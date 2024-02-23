@@ -1,6 +1,6 @@
 ﻿namespace PolyPlane
 {
-    partial class ProNavUI
+    partial class PolyPlaneUI
     {
         /// <summary>
         ///  Required designer variable.
@@ -30,20 +30,20 @@
         {
             SuspendLayout();
             // 
-            // ProNavUI
+            // PolyPlaneUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1330, 775);
-            Name = "ProNavUI";
+            Name = "PolyPlaneUI";
             Text = "PolyPlane - 2D Flight Physics";
-            FormClosing += ProNavUI_FormClosing;
-            KeyDown += Form1_KeyDown;
-            KeyPress += Form1_KeyPress;
-            KeyUp += Form1_KeyUp;
-            MouseDown += Form1_MouseDown;
-            MouseMove += ProNavUI_MouseMove;
-            MouseUp += Form1_MouseUp;
+            FormClosing += PolyPlaneUI_FormClosing;
+            KeyDown += PolyPlaneUI_KeyDown;
+            KeyPress += PolyPlaneUI_KeyPress;
+            KeyUp += PolyPlaneUI_KeyUp;
+            MouseDown += PolyPlaneUI_MouseDown;
+            MouseMove += PolyPlaneUI_MouseMove;
+            MouseUp += PolyPlaneUI_MouseUp;
             ResumeLayout(false);
         }
 

@@ -7,7 +7,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane
 {
-    public partial class ProNavUI : Form
+    public partial class PolyPlaneUI : Form
     {
         private D2DDevice _device;
         private D2DGraphics _gfx;
@@ -88,19 +88,19 @@ namespace PolyPlane
 
         private Random _rnd => Helpers.Rnd;
 
-        public ProNavUI()
+        public PolyPlaneUI()
         {
             InitializeComponent();
 
-            this.MouseWheel += Form1_MouseWheel;
-            this.Disposed += ProNavUI_Disposed;
+            this.MouseWheel += PolyPlaneUI_MouseWheel;
+            this.Disposed += PolyPlaneUI_Disposed;
 
             _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
             _playerBurstTimer.TriggerCallback = () => _playerPlane.FireBullet(p => AddExplosion(p));
         }
 
-        private void ProNavUI_Disposed(object? sender, EventArgs e)
+        private void PolyPlaneUI_Disposed(object? sender, EventArgs e)
         {
             _device?.Dispose();
             _missileOverlayLayer?.Dispose();
@@ -466,6 +466,7 @@ namespace PolyPlane
             DrawSpeedo(ctx.Gfx, viewportsize);
             DrawGMeter(ctx.Gfx, viewportsize);
             DrawThrottle(ctx.Gfx, viewportsize);
+            DrawGuideIcon(ctx.Gfx, viewportsize);
 
             if (!_playerPlane.IsDamaged)
             {
@@ -473,6 +474,20 @@ namespace PolyPlane
                 DrawTargetPointers(ctx.Gfx, viewportsize);
                 DrawMissilePointers(ctx.Gfx, viewportsize);
             }
+        }
+
+        private void DrawGuideIcon(D2DGraphics gfx, D2DSize viewportsize)
+        {
+            const float DIST = 300f;
+            var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
+
+            var mouseAngle = _guideAngle;
+            var mouseVec = Helpers.AngleToVectorDegrees(mouseAngle, DIST);
+            gfx.DrawEllipse(new D2DEllipse(pos - mouseVec, new D2DSize(5f, 5f)), _hudColor, 2f);
+
+            var planeAngle = _playerPlane.Rotation;
+            var planeVec = Helpers.AngleToVectorDegrees(planeAngle, DIST);
+            gfx.DrawCrosshair(pos + planeVec, 2f, _hudColor, 5f, 20f);
         }
 
         private void DrawHudMessage(D2DGraphics gfx, D2DSize viewportsize)
@@ -1492,7 +1507,7 @@ namespace PolyPlane
             //DrawFPSGraph(gfx);
             //DrawGrid(gfx);
 
-            //DrawRadial(gfx, _radialPosition);
+            //DrawRadial(ctx.Gfx, _radialPosition);
         }
 
         private void DrawFPSGraph(RenderContext ctx)
@@ -1502,8 +1517,8 @@ namespace PolyPlane
         }
 
 
-        private float _testAngle = 0f;
-        private void DrawRadial(RenderContext ctx, D2DPoint pos)
+        private float _guideAngle = 0f;
+        private void DrawRadial(D2DGraphics ctx, D2DPoint pos)
         {
             const float radius = 300f;
             const float step = 10f;
@@ -1527,8 +1542,8 @@ namespace PolyPlane
 
             float testDiff = 200f;
             float testFact = 0.6f;
-            float angle1 = _testAngle;
-            float angle2 = _testAngle + testDiff;
+            float angle1 = _guideAngle;
+            float angle2 = _guideAngle + testDiff;
 
             ctx.DrawLine(pos, pos + Helpers.AngleToVectorDegrees(angle1) * (radius), D2DColor.Green);
 
@@ -1866,7 +1881,7 @@ namespace PolyPlane
             gfx.DrawText(infoText, D2DColor.GreenYellow, "Consolas", 12f, pos.X, pos.Y);
         }
 
-        private void Form1_KeyPress(object sender, KeyPressEventArgs e)
+        private void PolyPlaneUI_KeyPress(object sender, KeyPressEventArgs e)
         {
             //if (_playerPlane.IsDamaged && e.KeyChar != 'p' && e.KeyChar != 'd')
             //    ResetPlane();
@@ -2014,7 +2029,7 @@ namespace PolyPlane
             }
         }
 
-        private void Form1_MouseUp(object sender, MouseEventArgs e)
+        private void PolyPlaneUI_MouseUp(object sender, MouseEventArgs e)
         {
             //_player.FlameOn = false;
 
@@ -2026,7 +2041,7 @@ namespace PolyPlane
             }
         }
 
-        private void Form1_MouseDown(object sender, MouseEventArgs e)
+        private void PolyPlaneUI_MouseDown(object sender, MouseEventArgs e)
         {
             switch (e.Button)
             {
@@ -2072,7 +2087,7 @@ namespace PolyPlane
             //_testAngle = (new D2DPoint(e.X, e.Y) - new D2DPoint(300, 300)).Angle();
         }
 
-        private void Form1_MouseWheel(object? sender, MouseEventArgs e)
+        private void PolyPlaneUI_MouseWheel(object? sender, MouseEventArgs e)
         {
             if (!_shiftDown)
             {
@@ -2106,7 +2121,7 @@ namespace PolyPlane
 
         }
 
-        private void Form1_KeyDown(object sender, KeyEventArgs e)
+        private void PolyPlaneUI_KeyDown(object sender, KeyEventArgs e)
         {
             _shiftDown = e.Shift;
 
@@ -2114,22 +2129,22 @@ namespace PolyPlane
             //    TargetAllWithMissile(_shiftDown);
         }
 
-        private void Form1_KeyUp(object sender, KeyEventArgs e)
+        private void PolyPlaneUI_KeyUp(object sender, KeyEventArgs e)
         {
             _shiftDown = e.Shift;
         }
 
-        private void ProNavUI_MouseMove(object sender, MouseEventArgs e)
+        private void PolyPlaneUI_MouseMove(object sender, MouseEventArgs e)
         {
             var center = new D2DPoint(World.ViewPortSize.width * 0.5f, World.ViewPortSize.height * 0.5f);
             var pos = new D2DPoint(e.X, e.Y) * World.ViewPortScaleMulti;
             var angle = (center - pos).Angle();
 
-            _testAngle = angle;
+            _guideAngle = angle;
             _playerPlane.SetAutoPilotAngle(angle);
         }
 
-        private void ProNavUI_FormClosing(object sender, FormClosingEventArgs e)
+        private void PolyPlaneUI_FormClosing(object sender, FormClosingEventArgs e)
         {
             _renderThread?.Join(1000);
             //_renderThread.Wait(1000);

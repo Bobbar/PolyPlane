@@ -36,6 +36,13 @@ namespace PolyPlane
             gfx.DrawLineClamped(viewport, end, end + (arrow2 * ARROW_LEN), color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
         }
 
+        public static void DrawCrosshair(this D2DGraphics gfx, D2DPoint pos, float weight, D2DColor color, float innerRadius, float outerRadius)
+        {
+            gfx.DrawLine(pos + Helpers.AngleToVectorDegrees(270f, innerRadius), pos + Helpers.AngleToVectorDegrees(270f, outerRadius), color, weight);
+            gfx.DrawLine(pos + Helpers.AngleToVectorDegrees(180f, innerRadius), pos + Helpers.AngleToVectorDegrees(180f, outerRadius), color, weight);
+            gfx.DrawLine(pos + Helpers.AngleToVectorDegrees(90f, innerRadius), pos + Helpers.AngleToVectorDegrees(90f, outerRadius), color, weight);
+            gfx.DrawLine(pos + Helpers.AngleToVectorDegrees(0f, innerRadius), pos + Helpers.AngleToVectorDegrees(0f, outerRadius), color, weight);
+        }
 
         public static void DrawArrowStroked(this D2DGraphics gfx, D2DPoint start, D2DPoint end, D2DColor color, float weight, D2DColor strokeColor, float strokeWeight)
         {
