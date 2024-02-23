@@ -43,6 +43,7 @@ namespace PolyPlane.GameObjects
         private Wing? _controlWing = null;
         private float _renderOffset = 1.5f;
         private RateLimiter _thrustAmt = new RateLimiter(0.5f);
+        private RateLimiterAngle _apAngleLimiter = new RateLimiterAngle(50f);
         private float _targetDeflection = 0f;
         private float _maxDeflection = 50f;
         private float _APTargetAngle = 0f;
@@ -55,14 +56,15 @@ namespace PolyPlane.GameObjects
         private float _AIDirOffset = 180f;
         private float _sinePos = 0f;
         private Plane _AIplayerPlane;
+        
         private GameTimer _engageTimer;
         private GameTimer _fireBurstTimer = new GameTimer(2f);
         private GameTimer _fireBurstCooldownTimer = new GameTimer(6f);
-
         private GameTimer _dropDecoyTimer = new GameTimer(1.5f);
         private GameTimer _dropDecoyCooldownTimer = new GameTimer(3f);
         private GameTimer _dropDecoyDelayTimer = new GameTimer(1f);
         private GameTimer _expireTimeout = new GameTimer(50f);
+        
         private float _damageDeflection = 0f;
 
         private RenderPoly FlamePoly;
@@ -196,7 +198,7 @@ namespace PolyPlane.GameObjects
                 if (_isAIPlane)
                     guideRot = GetAPGuidanceDirection(GetAIGuidance());
                 else
-                    guideRot = GetAPGuidanceDirection(_APTargetAngle);
+                    guideRot = GetAPGuidanceDirection(_apAngleLimiter.Value);
 
                 var veloAngle = this.Velocity.Angle(true);
                 var nextDeflect = Helpers.ClampAngle180(guideRot - veloAngle);
@@ -266,6 +268,7 @@ namespace PolyPlane.GameObjects
             Wings.ForEach(w => w.Update(dt, viewport, renderScale * _renderOffset));
             _centerOfThrust.Update(dt, viewport, renderScale * _renderOffset);
             _thrustAmt.Update(dt);
+            _apAngleLimiter.Update(dt);
             CheckForFlip();
 
             _sinePos += 0.3f * dt;
@@ -434,7 +437,7 @@ namespace PolyPlane.GameObjects
 
         public void SetAutoPilotAngle(float angle)
         {
-            _APTargetAngle = angle;
+            _apAngleLimiter.Target = angle;
         }
 
         public void ToggleThrust()

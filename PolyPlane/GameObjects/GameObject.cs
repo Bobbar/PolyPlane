@@ -119,11 +119,9 @@ namespace PolyPlane.GameObjects
 
         public bool IsObjInFOV(GameObject obj, float fov)
         {
-            //var dir = this.Position - obj.Position;
             var dir = obj.Position - this.Position;
 
             var angle = dir.Angle(true);
-            //var diff = Helpers.AngleDiff(obj.Rotation, angle);
             var diff = Helpers.AngleDiff(this.Rotation, angle);
 
             return diff <= (fov * 0.5f);

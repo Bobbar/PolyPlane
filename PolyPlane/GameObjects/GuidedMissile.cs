@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects.Guidance;
+using System.Diagnostics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -35,6 +36,7 @@ namespace PolyPlane.GameObjects
 
         }
 
+        public bool IsDistracted = false;
         public float TargetDistance { get; set; } = 0f;
 
         public bool MissedTarget => _guidance._missedTarget;
@@ -69,6 +71,8 @@ namespace PolyPlane.GameObjects
         private FixturePoint _warheadCenterMass;
         private FixturePoint _motorCenterMass;
         private FixturePoint _flamePos;
+        private GameTimer _decoyDistractCooldown = new GameTimer(1f);
+
 
         private D2DPoint _com = D2DPoint.Zero;
 
@@ -249,6 +253,8 @@ namespace PolyPlane.GameObjects
 
             if (Target.IsExpired && _age > LIFESPAN)
                 this.IsExpired = true;
+
+            _decoyDistractCooldown.Update(dt);
         }
 
         public void ChangeTarget(GameObject target)
@@ -256,6 +262,33 @@ namespace PolyPlane.GameObjects
             this.Target = target;
 
             _guidance = GetGuidance(target);
+        }
+
+        public void DoChangeTargetChance(GameObject target)
+        {
+            if (_decoyDistractCooldown.IsRunning)
+                return;
+
+            const int RANDO_AMT = 5;
+            var randOChanceO = _rnd.Next(RANDO_AMT);
+            var randOChanceO2 = _rnd.Next(RANDO_AMT);
+            var lucky = randOChanceO == randOChanceO2; // :-}
+
+            if (lucky)
+            {
+                ChangeTarget(target);
+                _decoyDistractCooldown.Reset();
+                _decoyDistractCooldown.Start();
+                IsDistracted = true;
+                Debug.Print("Missile distracted!");
+
+            }
+            else
+            {
+                _decoyDistractCooldown.Reset();
+                _decoyDistractCooldown.Start();
+                Debug.Print("Nice try!");
+            }
         }
 
         private GuidanceBase GetGuidance(GameObject target)

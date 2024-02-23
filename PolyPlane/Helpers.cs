@@ -123,6 +123,11 @@ namespace PolyPlane
             return absDiffDeg;
         }
 
+        public static float AngleDiffSmallest(float a, float b)
+        {
+            return 180f - Math.Abs(Math.Abs(a - b) % (2f * 180f) - 180f);
+        }
+
         public static double AngleDiffD(double a, double b)
         {
             var normDeg = ModSignD((a - b), 360d);

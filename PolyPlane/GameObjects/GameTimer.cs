@@ -59,9 +59,13 @@
             }
         }
 
-        public void Start()
+        public void Start(bool fireTriggerOnStart = false)
         {
             _isRunning = true;
+
+            if (fireTriggerOnStart)
+                if (TriggerCallback != null)
+                    TriggerCallback();
         }
 
         public void Stop()
