@@ -42,10 +42,10 @@ namespace PolyPlane.GameObjects
             ctx.FillEllipse(new D2DEllipse(this.Position, _radius + _currentFlash, _radius + _currentFlash), D2DColor.Yellow);
         }
 
-        public override bool Contains(D2DPoint pnt)
-        {
-            var dist = this.Position.DistanceTo(pnt);
-            return dist <= _radius + _flashAmt;
-        }
+        //public override bool Contains(D2DPoint pnt)
+        //{
+        //    var dist = this.Position.DistanceTo(pnt);
+        //    return dist <= _radius + _flashAmt;
+        //}
     }
 }

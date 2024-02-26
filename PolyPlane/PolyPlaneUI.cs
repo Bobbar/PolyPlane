@@ -656,6 +656,13 @@ namespace PolyPlane
 
                 gfx.DrawArrowStroked(pos1, pos2, distColor, weight, D2DColor.White, 3f);
 
+                if (_playerPlane.ClosingRate(target) > 0f)
+                    gfx.DrawArrow(pos + (vec * 270f), pos + (vec * 250f), D2DColor.Green);
+                else
+                    gfx.DrawArrow(pos + (vec * 250f), pos + (vec * 270f), D2DColor.Green);
+
+
+
                 if (mostCentered != null && mostCentered.ID == target.ID)
                 {
                     if (_playerPlane.IsObjInFOV(mostCentered, World.SENSOR_FOV))
@@ -663,6 +670,7 @@ namespace PolyPlane
                         gfx.FillEllipse(new D2DEllipse(pos1, new D2DSize(6f, 6f)), D2DColor.Red);
                     }
                 }
+
             }
 
             if (mostCentered != null && (mostCenteredPlane != null && !mostCenteredPlane.IsDamaged))
@@ -1810,7 +1818,8 @@ namespace PolyPlane
                     break;
 
                 case MouseButtons.Right:
-                    _playerPlane.ToggleThrust();
+                    //_playerPlane.ToggleThrust();
+                    DropDecoy(_playerPlane);
                     break;
 
                 case MouseButtons.Middle:
@@ -1824,10 +1833,18 @@ namespace PolyPlane
         {
             if (!_shiftDown)
             {
+                //if (e.Delta > 0)
+                //    _playerPlane.Pitch(true);
+                //else
+                //    _playerPlane.Pitch(false);
+
+                //DropDecoy(_playerPlane);
+
                 if (e.Delta > 0)
-                    _playerPlane.Pitch(true);
+                    _playerPlane.MoveThrottle(true);
                 else
-                    _playerPlane.Pitch(false);
+                    _playerPlane.MoveThrottle(false);
+
             }
             else
             {

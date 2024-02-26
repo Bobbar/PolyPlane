@@ -6,8 +6,8 @@ namespace PolyPlane.GameObjects
     {
         public float Radius { get; set; }
 
-        private const int MAX_PARTS = 100;//200;
-        private const float MAX_AGE = 10f;//20f;
+        private const int MAX_PARTS = 200;
+        private const float MAX_AGE = 20f;
         private List<FlamePart> _parts = new List<FlamePart>();
         private D2DColor _flameColor = new D2DColor(0.6f, D2DColor.Yellow);
         private D2DColor _smokeColor = new D2DColor(0.6f, D2DColor.Black);

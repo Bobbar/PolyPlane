@@ -2,35 +2,38 @@
 
 namespace PolyPlane.GameObjects
 {
-    public class Bullet : GameObject
+    public class Bullet : GameObjectPoly
     {
-        public float Speed = 600f;
+        public float Speed = 800f;
         public float Lifetime = 10f;
         public Action<D2DPoint> AddExplosionCallback { get; set; }
 
         private float _age = 0;
 
+        private D2DPoint[] _poly = new D2DPoint[]
+        {
+            new D2DPoint(7,0),
+            new D2DPoint(4,-3),
+            new D2DPoint(0,-4),
+            new D2DPoint(-8,-4),
+            new D2DPoint(-8,4),
+            new D2DPoint(0,4),
+            new D2DPoint(4,3),
+        };
+
         public Bullet() : base() { }
 
         public Bullet(D2DPoint pos) : base(pos) { }
 
-        public Bullet(Plane plane) : base(plane.GunPosition, plane.Rotation)
+        public Bullet(Plane plane) : base(plane.GunPosition, plane.Velocity, plane.Rotation)
         {
             this.Owner = plane;
+
+            this.Polygon = new RenderPoly(_poly);
 
             var velo = (Helpers.AngleToVectorDegrees(plane.Rotation, this.Speed));
             velo += plane.Velocity;
             this.Velocity = velo;
-        }
-
-        public Bullet(D2DPoint pos, float rotation) : base(pos, rotation)
-        {
-            this.Velocity = AngleToVector(rotation) * this.Speed;
-        }
-
-        public Bullet(D2DPoint pos, D2DPoint velo, float lifeSpan) : base(pos, velo)
-        {
-            this.Lifetime = lifeSpan;
         }
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
@@ -62,7 +65,9 @@ namespace PolyPlane.GameObjects
 
         public override void Render(RenderContext ctx)
         {
-            ctx.FillEllipse(new D2DEllipse(this.Position, new D2DSize(5, 5)), D2DColor.Goldenrod);
+            //ctx.FillEllipse(new D2DEllipse(this.Position, new D2DSize(5, 5)), D2DColor.Goldenrod);
+
+            ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, D2DColor.Goldenrod);
         }
     }
 

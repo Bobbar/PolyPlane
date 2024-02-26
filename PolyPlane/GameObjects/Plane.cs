@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using PolyPlane.AI_Behavior;
+using System.Diagnostics;
 using System.Numerics;
 using unvell.D2DLib;
 
@@ -24,11 +25,7 @@ namespace PolyPlane.GameObjects
         public D2DPoint ExhaustPosition => _centerOfThrust.Position;
         public bool IsDamaged { get; set; } = false;
 
-        public Plane AIPlayerPlane
-        {
-            get { return _AIplayerPlane; }
-            set { _AIplayerPlane = value; }
-        }
+        public IAIBehavior _aiBehavior;
 
         public bool IsEngaged
         {
@@ -46,25 +43,18 @@ namespace PolyPlane.GameObjects
         private RateLimiterAngle _apAngleLimiter = new RateLimiterAngle(50f);
         private float _targetDeflection = 0f;
         private float _maxDeflection = 50f;
-        private float _APTargetAngle = 0f;
-        private bool _isFlipped = false;
         private GameTimer _flipTimer = new GameTimer(2f);
         private Direction _currentDir = Direction.Right;
         private Direction _queuedDir = Direction.Right;
         private D2DPoint _force = D2DPoint.Zero;
         private bool _isAIPlane = false;
-        private float _AIDirOffset = 180f;
-        private float _sinePos = 0f;
-        private Plane _AIplayerPlane;
-        
+
         private GameTimer _engageTimer;
-        private GameTimer _fireBurstTimer = new GameTimer(2f);
-        private GameTimer _fireBurstCooldownTimer = new GameTimer(6f);
         private GameTimer _dropDecoyTimer = new GameTimer(1.5f);
         private GameTimer _dropDecoyCooldownTimer = new GameTimer(3f);
         private GameTimer _dropDecoyDelayTimer = new GameTimer(1f);
         private GameTimer _expireTimeout = new GameTimer(50f);
-        
+
         private float _damageDeflection = 0f;
 
         private RenderPoly FlamePoly;
@@ -73,6 +63,7 @@ namespace PolyPlane.GameObjects
         private FixturePoint _gunPosition;
         private D2DColor _planeColor;
         private SmokeTrail _contrail;
+        private int _throttlePos = 0;
 
         public Action<Bullet> FireBulletCallback { get; set; }
 
@@ -122,19 +113,10 @@ namespace PolyPlane.GameObjects
         {
             if (playerPlane != null)
             {
-                _AIplayerPlane = playerPlane;
+                _aiBehavior = new FighterPlaneAI(this, playerPlane);
+
                 _isAIPlane = true;
-                ThrustOn = true;
-                AutoPilotOn = true;
-
-                _dropDecoyTimer.TriggerCallback = () => _dropDecoyCooldownTimer.Restart();
-                _dropDecoyCooldownTimer.TriggerCallback = () => _dropDecoyTimer.Restart();
-                _dropDecoyDelayTimer.TriggerCallback = () =>
-                {
-                    _dropDecoyTimer.Restart();
-                    this.DroppingDecoy = true;
-                };
-
+               
                 Mass = 90f;
                 Thrust = 1000f;
             }
@@ -144,6 +126,14 @@ namespace PolyPlane.GameObjects
                 Mass = 90f;
                 Thrust = 2000f;
             }
+
+            _dropDecoyTimer.TriggerCallback = () => _dropDecoyCooldownTimer.Restart();
+            _dropDecoyCooldownTimer.TriggerCallback = () => _dropDecoyTimer.Restart();
+            _dropDecoyDelayTimer.TriggerCallback = () =>
+            {
+                _dropDecoyTimer.Restart();
+                this.DroppingDecoy = true;
+            };
 
             _planeColor = D2DColor.Randomly();
 
@@ -182,6 +172,8 @@ namespace PolyPlane.GameObjects
         {
             base.Update(dt, viewport, renderScale * _renderOffset);
 
+            if (_aiBehavior != null)
+                _aiBehavior.Update(dt);
 
             var wingForce = D2DPoint.Zero;
             var wingTorque = 0f;
@@ -196,7 +188,7 @@ namespace PolyPlane.GameObjects
                 float guideRot = this.Rotation;
 
                 if (_isAIPlane)
-                    guideRot = GetAPGuidanceDirection(GetAIGuidance());
+                    guideRot = GetAPGuidanceDirection(_aiBehavior.GetAIGuidance());
                 else
                     guideRot = GetAPGuidanceDirection(_apAngleLimiter.Value);
 
@@ -271,8 +263,6 @@ namespace PolyPlane.GameObjects
             _apAngleLimiter.Update(dt);
             CheckForFlip();
 
-            _sinePos += 0.3f * dt;
-
             _contrail.Update(dt);
 
             _flamePos.Update(dt, viewport, renderScale * _renderOffset);
@@ -288,32 +278,14 @@ namespace PolyPlane.GameObjects
 
             FlamePoly.Update(_flamePos.Position, flameAngle, renderScale * _renderOffset);
 
-
             _flipTimer.Update(dt);
+            _dropDecoyTimer.Update(dt);
+            _dropDecoyCooldownTimer.Update(dt);
+            _dropDecoyDelayTimer.Update(dt);
 
-            if (this.IsAI)
-            {
-                if (_engageTimer != null)
-                    _engageTimer.Update(dt);
-
-                ConsiderFireAtPlayer();
-
-                _fireBurstTimer.Update(dt);
-                _fireBurstCooldownTimer.Update(dt);
-
-                _dropDecoyTimer.Update(dt);
-                _dropDecoyCooldownTimer.Update(dt);
-                _dropDecoyDelayTimer.Update(dt);
-
-                if (_fireBurstTimer.IsRunning)
-                    this.FiringBurst = true;
-                else
-                    this.FiringBurst = false;
-
-                if (this.DroppingDecoy && _dropDecoyCooldownTimer.IsRunning)
-                    this.DroppingDecoy = false;
-            }
-
+            if (this.DroppingDecoy && _dropDecoyCooldownTimer.IsRunning)
+                this.DroppingDecoy = false;
+            
             _expireTimeout.Update(dt);
         }
 
@@ -348,22 +320,10 @@ namespace PolyPlane.GameObjects
             gfx.DrawLine(this.Position, this.Position + cone2, color);
         }
 
-        public override void Wrap(D2DSize viewport)
-        {
-            if (!_isAIPlane)
-                return;
-
-            const float MIN_VELO = 300f;
-
-            var velo = this.Velocity.Length();
-
-            if (this.Altitude < 3000f)
-                _AIDirOffset = 90f;
-
-            if (velo < MIN_VELO && this.Altitude > 3000f)
-                _AIDirOffset = 20f;
-
-        }
+        //public override void Wrap(D2DSize viewport)
+        //{
+            
+        //}
 
         public void EngagePlayer(float duration)
         {
@@ -374,26 +334,6 @@ namespace PolyPlane.GameObjects
                 _engageTimer.Start();
 
                 Debug.WriteLine("Engaging Player!");
-            }
-        }
-
-        private void ConsiderFireAtPlayer()
-        {
-            const float MIN_DIST = 1000f;
-            const float MIN_OFFBORE = 30f;
-
-            var plrDist = D2DPoint.Distance(_AIplayerPlane.Position, this.Position);
-
-            if (plrDist > MIN_DIST)
-                return;
-
-            var plrFOV = this.FOVToObject(_AIplayerPlane);
-
-            if (plrFOV <= MIN_OFFBORE && !_fireBurstCooldownTimer.IsRunning && !_fireBurstTimer.IsRunning)
-            {
-                //Debug.WriteLine("FIRING BURST AT PLAYER!");
-                _fireBurstTimer.TriggerCallback = () => _fireBurstCooldownTimer.Restart();
-                _fireBurstTimer.Restart();
             }
         }
 
@@ -554,24 +494,23 @@ namespace PolyPlane.GameObjects
             _flipTimer.Restart();
         }
 
-        private float GetAIGuidance()
+        public void MoveThrottle(bool up)
         {
-            var dir = Helpers.ClampAngle(Helpers.RadsToDegrees((float)Math.Sin(_sinePos)) + _AIDirOffset);
-            var dirToPlayer = this.Position - _AIplayerPlane.Position;
-            var angle = dirToPlayer.Angle(true);
+            const int DETENTS = 6;
 
-            if (_AIplayerPlane.HasCrashed)
-                angle = dir;
 
-            // Run away from player?
-            if (this.IsDefending)
-                angle = Helpers.ClampAngle(angle + 180f);
-          
-            // Pitch up if we get too low.
-            if (this.Altitude < 3000f)
-                angle = 90f;
+            if (up)
+            {
+                _throttlePos += 1;
+            }
+            else
+            {
+                _throttlePos -= 1;
+            }
 
-            return angle;
+            _throttlePos = Math.Clamp(_throttlePos, 0, DETENTS);
+            var amt = (1f / (float)DETENTS) * _throttlePos;
+            _thrustAmt.Target = amt;
         }
 
         private float GetTorque(Wing wing, D2DPoint force)
@@ -587,7 +526,6 @@ namespace PolyPlane.GameObjects
             var torque = Helpers.Cross(r, force);
             return torque;
         }
-
 
         public void FlipPoly(Direction direction)
         {
@@ -626,14 +564,14 @@ namespace PolyPlane.GameObjects
         {
             var thrust = D2DPoint.Zero;
 
-            if (ThrustOn)
-                _thrustAmt.Target = 1f;
-            else
-                _thrustAmt.Target = 0f;
+            //if (ThrustOn)
+            //    _thrustAmt.Target = 1f;
+            //else
+            //    _thrustAmt.Target = 0f;
 
             const float thrustVectorAmt = 1f;//1f;
             const float thrustBoostAmt = 1000f;
-            const float thrustBoostMaxSpd = 1000f;
+            const float thrustBoostMaxSpd = 400f;
 
             D2DPoint vec;
 
