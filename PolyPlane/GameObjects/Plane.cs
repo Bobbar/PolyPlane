@@ -7,9 +7,22 @@ namespace PolyPlane.GameObjects
 {
     public class Plane : GameObjectPoly
     {
+
+        private const int MAX_MISSILES = 6;
+        public int NumMissiles = MAX_MISSILES;
         public bool IsAI => _isAIPlane;
         public bool IsDefending = false;
-        public float Mass { get; set; } = 90f;
+
+        public float Mass 
+        {
+            get { return _mass + (NumMissiles * 0.853f); }
+            //get { return _mass; }
+
+            set {  _mass = value; }
+        }
+
+        private float _mass = 379.8f;
+
         public float Thrust { get; set; } = 10f;
         public bool FiringBurst { get; set; } = false;
         public bool DroppingDecoy { get; set; } = false;
@@ -117,14 +130,12 @@ namespace PolyPlane.GameObjects
 
                 _isAIPlane = true;
                
-                Mass = 90f;
-                Thrust = 1000f;
+                Thrust = 4220f;
             }
             else
             {
 
-                Mass = 90f;
-                Thrust = 2000f;
+                Thrust = 8440f;
             }
             
             _thrustAmt.Target = 1f;
@@ -154,8 +165,8 @@ namespace PolyPlane.GameObjects
             if (_isAIPlane)
                 defRate = 20f;
 
-            AddWing(new Wing(this, 10f * _renderOffset, 0.5f, 40f, 10000f, new D2DPoint(1.5f, 1f), defRate));
-            AddWing(new Wing(this, 5f * _renderOffset, 0.2f, 50f, 5000f, new D2DPoint(-35f, 1f), defRate), true);
+            AddWing(new Wing(this, 10f * _renderOffset, 2.11f, 40f, 52200f, new D2DPoint(1.5f, 1f), defRate));
+            AddWing(new Wing(this, 5f * _renderOffset, 0.844f, 50f, 31100f, new D2DPoint(-35f, 1f), defRate), true);
 
             this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), 1.7f);
             _flamePos = new FixturePoint(this, new D2DPoint(-37f, 0));
@@ -236,8 +247,8 @@ namespace PolyPlane.GameObjects
 
             if (IsDamaged)
             {
-                wingForce *= 0.3f;//0.1f;
-                wingTorque *= 0.3f;//0.1f;
+                wingForce *= 0.1f;
+                wingTorque *= 0.1f;
                 AutoPilotOn = false;
                 SASOn = false;
                 ThrustOn = false;
@@ -275,7 +286,7 @@ namespace PolyPlane.GameObjects
             var flameAngle = thrust.Angle();
             var len = this.Velocity.Length() * 0.05f;
             len += thrustMag * 0.01f;
-            len *= 0.9f;
+            len *= 0.6f;
             FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
             _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
 
@@ -415,41 +426,11 @@ namespace PolyPlane.GameObjects
 
         public void DoImpact(GameObject impactor, List<GameObject> flameList)
         {
-            var dir = impactor.Position - this.Position;
-
-            if (!IsDamaged)
-            {
-                var mat = Matrix3x2.CreateRotation(-this.Rotation * (float)(Math.PI / 180f), this.Position);
-                mat *= Matrix3x2.CreateTranslation(new D2DPoint(-this.Position.X, -this.Position.Y));
-                var ogPos = D2DPoint.Transform(impactor.Position, mat);
-
-                SetOnFire(ogPos, flameList);
-
-                IsDamaged = true;
-                _damageDeflection = _rnd.NextFloat(-180, 180);
-            }
-
-            float impactMass = 40f;
-
-            if (impactor is GuidedMissile missile)
-                impactMass = missile.TotalMass;
-
-            impactMass *= 2f;
-
-            var velo = impactor.Velocity - this.Velocity;
-            var force = (impactMass * velo.Length()) / 2f * 0.5f;
-            var forceVec = (impactor.Position.Normalized() * force);
-            var impactTq = GetTorque(impactor.Position, forceVec);
-
-            this.RotationSpeed += impactTq / this.Mass * World.DT;
-            this.Velocity += forceVec / this.Mass * World.DT;
+            DoImpact(impactor, impactor.Position, flameList);
         }
-
 
         public void DoImpact(GameObject impactor, D2DPoint impactPos, List<GameObject> flameList)
         {
-            var dir = impactPos - this.Position;
-
             if (!IsDamaged)
             {
                 var mat = Matrix3x2.CreateRotation(-this.Rotation * (float)(Math.PI / 180f), this.Position);
@@ -464,10 +445,10 @@ namespace PolyPlane.GameObjects
 
             float impactMass = 40f;
 
-            if (impactor is GuidedMissile missile)
-                impactMass = missile.TotalMass * 4f;
+            //if (impactor is GuidedMissile missile)
+            //    impactMass = missile.TotalMass * 4f;
 
-            impactMass *= 2f;
+            impactMass *= 10f;
 
             var velo = impactor.Velocity - this.Velocity;
             var force = (impactMass * velo.Length()) / 2f * 0.5f;
@@ -491,6 +472,7 @@ namespace PolyPlane.GameObjects
 
         public void FixPlane()
         {
+            NumMissiles = MAX_MISSILES;
             IsDamaged = false;
             HasCrashed = false;
             _expireTimeout.Stop();

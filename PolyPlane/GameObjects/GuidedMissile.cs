@@ -42,16 +42,14 @@ namespace PolyPlane.GameObjects
         public bool MissedTarget => _guidance.MissedTarget;
 
         private readonly float THURST_VECTOR_AMT = 1f;
-        private readonly float LIFESPAN = 40f;//70f;
-        private readonly float BURN_RATE = 1.5f;//6f;
-        private readonly float THRUST = 5000f;//6000f;//6000f;
-        private readonly float MASS = 22.5f;//90f;//45.3f;
-        private readonly float FUEL = 10f;//40f;
-        private readonly float BOOST_FUEL = 20f;
+        private readonly float LIFESPAN = 40f;
+        private readonly float BURN_RATE = 0.06f;//1.5f;
+        private readonly float THRUST = 156f;//5000f;
+        private readonly float MASS = 0.478f;//22.5f;
+        private readonly float FUEL = 0.375f;//10f;
 
         private float _age = 0;
         private float _currentFuel = 0f;
-        private float _currentBoostFuel = 0f;
         private float _gForce = 0f;
         private float _gForcePeak = 0f;
 
@@ -71,7 +69,8 @@ namespace PolyPlane.GameObjects
         private FixturePoint _warheadCenterMass;
         private FixturePoint _motorCenterMass;
         private FixturePoint _flamePos;
-        private GameTimer _decoyDistractCooldown = new GameTimer(0.5f);
+        private GameTimer _decoyDistractCooldown = new GameTimer(1f);
+        private GameTimer _decoyDistractArm = new GameTimer(2f);
 
 
         private D2DPoint _com = D2DPoint.Zero;
@@ -79,7 +78,6 @@ namespace PolyPlane.GameObjects
         public GuidedMissile(GameObject player, GameObject target, GuidanceType guidance = GuidanceType.Advanced, bool useControlSurfaces = false, bool useThrustVectoring = false) : base(player.Position, player.Velocity, player.Rotation, player, target)
         {
             _currentFuel = FUEL;
-            _currentBoostFuel = BOOST_FUEL;
 
             _centerOfThrust = new FixturePoint(this, new D2DPoint(-22, 0));
             _warheadCenterMass = new FixturePoint(this, new D2DPoint(4f, 0));
@@ -98,17 +96,15 @@ namespace PolyPlane.GameObjects
 
             if (_useControlSurfaces)
             {
-                //_tailWing = new Wing(this, 4f, 0.2f, 50f, 8000f, new D2DPoint(-22f, 0));
-                //_rocketBody = new Wing(this, 0f, 0.15f, 2000f, D2DPoint.Zero);
-                //_noseWing = new Wing(this, 4f, 0.05f, 20f, 7000f, new D2DPoint(19.5f, 0));
+                
 
-                //_tailWing = new Wing(this, 4f, 0.4f, 50f, 16000f, new D2DPoint(-22f, 0));
-                //_rocketBody = new Wing(this, 0f, 0.30f, 5000f, D2DPoint.Zero);
-                //_noseWing = new Wing(this, 4f, 0.1f, 20f, 14000f, new D2DPoint(19.5f, 0));
+                //_tailWing = new Wing(this, 4f, 0.1f, 50f, 4000f, new D2DPoint(-22f, 0));
+                //_rocketBody = new Wing(this, 0f, 0.075f, 1250f, D2DPoint.Zero);
+                //_noseWing = new Wing(this, 4f, 0.025f, 20f, 3500f, new D2DPoint(19.5f, 0));
 
-                _tailWing = new Wing(this, 4f, 0.1f, 50f, 4000f, new D2DPoint(-22f, 0));
-                _rocketBody = new Wing(this, 0f, 0.075f, 1250f, D2DPoint.Zero);
-                _noseWing = new Wing(this, 4f, 0.025f, 20f, 3500f, new D2DPoint(19.5f, 0));
+                _tailWing = new Wing(this, 4f, 0.003f, 50f, 85.1f, new D2DPoint(-22f, 0), 100f);
+                _rocketBody = new Wing(this, 0f, 0.00159f, 56.5f, D2DPoint.Zero);
+                _noseWing = new Wing(this, 4f, 0.0001f, 20f, 84.4f, new D2DPoint(19.5f, 0));
             }
             else
             {
@@ -116,6 +112,7 @@ namespace PolyPlane.GameObjects
             }
 
             _guidance = GetGuidance(target);
+            _decoyDistractArm.Start();
         }
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
@@ -205,7 +202,6 @@ namespace PolyPlane.GameObjects
             if (_currentFuel > 0f)
             {
                 _currentFuel -= BURN_RATE * dt;
-                _currentBoostFuel -= BURN_RATE * dt;
             }
 
             base.Update(dt, viewport, renderScale + _renderOffset);
@@ -242,7 +238,7 @@ namespace PolyPlane.GameObjects
             var thrust = GetThrust().Length();
             var len = this.Velocity.Length() * 0.05f;
             len += thrust * 0.01f;
-            len *= 0.5f;
+            len *= 0.8f;
             FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
             _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
 
@@ -255,6 +251,7 @@ namespace PolyPlane.GameObjects
                 this.IsExpired = true;
 
             _decoyDistractCooldown.Update(dt);
+            _decoyDistractArm.Update(dt);
         }
 
         public void ChangeTarget(GameObject target)
@@ -266,10 +263,10 @@ namespace PolyPlane.GameObjects
 
         public void DoChangeTargetChance(GameObject target)
         {
-            if (_decoyDistractCooldown.IsRunning)
+            if (_decoyDistractCooldown.IsRunning || _decoyDistractArm.IsRunning)
                 return;
 
-            const int RANDO_AMT = 3;//5;
+            const int RANDO_AMT = 5;
             var randOChanceO = _rnd.Next(RANDO_AMT);
             var randOChanceO2 = _rnd.Next(RANDO_AMT);
             var lucky = randOChanceO == randOChanceO2; // :-}
@@ -434,24 +431,6 @@ namespace PolyPlane.GameObjects
 
             gfx.DrawLine(this.Position, this.Position + cone1, D2DColor.Red);
             gfx.DrawLine(this.Position, this.Position + cone2, D2DColor.Blue);
-        }
-
-        private void DrawFuelGauge(D2DGraphics gfx)
-        {
-            const float HEIGHT = 6f;
-            const float WIDTH = 2f;
-
-            var pos = new D2DPoint(5.5f, HEIGHT * 0.5f);
-            var offsetPos = this.ApplyTranslation(pos, this.Rotation, this.Position);
-            var angleVec = Helpers.AngleToVectorDegrees(this.Rotation - 90f);
-
-            // Background
-            var vec1 = angleVec * HEIGHT;
-            gfx.DrawLine(offsetPos, offsetPos + vec1, D2DColor.DarkGray, WIDTH);
-
-            // Gauge
-            var vec2 = angleVec * (HEIGHT * (_currentFuel / FUEL));
-            gfx.DrawLine(offsetPos, offsetPos + vec2, _currentBoostFuel > 0f ? D2DColor.Red : D2DColor.DarkRed, WIDTH);
         }
 
         private float GetTorque(Wing wing, D2DPoint force)

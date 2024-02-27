@@ -11,35 +11,29 @@ namespace PolyPlane.GameObjects.Guidance
         protected Missile Missile { get; set; }
         protected GameObject Target { get; set; }
 
+        private const float ARM_TIME = 3f;
+
         private GameTimer _lostLockTimer = new GameTimer(2f);
         private GameTimer _groundScatterTimer = new GameTimer(2f);
-
-        //private bool _lostLock = false;
+        private GameTimer _armTimer = new GameTimer(ARM_TIME);
 
         public bool MissedTarget => _missedTarget || _lostInGround;
         public bool _missedTarget = false;
         private bool _lostInGround = false;
-        private float _prevTargDist = 0f;
-        private float _reEngageMod = 0f;
-        private float _missDistTraveled = 0f;
-        private float _missDirection = 0f; // O.o
-
-        private readonly float MISS_TARG_DIST = 400f; // Distance to be considered a miss when the closing rate goes negative.
-        private readonly float REENGAGE_DIST = 1500f; // How far we must be from the target before re-engaging after a miss.
-        private readonly float ARM_DIST = 1200f;
 
         protected GuidanceBase(Missile missile, GameObject target)
         {
             Missile = missile;
             Target = target;
-            _lostLockTimer.TriggerCallback = () =>
-            _missedTarget = true;
+            _lostLockTimer.TriggerCallback = () => _missedTarget = true;
+            _armTimer.Start();
         }
 
         public float GuideTo(float dt)
         {
             _lostLockTimer.Update(dt);
             _groundScatterTimer.Update(dt);
+            _armTimer.Update(dt);
 
             // The guidance logic doesn't work when velo is zero (or very close).
             // Always return the current rotation if we aren't moving yet.
@@ -52,9 +46,6 @@ namespace PolyPlane.GameObjects.Guidance
 
             // Get rotation from implementation.
             var rotation = GetGuidanceDirection(dt);
-
-       
-
 
             var isInFOV = Missile.IsObjInFOV(Target, World.SENSOR_FOV);
 
@@ -69,7 +60,6 @@ namespace PolyPlane.GameObjects.Guidance
                 {
                     _lostLockTimer.Stop();
                     _missedTarget = false;
-
                 }
             }
 
@@ -108,56 +98,10 @@ namespace PolyPlane.GameObjects.Guidance
             if (float.IsNaN(rotation))
                 Debugger.Break();
 
-            //if (!_missedTarget && !isInFOV && Missile.DistTraveled > 1000f)
-            //{
-            //    Debug.WriteLine("Target lost!");
-            //    _missedTarget = true;
-            //}
-
-            //if (_missedTarget && isInFOV && Missile.DistTraveled > 1000f)
-            //{
-            //    Debug.WriteLine("Target re-acquired!");
-            //    _missedTarget = false;
-            //}
-
-
-            //// Compute closing rate and detect when we miss the target.
-            //var targDist = D2DPoint.Distance(Missile.Position, Target.Position);
-            //var closingRate = _prevTargDist - targDist;
-            //_prevTargDist = targDist;
-
-            //if (closingRate < 0.1f)
-            //{
-            //    if (!_missedTarget && targDist < MISS_TARG_DIST && Missile.DistTraveled > ARM_DIST)
-            //    {
-            //        if (World.ExpireMissilesOnMiss)
-            //            this.Missile.IsExpired = true;
-
-            //        _missedTarget = true;
-            //        _missDistTraveled = Missile.DistTraveled;
-            //        _reEngageMod += REENGAGE_DIST * 0.2f;
-            //        _missDirection = Missile.Rotation;
-            //    }
-            //}
-
-            //// Reduce the rotation amount to fly a straighter course until
-            //// we are the specified distance away from the target.
-            //var missDist = Missile.DistTraveled - _missDistTraveled;
-
-            //if (_missedTarget)
-            //{
-            //    var reengageDist = REENGAGE_DIST + _reEngageMod;
-            //    rotFactor = Helpers.Factor(missDist, reengageDist);
-            //    initialAngle = _missDirection;
-            //}
-
-            //if (_missedTarget && missDist >= REENGAGE_DIST + _reEngageMod)
-            //    _missedTarget = false;
-
+          
             // Lerp from current rotation towards guidance rotation as we 
-            // approach the specified arm distance.
-            var armFactor = Helpers.Factor(Missile.DistTraveled, ARM_DIST);
-
+            // approach the specified arm time.
+            var armFactor = Helpers.Factor(_armTimer.Value, _armTimer.Interval);
             var finalRot = Helpers.LerpAngle(initialAngle, rotation, rotFactor * armFactor);
 
             return finalRot;

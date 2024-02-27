@@ -398,6 +398,7 @@ namespace PolyPlane
 
             if (World.ShowMissileCloseup)
                 DrawAIPlanesOverlay(ctx);
+            //DrawMissileOverlays(ctx);
             //DrawAIPlanesOverlay(ctx);
             //DrawMissileOverlays(gfx);
             //DrawMissileTargetOverlays(gfx);
@@ -913,13 +914,13 @@ namespace PolyPlane
                 if (bullet.Owner.ID == _playerPlane.ID)
                     continue;
 
-                if (_playerPlane.Contains(bullet.Position))
+                if (_playerPlane.Contains(bullet, out D2DPoint pos))
                 {
                     if (!_playerPlane.IsExpired)
                         AddExplosion(_playerPlane.Position);
 
                     if (!_godMode)
-                        _playerPlane.DoImpact(bullet, _flames);
+                        _playerPlane.DoImpact(bullet, pos, _flames);
 
                     bullet.IsExpired = true;
                 }
@@ -1070,6 +1071,9 @@ namespace PolyPlane
                         continue;
                 }
 
+                if (targ is Decoy)
+                    continue;
+
                 var fov = _playerPlane.FOVToObject(targ);
 
                 if (fov < minFov)
@@ -1093,12 +1097,19 @@ namespace PolyPlane
             if (mostCenter == null)
                 return;
 
+            if (_playerPlane.NumMissiles <= 0)
+                return;
+
             //var inFov = Helpers.IsPosInFOV(_plane, closest.Position, 40f);
 
             if (!_playerPlane.IsObjInFOV(mostCenter, World.SENSOR_FOV))
                 return;
 
-            var missile = GetNewMissile(mostCenter, _guidanceType);
+
+            var missile = new GuidedMissile(_playerPlane, mostCenter, _guidanceType, useControlSurfaces: true, useThrustVectoring: true);
+            //var missile = GetNewMissile(mostCenter, _guidanceType);
+
+            _playerPlane.NumMissiles--;
 
             _newMissiles.Enqueue(missile);
         }
@@ -1208,10 +1219,16 @@ namespace PolyPlane
                 if (planesWithLock.Count > 0)
                 {
                     var rndPlane = planesWithLock[_rnd.Next(planesWithLock.Count)];
+
+                    if (rndPlane.NumMissiles <= 0)
+                        return;
+
                     //var missile = new GuidedMissile(rndPlane, _playerPlane, GuidanceType.BasicLOS, useControlSurfaces: true, useThrustVectoring: true);
-                    var missile = new GuidedMissile(rndPlane, _playerPlane, GuidanceType.Advanced, useControlSurfaces: true, useThrustVectoring: false);
+                    var missile = new GuidedMissile(rndPlane, _playerPlane, GuidanceType.QuadraticPN, useControlSurfaces: true, useThrustVectoring: false);
 
                     Debug.WriteLine("MISSILE LAUNCH!");
+
+                    rndPlane.NumMissiles--;
 
                     _newMissiles.Enqueue(missile);
 
@@ -1553,6 +1570,10 @@ namespace PolyPlane
                 if (missile.Owner.ID != _playerPlane.ID)
                     continue;
 
+
+                var vp = new D2DRect(missile.Position, World.ViewPortSize);
+                ctx.PushViewPort(vp);
+
                 ctx.Gfx.PushTransform();
 
                 var offset = new D2DPoint(-missile.Position.X, -missile.Position.Y);
@@ -1573,6 +1594,7 @@ namespace PolyPlane
                 ctx.DrawText(Math.Round(missile.Velocity.Length(), 1).ToString(), D2DColor.White, _defaultFontName, 10f, new D2DRect(missile.Position + new D2DPoint(80, 80), new D2DSize(50, 20)));
                 ctx.DrawText(Math.Round(dist, 1).ToString(), D2DColor.White, _defaultFontName, 10f, new D2DRect(missile.Position - new D2DPoint(60, -80), new D2DSize(50, 20)));
 
+                ctx.PopViewPort();
                 ctx.Gfx.PopTransform();
             }
 
@@ -1675,6 +1697,7 @@ namespace PolyPlane
 
             infoText += $"Score: {_playerScore}\n";
             infoText += $"Deaths: {_playerDeaths}\n";
+            infoText += $"Missiles: {_playerPlane.NumMissiles}\n";
 
 
             //infoText += $"Velocity: {_playerPlane?.Velocity.Length()}\n";
