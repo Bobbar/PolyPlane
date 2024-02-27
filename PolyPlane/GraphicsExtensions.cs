@@ -1,4 +1,5 @@
-﻿using unvell.D2DLib;
+﻿using System.Numerics;
+using unvell.D2DLib;
 
 namespace PolyPlane
 {
@@ -7,6 +8,24 @@ namespace PolyPlane
         public static int OnScreen = 0;
         public static int OffScreen = 0;
 
+        public static readonly D2DPoint[] TrianglePoly = new D2DPoint[]
+        {
+            new D2DPoint(0,-3),
+            new D2DPoint(3,2),
+            new D2DPoint(-3,2),
+        };
+
+        public static void DrawTriangle(this D2DGraphics gfx, D2DPoint position, D2DColor color, D2DColor fillColor, float scale = 1f)
+        {
+            var tri = new D2DPoint[TrianglePoly.Length];
+            Array.Copy(TrianglePoly, tri, tri.Length);
+
+            Helpers.ApplyTranslation(TrianglePoly, tri, 0f, position, scale);
+
+            gfx.DrawPolygon(tri, color, 1f, D2DDashStyle.Solid, fillColor);
+
+        }
+      
 
         public static void DrawArrow(this D2DGraphics gfx, D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f)
         {

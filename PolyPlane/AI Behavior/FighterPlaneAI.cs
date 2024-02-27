@@ -16,7 +16,7 @@ namespace PolyPlane.AI_Behavior
 
         private GameTimer _fireBurstTimer = new GameTimer(2f);
         private GameTimer _fireBurstCooldownTimer = new GameTimer(6f);
-
+        private readonly float _maxSpeed = 1000f;
 
         public FighterPlaneAI(Plane plane, Plane playerPlane)
         {
@@ -55,6 +55,11 @@ namespace PolyPlane.AI_Behavior
 
             if (velo < MIN_VELO && this.Plane.Altitude > 3000f)
                 _AIDirOffset = 20f;
+
+            if (velo > _maxSpeed)
+                this.Plane.ThrustOn = false;
+            else
+                this.Plane.ThrustOn = true;
         }
 
         private void ConsiderFireAtPlayer()

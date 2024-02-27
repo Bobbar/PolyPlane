@@ -50,9 +50,9 @@ namespace PolyPlane.GameObjects
         private bool _isAIPlane = false;
 
         private GameTimer _engageTimer;
-        private GameTimer _dropDecoyTimer = new GameTimer(1.5f);
-        private GameTimer _dropDecoyCooldownTimer = new GameTimer(3f);
-        private GameTimer _dropDecoyDelayTimer = new GameTimer(1f);
+        private GameTimer _dropDecoyTimer = new GameTimer(4f);
+        private GameTimer _dropDecoyCooldownTimer = new GameTimer(2f);
+        private GameTimer _dropDecoyDelayTimer = new GameTimer(0.3f);
         private GameTimer _expireTimeout = new GameTimer(50f);
 
         private float _damageDeflection = 0f;
@@ -126,6 +126,8 @@ namespace PolyPlane.GameObjects
                 Mass = 90f;
                 Thrust = 2000f;
             }
+            
+            _thrustAmt.Target = 1f;
 
             _dropDecoyTimer.TriggerCallback = () => _dropDecoyCooldownTimer.Restart();
             _dropDecoyCooldownTimer.TriggerCallback = () => _dropDecoyTimer.Restart();
@@ -239,6 +241,7 @@ namespace PolyPlane.GameObjects
                 AutoPilotOn = false;
                 SASOn = false;
                 ThrustOn = false;
+                _thrustAmt.Set(0f);
                 //_controlWing.Deflection = -20f;
                 _controlWing.Deflection = _damageDeflection;
             }
@@ -377,7 +380,8 @@ namespace PolyPlane.GameObjects
 
         public void SetAutoPilotAngle(float angle)
         {
-            _apAngleLimiter.Target = angle;
+            //_apAngleLimiter.Target = angle;
+            _apAngleLimiter.Set(angle);
         }
 
         public void ToggleThrust()
@@ -492,6 +496,7 @@ namespace PolyPlane.GameObjects
             _expireTimeout.Stop();
             _expireTimeout.Reset();
             _flipTimer.Restart();
+            _thrustAmt.Target = 1f;
         }
 
         public void MoveThrottle(bool up)
@@ -564,6 +569,9 @@ namespace PolyPlane.GameObjects
         {
             var thrust = D2DPoint.Zero;
 
+            if (!ThrustOn)
+                return thrust;
+
             //if (ThrustOn)
             //    _thrustAmt.Target = 1f;
             //else
@@ -571,7 +579,7 @@ namespace PolyPlane.GameObjects
 
             const float thrustVectorAmt = 1f;//1f;
             const float thrustBoostAmt = 1000f;
-            const float thrustBoostMaxSpd = 400f;
+            const float thrustBoostMaxSpd = 600f;
 
             D2DPoint vec;
 

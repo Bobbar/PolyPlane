@@ -12,10 +12,13 @@ namespace PolyPlane.GameObjects.Guidance
         protected GameObject Target { get; set; }
 
         private GameTimer _lostLockTimer = new GameTimer(2f);
+        private GameTimer _groundScatterTimer = new GameTimer(2f);
 
         //private bool _lostLock = false;
 
+        public bool MissedTarget => _missedTarget || _lostInGround;
         public bool _missedTarget = false;
+        private bool _lostInGround = false;
         private float _prevTargDist = 0f;
         private float _reEngageMod = 0f;
         private float _missDistTraveled = 0f;
@@ -36,6 +39,7 @@ namespace PolyPlane.GameObjects.Guidance
         public float GuideTo(float dt)
         {
             _lostLockTimer.Update(dt);
+            _groundScatterTimer.Update(dt);
 
             // The guidance logic doesn't work when velo is zero (or very close).
             // Always return the current rotation if we aren't moving yet.
@@ -49,11 +53,7 @@ namespace PolyPlane.GameObjects.Guidance
             // Get rotation from implementation.
             var rotation = GetGuidanceDirection(dt);
 
-            if (_missedTarget)
-                rotation = Missile.Rotation;
-
-            if (float.IsNaN(rotation))
-                Debugger.Break();
+       
 
 
             var isInFOV = Missile.IsObjInFOV(Target, World.SENSOR_FOV);
@@ -72,6 +72,41 @@ namespace PolyPlane.GameObjects.Guidance
 
                 }
             }
+
+
+            if (Target.Altitude <= 3000f)
+            {
+                const int CHANCE_INIT = 10;
+                var chance = CHANCE_INIT;
+
+                var altFact = Helpers.Factor(Target.Altitude, 3000f);
+
+                chance -= (int)(altFact * 5);
+
+                if (!_groundScatterTimer.IsRunning)
+                {
+                    _groundScatterTimer.Restart();
+
+                    var rnd1 = Helpers.Rnd.Next(chance);
+                    var rnd2 = Helpers.Rnd.Next(chance);
+                    if (rnd1 == rnd2)
+                    {
+                        _lostInGround = true;
+                        _missedTarget = true;
+                        Debug.WriteLine("Lost in ground scatter....");
+                    }
+
+                }
+            }
+            else
+                _lostInGround = false;
+
+
+            if (_missedTarget || _lostInGround)
+                rotation = Missile.Rotation;
+
+            if (float.IsNaN(rotation))
+                Debugger.Break();
 
             //if (!_missedTarget && !isInFOV && Missile.DistTraveled > 1000f)
             //{

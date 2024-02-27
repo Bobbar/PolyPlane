@@ -5,7 +5,7 @@ namespace PolyPlane
 {
     public static class World
     {
-        public const int PHYSICS_STEPS = 6;//8;
+        public const int PHYSICS_STEPS = 8;//8;
 
         public static float DT
         {

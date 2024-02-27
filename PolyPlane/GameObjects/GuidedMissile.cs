@@ -39,12 +39,12 @@ namespace PolyPlane.GameObjects
         public bool IsDistracted = false;
         public float TargetDistance { get; set; } = 0f;
 
-        public bool MissedTarget => _guidance._missedTarget;
+        public bool MissedTarget => _guidance.MissedTarget;
 
         private readonly float THURST_VECTOR_AMT = 1f;
         private readonly float LIFESPAN = 40f;//70f;
         private readonly float BURN_RATE = 1.5f;//6f;
-        private readonly float THRUST = 3000f;//6000f;//6000f;
+        private readonly float THRUST = 5000f;//6000f;//6000f;
         private readonly float MASS = 22.5f;//90f;//45.3f;
         private readonly float FUEL = 10f;//40f;
         private readonly float BOOST_FUEL = 20f;
@@ -71,7 +71,7 @@ namespace PolyPlane.GameObjects
         private FixturePoint _warheadCenterMass;
         private FixturePoint _motorCenterMass;
         private FixturePoint _flamePos;
-        private GameTimer _decoyDistractCooldown = new GameTimer(1f);
+        private GameTimer _decoyDistractCooldown = new GameTimer(0.5f);
 
 
         private D2DPoint _com = D2DPoint.Zero;
@@ -269,7 +269,7 @@ namespace PolyPlane.GameObjects
             if (_decoyDistractCooldown.IsRunning)
                 return;
 
-            const int RANDO_AMT = 5;
+            const int RANDO_AMT = 3;//5;
             var randOChanceO = _rnd.Next(RANDO_AMT);
             var randOChanceO2 = _rnd.Next(RANDO_AMT);
             var lucky = randOChanceO == randOChanceO2; // :-}
@@ -341,7 +341,7 @@ namespace PolyPlane.GameObjects
 
             var fillColor = D2DColor.White;
 
-            if (_guidance._missedTarget)
+            if (_guidance.MissedTarget)
                 fillColor = D2DColor.Orange;
 
             if (Target is Decoy)

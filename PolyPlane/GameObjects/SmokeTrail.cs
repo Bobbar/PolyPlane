@@ -4,7 +4,7 @@ namespace PolyPlane.GameObjects
 {
     public class SmokeTrail : GameObject
     {
-        private const int TRAIL_LEN = 200;
+        private const int TRAIL_LEN = 400;
         private readonly int TRAIL_STEP = 10;
         private readonly float TRAIL_DIST = 40f;
         private long _trailFrame = 0;
