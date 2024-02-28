@@ -1,8 +1,6 @@
 using PolyPlane.GameObjects;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-
-
 using unvell.D2DLib;
 
 namespace PolyPlane
@@ -35,6 +33,7 @@ namespace PolyPlane
         private float _aiTime = 0f;
         private float _nextAITime = 0f;
         private bool _godMode = false;
+        private bool _clearObjs = false;
         private int _playerScore = 0;
         private int _playerDeaths = 0;
 
@@ -45,7 +44,6 @@ namespace PolyPlane
         private List<SmokeTrail> _missileTrails = new List<SmokeTrail>();
         private List<GameObject> _targets = new List<GameObject>();
         private List<GameObjectPoly> _bullets = new List<GameObjectPoly>();
-
         private List<GameObject> _explosions = new List<GameObject>();
         private List<GameObject> _flames = new List<GameObject>();
         private List<Plane> _aiPlanes = new List<Plane>();
@@ -55,7 +53,6 @@ namespace PolyPlane
         private ConcurrentQueue<Plane> _newAIPlanes = new ConcurrentQueue<Plane>();
 
         private Plane _playerPlane;
-        private Radar _playerRadar;
 
         private D2DPoint _playerPlaneSlewPos = D2DPoint.Zero;
         private bool _slewEnable = false;
@@ -124,7 +121,10 @@ namespace PolyPlane
             _playerPlane.ThrustOn = true;
             _playerPlane.Velocity = new D2DPoint(500f, 0f);
 
-            _playerRadar = new Radar(_playerPlane, _targets, _missiles);
+            _playerPlane.Radar = new Radar(_playerPlane, _targets, _missiles);
+            _playerPlane.FireMissileCallback = (m) => _newMissiles.Enqueue(m);
+
+            _newTargets.Enqueue(_playerPlane);
         }
 
         private void ResetPlane()
@@ -147,13 +147,33 @@ namespace PolyPlane
 
             });
 
-            _playerRadar = new Radar(_playerPlane, _targets, _missiles);
+            _playerPlane.Radar = new Radar(_playerPlane, _targets, _missiles);
+            _playerPlane.FireMissileCallback = (m) => _newMissiles.Enqueue(m);
+
+        }
+
+        private void TargetLockedWithMissile()
+        {
+            if (_playerPlane.Radar.HasLock && _playerPlane.Radar.LockedObj != null)
+            {
+                var missile = new GuidedMissile(_playerPlane, _playerPlane.Radar.LockedObj, _guidanceType, useControlSurfaces: true, useThrustVectoring: true);
+                //var missile = GetNewMissile(mostCenter, _guidanceType);
+
+                _playerPlane.NumMissiles--;
+
+                _newMissiles.Enqueue(missile);
+            }
         }
 
         private void SpawnAIPlane()
         {
-            //var aiPlane = new Plane(new D2DPoint(_rnd.NextFloat(-(World.ViewPortSize.width * 0.5f), World.ViewPortSize.width * 0.5f), _rnd.NextFloat(-(World.ViewPortSize.height * 0.5f), -5000f)), _playerPlane);
-            var aiPlane = new Plane(new D2DPoint(_rnd.NextFloat(-(World.ViewPortSize.width * 3f), World.ViewPortSize.width * 3f), _rnd.NextFloat(-(World.ViewPortSize.height * 0.5f), -15000f)), _playerPlane);
+            //var pos = new D2DPoint(_rnd.NextFloat(-(World.ViewPortSize.width * 4f), World.ViewPortSize.width * 4f), _rnd.NextFloat(-(World.ViewPortSize.height * 0.5f), -15000f));
+            var pos = new D2DPoint(_rnd.NextFloat(-(World.ViewPortSize.width * 4f), World.ViewPortSize.width * 4f), _rnd.NextFloat(-4000f, -17000f));
+
+            var aiPlane = new Plane(pos, _playerPlane);
+            aiPlane.Radar = new Radar(aiPlane, _targets, _missiles);
+            aiPlane.FireMissileCallback = (m) => _newMissiles.Enqueue(m);
+
 
             aiPlane.FireBulletCallback = b => { _bullets.Add(b); };
             aiPlane.Velocity = new D2DPoint(400f, 0f);
@@ -166,6 +186,7 @@ namespace PolyPlane
         private void StartRenderThread()
         {
             _renderThread = new Thread(RenderLoop);
+            _renderThread.Priority = ThreadPriority.AboveNormal;
             _renderThread.Start();
 
             _decoyTimer.Start();
@@ -245,7 +266,7 @@ namespace PolyPlane
                         _bullets.ForEach(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale));
 
                         //if (!_slewEnable)
-                        _playerPlane.Update(partialDT, World.ViewPortSize, World.RenderScale);
+                        //_playerPlane.Update(partialDT, World.ViewPortSize, World.RenderScale);
 
                         if (_renderEveryStep)
                         {
@@ -259,12 +280,8 @@ namespace PolyPlane
 
                     _oneStep = false;
 
-                    ConsiderTargetPlayer();
-                    ConsiderDropDecoy();
-                    ConsiderDefendMissile();
                     DoDecoySuccess();
 
-                    _playerRadar.Update(World.DT);
                     _playerBurstTimer.Update(World.DT);
                     _hudMessageTimeout.Update(World.DT);
                     _groundScatterTimer.Update(World.DT);
@@ -465,7 +482,7 @@ namespace PolyPlane
             {
                 DrawGuideIcon(ctx.Gfx, viewportsize);
                 DrawHudMessage(ctx.Gfx, viewportsize);
-                //DrawTargetPointers(ctx.Gfx, viewportsize);
+                DrawTargetPointers(ctx.Gfx, viewportsize);
                 DrawMissilePointers(ctx.Gfx, viewportsize);
 
                 //DrawRadar(ctx.Gfx, viewportsize);
@@ -631,11 +648,8 @@ namespace PolyPlane
         private void DrawTargetPointers(D2DGraphics gfx, D2DSize viewportsize)
         {
             const float MIN_DIST = 600f;
+            const float MAX_DIST = 6000f;
             var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
-
-            var mostCentered = FindMostCentered();
-            var mostCenteredPlane = mostCentered as Plane;
-
 
             for (int i = 0; i < _targets.Count; i++)
             {
@@ -648,48 +662,36 @@ namespace PolyPlane
                     continue;
 
                 var dist = D2DPoint.Distance(_playerPlane.Position, target.Position);
+
+                if (dist < MIN_DIST || dist > MAX_DIST)
+                    continue;
+
                 var dir = target.Position - _playerPlane.Position;
                 var angle = dir.Angle(true);
                 var color = D2DColor.White;
                 var vec = Helpers.AngleToVectorDegrees(angle);
                 var pos1 = pos + (vec * 300f);
                 var pos2 = pos1 + (vec * 50f);
-
                 var distColor = Helpers.LerpColor(D2DColor.Red, D2DColor.Green, Helpers.Factor(dist, MIN_DIST * 6f));
 
                 float weight = 3f;
 
-                gfx.DrawArrowStroked(pos1, pos2, distColor, weight, D2DColor.White, 3f);
+                //gfx.DrawArrowStroked(pos1, pos2, distColor, weight, D2DColor.White, 3f);
 
                 if (_playerPlane.ClosingRate(target) > 0f)
-                    gfx.DrawArrow(pos + (vec * 270f), pos + (vec * 250f), D2DColor.Green);
+                    gfx.DrawArrow(pos + (vec * 270f), pos + (vec * 250f), _hudColor, 2f);
                 else
-                    gfx.DrawArrow(pos + (vec * 250f), pos + (vec * 270f), D2DColor.Green);
-
-
-
-                if (mostCentered != null && mostCentered.ID == target.ID)
-                {
-                    if (_playerPlane.IsObjInFOV(mostCentered, World.SENSOR_FOV))
-                    {
-                        gfx.FillEllipse(new D2DEllipse(pos1, new D2DSize(6f, 6f)), D2DColor.Red);
-                    }
-                }
-
+                    gfx.DrawArrow(pos + (vec * 250f), pos + (vec * 270f), _hudColor, 2f);
             }
 
-            if (mostCentered != null && (mostCenteredPlane != null && !mostCenteredPlane.IsDamaged))
+            if (_playerPlane.Radar.HasLock)
             {
-                if (_playerPlane.IsObjInFOV(mostCentered, World.SENSOR_FOV))
-                {
-                    var dist = D2DPoint.Distance(_playerPlane.Position, mostCentered.Position);
-                    var distPos = pos + new D2DPoint(0f, -200f);
-                    var dRect = new D2DRect(distPos, new D2DSize(60, 30));
-                    gfx.FillRectangle(dRect, new D2DColor(0.5f, D2DColor.Black));
-                    gfx.DrawTextCenter(Math.Round(dist, 0).ToString(), _hudColor, _defaultFontName, 15f, dRect);
+                var lockPos = pos + new D2DPoint(0f, -200f);
+                var lRect = new D2DRect(lockPos, new D2DSize(120, 30));
+                gfx.DrawTextCenter("LOCKED", _hudColor, _defaultFontName, 25f, lRect);
 
-                }
             }
+
         }
 
         private void DrawRadar(D2DGraphics gfx, D2DSize viewportsize)
@@ -698,12 +700,11 @@ namespace PolyPlane
             //pos += new D2DPoint(400, 400);
 
 
-            _playerRadar.Position = pos;
-            _playerRadar.Render(gfx, _hudColor);
+            _playerPlane.Radar.Position = pos;
+            _playerPlane.Radar.Render(gfx, _hudColor);
 
 
         }
-
 
         private void DrawMissilePointers(D2DGraphics gfx, D2DSize viewportsize)
         {
@@ -724,12 +725,15 @@ namespace PolyPlane
                 if (missile.Owner.ID == _playerPlane.ID)
                     continue;
 
+                if (missile.Target.ID != _playerPlane.ID)
+                    continue;
+
                 var dist = D2DPoint.Distance(_playerPlane.Position, missile.Position);
 
                 if (dist < MIN_DIST / 2f || dist > MAX_DIST)
                     continue;
 
-                
+
 
                 var dir = missile.Position - _playerPlane.Position;
                 var angle = dir.Angle(true);
@@ -810,21 +814,22 @@ namespace PolyPlane
                             if (plane.IsAI)
                             {
                                 var oPlane = missile.Owner as Plane;
-                                if (oPlane.IsAI)
-                                    continue;
 
-                                if (targ.ID != _playerPlane.ID && !plane.IsDamaged)
+                                if (!oPlane.IsAI && targ.ID != _playerPlane.ID && !plane.IsDamaged)
                                 {
                                     _playerScore++;
                                     NewHudMessage("Splash!", D2DColor.GreenYellow);
+                                    Debug.WriteLine($"Dist Traveled: {missile.DistTraveled}");
                                 }
 
-                                plane.DoImpact(missile, pos, _flames);
+                                Debug.WriteLine("AI plane hit AI plane with missile.");
                             }
+                            
+                            plane.DoImpact(missile, pos, _flames);
                         }
 
                         missile.IsExpired = true;
-                        AddExplosion(targ.Position);
+                        AddExplosion(pos);
                     }
                 }
 
@@ -832,13 +837,6 @@ namespace PolyPlane
                 for (int b = 0; b < _bullets.Count; b++)
                 {
                     var bullet = _bullets[b];
-
-                    // Keep AI planes from shooting each other.
-                    if (targ is Plane plane)
-                    {
-                        if (plane.IsAI && bullet.Owner.ID != _playerPlane.ID)
-                            continue;
-                    }
 
                     if (targ.Contains(bullet, out D2DPoint pos) && bullet.Owner.ID != targ.ID)
                     {
@@ -882,10 +880,10 @@ namespace PolyPlane
                     if (bullet.Owner == missile.Owner)
                         continue;
 
-                    if (missile.Contains(bullet.Position))
+                    if (missile.Contains(bullet, out D2DPoint posb))
                     {
                         if (!missile.IsExpired)
-                            AddExplosion(missile.Position);
+                            AddExplosion(posb);
 
                         missile.IsExpired = true;
                         bullet.IsExpired = true;
@@ -899,6 +897,8 @@ namespace PolyPlane
                 {
                     if (!_godMode)
                         _playerPlane.DoImpact(missile, pos, _flames);
+
+                    Debug.WriteLine($"Dist Traveled: {missile.DistTraveled}");
 
                     missile.IsExpired = true;
                     AddExplosion(_playerPlane.Position);
@@ -989,6 +989,11 @@ namespace PolyPlane
 
         private void PruneExpiredObj()
         {
+            if (_clearObjs)
+            {
+                _clearObjs = false;
+                Clear();
+            }
 
             for (int o = 0; o < _missiles.Count; o++)
             {
@@ -1089,31 +1094,6 @@ namespace PolyPlane
             return mostCenter;
         }
 
-        private void TargetCenteredWithMissile()
-        {
-
-            var mostCenter = FindMostCentered();
-
-            if (mostCenter == null)
-                return;
-
-            if (_playerPlane.NumMissiles <= 0)
-                return;
-
-            //var inFov = Helpers.IsPosInFOV(_plane, closest.Position, 40f);
-
-            if (!_playerPlane.IsObjInFOV(mostCenter, World.SENSOR_FOV))
-                return;
-
-
-            var missile = new GuidedMissile(_playerPlane, mostCenter, _guidanceType, useControlSurfaces: true, useThrustVectoring: true);
-            //var missile = GetNewMissile(mostCenter, _guidanceType);
-
-            _playerPlane.NumMissiles--;
-
-            _newMissiles.Enqueue(missile);
-        }
-
         private void DropDecoy(Plane plane)
         {
             if (plane.IsDamaged)
@@ -1132,112 +1112,6 @@ namespace PolyPlane
 
             // Is it going to hit soon, and has positive closing rate and is actively targeting us?
             return (navigationTime < minImpactTime && closingRate > 0f && missile.Target == plane);
-        }
-
-        private void ConsiderDefendMissile()
-        {
-            const float MIN_DIST = 8000f;
-            for (int i = 0; i < _aiPlanes.Count; i++)
-            {
-                var plane = _aiPlanes[i];
-                bool isTargeted = false;
-
-                for (int j = 0; j < _missiles.Count; j++)
-                {
-                    var missile = _missiles[j] as GuidedMissile;
-                    var dist = missile.Position.DistanceTo(plane.Position);
-
-                    const float MIN_IMPACT_TIME = 20f; //?
-                    if (MissileIsImpactThreat(plane, missile, MIN_IMPACT_TIME))
-                        isTargeted = true;
-                }
-
-                plane.IsDefending = isTargeted;
-            }
-        }
-
-        private void ConsiderDropDecoy()
-        {
-            const float MIN_DIST = 20000f;
-
-            for (int i = 0; i < _aiPlanes.Count; i++)
-            {
-                var plane = _aiPlanes[i];
-
-                for (int j = 0; j < _missiles.Count; j++)
-                {
-                    var missile = _missiles[j] as GuidedMissile;
-
-                    if (missile == null)
-                        continue;
-
-                    var dist = D2DPoint.Distance(plane.Position, missile.Position);
-                    if (missile.Target.ID == plane.ID && !missile.MissedTarget && dist <= MIN_DIST)
-                        plane.DropDecoys();
-                }
-            }
-        }
-
-        private void ConsiderTargetPlayer()
-        {
-            const float min_time = 10f;//10f;
-            const float max_time = 40f;//20f;
-
-            if (_aiTime > 0 && _aiTime > _nextAITime)
-            {
-                _aiTime = 0;
-                _nextAITime = _rnd.NextFloat(min_time, max_time);
-
-                var aiPlanes = new List<Plane>();
-                for (int i = 0; i < _targets.Count; i++)
-                {
-                    var obj = _targets[i];
-
-                    var plane = obj as Plane;
-
-                    if (plane != null && plane.IsAI && !plane.IsDamaged)
-                        aiPlanes.Add(plane);
-                }
-
-                if (aiPlanes.Count == 0)
-                    return;
-
-                //var rndEngagePlane = aiPlanes[_rnd.Next(aiPlanes.Count)];
-                //rndEngagePlane.EngagePlayer(_rnd.NextFloat(50f, 200f));
-
-
-                // Find AI planes pointing at player and fire missiles from a random plane.
-                var planesWithLock = new List<Plane>();
-                for (int i = 0; i < aiPlanes.Count; i++)
-                {
-                    var plane = aiPlanes[i];
-
-                    if (plane.IsObjInFOV(_playerPlane, World.SENSOR_FOV))
-                        planesWithLock.Add(plane);
-                }
-
-                if (planesWithLock.Count > 0)
-                {
-                    var rndPlane = planesWithLock[_rnd.Next(planesWithLock.Count)];
-
-                    if (rndPlane.NumMissiles <= 0)
-                        return;
-
-                    //var missile = new GuidedMissile(rndPlane, _playerPlane, GuidanceType.BasicLOS, useControlSurfaces: true, useThrustVectoring: true);
-                    var missile = new GuidedMissile(rndPlane, _playerPlane, GuidanceType.QuadraticPN, useControlSurfaces: true, useThrustVectoring: false);
-
-                    Debug.WriteLine("MISSILE LAUNCH!");
-
-                    rndPlane.NumMissiles--;
-
-                    _newMissiles.Enqueue(missile);
-
-                }
-            }
-
-            if (!_isPaused)
-                _aiTime += World.DT;
-
         }
 
         private void DoDecoySuccess()
@@ -1355,10 +1229,13 @@ namespace PolyPlane
             _explosions.Add(explosion);
         }
 
+        private void QueueClear()
+        {
+            _clearObjs = true;
+        }
 
         private void Clear()
         {
-            PauseRender();
             _missiles.Clear();
             _missileTrails.Clear();
             _targets.Clear();
@@ -1368,7 +1245,8 @@ namespace PolyPlane
             _playerScore = 0;
             _playerDeaths = 0;
             _flames.Clear();
-            ResumeRender();
+           
+            _newTargets.Enqueue(_playerPlane);
         }
 
 
@@ -1449,7 +1327,7 @@ namespace PolyPlane
             var pos = new D2DPoint(World.ViewPortSize.width * 0.85f, World.ViewPortSize.height * 0.20f);
             pos *= zAmt;
 
-            ctx.Gfx.PushLayer(_missileOverlayLayer, new D2DRect(pos * World.ViewPortScaleMulti, new D2DSize(1000f, 1000f)));
+            ctx.Gfx.PushLayer(_missileOverlayLayer, new D2DRect(pos * World.ViewPortScaleMulti, new D2DSize(3000f, 3000f)));
             ctx.Gfx.Clear(_missileOverlayColor);
 
             ctx.Gfx.PushTransform();
@@ -1674,16 +1552,17 @@ namespace PolyPlane
         {
             string infoText = string.Empty;
             infoText += $"Paused: {_isPaused}\n\n";
-            infoText += $"Guidance Type: {_guidanceType.ToString()}\n";
+            //infoText += $"Guidance Type: {_guidanceType.ToString()}\n";
             //infoText += $"Missile Type: {_interceptorType.ToString()}\n";
             //infoText += $"Target Type: {_targetTypes.ToString()}\n\n";
-            infoText += $"Overlay (Tracking/Aero/Missile): {(World.ShowTracking ? "On" : "Off")}/{(World.ShowAero ? "On" : "Off")}/{(World.ShowMissileCloseup ? "On" : "Off")} \n";
-            infoText += $"Turbulence/Wind: {(World.EnableTurbulence ? "On" : "Off")}/{(World.EnableWind ? "On" : "Off")}\n";
+            //infoText += $"Overlay (Tracking/Aero/Missile): {(World.ShowTracking ? "On" : "Off")}/{(World.ShowAero ? "On" : "Off")}/{(World.ShowMissileCloseup ? "On" : "Off")} \n";
+            //infoText += $"Turbulence/Wind: {(World.EnableTurbulence ? "On" : "Off")}/{(World.EnableWind ? "On" : "Off")}\n";
 
             var numObj = _missiles.Count + _targets.Count + _bullets.Count + _explosions.Count + _aiPlanes.Count + _flames.Count;
             infoText += $"Num Objects: {numObj}\n";
             infoText += $"On Screen: {GraphicsExtensions.OnScreen}\n";
             infoText += $"Off Screen: {GraphicsExtensions.OffScreen}\n";
+            infoText += $"AI Planes: {_aiPlanes.Count(p => !p.IsDamaged && !p.HasCrashed)}\n";
 
 
             infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";
@@ -1757,7 +1636,7 @@ namespace PolyPlane
                     break;
 
                 case 'c':
-                    Clear();
+                    QueueClear();
                     break;
 
                 case 'd':
@@ -1899,7 +1778,7 @@ namespace PolyPlane
                     break;
 
                 case MouseButtons.Middle:
-                    TargetCenteredWithMissile();
+                    TargetLockedWithMissile();
                     break;
 
             }

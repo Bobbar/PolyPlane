@@ -26,6 +26,7 @@ namespace PolyPlane.GameObjects.Guidance
             Missile = missile;
             Target = target;
             _lostLockTimer.TriggerCallback = () => _missedTarget = true;
+
             _armTimer.Start();
         }
 
@@ -51,7 +52,7 @@ namespace PolyPlane.GameObjects.Guidance
 
             if (!isInFOV)
             {
-                if (!_missedTarget && !_lostLockTimer.IsRunning)
+                if (!_missedTarget && !_lostLockTimer.IsRunning && !_armTimer.IsRunning)
                     _lostLockTimer.Restart();
             }
             else

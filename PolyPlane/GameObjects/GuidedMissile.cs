@@ -96,15 +96,17 @@ namespace PolyPlane.GameObjects
 
             if (_useControlSurfaces)
             {
-                
+
 
                 //_tailWing = new Wing(this, 4f, 0.1f, 50f, 4000f, new D2DPoint(-22f, 0));
                 //_rocketBody = new Wing(this, 0f, 0.075f, 1250f, D2DPoint.Zero);
                 //_noseWing = new Wing(this, 4f, 0.025f, 20f, 3500f, new D2DPoint(19.5f, 0));
 
-                _tailWing = new Wing(this, 4f, 0.003f, 50f, 85.1f, new D2DPoint(-22f, 0), 100f);
-                _rocketBody = new Wing(this, 0f, 0.00159f, 56.5f, D2DPoint.Zero);
-                _noseWing = new Wing(this, 4f, 0.0001f, 20f, 84.4f, new D2DPoint(19.5f, 0));
+                var liftscale = 0.8f;//1f;
+                _tailWing = new Wing(this, 4f, 0.002f, 50f, 85.1f * liftscale, new D2DPoint(-22f, 0), 100f);
+                _rocketBody = new Wing(this, 0f, 0.00159f, 0f, 26.6f * liftscale, D2DPoint.Zero);
+                _noseWing = new Wing(this, 4f, 0.00053f, 20f, 74.4f * liftscale, new D2DPoint(19.5f, 0));
+
             }
             else
             {
@@ -168,14 +170,14 @@ namespace PolyPlane.GameObjects
                 // This is to try to prevent over-rotation caused by thrust vectoring.
                 if (_currentFuel > 0f && _useThrustVectoring)
                 {
-                    const float MIN_DEF_SPD = 200f;//450f; // Minimum speed required for full deflection.
+                    const float MIN_DEF_SPD = 300f;//450f; // Minimum speed required for full deflection.
                     var spdFact = Helpers.Factor(this.Velocity.Length(), MIN_DEF_SPD);
 
                     const float MAX_DEF_AOA = 20f;// Maximum AoA allowed. Reduce deflection as AoA increases.
                     var aoaFact = 1f - (Math.Abs(_rocketBody.AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 2f))));
 
                     const float MAX_DEF_ROT_SPD = 200f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
-                    var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 3f))));
+                    var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 2f))));
 
                     nextDeflect *= aoaFact * rotSpdFact * spdFact;
                 }

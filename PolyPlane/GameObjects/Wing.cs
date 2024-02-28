@@ -162,7 +162,7 @@ namespace PolyPlane.GameObjects
             //var fixedVec = Helpers.AngleToVectorDegrees(this.Rotation - this.Deflection);
             //var startB = this.Position - fixedVec * RenderLength;
             //var endB = this.Position + fixedVec * RenderLength;
-            //gfx.DrawLine(startB, endB, D2DColor.DarkGray, 2f);
+            //ctx.DrawLine(startB, endB, D2DColor.DarkGray, 2f);
 
             ////// Draw wing without rate limit.
             //var wingVecRaw = Helpers.AngleToVectorDegrees(_parentObject.Rotation + _defRateLimit.Target);
@@ -199,7 +199,9 @@ namespace PolyPlane.GameObjects
             var veloMag = velo.Length();
             var veloMagSq = (float)Math.Pow(veloMag, 2f);
 
-            float minVelo = 300f;
+            //float minVelo = 300f;
+
+            float minVelo = 100f;
             var veloFact = Helpers.Factor(veloMag, minVelo);
 
             //veloMag *= veloFact;
@@ -217,8 +219,8 @@ namespace PolyPlane.GameObjects
             // Greater AoA and greater velocity = more lift force.
 
             // Wing & air parameters.
-            const float AOA_FACT = 0.5f; // How much AoA effects drag.
-            const float VELO_FACT = 0.3f; // How much velocity effects drag.
+            const float AOA_FACT = 0.3f;//0.5f; // How much AoA effects drag.
+            const float VELO_FACT = 0.5f;//0.5f;//0.3f; // How much velocity effects drag.
             float WING_AREA = this.Area; // Area of the wing. Effects lift & drag forces.
             float MAX_LIFT = this.MaxLift; // Max lift force allowed.
             const float MAX_AOA = 30f; // Max AoA allowed before lift force reduces. (Stall)
@@ -227,7 +229,7 @@ namespace PolyPlane.GameObjects
 
 
             //const float PARASITIC_DRAG = 0.04f;
-            const float PARASITIC_DRAG = 1f;
+            const float PARASITIC_DRAG = 0.5f;//1f;
 
 
             // Drag force.
@@ -238,11 +240,15 @@ namespace PolyPlane.GameObjects
             veloMag *= veloFact;
             veloMagSq *= veloFact;
 
+
             // Lift force.
             var aoaFact = Helpers.Factor(MAX_AOA, Math.Abs(aoa));
             var coeffLift = (float)Math.Sin(2f * aoaRads) * aoaFact;
             var liftForce = AIR_DENSITY * 0.5f * veloMagSq * WING_AREA * coeffLift;
             liftForce = Math.Clamp(liftForce, -MAX_LIFT, MAX_LIFT);
+
+            dragForce = Math.Clamp(dragForce, -MAX_LIFT, MAX_LIFT);
+
 
             var dragVec = -veloNorm * dragForce;
             var liftVec = veloNormTan * liftForce;
