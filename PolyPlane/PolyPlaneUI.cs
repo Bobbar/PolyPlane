@@ -1734,7 +1734,6 @@ namespace PolyPlane
 
             if (e.Button == MouseButtons.Left)
             {
-                _fireBurst = false;
                 _playerBurstTimer.Stop();
             }
 
