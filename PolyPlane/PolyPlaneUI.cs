@@ -310,7 +310,7 @@ namespace PolyPlane
                     _playerPlane.Position = _playerPlaneSlewPos;
                     _playerPlane.Reset();
                     _playerPlane.Velocity = D2DPoint.Zero;
-                    //_playerPlane.HasCrashed = true;
+                    _playerPlane.HasCrashed = true;
                     _godMode = true;
 
                 }
@@ -723,7 +723,14 @@ namespace PolyPlane
             if (warningMessage)
             {
                 var rect = new D2DRect(pos - new D2DPoint(0, -200), new D2DSize(120, 30));
-                gfx.DrawTextCenter("WARNING", D2DColor.Red, _defaultFontName, 30f, rect);
+                gfx.DrawTextCenter("MISSILE", D2DColor.Red, _defaultFontName, 30f, rect);
+            }
+
+            if (plane.HasRadarLock)
+            {
+                var lockRect = new D2DRect(pos - new D2DPoint(0, -160), new D2DSize(120, 30));
+                gfx.DrawTextCenter("LOCK", D2DColor.Red, _defaultFontName, 30f, lockRect);
+
             }
         }
 
@@ -1708,20 +1715,12 @@ namespace PolyPlane
                     break;
 
                 case '[':
-                    //_aiPlaneViewIdx--;
-                    //_aiPlaneViewIdx = Math.Clamp(_aiPlaneViewIdx, 0, _aiPlanes.Count);
-
                     _queuePrevViewId = true;
 
                     break;
                 case ']':
 
                     _queueNextViewId = true;
-
-                    //if (_aiPlanes.Count == 0)
-                    //    return;
-
-                    //_aiPlaneViewIdx = (_aiPlaneViewIdx + 1) % _aiPlanes.Count;
                     break;
 
             }
@@ -1729,9 +1728,6 @@ namespace PolyPlane
 
         private void PolyPlaneUI_MouseUp(object sender, MouseEventArgs e)
         {
-            //_player.FlameOn = false;
-
-
             if (e.Button == MouseButtons.Left)
             {
                 _playerBurstTimer.Stop();
@@ -1750,7 +1746,6 @@ namespace PolyPlane
                     break;
 
                 case MouseButtons.Right:
-                    //_playerPlane.ToggleThrust();
                     DropDecoy(_playerPlane);
                     _playerPlane.DroppingDecoy = true;
                     break;
@@ -1766,18 +1761,10 @@ namespace PolyPlane
         {
             if (!_shiftDown)
             {
-                //if (e.Delta > 0)
-                //    _playerPlane.Pitch(true);
-                //else
-                //    _playerPlane.Pitch(false);
-
-                //DropDecoy(_playerPlane);
-
                 if (e.Delta > 0)
                     _playerPlane.MoveThrottle(true);
                 else
                     _playerPlane.MoveThrottle(false);
-
             }
             else
             {

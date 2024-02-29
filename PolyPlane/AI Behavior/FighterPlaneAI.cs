@@ -75,12 +75,12 @@ namespace PolyPlane.AI_Behavior
                 this.Plane.ThrustOn = true;
         }
 
-
         private void ConsiderNewTarget()
         {
             if (this.TargetPlane == null || this.TargetPlane.IsExpired || this.TargetPlane.HasCrashed || this.TargetPlane.IsDamaged)
             {
-                var rndTarg = this.Plane.Radar.FindRandomPlane();
+                //var rndTarg = this.Plane.Radar.FindRandomPlane();
+                var rndTarg = this.Plane.Radar.FindNearestPlane();
 
                 _targetPlane = rndTarg;
 
@@ -120,6 +120,7 @@ namespace PolyPlane.AI_Behavior
             if (plrFOV <= MIN_OFFBORE && !_fireBurstCooldownTimer.IsRunning && !_fireBurstTimer.IsRunning)
             {
                 Log.Msg("FIRING BURST AT PLAYER!");
+
                 _fireBurstTimer.TriggerCallback = () => _fireBurstCooldownTimer.Restart();
                 _fireBurstTimer.Restart();
             }
@@ -144,7 +145,7 @@ namespace PolyPlane.AI_Behavior
 
         public float GetAIGuidance()
         {
-            var angle = Helpers.ClampAngle(Helpers.RadsToDegrees((float)Math.Sin(_sinePos)) + _AIDirOffset);
+            var angle = Helpers.ClampAngle(Helpers.RadsToDegrees((float)Math.Sin(_sinePos)));
 
             if (TargetPlane != null)
             {
@@ -157,6 +158,13 @@ namespace PolyPlane.AI_Behavior
             {
                 var angleToThreat = (DefendingMissile.Position - this.Plane.Position).Angle(true);
                 angle = Helpers.ClampAngle(angleToThreat + 90f);
+            }
+
+            // Try to lead the target if we are firing a burst.
+            if (_fireBurstTimer.IsRunning && TargetPlane != null)
+            {
+                var aimAmt = LeadTarget(TargetPlane);
+                angle = aimAmt;
             }
 
             // Pitch up if we get too low.
@@ -184,7 +192,25 @@ namespace PolyPlane.AI_Behavior
                     angle = 240f;
             }
 
-            return angle;
+            var finalAngle = angle;
+            finalAngle = Helpers.ClampAngle(finalAngle);
+            return finalAngle;
+        }
+      
+        private float LeadTarget(GameObject target)
+        {
+            const float pValue = 5f;
+
+            var los = target.Position - this.Plane.Position;
+            var navigationTime = los.Length() / (this.Plane.Velocity.Length() * World.DT);
+            var targRelInterceptPos = los + ((target.Velocity * World.DT) * navigationTime);
+
+            targRelInterceptPos *= pValue;
+
+            var leadRotation = ((target.Position + targRelInterceptPos) - this.Plane.Position).Angle(true);
+            var targetRot = leadRotation;
+
+            return targetRot;
         }
     }
 }

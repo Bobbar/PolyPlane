@@ -4,7 +4,7 @@ namespace PolyPlane.GameObjects
 {
     public class Bullet : GameObjectPoly
     {
-        public float Speed = 800f;
+        public static float Speed = 800f;
         public float Lifetime = 10f;
         public Action<D2DPoint> AddExplosionCallback { get; set; }
 
@@ -31,7 +31,7 @@ namespace PolyPlane.GameObjects
 
             this.Polygon = new RenderPoly(_poly);
 
-            var velo = (Helpers.AngleToVectorDegrees(plane.Rotation, this.Speed));
+            var velo = (Helpers.AngleToVectorDegrees(plane.Rotation, Bullet.Speed));
             velo += plane.Velocity;
             this.Velocity = velo;
         }
@@ -78,7 +78,7 @@ namespace PolyPlane.GameObjects
 
         public TargetedBullet(D2DPoint pos, GameObject target, float speed) : base(pos)
         {
-            this.Speed = speed;
+            Bullet.Speed = speed;
             this.Target = target;
 
             AimAtTarget(this.Target);
@@ -115,8 +115,8 @@ namespace PolyPlane.GameObjects
             var delta = target.Position - this.Position;
             var vr = target.Velocity - this.Velocity;
             var dist = D2DPoint.Distance(target.Position, this.Position);
-            var deltaTime = AimAhead(delta, vr, this.Speed);
-            var toa = dist / this.Speed;
+            var deltaTime = AimAhead(delta, vr, Bullet.Speed);
+            var toa = dist / Bullet.Speed;
             var impact = RefineImpact(target.Position, target.Velocity, target.RotationSpeed, toa, 0.01f);
 
             D2DPoint aimPoint = D2DPoint.Zero;
@@ -132,7 +132,7 @@ namespace PolyPlane.GameObjects
             }
 
             var angle = D2DPoint.Normalize(aimPoint - this.Position);
-            this.Velocity = angle * this.Speed;
+            this.Velocity = angle * Bullet.Speed;
         }
 
         private float AimAhead(D2DPoint delta, D2DPoint vr, float bulletSpd)

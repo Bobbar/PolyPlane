@@ -29,7 +29,7 @@ namespace PolyPlane
         private float _sweepAngle = 0f;
         private float _maxRange = 40000f;
         private float _maxAge = 2f;
-        private readonly float SWEEP_RATE = 200f;
+        private readonly float SWEEP_RATE = 300f;
         private float _radius = 150f;//100f;
         private List<List<GameObject>> _sources = new List<List<GameObject>>();
         private List<PingObj> _pings = new List<PingObj>();
@@ -100,6 +100,7 @@ namespace PolyPlane
             _pings.ForEach(p => p.Update(dt));
 
             CheckForLock();
+            NotifyLocks();
         }
 
         public void Render(D2DGraphics gfx, D2DColor color)
@@ -144,10 +145,11 @@ namespace PolyPlane
                 gfx.DrawCrosshair(_aimedAtPingObj.RadarPos, 2f, color, 0, 10f);
 
                 var dist = this.HostPlane.Position.DistanceTo(_aimedAtPingObj.Obj.Position);
-                var distPos = this.Position + new D2DPoint(0f, 120f);
-                var dRect = new D2DRect(distPos, new D2DSize(60, 30));
+                var distPos = this.Position + new D2DPoint(-210f, 100f);
+                var dRect = new D2DRect(distPos, new D2DSize(100, 40));
                 gfx.FillRectangle(dRect, new D2DColor(0.5f, D2DColor.Black));
-                gfx.DrawTextCenter(Math.Round(dist, 0).ToString(), color, "Consolas", 15f, dRect);
+                var info = $"D:{Math.Round(dist, 0)}\nA:{Math.Round(_aimedAtPingObj.Obj.Altitude,0)}";
+                gfx.DrawTextCenter(info, color, "Consolas", 15f, dRect);
             }
 
             // Draw lock circle around locked on obj.
@@ -167,12 +169,25 @@ namespace PolyPlane
             gfx.DrawEllipse(new D2DEllipse(this.Position, new D2DSize(_radius, _radius)), color);
         }
 
+        private void NotifyLocks()
+        {
+            if (_lockedPingObj != null)
+            {
+                if (_lockedPingObj.Obj is Plane plane)
+                    plane.IsLockedOnto();
+            }
+        }
+
         private void SwitchLock()
         {
             if (_aimedAtPingObj != null)
             {
                 _lockedPingObj = _aimedAtPingObj;
                 HasLock = true;
+
+                if (_lockedPingObj.Obj is Plane plane)
+                    plane.IsLockedOnto();
+
             }
         }
 
@@ -250,6 +265,21 @@ namespace PolyPlane
 
             var rndPlane = planes[Helpers.Rnd.Next(planes.Count)].Obj as Plane;
             return rndPlane;
+        }
+
+        public Plane FindNearestPlane()
+        {
+            var planes = _pings.Where(p =>
+            p.Obj is Plane plane
+            && !plane.IsDamaged
+            && !plane.HasCrashed).ToList();
+
+            planes = planes.OrderBy(p => this.HostPlane.Position.DistanceTo(p.Obj.Position)).ToList();
+
+            if (planes.Count == 0)
+                return null;
+
+           return planes.First().Obj as Plane;
         }
 
         private PingObj? FindMostCentered()

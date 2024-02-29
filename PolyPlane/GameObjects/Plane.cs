@@ -8,6 +8,7 @@ namespace PolyPlane.GameObjects
     {
 
         public Radar Radar { get; set; }
+        public bool HasRadarLock = false;
         private const int MAX_FLAMES = 10;
         private int nFlames = 0;
         private const int MAX_MISSILES = 6;
@@ -68,6 +69,7 @@ namespace PolyPlane.GameObjects
         private GameTimer _dropDecoyCooldownTimer = new GameTimer(2f);
         private GameTimer _dropDecoyDelayTimer = new GameTimer(0.3f);
         private GameTimer _expireTimeout = new GameTimer(50f);
+        private GameTimer _isLockOntoTimeout = new GameTimer(3f);
 
         private float _damageDeflection = 0f;
 
@@ -148,6 +150,7 @@ namespace PolyPlane.GameObjects
                 _dropDecoyTimer.Restart();
                 this.DroppingDecoy = true;
             };
+            _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
 
             _planeColor = D2DColor.Randomly();
 
@@ -298,6 +301,7 @@ namespace PolyPlane.GameObjects
             _dropDecoyTimer.Update(dt);
             _dropDecoyCooldownTimer.Update(dt);
             _dropDecoyDelayTimer.Update(dt);
+            _isLockOntoTimeout.Update(dt);
 
             if (this.DroppingDecoy && _dropDecoyCooldownTimer.IsRunning)
                 this.DroppingDecoy = false;
@@ -337,6 +341,13 @@ namespace PolyPlane.GameObjects
         }
 
 
+        public void IsLockedOnto()
+        {
+            if (!_isLockOntoTimeout.IsRunning || !HasRadarLock)
+                _isLockOntoTimeout.Restart();
+
+            HasRadarLock = true;
+        }
 
         public void EngagePlayer(float duration)
         {

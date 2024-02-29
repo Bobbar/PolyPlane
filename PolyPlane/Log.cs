@@ -4,7 +4,7 @@ namespace PolyPlane
 {
     public static class Log
     {
-        public static bool Enabled = true;
+        public static bool Enabled = false;
         public static void Msg(string message)
         {
             if (Enabled)
