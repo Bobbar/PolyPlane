@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using unvell.D2DLib;
+﻿using unvell.D2DLib;
 
 namespace PolyPlane
 {
@@ -35,7 +34,7 @@ namespace PolyPlane
                 if (value >= 0.01f && value <= 3f)
                     _zoomScale = value;
 
-                Debug.WriteLine($"Zoom: {_zoomScale}");
+                Log.Msg($"Zoom: {_zoomScale}");
             }
         }
 

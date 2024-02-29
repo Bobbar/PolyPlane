@@ -288,5 +288,38 @@ namespace PolyPlane
 
             return c;
         }
+
+        public static float ImpactTime(GameObjects.Plane plane, Missile missile)
+        {
+            var dist = plane.Position.DistanceTo(missile.Position);
+            var navTime = ImpactTime(dist, (plane.Velocity.Length() + missile.Velocity.Length()), 1f);
+            return navTime;
+        }
+
+        public static float ImpactTime(GameObjects.Plane plane, D2DPoint pos)
+        {
+            var dist = plane.Position.DistanceTo(pos);
+            var navTime = ImpactTime(dist, (plane.Velocity.Length()), 1f);
+            return navTime;
+        }
+
+        public static float ImpactTime(float dist, float velo, float accel)
+        {
+            var finalVelo = (float)Math.Sqrt((Math.Pow(velo, 2f) + 2f * accel * dist));
+
+            return (finalVelo - velo) / accel;
+        }
+
+        public static bool IsPointingRight(float angle)
+        {
+            var rot180 = ClampAngle180(angle);
+            if (rot180 > -90f && rot180 < 0f || rot180 < 90f && rot180 > 0f)
+                return true;
+            else if (rot180 > 90f && rot180 < 180f || rot180 > -180f && rot180 < -90f)
+                return false;
+
+            return false;
+        }
+
     }
 }

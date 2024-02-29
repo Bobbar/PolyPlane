@@ -57,11 +57,11 @@ namespace PolyPlane
             foreach (var marker in _markers)
             {
                 totalTime += marker.Elapsed;
-                Debug.WriteLine($"{marker.Label}:  {marker.Elapsed.TotalMilliseconds} ms  {marker.Elapsed.Ticks} ticks");
+                Log.Msg($"{marker.Label}:  {marker.Elapsed.TotalMilliseconds} ms  {marker.Elapsed.Ticks} ticks");
             }
 
-            Debug.WriteLine($"Total: {totalTime.TotalMilliseconds} ms  {totalTime.Ticks} ticks");
-            Debug.WriteLine($"");
+            Log.Msg($"Total: {totalTime.TotalMilliseconds} ms  {totalTime.Ticks} ticks");
+            Log.Msg($"");
 
         }
 

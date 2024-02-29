@@ -1,5 +1,4 @@
 ﻿using PolyPlane.GameObjects;
-using System.Diagnostics;
 
 namespace PolyPlane
 {
@@ -222,7 +221,7 @@ namespace PolyPlane
             Array.Copy(_grid, newGrid, _grid.Length);
             _grid = newGrid;
 
-            Debug.WriteLine($"Resize: {_dims}");
+            Log.Msg($"Resize: {_dims}");
         }
 
         /// <summary>

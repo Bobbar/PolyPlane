@@ -84,7 +84,7 @@ namespace PolyPlane.GameObjects.Guidance
                     {
                         _lostInGround = true;
                         _missedTarget = true;
-                        Debug.WriteLine("Lost in ground scatter....");
+                        Log.Msg("Lost in ground scatter....");
                     }
 
                 }
@@ -99,7 +99,7 @@ namespace PolyPlane.GameObjects.Guidance
             if (float.IsNaN(rotation))
                 Debugger.Break();
 
-          
+
             // Lerp from current rotation towards guidance rotation as we 
             // approach the specified arm time.
             var armFactor = Helpers.Factor(_armTimer.Value, _armTimer.Interval);

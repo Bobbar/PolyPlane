@@ -1,21 +1,18 @@
 ﻿using PolyPlane.GameObjects;
-using System.Diagnostics;
 
 namespace PolyPlane.AI_Behavior
 {
     public class FighterPlaneAI : IAIBehavior
     {
         public Plane Plane => _plane;
-
         public Plane TargetPlane => _targetPlane;
-
         public Missile DefendingMissile = null;
 
         private Plane _plane;
         private Plane _targetPlane;
         private float _AIDirOffset = 0f;
         private float _sinePos = 0f;
-
+        private bool _avoidingGround = false;
         private GameTimer _fireBurstTimer = new GameTimer(2f);
         private GameTimer _fireBurstCooldownTimer = new GameTimer(6f);
 
@@ -41,12 +38,11 @@ namespace PolyPlane.AI_Behavior
 
             _fireMissileCooldown = new GameTimer(Helpers.Rnd.NextFloat(MIN_MISSILE_TIME, MAX_MISSILE_TIME));
             _fireMissileCooldown.Start();
-
         }
 
         public void Update(float dt)
         {
-            if (this.Plane.IsDamaged || this.Plane.HasCrashed) 
+            if (this.Plane.IsDamaged || this.Plane.HasCrashed)
                 return;
 
             _sinePos += 0.3f * dt;
@@ -61,7 +57,6 @@ namespace PolyPlane.AI_Behavior
                 ConsiderFireMissileAtTarget();
             }
 
-
             ConsiderDefendMissile();
             ConsiderNewTarget();
             ConsiderDropDecoy();
@@ -71,15 +66,8 @@ namespace PolyPlane.AI_Behavior
             else
                 this.Plane.FiringBurst = false;
 
-            const float MIN_VELO = 300f;
 
             var velo = this.Plane.Velocity.Length();
-
-            if (this.Plane.Altitude < 3000f)
-                _AIDirOffset = 90f;
-
-            if (velo < MIN_VELO && this.Plane.Altitude > 3000f)
-                _AIDirOffset = 20f;
 
             if (velo > _maxSpeed)
                 this.Plane.ThrustOn = false;
@@ -90,14 +78,14 @@ namespace PolyPlane.AI_Behavior
 
         private void ConsiderNewTarget()
         {
-            if (this.TargetPlane == null || this.TargetPlane.IsExpired || this.TargetPlane.HasCrashed)
+            if (this.TargetPlane == null || this.TargetPlane.IsExpired || this.TargetPlane.HasCrashed || this.TargetPlane.IsDamaged)
             {
                 var rndTarg = this.Plane.Radar.FindRandomPlane();
 
                 _targetPlane = rndTarg;
 
                 if (_targetPlane != null)
-                    Debug.WriteLine($"Picked new target: {this.Plane.ID} -> {this.TargetPlane.ID} ");
+                    Log.Msg($"Picked new target: {this.Plane.ID} -> {this.TargetPlane.ID} ");
             }
         }
 
@@ -113,16 +101,13 @@ namespace PolyPlane.AI_Behavior
                 _fireMissileCooldown = new GameTimer(Helpers.Rnd.NextFloat(MIN_MISSILE_TIME, MAX_MISSILE_TIME));
                 _fireMissileCooldown.Restart();
 
-
-
-                Debug.WriteLine("Firing Missile");
-
+                Log.Msg("Firing Missile");
             }
         }
 
         private void ConsiderFireBurstAtTarget()
         {
-            const float MIN_DIST = 1000f;
+            const float MIN_DIST = 2000f;
             const float MIN_OFFBORE = 30f;
 
             var plrDist = D2DPoint.Distance(TargetPlane.Position, this.Plane.Position);
@@ -134,7 +119,7 @@ namespace PolyPlane.AI_Behavior
 
             if (plrFOV <= MIN_OFFBORE && !_fireBurstCooldownTimer.IsRunning && !_fireBurstTimer.IsRunning)
             {
-                Debug.WriteLine("FIRING BURST AT PLAYER!");
+                Log.Msg("FIRING BURST AT PLAYER!");
                 _fireBurstTimer.TriggerCallback = () => _fireBurstCooldownTimer.Restart();
                 _fireBurstTimer.Restart();
             }
@@ -155,7 +140,6 @@ namespace PolyPlane.AI_Behavior
                 return;
             else
                 this.Plane.DropDecoys();
-
         }
 
         public float GetAIGuidance()
@@ -164,20 +148,41 @@ namespace PolyPlane.AI_Behavior
 
             if (TargetPlane != null)
             {
-                var dirToPlayer = this.Plane.Position - TargetPlane.Position;
+                var dirToPlayer = TargetPlane.Position - this.Plane.Position;
                 angle = dirToPlayer.Angle(true);
             }
-
 
             // Run away from missile?
             if (this.Plane.IsDefending && DefendingMissile != null)
             {
-                angle = Helpers.ClampAngle(((this.Plane.Position - DefendingMissile.Position).Angle(true)) + 180f);
+                var angleToThreat = (DefendingMissile.Position - this.Plane.Position).Angle(true);
+                angle = Helpers.ClampAngle(angleToThreat + 90f);
             }
 
             // Pitch up if we get too low.
-            if (this.Plane.Altitude < 3000f)
-                angle = 90f;
+            var groundPos = new D2DPoint(this.Plane.Position.X, 0f);
+            var impactTime = Helpers.ImpactTime(this.Plane, groundPos);
+
+            if (this.Plane.Altitude < 4000f || impactTime < 20f)
+            {
+                _avoidingGround = true;
+            }
+
+            if (_avoidingGround && this.Plane.Altitude > 6000f)
+            {
+                _avoidingGround = false;
+            }
+
+            // Try to pitch up in the same direction we're pointing.
+            if (_avoidingGround)
+            {
+                var toRight = Helpers.IsPointingRight(this.Plane.Rotation);
+
+                if (toRight)
+                    angle = 300f;
+                else
+                    angle = 240f;
+            }
 
             return angle;
         }

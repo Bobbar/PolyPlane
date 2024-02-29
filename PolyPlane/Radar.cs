@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using PolyPlane.GameObjects;
+﻿using PolyPlane.GameObjects;
 using unvell.D2DLib;
 
 namespace PolyPlane
@@ -15,11 +9,23 @@ namespace PolyPlane
         public Plane HostPlane;
 
         public bool HasLock = false;
-        public GameObject LockedObj = null;
+        public GameObject LockedObj
+        {
+            get
+            {
+                if (_lockedPingObj != null)
+                    return _lockedPingObj.Obj;
+                else
+                    return null;
+            }
+        }
 
+        private PingObj _lockedPingObj = null;
+        private PingObj _aimedAtPingObj = null;
 
         private readonly float MIN_IMPACT_TIME = 20f; // Min time before defending.
-        private long _curLockId = -1;
+        private readonly float SWEEP_FOV = 10f; // How wide the radar beam is?
+
         private float _sweepAngle = 0f;
         private float _maxRange = 40000f;
         private float _maxAge = 2f;
@@ -28,6 +34,7 @@ namespace PolyPlane
         private List<List<GameObject>> _sources = new List<List<GameObject>>();
         private List<PingObj> _pings = new List<PingObj>();
         private GameTimer _lockTimer = new GameTimer(2f);
+        private GameTimer _lostLockTimer = new GameTimer(10f);
 
         public Radar(Plane hostPlane, params List<GameObject>[] sources)
         {
@@ -40,19 +47,22 @@ namespace PolyPlane
 
             _lockTimer.TriggerCallback = () =>
             {
-                HasLock = true;
-                Debug.WriteLine("Lock complete!");
-
+                SwitchLock();
+                Log.Msg("Lock complete!");
             };
+
+            _lostLockTimer.TriggerCallback = () => ClearLock();
         }
 
         public void Update(float dt)
         {
             _lockTimer.Update(dt);
+            _lostLockTimer.Update(dt);
 
             _sweepAngle += SWEEP_RATE * dt;
             _sweepAngle = Helpers.ClampAngle(_sweepAngle);
 
+            // Check all sources and add pings if they are within the FOV of the current sweep.
             foreach (var src in _sources)
             {
                 foreach (var obj in src)
@@ -66,7 +76,8 @@ namespace PolyPlane
                     if (obj.ID == HostPlane.ID) // Really needed?
                         continue;
 
-                    if (IsInFOV(obj, _sweepAngle, 10f))
+
+                    if (IsInFOV(obj, _sweepAngle, SWEEP_FOV))
                     {
                         var dist = this.HostPlane.Position.DistanceTo(obj.Position);
                         var angle = (this.HostPlane.Position - obj.Position).Angle(true);
@@ -127,19 +138,21 @@ namespace PolyPlane
 
             DrawFOVCone(gfx, color);
 
-            var mostCentered = FindMostCentered();
-            if (mostCentered != null)
+            // Draw crosshairs on aimed at obj.
+            if (_aimedAtPingObj != null)
             {
-                gfx.DrawCrosshair(mostCentered.RadarPos, 2f, color, 0, 10f);
-                if (_curLockId != -1 && LockedObj != null && HasLock)
-                    gfx.DrawEllipse(new D2DEllipse(mostCentered.RadarPos, new D2DSize(10f, 10f)), color);
+                gfx.DrawCrosshair(_aimedAtPingObj.RadarPos, 2f, color, 0, 10f);
 
-                var dist = this.HostPlane.Position.DistanceTo(mostCentered.Obj.Position);
+                var dist = this.HostPlane.Position.DistanceTo(_aimedAtPingObj.Obj.Position);
                 var distPos = this.Position + new D2DPoint(0f, 120f);
                 var dRect = new D2DRect(distPos, new D2DSize(60, 30));
                 gfx.FillRectangle(dRect, new D2DColor(0.5f, D2DColor.Black));
                 gfx.DrawTextCenter(Math.Round(dist, 0).ToString(), color, "Consolas", 15f, dRect);
             }
+
+            // Draw lock circle around locked on obj.
+            if (_lockedPingObj != null && HasLock)
+                gfx.DrawEllipse(new D2DEllipse(_lockedPingObj.RadarPos, new D2DSize(10f, 10f)), color);
 
             // Draw range rings.
             const int N_RANGES = 4;
@@ -154,53 +167,60 @@ namespace PolyPlane
             gfx.DrawEllipse(new D2DEllipse(this.Position, new D2DSize(_radius, _radius)), color);
         }
 
+        private void SwitchLock()
+        {
+            if (_aimedAtPingObj != null)
+            {
+                _lockedPingObj = _aimedAtPingObj;
+                HasLock = true;
+            }
+        }
+
         private void ClearLock()
         {
-            _lockTimer.Stop();
-            _curLockId = -1;
             HasLock = false;
-            LockedObj = null;
-            Debug.WriteLine("Lost radar lock...");
+            _lockTimer.Stop();
+            _lockedPingObj = null;
+
+            Log.Msg("Lost radar lock...");
         }
 
         private void CheckForLock()
         {
-            // Draw the current target.
-            // TODO:  This logic is repeated in multiple places. Need to find a global solution.
             var mostCentered = FindMostCentered();
 
-            if (mostCentered == null && _curLockId != -1)
-            {
-                ClearLock();
-            }
-
-            if (_curLockId != -1 && LockedObj != null && LockedObj.IsExpired)
+            if (LockedObj != null && (LockedObj is Plane plane && (plane.IsExpired || plane.IsDamaged || plane.HasCrashed)))
             {
                 ClearLock();
             }
 
             if (mostCentered != null)
             {
-                if (mostCentered.Obj.ID != _curLockId && !_lockTimer.IsRunning)
+                _lostLockTimer.Stop();
+                _aimedAtPingObj = mostCentered;
+
+                if (HasLock)
                 {
-                    _curLockId = mostCentered.Obj.ID;
-                    LockedObj = mostCentered.Obj;
-                    _lockTimer.Restart();
-                    HasLock = false;
+                    if (mostCentered.Obj.ID != _lockedPingObj.Obj.ID)
+                    {
 
-                    //Debug.WriteLine("Starting lock...");
-
+                        if (!_lockTimer.IsRunning)
+                            _lockTimer.Restart();
+                    }
                 }
-                else if (mostCentered.Obj.ID != _curLockId && _lockTimer.IsRunning)
+                else
                 {
-                    _curLockId = mostCentered.Obj.ID;
-                    LockedObj = mostCentered.Obj;
-                    _lockTimer.Restart();
-                    HasLock = false;
-
-                    //Debug.WriteLine("New lock obj...");
-
+                    if (!_lockTimer.IsRunning)
+                        _lockTimer.Restart();
                 }
+            }
+            else
+            {
+                _aimedAtPingObj = null;
+                _lockTimer.Stop();
+
+                if (!_lostLockTimer.IsRunning)
+                    _lostLockTimer.Restart();
             }
         }
 
@@ -216,15 +236,14 @@ namespace PolyPlane
             gfx.DrawLine(this.Position, this.Position + cone2, color);
 
             gfx.DrawLine(this.Position, this.Position + centerLine, color, 1f, D2DDashStyle.DashDot);
-
         }
-
 
         public Plane FindRandomPlane()
         {
             var planes = _pings.Where(p =>
             p.Obj is Plane plane
-            && !plane.IsDamaged).ToList();
+            && !plane.IsDamaged
+            && !plane.HasCrashed).ToList();
 
             if (planes.Count == 0)
                 return null;
@@ -235,27 +254,42 @@ namespace PolyPlane
 
         private PingObj? FindMostCentered()
         {
-            float minFov = float.MaxValue;
-            PingObj minFovObj = null;
+            var distSort = _pings.Where(p =>
+            p.Obj is Plane plane
+            && !plane.IsDamaged && !plane.HasCrashed
+            && this.HostPlane.FOVToObject(p.Obj) <= (World.SENSOR_FOV * 0.5f))
+            .OrderBy(p => p.Obj.Position.DistanceTo(HostPlane.Position)).ToList();
 
-            foreach (var p in _pings)
-            {
-                if (p.Obj is not Plane plane)
-                    continue;
+            var fovSort = distSort.OrderBy(p => this.HostPlane.FOVToObject(p.Obj));
 
-                if (plane.IsDamaged)
-                    continue;
+            var mostCentered = fovSort.FirstOrDefault();
 
-                var fov = this.HostPlane.FOVToObject(p.Obj);
-                if (fov < minFov && fov <= (World.SENSOR_FOV * 0.5f))
-                {
-                    minFov = fov;
-                    minFovObj = p;
-                }
-            }
-
-            return minFovObj;
+            return mostCentered;
         }
+
+        //private PingObj? FindMostCentered()
+        //{
+        //    float minFov = float.MaxValue;
+        //    PingObj minFovObj = null;
+
+        //    foreach (var p in _pings)
+        //    {
+        //        if (p.Obj is not Plane plane)
+        //            continue;
+
+        //        if (plane.IsDamaged)
+        //            continue;
+
+        //        var fov = this.HostPlane.FOVToObject(p.Obj);
+        //        if (fov < minFov && fov <= (World.SENSOR_FOV * 0.5f))
+        //        {
+        //            minFov = fov;
+        //            minFovObj = p;
+        //        }
+        //    }
+
+        //    return minFovObj;
+        //}
 
         public GuidedMissile FindNearestThreat()
         {
@@ -266,32 +300,20 @@ namespace PolyPlane
             && !missile.IsDistracted && !missile.MissedTarget
             && missile.Target == HostPlane
             && missile.ClosingRate(HostPlane) > 0f
-            && ImpactTime(HostPlane, missile) <= MIN_IMPACT_TIME).ToList();
+            && Helpers.ImpactTime(HostPlane, missile) <= MIN_IMPACT_TIME).ToList();
 
-            threats.OrderBy(p => ImpactTime(HostPlane, p.Obj as Missile)).ToList();
+            // var threats = _pings.Where(p => p.Obj is GuidedMissile missile
+            //&& !missile.IsDistracted && !missile.MissedTarget
+            //&& missile.ClosingRate(HostPlane) > 0f
+            //&& Helpers.ImpactTime(HostPlane, missile) <= MIN_IMPACT_TIME).ToList();
+
+            threats.OrderBy(p => Helpers.ImpactTime(HostPlane, p.Obj as Missile)).ToList();
 
             if (threats.Count == 0)
                 return nearest;
 
             return threats.First().Obj as GuidedMissile;
         }
-
-        private bool MissileIsImpactThreat(Plane plane, Missile missile, float minImpactTime)
-        {
-            var navigationTime = ImpactTime(plane, missile);
-            var closingRate = plane.ClosingRate(missile);
-
-            // Is it going to hit soon, and has positive closing rate and is actively targeting us?
-            return (navigationTime < minImpactTime && closingRate > 0f && missile.Target == plane);
-        }
-
-        private float ImpactTime(Plane plane, Missile missile)
-        {
-            var dist = plane.Position.DistanceTo(missile.Position);
-            var navigationTime = dist / (plane.Velocity.Length() + missile.Velocity.Length());
-            return navigationTime;
-        }
-
 
         private bool IsInFOV(GameObject obj, float sweepAngle, float fov)
         {

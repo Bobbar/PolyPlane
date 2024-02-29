@@ -1,5 +1,4 @@
 ﻿using PolyPlane.AI_Behavior;
-using System.Diagnostics;
 using System.Numerics;
 using unvell.D2DLib;
 
@@ -7,7 +6,7 @@ namespace PolyPlane.GameObjects
 {
     public class Plane : GameObjectPoly
     {
-        
+
         public Radar Radar { get; set; }
         private const int MAX_FLAMES = 10;
         private int nFlames = 0;
@@ -16,15 +15,14 @@ namespace PolyPlane.GameObjects
         public bool IsAI => _isAIPlane;
         public bool IsDefending = false;
 
-        public float Mass 
+        public float Mass
         {
-            get { return _mass + (NumMissiles * 0.853f); }
-            //get { return _mass; }
+            get { return _mass; }
 
-            set {  _mass = value; }
+            set { _mass = value; }
         }
 
-        private float _mass = 379.8f;
+        private float _mass = 90f;
 
         public float Thrust { get; set; } = 10f;
         public bool FiringBurst { get; set; } = false;
@@ -84,7 +82,6 @@ namespace PolyPlane.GameObjects
         public Action<Bullet> FireBulletCallback { get; set; }
         public Action<GuidedMissile> FireMissileCallback { get; set; }
 
-
         private float _gForce = 0f;
 
         private float Deflection
@@ -135,14 +132,11 @@ namespace PolyPlane.GameObjects
 
                 _isAIPlane = true;
 
-                Thrust = 3040f;
-
+                Thrust = 1000f;
             }
             else
             {
-
-                Thrust = 5040f;
-
+                Thrust = 2000f;
             }
 
             _thrustAmt.Target = 1f;
@@ -167,30 +161,13 @@ namespace PolyPlane.GameObjects
 
         private void InitStuff()
         {
-            float defRate = 150f;
+            float defRate = 50f;
 
             if (_isAIPlane)
                 defRate = 20f;
 
-            //AddWing(new Wing(this, 10f * _renderOffset, 2.11f, 40f, 52200f, new D2DPoint(1.5f, 1f), defRate));
-            //AddWing(new Wing(this, 5f * _renderOffset, 0.844f, 50f, 31100f, new D2DPoint(-35f, 1f), defRate), true);
-
-            //AddWing(new Wing(this, 10f * _renderOffset, 2.11f, 0f, 62200f, new D2DPoint(1.5f, 1f), defRate));
-            //AddWing(new Wing(this, 5f * _renderOffset, 0.844f, 50f, 41100f, new D2DPoint(-35f, 1f), defRate), true);
-
-            //AddWing(new Wing(this, 10f * _renderOffset, 0.6084f, 0f, 60000f, new D2DPoint(1.5f, 1f), defRate));
-            //AddWing(new Wing(this, 5f * _renderOffset, 0.17161f, 50f, 40500f, new D2DPoint(-35f, 1f), defRate), true);
-
-            var totArea = 0.78001f;
-            var mainRatio = 0.7f;//0.7766f;
-            var tailRatio = 1f - mainRatio;
-
-            AddWing(new Wing(this, 10f * _renderOffset, totArea * mainRatio, 0f, 46800f, new D2DPoint(1.5f, 1f), defRate));
-            AddWing(new Wing(this, 5f * _renderOffset, totArea * tailRatio, 50f, 13200f, new D2DPoint(-35f, 1f), defRate), true);
-
-
-            //AddWing(new Wing(this, 10f * _renderOffset, 0.6084f, 0f, 46800f, new D2DPoint(1.5f, 1f), defRate));
-            //AddWing(new Wing(this, 5f * _renderOffset, 0.17161f, 50f, 13200f, new D2DPoint(-35f, 1f), defRate), true);
+            AddWing(new Wing(this, 10f * _renderOffset, 0.5f, 40f, 10000f, new D2DPoint(1.5f, 1f), defRate));
+            AddWing(new Wing(this, 5f * _renderOffset, 0.2f, 50f, 5000f, new D2DPoint(-35f, 1f), defRate), true);
 
             this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), 1.7f);
             _flamePos = new FixturePoint(this, new D2DPoint(-37f, 0));
@@ -238,19 +215,18 @@ namespace PolyPlane.GameObjects
 
             float ogDef = deflection;
 
-
             // Apply some stability control to try to prevent thrust vectoring from spinning the plane.
-            const float MIN_DEF_SPD = 300f;//450f; // Minimum speed required for full deflection.
+            const float MIN_DEF_SPD = 300f; // Minimum speed required for full deflection.
             var velo = this.Velocity.Length();
-            if (_thrustAmt.Value > 0f && velo < MIN_DEF_SPD * 2f && SASOn)
+            if (_thrustAmt.Value > 0f && SASOn)
             {
                 var spdFact = Helpers.Factor(velo, MIN_DEF_SPD);
 
                 const float MAX_DEF_AOA = 20f;// Maximum AoA allowed. Reduce deflection as AoA increases.
                 var aoaFact = 1f - (Math.Abs(Wings[0].AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 6f))));
 
-                const float MAX_DEF_ROT_SPD = 50f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
-                var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 7-f))));
+                const float MAX_DEF_ROT_SPD = 55f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
+                var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 8f))));
 
                 // Ease out when thrust is decreasing.
                 deflection = Helpers.Lerp(ogDef, ogDef * aoaFact * rotSpdFact, _thrustAmt.Value);
@@ -274,13 +250,12 @@ namespace PolyPlane.GameObjects
 
             if (IsDamaged)
             {
-                wingForce *= 0.1f;
-                wingTorque *= 0.1f;
+                wingForce *= 0.2f;
+                wingTorque *= 0.2f;
                 AutoPilotOn = false;
                 SASOn = false;
                 ThrustOn = false;
                 _thrustAmt.Set(0f);
-                //_controlWing.Deflection = -20f;
                 _controlWing.Deflection = _damageDeflection;
             }
 
@@ -326,7 +301,7 @@ namespace PolyPlane.GameObjects
 
             if (this.DroppingDecoy && _dropDecoyCooldownTimer.IsRunning)
                 this.DroppingDecoy = false;
-            
+
             _expireTimeout.Update(dt);
         }
 
@@ -361,7 +336,7 @@ namespace PolyPlane.GameObjects
             gfx.DrawLine(this.Position, this.Position + cone2, color);
         }
 
-      
+
 
         public void EngagePlayer(float duration)
         {
@@ -371,7 +346,7 @@ namespace PolyPlane.GameObjects
                 _engageTimer.Reset();
                 _engageTimer.Start();
 
-                Debug.WriteLine("Engaging Player!");
+                Log.Msg("Engaging Player!");
             }
         }
 
@@ -379,18 +354,18 @@ namespace PolyPlane.GameObjects
         {
             if (this.NumMissiles <= 0)
             {
-                Debug.WriteLine("Click...");
+                Log.Msg("Click...");
                 return;
             }
 
             if (this.IsAI)
             {
-                var missile = new GuidedMissile(this, target, GuidanceType.Advanced, useControlSurfaces: true, useThrustVectoring: true);
+                var missile = new GuidedMissile(this, target, GuidanceType.SimplePN, useControlSurfaces: true, useThrustVectoring: true);
                 FireMissileCallback(missile);
             }
             else
             {
-                var missile = new GuidedMissile(this, target, GuidanceType.Advanced, useControlSurfaces: true, useThrustVectoring: true);
+                var missile = new GuidedMissile(this, target, GuidanceType.SimplePN, useControlSurfaces: true, useThrustVectoring: true);
                 FireMissileCallback(missile);
             }
 
@@ -429,8 +404,9 @@ namespace PolyPlane.GameObjects
 
         private float GetAPGuidanceDirection(float dir)
         {
-            var amt = Helpers.RadsToDegrees(this.Velocity.Normalized().Cross(Helpers.AngleToVectorDegrees(dir)));
-            var rot = this.Velocity.Angle() + amt;
+            var amt = Helpers.RadsToDegrees(this.Velocity.Normalized().Cross(Helpers.AngleToVectorDegrees(dir, 2f)));
+            var rot = this.Rotation - amt;
+            rot = Helpers.ClampAngle(rot);
 
             return rot;
         }
@@ -611,7 +587,7 @@ namespace PolyPlane.GameObjects
             //else
             //    _thrustAmt.Target = 0f;
 
-            const float thrustVectorAmt = 1f;//1f;
+            const float thrustVectorAmt = 1f;
             const float thrustBoostAmt = 1000f;
             const float thrustBoostMaxSpd = 200f;//600f;
 

@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using unvell.D2DLib;
+﻿using unvell.D2DLib;
 
 namespace PolyPlane
 {
@@ -25,7 +24,7 @@ namespace PolyPlane
             gfx.DrawPolygon(tri, color, 1f, D2DDashStyle.Solid, fillColor);
 
         }
-      
+
 
         public static void DrawArrow(this D2DGraphics gfx, D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f)
         {

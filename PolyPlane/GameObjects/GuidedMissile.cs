@@ -1,14 +1,10 @@
 ﻿using PolyPlane.GameObjects.Guidance;
-using System.Diagnostics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
     public class GuidedMissile : Missile
     {
-        //public GameObjectPoly Target { get; set; }
-        //public GameObjectPoly Owner { get; set; }
-
         public D2DPoint CenterOfThrust => _centerOfThrust.Position;
 
         private static readonly D2DPoint[] _missilePoly = new D2DPoint[]
@@ -43,10 +39,10 @@ namespace PolyPlane.GameObjects
 
         private readonly float THURST_VECTOR_AMT = 1f;
         private readonly float LIFESPAN = 40f;
-        private readonly float BURN_RATE = 0.06f;//1.5f;
-        private readonly float THRUST = 156f;//5000f;
-        private readonly float MASS = 0.478f;//22.5f;
-        private readonly float FUEL = 0.375f;//10f;
+        private readonly float BURN_RATE = 0.06f;
+        private readonly float THRUST = 126f;
+        private readonly float MASS = 0.478f;
+        private readonly float FUEL = 0.375f;
 
         private float _age = 0;
         private float _currentFuel = 0f;
@@ -55,7 +51,7 @@ namespace PolyPlane.GameObjects
 
         private RenderPoly FlamePoly;
         private D2DColor _flameFillColor = new D2DColor(0.6f, D2DColor.Yellow);
-        private float _renderOffset = -0.2f;//1.5f;
+        private float _renderOffset = -0.2f;
 
         private GuidanceType GuidanceType = GuidanceType.Advanced;
         private GuidanceBase _guidance;
@@ -96,14 +92,8 @@ namespace PolyPlane.GameObjects
 
             if (_useControlSurfaces)
             {
-
-
-                //_tailWing = new Wing(this, 4f, 0.1f, 50f, 4000f, new D2DPoint(-22f, 0));
-                //_rocketBody = new Wing(this, 0f, 0.075f, 1250f, D2DPoint.Zero);
-                //_noseWing = new Wing(this, 4f, 0.025f, 20f, 3500f, new D2DPoint(19.5f, 0));
-
-                var liftscale = 0.8f;//1f;
-                _tailWing = new Wing(this, 4f, 0.002f, 50f, 85.1f * liftscale, new D2DPoint(-22f, 0), 100f);
+                var liftscale = 1.5f;
+                _tailWing = new Wing(this, 4f, 0.002f, 50f, 85.1f * liftscale, new D2DPoint(-22f, 0));
                 _rocketBody = new Wing(this, 0f, 0.00159f, 0f, 26.6f * liftscale, D2DPoint.Zero);
                 _noseWing = new Wing(this, 4f, 0.00053f, 20f, 74.4f * liftscale, new D2DPoint(19.5f, 0));
 
@@ -177,7 +167,7 @@ namespace PolyPlane.GameObjects
                     var aoaFact = 1f - (Math.Abs(_rocketBody.AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 2f))));
 
                     const float MAX_DEF_ROT_SPD = 200f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
-                    var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 2f))));
+                    var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 3f))));
 
                     nextDeflect *= aoaFact * rotSpdFact * spdFact;
                 }
@@ -279,14 +269,14 @@ namespace PolyPlane.GameObjects
                 _decoyDistractCooldown.Reset();
                 _decoyDistractCooldown.Start();
                 IsDistracted = true;
-                Debug.Print("Missile distracted!");
+                Log.Msg("Missile distracted!");
 
             }
             else
             {
                 _decoyDistractCooldown.Reset();
                 _decoyDistractCooldown.Start();
-                Debug.Print("Nice try!");
+                Log.Msg("Nice try!");
             }
         }
 
@@ -346,25 +336,7 @@ namespace PolyPlane.GameObjects
             if (Target is Decoy)
                 fillColor = D2DColor.Yellow;
 
-            //switch (GuidanceType)
-            //{
-            //    case GuidanceType.Advanced:
-            //        fillColor = D2DColor.White;
-            //        break;
-
-            //    case GuidanceType.BasicLOS:
-            //        fillColor = D2DColor.SkyBlue;
-            //        break;
-
-            //    case GuidanceType.SimplePN:
-            //        fillColor = D2DColor.Orange;
-            //        break;
-
-            //    case GuidanceType.QuadraticPN:
-            //        fillColor = D2DColor.PaleVioletRed;
-            //        break;
-            //}
-
+            
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.White, 0.5f, D2DDashStyle.Solid, fillColor);
 
             //DrawFuelGauge(gfx);
@@ -387,37 +359,6 @@ namespace PolyPlane.GameObjects
                 ctx.FillEllipse(new D2DEllipse(_guidance.ImpactPoint, new D2DSize(3f, 3f)), D2DColor.Red);
             }
 
-            //// Center of mass and center of lift.
-            //gfx.FillEllipse(new D2DEllipse(this.Position, new D2DSize(1f, 1f)), D2DColor.Orange);
-            //gfx.FillEllipse(new D2DEllipse((_tailWing.Position + _noseWing.Position) / 2f, new D2DSize(1f, 1f)), D2DColor.CornflowerBlue);
-            //gfx.FillEllipse(new D2DEllipse(this.CenterOfPolygon(), new D2DSize(1f, 1f)), D2DColor.Green);
-            //gfx.FillEllipse(this.CenterOfPolygon(), 2f, D2DColor.LightGreen);
-
-            //gfx.FillEllipse(_com, 2f, D2DColor.LightGreen);
-
-
-            //_centerOfThrust.Render(gfx);
-            //_warheadCenterMass.Render(gfx);
-            //_motorCenterMass.Render(gfx);
-            //_flamePos.Render(gfx);
-
-            //var sumCm = (MASS * _warheadCenterMass.Position + _currentFuel * _motorCenterMass.Position) / (MASS + _currentFuel);
-            //gfx.FillEllipse(new D2DEllipse(sumCm, new D2DSize(1f, 1f)), D2DColor.Blue);
-
-            //gfx.PushTransform();
-            //gfx.RotateTransform(this.Rotation, this.Position);
-
-            ////gfx.DrawText(Math.Round(this.Velocity.Length(), 1).ToString(), D2DColor.Black, "Consolas", 3f, new D2DRect(this.Position, new D2DSize(10f, 5f)));
-            ////gfx.DrawText($"{Math.Round(_gForce, 1)} ({Math.Round(_gForcePeak, 1)})", D2DColor.Black, "Consolas", 3f, new D2DRect(this.Position, new D2DSize(20f, 5f)));
-            ////gfx.DrawText(Math.Round(Math.Abs(this.RotationSpeed), 1).ToString(), D2DColor.Black, "Consolas", 3f, new D2DRect(this.Position, new D2DSize(10f, 5f)));
-            //gfx.DrawText(Math.Round(Math.Abs(_rocketBody.AoA), 1).ToString(), D2DColor.Black, "Consolas", 3f, new D2DRect(this.Position, new D2DSize(10f, 5f)));
-
-            //gfx.PopTransform();
-
-
-            //_graph.Render(gfx, new D2DPoint(700, 700), 2f);
-
-            //DrawFOVCone(gfx);
         }
 
         private void DrawFOVCone(D2DGraphics gfx)
