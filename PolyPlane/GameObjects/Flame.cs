@@ -6,22 +6,15 @@ namespace PolyPlane.GameObjects
     {
         public float Radius { get; set; }
 
-        private const int MAX_PARTS = 200;
-        private const float MAX_AGE = 20f;
+        private const int MAX_PARTS = 100;
+        private const float MAX_AGE = 10f;//20f;
         private List<FlamePart> _parts = new List<FlamePart>();
         private D2DColor _flameColor = new D2DColor(0.6f, D2DColor.Yellow);
-        private D2DColor _smokeColor = new D2DColor(0.6f, D2DColor.Black);
+        private D2DColor _blackSmoke = new D2DColor(0.6f, D2DColor.Black);
+        private D2DColor _graySmoke = new D2DColor(0.6f, D2DColor.Gray);
+
         private FixturePoint _refPos = null;
         private GameTimer _spawnTimer = new GameTimer(0.1f, true);
-
-        public Flame(GameObject obj, float radius = 10f) : base(obj.Position, obj.Velocity)
-        {
-            this.Owner = obj;
-            Radius = radius;
-
-            _spawnTimer.TriggerCallback = () => SpawnPart();
-            _spawnTimer.Start();
-        }
 
         public Flame(GameObject obj, D2DPoint offset, float radius = 10f) : base(obj.Position, obj.Velocity)
         {
@@ -33,14 +26,15 @@ namespace PolyPlane.GameObjects
             _spawnTimer.Start();
         }
 
-        public Flame(D2DPoint fixedPos, float radius = 10f) : base(fixedPos)
+        public Flame(GameObject obj, D2DPoint offset) : base(obj.Position, obj.Velocity)
         {
-            Radius = radius;
+            this.Owner = obj;
+            Radius = Helpers.Rnd.NextFloat(4f,15f);
+            _refPos = new FixturePoint(obj, offset);
 
             _spawnTimer.TriggerCallback = () => SpawnPart();
             _spawnTimer.Start();
         }
-
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
@@ -64,7 +58,15 @@ namespace PolyPlane.GameObjects
 
         public override void Render(RenderContext ctx)
         {
+            //ctx.Gfx.FillEllipseSimple(this.Position, 3f, D2DColor.Red);
+
             _parts.ForEach(p => p.Render(ctx));
+
+        }
+
+        public void FlipY()
+        {
+            this._refPos.FlipY();
         }
 
         private void SpawnPart()
@@ -81,10 +83,15 @@ namespace PolyPlane.GameObjects
 
             newVelo += Helpers.RandOPoint(10f);
 
+            var endColor = _blackSmoke;
+
+            if (_refPos.GameObject is Plane plane && !plane.IsDamaged)
+                endColor = _graySmoke;
+
             var newRad = this.Radius + Helpers.Rnd.NextFloat(-3f, 3f);
             var newColor = new D2DColor(_flameColor.a, 1f, Helpers.Rnd.NextFloat(0f, 0.86f), _flameColor.b);
             var newEllipse = new D2DEllipse(newPos, new D2DSize(newRad, newRad));
-            var newPart = new FlamePart(newEllipse, newColor, newVelo);
+            var newPart = new FlamePart(newEllipse, newColor, endColor, newVelo);
 
             if (_parts.Count < MAX_PARTS)
                 _parts.Add(newPart);
@@ -107,7 +114,7 @@ namespace PolyPlane.GameObjects
                 var ageFactSmoke = Helpers.Factor(part.Age, MAX_AGE * 0.5f);
                 var alpha = _flameColor.a * ageFactFade;
 
-                part.Color = new D2DColor(alpha, Helpers.LerpColor(part.Color, _smokeColor, ageFactSmoke));
+                part.Color = new D2DColor(alpha, Helpers.LerpColor(part.Color, part.EndColor, ageFactSmoke));
 
                 if (part.Age > MAX_AGE)
                     _parts.RemoveAt(i);
@@ -120,6 +127,8 @@ namespace PolyPlane.GameObjects
         {
             public D2DEllipse Ellipse => _ellipse;
             public D2DColor Color { get; set; }
+            public D2DColor EndColor { get; set; }
+
             public float Age { get; set; }
 
             private D2DEllipse _ellipse;
@@ -131,6 +140,13 @@ namespace PolyPlane.GameObjects
             {
                 _ellipse = ellipse;
                 Color = color;
+            }
+
+            public FlamePart(D2DEllipse ellipse, D2DColor color, D2DColor endColor, D2DPoint velo) : base(ellipse.origin, velo)
+            {
+                _ellipse = ellipse;
+                Color = color;
+                EndColor = endColor;
             }
 
             public override void Update(float dt, D2DSize viewport, float renderScale)
@@ -149,6 +165,7 @@ namespace PolyPlane.GameObjects
             public override void Render(RenderContext ctx)
             {
                 ctx.FillEllipse(Ellipse, Color);
+                //ctx.FillRectangle(new D2DRect(_ellipse.origin, new D2DSize(_ellipse.radiusX, _ellipse.radiusY)), Color);
             }
         }
     }

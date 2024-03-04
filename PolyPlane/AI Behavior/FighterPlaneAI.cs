@@ -15,11 +15,11 @@ namespace PolyPlane.AI_Behavior
         private bool _avoidingGround = false;
         private GameTimer _fireBurstTimer = new GameTimer(2f);
         private GameTimer _fireBurstCooldownTimer = new GameTimer(6f);
-
-        private readonly float MIN_MISSILE_TIME = 10f;
-        private readonly float MAX_MISSILE_TIME = 40f;
-
         private GameTimer _fireMissileCooldown = new GameTimer(6f);
+
+        private readonly float MIN_MISSILE_TIME = 40f;
+        private readonly float MAX_MISSILE_TIME = 80f;
+
 
         private readonly float _maxSpeed = 1000f;
 
@@ -91,11 +91,17 @@ namespace PolyPlane.AI_Behavior
 
         private void ConsiderFireMissileAtTarget()
         {
+            const float MAX_DIST = 40000f;
             if (_fireMissileCooldown.IsRunning)
                 return;
 
             if (this.Plane.Radar.HasLock && this.Plane.Radar.LockedObj != null)
             {
+                var dist = this.Plane.Position.DistanceTo(this.Plane.Radar.LockedObj.Position);
+
+                if (dist > MAX_DIST)
+                    return;
+
                 this.Plane.FireMissile(this.Plane.Radar.LockedObj);
 
                 _fireMissileCooldown = new GameTimer(Helpers.Rnd.NextFloat(MIN_MISSILE_TIME, MAX_MISSILE_TIME));
@@ -108,7 +114,7 @@ namespace PolyPlane.AI_Behavior
         private void ConsiderFireBurstAtTarget()
         {
             const float MIN_DIST = 2000f;
-            const float MIN_OFFBORE = 30f;
+            const float MIN_OFFBORE = 10f;
 
             var plrDist = D2DPoint.Distance(TargetPlane.Position, this.Plane.Position);
 

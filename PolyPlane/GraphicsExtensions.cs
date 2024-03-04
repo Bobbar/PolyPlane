@@ -82,6 +82,11 @@ namespace PolyPlane
         }
 
 
+        public static void FillEllipseSimple(this D2DGraphics gfx, D2DPoint pos, float radius, D2DColor color)
+        {
+            gfx.FillEllipse(new D2DEllipse(pos, new D2DSize(radius, radius)), color);
+        }
+
         public static void FillEllipseClamped(this D2DGraphics gfx, D2DRect viewport, D2DEllipse ellipse, D2DColor color)
         {
             if (viewport.Contains(ellipse))

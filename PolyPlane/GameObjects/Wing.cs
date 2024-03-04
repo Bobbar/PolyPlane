@@ -177,7 +177,7 @@ namespace PolyPlane.GameObjects
 
             if (World.ShowAero)
             {
-                const float SCALE = 0.04f;
+                const float SCALE = 0.1f;//0.04f;
                 ctx.DrawLine(this.Position, this.Position + (LiftVector * SCALE), D2DColor.SkyBlue, 2f, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
                 ctx.DrawLine(this.Position, this.Position + (DragVector * (SCALE + 0.03f)), D2DColor.Red, 2f, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
             }

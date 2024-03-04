@@ -25,20 +25,29 @@ namespace PolyPlane
 
         private readonly float MIN_IMPACT_TIME = 20f; // Min time before defending.
         private readonly float SWEEP_FOV = 10f; // How wide the radar beam is?
+        private readonly float AIM_FOV = 10f; // How wide the radar beam is?
 
         private float _sweepAngle = 0f;
         private float _maxRange = 40000f;
         private float _maxAge = 2f;
         private readonly float SWEEP_RATE = 300f;
         private float _radius = 150f;//100f;
+        private bool _hostIsAI = false;
         private List<List<GameObject>> _sources = new List<List<GameObject>>();
         private List<PingObj> _pings = new List<PingObj>();
         private GameTimer _lockTimer = new GameTimer(2f);
         private GameTimer _lostLockTimer = new GameTimer(10f);
+        private GameTimer _AIUpdateRate = new GameTimer(1f);
 
         public Radar(Plane hostPlane, params List<GameObject>[] sources)
         {
             HostPlane = hostPlane;
+
+            if (HostPlane.IsAI)
+            {
+                _hostIsAI = true;
+                _AIUpdateRate.Restart();
+            }
 
             foreach (var source in sources)
             {
@@ -58,42 +67,75 @@ namespace PolyPlane
         {
             _lockTimer.Update(dt);
             _lostLockTimer.Update(dt);
+            _AIUpdateRate.Update(dt);
 
-            _sweepAngle += SWEEP_RATE * dt;
-            _sweepAngle = Helpers.ClampAngle(_sweepAngle);
+            bool timeForUpdate = true;
 
-            // Check all sources and add pings if they are within the FOV of the current sweep.
-            foreach (var src in _sources)
+            if (_hostIsAI && _AIUpdateRate.IsRunning)
             {
-                foreach (var obj in src)
+                timeForUpdate = false;
+            }
+
+            if (timeForUpdate)
+            {
+                _sweepAngle += SWEEP_RATE * dt;
+                _sweepAngle = Helpers.ClampAngle(_sweepAngle);
+
+                // Check all sources and add pings if they are within the FOV of the current sweep.
+                foreach (var src in _sources)
                 {
-                    if (obj is Decoy)
-                        continue;
-
-                    if (obj.IsExpired)
-                        continue;
-
-                    if (obj.ID == HostPlane.ID) // Really needed?
-                        continue;
-
-
-                    if (IsInFOV(obj, _sweepAngle, SWEEP_FOV))
+                    foreach (var obj in src)
                     {
-                        var dist = this.HostPlane.Position.DistanceTo(obj.Position);
-                        var angle = (this.HostPlane.Position - obj.Position).Angle(true);
-                        var radDist = (_radius / _maxRange) * dist;
-                        var radPos = this.Position - Helpers.AngleToVectorDegrees(angle, radDist);
+                        if (obj is Decoy)
+                            continue;
 
-                        if (dist > _maxRange)
-                            radPos = this.Position - Helpers.AngleToVectorDegrees(angle, _radius);
+                        if (obj.IsExpired)
+                            continue;
 
-                        var pObj = new PingObj(obj, radPos);
+                        if (obj.ID == HostPlane.ID) // Really needed?
+                            continue;
 
-                        AddIfNotExists(pObj);
-                        RefreshPing(pObj);
+                        if (_hostIsAI)
+                        {
+                            var dist = this.HostPlane.Position.DistanceTo(obj.Position);
+                            var angle = (this.HostPlane.Position - obj.Position).Angle(true);
+                            var radDist = (_radius / _maxRange) * dist;
+                            var radPos = this.Position - Helpers.AngleToVectorDegrees(angle, radDist);
+
+                            if (dist > _maxRange)
+                                radPos = this.Position - Helpers.AngleToVectorDegrees(angle, _radius);
+
+                            var pObj = new PingObj(obj, radPos);
+
+                            AddIfNotExists(pObj);
+                            RefreshPing(pObj);
+                        }
+                        else
+                        {
+                            if (IsInFOV(obj, _sweepAngle, SWEEP_FOV))
+                            {
+                                var dist = this.HostPlane.Position.DistanceTo(obj.Position);
+                                var angle = (this.HostPlane.Position - obj.Position).Angle(true);
+                                var radDist = (_radius / _maxRange) * dist;
+                                var radPos = this.Position - Helpers.AngleToVectorDegrees(angle, radDist);
+
+                                if (dist > _maxRange)
+                                    radPos = this.Position - Helpers.AngleToVectorDegrees(angle, _radius);
+
+                                var pObj = new PingObj(obj, radPos);
+
+                                AddIfNotExists(pObj);
+                                RefreshPing(pObj);
+                            }
+                        }
+
+
                     }
                 }
+
+                _AIUpdateRate.Restart();
             }
+
 
             PrunePings();
 
@@ -102,6 +144,7 @@ namespace PolyPlane
             CheckForLock();
             NotifyLocks();
         }
+
 
         public void Render(D2DGraphics gfx, D2DColor color)
         {
@@ -148,7 +191,7 @@ namespace PolyPlane
                 var distPos = this.Position + new D2DPoint(-210f, 100f);
                 var dRect = new D2DRect(distPos, new D2DSize(100, 40));
                 gfx.FillRectangle(dRect, new D2DColor(0.5f, D2DColor.Black));
-                var info = $"D:{Math.Round(dist, 0)}\nA:{Math.Round(_aimedAtPingObj.Obj.Altitude,0)}";
+                var info = $"D:{Math.Round(dist, 0)}\nA:{Math.Round(_aimedAtPingObj.Obj.Altitude, 0)}";
                 gfx.DrawTextCenter(info, color, "Consolas", 15f, dRect);
             }
 
@@ -279,47 +322,55 @@ namespace PolyPlane
             if (planes.Count == 0)
                 return null;
 
-           return planes.First().Obj as Plane;
-        }
-
-        private PingObj? FindMostCentered()
-        {
-            var distSort = _pings.Where(p =>
-            p.Obj is Plane plane
-            && !plane.IsDamaged && !plane.HasCrashed
-            && this.HostPlane.FOVToObject(p.Obj) <= (World.SENSOR_FOV * 0.5f))
-            .OrderBy(p => p.Obj.Position.DistanceTo(HostPlane.Position)).ToList();
-
-            var fovSort = distSort.OrderBy(p => this.HostPlane.FOVToObject(p.Obj));
-
-            var mostCentered = fovSort.FirstOrDefault();
-
-            return mostCentered;
+            return planes.First().Obj as Plane;
         }
 
         //private PingObj? FindMostCentered()
         //{
-        //    float minFov = float.MaxValue;
-        //    PingObj minFovObj = null;
+        //    //var distSort = _pings.Where(p =>
+        //    //p.Obj is Plane plane
+        //    //&& !plane.IsDamaged && !plane.HasCrashed
+        //    //&& this.HostPlane.FOVToObject(p.Obj) <= (World.SENSOR_FOV * 0.5f))
+        //    //.OrderBy(p => p.Obj.Position.DistanceTo(HostPlane.Position)).ToList();
 
-        //    foreach (var p in _pings)
-        //    {
-        //        if (p.Obj is not Plane plane)
-        //            continue;
+        //    var distSort = _pings.Where(p =>
+        //   p.Obj is Plane plane
+        //   && !plane.IsDamaged && !plane.HasCrashed
+        //   && this.HostPlane.FOVToObject(p.Obj) <= AIM_FOV)
+        //   .OrderBy(p => p.Obj.Position.DistanceTo(HostPlane.Position)).ToList();
 
-        //        if (plane.IsDamaged)
-        //            continue;
+        //    var fovSort = distSort.OrderBy(p => this.HostPlane.FOVToObject(p.Obj));
 
-        //        var fov = this.HostPlane.FOVToObject(p.Obj);
-        //        if (fov < minFov && fov <= (World.SENSOR_FOV * 0.5f))
-        //        {
-        //            minFov = fov;
-        //            minFovObj = p;
-        //        }
-        //    }
+        //    var mostCentered = fovSort.FirstOrDefault();
 
-        //    return minFovObj;
+        //    return mostCentered;
         //}
+
+        private PingObj? FindMostCentered()
+        {
+            PingObj? mostCentered = null;
+            var minFov = float.MaxValue;
+            var minDist = float.MaxValue;
+
+            foreach (var p in _pings)
+            {
+                if (p.Obj is Plane plane && !plane.IsDamaged && !plane.HasCrashed)
+                {
+                    var fov = this.HostPlane.FOVToObject(plane);
+                    var dist = this.HostPlane.Position.DistanceTo(plane.Position);
+
+                    if (fov <= (World.SENSOR_FOV * 0.5f) && fov < minFov && dist < minDist)
+                    {
+                        minFov = fov;
+                        minDist = dist;
+                        mostCentered = p;
+                    }
+                }
+            }
+
+
+            return mostCentered;
+        }
 
         public GuidedMissile FindNearestThreat()
         {
@@ -353,6 +404,15 @@ namespace PolyPlane
             var diff = Helpers.AngleDiff(sweepAngle, angle);
 
             return diff <= (fov * 0.5f);
+        }
+
+        private float FOVToSweep(GameObject obj)
+        {
+            var dir = obj.Position - this.Position;
+            var angle = dir.Angle(true);
+            var diff = Helpers.AngleDiff(_sweepAngle, angle);
+
+            return diff;
         }
 
         private void PrunePings()

@@ -9,9 +9,8 @@ namespace PolyPlane
         private D2DDevice _device;
         private D2DGraphics _gfx;
         private RenderContext _ctx;
-        private Thread _renderThread;
+        private Thread _gameThread;
 
-        private const float ROTATE_RATE = 2f;
         private const float DT_ADJ_AMT = 0.00025f;
         private const float VIEW_SCALE = 4f;
 
@@ -31,7 +30,7 @@ namespace PolyPlane
         private int _playerDeaths = 0;
         private bool _queueNextViewId = false;
         private bool _queuePrevViewId = false;
-
+        private bool _skipRender = false;
         private long _lastRenderTime = 0;
         private float _renderFPS = 0;
 
@@ -105,7 +104,7 @@ namespace PolyPlane
 
             InitPlane();
 
-            StartRenderThread();
+            StartGameThread();
         }
 
         private void InitPlane()
@@ -168,12 +167,11 @@ namespace PolyPlane
             _newAIPlanes.Enqueue(aiPlane);
         }
 
-        private void StartRenderThread()
+        private void StartGameThread()
         {
-            _renderThread = new Thread(RenderLoop);
-            _renderThread.Priority = ThreadPriority.AboveNormal;
-            _renderThread.Start();
-
+            _gameThread = new Thread(GameLoop);
+            _gameThread.Priority = ThreadPriority.AboveNormal;
+            _gameThread.Start();
             _decoyTimer.Start();
         }
 
@@ -208,113 +206,161 @@ namespace PolyPlane
             ResumeRender();
         }
 
-        private void RenderLoop()
+        private void GameLoop()
         {
             while (!this.Disposing && !_killRender)
             {
                 _stopRenderEvent.Wait();
 
-                GraphicsExtensions.OnScreen = 0;
-                GraphicsExtensions.OffScreen = 0;
-
-                ResizeGfx();
-                ProcessObjQueue();
-
-                var viewPortRect = new D2DRect(_playerPlane.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
-                _ctx.Viewport = viewPortRect;
-
-                if (_trailsOn || _motionBlur)
-                    _gfx.BeginRender();
-                else
-                    _gfx.BeginRender(_clearColor);
-
-                if (_motionBlur)
-                    _gfx.FillRectangle(World.ViewPortRect, _blurColor);
-
-                Plane viewPlane = null;
-
-                var idPlane = IDToPlane(_aiPlaneViewID);
-
-                if (idPlane != null)
-                {
-                    viewPlane = idPlane;
-                    //NewHudMessage(viewPlane.ID.ToString(), D2DColor.White);
-                }
-                else
-                    viewPlane = _playerPlane;
-
-                DrawSky(_ctx, viewPlane);
-                DrawMovingBackground(_ctx, viewPlane);
-
-                _gfx.PushTransform();
-                _gfx.ScaleTransform(World.ZoomScale, World.ZoomScale);
-
-
-                // Render stuff...
-                if (!_isPaused || _oneStep)
-                {
-                    var partialDT = World.SUB_DT;
-
-                    for (int i = 0; i < World.PHYSICS_STEPS; i++)
-                    {
-                        _missiles.ForEach(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale));
-                        _targets.ForEach(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale));
-                        _bullets.ForEach(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale));
-
-                        DoCollisions();
-                    }
-
-                    World.UpdateAirDensityAndWind(World.DT);
-
-                    _oneStep = false;
-
-                    DoDecoySuccess();
-
-                    _playerBurstTimer.Update(World.DT);
-                    _hudMessageTimeout.Update(World.DT);
-                    _groundScatterTimer.Update(World.DT);
-                    _explosions.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
-                    _flames.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
-                    _missileTrails.ForEach(t => t.Update(World.DT));
-
-                    DoAIPlaneBurst(World.DT);
-                    _decoyTimer.Update(World.DT);
-                }
-
-
-                DrawPlaneAndObjects(_ctx, viewPlane);
-
-                _gfx.PopTransform();
-
-                DrawHud(_ctx, new D2DSize(this.Width, this.Height), viewPlane);
-                DrawOverlays(_ctx);
-
-                _gfx.EndRender();
-
-                var fps = TimeSpan.TicksPerSecond / (float)(DateTime.Now.Ticks - _lastRenderTime);
-                _lastRenderTime = DateTime.Now.Ticks;
-                _renderFPS = fps;
-
-                //_fpsGraph.Update(fps);
+                AdvanceAndRender();
 
                 if (!_pauseRenderEvent.Wait(0))
                 {
                     _isPaused = true;
                     _pauseRenderEvent.Set();
                 }
-
-
-                if (_slewEnable)
-                {
-                    _playerPlane.RotationSpeed = 0f;
-                    _playerPlane.Position = _playerPlaneSlewPos;
-                    _playerPlane.Reset();
-                    _playerPlane.Velocity = D2DPoint.Zero;
-                    _playerPlane.HasCrashed = true;
-                    _godMode = true;
-
-                }
             }
+        }
+
+        private void AdvanceAndRender()
+        {
+            GraphicsExtensions.OnScreen = 0;
+            GraphicsExtensions.OffScreen = 0;
+
+            ResizeGfx();
+            ProcessObjQueue();
+
+            var viewPortRect = new D2DRect(_playerPlane.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
+            _ctx.Viewport = viewPortRect;
+
+            if (_trailsOn || _motionBlur)
+                _gfx.BeginRender();
+            else
+                _gfx.BeginRender(_clearColor);
+
+            if (_motionBlur)
+                _gfx.FillRectangle(World.ViewPortRect, _blurColor);
+
+            Plane viewPlane = null;
+
+            var idPlane = IDToPlane(_aiPlaneViewID);
+
+            if (idPlane != null)
+            {
+                viewPlane = idPlane;
+                //NewHudMessage(viewPlane.ID.ToString(), D2DColor.White);
+            }
+            else
+                viewPlane = _playerPlane;
+
+            DrawSky(_ctx, viewPlane);
+            DrawMovingBackground(_ctx, viewPlane);
+
+            _gfx.PushTransform();
+            _gfx.ScaleTransform(World.ZoomScale, World.ZoomScale);
+
+
+            // Update/advance objects.
+            if (!_isPaused || _oneStep)
+            {
+                var partialDT = World.SUB_DT;
+
+                for (int i = 0; i < World.PHYSICS_STEPS; i++)
+                {
+                    DoCollisions();
+
+                    _missiles.ForEach(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale));
+                    _targets.ForEach(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale));
+                    _bullets.ForEach(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale));
+                }
+
+                World.UpdateAirDensityAndWind(World.DT);
+
+                DoDecoySuccess();
+
+                _playerBurstTimer.Update(World.DT);
+                _hudMessageTimeout.Update(World.DT);
+                _groundScatterTimer.Update(World.DT);
+                _explosions.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
+                _flames.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
+                _missileTrails.ForEach(t => t.Update(World.DT));
+
+                DoAIPlaneBurst(World.DT);
+                _decoyTimer.Update(World.DT);
+
+                _oneStep = false;
+            }
+
+
+            // Render objects.
+            if (!_skipRender)
+                DrawPlaneAndObjects(_ctx, viewPlane);
+
+            _gfx.PopTransform();
+
+            DrawHud(_ctx, new D2DSize(this.Width, this.Height), viewPlane);
+            DrawOverlays(_ctx);
+
+            _gfx.EndRender();
+
+            var fps = TimeSpan.TicksPerSecond / (float)(DateTime.Now.Ticks - _lastRenderTime);
+            _lastRenderTime = DateTime.Now.Ticks;
+            _renderFPS = fps;
+
+            //_fpsGraph.Update(fps);
+
+            if (_slewEnable)
+            {
+                _playerPlane.RotationSpeed = 0f;
+                _playerPlane.Position = _playerPlaneSlewPos;
+                _playerPlane.Reset();
+                _playerPlane.Velocity = D2DPoint.Zero;
+                _playerPlane.HasCrashed = true;
+                _godMode = true;
+            }
+        }
+
+        private List<GameObject> GetAllObjects()
+        {
+            var objs = new List<GameObject>();
+
+            objs.AddRange(_missiles);
+            objs.AddRange(_targets);
+            objs.AddRange(_bullets);
+
+            return objs;
+        }
+
+
+        private void DrawNearObj(D2DGraphics gfx, Plane plane)
+        {
+            _targets.ForEach(t =>
+            {
+                if (t.IsObjNear(plane))
+                    gfx.FillEllipseSimple(t.Position, 5f, D2DColor.Red);
+
+            });
+
+            _bullets.ForEach(b =>
+            {
+                if (b.IsObjNear(plane))
+                    gfx.FillEllipseSimple(b.Position, 5f, D2DColor.Red);
+
+            });
+
+            _missiles.ForEach(m =>
+            {
+                if (m.IsObjNear(plane))
+                    gfx.FillEllipseSimple(m.Position, 5f, D2DColor.Red);
+
+            });
+
+            _flames.ForEach(f =>
+            {
+                if (f.IsObjNear(plane))
+                    gfx.FillEllipseSimple(f.Position, 5f, D2DColor.Red);
+
+            });
         }
 
         private Plane IDToPlane(long id)
@@ -437,8 +483,18 @@ namespace PolyPlane
             // Draw the ground.
             ctx.Gfx.FillRectangle(new D2DRect(new D2DPoint(plane.Position.X, 2000f), new D2DSize(this.Width * World.ViewPortScaleMulti, 4000f)), D2DColor.DarkGreen);
 
-            _targets.ForEach(o => o.Render(ctx));
-            _explosions.ForEach(o => o.Render(ctx));
+            //_targets.ForEach(o => o.Render(ctx));
+
+            _targets.ForEach(o =>
+            {
+                o.Render(ctx);
+
+                if (o is Plane tplane && tplane != plane)
+                {
+                    ctx.Gfx.DrawEllipse(new D2DEllipse(tplane.Position, new D2DSize(80f, 80f)), _hudColor, 2f);
+                }
+            });
+
             _missiles.ForEach(o => o.Render(ctx));
             _missileTrails.ForEach(o => o.Render(ctx));
 
@@ -446,6 +502,9 @@ namespace PolyPlane
 
             _bullets.ForEach(o => o.Render(ctx));
             _flames.ForEach(o => o.Render(ctx));
+            _explosions.ForEach(o => o.Render(ctx));
+
+            //DrawNearObj(_ctx.Gfx, plane);
 
             ctx.PopViewPort();
             ctx.Gfx.PopTransform();
@@ -457,6 +516,7 @@ namespace PolyPlane
             DrawSpeedo(ctx.Gfx, viewportsize, viewPlane);
             DrawGMeter(ctx.Gfx, viewportsize, viewPlane);
             DrawThrottle(ctx.Gfx, viewportsize, viewPlane);
+            DrawStats(ctx.Gfx, viewportsize, viewPlane);
 
             if (!viewPlane.IsDamaged)
             {
@@ -526,6 +586,24 @@ namespace PolyPlane
             var throtRect = new D2DRect(pos.X - (W * 0.5f), pos.Y - (H * 0.5f), W, (H * plane.ThrustAmount));
             gfx.RotateTransform(180f, pos);
             gfx.FillRectangle(throtRect, _hudColor);
+
+            gfx.PopTransform();
+        }
+
+        private void DrawStats(D2DGraphics gfx, D2DSize viewportsize, Plane plane)
+        {
+            const float W = 20f;
+            const float H = 50f;
+            const float xPos = 80f;
+            const float yPos = 110f;
+            var pos = new D2DPoint(xPos, (viewportsize.height * 0.5f) + yPos);
+
+            var rect = new D2DRect(pos, new D2DSize(W, H));
+
+            gfx.PushTransform();
+
+            gfx.DrawTextCenter($"{plane.Hits}/{Plane.MAX_HITS}", _hudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 40f), new D2DSize(50f, 20f)));
+            gfx.DrawTextCenter($"{plane.NumMissiles}", _hudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 70f), new D2DSize(50f, 20f)));
 
             gfx.PopTransform();
         }
@@ -676,8 +754,8 @@ namespace PolyPlane
 
         private void DrawMissilePointers(D2DGraphics gfx, D2DSize viewportsize, Plane plane)
         {
-            const float MIN_DIST = 600f;
-            const float MAX_DIST = 10000f;
+            const float MIN_DIST = 3000f;
+            const float MAX_DIST = 20000f;
 
             bool warningMessage = false;
             var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
@@ -768,7 +846,11 @@ namespace PolyPlane
             for (int r = 0; r < _targets.Count; r++)
             {
                 var targ = _targets[r] as GameObjectPoly;
+
                 if (targ == null)
+                    continue;
+
+                if (targ is Decoy)
                     continue;
 
                 // Missiles
@@ -798,9 +880,9 @@ namespace PolyPlane
                             }
 
                             if (plane.IsAI == true)
-                                plane.DoImpact(missile, pos, _flames);
+                                plane.DoImpact(missile, pos);
                             else if (plane.IsAI == false && !_godMode)
-                                plane.DoImpact(missile, pos, _flames);
+                                plane.DoImpact(missile, pos);
                         }
 
                         missile.IsExpired = true;
@@ -813,18 +895,21 @@ namespace PolyPlane
                 {
                     var bullet = _bullets[b];
 
-                    if (targ.Contains(bullet, out D2DPoint pos) && bullet.Owner.ID != targ.ID)
+                    if (bullet.Owner.ID == targ.ID)
+                        continue;
+
+                    if (targ.Contains(bullet, out D2DPoint pos, World.DT) && bullet.Owner.ID != targ.ID)
                     {
                         if (!targ.IsExpired)
                             AddExplosion(pos);
 
                         if (targ is Plane plane2)
                         {
-                            if (targ.ID != _playerPlane.ID && !plane2.IsDamaged)
+                            if (!plane2.IsAI && targ.ID != _playerPlane.ID && !plane2.IsDamaged)
                                 _playerScore++;
 
                             if (plane2.IsAI)
-                                plane2.DoImpact(bullet, pos, _flames);
+                                plane2.DoImpact(bullet, pos);
                         }
 
                         bullet.IsExpired = true;
@@ -871,7 +956,7 @@ namespace PolyPlane
                 if (_playerPlane.Contains(missile, out D2DPoint pos))
                 {
                     if (!_godMode)
-                        _playerPlane.DoImpact(missile, pos, _flames);
+                        _playerPlane.DoImpact(missile, pos);
 
                     Log.Msg($"Dist Traveled: {missile.DistTraveled}");
 
@@ -881,25 +966,25 @@ namespace PolyPlane
             }
 
 
-            // Handle player plane vs bullets.
-            for (int b = 0; b < _bullets.Count; b++)
-            {
-                var bullet = _bullets[b];
+            //// Handle player plane vs bullets.
+            //for (int b = 0; b < _bullets.Count; b++)
+            //{
+            //    var bullet = _bullets[b];
 
-                if (bullet.Owner.ID == _playerPlane.ID)
-                    continue;
+            //    if (bullet.Owner.ID == _playerPlane.ID)
+            //        continue;
 
-                if (_playerPlane.Contains(bullet, out D2DPoint pos))
-                {
-                    if (!_playerPlane.IsExpired)
-                        AddExplosion(_playerPlane.Position);
+            //    if (_playerPlane.Contains(bullet, out D2DPoint pos))
+            //    {
+            //        if (!_playerPlane.IsExpired)
+            //            AddExplosion(_playerPlane.Position);
 
-                    if (!_godMode)
-                        _playerPlane.DoImpact(bullet, pos, _flames);
+            //        if (!_godMode)
+            //            _playerPlane.DoImpact(bullet, pos);
 
-                    bullet.IsExpired = true;
-                }
-            }
+            //        bullet.IsExpired = true;
+            //    }
+            //}
 
             HandleGroundImpacts();
             PruneExpiredObj();
@@ -915,7 +1000,7 @@ namespace PolyPlane
                 if (plane.Altitude <= 0f)
                 {
                     if (!plane.IsDamaged)
-                        plane.SetOnFire(_flames);
+                        plane.SetOnFire();
 
 
                     if (!plane.HasCrashed)
@@ -930,7 +1015,9 @@ namespace PolyPlane
                     plane.IsDamaged = true;
                     plane.DoHitGround();
                     plane.SASOn = false;
-                    plane.Velocity = D2DPoint.Zero;
+                    //plane.Velocity = D2DPoint.Zero;
+
+                    plane.Velocity *= new D2DPoint(0.998f, 0f);
                     plane.Position = new D2DPoint(plane.Position.X, 0f);
                     plane.RotationSpeed = 0f;
                 }
@@ -946,7 +1033,7 @@ namespace PolyPlane
                     _playerDeaths++;
 
                 if (!_playerPlane.IsDamaged)
-                    _playerPlane.SetOnFire(_flames);
+                    _playerPlane.SetOnFire();
 
                 if (!_playerPlane.HasCrashed)
                 {
@@ -962,9 +1049,9 @@ namespace PolyPlane
                 _playerPlane.SASOn = false;
                 _playerPlane.AutoPilotOn = false;
                 _playerPlane.ThrustOn = false;
-                _playerPlane.Velocity = D2DPoint.Zero;
                 _playerPlane.Position = new D2DPoint(_playerPlane.Position.X, 0f);
                 _playerPlane.RotationSpeed = 0f;
+                _playerPlane.Velocity *= new D2DPoint(0.998f, 0f);
             }
         }
 
@@ -1035,7 +1122,7 @@ namespace PolyPlane
         {
             foreach (var plane in _aiPlanes)
             {
-                plane.SetOnFire(_flames);
+                plane.SetOnFire();
                 plane.IsDamaged = true;
             }
         }
@@ -1605,8 +1692,9 @@ namespace PolyPlane
                     break;
 
                 case 'b':
-                    _motionBlur = !_motionBlur;
-                    _trailsOn = false;
+                    //_motionBlur = !_motionBlur;
+                    //_trailsOn = false;
+                    _skipRender = !_skipRender;
                     break;
 
                 case 'c':
@@ -1803,7 +1891,7 @@ namespace PolyPlane
 
         private void PolyPlaneUI_FormClosing(object sender, FormClosingEventArgs e)
         {
-            _renderThread?.Join(1000);
+            _gameThread?.Join(1000);
             //_renderThread.Wait(1000);
 
 

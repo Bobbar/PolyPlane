@@ -39,8 +39,8 @@ namespace PolyPlane.GameObjects
 
         private readonly float THURST_VECTOR_AMT = 1f;
         private readonly float LIFESPAN = 40f;
-        private readonly float BURN_RATE = 0.06f;
-        private readonly float THRUST = 126f;
+        private readonly float BURN_RATE = 0.04f;//0.06f;
+        private readonly float THRUST = 84f;//126f;
         private readonly float MASS = 0.478f;
         private readonly float FUEL = 0.375f;
 
@@ -359,6 +359,7 @@ namespace PolyPlane.GameObjects
                 ctx.FillEllipse(new D2DEllipse(_guidance.ImpactPoint, new D2DSize(3f, 3f)), D2DColor.Red);
             }
 
+            //this.DrawVeloLines(ctx.Gfx);
         }
 
         private void DrawFOVCone(D2DGraphics gfx)

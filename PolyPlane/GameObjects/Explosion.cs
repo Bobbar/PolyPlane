@@ -62,6 +62,8 @@ namespace PolyPlane.GameObjects
         public override void Render(RenderContext ctx)
         {
             ctx.FillEllipse(new D2DEllipse(this.Position, new D2DSize(_currentRadius, _currentRadius)), _color);
+
+            //ctx.FillEllipse(new D2DEllipse(this.Position, new D2DSize(3f, 3f)), D2DColor.Red);
         }
 
         public override bool Contains(D2DPoint pnt)
