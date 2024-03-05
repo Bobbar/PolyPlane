@@ -1,5 +1,6 @@
 using PolyPlane.GameObjects;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using unvell.D2DLib;
 
 namespace PolyPlane
@@ -33,6 +34,8 @@ namespace PolyPlane
         private bool _skipRender = false;
         private long _lastRenderTime = 0;
         private float _renderFPS = 0;
+        private bool _useMultiThread = true;
+        private int _multiThreadNum = 4;
 
         private List<GameObject> _missiles = new List<GameObject>();
         private List<SmokeTrail> _missileTrails = new List<SmokeTrail>();
@@ -41,6 +44,8 @@ namespace PolyPlane
         private List<GameObjectPoly> _bullets = new List<GameObjectPoly>();
         private List<GameObject> _explosions = new List<GameObject>();
         private List<Plane> _aiPlanes = new List<Plane>();
+
+        private List<GameObject> _updateObjects = new List<GameObject>();
 
         private ConcurrentQueue<GameObject> _newTargets = new ConcurrentQueue<GameObject>();
         private ConcurrentQueue<GameObject> _newDecoys = new ConcurrentQueue<GameObject>();
@@ -69,13 +74,18 @@ namespace PolyPlane
         private GameTimer _burstTimer = new GameTimer(0.25f, true);
         private GameTimer _decoyTimer = new GameTimer(0.25f, true);
         private GameTimer _playerBurstTimer = new GameTimer(0.1f, true);
-        private GameTimer _groundScatterTimer = new GameTimer(2f);
 
         private string _hudMessage = string.Empty;
         private D2DColor _hudMessageColor = D2DColor.Red;
         private GameTimer _hudMessageTimeout = new GameTimer(5f);
 
         private long _aiPlaneViewID = -1;
+
+        private Stopwatch _timer = new Stopwatch();
+        private TimeSpan _renderTime = new TimeSpan();
+        private TimeSpan _updateTime = new TimeSpan();
+        private TimeSpan _collisionTime = new TimeSpan();
+
 
         private Random _rnd => Helpers.Rnd;
 
@@ -89,6 +99,8 @@ namespace PolyPlane
             _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
             _playerBurstTimer.TriggerCallback = () => _playerPlane.FireBullet(p => AddExplosion(p));
+
+            _multiThreadNum = Environment.ProcessorCount;
         }
 
         private void PolyPlaneUI_Disposed(object? sender, EventArgs e)
@@ -224,6 +236,10 @@ namespace PolyPlane
 
         private void AdvanceAndRender()
         {
+            _renderTime = TimeSpan.Zero;
+            _updateTime = TimeSpan.Zero;
+            _collisionTime = TimeSpan.Zero;
+
             GraphicsExtensions.OnScreen = 0;
             GraphicsExtensions.OffScreen = 0;
 
@@ -253,26 +269,51 @@ namespace PolyPlane
             else
                 viewPlane = _playerPlane;
 
+            _timer.Restart();
+
             DrawSky(_ctx, viewPlane);
             DrawMovingBackground(_ctx, viewPlane);
 
+            _timer.Stop();
+            _renderTime += _timer.Elapsed;
+
             _gfx.PushTransform();
             _gfx.ScaleTransform(World.ZoomScale, World.ZoomScale);
-
 
             // Update/advance objects.
             if (!_isPaused || _oneStep)
             {
                 var partialDT = World.SUB_DT;
 
+                var objs = GetAllObjects();
+                var numObj = objs.Count;
+
                 for (int i = 0; i < World.PHYSICS_STEPS; i++)
                 {
+                    _timer.Restart();
+
                     DoCollisions();
 
-                    _missiles.ForEach(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale));
-                    _targets.ForEach(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale));
-                    _bullets.ForEach(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale));
+                    _timer.Stop();
+
+                    _collisionTime += _timer.Elapsed;
+
+                    _timer.Restart();
+
+                    if (_useMultiThread)
+                    {
+                        objs.ForEachParallel(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale), _multiThreadNum);
+                    }
+                    else
+                    {
+                        objs.ForEach(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale));
+                    }
+
+                    _timer.Stop();
+                    _updateTime += _timer.Elapsed;
                 }
+
+                _timer.Restart();
 
                 World.UpdateAirDensityAndWind(World.DT);
 
@@ -280,7 +321,6 @@ namespace PolyPlane
 
                 _playerBurstTimer.Update(World.DT);
                 _hudMessageTimeout.Update(World.DT);
-                _groundScatterTimer.Update(World.DT);
                 _explosions.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
                 _decoys.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
 
@@ -289,9 +329,13 @@ namespace PolyPlane
                 DoAIPlaneBurst(World.DT);
                 _decoyTimer.Update(World.DT);
 
+                _timer.Stop();
+                _updateTime += _timer.Elapsed;
+
                 _oneStep = false;
             }
 
+            _timer.Restart();
 
             // Render objects.
             if (!_skipRender)
@@ -302,7 +346,12 @@ namespace PolyPlane
             DrawHud(_ctx, new D2DSize(this.Width, this.Height), viewPlane);
             DrawOverlays(_ctx);
 
+            _timer.Stop();
+            _renderTime += _timer.Elapsed;
+
+
             _gfx.EndRender();
+
 
             var fps = TimeSpan.TicksPerSecond / (float)(DateTime.Now.Ticks - _lastRenderTime);
             _lastRenderTime = DateTime.Now.Ticks;
@@ -323,13 +372,13 @@ namespace PolyPlane
 
         private List<GameObject> GetAllObjects()
         {
-            var objs = new List<GameObject>();
+            _updateObjects.Clear();
 
-            objs.AddRange(_missiles);
-            objs.AddRange(_targets);
-            objs.AddRange(_bullets);
+            _updateObjects.AddRange(_missiles);
+            _updateObjects.AddRange(_targets);
+            _updateObjects.AddRange(_bullets);
 
-            return objs;
+            return _updateObjects;
         }
 
 
@@ -1007,10 +1056,10 @@ namespace PolyPlane
                     if (!plane.HasCrashed)
                     {
                         var pointingRight = Helpers.IsPointingRight(plane.Rotation);
-                        if (pointingRight)
-                            plane.Rotation = 0f;
-                        else
-                            plane.Rotation = 180f;
+                    if (pointingRight)
+                        plane.Rotation = 0f;
+                    else
+                        plane.Rotation = 180f;
                     }
 
                     plane.IsDamaged = true;
@@ -1039,10 +1088,10 @@ namespace PolyPlane
                 if (!_playerPlane.HasCrashed)
                 {
                     var pointingRight = Helpers.IsPointingRight(_playerPlane.Rotation);
-                    if (pointingRight)
-                        _playerPlane.Rotation = 0f;
-                    else
-                        _playerPlane.Rotation = 180f;
+                if (pointingRight)
+                    _playerPlane.Rotation = 0f;
+                else
+                    _playerPlane.Rotation = 180f;
                 }
 
                 _playerPlane.IsDamaged = true;
@@ -1270,7 +1319,7 @@ namespace PolyPlane
             if (_playerPlane.IsDamaged)
                 ctx.Gfx.FillRectangle(World.ViewPortRect, new D2DColor(0.2f, D2DColor.Red));
 
-            //DrawFPSGraph(gfx);
+            //DrawFPSGraph(ctx);
             //DrawGrid(gfx);
 
             //DrawRadial(ctx.Gfx, _radialPosition);
@@ -1554,11 +1603,7 @@ namespace PolyPlane
         {
             string infoText = string.Empty;
             infoText += $"Paused: {_isPaused}\n\n";
-            //infoText += $"Guidance Type: {_guidanceType.ToString()}\n";
-            //infoText += $"Missile Type: {_interceptorType.ToString()}\n";
-            //infoText += $"Target Type: {_targetTypes.ToString()}\n\n";
-            //infoText += $"Overlay (Tracking/Aero/Missile): {(World.ShowTracking ? "On" : "Off")}/{(World.ShowAero ? "On" : "Off")}/{(World.ShowMissileCloseup ? "On" : "Off")} \n";
-            //infoText += $"Turbulence/Wind: {(World.EnableTurbulence ? "On" : "Off")}/{(World.EnableWind ? "On" : "Off")}\n";
+
 
             var numObj = _missiles.Count + _targets.Count + _bullets.Count + _explosions.Count + _aiPlanes.Count;
             infoText += $"Num Objects: {numObj}\n";
@@ -1568,6 +1613,10 @@ namespace PolyPlane
 
 
             infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";
+            infoText += $"Update ms: {_updateTime.TotalMilliseconds}\n";
+            infoText += $"Render ms: {_renderTime.TotalMilliseconds}\n";
+            infoText += $"Collision ms: {_collisionTime.TotalMilliseconds}\n";
+
             infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
             infoText += $"DT: {Math.Round(World.DT, 4)}\n";
             //infoText += $"Trails: {(_trailsOn ? "Trails" : _motionBlur ? "Blur" : "Off")}\n\n";
@@ -1579,6 +1628,7 @@ namespace PolyPlane
             infoText += $"Score: {_playerScore}\n";
             infoText += $"Deaths: {_playerDeaths}\n";
             infoText += $"Missiles: {_playerPlane.NumMissiles}\n";
+            infoText += $"Use MultiThread: {_useMultiThread.ToString()}\n";
 
 
             //infoText += $"Velocity: {_playerPlane?.Velocity.Length()}\n";
@@ -1692,7 +1742,7 @@ namespace PolyPlane
                     break;
 
                 case 'd':
-                    
+
                     break;
 
                 case 'e':
@@ -1709,7 +1759,7 @@ namespace PolyPlane
 
                 case 'k':
                     World.EnableTurbulence = !World.EnableTurbulence;
-                   
+
                     break;
 
                 case 'l':
@@ -1726,7 +1776,8 @@ namespace PolyPlane
                     break;
 
                 case 'o':
-                    World.ShowMissileCloseup = !World.ShowMissileCloseup;
+                    //World.ShowMissileCloseup = !World.ShowMissileCloseup;
+                    _useMultiThread = !_useMultiThread;
                     break;
 
                 case 'p':
@@ -1764,7 +1815,7 @@ namespace PolyPlane
                     break;
 
                 case 'y':
-                    _targetTypes = Helpers.CycleEnum(_targetTypes);
+                    //_targetTypes = Helpers.CycleEnum(_targetTypes);
                     break;
 
                 case '=' or '+':

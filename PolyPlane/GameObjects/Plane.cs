@@ -216,14 +216,13 @@ namespace PolyPlane.GameObjects
 
             this.Radar?.Update(dt, viewport, renderScale, skipFrames: true);
 
-            _flames.ForEach(f => f.Update(dt, viewport, renderScale, skipFrames: true));
-            _debris.ForEach(d => d.Update(dt, viewport, renderScale, skipFrames: true));
+            _flames.ForEach(f => f.Update(dt, viewport, renderScale));
+            _debris.ForEach(d => d.Update(dt, viewport, renderScale));
 
             if (_aiBehavior != null)
                 _aiBehavior.Update(dt, viewport, renderScale, skipFrames: true);
 
             _contrail.Update(dt, viewport, renderScale, skipFrames: true);
-
             _flamePos.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
             _gunPosition.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
             _cockpitPosition.Update(dt, viewport, renderScale * _renderOffset);
@@ -302,7 +301,13 @@ namespace PolyPlane.GameObjects
 
             this.Velocity += thrust / this.Mass * dt;
             this.Velocity += wingForce / this.Mass * dt;
-            this.Velocity += (World.Gravity * (IsDamaged ? 4f : 1f)) * dt;
+
+            var gravFact = 1f;
+
+            if (IsDamaged)
+                gravFact = 4f;
+
+            this.Velocity += (World.Gravity * gravFact * dt);
 
             var totForce = (thrust / this.Mass * dt) + (wingForce / this.Mass * dt);
 
@@ -505,7 +510,6 @@ namespace PolyPlane.GameObjects
         {
             var flame = new Flame(this, pos);
             flame.SkipFrames = World.PHYSICS_STEPS;
-
             _flames.Add(flame);
         }
 
@@ -543,6 +547,7 @@ namespace PolyPlane.GameObjects
 
                     if (nFlames < MAX_FLAMES)
                     {
+                        // Scale the impact position back to the origin of the polygon.
                         var mat = Matrix3x2.CreateRotation(-this.Rotation * (float)(Math.PI / 180f), this.Position);
                         mat *= Matrix3x2.CreateTranslation(new D2DPoint(-this.Position.X, -this.Position.Y));
                         var ogPos1 = D2DPoint.Transform(impactPos, mat);

@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Numerics;
+﻿using System.Numerics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -90,19 +89,24 @@ namespace PolyPlane.GameObjects
         {
             CurrentFrame++;
 
-            if (SkipFrame())
-                return;
+            if (skipFrames)
+            {
+                if (SkipFrame())
+                    return;
 
-            var multiDT = dt * this.SkipFrames;
+                var multiDT = dt * this.SkipFrames;
 
-            this.Update(multiDT, viewport, renderScale);
+                this.Update(multiDT, viewport, renderScale);
+            }
+            else
+                this.Update(dt, viewport, renderScale);
         }
 
 
         public virtual void Update(float dt, D2DSize viewport, float renderScale)
         {
             if (this.IsExpired)
-                return; 
+                return;
 
             Position += Velocity * dt;
 
@@ -110,7 +114,7 @@ namespace PolyPlane.GameObjects
 
             Wrap(viewport);
 
-         
+
         }
 
         private bool SkipFrame()
@@ -133,9 +137,9 @@ namespace PolyPlane.GameObjects
             //    this.Position = new D2DPoint(this.Position.X, 0);
         }
 
-        public virtual void Render(RenderContext ctx) 
-        { 
-            if (this.IsExpired) 
+        public virtual void Render(RenderContext ctx)
+        {
+            if (this.IsExpired)
                 return;
         }
 
@@ -244,50 +248,8 @@ namespace PolyPlane.GameObjects
             Polygon.Update(this.Position, this.Rotation, renderScale);
         }
 
-        //public virtual bool Contains(GameObjectPoly obj)
-        //{
-        //    if (!this.IsObjNear(obj))
-        //        return false;
-
-        //    var poly1 = obj.Polygon.Poly;
-
-        //    // First do velocity compensation collisions.
-        //    // Extend line segments from the current position to the next position and check for intersections.
-        //    for (int i = 0; i < poly1.Length; i++)
-        //    {
-        //        var pnt1 = poly1[i];
-        //        var pnt2 = pnt1 + (obj.Velocity * World.SUB_DT);
-        //        if (PolyIntersect(pnt1, pnt2, this.Polygon.Poly))
-        //            return true;
-        //    }
-
-        //    // Same as above but for the central point.
-        //    if (PolyIntersect(obj.Position, obj.Position + (obj.Velocity * World.SUB_DT), this.Polygon.Poly))
-        //        return true;
-
-        //    // Plain old point-in-poly collisions.
-        //    // Check for center point first.
-        //    if (Contains(obj.Position))
-        //        return true;
-
-        //    // Check all other poly points.
-        //    foreach (var pnt in obj.Polygon.Poly)
-        //    {
-        //        if (PointInPoly(pnt, this.Polygon.Poly))
-        //            return true;
-        //    }
-
-        //    // Reverse of above. Just in case...
-        //    foreach (var pnt in Polygon.Poly)
-        //    {
-        //        if (PointInPoly(pnt, obj.Polygon.Poly))
-        //            return true;
-        //    }
-
-        //    return false;
-        //}
-
-        public virtual bool Contains(GameObjectPoly obj,  out D2DPoint pos, float dt = -1f)
+      
+        public virtual bool Contains(GameObjectPoly obj, out D2DPoint pos, float dt = -1f)
         {
             if (!this.IsObjNear(obj) || obj.Owner == this)
             {
@@ -304,56 +266,59 @@ namespace PolyPlane.GameObjects
             // Extend line segments from the current position to the next position and check for intersections.
             for (int i = 0; i < poly1.Length; i++)
             {
-                var pnt1 = poly1[i] - ((obj.Velocity * dt) * 0.5f);
-                var pnt2 = poly1[i] + ((obj.Velocity * dt) * 0.5f);
-                if (PolyIntersect2(pnt1, pnt2, this.Polygon.Poly, out D2DPoint iPos1))
+                //var pnt1 = poly1[i] - ((obj.Velocity * dt) * 0.5f);
+                //var pnt2 = poly1[i] + ((obj.Velocity * dt) * 0.5f);
+
+                var pnt1 = poly1[i];
+                var pnt2 = poly1[i] + (obj.Velocity * dt);
+
+                if (PolyIntersect(pnt1, pnt2, this.Polygon.Poly, out D2DPoint iPos1))
                 {
                     pos = iPos1;
                     return true;
                 }
             }
 
-            // Same as above but for the central point.
-            if (PolyIntersect2(obj.Position - ((obj.Velocity * dt) * 0.5f), obj.Position + ((obj.Velocity * dt) * 0.5f), this.Polygon.Poly, out D2DPoint iPos2))
-            {
-                pos = iPos2;
-                return true;
-            }
+            //// Same as above but for the central point.
+            //if (PolyIntersect2(obj.Position - ((obj.Velocity * dt) * 0.5f), obj.Position + ((obj.Velocity * dt) * 0.5f), this.Polygon.Poly, out D2DPoint iPos2))
+            //{
+            //    pos = iPos2;
+            //    return true;
+            //}
 
-            // Plain old point-in-poly collisions.
-            // Check for center point first.
-            if (Contains(obj.Position))
-            {
-                pos = obj.Position;
-                return true;
+            //// Plain old point-in-poly collisions.
+            //// Check for center point first.
+            //if (Contains(obj.Position))
+            //{
+            //    pos = obj.Position;
+            //    return true;
 
-            }
+            //}
 
-            // Check all other poly points.
-            foreach (var pnt in obj.Polygon.Poly)
-            {
-                if (PointInPoly(pnt, this.Polygon.Poly))
-                {
-                    pos = pnt;
-                    return true;
-                }
-            }
+            //// Check all other poly points.
+            //foreach (var pnt in obj.Polygon.Poly)
+            //{
+            //    if (PointInPoly(pnt, this.Polygon.Poly))
+            //    {
+            //        pos = pnt;
+            //        return true;
+            //    }
+            //}
 
-            // Reverse of above. Just in case...
-            foreach (var pnt in Polygon.Poly)
-            {
-                if (PointInPoly(pnt, obj.Polygon.Poly))
-                {
-                    pos = pnt;
-                    return true;
-                }
-            }
+            //// Reverse of above. Just in case...
+            //foreach (var pnt in Polygon.Poly)
+            //{
+            //    if (PointInPoly(pnt, obj.Polygon.Poly))
+            //    {
+            //        pos = pnt;
+            //        return true;
+            //    }
+            //}
 
 
             pos = D2DPoint.Zero;
             return false;
         }
-
 
         public void DrawVeloLines(D2DGraphics gfx)
         {
@@ -369,57 +334,7 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private bool LineSegementsIntersect(D2DPoint p, D2DPoint p2, D2DPoint q, D2DPoint q2, out D2DPoint intersection, bool considerCollinearOverlapAsIntersect = false)
-        {
-            intersection = new D2DPoint();
-            const float eps = 1e-10f;
-            var r = p2 - p;
-            var s = q2 - q;
-            var rxs = r.Cross(s);
-            var qpxr = (q - p).Cross(r);
-
-            // If r x s = 0 and (q - p) x r = 0, then the two lines are collinear.
-            if (rxs < eps && qpxr < eps)
-            {
-                // 1. If either  0 <= (q - p) * r <= r * r or 0 <= (p - q) * s <= * s
-                // then the two lines are overlapping,
-                if (considerCollinearOverlapAsIntersect)
-                    if ((0f <= ((q - p) * r).Length() && ((q - p) * r).Length() <= (r * r).Length()) || (0f <= ((p - q) * s).Length() && ((p - q) * s).Length() <= (s * s).Length()))
-                        return true;
-
-                // 2. If neither 0 <= (q - p) * r = r * r nor 0 <= (p - q) * s <= s * s
-                // then the two lines are collinear but disjoint.
-                // No need to implement this expression, as it follows from the expression above.
-                return false;
-            }
-
-            // 3. If r x s = 0 and (q - p) x r != 0, then the two lines are parallel and non-intersecting.
-            if (rxs < eps && !(qpxr < eps))
-                return false;
-
-            // t = (q - p) x s / (r x s)
-            var t = (q - p).Cross(s) / rxs;
-
-            // u = (q - p) x r / (r x s)
-
-            var u = (q - p).Cross(r) / rxs;
-
-            // 4. If r x s != 0 and 0 <= t <= 1 and 0 <= u <= 1
-            // the two line segments meet at the point p + t r = q + u s.
-            if (!(rxs < eps) && (0 <= t && t <= 1) && (0 <= u && u <= 1))
-            {
-                // We can calculate the intersection point using either t or u.
-                intersection = p + t * r;
-
-                // An intersection was found.
-                return true;
-            }
-
-            // 5. Otherwise, the two line segments are not parallel but do not intersect.
-            return false;
-        }
-      
-        private bool PolyIntersect2(D2DPoint a, D2DPoint b, D2DPoint[] poly, out D2DPoint pos)
+        private bool PolyIntersect(D2DPoint a, D2DPoint b, D2DPoint[] poly, out D2DPoint pos)
         {
             // Check the segment against every segment in the polygon.
             for (int i = 0; i < poly.Length - 1; i++)
@@ -427,17 +342,16 @@ namespace PolyPlane.GameObjects
                 var pnt1 = poly[i];
                 var pnt2 = poly[i + 1];
 
-                if (LineSegementsIntersect(a, b, pnt1, pnt2, out D2DPoint iPos))
+                if (CollisionHelpers.IsIntersecting(a, b, pnt1, pnt2, out D2DPoint iPos))
                 {
                     pos = iPos;
                     return true;
-
                 }
             }
+
             pos = D2DPoint.Zero;
             return false;
         }
-
 
         public virtual bool Contains(D2DPoint pnt)
         {

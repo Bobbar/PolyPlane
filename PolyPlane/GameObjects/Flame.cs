@@ -6,8 +6,8 @@ namespace PolyPlane.GameObjects
     {
         public float Radius { get; set; }
 
-        private const int MAX_PARTS = 100;
-        private const float MAX_AGE = 10f;//20f;
+        private const int MAX_PARTS = 50;
+        private const float MAX_AGE = 20f;
         private List<FlamePart> _parts = new List<FlamePart>();
         private D2DColor _flameColor = new D2DColor(0.6f, D2DColor.Yellow);
         private D2DColor _blackSmoke = new D2DColor(0.6f, D2DColor.Black);
@@ -18,6 +18,8 @@ namespace PolyPlane.GameObjects
 
         public Flame(GameObject obj, D2DPoint offset, float radius = 10f) : base(obj.Position, obj.Velocity)
         {
+            _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
+
             this.Owner = obj;
             Radius = radius;
             _refPos = new FixturePoint(obj, offset);
@@ -28,6 +30,8 @@ namespace PolyPlane.GameObjects
 
         public Flame(GameObject obj, D2DPoint offset) : base(obj.Position, obj.Velocity)
         {
+            _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
+
             this.Owner = obj;
             Radius = Helpers.Rnd.NextFloat(4f,15f);
             _refPos = new FixturePoint(obj, offset);
@@ -61,7 +65,6 @@ namespace PolyPlane.GameObjects
             //ctx.Gfx.FillEllipseSimple(this.Position, 3f, D2DColor.Red);
 
             _parts.ForEach(p => p.Render(ctx));
-
         }
 
         public void FlipY()
@@ -92,6 +95,7 @@ namespace PolyPlane.GameObjects
             var newColor = new D2DColor(_flameColor.a, 1f, Helpers.Rnd.NextFloat(0f, 0.86f), _flameColor.b);
             var newEllipse = new D2DEllipse(newPos, new D2DSize(newRad, newRad));
             var newPart = new FlamePart(newEllipse, newColor, endColor, newVelo);
+            newPart.SkipFrames = World.PHYSICS_STEPS;
 
             if (_parts.Count < MAX_PARTS)
                 _parts.Add(newPart);
@@ -108,7 +112,7 @@ namespace PolyPlane.GameObjects
             while (i < _parts.Count)
             {
                 var part = _parts[i];
-                part.Update(dt, viewport, renderScale);
+                part.Update(dt, viewport, renderScale, skipFrames: true);
 
                 var ageFactFade = 1f - Helpers.Factor(part.Age, MAX_AGE);
                 var ageFactSmoke = Helpers.Factor(part.Age, MAX_AGE * 0.5f);
