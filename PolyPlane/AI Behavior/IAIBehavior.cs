@@ -3,11 +3,10 @@
 
 namespace PolyPlane.AI_Behavior
 {
-    public interface IAIBehavior
+    public interface IAIBehavior : ISkipFramesUpdate
     {
         Plane Plane { get; }
         Plane TargetPlane { get; }
-        void Update(float dt);
         float GetAIGuidance();
 
 

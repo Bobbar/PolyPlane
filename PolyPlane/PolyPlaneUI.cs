@@ -37,12 +37,13 @@ namespace PolyPlane
         private List<GameObject> _missiles = new List<GameObject>();
         private List<SmokeTrail> _missileTrails = new List<SmokeTrail>();
         private List<GameObject> _targets = new List<GameObject>();
+        private List<GameObject> _decoys = new List<GameObject>();
         private List<GameObjectPoly> _bullets = new List<GameObjectPoly>();
         private List<GameObject> _explosions = new List<GameObject>();
-        private List<GameObject> _flames = new List<GameObject>();
         private List<Plane> _aiPlanes = new List<Plane>();
 
         private ConcurrentQueue<GameObject> _newTargets = new ConcurrentQueue<GameObject>();
+        private ConcurrentQueue<GameObject> _newDecoys = new ConcurrentQueue<GameObject>();
         private ConcurrentQueue<GameObject> _newMissiles = new ConcurrentQueue<GameObject>();
         private ConcurrentQueue<Plane> _newAIPlanes = new ConcurrentQueue<Plane>();
 
@@ -115,7 +116,9 @@ namespace PolyPlane
             _playerPlane.ThrustOn = true;
             _playerPlane.Velocity = new D2DPoint(500f, 0f);
 
-            _playerPlane.Radar = new Radar(_playerPlane, _targets, _missiles);
+            _playerPlane.Radar = new Radar(_playerPlane, _hudColor, _targets, _missiles);
+            _playerPlane.Radar.SkipFrames = World.PHYSICS_STEPS;
+
             _playerPlane.FireMissileCallback = (m) => _newMissiles.Enqueue(m);
 
             _newTargets.Enqueue(_playerPlane);
@@ -134,14 +137,9 @@ namespace PolyPlane
             _playerPlane.Reset();
             _playerPlane.FixPlane();
 
-            _flames.ForEach(f =>
-            {
-                if (f.Owner.ID == _playerPlane.ID)
-                    f.IsExpired = true;
+            _playerPlane.Radar = new Radar(_playerPlane, _hudColor, _targets, _missiles);
+            _playerPlane.Radar.SkipFrames = World.PHYSICS_STEPS;
 
-            });
-
-            _playerPlane.Radar = new Radar(_playerPlane, _targets, _missiles);
             _playerPlane.FireMissileCallback = (m) => _newMissiles.Enqueue(m);
         }
 
@@ -156,7 +154,9 @@ namespace PolyPlane
             var pos = new D2DPoint(_rnd.NextFloat(-(World.ViewPortSize.width * 4f), World.ViewPortSize.width * 4f), _rnd.NextFloat(-4000f, -17000f));
 
             var aiPlane = new Plane(pos, _playerPlane);
-            aiPlane.Radar = new Radar(aiPlane, _targets, _missiles);
+            aiPlane.Radar = new Radar(aiPlane, _hudColor, _targets, _missiles);
+            aiPlane.Radar.SkipFrames = World.PHYSICS_STEPS;
+
             aiPlane.FireMissileCallback = (m) => _newMissiles.Enqueue(m);
 
 
@@ -282,8 +282,9 @@ namespace PolyPlane
                 _hudMessageTimeout.Update(World.DT);
                 _groundScatterTimer.Update(World.DT);
                 _explosions.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
-                _flames.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
-                _missileTrails.ForEach(t => t.Update(World.DT));
+                _decoys.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
+
+                _missileTrails.ForEach(t => t.Update(World.DT, World.ViewPortSize, World.RenderScale));
 
                 DoAIPlaneBurst(World.DT);
                 _decoyTimer.Update(World.DT);
@@ -354,13 +355,6 @@ namespace PolyPlane
                     gfx.FillEllipseSimple(m.Position, 5f, D2DColor.Red);
 
             });
-
-            _flames.ForEach(f =>
-            {
-                if (f.IsObjNear(plane))
-                    gfx.FillEllipseSimple(f.Position, 5f, D2DColor.Red);
-
-            });
         }
 
         private Plane IDToPlane(long id)
@@ -398,6 +392,12 @@ namespace PolyPlane
             {
                 if (_newAIPlanes.TryDequeue(out Plane plane))
                     _aiPlanes.Add(plane);
+            }
+
+            while (_newDecoys.Count > 0)
+            {
+                if (_newDecoys.TryDequeue(out GameObject decoy))
+                    _decoys.Add(decoy);
             }
 
             if (_queueNextViewId)
@@ -497,11 +497,11 @@ namespace PolyPlane
 
             _missiles.ForEach(o => o.Render(ctx));
             _missileTrails.ForEach(o => o.Render(ctx));
+            _decoys.ForEach(o => o.Render(ctx));
 
             plane.Render(ctx);
 
             _bullets.ForEach(o => o.Render(ctx));
-            _flames.ForEach(o => o.Render(ctx));
             _explosions.ForEach(o => o.Render(ctx));
 
             //DrawNearObj(_ctx.Gfx, plane);
@@ -530,7 +530,8 @@ namespace PolyPlane
                 DrawMissilePointers(ctx.Gfx, viewportsize, viewPlane);
             }
 
-            DrawRadar(ctx.Gfx, viewportsize, viewPlane);
+            DrawRadar(ctx, viewportsize, viewPlane);
+
         }
 
         private void DrawGuideIcon(D2DGraphics gfx, D2DSize viewportsize)
@@ -745,11 +746,11 @@ namespace PolyPlane
             }
         }
 
-        private void DrawRadar(D2DGraphics gfx, D2DSize viewportsize, Plane plane)
+        private void DrawRadar(RenderContext ctx, D2DSize viewportsize, Plane plane)
         {
             var pos = new D2DPoint(viewportsize.width * 0.8f, viewportsize.height * 0.8f);
             plane.Radar.Position = pos;
-            plane.Radar.Render(gfx, _hudColor);
+            plane.Radar.Render(ctx);
         }
 
         private void DrawMissilePointers(D2DGraphics gfx, D2DSize viewportsize, Plane plane)
@@ -1109,21 +1110,12 @@ namespace PolyPlane
                     _explosions.RemoveAt(e);
             }
 
-            for (int f = 0; f < _flames.Count; f++)
+            for (int d = 0; d < _decoys.Count; d++)
             {
-                var flame = _flames[f];
+                var decoy = _decoys[d];
 
-                if (flame.IsExpired)
-                    _flames.RemoveAt(f);
-            }
-        }
-
-        private void KillAllAIPlanes()
-        {
-            foreach (var plane in _aiPlanes)
-            {
-                plane.SetOnFire();
-                plane.IsDamaged = true;
+                if (decoy.IsExpired || decoy.Owner.IsExpired)
+                    _decoys.RemoveAt(d);
             }
         }
 
@@ -1133,8 +1125,7 @@ namespace PolyPlane
                 return;
 
             var decoy = new Decoy(plane);
-
-            _newTargets.Enqueue(decoy);
+            _newDecoys.Enqueue(decoy);
         }
 
         private bool MissileIsImpactThreat(Plane plane, Missile missile, float minImpactTime)
@@ -1150,7 +1141,8 @@ namespace PolyPlane
         {
             // Test for decoy success.
             const float MIN_DECOY_FOV = 10f;
-            var decoys = _targets.Where(t => t is Decoy).ToList();
+            var decoys = _decoys;
+
             bool groundScatter = false;
 
             for (int i = 0; i < _missiles.Count; i++)
@@ -1256,7 +1248,7 @@ namespace PolyPlane
             _aiPlanes.Clear();
             _playerScore = 0;
             _playerDeaths = 0;
-            _flames.Clear();
+            _decoys.Clear();
 
             _newTargets.Enqueue(_playerPlane);
         }
@@ -1425,8 +1417,6 @@ namespace PolyPlane
 
                 });
 
-                _flames.ForEach(f => f.Render(ctx));
-
                 var dist = D2DPoint.Distance(missile.Position, missile.Target.Position);
 
                 //gfx.DrawText(missile.Velocity.Length().ToString(), D2DColor.White, _defaultFontName, 20f, new D2DRect(pos - new D2DPoint(0,0),new D2DSize(500,500)));
@@ -1570,7 +1560,7 @@ namespace PolyPlane
             //infoText += $"Overlay (Tracking/Aero/Missile): {(World.ShowTracking ? "On" : "Off")}/{(World.ShowAero ? "On" : "Off")}/{(World.ShowMissileCloseup ? "On" : "Off")} \n";
             //infoText += $"Turbulence/Wind: {(World.EnableTurbulence ? "On" : "Off")}/{(World.EnableWind ? "On" : "Off")}\n";
 
-            var numObj = _missiles.Count + _targets.Count + _bullets.Count + _explosions.Count + _aiPlanes.Count + _flames.Count;
+            var numObj = _missiles.Count + _targets.Count + _bullets.Count + _explosions.Count + _aiPlanes.Count;
             infoText += $"Num Objects: {numObj}\n";
             infoText += $"On Screen: {GraphicsExtensions.OnScreen}\n";
             infoText += $"Off Screen: {GraphicsExtensions.OffScreen}\n";
@@ -1702,7 +1692,7 @@ namespace PolyPlane
                     break;
 
                 case 'd':
-                    DropDecoy(_playerPlane);
+                    
                     break;
 
                 case 'e':
@@ -1719,7 +1709,7 @@ namespace PolyPlane
 
                 case 'k':
                     World.EnableTurbulence = !World.EnableTurbulence;
-                    KillAllAIPlanes();
+                   
                     break;
 
                 case 'l':
@@ -1834,7 +1824,6 @@ namespace PolyPlane
                     break;
 
                 case MouseButtons.Right:
-                    DropDecoy(_playerPlane);
                     _playerPlane.DroppingDecoy = true;
                     break;
 

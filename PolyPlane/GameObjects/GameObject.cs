@@ -1,9 +1,10 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics;
+using System.Numerics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public abstract class GameObject : IEquatable<GameObject>
+    public abstract class GameObject : IEquatable<GameObject>, ISkipFramesUpdate
     {
         public long ID => _id;
         private long _id = 0;
@@ -15,7 +16,12 @@ namespace PolyPlane.GameObjects
 
         public D2DPoint Velocity { get; set; }
 
-        protected long currentFrame = 0;
+        public long CurrentFrame { get; set; } = 0;
+
+        /// <summary>
+        /// How many frames must pass between updates.
+        /// </summary>
+        public long SkipFrames { get; set; } = 1;
 
         public float Rotation
         {
@@ -80,15 +86,36 @@ namespace PolyPlane.GameObjects
             RotationSpeed = rotationSpeed;
         }
 
+        public void Update(float dt, D2DSize viewport, float renderScale, bool skipFrames = false)
+        {
+            CurrentFrame++;
+
+            if (SkipFrame())
+                return;
+
+            var multiDT = dt * this.SkipFrames;
+
+            this.Update(multiDT, viewport, renderScale);
+        }
+
+
         public virtual void Update(float dt, D2DSize viewport, float renderScale)
         {
+            if (this.IsExpired)
+                return; 
+
             Position += Velocity * dt;
 
             Rotation += RotationSpeed * dt;
 
             Wrap(viewport);
 
-            currentFrame++;
+         
+        }
+
+        private bool SkipFrame()
+        {
+            return this.CurrentFrame % this.SkipFrames != 0;
         }
 
         public virtual void Wrap(D2DSize viewport)
@@ -106,7 +133,11 @@ namespace PolyPlane.GameObjects
             //    this.Position = new D2DPoint(this.Position.X, 0);
         }
 
-        public virtual void Render(RenderContext ctx) { }
+        public virtual void Render(RenderContext ctx) 
+        { 
+            if (this.IsExpired) 
+                return;
+        }
 
         public float FOVToObject(GameObject obj)
         {

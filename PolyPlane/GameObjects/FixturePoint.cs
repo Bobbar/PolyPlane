@@ -14,6 +14,14 @@ namespace PolyPlane.GameObjects
             this.Position = ApplyTranslation(ReferencePosition, gameObject.Rotation, gameObject.Position, World.RenderScale);
         }
 
+        public FixturePoint(GameObject gameObject, D2DPoint referencePosition, long skipFrames)
+        {
+            this.SkipFrames = skipFrames;
+            this.GameObject = gameObject;
+            this.ReferencePosition = referencePosition;
+            this.Position = ApplyTranslation(ReferencePosition, gameObject.Rotation, gameObject.Position, World.RenderScale);
+        }
+
         public void FlipY()
         {
             ReferencePosition = new D2DPoint(ReferencePosition.X, ReferencePosition.Y * -1);

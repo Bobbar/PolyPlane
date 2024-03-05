@@ -1,8 +1,9 @@
 ﻿using PolyPlane.GameObjects;
+using unvell.D2DLib;
 
 namespace PolyPlane.AI_Behavior
 {
-    public class FighterPlaneAI : IAIBehavior
+    public class FighterPlaneAI : GameObject, IAIBehavior
     {
         public Plane Plane => _plane;
         public Plane TargetPlane => _targetPlane;
@@ -13,6 +14,8 @@ namespace PolyPlane.AI_Behavior
         private float _AIDirOffset = 0f;
         private float _sinePos = 0f;
         private bool _avoidingGround = false;
+        private bool _gainingVelo = false;
+
         private GameTimer _fireBurstTimer = new GameTimer(2f);
         private GameTimer _fireBurstCooldownTimer = new GameTimer(6f);
         private GameTimer _fireMissileCooldown = new GameTimer(6f);
@@ -40,7 +43,7 @@ namespace PolyPlane.AI_Behavior
             _fireMissileCooldown.Start();
         }
 
-        public void Update(float dt)
+        public override void Update(float dt, D2DSize viewport, float renderScale)
         {
             if (this.Plane.IsDamaged || this.Plane.HasCrashed)
                 return;
@@ -152,6 +155,9 @@ namespace PolyPlane.AI_Behavior
         public float GetAIGuidance()
         {
             var angle = Helpers.ClampAngle(Helpers.RadsToDegrees((float)Math.Sin(_sinePos)));
+            var toRight = Helpers.IsPointingRight(this.Plane.Rotation);
+            var groundPos = new D2DPoint(this.Plane.Position.X, 0f);
+            var impactTime = Helpers.ImpactTime(this.Plane, groundPos);
 
             if (TargetPlane != null)
             {
@@ -174,8 +180,7 @@ namespace PolyPlane.AI_Behavior
             }
 
             // Pitch up if we get too low.
-            var groundPos = new D2DPoint(this.Plane.Position.X, 0f);
-            var impactTime = Helpers.ImpactTime(this.Plane, groundPos);
+          
 
             if (this.Plane.Altitude < 4000f || impactTime < 20f)
             {
@@ -190,7 +195,6 @@ namespace PolyPlane.AI_Behavior
             // Try to pitch up in the same direction we're pointing.
             if (_avoidingGround)
             {
-                var toRight = Helpers.IsPointingRight(this.Plane.Rotation);
 
                 if (toRight)
                     angle = 300f;
@@ -198,11 +202,25 @@ namespace PolyPlane.AI_Behavior
                     angle = 240f;
             }
 
+            var velo = this.Plane.Velocity.Length();
+            if (velo < 100f)
+                _gainingVelo = true;
+            else if (velo > 200f)
+                _gainingVelo = false;
+
+            if (_gainingVelo)
+            {
+                if (toRight)
+                    angle = 0f;
+                else
+                    angle = 180f;
+            }
+
             var finalAngle = angle;
             finalAngle = Helpers.ClampAngle(finalAngle);
             return finalAngle;
         }
-      
+
         private float LeadTarget(GameObject target)
         {
             const float pValue = 5f;

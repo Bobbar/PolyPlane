@@ -24,7 +24,7 @@ namespace PolyPlane.GameObjects
         {
             base.Update(dt, viewport, renderScale);
 
-            this.Velocity *= 0.99f;
+            this.Velocity *= 0.95f;
 
             _currentFlash += _direction * (_flashRate * dt);
 

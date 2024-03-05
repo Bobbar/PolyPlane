@@ -11,7 +11,7 @@ namespace PolyPlane.GameObjects
         public const int MAX_MISSILES = 6;
 
 
-        public const int MAX_HITS = 8;
+        public const int MAX_HITS = 16;
         public int Hits = MAX_HITS;
 
         public Radar Radar { get; set; }
@@ -22,6 +22,7 @@ namespace PolyPlane.GameObjects
         public bool IsAI => _isAIPlane;
         public bool IsDefending = false;
 
+        public D2DColor PlaneColor => _planeColor;
         public float Mass
         {
             get { return _mass; }
@@ -79,7 +80,7 @@ namespace PolyPlane.GameObjects
         private GameTimer _isLockOntoTimeout = new GameTimer(3f);
         private GameTimer _damageCooldownTimeout = new GameTimer(4f);
         private GameTimer _damageFlashTimer = new GameTimer(0.2f, true);
-
+        
         private float _damageDeflection = 0f;
 
         private RenderPoly FlamePoly;
@@ -92,6 +93,7 @@ namespace PolyPlane.GameObjects
         private int _throttlePos = 0;
 
         private List<Flame> _flames = new List<Flame>();
+        private List<Debris> _debris = new List<Debris>();
 
         public Action<Bullet> FireBulletCallback { get; set; }
         public Action<GuidedMissile> FireMissileCallback { get; set; }
@@ -143,6 +145,7 @@ namespace PolyPlane.GameObjects
             if (playerPlane != null)
             {
                 _aiBehavior = new FighterPlaneAI(this, null);
+                _aiBehavior.SkipFrames = World.PHYSICS_STEPS;
 
                 _isAIPlane = true;
 
@@ -193,8 +196,8 @@ namespace PolyPlane.GameObjects
             AddWing(new Wing(this, 5f * _renderOffset, 0.2f, 50f, 5000f, new D2DPoint(-35f, 1f), defRate), true);
 
             this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), 1.7f);
-            _flamePos = new FixturePoint(this, new D2DPoint(-37f, 0));
-            _gunPosition = new FixturePoint(this, new D2DPoint(33f, 0));
+            _flamePos = new FixturePoint(this, new D2DPoint(-37f, 0), World.PHYSICS_STEPS);
+            _gunPosition = new FixturePoint(this, new D2DPoint(33f, 0), World.PHYSICS_STEPS);
             _cockpitPosition = new FixturePoint(this, new D2DPoint(20f, -5f));
 
             _contrail = new SmokeTrail(this, o =>
@@ -202,6 +205,7 @@ namespace PolyPlane.GameObjects
                 var p = o as Plane;
                 return p.ExhaustPosition;
             });
+            _contrail.SkipFrames = World.PHYSICS_STEPS;
 
             _expireTimeout.TriggerCallback = () => this.IsExpired = true;
         }
@@ -210,12 +214,19 @@ namespace PolyPlane.GameObjects
         {
             base.Update(dt, viewport, renderScale * _renderOffset);
 
-            this.Radar?.Update(dt);
+            this.Radar?.Update(dt, viewport, renderScale, skipFrames: true);
 
-            _flames.ForEach(f => f.Update(dt, viewport, renderScale));
+            _flames.ForEach(f => f.Update(dt, viewport, renderScale, skipFrames: true));
+            _debris.ForEach(d => d.Update(dt, viewport, renderScale, skipFrames: true));
 
             if (_aiBehavior != null)
-                _aiBehavior.Update(dt);
+                _aiBehavior.Update(dt, viewport, renderScale, skipFrames: true);
+
+            _contrail.Update(dt, viewport, renderScale, skipFrames: true);
+
+            _flamePos.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
+            _gunPosition.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
+            _cockpitPosition.Update(dt, viewport, renderScale * _renderOffset);
 
             var wingForce = D2DPoint.Zero;
             var wingTorque = 0f;
@@ -305,12 +316,6 @@ namespace PolyPlane.GameObjects
             _apAngleLimiter.Update(dt);
             CheckForFlip();
 
-            _contrail.Update(dt);
-
-            _flamePos.Update(dt, viewport, renderScale * _renderOffset);
-            _gunPosition.Update(dt, viewport, renderScale * _renderOffset);
-            _cockpitPosition.Update(dt, viewport, renderScale * _renderOffset);
-
             var thrustMag = thrust.Length();
             var flameAngle = thrust.Angle();
             var len = this.Velocity.Length() * 0.05f;
@@ -333,6 +338,9 @@ namespace PolyPlane.GameObjects
                 this.DroppingDecoy = false;
 
             _expireTimeout.Update(dt);
+
+            //if (this.HasCrashed)
+            //    _debris.Clear();
         }
 
         public override void Render(RenderContext ctx)
@@ -346,15 +354,24 @@ namespace PolyPlane.GameObjects
 
             var color = _planeColor;
 
-            if (_damageFlash)
+            if (_damageFlash && !this.IsDamaged)
                 color = new D2DColor(0.2f, _planeColor);
 
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, color);
 
+
             Wings.ForEach(w => w.Render(ctx));
 
             _contrail.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000 && ThrustAmount > 0f);
+
+            ctx.FillEllipse(new D2DEllipse(_cockpitPosition.Position, new D2DSize(7f, 7f)), D2DColor.LightBlue);
+
             _flames.ForEach(f => f.Render(ctx));
+            _debris.ForEach(d => d.Render(ctx));
+
+
+            //_cockpitPosition.Render(ctx);
+            //_centerOfThrust.Render(ctx);
         }
 
         private void DrawFOVCone(D2DGraphics gfx)
@@ -486,8 +503,10 @@ namespace PolyPlane.GameObjects
 
         public void SetOnFire(D2DPoint pos)
         {
-           
-            _flames.Add(new Flame(this, pos));
+            var flame = new Flame(this, pos);
+            flame.SkipFrames = World.PHYSICS_STEPS;
+
+            _flames.Add(flame);
         }
 
         public void DoImpact(GameObject impactor)
@@ -502,17 +521,25 @@ namespace PolyPlane.GameObjects
                 if (this.Hits > 0)
                 {
                     var cockpitDist = _cockpitPosition.Position.DistanceTo(impactPos);
-                    if (cockpitDist < 10f)
+                    if (cockpitDist <= 7f)
                     {
                         Debug.WriteLine("HEADSHOT!");
+                        SpawnDebris(8, impactPos, D2DColor.Red);
+
                         IsDamaged = true;
                     }
 
 
                     if (impactor is Missile)
-                        this.Hits -= 2;
+                    {
+                        this.Hits -= 4;
+                        SpawnDebris(4, impactPos, this.PlaneColor);
+                    }
                     else
-                        this.Hits -= 1;
+                    {
+                        this.Hits -= 2;
+                        SpawnDebris(2, impactPos, this.PlaneColor);
+                    }
 
                     if (nFlames < MAX_FLAMES)
                     {
@@ -559,6 +586,17 @@ namespace PolyPlane.GameObjects
             this.Velocity += forceVec / this.Mass * World.DT;
         }
 
+
+        private void SpawnDebris(int num, D2DPoint pos, D2DColor color)
+        {
+            for (int i = 0; i < num; i++)
+            {
+                var debris = new Debris(pos, this.Velocity, color);
+                debris.SkipFrames = World.PHYSICS_STEPS;
+
+                _debris.Add(debris);
+            }
+        }
 
         public void DoHitGround()
         {
@@ -635,7 +673,8 @@ namespace PolyPlane.GameObjects
             this.Polygon.FlipY();
             Wings.ForEach(w => w.FlipY());
             _flames.ForEach(f => f.FlipY());
-
+            _cockpitPosition.FlipY();
+           
 
             if (_currentDir == Direction.Right)
                 _currentDir = Direction.Left;

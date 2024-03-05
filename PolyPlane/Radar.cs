@@ -3,7 +3,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane
 {
-    public class Radar
+    public class Radar : GameObject
     {
         public D2DPoint Position { get; set; } = D2DPoint.Zero;
         public Plane HostPlane;
@@ -33,15 +33,17 @@ namespace PolyPlane
         private readonly float SWEEP_RATE = 300f;
         private float _radius = 150f;//100f;
         private bool _hostIsAI = false;
+        private D2DColor _color = D2DColor.Green;
         private List<List<GameObject>> _sources = new List<List<GameObject>>();
         private List<PingObj> _pings = new List<PingObj>();
         private GameTimer _lockTimer = new GameTimer(2f);
         private GameTimer _lostLockTimer = new GameTimer(10f);
         private GameTimer _AIUpdateRate = new GameTimer(1f);
 
-        public Radar(Plane hostPlane, params List<GameObject>[] sources)
+        public Radar(Plane hostPlane, D2DColor renderColor, params List<GameObject>[] sources)
         {
             HostPlane = hostPlane;
+            _color = renderColor;
 
             if (HostPlane.IsAI)
             {
@@ -63,8 +65,10 @@ namespace PolyPlane
             _lostLockTimer.TriggerCallback = () => ClearLock();
         }
 
-        public void Update(float dt)
+        public override void Update(float dt, D2DSize viewport, float renderScale)
         {
+            base.Update(dt, viewport, renderScale);
+
             _lockTimer.Update(dt);
             _lostLockTimer.Update(dt);
             _AIUpdateRate.Update(dt);
@@ -146,17 +150,19 @@ namespace PolyPlane
         }
 
 
-        public void Render(D2DGraphics gfx, D2DColor color)
+        public override void Render(RenderContext ctx)
         {
+            var gfx = ctx.Gfx;
+
             // Background
-            var bgColor = new D2DColor(color.a * 0.05f, color);
+            var bgColor = new D2DColor(_color.a * 0.05f, _color);
             gfx.FillEllipse(new D2DEllipse(this.Position, new D2DSize(_radius, _radius)), bgColor);
 
             // Draw icons.
             foreach (var p in _pings)
             {
                 var ageFact = 1f - Helpers.Factor(p.Age, _maxAge);
-                var pColor = new D2DColor(ageFact, color);
+                var pColor = new D2DColor(ageFact, _color);
 
                 if (p.Obj is Plane plane)
                 {
@@ -178,38 +184,38 @@ namespace PolyPlane
 
             // Sweep line, direction line and FOV cone.
             var sweepLine = Helpers.AngleToVectorDegrees(_sweepAngle, _radius);
-            gfx.DrawLine(this.Position, this.Position + sweepLine, color, 1f, D2DDashStyle.Dot);
+            gfx.DrawLine(this.Position, this.Position + sweepLine, _color, 1f, D2DDashStyle.Dot);
 
-            DrawFOVCone(gfx, color);
+            DrawFOVCone(gfx, _color);
 
             // Draw crosshairs on aimed at obj.
             if (_aimedAtPingObj != null)
             {
-                gfx.DrawCrosshair(_aimedAtPingObj.RadarPos, 2f, color, 0, 10f);
+                gfx.DrawCrosshair(_aimedAtPingObj.RadarPos, 2f, _color, 0, 10f);
 
                 var dist = this.HostPlane.Position.DistanceTo(_aimedAtPingObj.Obj.Position);
                 var distPos = this.Position + new D2DPoint(-210f, 100f);
                 var dRect = new D2DRect(distPos, new D2DSize(100, 40));
                 gfx.FillRectangle(dRect, new D2DColor(0.5f, D2DColor.Black));
                 var info = $"D:{Math.Round(dist, 0)}\nA:{Math.Round(_aimedAtPingObj.Obj.Altitude, 0)}";
-                gfx.DrawTextCenter(info, color, "Consolas", 15f, dRect);
+                gfx.DrawTextCenter(info, _color, "Consolas", 15f, dRect);
             }
 
             // Draw lock circle around locked on obj.
             if (_lockedPingObj != null && HasLock)
-                gfx.DrawEllipse(new D2DEllipse(_lockedPingObj.RadarPos, new D2DSize(10f, 10f)), color);
+                gfx.DrawEllipse(new D2DEllipse(_lockedPingObj.RadarPos, new D2DSize(10f, 10f)), _color);
 
             // Draw range rings.
             const int N_RANGES = 4;
             var step = _radius / (float)N_RANGES;
             for (int i = 0; i < N_RANGES; i++)
             {
-                gfx.DrawEllipse(new D2DEllipse(this.Position, new D2DSize(step * i, step * i)), color, 1f, D2DDashStyle.Dot);
+                gfx.DrawEllipse(new D2DEllipse(this.Position, new D2DSize(step * i, step * i)), _color, 1f, D2DDashStyle.Dot);
 
             }
 
             // Border
-            gfx.DrawEllipse(new D2DEllipse(this.Position, new D2DSize(_radius, _radius)), color);
+            gfx.DrawEllipse(new D2DEllipse(this.Position, new D2DSize(_radius, _radius)), _color);
         }
 
         private void NotifyLocks()
