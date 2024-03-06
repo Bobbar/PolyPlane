@@ -11,6 +11,7 @@ namespace PolyPlane.GameObjects
         {
             this.GameObject = gameObject;
             this.ReferencePosition = referencePosition;
+            this.Rotation = GameObject.Rotation;
             this.Position = ApplyTranslation(ReferencePosition, gameObject.Rotation, gameObject.Position, World.RenderScale);
         }
 
@@ -19,6 +20,7 @@ namespace PolyPlane.GameObjects
             this.SkipFrames = skipFrames;
             this.GameObject = gameObject;
             this.ReferencePosition = referencePosition;
+            this.Rotation = GameObject.Rotation;
             this.Position = ApplyTranslation(ReferencePosition, gameObject.Rotation, gameObject.Position, World.RenderScale);
         }
 
@@ -29,6 +31,7 @@ namespace PolyPlane.GameObjects
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
+            this.Rotation = GameObject.Rotation;
             this.Position = ApplyTranslation(ReferencePosition, GameObject.Rotation, GameObject.Position, renderScale);
         }
 

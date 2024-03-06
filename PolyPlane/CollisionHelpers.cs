@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using PolyPlane.GameObjects;
+using unvell.D2DLib;
 
 namespace PolyPlane
 {
@@ -122,6 +123,16 @@ namespace PolyPlane
             }
 
             return isBetween;
+        }
+
+        public static bool EllipseContains(D2DEllipse ellipse, float ellipseRotation, D2DPoint pos)
+        {
+            var mat = Matrix3x2.CreateRotation(-ellipseRotation * (float)(Math.PI / 180f), ellipse.origin);
+            var transPos = D2DPoint.Transform(pos, mat);
+
+            var p = (Math.Pow(transPos.X - ellipse.origin.X, 2f) / Math.Pow(ellipse.radiusX, 2f)) + (Math.Pow(transPos.Y - ellipse.origin.Y, 2f) / Math.Pow(ellipse.radiusY, 2f));
+
+            return p <= 1f;
         }
 
     }

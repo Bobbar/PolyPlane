@@ -90,6 +90,7 @@ namespace PolyPlane.GameObjects
         private FixturePoint _flamePos;
         private FixturePoint _gunPosition;
         private FixturePoint _cockpitPosition;
+        private D2DSize _cockpitSize = new D2DSize(9f, 6f);
         private D2DColor _planeColor;
         private SmokeTrail _contrail;
         private int _throttlePos = 0;
@@ -200,7 +201,7 @@ namespace PolyPlane.GameObjects
             this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), 1.7f);
             _flamePos = new FixturePoint(this, new D2DPoint(-37f, 0), World.PHYSICS_STEPS);
             _gunPosition = new FixturePoint(this, new D2DPoint(33f, 0), World.PHYSICS_STEPS);
-            _cockpitPosition = new FixturePoint(this, new D2DPoint(20f, -5f));
+            _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
 
             _contrail = new SmokeTrail(this, o =>
             {
@@ -366,21 +367,25 @@ namespace PolyPlane.GameObjects
 
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, color);
 
-
             Wings.ForEach(w => w.Render(ctx));
 
+            DrawCockpit(ctx.Gfx);
+
             _contrail.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000 && ThrustAmount > 0f);
-
-
-            ctx.FillEllipse(new D2DEllipse(_cockpitPosition.Position, new D2DSize(_cockpitRadius, _cockpitRadius)), WasHeadshot ? D2DColor.DarkRed : D2DColor.LightBlue);
-            ctx.DrawEllipse(new D2DEllipse(_cockpitPosition.Position, new D2DSize(_cockpitRadius, _cockpitRadius)), D2DColor.Black);
-
             _flames.ForEach(f => f.Render(ctx));
             _debris.ForEach(d => d.Render(ctx));
 
-
             //_cockpitPosition.Render(ctx);
             //_centerOfThrust.Render(ctx);
+        }
+
+        private void DrawCockpit(D2DGraphics gfx)
+        {
+            gfx.PushTransform();
+            gfx.RotateTransform(_cockpitPosition.Rotation, _cockpitPosition.Position);
+            gfx.FillEllipse(new D2DEllipse(_cockpitPosition.Position, _cockpitSize), WasHeadshot ? D2DColor.DarkRed : D2DColor.LightBlue);
+            gfx.DrawEllipse(new D2DEllipse(_cockpitPosition.Position, _cockpitSize), D2DColor.Black);
+            gfx.PopTransform();
         }
 
         private void DrawFOVCone(D2DGraphics gfx)
@@ -528,14 +533,24 @@ namespace PolyPlane.GameObjects
             {
                 if (this.Hits > 0)
                 {
-                    var cockpitDist = _cockpitPosition.Position.DistanceTo(impactPos);
-                    if (cockpitDist <= _cockpitRadius)
+                    var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
+                    var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos);
+                    if (hitCockpit)
                     {
                         Debug.WriteLine("HEADSHOT!");
                         SpawnDebris(8, impactPos, D2DColor.Red);
                         WasHeadshot = true;
                         IsDamaged = true;
                     }
+
+                    //var cockpitDist = _cockpitPosition.Position.DistanceTo(impactPos);
+                    //if (cockpitDist <= _cockpitRadius)
+                    //{
+                    //    Debug.WriteLine("HEADSHOT!");
+                    //    SpawnDebris(8, impactPos, D2DColor.Red);
+                    //    WasHeadshot = true;
+                    //    IsDamaged = true;
+                    //}
 
 
                     if (impactor is Missile)
