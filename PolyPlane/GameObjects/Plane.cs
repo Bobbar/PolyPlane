@@ -42,6 +42,7 @@ namespace PolyPlane.GameObjects
         public bool AutoPilotOn { get; set; } = false;
         public bool SASOn { get; set; } = true;
         public bool HasCrashed { get; set; } = false;
+        public bool WasHeadshot { get; set; } = false;
 
         public D2DPoint GunPosition => _gunPosition.Position;
         public D2DPoint ExhaustPosition => _centerOfThrust.Position;
@@ -369,7 +370,9 @@ namespace PolyPlane.GameObjects
 
             _contrail.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000 && ThrustAmount > 0f);
 
-            ctx.FillEllipse(new D2DEllipse(_cockpitPosition.Position, new D2DSize(7f, 7f)), D2DColor.LightBlue);
+
+            ctx.FillEllipse(new D2DEllipse(_cockpitPosition.Position, new D2DSize(7f, 7f)), WasHeadshot ? D2DColor.DarkRed : D2DColor.LightBlue);
+            ctx.DrawEllipse(new D2DEllipse(_cockpitPosition.Position, new D2DSize(7f, 7f)), D2DColor.Black);
 
             _flames.ForEach(f => f.Render(ctx));
             _debris.ForEach(d => d.Render(ctx));
@@ -529,7 +532,7 @@ namespace PolyPlane.GameObjects
                     {
                         Debug.WriteLine("HEADSHOT!");
                         SpawnDebris(8, impactPos, D2DColor.Red);
-
+                        WasHeadshot = true;
                         IsDamaged = true;
                     }
 
@@ -624,6 +627,7 @@ namespace PolyPlane.GameObjects
             _flipTimer.Restart();
             _flames.Clear();
             _thrustAmt.Target = 1f;
+            WasHeadshot = false;
         }
 
         public void MoveThrottle(bool up)

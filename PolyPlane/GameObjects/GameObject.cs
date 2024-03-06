@@ -248,8 +248,7 @@ namespace PolyPlane.GameObjects
             Polygon.Update(this.Position, this.Rotation, renderScale);
         }
 
-      
-        public virtual bool Contains(GameObjectPoly obj, out D2DPoint pos, float dt = -1f)
+        public virtual bool CollidesWith(GameObjectPoly obj, out D2DPoint pos, float dt = -1f)
         {
             if (!this.IsObjNear(obj) || obj.Owner == this)
             {
@@ -266,11 +265,9 @@ namespace PolyPlane.GameObjects
             // Extend line segments from the current position to the next position and check for intersections.
             for (int i = 0; i < poly1.Length; i++)
             {
-                //var pnt1 = poly1[i] - ((obj.Velocity * dt) * 0.5f);
-                //var pnt2 = poly1[i] + ((obj.Velocity * dt) * 0.5f);
+                var pnt1 = poly1[i] - ((obj.Velocity * dt) * 0.5f);
+                var pnt2 = poly1[i] + ((obj.Velocity * dt) * 0.5f);
 
-                var pnt1 = poly1[i];
-                var pnt2 = poly1[i] + (obj.Velocity * dt);
 
                 if (PolyIntersect(pnt1, pnt2, this.Polygon.Poly, out D2DPoint iPos1))
                 {
@@ -322,7 +319,8 @@ namespace PolyPlane.GameObjects
 
         public void DrawVeloLines(D2DGraphics gfx)
         {
-            var dt = World.DT;
+            //var dt = World.DT;
+            var dt = World.SUB_DT;
 
             foreach (var pnt in this.Polygon.Poly)
             {

@@ -911,7 +911,7 @@ namespace PolyPlane
                     if (missile.Owner.ID == targ.ID)
                         continue;
 
-                    if (targ.Contains(missile, out D2DPoint pos))
+                    if (targ.CollidesWith(missile, out D2DPoint pos))
                     {
                         if (targ is Plane plane)
                         {
@@ -948,7 +948,7 @@ namespace PolyPlane
                     if (bullet.Owner.ID == targ.ID)
                         continue;
 
-                    if (targ.Contains(bullet, out D2DPoint pos, World.DT) && bullet.Owner.ID != targ.ID)
+                    if (targ.CollidesWith(bullet, out D2DPoint pos) && bullet.Owner.ID != targ.ID)
                     {
                         if (!targ.IsExpired)
                             AddExplosion(pos);
@@ -959,6 +959,9 @@ namespace PolyPlane
                                 _playerScore++;
 
                             if (plane2.IsAI)
+                                plane2.DoImpact(bullet, pos);
+
+                            if (plane2 == _playerPlane && !_godMode)
                                 plane2.DoImpact(bullet, pos);
                         }
 
@@ -990,7 +993,7 @@ namespace PolyPlane
                     if (bullet.Owner == missile.Owner)
                         continue;
 
-                    if (missile.Contains(bullet, out D2DPoint posb))
+                    if (missile.CollidesWith(bullet, out D2DPoint posb))
                     {
                         if (!missile.IsExpired)
                             AddExplosion(posb);
@@ -1003,7 +1006,7 @@ namespace PolyPlane
                 if (missile.Owner.ID == _playerPlane.ID)
                     continue;
 
-                if (_playerPlane.Contains(missile, out D2DPoint pos))
+                if (_playerPlane.CollidesWith(missile, out D2DPoint pos))
                 {
                     if (!_godMode)
                         _playerPlane.DoImpact(missile, pos);
