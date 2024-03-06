@@ -255,20 +255,35 @@ namespace PolyPlane.GameObjects
             if (dt < 0f)
                 dt = World.SUB_DT;
 
-            // First do velocity compensation collisions.
-            // Extend line segments from the current position to the next position and check for intersections.
+            //var veloDTHalf = ((obj.Velocity * dt) * 0.5f);
+
+            var relVelo = this.Velocity - obj.Velocity;
+            var relVeloDTHalf = (relVelo * dt) * 0.5f;
+
+            // Velocity compensation collisions:
+            // For each point in the polygon compute two points, one for backwards 1/2 timestep and one forwards 1/2 timestep
+            // and connect a line between the two.
+            // Then check if any of these lines intersect any segments of the test polygon.
+            // I guess this is sorta similar to what Continuous Collision Detection does.
             for (int i = 0; i < poly1.Length; i++)
             {
-                var pnt1 = poly1[i] - ((obj.Velocity * dt) * 0.5f);
-                var pnt2 = poly1[i] + ((obj.Velocity * dt) * 0.5f);
+                // Not sure which is more correct for this...
+                //var pnt1 = poly1[i] - veloDTHalf;
+                //var pnt2 = poly1[i] + veloDTHalf;
 
+                var pnt1 = poly1[i] - relVeloDTHalf;
+                var pnt2 = poly1[i] + relVeloDTHalf;
 
+                // Check for an intersection and get the exact location of the impact.
                 if (PolyIntersect(pnt1, pnt2, this.Polygon.Poly, out D2DPoint iPos1))
                 {
                     pos = iPos1;
                     return true;
                 }
             }
+
+            // ** Other/old collision strategies **
+            
 
             //// Same as above but for the central point.
             //if (PolyIntersect2(obj.Position - ((obj.Velocity * dt) * 0.5f), obj.Position + ((obj.Velocity * dt) * 0.5f), this.Polygon.Poly, out D2DPoint iPos2))
