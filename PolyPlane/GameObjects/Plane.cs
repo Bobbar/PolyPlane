@@ -19,6 +19,7 @@ namespace PolyPlane.GameObjects
         private const int MAX_FLAMES = 10;
         private int nFlames = 0;
         public int NumMissiles = MAX_MISSILES;
+        private readonly float _cockpitRadius = 7f;
         public bool IsAI => _isAIPlane;
         public bool IsDefending = false;
 
@@ -371,8 +372,8 @@ namespace PolyPlane.GameObjects
             _contrail.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000 && ThrustAmount > 0f);
 
 
-            ctx.FillEllipse(new D2DEllipse(_cockpitPosition.Position, new D2DSize(7f, 7f)), WasHeadshot ? D2DColor.DarkRed : D2DColor.LightBlue);
-            ctx.DrawEllipse(new D2DEllipse(_cockpitPosition.Position, new D2DSize(7f, 7f)), D2DColor.Black);
+            ctx.FillEllipse(new D2DEllipse(_cockpitPosition.Position, new D2DSize(_cockpitRadius, _cockpitRadius)), WasHeadshot ? D2DColor.DarkRed : D2DColor.LightBlue);
+            ctx.DrawEllipse(new D2DEllipse(_cockpitPosition.Position, new D2DSize(_cockpitRadius, _cockpitRadius)), D2DColor.Black);
 
             _flames.ForEach(f => f.Render(ctx));
             _debris.ForEach(d => d.Render(ctx));
@@ -528,7 +529,7 @@ namespace PolyPlane.GameObjects
                 if (this.Hits > 0)
                 {
                     var cockpitDist = _cockpitPosition.Position.DistanceTo(impactPos);
-                    if (cockpitDist <= 7f)
+                    if (cockpitDist <= _cockpitRadius)
                     {
                         Debug.WriteLine("HEADSHOT!");
                         SpawnDebris(8, impactPos, D2DColor.Red);

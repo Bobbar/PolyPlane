@@ -164,15 +164,9 @@ namespace PolyPlane.GameObjects
 
         public bool IsObjNear(GameObject obj)
         {
-            var idx1 = new D2DPoint((int)Math.Floor(this.Position.X) >> World.VIRT_GRID_SIDE, (int)Math.Floor(this.Position.Y) >> World.VIRT_GRID_SIDE);
-            var idx2 = new D2DPoint((int)Math.Floor(obj.Position.X) >> World.VIRT_GRID_SIDE, (int)Math.Floor(obj.Position.Y) >> World.VIRT_GRID_SIDE);
+            var dist = this.Position.DistanceSquaredTo(obj.Position);
 
-            var diff = idx1.AbsDiff(idx2);
-
-            if (diff.X > 1 || diff.Y > 1)
-                return false;
-
-            return true;
+            return dist <= World.MIN_COLLISION_DIST;
         }
 
         public float ClosingRate(GameObject obj)

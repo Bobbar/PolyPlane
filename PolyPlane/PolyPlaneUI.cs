@@ -404,6 +404,13 @@ namespace PolyPlane
                     gfx.FillEllipseSimple(m.Position, 5f, D2DColor.Red);
 
             });
+
+            _decoys.ForEach(d =>
+            {
+                if (d.IsObjNear(plane))
+                    gfx.FillEllipseSimple(d.Position, 5f, D2DColor.Red);
+
+            });
         }
 
         private Plane IDToPlane(long id)
@@ -1676,7 +1683,6 @@ namespace PolyPlane
 
             gfx.DrawText(infoText, D2DColor.GreenYellow, _defaultFontName, 12f, pos.X, pos.Y);
         }
-
 
         private long GetNextAIID()
         {
