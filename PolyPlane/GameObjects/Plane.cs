@@ -75,9 +75,6 @@ namespace PolyPlane.GameObjects
         private bool _damageFlash = false;
 
         private GameTimer _engageTimer;
-        private GameTimer _dropDecoyTimer = new GameTimer(4f);
-        private GameTimer _dropDecoyCooldownTimer = new GameTimer(2f);
-        private GameTimer _dropDecoyDelayTimer = new GameTimer(0.3f);
         private GameTimer _expireTimeout = new GameTimer(50f);
         private GameTimer _isLockOntoTimeout = new GameTimer(3f);
         private GameTimer _damageCooldownTimeout = new GameTimer(4f);
@@ -92,6 +89,7 @@ namespace PolyPlane.GameObjects
         private FixturePoint _cockpitPosition;
         private D2DSize _cockpitSize = new D2DSize(9f, 6f);
         private D2DColor _planeColor;
+        private D2DColor _cockpitColor = new D2DColor(0.5f, D2DColor.LightBlue);
         private SmokeTrail _contrail;
         private int _throttlePos = 0;
 
@@ -160,14 +158,6 @@ namespace PolyPlane.GameObjects
             }
 
             _thrustAmt.Target = 1f;
-
-            _dropDecoyTimer.TriggerCallback = () => _dropDecoyCooldownTimer.Restart();
-            _dropDecoyCooldownTimer.TriggerCallback = () => _dropDecoyTimer.Restart();
-            _dropDecoyDelayTimer.TriggerCallback = () =>
-            {
-                _dropDecoyTimer.Restart();
-                this.DroppingDecoy = true;
-            };
 
             _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
 
@@ -335,16 +325,9 @@ namespace PolyPlane.GameObjects
             FlamePoly.Update(_flamePos.Position, flameAngle, renderScale * _renderOffset);
 
             _flipTimer.Update(dt);
-            _dropDecoyTimer.Update(dt);
-            _dropDecoyCooldownTimer.Update(dt);
-            _dropDecoyDelayTimer.Update(dt);
             _isLockOntoTimeout.Update(dt);
             _damageCooldownTimeout.Update(dt);
             _damageFlashTimer.Update(dt);
-
-            if (this.DroppingDecoy && _dropDecoyCooldownTimer.IsRunning)
-                this.DroppingDecoy = false;
-
             _expireTimeout.Update(dt);
 
             //if (this.HasCrashed)
@@ -383,7 +366,7 @@ namespace PolyPlane.GameObjects
         {
             gfx.PushTransform();
             gfx.RotateTransform(_cockpitPosition.Rotation, _cockpitPosition.Position);
-            gfx.FillEllipse(new D2DEllipse(_cockpitPosition.Position, _cockpitSize), WasHeadshot ? D2DColor.DarkRed : D2DColor.LightBlue);
+            gfx.FillEllipse(new D2DEllipse(_cockpitPosition.Position, _cockpitSize), WasHeadshot ? D2DColor.DarkRed : _cockpitColor);
             gfx.DrawEllipse(new D2DEllipse(_cockpitPosition.Position, _cockpitSize), D2DColor.Black);
             gfx.PopTransform();
         }
@@ -455,15 +438,6 @@ namespace PolyPlane.GameObjects
 
             bullet.AddExplosionCallback = addExplosion;
             FireBulletCallback(bullet);
-        }
-
-        public void DropDecoys()
-        {
-            if (IsDamaged)
-                return;
-
-            if (!this.DroppingDecoy && !_dropDecoyDelayTimer.IsRunning)
-                _dropDecoyDelayTimer.Restart();
         }
 
         public void Pitch(bool pitchUp)

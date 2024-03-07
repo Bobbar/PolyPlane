@@ -8,6 +8,7 @@ namespace PolyPlane.AI_Behavior
         public Plane Plane => _plane;
         public Plane TargetPlane => _targetPlane;
         public Missile DefendingMissile = null;
+        public AIPersonality Personality { get; set; }
 
         private Plane _plane;
         private Plane _targetPlane;
@@ -16,15 +17,13 @@ namespace PolyPlane.AI_Behavior
         private bool _avoidingGround = false;
         private bool _gainingVelo = false;
 
-        private GameTimer _fireBurstTimer = new GameTimer(2f);
-        private GameTimer _fireBurstCooldownTimer = new GameTimer(6f);
+        private GameTimer _fireBurstTimer = new GameTimer(2f, 6f);
         private GameTimer _fireMissileCooldown = new GameTimer(6f);
+        private GameTimer _dropDecoysTimer = new GameTimer(4f, 2f);
 
-        private readonly float MIN_MISSILE_TIME = 40f;
-        private readonly float MAX_MISSILE_TIME = 80f;
-
-
-        private readonly float _maxSpeed = 1000f;
+        private float MIN_MISSILE_TIME = 40f;
+        private float MAX_MISSILE_TIME = 80f;
+        private float MAX_SPEED = 1000f;
 
         public FighterPlaneAI(Plane plane, Plane targetPlane)
         {
@@ -39,6 +38,21 @@ namespace PolyPlane.AI_Behavior
             Plane.ThrustOn = true;
             Plane.AutoPilotOn = true;
 
+            Personality = Helpers.RandomEnum(Personality);
+
+            ConfigPersonality();
+
+            _fireBurstTimer.StartCallback = () =>
+            this.Plane.FiringBurst = true;
+
+            _fireBurstTimer.TriggerCallback = () => 
+            this.Plane.FiringBurst = false;
+
+            _dropDecoysTimer.StartCallback = () => this.Plane.DroppingDecoy = true;
+            _dropDecoysTimer.TriggerCallback = () => this.Plane.DroppingDecoy = false;
+
+            _fireBurstTimer.AutoRestart = true;
+
             _fireMissileCooldown = new GameTimer(Helpers.Rnd.NextFloat(MIN_MISSILE_TIME, MAX_MISSILE_TIME));
             _fireMissileCooldown.Start();
         }
@@ -51,8 +65,8 @@ namespace PolyPlane.AI_Behavior
             _sinePos += 0.3f * dt;
 
             _fireBurstTimer.Update(dt);
-            _fireBurstCooldownTimer.Update(dt);
             _fireMissileCooldown.Update(dt);
+            _dropDecoysTimer.Update(dt);
 
             if (TargetPlane != null)
             {
@@ -64,18 +78,42 @@ namespace PolyPlane.AI_Behavior
             ConsiderNewTarget();
             ConsiderDropDecoy();
 
-            if (_fireBurstTimer.IsRunning)
-                this.Plane.FiringBurst = true;
-            else
-                this.Plane.FiringBurst = false;
-
-
             var velo = this.Plane.Velocity.Length();
 
-            if (velo > _maxSpeed)
+            if (velo > MAX_SPEED)
                 this.Plane.ThrustOn = false;
             else
                 this.Plane.ThrustOn = true;
+        }
+
+        private void ConfigPersonality()
+        {
+            switch (this.Personality)
+            {
+                case AIPersonality.Normal:
+
+                    break;
+
+                case AIPersonality.MissileHappy:
+                    MIN_MISSILE_TIME = 20f;
+                    MAX_MISSILE_TIME = 40f;
+
+                    break;
+
+                case AIPersonality.LongBursts:
+                    _fireBurstTimer.Interval = 3f;
+                    break;
+
+                case AIPersonality.Cowardly:
+                    MAX_SPEED = 700f;
+                    this.Plane.Thrust = 700f;
+                    break;
+
+                case AIPersonality.Speedy:
+                    MAX_SPEED = 2000f;
+                    this.Plane.Thrust = 2000f;
+                    break;
+            }
         }
 
         private void ConsiderNewTarget()
@@ -94,10 +132,11 @@ namespace PolyPlane.AI_Behavior
 
         private void ConsiderFireMissileAtTarget()
         {
-            const float MAX_DIST = 40000f;
             if (_fireMissileCooldown.IsRunning)
                 return;
 
+            const float MAX_DIST = 40000f;
+        
             if (this.Plane.Radar.HasLock && this.Plane.Radar.LockedObj != null)
             {
                 var dist = this.Plane.Position.DistanceTo(this.Plane.Radar.LockedObj.Position);
@@ -116,6 +155,9 @@ namespace PolyPlane.AI_Behavior
 
         private void ConsiderFireBurstAtTarget()
         {
+            if (_fireBurstTimer.IsRunning)
+                return;
+
             const float MIN_DIST = 2000f;
             const float MIN_OFFBORE = 10f;
 
@@ -126,11 +168,9 @@ namespace PolyPlane.AI_Behavior
 
             var plrFOV = this.Plane.FOVToObject(TargetPlane);
 
-            if (plrFOV <= MIN_OFFBORE && !_fireBurstCooldownTimer.IsRunning && !_fireBurstTimer.IsRunning)
+            if (plrFOV <= MIN_OFFBORE)
             {
                 Log.Msg("FIRING BURST AT PLAYER!");
-
-                _fireBurstTimer.TriggerCallback = () => _fireBurstCooldownTimer.Restart();
                 _fireBurstTimer.Restart();
             }
         }
@@ -149,7 +189,12 @@ namespace PolyPlane.AI_Behavior
             if (!this.Plane.IsDefending)
                 return;
             else
-                this.Plane.DropDecoys();
+            {
+                if (!_dropDecoysTimer.IsRunning)
+                {
+                    _dropDecoysTimer.Restart();
+                }
+            }
         }
 
         public float GetAIGuidance()
@@ -162,6 +207,11 @@ namespace PolyPlane.AI_Behavior
             if (TargetPlane != null)
             {
                 var dirToPlayer = TargetPlane.Position - this.Plane.Position;
+
+                // Fly away from target plane?
+                if (this.Personality == AIPersonality.Cowardly)
+                    dirToPlayer *= -1f;
+
                 angle = dirToPlayer.Angle(true);
             }
 
@@ -180,8 +230,6 @@ namespace PolyPlane.AI_Behavior
             }
 
             // Pitch up if we get too low.
-          
-
             if (this.Plane.Altitude < 4000f || impactTime < 20f)
             {
                 _avoidingGround = true;

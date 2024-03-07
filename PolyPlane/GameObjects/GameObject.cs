@@ -255,8 +255,6 @@ namespace PolyPlane.GameObjects
             if (dt < 0f)
                 dt = World.SUB_DT;
 
-            //var veloDTHalf = ((obj.Velocity * dt) * 0.5f);
-
             var relVelo = this.Velocity - obj.Velocity;
             var relVeloDTHalf = (relVelo * dt) * 0.5f;
 
@@ -267,10 +265,6 @@ namespace PolyPlane.GameObjects
             // I guess this is sorta similar to what Continuous Collision Detection does.
             for (int i = 0; i < poly1.Length; i++)
             {
-                // Not sure which is more correct for this...
-                //var pnt1 = poly1[i] - veloDTHalf;
-                //var pnt2 = poly1[i] + veloDTHalf;
-
                 var pnt1 = poly1[i] - relVeloDTHalf;
                 var pnt2 = poly1[i] + relVeloDTHalf;
 

@@ -9,6 +9,7 @@ namespace PolyPlane
     public class RenderContext
     {
         public D2DGraphics Gfx;
+        public D2DDevice Device;
         public D2DRect Viewport;
         private Stack<D2DRect> _vpStack = new Stack<D2DRect>();
 
@@ -16,6 +17,12 @@ namespace PolyPlane
 
         public RenderContext(D2DGraphics gfx) : this(gfx, new D2DRect())
         {
+        }
+
+        public RenderContext(D2DGraphics gfx, D2DDevice device)
+        {
+            Gfx = gfx;
+            Device = device;
         }
 
         public RenderContext(D2DGraphics gfx, D2DRect viewport)
