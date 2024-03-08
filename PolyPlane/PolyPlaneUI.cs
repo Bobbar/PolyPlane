@@ -344,9 +344,9 @@ namespace PolyPlane
 
             _gfx.EndRender();
 
-
-            var fps = TimeSpan.TicksPerSecond / (float)(DateTime.Now.Ticks - _lastRenderTime);
-            _lastRenderTime = DateTime.Now.Ticks;
+            var now = DateTime.UtcNow.Ticks;
+            var fps = TimeSpan.TicksPerSecond / (float)(now - _lastRenderTime);
+            _lastRenderTime = now;
             _renderFPS = fps;
 
             //_fpsGraph.Update(fps);
