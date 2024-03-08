@@ -330,11 +330,11 @@ namespace PolyPlane.GameObjects
 
             var fillColor = D2DColor.White;
 
-            if (_guidance.MissedTarget)
-                fillColor = D2DColor.Orange;
+            //if (_guidance.MissedTarget)
+            //    fillColor = D2DColor.Orange;
 
-            if (Target is Decoy)
-                fillColor = D2DColor.Yellow;
+            //if (Target is Decoy)
+            //    fillColor = D2DColor.Yellow;
 
             
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.White, 0.5f, D2DDashStyle.Solid, fillColor);

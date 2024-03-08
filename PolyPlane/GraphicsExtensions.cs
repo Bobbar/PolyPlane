@@ -176,5 +176,15 @@ namespace PolyPlane
                 OffScreen++;
         }
 
+
+        public static void AntiAliasingOn(this D2DGraphics gfx)
+        {
+            gfx.Antialias = true;
+        }
+
+        public static void AntiAliasingOff(this D2DGraphics gfx)
+        {
+            gfx.Antialias = false;
+        }
     }
 }

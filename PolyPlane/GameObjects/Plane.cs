@@ -346,40 +346,42 @@ namespace PolyPlane.GameObjects
 
         public override void Render(RenderContext ctx)
         {
-            if (_polyClipLayer == null)
-                _polyClipLayer = ctx.Device.CreateLayer();
-
             base.Render(ctx);
 
-            //DrawFOVCone(gfx);
+            _contrail.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000 && ThrustAmount > 0f);
 
             if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
                 ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
 
             var color = _planeColor;
-
             if (_damageFlash && !this.IsDamaged)
                 color = new D2DColor(0.2f, _planeColor);
 
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, color);
-
             Wings.ForEach(w => w.Render(ctx));
-
             DrawCockpit(ctx.Gfx);
+            
 
-            _contrail.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000 && ThrustAmount > 0f);
+            ctx.Gfx.AntiAliasingOff();
             _debris.ForEach(d => d.Render(ctx));
+            ctx.Gfx.AntiAliasingOn();
 
             DrawBulletHoles(ctx);
 
+            ctx.Gfx.AntiAliasingOff();
             _flames.ForEach(f => f.Render(ctx));
+            ctx.Gfx.AntiAliasingOn();
 
+            //DrawFOVCone(gfx);
             //_cockpitPosition.Render(ctx);
             //_centerOfThrust.Render(ctx);
         }
 
         private void DrawBulletHoles(RenderContext ctx)
         {
+            if (_polyClipLayer == null)
+                _polyClipLayer = ctx.Device.CreateLayer();
+
             // Clip the polygon to give the holes some depth/realism.
             using (var polyClipGeo = ctx.Device.CreatePathGeometry())
             {

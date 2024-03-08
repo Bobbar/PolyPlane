@@ -173,8 +173,9 @@ namespace PolyPlane.GameObjects
             var wingVec = Helpers.AngleToVectorDegrees(this.Rotation);
             var start = this.Position - wingVec * RenderLength;
             var end = this.Position + wingVec * RenderLength;
-            ctx.DrawLine(start, end, D2DColor.Blue, WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Round);
-
+            ctx.DrawLine(start, end, D2DColor.Black, WEIGHT + 0.5f, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Round);
+            ctx.DrawLine(start, end, D2DColor.Gray, WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Round);
+            
             if (World.ShowAero)
             {
                 const float SCALE = 0.1f;//0.04f;

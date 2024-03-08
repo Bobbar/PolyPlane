@@ -1637,24 +1637,12 @@ namespace PolyPlane
 
             infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
             infoText += $"DT: {Math.Round(World.DT, 4)}\n";
-            //infoText += $"Trails: {(_trailsOn ? "Trails" : _motionBlur ? "Blur" : "Off")}\n\n";
             infoText += $"AutoPilot: {(_playerPlane.AutoPilotOn ? "On" : "Off")}\n";
             infoText += $"Position: {_playerPlane?.Position}\n";
-            //infoText += $"Rotation: {_playerPlane?.Rotation}\n";
-            //infoText += $"Rotation: {Helpers.ClampAngle180(_playerPlane.Rotation)}\n";
-
             infoText += $"Kills: {viewPlane.Kills}\n";
             infoText += $"Bullets (Fired/Hit): ({viewPlane.BulletsFired} / {viewPlane.BulletsHit}) \n";
             infoText += $"Missiles (Fired/Hit): ({viewPlane.MissilesFired} / {viewPlane.MissilesHit}) \n";
             infoText += $"Headshots: {viewPlane.Headshots}\n";
-
-            //infoText += $"Use MultiThread: {_useMultiThread.ToString()}\n";
-
-
-            //infoText += $"Velocity: {_playerPlane?.Velocity.Length()}\n";
-            //infoText += $"Density Alt: {World.GetDensityAltitude(_playerPlane.Position)}\n";
-
-
 
             if (_showHelp)
             {
