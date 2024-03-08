@@ -8,18 +8,25 @@ namespace PolyPlane.GameObjects
 {
     public class Plane : GameObjectPoly
     {
+
+        public int BulletsFired = 0;
+        public int MissilesFired = 0;
+
+        public int BulletsHit = 0;
+        public int MissilesHit = 0;
+
+        public int Kills = 0;
+        public int Headshots = 0;
+
         public const int MAX_MISSILES = 6;
-
-
         public const int MAX_HITS = 16;
         public int Hits = MAX_HITS;
 
         public Radar Radar { get; set; }
         public bool HasRadarLock = false;
-        private const int MAX_FLAMES = 10;
-        private int nFlames = 0;
+       
         public int NumMissiles = MAX_MISSILES;
-        private readonly float _cockpitRadius = 7f;
+        
         public bool IsAI => _isAIPlane;
         public bool IsDefending = false;
 
@@ -32,6 +39,8 @@ namespace PolyPlane.GameObjects
         }
 
         private float _mass = 90f;
+        private const int MAX_FLAMES = 10;
+        private int nFlames = 0;
 
         public float Thrust { get; set; } = 10f;
         public bool FiringBurst { get; set; } = false;
@@ -75,11 +84,11 @@ namespace PolyPlane.GameObjects
         private bool _damageFlash = false;
 
         private GameTimer _engageTimer;
-        private GameTimer _expireTimeout = new GameTimer(50f);
+        private GameTimer _expireTimeout = new GameTimer(100f);
         private GameTimer _isLockOntoTimeout = new GameTimer(3f);
         private GameTimer _damageCooldownTimeout = new GameTimer(4f);
         private GameTimer _damageFlashTimer = new GameTimer(0.2f, true);
-        
+
         private float _damageDeflection = 0f;
 
         private RenderPoly FlamePoly;
@@ -162,8 +171,8 @@ namespace PolyPlane.GameObjects
             _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
 
             _damageFlashTimer.TriggerCallback = () => _damageFlash = !_damageFlash;
-            _damageCooldownTimeout.TriggerCallback = () => 
-            { 
+            _damageCooldownTimeout.TriggerCallback = () =>
+            {
                 _damageFlashTimer.Stop();
                 _damageFlash = false;
             };
@@ -426,6 +435,7 @@ namespace PolyPlane.GameObjects
                 FireMissileCallback(missile);
             }
 
+            this.MissilesFired++;
             this.NumMissiles--;
         }
 
@@ -438,6 +448,7 @@ namespace PolyPlane.GameObjects
 
             bullet.AddExplosionCallback = addExplosion;
             FireBulletCallback(bullet);
+            this.BulletsFired++;
         }
 
         public void Pitch(bool pitchUp)
@@ -503,6 +514,14 @@ namespace PolyPlane.GameObjects
 
         public void DoImpact(GameObject impactor, D2DPoint impactPos)
         {
+            var attackPlane = impactor.Owner as Plane;
+
+            if (impactor is Bullet)
+                attackPlane.BulletsHit++;
+            else if (impactor is Missile)
+                attackPlane.MissilesHit++;
+
+
             if (!IsDamaged && !_damageCooldownTimeout.IsRunning)
             {
                 if (this.Hits > 0)
@@ -515,6 +534,10 @@ namespace PolyPlane.GameObjects
                         SpawnDebris(8, impactPos, D2DColor.Red);
                         WasHeadshot = true;
                         IsDamaged = true;
+
+                        attackPlane.Headshots++;
+                        attackPlane.Kills++;
+
                     }
 
                     //var cockpitDist = _cockpitPosition.Position.DistanceTo(impactPos);
@@ -560,11 +583,27 @@ namespace PolyPlane.GameObjects
                     _damageDeflection = _rnd.NextFloat(-180, 180);
 
                     // Award targeting plane with missiles?
-                    if (impactor.Owner is Plane plane && plane.NumMissiles < Plane.MAX_MISSILES)
-                        plane.NumMissiles++;
+                    //if (impactor.Owner is Plane plane && plane.NumMissiles < Plane.MAX_MISSILES)
+                    //    plane.NumMissiles++;
+
+                    //if (impactor.Owner is Plane plane && plane.NumMissiles < Plane.MAX_MISSILES)
+                    //{
+                    //    plane.NumMissiles++;
+                    //}
+
+                    if (attackPlane.NumMissiles < Plane.MAX_MISSILES)
+                    {
+                        attackPlane.NumMissiles++;
+                    }
+
+                    attackPlane.Kills++;
+
+                    if (attackPlane.Hits < MAX_HITS)
+                        attackPlane.Hits += 2;
+
                 }
 
-             
+
             }
 
             float impactMass = 40f;
@@ -673,7 +712,7 @@ namespace PolyPlane.GameObjects
             Wings.ForEach(w => w.FlipY());
             _flames.ForEach(f => f.FlipY());
             _cockpitPosition.FlipY();
-           
+
 
             if (_currentDir == Direction.Right)
                 _currentDir = Direction.Left;

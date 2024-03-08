@@ -120,7 +120,7 @@ namespace PolyPlane.GameObjects
                 part.Update(dt, viewport, renderScale, skipFrames: true);
 
                 var ageFactFade = 1f - Helpers.Factor(part.Age, MAX_AGE);
-                var ageFactSmoke = Helpers.Factor(part.Age, MAX_AGE * 0.5f);
+                var ageFactSmoke = Helpers.Factor(part.Age, MAX_AGE * 3f);
                 var alpha = _flameColor.a * ageFactFade;
 
                 part.Color = new D2DColor(alpha, Helpers.LerpColor(part.Color, part.EndColor, ageFactSmoke));

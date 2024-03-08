@@ -12,8 +12,7 @@ namespace PolyPlane.AI_Behavior
 
         private Plane _plane;
         private Plane _targetPlane;
-        private float _AIDirOffset = 0f;
-        private float _sinePos = 0f;
+        private float _sineWavePos = 0f;
         private bool _avoidingGround = false;
         private bool _gainingVelo = false;
 
@@ -24,6 +23,7 @@ namespace PolyPlane.AI_Behavior
         private float MIN_MISSILE_TIME = 40f;
         private float MAX_MISSILE_TIME = 80f;
         private float MAX_SPEED = 1000f;
+        private float RUN_DISTANCE = 30000f; // How close before cowardly AI runs away.
 
         public FighterPlaneAI(Plane plane, Plane targetPlane)
         {
@@ -45,7 +45,7 @@ namespace PolyPlane.AI_Behavior
             _fireBurstTimer.StartCallback = () =>
             this.Plane.FiringBurst = true;
 
-            _fireBurstTimer.TriggerCallback = () => 
+            _fireBurstTimer.TriggerCallback = () =>
             this.Plane.FiringBurst = false;
 
             _dropDecoysTimer.StartCallback = () => this.Plane.DroppingDecoy = true;
@@ -62,7 +62,10 @@ namespace PolyPlane.AI_Behavior
             if (this.Plane.IsDamaged || this.Plane.HasCrashed)
                 return;
 
-            _sinePos += 0.3f * dt;
+            _sineWavePos += 0.3f * dt;
+
+            if (_sineWavePos > 99999f)
+                _sineWavePos = 0f;
 
             _fireBurstTimer.Update(dt);
             _fireMissileCooldown.Update(dt);
@@ -136,7 +139,7 @@ namespace PolyPlane.AI_Behavior
                 return;
 
             const float MAX_DIST = 40000f;
-        
+
             if (this.Plane.Radar.HasLock && this.Plane.Radar.LockedObj != null)
             {
                 var dist = this.Plane.Position.DistanceTo(this.Plane.Radar.LockedObj.Position);
@@ -199,20 +202,26 @@ namespace PolyPlane.AI_Behavior
 
         public float GetAIGuidance()
         {
-            var angle = Helpers.ClampAngle(Helpers.RadsToDegrees((float)Math.Sin(_sinePos)));
+            var patrolDir = Helpers.ClampAngle(Helpers.RadsToDegrees((float)Math.Sin(_sineWavePos)));
             var toRight = Helpers.IsPointingRight(this.Plane.Rotation);
             var groundPos = new D2DPoint(this.Plane.Position.X, 0f);
             var impactTime = Helpers.ImpactTime(this.Plane, groundPos);
+
+            var angle = patrolDir;
 
             if (TargetPlane != null)
             {
                 var dirToPlayer = TargetPlane.Position - this.Plane.Position;
 
                 // Fly away from target plane?
-                if (this.Personality == AIPersonality.Cowardly)
+                if (this.Personality == AIPersonality.Cowardly && this.Plane.Position.DistanceTo(TargetPlane.Position) < RUN_DISTANCE)
+                {
                     dirToPlayer *= -1f;
-
-                angle = dirToPlayer.Angle(true);
+                    angle = dirToPlayer.Angle(true);
+                    angle += patrolDir * 0.2f; // Incorporate a small amount of the sine wave so we 'bob & weave' a little bit.
+                }
+                else
+                    angle = dirToPlayer.Angle(true);
             }
 
             // Run away from missile?

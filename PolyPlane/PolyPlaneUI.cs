@@ -35,6 +35,7 @@ namespace PolyPlane
         private long _lastRenderTime = 0;
         private float _renderFPS = 0;
         private bool _useMultiThread = true;
+        private bool _showInfo = true;
         private int _multiThreadNum = 4;
 
         private List<GameObject> _missiles = new List<GameObject>();
@@ -198,7 +199,7 @@ namespace PolyPlane
             _missileOverlayLayer = _device.CreateLayer();
             _fpsGraph = new Graph(new SizeF(300, 100), new Color[] { Color.Red }, new string[] { "FPS" });
 
-            _ctx = new RenderContext(_gfx);
+            _ctx = new RenderContext(_gfx, _device);
 
             World.UpdateViewport(this.Size);
         }
@@ -257,17 +258,8 @@ namespace PolyPlane
             if (_motionBlur)
                 _gfx.FillRectangle(World.ViewPortRect, _blurColor);
 
-            Plane viewPlane = null;
+            Plane viewPlane = GetViewPlane();
 
-            var idPlane = IDToPlane(_aiPlaneViewID);
-
-            if (idPlane != null)
-            {
-                viewPlane = idPlane;
-                //NewHudMessage(viewPlane.ID.ToString(), D2DColor.White);
-            }
-            else
-                viewPlane = _playerPlane;
 
             _timer.Restart();
 
@@ -368,6 +360,18 @@ namespace PolyPlane
                 _playerPlane.HasCrashed = true;
                 _godMode = true;
             }
+        }
+
+        private Plane GetViewPlane()
+        {
+            var idPlane = IDToPlane(_aiPlaneViewID);
+
+            if (idPlane != null)
+            {
+                return idPlane;
+            }
+            else
+                return _playerPlane;
         }
 
         private List<GameObject> GetAllObjects()
@@ -1066,10 +1070,10 @@ namespace PolyPlane
                     if (!plane.HasCrashed)
                     {
                         var pointingRight = Helpers.IsPointingRight(plane.Rotation);
-                    if (pointingRight)
-                        plane.Rotation = 0f;
-                    else
-                        plane.Rotation = 180f;
+                        if (pointingRight)
+                            plane.Rotation = 0f;
+                        else
+                            plane.Rotation = 180f;
                     }
 
                     plane.IsDamaged = true;
@@ -1098,10 +1102,10 @@ namespace PolyPlane
                 if (!_playerPlane.HasCrashed)
                 {
                     var pointingRight = Helpers.IsPointingRight(_playerPlane.Rotation);
-                if (pointingRight)
-                    _playerPlane.Rotation = 0f;
-                else
-                    _playerPlane.Rotation = 180f;
+                    if (pointingRight)
+                        _playerPlane.Rotation = 0f;
+                    else
+                        _playerPlane.Rotation = 180f;
                 }
 
                 _playerPlane.IsDamaged = true;
@@ -1315,7 +1319,8 @@ namespace PolyPlane
 
         private void DrawOverlays(RenderContext ctx)
         {
-            DrawInfo(ctx.Gfx, _infoPosition);
+            if (_showInfo)
+                DrawInfo(ctx.Gfx, _infoPosition);
 
             //var center = new D2DPoint(World.ViewPortSize.width * 0.5f, World.ViewPortSize.height * 0.5f);
             //var angVec = Helpers.AngleToVectorDegrees(_testAngle);
@@ -1611,6 +1616,8 @@ namespace PolyPlane
 
         private void DrawInfo(D2DGraphics gfx, D2DPoint pos)
         {
+            var viewPlane = GetViewPlane();
+
             string infoText = string.Empty;
             infoText += $"Paused: {_isPaused}\n\n";
 
@@ -1635,10 +1642,12 @@ namespace PolyPlane
             //infoText += $"Rotation: {_playerPlane?.Rotation}\n";
             //infoText += $"Rotation: {Helpers.ClampAngle180(_playerPlane.Rotation)}\n";
 
-            infoText += $"Score: {_playerScore}\n";
-            infoText += $"Deaths: {_playerDeaths}\n";
-            infoText += $"Missiles: {_playerPlane.NumMissiles}\n";
-            infoText += $"Use MultiThread: {_useMultiThread.ToString()}\n";
+            infoText += $"Kills: {viewPlane.Kills}\n";
+            infoText += $"Bullets (Fired/Hit): ({viewPlane.BulletsFired} / {viewPlane.BulletsHit}) \n";
+            infoText += $"Missiles (Fired/Hit): ({viewPlane.MissilesFired} / {viewPlane.MissilesHit}) \n";
+            infoText += $"Headshots: {viewPlane.Headshots}\n";
+
+            //infoText += $"Use MultiThread: {_useMultiThread.ToString()}\n";
 
 
             //infoText += $"Velocity: {_playerPlane?.Velocity.Length()}\n";
@@ -1786,7 +1795,8 @@ namespace PolyPlane
 
                 case 'o':
                     //World.ShowMissileCloseup = !World.ShowMissileCloseup;
-                    _useMultiThread = !_useMultiThread;
+                    //_useMultiThread = !_useMultiThread;
+                    _showInfo = !_showInfo;
                     break;
 
                 case 'p':
