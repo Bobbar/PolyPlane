@@ -353,6 +353,7 @@ namespace PolyPlane
 
             if (_slewEnable)
             {
+                _playerPlane.Rotation = _guideAngle;
                 _playerPlane.RotationSpeed = 0f;
                 _playerPlane.Position = _playerPlaneSlewPos;
                 _playerPlane.Reset();

@@ -269,15 +269,25 @@ namespace PolyPlane.GameObjects
                 var pnt2 = poly1[i] + relVeloDTHalf;
 
                 // Check for an intersection and get the exact location of the impact.
-                if (PolyIntersect(pnt1, pnt2, this.Polygon.Poly, out D2DPoint iPos1))
+                if (PolyIntersect(pnt1, pnt2, this.Polygon.Poly, out D2DPoint iPosPoly))
                 {
-                    pos = iPos1;
+                    pos = iPosPoly;
                     return true;
                 }
             }
 
+            // One last check with the center point.
+            var centerPnt1 = obj.Position - relVeloDTHalf;
+            var centerPnt2 = obj.Position + relVeloDTHalf;
+
+            if (PolyIntersect(centerPnt1, centerPnt2, this.Polygon.Poly, out D2DPoint iPosCenter))
+            {
+                pos = iPosCenter;
+                return true;
+            }
+
             // ** Other/old collision strategies **
-            
+
 
             //// Same as above but for the central point.
             //if (PolyIntersect2(obj.Position - ((obj.Velocity * dt) * 0.5f), obj.Position + ((obj.Velocity * dt) * 0.5f), this.Polygon.Poly, out D2DPoint iPos2))

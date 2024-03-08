@@ -65,11 +65,6 @@ namespace PolyPlane.GameObjects
             //ctx.Gfx.FillEllipseSimple(this.Position, 3f, D2DColor.Red);
 
             _parts.ForEach(p => p.Render(ctx));
-
-            // Draw hole/impact marker?
-            ctx.Gfx.FillEllipseSimple(this.Position, 3f, D2DColor.Black);
-            ctx.Gfx.FillEllipseSimple(this.Position, 1.5f, D2DColor.Red);
-
         }
 
         public void FlipY()

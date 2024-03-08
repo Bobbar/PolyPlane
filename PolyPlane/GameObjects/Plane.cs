@@ -24,9 +24,9 @@ namespace PolyPlane.GameObjects
 
         public Radar Radar { get; set; }
         public bool HasRadarLock = false;
-       
+
         public int NumMissiles = MAX_MISSILES;
-        
+
         public bool IsAI => _isAIPlane;
         public bool IsDefending = false;
 
@@ -92,6 +92,7 @@ namespace PolyPlane.GameObjects
         private float _damageDeflection = 0f;
 
         private RenderPoly FlamePoly;
+        private D2DLayer _polyClipLayer = null;
         private D2DColor _flameFillColor = new D2DColor(0.6f, D2DColor.Yellow);
         private FixturePoint _flamePos;
         private FixturePoint _gunPosition;
@@ -179,7 +180,7 @@ namespace PolyPlane.GameObjects
 
             _planeColor = D2DColor.Randomly();
 
-            this.Polygon = new RenderPoly(_poly, 1.5f);
+            this.Polygon = new RenderPoly(_poly, _renderOffset);
 
             InitStuff();
 
@@ -345,6 +346,9 @@ namespace PolyPlane.GameObjects
 
         public override void Render(RenderContext ctx)
         {
+            if (_polyClipLayer == null)
+                _polyClipLayer = ctx.Device.CreateLayer();
+
             base.Render(ctx);
 
             //DrawFOVCone(gfx);
@@ -364,11 +368,34 @@ namespace PolyPlane.GameObjects
             DrawCockpit(ctx.Gfx);
 
             _contrail.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000 && ThrustAmount > 0f);
-            _flames.ForEach(f => f.Render(ctx));
             _debris.ForEach(d => d.Render(ctx));
+
+            DrawBulletHoles(ctx);
+
+            _flames.ForEach(f => f.Render(ctx));
 
             //_cockpitPosition.Render(ctx);
             //_centerOfThrust.Render(ctx);
+        }
+
+        private void DrawBulletHoles(RenderContext ctx)
+        {
+            // Clip the polygon to give the holes some depth/realism.
+            using (var polyClipGeo = ctx.Device.CreatePathGeometry())
+            {
+                polyClipGeo.AddLines(this.Polygon.Poly);
+                polyClipGeo.ClosePath();
+
+                ctx.Gfx.PushLayer(_polyClipLayer, ctx.Viewport, polyClipGeo);
+
+                foreach (var flame in _flames)
+                {
+                    ctx.Gfx.FillEllipseSimple(flame.Position, 5f, D2DColor.Gray);
+                    ctx.Gfx.FillEllipseSimple(flame.Position, 3f, D2DColor.Black);
+                }
+
+                ctx.Gfx.PopLayer();
+            }
         }
 
         private void DrawCockpit(D2DGraphics gfx)
@@ -582,15 +609,7 @@ namespace PolyPlane.GameObjects
                     IsDamaged = true;
                     _damageDeflection = _rnd.NextFloat(-180, 180);
 
-                    // Award targeting plane with missiles?
-                    //if (impactor.Owner is Plane plane && plane.NumMissiles < Plane.MAX_MISSILES)
-                    //    plane.NumMissiles++;
-
-                    //if (impactor.Owner is Plane plane && plane.NumMissiles < Plane.MAX_MISSILES)
-                    //{
-                    //    plane.NumMissiles++;
-                    //}
-
+                    // Award attacking plane with missiles and health?
                     if (attackPlane.NumMissiles < Plane.MAX_MISSILES)
                     {
                         attackPlane.NumMissiles++;
@@ -600,10 +619,7 @@ namespace PolyPlane.GameObjects
 
                     if (attackPlane.Hits < MAX_HITS)
                         attackPlane.Hits += 2;
-
                 }
-
-
             }
 
             float impactMass = 40f;
