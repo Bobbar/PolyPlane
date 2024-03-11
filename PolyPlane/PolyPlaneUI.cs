@@ -1,4 +1,5 @@
 using PolyPlane.GameObjects;
+using PolyPlane.Net;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using unvell.D2DLib;
@@ -87,6 +88,12 @@ namespace PolyPlane
         private TimeSpan _updateTime = new TimeSpan();
         private TimeSpan _collisionTime = new TimeSpan();
 
+        private bool _isNetGame = false;
+        private bool _isServer = false;
+        private Net.Client _client;
+        private Net.Server _server;
+
+
 
         private Random _rnd => Helpers.Rnd;
 
@@ -106,6 +113,11 @@ namespace PolyPlane
 
         private void PolyPlaneUI_Disposed(object? sender, EventArgs e)
         {
+            _client?.Stop();
+            _server?.Stop();
+
+            ENet.Library.Deinitialize();
+
             _device?.Dispose();
             _missileOverlayLayer?.Dispose();
         }
@@ -118,7 +130,11 @@ namespace PolyPlane
 
             InitPlane();
 
+            DoNetGameSetup();
+
             StartGameThread();
+
+            PauseRender();
         }
 
         private void InitPlane()
@@ -166,7 +182,7 @@ namespace PolyPlane
             //var pos = new D2DPoint(_rnd.NextFloat(-(World.ViewPortSize.width * 4f), World.ViewPortSize.width * 4f), _rnd.NextFloat(-(World.ViewPortSize.height * 0.5f), -15000f));
             var pos = new D2DPoint(_rnd.NextFloat(-(World.ViewPortSize.width * 4f), World.ViewPortSize.width * 4f), _rnd.NextFloat(-4000f, -17000f));
 
-            var aiPlane = new Plane(pos, _playerPlane);
+            var aiPlane = new Plane(pos, isAI: true);
             aiPlane.Radar = new Radar(aiPlane, _hudColor, _targets, _missiles);
             aiPlane.Radar.SkipFrames = World.PHYSICS_STEPS;
 
@@ -203,6 +219,57 @@ namespace PolyPlane
 
             World.UpdateViewport(this.Size);
         }
+
+        private void DoNetGameSetup()
+        {
+
+            using (var config = new ClientServerConfigForm())
+            {
+                if (config.ShowDialog() == DialogResult.OK)
+                {
+                    ENet.Library.Initialize();
+
+                    if (config.IsServer)
+                    {
+                        _isServer = true;
+                        _server = new Net.Server(config.Port, config.IPAddress);
+                        _server.Start();
+
+
+
+                    }
+                    else
+                    {
+                        _isServer = false;
+                        _client = new Net.Client(config.Port, config.IPAddress);
+                        _client.Start();
+
+                        World.CurrentObjId = 1001;
+                        _playerPlane.ID = 1000;
+
+                        //_client.SendPacket(IO.ObjectToByteArray(_playerPlane), PacketTypes.NewPlayer);
+                        var planePacket = new Net.PlanePacket(_playerPlane);
+                        planePacket.Type = PacketTypes.NewPlayer;
+                        _client.SendNewPlanePacket(planePacket);
+
+
+
+                        //while (_client.PlaneID == -1)
+                        //{
+                        //    // Wait for ID...
+                        //}
+
+                        //_playerPlane.ID = _client.PlaneID;
+
+                    }
+                }
+            }
+
+            ResumeRender();
+        }
+
+
+
 
         private void ResizeGfx(bool force = false)
         {
@@ -344,6 +411,9 @@ namespace PolyPlane
 
             _gfx.EndRender();
 
+            if (_isNetGame)
+                DoNetEvents();
+
             var now = DateTime.UtcNow.Ticks;
             var fps = TimeSpan.TicksPerSecond / (float)(now - _lastRenderTime);
             _lastRenderTime = now;
@@ -362,6 +432,158 @@ namespace PolyPlane
                 _godMode = true;
             }
         }
+
+
+        private bool idSet = false;
+        private void DoNetEvents()
+        {
+            if (_isServer)
+            {
+                var newPacket = new Net.PlanePacket(_playerPlane, PacketTypes.PlaneUpdate);
+                _server.SendPlaneUpdate(newPacket);
+
+                while (_server.PacketQueue.Count > 0)
+                {
+                    if (_server.PacketQueue.TryDequeue(out Net.NetPacket packet))
+                    {
+                        switch (packet.Type)
+                        {
+                            case Net.PacketTypes.PlaneUpdate:
+
+                                var updPacket = packet as PlanePacket;
+
+                                if (updPacket == null)
+                                    Debugger.Break();
+
+                                var clientPlane = TryIDToPlane(updPacket.ID);
+                                if (clientPlane != null)
+                                    updPacket.SyncObj(clientPlane);
+
+                                break;
+
+                            case Net.PacketTypes.NewPlayer:
+                                var planePacket = packet as PlanePacket;
+
+                                if (planePacket != null)
+                                {
+                                    var netPlane = new Plane(planePacket.Position.ToD2DPoint(), planePacket.PlaneColor);
+                                    netPlane.ID = planePacket.ID;
+                                    _newTargets.Enqueue(netPlane);
+                                    _newAIPlanes.Enqueue(netPlane);
+                                }
+
+                                break;
+
+                            case Net.PacketTypes.ChatMessage:
+                                break;
+
+                            case Net.PacketTypes.GetOtherPlanes:
+                                var excludeID = packet.ID;
+
+                                //var otherPlanes = _targets.Where(o => o.ID != excludeID).ToList();
+                                var otherPlanes = _aiPlanes.Where(o => o.ID != excludeID).ToList();
+
+                                otherPlanes.Add(_playerPlane);
+
+                                var otherPlanesPackets = new List<Net.PlanePacket>();
+                                //var planeListPacket = new Net.PlaneListPacket(otherPlanes);
+
+
+                                foreach (var plane in otherPlanes)
+                                    otherPlanesPackets.Add(new Net.PlanePacket(plane as Plane));
+
+                                var listPacket = new Net.PlaneListPacket(otherPlanesPackets);
+                                listPacket.Type = PacketTypes.GetOtherPlanes;
+
+                                _server.SyncOtherPlanes(listPacket, (ushort)excludeID);
+
+                                break;
+
+
+                        }
+                    }
+                }
+            }
+            else
+            {
+                //_playerPlane.ID = _client.PlaneID;
+
+                var newPacket = new Net.PlanePacket(_playerPlane, PacketTypes.PlaneUpdate);
+                _client.EnqueuePacket(newPacket);
+
+
+                while (_client.PacketReceiveQueue.Count > 0)
+                {
+                    if (_client.PacketReceiveQueue.TryDequeue(out NetPacket packet))
+                    {
+                        switch (packet.Type)
+                        {
+                            case Net.PacketTypes.PlaneUpdate:
+
+                                if (!idSet)
+                                    break;
+
+                                var updPacket = packet as PlanePacket;
+
+                                if (updPacket == null)
+                                    Debugger.Break();
+
+                                var myPlane = _playerPlane;
+
+                                var clientPlane = TryIDToPlane(updPacket.ID);
+                                if (clientPlane != null)
+                                    updPacket.SyncObj(clientPlane);
+
+                                break;
+
+                            case Net.PacketTypes.NewPlayer:
+                                //var planePacket = packet as PlanePacket;
+
+                                //if (planePacket != null)
+                                //{
+                                //    var netPlane = new Plane(planePacket.Position.ToD2DPoint(), planePacket.PlaneColor);
+                                //    _newTargets.Enqueue(netPlane);
+                                //}
+
+                                break;
+
+                            case Net.PacketTypes.ChatMessage:
+                                break;
+
+                            case PacketTypes.SetID:
+                                //_playerPlane.ID = packet.ID;
+                                idSet = true;
+                                break;
+
+                            case Net.PacketTypes.GetOtherPlanes:
+                                var listPacket = packet as Net.PlaneListPacket;
+
+
+                                foreach (var plane in listPacket.Planes)
+                                {
+                                    var existing = TryIDToPlane(plane.ID);
+
+                                    if (existing == null)
+                                    {
+                                        var newPlane = new Plane(plane.Position.ToD2DPoint(), plane.PlaneColor);
+                                        newPlane.ID = plane.ID;
+                                        _aiPlanes.Add(newPlane);
+                                        _targets.Add(newPlane);
+                                    }
+                                }
+
+
+
+                                break;
+
+
+                        }
+                    }
+                }
+            }
+        }
+
+
 
         private Plane GetViewPlane()
         {
@@ -424,6 +646,13 @@ namespace PolyPlane
 
             if (plane == null)
                 return _playerPlane;
+
+            return plane;
+        }
+
+        private Plane TryIDToPlane(long id)
+        {
+            var plane = _aiPlanes.Where(p => p.ID == id).FirstOrDefault();
 
             return plane;
         }

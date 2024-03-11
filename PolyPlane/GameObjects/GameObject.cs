@@ -5,7 +5,14 @@ namespace PolyPlane.GameObjects
 {
     public abstract class GameObject : IEquatable<GameObject>, ISkipFramesUpdate
     {
-        public long ID => _id;
+        //public long ID => _id;
+
+        public long ID
+        { 
+            get { return _id; }
+            set { _id = value; } 
+        }
+
         private long _id = 0;
         public GameObject Owner { get; set; }
 
@@ -121,6 +128,12 @@ namespace PolyPlane.GameObjects
         {
             return this.CurrentFrame % this.SkipFrames != 0;
         }
+
+        private void SetID(long id)
+        {
+            this.ID = id;
+        }
+     
 
         public virtual void Wrap(D2DSize viewport)
         {

@@ -25,11 +25,9 @@ namespace PolyPlane.AI_Behavior
         private float MAX_SPEED = 1000f;
         private float RUN_DISTANCE = 30000f; // How close before cowardly AI runs away.
 
-        public FighterPlaneAI(Plane plane, Plane targetPlane)
+        public FighterPlaneAI(Plane plane)
         {
             _plane = plane;
-            _targetPlane = targetPlane;
-
             InitStuff();
         }
 
