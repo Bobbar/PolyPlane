@@ -120,4 +120,29 @@ namespace PolyPlane.Net
             obj.ThrustAmount = ThrustAmt;
         }
     }
-   }
+
+    [Serializable]
+    public class BulletPacket : GameObjectPacket
+    {
+
+        public BulletPacket() { }
+
+        public BulletPacket(GameObject obj) : base(obj)
+        {
+            //this.OwnerID = obj.Owner.ID;
+        }
+
+        public BulletPacket(GameObject obj, PacketTypes type) : base(obj, type)
+        {
+            //this.OwnerID = obj.Owner.ID;
+
+        }
+
+        public virtual void SyncObj(GameObject obj)
+        {
+            base.SyncObj(obj);
+        }
+    }
+
+
+}

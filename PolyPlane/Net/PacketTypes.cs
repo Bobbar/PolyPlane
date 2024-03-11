@@ -10,7 +10,9 @@ namespace PolyPlane.Net
     {
         PlaneUpdate,
         NewPlayer,
+        NewBullet,
         SetID,
+        GetNextID,
         ChatMessage,
         GetOtherPlanes
             

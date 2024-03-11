@@ -36,6 +36,12 @@ namespace PolyPlane.GameObjects
             this.Velocity = velo;
         }
 
+        public Bullet(D2DPoint pos, D2DPoint velo, float rotation) : base(pos, velo, rotation) 
+        {
+            this.Polygon = new RenderPoly(_poly);
+        }
+
+
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
             base.Update(dt, viewport, renderScale);
@@ -68,6 +74,7 @@ namespace PolyPlane.GameObjects
             ctx.Gfx.AntiAliasingOff();
             //ctx.FillEllipse(new D2DEllipse(this.Position, new D2DSize(5, 5)), D2DColor.Goldenrod);
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, D2DColor.Yellow);
+            //ctx.Gfx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, D2DColor.Yellow);
 
             ctx.Gfx.AntiAliasingOn();
         }

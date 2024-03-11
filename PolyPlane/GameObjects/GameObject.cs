@@ -7,6 +7,8 @@ namespace PolyPlane.GameObjects
     {
         //public long ID => _id;
 
+        public bool IsNetObject { get; set; } = false;
+
         public long ID
         { 
             get { return _id; }
@@ -94,6 +96,9 @@ namespace PolyPlane.GameObjects
 
         public void Update(float dt, D2DSize viewport, float renderScale, bool skipFrames = false)
         {
+            if (IsNetObject)
+                return;
+
             CurrentFrame++;
 
             if (skipFrames)
@@ -112,6 +117,9 @@ namespace PolyPlane.GameObjects
 
         public virtual void Update(float dt, D2DSize viewport, float renderScale)
         {
+            if (IsNetObject)
+                return;
+
             if (this.IsExpired)
                 return;
 
@@ -121,6 +129,11 @@ namespace PolyPlane.GameObjects
 
             Wrap(viewport);
 
+
+        }
+
+        public virtual void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, float rotation)
+        {
 
         }
 
