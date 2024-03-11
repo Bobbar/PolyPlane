@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+	  <NoWarn>$(NoWarn);SYSLIB0011</NoWarn>
+	  <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,6 +31,10 @@
     </None>
 
     <using Include="System.Numerics.Vector2" Alias="D2DPoint" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ENet-CSharp" Version="2.4.8" />
   </ItemGroup>
 
 </Project>

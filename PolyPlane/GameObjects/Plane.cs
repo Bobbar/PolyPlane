@@ -9,6 +9,7 @@ namespace PolyPlane.GameObjects
     public class Plane : GameObjectPoly
     {
 
+        public bool IsNetPlayer = false;
         public int BulletsFired = 0;
         public int MissilesFired = 0;
 
@@ -48,7 +49,15 @@ namespace PolyPlane.GameObjects
 
         public float GForce => _gForce;
         public bool ThrustOn { get; set; } = false;
-        public float ThrustAmount => _thrustAmt.Value;
+        public float ThrustAmount
+        {
+            get { return _thrustAmt.Value; }
+
+            set { _thrustAmt.Set(value); }
+        }
+
+
+        //public float ThrustAmount => _thrustAmt.Value;
         public bool AutoPilotOn { get; set; } = false;
         public bool SASOn { get; set; } = true;
         public bool HasCrashed { get; set; } = false;
@@ -151,11 +160,39 @@ namespace PolyPlane.GameObjects
             new D2DPoint(-8, -1),
         };
 
-        public Plane(D2DPoint pos, Plane playerPlane = null) : base(pos)
+        public Plane(D2DPoint pos, D2DColor color) : base(pos)
         {
-            if (playerPlane != null)
+            IsNetPlayer = true;
+            _planeColor = color;
+
+
+            _thrustAmt.Target = 1f;
+
+            _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
+
+            _damageFlashTimer.TriggerCallback = () => _damageFlash = !_damageFlash;
+            _damageCooldownTimeout.TriggerCallback = () =>
             {
-                _aiBehavior = new FighterPlaneAI(this, null);
+                _damageFlashTimer.Stop();
+                _damageFlash = false;
+            };
+
+            _planeColor = D2DColor.Randomly();
+
+            this.Polygon = new RenderPoly(_poly, _renderOffset);
+
+            InitStuff();
+
+            _controlWing.Deflection = 2f;
+            _centerOfThrust = new FixturePoint(this, new D2DPoint(-33f, 0));
+
+        }
+
+        public Plane(D2DPoint pos, bool isAI = false) : base(pos)
+        {
+            if (isAI)
+            {
+                _aiBehavior = new FighterPlaneAI(this);
                 _aiBehavior.SkipFrames = World.PHYSICS_STEPS;
 
                 _isAIPlane = true;
@@ -216,6 +253,43 @@ namespace PolyPlane.GameObjects
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
             base.Update(dt, viewport, renderScale * _renderOffset);
+
+            if (IsNetPlayer)
+            {
+                _flames.ForEach(f => f.Update(dt, viewport, renderScale));
+                _debris.ForEach(d => d.Update(dt, viewport, renderScale));
+                _contrail.Update(dt, viewport, renderScale, skipFrames: true);
+                _flamePos.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
+                _gunPosition.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
+                _cockpitPosition.Update(dt, viewport, renderScale * _renderOffset);
+
+
+                // TODO:  This is so messy...
+                Wings.ForEach(w => w.Update(dt, viewport, renderScale * _renderOffset));
+                _centerOfThrust.Update(dt, viewport, renderScale * _renderOffset);
+                _thrustAmt.Update(dt);
+                _apAngleLimiter.Update(dt);
+                CheckForFlip();
+
+                //var thrustMag = thrust.Length();
+                //var flameAngle = thrust.Angle();
+                //var len = this.Velocity.Length() * 0.05f;
+                //len += thrustMag * 0.01f;
+                //len *= 0.6f;
+                //FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
+                //_flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
+
+                //FlamePoly.Update(_flamePos.Position, flameAngle, renderScale * _renderOffset);
+
+                _flipTimer.Update(dt);
+                _isLockOntoTimeout.Update(dt);
+                _damageCooldownTimeout.Update(dt);
+                _damageFlashTimer.Update(dt);
+                _expireTimeout.Update(dt);
+
+
+                return;
+            }
 
             this.Radar?.Update(dt, viewport, renderScale, skipFrames: true);
 
