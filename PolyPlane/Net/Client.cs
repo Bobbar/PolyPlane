@@ -77,10 +77,29 @@ namespace PolyPlane.Net
 
         }
 
-        public void SendNewPlanePacket(PlanePacket plane)
+        public void SendNewPlanePacket(GameObjects.Plane plane)
         {
+            Packet reqPacket = default(Packet);
 
+            var netPacket = new PlanePacket(plane, PacketTypes.NewPlayer);
+            var data = IO.ObjectToByteArray(netPacket);
+
+            reqPacket.Create(data);
+
+            Peer.Send(CHANNEL_ID, ref reqPacket);
         }
+
+        public void SendNewBulletPacket(GameObjects.Bullet bullet)
+        {
+            //Packet packet = default(Packet);
+            var netPacket = new BulletPacket(bullet, PacketTypes.NewBullet);
+            //var data = IO.ObjectToByteArray(netPacket);
+            //packet.Create(data);
+
+            EnqueuePacket(netPacket);
+            //Peer.Send(CHANNEL_ID, ref packet);
+        }
+
 
         public void EnqueuePacket(NetPacket packet)
         {
@@ -156,6 +175,7 @@ namespace PolyPlane.Net
             }
 
         }
+
 
         private void RequestOtherPlanes()
         {

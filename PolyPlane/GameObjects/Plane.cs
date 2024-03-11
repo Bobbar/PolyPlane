@@ -418,6 +418,49 @@ namespace PolyPlane.GameObjects
             //    _debris.Clear();
         }
 
+        public override void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, float rotation)
+        {
+            base.NetUpdate(dt, viewport, renderScale, position, rotation);
+
+            this.Position = position;
+            this.Rotation = rotation;
+
+
+            _flames.ForEach(f => f.Update(dt, viewport, renderScale));
+            _debris.ForEach(d => d.Update(dt, viewport, renderScale));
+            _contrail.Update(dt, viewport, renderScale, skipFrames: true);
+            _flamePos.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
+            _gunPosition.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
+            _cockpitPosition.Update(dt, viewport, renderScale * _renderOffset);
+
+            // TODO:  This is so messy...
+            Wings.ForEach(w => w.Update(dt, viewport, renderScale * _renderOffset));
+            _centerOfThrust.Update(dt, viewport, renderScale * _renderOffset);
+            _thrustAmt.Update(dt);
+            _apAngleLimiter.Update(dt);
+            CheckForFlip();
+
+            var thrust = GetThrust(true);
+            var thrustMag = thrust.Length();
+            var flameAngle = thrust.Angle();
+            var len = this.Velocity.Length() * 0.05f;
+            len += thrustMag * 0.01f;
+            len *= 0.6f;
+            FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
+            _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
+
+            FlamePoly.Update(_flamePos.Position, flameAngle, renderScale * _renderOffset);
+
+            this.Polygon.Update(this.Position, this.Rotation, renderScale * _renderOffset);
+
+            _flipTimer.Update(dt);
+            _isLockOntoTimeout.Update(dt);
+            _damageCooldownTimeout.Update(dt);
+            _damageFlashTimer.Update(dt);
+            _expireTimeout.Update(dt);
+
+        }
+
         public override void Render(RenderContext ctx)
         {
             base.Render(ctx);

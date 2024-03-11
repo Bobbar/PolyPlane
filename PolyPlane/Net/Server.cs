@@ -6,6 +6,7 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using ENet;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PolyPlane.Net
 {
@@ -106,9 +107,10 @@ namespace PolyPlane.Net
                         case EventType.Receive:
                             Log("Packet received from - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP + ", Channel ID: " + netEvent.ChannelID + ", Data length: " + netEvent.Packet.Length);
 
-                            ParseTestPacket(netEvent.Packet);
+                            //ParseTestPacket(netEvent.Packet);
 
-                            
+                            ParsePacket(netEvent.Packet, netEvent.Peer);
+
                             netEvent.Packet.Dispose();
                             break;
                     }
@@ -161,7 +163,27 @@ namespace PolyPlane.Net
             peer.Send(CHANNEL_ID, ref idPacket);
         }
 
-        private void ParseTestPacket(Packet packet)
+        private void SendPacketToPeer(Peer peer, NetPacket packet)
+        {
+
+        }
+
+        //private void ParseTestPacket(Packet packet)
+        //{
+        //    var buffer = new byte[packet.Length];
+        //    packet.CopyTo(buffer);
+
+
+        //    var packetObj = IO.ByteArrayToObject(buffer) as NetPacket;
+
+        //    PacketQueue.Enqueue(packetObj);
+        //    //if (packetObj != null)
+        //    //{
+        //    //    Log(packetObj.ToString());
+        //    //}
+        //}
+
+        private void ParsePacket(Packet packet, Peer peer)
         {
             var buffer = new byte[packet.Length];
             packet.CopyTo(buffer);
@@ -169,7 +191,20 @@ namespace PolyPlane.Net
 
             var packetObj = IO.ByteArrayToObject(buffer) as NetPacket;
 
-            PacketQueue.Enqueue(packetObj);
+            if (packetObj.Type == PacketTypes.GetNextID)
+            {
+                var nextId = new NetPacket(PacketTypes.GetNextID, World.GetNextId());
+
+                Packet idPacket = default(Packet);
+                idPacket.Create(IO.ObjectToByteArray(nextId));
+                peer.Send(CHANNEL_ID, ref idPacket);
+            }
+            else
+            {
+                PacketQueue.Enqueue(packetObj);
+            }
+
+
             //if (packetObj != null)
             //{
             //    Log(packetObj.ToString());
