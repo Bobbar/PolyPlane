@@ -8,7 +8,7 @@ namespace PolyPlane.AI_Behavior
         Plane Plane { get; }
         Plane TargetPlane { get; }
         float GetAIGuidance();
-
+        void ChangeTarget(Plane plane);
 
     }
 }

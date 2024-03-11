@@ -19,6 +19,7 @@ namespace PolyPlane.AI_Behavior
         private GameTimer _fireBurstTimer = new GameTimer(2f, 6f);
         private GameTimer _fireMissileCooldown = new GameTimer(6f);
         private GameTimer _dropDecoysTimer = new GameTimer(4f, 2f);
+        private GameTimer _changeTargetCooldown = new GameTimer(10f);
 
         private float MIN_MISSILE_TIME = 40f;
         private float MAX_MISSILE_TIME = 80f;
@@ -68,6 +69,7 @@ namespace PolyPlane.AI_Behavior
             _fireBurstTimer.Update(dt);
             _fireMissileCooldown.Update(dt);
             _dropDecoysTimer.Update(dt);
+            _changeTargetCooldown.Update(dt);
 
             if (TargetPlane != null)
             {
@@ -195,6 +197,18 @@ namespace PolyPlane.AI_Behavior
                 {
                     _dropDecoysTimer.Restart();
                 }
+            }
+        }
+
+        public void ChangeTarget(Plane plane)
+        {
+            if (_changeTargetCooldown.IsRunning)
+                return;
+
+            if (plane != null)
+            {
+                _targetPlane = plane;
+                _changeTargetCooldown.Restart();
             }
         }
 
