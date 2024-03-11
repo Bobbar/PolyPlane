@@ -550,6 +550,8 @@ namespace PolyPlane.GameObjects
             else if (impactor is Missile)
                 attackPlane.MissilesHit++;
 
+            // Always change target to attacking plane?
+            _aiBehavior.ChangeTarget(attackPlane);
 
             if (!IsDamaged && !_damageCooldownTimeout.IsRunning)
             {
