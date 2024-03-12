@@ -28,6 +28,7 @@ namespace PolyPlane.GameObjects
         public Bullet(Plane plane) : base(plane.GunPosition, plane.Velocity, plane.Rotation)
         {
             this.Owner = plane;
+            this.PlayerID = plane.PlayerID;
 
             this.Polygon = new RenderPoly(_poly);
 

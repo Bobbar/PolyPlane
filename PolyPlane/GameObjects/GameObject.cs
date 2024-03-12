@@ -9,13 +9,21 @@ namespace PolyPlane.GameObjects
 
         public bool IsNetObject { get; set; } = false;
 
-        public long ID
+        public GameID ID { get; set; } = new GameID();
+
+        public int PlayerID 
         { 
-            get { return _id; }
-            set { _id = value; } 
+            get { return ID.PlayerID; }
+            set { ID = new GameID(value, ID.ObjectID); }
         }
 
-        private long _id = 0;
+        //public long ID
+        //{ 
+        //    get { return _id; }
+        //    set { _id = value; } 
+        //}
+
+        //private long _id = 0;
         public GameObject Owner { get; set; }
 
         public bool IsExpired { get; set; } = false;
@@ -59,7 +67,8 @@ namespace PolyPlane.GameObjects
 
         public GameObject()
         {
-            _id = World.GetNextId();
+            this.ID = new GameID(-1, World.GetNextObjectId());
+            //_id = World.GetNextId();
         }
 
         public GameObject(D2DPoint pos) : this(pos, D2DPoint.Zero, 0f, 0f)
@@ -101,16 +110,16 @@ namespace PolyPlane.GameObjects
 
             CurrentFrame++;
 
-            if (skipFrames)
-            {
-                if (SkipFrame())
-                    return;
+            ////if (skipFrames)
+            ////{
+            //    if (SkipFrame())
+            //        return;
 
-                var multiDT = dt * this.SkipFrames;
+            //    var multiDT = dt * this.SkipFrames;
 
-                this.Update(multiDT, viewport, renderScale);
-            }
-            else
+            //    this.Update(multiDT, viewport, renderScale);
+            ////}
+            //else
                 this.Update(dt, viewport, renderScale);
         }
 
@@ -132,7 +141,7 @@ namespace PolyPlane.GameObjects
 
         }
 
-        public virtual void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, float rotation)
+        public virtual void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, D2DPoint velocity, float rotation)
         {
 
         }
@@ -144,7 +153,9 @@ namespace PolyPlane.GameObjects
 
         private void SetID(long id)
         {
-            this.ID = id;
+            this.ID = new GameID(this.ID.PlayerID, id);
+
+            //this.ID = id;
         }
      
 
@@ -226,7 +237,7 @@ namespace PolyPlane.GameObjects
 
         public bool Equals(GameObject? other)
         {
-            return this.ID == other.ID;
+            return this.ID.Equals(other.ID);
         }
     }
 

@@ -9,8 +9,11 @@ namespace PolyPlane.Net
     public enum PacketTypes
     {
         PlaneUpdate,
+        MissileUpdate,
+        Impact,
         NewPlayer,
         NewBullet,
+        NewMissile,
         SetID,
         GetNextID,
         ChatMessage,
