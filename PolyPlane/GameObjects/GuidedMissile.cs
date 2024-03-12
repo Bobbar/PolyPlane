@@ -5,6 +5,11 @@ namespace PolyPlane.GameObjects
 {
     public class GuidedMissile : Missile
     {
+        public float CurrentFuel
+        {
+            get { return _currentFuel; }
+            set { _currentFuel = value; }
+        }
         public D2DPoint CenterOfThrust => _centerOfThrust.Position;
 
         private static readonly D2DPoint[] _missilePoly = new D2DPoint[]
@@ -35,7 +40,20 @@ namespace PolyPlane.GameObjects
         public bool IsDistracted = false;
         public float TargetDistance { get; set; } = 0f;
 
-        public bool MissedTarget => _guidance.MissedTarget;
+        //public bool MissedTarget => _guidance.MissedTarget;
+
+        public bool MissedTarget 
+        {
+            get
+            {
+                if (_guidance != null)
+                    return _guidance.MissedTarget;
+                else
+                    return false;
+            }
+        }
+
+
 
         private readonly float THURST_VECTOR_AMT = 1f;
         private readonly float LIFESPAN = 40f;
@@ -68,11 +86,40 @@ namespace PolyPlane.GameObjects
         private GameTimer _decoyDistractCooldown = new GameTimer(1f);
         private GameTimer _decoyDistractArm = new GameTimer(2f);
 
+        public float Deflection = 0f;
 
         private D2DPoint _com = D2DPoint.Zero;
 
+        public GuidedMissile(GameObject player, D2DPoint position, D2DPoint velocity, float rotation)
+        {
+            this.PlayerID = player.ID.PlayerID;
+            this.IsNetObject = true;
+            _useControlSurfaces = true;
+            _useThrustVectoring = true;
+
+            this.Position = position;
+            this.Velocity = velocity;
+            this.Rotation = rotation;
+            this.Owner = player;
+
+            _centerOfThrust = new FixturePoint(this, new D2DPoint(-22, 0));
+            _warheadCenterMass = new FixturePoint(this, new D2DPoint(4f, 0));
+            _motorCenterMass = new FixturePoint(this, new D2DPoint(-11f, 0));
+            _flamePos = new FixturePoint(this, new D2DPoint(-22f, 0));
+
+            this.Polygon = new RenderPoly(_missilePoly, new D2DPoint(-2f, 0f));
+            this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(6f, 0));
+
+            var liftscale = 1.5f;
+            _tailWing = new Wing(this, 4f, 0.002f, 50f, 85.1f * liftscale, new D2DPoint(-22f, 0));
+            _rocketBody = new Wing(this, 0f, 0.00159f, 0f, 26.6f * liftscale, D2DPoint.Zero);
+            _noseWing = new Wing(this, 4f, 0.00053f, 20f, 74.4f * liftscale, new D2DPoint(19.5f, 0));
+        }
+
         public GuidedMissile(GameObject player, GameObject target, GuidanceType guidance = GuidanceType.Advanced, bool useControlSurfaces = false, bool useThrustVectoring = false) : base(player.Position, player.Velocity, player.Rotation, player, target)
         {
+            this.PlayerID = player.ID.PlayerID;
+
             _currentFuel = FUEL;
 
             _centerOfThrust = new FixturePoint(this, new D2DPoint(-22, 0));
@@ -109,6 +156,9 @@ namespace PolyPlane.GameObjects
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
+            if (this.IsNetObject)
+                return;
+
             if (_age == 0f)
                 base.Update(dt, viewport, renderScale + _renderOffset);
 
@@ -174,6 +224,8 @@ namespace PolyPlane.GameObjects
 
                 _tailWing.Deflection = TAIL_AUTH * -nextDeflect;
                 _noseWing.Deflection = NOSE_AUTH * nextDeflect;
+
+                this.Deflection = _tailWing.Deflection;
             }
             else
             {
@@ -244,6 +296,61 @@ namespace PolyPlane.GameObjects
 
             _decoyDistractCooldown.Update(dt);
             _decoyDistractArm.Update(dt);
+        }
+
+        public override void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, D2DPoint velocity, float rotation)
+        {
+            this.Position = position;
+            this.Velocity = velocity;
+            this.Rotation = rotation;
+
+
+            _tailWing.Deflection = this.Deflection;
+
+
+            if (_useControlSurfaces)
+            {
+                _tailWing.Update(dt, viewport, renderScale + _renderOffset);
+                _noseWing.Update(dt, viewport, renderScale + _renderOffset);
+                _rocketBody.Update(dt, viewport, renderScale + _renderOffset);
+            }
+            else
+            {
+                _rocketBody.Update(dt, viewport, renderScale + _renderOffset);
+            }
+
+            _centerOfThrust.Update(dt, viewport, renderScale + _renderOffset);
+            _warheadCenterMass.Update(dt, viewport, renderScale + _renderOffset);
+            _motorCenterMass.Update(dt, viewport, renderScale + _renderOffset);
+            _flamePos.Update(dt, viewport, renderScale + _renderOffset);
+
+            float flameAngle = 0f;
+
+            if (_useThrustVectoring)
+            {
+                flameAngle = GetThrust(_useThrustVectoring).Angle();
+            }
+            else
+            {
+                const float DEF_AMT = 0.2f; // How much the flame will be deflected in relation to velocity.
+                flameAngle = this.Rotation - (Helpers.ClampAngle180(this.Rotation - this.Velocity.Angle(true)) * DEF_AMT);
+            }
+
+            var thrust = GetThrust().Length();
+            var len = this.Velocity.Length() * 0.05f;
+            len += thrust * 0.01f;
+            len *= 0.8f;
+            FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
+            _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
+
+            FlamePoly.Update(_flamePos.Position, flameAngle, renderScale + _renderOffset);
+            this.Polygon.Update(this.Position, this.Rotation, renderScale + _renderOffset); 
+
+            if (FUEL <= 0f && this.Velocity.Length() <= 5f)
+                this.IsExpired = true;
+
+            if (Target.IsExpired && _age > LIFESPAN)
+                this.IsExpired = true;
         }
 
         public void ChangeTarget(GameObject target)
@@ -336,7 +443,7 @@ namespace PolyPlane.GameObjects
             //if (Target is Decoy)
             //    fillColor = D2DColor.Yellow;
 
-            
+
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.White, 0.5f, D2DDashStyle.Solid, fillColor);
 
             //DrawFuelGauge(gfx);

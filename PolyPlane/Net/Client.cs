@@ -100,6 +100,18 @@ namespace PolyPlane.Net
             //Peer.Send(CHANNEL_ID, ref packet);
         }
 
+        public void SendNewMissilePacket(GameObjects.GuidedMissile missile)
+        {
+            //Packet packet = default(Packet);
+            var netPacket = new MissilePacket(missile);
+            //var data = IO.ObjectToByteArray(netPacket);
+            //packet.Create(data);
+
+            EnqueuePacket(netPacket);
+            //Peer.Send(CHANNEL_ID, ref packet);
+        }
+
+
 
         public void EnqueuePacket(NetPacket packet)
         {
@@ -159,7 +171,7 @@ namespace PolyPlane.Net
                             break;
 
                         case EventType.Receive:
-                            Log("Packet received from server - Channel ID: " + netEvent.ChannelID + ", Data length: " + netEvent.Packet.Length);
+                            //Log("Packet received from server - Channel ID: " + netEvent.ChannelID + ", Data length: " + netEvent.Packet.Length);
 
 
                             ParsePacket(netEvent.Packet);
@@ -196,6 +208,9 @@ namespace PolyPlane.Net
 
             var packetObj = IO.ByteArrayToObject(buffer) as NetPacket;
 
+            //Log(packetObj.Type.ToString());
+
+
             PacketReceiveQueue.Enqueue(packetObj);
 
             //switch (packetObj.Type)
@@ -220,7 +235,7 @@ namespace PolyPlane.Net
 
         private void Log(string message)
         {
-            //Debug.WriteLine($"[CLIENT] {message}");
+            Debug.WriteLine($"[CLIENT] {message}");
         }
 
         public void Dispose()

@@ -77,6 +77,8 @@ namespace PolyPlane
 
         public static D2DPoint Gravity = new D2DPoint(0, 9.8f);
         public static long CurrentObjId = 0;
+        public static int CurrentPlayerId = 0;
+
 
         public static float GetDensityAltitude(D2DPoint position)
         {
@@ -122,9 +124,14 @@ namespace PolyPlane
             }
         }
 
-        public static long GetNextId()
+        public static long GetNextObjectId()
         {
             return Interlocked.Increment(ref CurrentObjId);
+        }
+
+        public static int GetNextPlayerId()
+        {
+            return Interlocked.Increment(ref CurrentPlayerId);
         }
 
     }

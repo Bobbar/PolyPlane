@@ -8,8 +8,8 @@ namespace PolyPlane.GameObjects
 {
     public class Plane : GameObjectPoly
     {
-
-        public bool IsNetPlayer = false;
+        public float Deflection = 0f;
+        //public bool IsNetPlayer = false;
         public int BulletsFired = 0;
         public int MissilesFired = 0;
 
@@ -120,17 +120,17 @@ namespace PolyPlane.GameObjects
 
         private float _gForce = 0f;
 
-        private float Deflection
-        {
-            get { return _targetDeflection; }
-            set
-            {
-                if (value >= -_maxDeflection && value <= _maxDeflection)
-                    _targetDeflection = value;
-                else
-                    _targetDeflection = Math.Sign(value) * _maxDeflection;
-            }
-        }
+        //private float Deflection
+        //{
+        //    get { return _targetDeflection; }
+        //    set
+        //    {
+        //        if (value >= -_maxDeflection && value <= _maxDeflection)
+        //            _targetDeflection = value;
+        //        else
+        //            _targetDeflection = Math.Sign(value) * _maxDeflection;
+        //    }
+        //}
 
         private readonly D2DPoint[] _poly = new D2DPoint[]
         {
@@ -162,10 +162,11 @@ namespace PolyPlane.GameObjects
 
         public Plane(D2DPoint pos, D2DColor color) : base(pos)
         {
-            IsNetPlayer = true;
+            IsNetObject = true;
             _planeColor = color;
 
-
+            AutoPilotOn = false;
+            ThrustOn = true;
             _thrustAmt.Target = 1f;
 
             _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
@@ -177,7 +178,7 @@ namespace PolyPlane.GameObjects
                 _damageFlash = false;
             };
 
-            _planeColor = D2DColor.Randomly();
+            //_planeColor = D2DColor.Randomly();
 
             this.Polygon = new RenderPoly(_poly, _renderOffset);
 
@@ -235,61 +236,37 @@ namespace PolyPlane.GameObjects
             AddWing(new Wing(this, 10f * _renderOffset, 0.5f, 40f, 10000f, new D2DPoint(1.5f, 1f), defRate));
             AddWing(new Wing(this, 5f * _renderOffset, 0.2f, 50f, 5000f, new D2DPoint(-35f, 1f), defRate), true);
 
+            var skipFrames = IsNetObject ? 1 : World.PHYSICS_STEPS;
+
             this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), 1.7f);
-            _flamePos = new FixturePoint(this, new D2DPoint(-37f, 0), World.PHYSICS_STEPS);
-            _gunPosition = new FixturePoint(this, new D2DPoint(33f, 0), World.PHYSICS_STEPS);
+            _flamePos = new FixturePoint(this, new D2DPoint(-37f, 0), skipFrames);
+            _gunPosition = new FixturePoint(this, new D2DPoint(33f, 0), skipFrames);
             _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
+
+            
+            _flamePos.IsNetObject = this.IsNetObject;
+            _gunPosition.IsNetObject = this.IsNetObject;
+            _cockpitPosition.IsNetObject = this.IsNetObject;
 
             _contrail = new SmokeTrail(this, o =>
             {
                 var p = o as Plane;
                 return p.ExhaustPosition;
             });
-            _contrail.SkipFrames = World.PHYSICS_STEPS;
+            _contrail.SkipFrames = skipFrames;
+
+            _contrail.IsNetObject = this.IsNetObject;
+
 
             _expireTimeout.TriggerCallback = () => this.IsExpired = true;
         }
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
-            base.Update(dt, viewport, renderScale * _renderOffset);
-
-            if (IsNetPlayer)
-            {
-                _flames.ForEach(f => f.Update(dt, viewport, renderScale));
-                _debris.ForEach(d => d.Update(dt, viewport, renderScale));
-                _contrail.Update(dt, viewport, renderScale, skipFrames: true);
-                _flamePos.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
-                _gunPosition.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
-                _cockpitPosition.Update(dt, viewport, renderScale * _renderOffset);
-
-
-                // TODO:  This is so messy...
-                Wings.ForEach(w => w.Update(dt, viewport, renderScale * _renderOffset));
-                _centerOfThrust.Update(dt, viewport, renderScale * _renderOffset);
-                _thrustAmt.Update(dt);
-                _apAngleLimiter.Update(dt);
-                CheckForFlip();
-
-                //var thrustMag = thrust.Length();
-                //var flameAngle = thrust.Angle();
-                //var len = this.Velocity.Length() * 0.05f;
-                //len += thrustMag * 0.01f;
-                //len *= 0.6f;
-                //FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
-                //_flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
-
-                //FlamePoly.Update(_flamePos.Position, flameAngle, renderScale * _renderOffset);
-
-                _flipTimer.Update(dt);
-                _isLockOntoTimeout.Update(dt);
-                _damageCooldownTimeout.Update(dt);
-                _damageFlashTimer.Update(dt);
-                _expireTimeout.Update(dt);
-
-
+            if (this.IsNetObject)
                 return;
-            }
+
+            base.Update(dt, viewport, renderScale * _renderOffset);
 
             this.Radar?.Update(dt, viewport, renderScale, skipFrames: true);
 
@@ -349,6 +326,7 @@ namespace PolyPlane.GameObjects
                 deflection = 0f;
 
             _controlWing.Deflection = deflection;
+            Deflection = _controlWing.Deflection;
 
             foreach (var wing in Wings)
             {
@@ -418,19 +396,21 @@ namespace PolyPlane.GameObjects
             //    _debris.Clear();
         }
 
-        public override void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, float rotation)
+        public override void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, D2DPoint velocity, float rotation)
         {
-            base.NetUpdate(dt, viewport, renderScale, position, rotation);
+            base.NetUpdate(dt, viewport, renderScale, position, velocity, rotation);
 
             this.Position = position;
             this.Rotation = rotation;
 
+            _controlWing.Deflection = this.Deflection;
+
 
             _flames.ForEach(f => f.Update(dt, viewport, renderScale));
             _debris.ForEach(d => d.Update(dt, viewport, renderScale));
-            _contrail.Update(dt, viewport, renderScale, skipFrames: true);
-            _flamePos.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
-            _gunPosition.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
+            _contrail.Update(dt, viewport, renderScale, skipFrames: false);
+            _flamePos.Update(dt, viewport, renderScale * _renderOffset, skipFrames: false);
+            _gunPosition.Update(dt, viewport, renderScale * _renderOffset, skipFrames: false);
             _cockpitPosition.Update(dt, viewport, renderScale * _renderOffset);
 
             // TODO:  This is so messy...
@@ -597,15 +577,15 @@ namespace PolyPlane.GameObjects
             this.BulletsFired++;
         }
 
-        public void Pitch(bool pitchUp)
-        {
-            float amt = 1f;//0.5f;
+        //public void Pitch(bool pitchUp)
+        //{
+        //    float amt = 1f;//0.5f;
 
-            if (pitchUp)
-                this.Deflection += amt;
-            else
-                this.Deflection -= amt;
-        }
+        //    if (pitchUp)
+        //        this.Deflection += amt;
+        //    else
+        //        this.Deflection -= amt;
+        //}
 
         private float GetAPGuidanceDirection(float dir)
         {
@@ -649,7 +629,8 @@ namespace PolyPlane.GameObjects
         public void SetOnFire(D2DPoint pos)
         {
             var flame = new Flame(this, pos);
-            flame.SkipFrames = World.PHYSICS_STEPS;
+            flame.IsNetObject = this.IsNetObject;
+            flame.SkipFrames = this.IsNetObject ? 1 : World.PHYSICS_STEPS;
             _flames.Add(flame);
         }
 
@@ -766,7 +747,7 @@ namespace PolyPlane.GameObjects
             for (int i = 0; i < num; i++)
             {
                 var debris = new Debris(pos, this.Velocity, color);
-                debris.SkipFrames = World.PHYSICS_STEPS;
+                //debris.SkipFrames = World.PHYSICS_STEPS;
 
                 _debris.Add(debris);
             }

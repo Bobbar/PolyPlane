@@ -40,7 +40,12 @@ namespace PolyPlane
         private GameTimer _lostLockTimer = new GameTimer(10f);
         private GameTimer _AIUpdateRate = new GameTimer(1f);
 
-        public Radar(Plane hostPlane, D2DColor renderColor, params List<GameObject>[] sources)
+        private List<GameObject> _missiles;
+        private List<Plane> _planes;
+
+
+
+        public Radar(Plane hostPlane, D2DColor renderColor, List<GameObject> missiles, List<Plane> planes)
         {
             HostPlane = hostPlane;
             _color = renderColor;
@@ -51,10 +56,16 @@ namespace PolyPlane
                 _AIUpdateRate.Restart();
             }
 
-            foreach (var source in sources)
-            {
-                _sources.Add(source);
-            }
+            _missiles = missiles;
+            _planes = planes;
+
+            //_sources.Add(missiles);
+            //_sources.Add(planes);
+
+            //foreach (var source in sources)
+            //{
+            //    _sources.Add(source);
+            //}
 
             _lockTimer.TriggerCallback = () =>
             {
@@ -64,6 +75,31 @@ namespace PolyPlane
 
             _lostLockTimer.TriggerCallback = () => ClearLock();
         }
+
+        //public Radar(Plane hostPlane, D2DColor renderColor, params List<GameObject>[] sources)
+        //{
+        //    HostPlane = hostPlane;
+        //    _color = renderColor;
+
+        //    if (HostPlane.IsAI)
+        //    {
+        //        _hostIsAI = true;
+        //        _AIUpdateRate.Restart();
+        //    }
+
+        //    foreach (var source in sources)
+        //    {
+        //        _sources.Add(source);
+        //    }
+
+        //    _lockTimer.TriggerCallback = () =>
+        //    {
+        //        SwitchLock();
+        //        Log.Msg("Lock complete!");
+        //    };
+
+        //    _lostLockTimer.TriggerCallback = () => ClearLock();
+        //}
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
@@ -86,56 +122,64 @@ namespace PolyPlane
                 _sweepAngle = Helpers.ClampAngle(_sweepAngle);
 
                 // Check all sources and add pings if they are within the FOV of the current sweep.
-                foreach (var src in _sources)
-                {
-                    foreach (var obj in src)
-                    {
-                        if (obj is Decoy)
-                            continue;
 
-                        if (obj.IsExpired)
-                            continue;
+                foreach (var missile in _missiles)
+                    DoSweep(missile);
 
-                        if (obj.ID == HostPlane.ID) // Really needed?
-                            continue;
-
-                        if (_hostIsAI)
-                        {
-                            var dist = this.HostPlane.Position.DistanceTo(obj.Position);
-                            var angle = (this.HostPlane.Position - obj.Position).Angle(true);
-                            var radDist = (_radius / _maxRange) * dist;
-                            var radPos = this.Position - Helpers.AngleToVectorDegrees(angle, radDist);
-
-                            if (dist > _maxRange)
-                                radPos = this.Position - Helpers.AngleToVectorDegrees(angle, _radius);
-
-                            var pObj = new PingObj(obj, radPos);
-
-                            AddIfNotExists(pObj);
-                            RefreshPing(pObj);
-                        }
-                        else
-                        {
-                            if (IsInFOV(obj, _sweepAngle, SWEEP_FOV))
-                            {
-                                var dist = this.HostPlane.Position.DistanceTo(obj.Position);
-                                var angle = (this.HostPlane.Position - obj.Position).Angle(true);
-                                var radDist = (_radius / _maxRange) * dist;
-                                var radPos = this.Position - Helpers.AngleToVectorDegrees(angle, radDist);
-
-                                if (dist > _maxRange)
-                                    radPos = this.Position - Helpers.AngleToVectorDegrees(angle, _radius);
-
-                                var pObj = new PingObj(obj, radPos);
-
-                                AddIfNotExists(pObj);
-                                RefreshPing(pObj);
-                            }
-                        }
+                foreach (var plane in _planes)
+                    DoSweep(plane);
 
 
-                    }
-                }
+                //foreach (var src in _sources)
+                //{
+                //    foreach (var obj in src)
+                //    {
+                //        if (obj is Decoy)
+                //            continue;
+
+                //        if (obj.IsExpired)
+                //            continue;
+
+                //        if (obj.ID.Equals(HostPlane.ID)) // Really needed?
+                //            continue;
+
+                //        if (_hostIsAI)
+                //        {
+                //            var dist = this.HostPlane.Position.DistanceTo(obj.Position);
+                //            var angle = (this.HostPlane.Position - obj.Position).Angle(true);
+                //            var radDist = (_radius / _maxRange) * dist;
+                //            var radPos = this.Position - Helpers.AngleToVectorDegrees(angle, radDist);
+
+                //            if (dist > _maxRange)
+                //                radPos = this.Position - Helpers.AngleToVectorDegrees(angle, _radius);
+
+                //            var pObj = new PingObj(obj, radPos);
+
+                //            AddIfNotExists(pObj);
+                //            RefreshPing(pObj);
+                //        }
+                //        else
+                //        {
+                //            if (IsInFOV(obj, _sweepAngle, SWEEP_FOV))
+                //            {
+                //                var dist = this.HostPlane.Position.DistanceTo(obj.Position);
+                //                var angle = (this.HostPlane.Position - obj.Position).Angle(true);
+                //                var radDist = (_radius / _maxRange) * dist;
+                //                var radPos = this.Position - Helpers.AngleToVectorDegrees(angle, radDist);
+
+                //                if (dist > _maxRange)
+                //                    radPos = this.Position - Helpers.AngleToVectorDegrees(angle, _radius);
+
+                //                var pObj = new PingObj(obj, radPos);
+
+                //                AddIfNotExists(pObj);
+                //                RefreshPing(pObj);
+                //            }
+                //        }
+
+
+                //    }
+                //}
 
                 _AIUpdateRate.Restart();
             }
@@ -149,6 +193,52 @@ namespace PolyPlane
             NotifyLocks();
         }
 
+        private void DoSweep(GameObject obj)
+        {
+            if (obj is Decoy)
+                return;
+
+            if (obj.IsExpired)
+                return;
+
+            if (obj.ID.Equals(HostPlane.ID)) // Really needed?
+                return;
+
+            if (_hostIsAI)
+            {
+                var dist = this.HostPlane.Position.DistanceTo(obj.Position);
+                var angle = (this.HostPlane.Position - obj.Position).Angle(true);
+                var radDist = (_radius / _maxRange) * dist;
+                var radPos = this.Position - Helpers.AngleToVectorDegrees(angle, radDist);
+
+                if (dist > _maxRange)
+                    radPos = this.Position - Helpers.AngleToVectorDegrees(angle, _radius);
+
+                var pObj = new PingObj(obj, radPos);
+
+                AddIfNotExists(pObj);
+                RefreshPing(pObj);
+            }
+            else
+            {
+                if (IsInFOV(obj, _sweepAngle, SWEEP_FOV))
+                {
+                    var dist = this.HostPlane.Position.DistanceTo(obj.Position);
+                    var angle = (this.HostPlane.Position - obj.Position).Angle(true);
+                    var radDist = (_radius / _maxRange) * dist;
+                    var radPos = this.Position - Helpers.AngleToVectorDegrees(angle, radDist);
+
+                    if (dist > _maxRange)
+                        radPos = this.Position - Helpers.AngleToVectorDegrees(angle, _radius);
+
+                    var pObj = new PingObj(obj, radPos);
+
+                    AddIfNotExists(pObj);
+                    RefreshPing(pObj);
+                }
+            }
+
+        }
 
         public override void Render(RenderContext ctx)
         {
@@ -174,7 +264,7 @@ namespace PolyPlane
 
                 if (p.Obj is Missile missile)
                 {
-                    if (p.Obj.Owner.ID != this.HostPlane.ID)
+                    if (!p.Obj.Owner.ID.Equals(this.HostPlane.ID))
                         gfx.DrawTriangle(p.RadarPos, pColor, D2DColor.Red, 1f);
                     else
                         gfx.DrawTriangle(p.RadarPos, pColor, pColor, 1f);
@@ -265,7 +355,7 @@ namespace PolyPlane
 
                 if (HasLock)
                 {
-                    if (mostCentered.Obj.ID != _lockedPingObj.Obj.ID)
+                    if (!mostCentered.Obj.ID.Equals(_lockedPingObj.Obj.ID))
                     {
 
                         if (!_lockTimer.IsRunning)
@@ -439,7 +529,7 @@ namespace PolyPlane
             {
                 var p = _pings[i];
 
-                if (p.Obj.ID == pingObj.Obj.ID)
+                if (p.Obj.ID.Equals(pingObj.Obj.ID))
                     exists = true;
             }
 
@@ -453,7 +543,7 @@ namespace PolyPlane
             {
                 var ping = _pings[i];
 
-                if (ping.Obj.ID == pingObj.Obj.ID)
+                if (ping.Obj.ID.Equals(pingObj.Obj.ID))
                 {
                     _pings[i].Refresh(pingObj.RadarPos);
                 }
