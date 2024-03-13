@@ -243,7 +243,7 @@ namespace PolyPlane.GameObjects
             _gunPosition = new FixturePoint(this, new D2DPoint(33f, 0), skipFrames);
             _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
 
-            
+
             _flamePos.IsNetObject = this.IsNetObject;
             _gunPosition.IsNetObject = this.IsNetObject;
             _cockpitPosition.IsNetObject = this.IsNetObject;
@@ -458,7 +458,7 @@ namespace PolyPlane.GameObjects
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, color);
             Wings.ForEach(w => w.Render(ctx));
             DrawCockpit(ctx.Gfx);
-            
+
 
             ctx.Gfx.AntiAliasingOff();
             _debris.ForEach(d => d.Render(ctx));
@@ -640,7 +640,7 @@ namespace PolyPlane.GameObjects
             DoImpact(impactor, impactor.Position);
         }
 
-        public void DoImpact(GameObject impactor, D2DPoint impactPos)
+        public void DoImpact(GameObject impactor, D2DPoint impactPos, bool ignoreCooldown = false)
         {
             var attackPlane = impactor.Owner as Plane;
 
@@ -650,9 +650,10 @@ namespace PolyPlane.GameObjects
                 attackPlane.MissilesHit++;
 
             // Always change target to attacking plane?
-            _aiBehavior.ChangeTarget(attackPlane);
+            if (this.IsAI)
+                _aiBehavior.ChangeTarget(attackPlane);
 
-            if (!IsDamaged && !_damageCooldownTimeout.IsRunning)
+            if ((!IsDamaged && !_damageCooldownTimeout.IsRunning) || ignoreCooldown)
             {
                 if (this.Hits > 0)
                 {
