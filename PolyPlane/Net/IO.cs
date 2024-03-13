@@ -4,31 +4,77 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
+using GroBuf;
+using GroBuf.DataMembersExtracters;
 
 namespace PolyPlane.Net
 {
     public static class IO
     {
-        public static byte[] ObjectToByteArray(Object obj)
+        public static Serializer _serializer = new Serializer(new FieldsExtractor(), options: GroBufOptions.WriteEmptyObjects);
+
+        public static byte[] ObjectToByteArray(NetPacket obj)
         {
-            BinaryFormatter bf = new BinaryFormatter();
-            using (var ms = new MemoryStream())
-            {
-                bf.Serialize(ms, obj);
-                return ms.ToArray();
-            }
+            var payloadBytes = _serializer.Serialize(obj.GetType(), obj);
+            var payload = new PayloadPacket(obj.Type, payloadBytes);
+            var bytes = _serializer.Serialize<PayloadPacket>(payload);
+            return bytes;
         }
 
         public static Object ByteArrayToObject(byte[] arrBytes)
         {
-            using (var memStream = new MemoryStream())
+            var payloadPacket = _serializer.Deserialize<PayloadPacket>(arrBytes);
+
+            Object obj = null;
+
+            switch (payloadPacket.Type)
             {
-                var binForm = new BinaryFormatter();
-                memStream.Write(arrBytes, 0, arrBytes.Length);
-                memStream.Seek(0, SeekOrigin.Begin);
-                var obj = binForm.Deserialize(memStream);
-                return obj;
+                case PacketTypes.PlaneUpdate:
+                    obj = _serializer.Deserialize<PlaneListPacket>(payloadPacket.Payload);
+
+                    break;
+                case PacketTypes.MissileUpdate:
+                    obj = _serializer.Deserialize<MissileListPacket>(payloadPacket.Payload);
+
+                    break;
+                case PacketTypes.Impact:
+                    obj = _serializer.Deserialize<ImpactPacket>(payloadPacket.Payload);
+
+                    break;
+                case PacketTypes.NewPlayer:
+                    obj = _serializer.Deserialize<PlanePacket>(payloadPacket.Payload);
+
+                    break;
+                case PacketTypes.NewBullet:
+                    obj = _serializer.Deserialize<BulletPacket>(payloadPacket.Payload);
+
+                    break;
+                case PacketTypes.NewMissile:
+                    obj = _serializer.Deserialize<MissilePacket>(payloadPacket.Payload);
+
+                    break;
+                case PacketTypes.NewDecoy:
+                    obj = _serializer.Deserialize<DecoyPacket>(payloadPacket.Payload);
+
+                    break;
+                case PacketTypes.SetID:
+                    obj = _serializer.Deserialize<BasicPacket>(payloadPacket.Payload);
+
+                    break;
+                case PacketTypes.GetNextID:
+                    obj = _serializer.Deserialize<BasicPacket>(payloadPacket.Payload);
+
+                    break;
+                case PacketTypes.ChatMessage:
+
+                    break;
+                case PacketTypes.GetOtherPlanes:
+                    obj = _serializer.Deserialize<PlaneListPacket>(payloadPacket.Payload);
+
+                    break;
             }
+
+            return obj;
         }
 
         public static D2DPoint ToD2DPoint(this PointF point)
@@ -36,9 +82,17 @@ namespace PolyPlane.Net
             return new D2DPoint(point.X, point.Y);
         }
 
-        public static PointF ToPoint(this D2DPoint point)
+        public static D2DPoint ToD2DPoint(this NetPoint point)
         {
-            return new PointF(point.X, point.Y);
+            return new D2DPoint(point.X, point.Y);
         }
+
+        public static NetPoint ToPoint(this D2DPoint point)
+        {
+            return new NetPoint(point.X, point.Y);
+        }
+
+
+
     }
 }

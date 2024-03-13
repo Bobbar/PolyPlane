@@ -21,6 +21,7 @@ namespace PolyPlane.Net
         public Peer Peer;
         public int Port;
         public Address Address;
+        public long CurrentTime;
         private Thread _pollThread;
         private bool _runLoop = true;
         private const int MAX_CLIENTS = 3;
@@ -184,6 +185,7 @@ namespace PolyPlane.Net
 
                 ProcessQueue();
 
+                CurrentTime = DateTime.UtcNow.Ticks;
             }
 
         }
@@ -193,7 +195,7 @@ namespace PolyPlane.Net
         {
             Packet reqPacket = default(Packet);
 
-            var netPacket = new NetPacket(PacketTypes.GetOtherPlanes, Peer.ID);
+            var netPacket = new BasicPacket(PacketTypes.GetOtherPlanes, new GameObjects.GameID(-1, (int)Peer.ID));
             var data = IO.ObjectToByteArray(netPacket);
 
             reqPacket.Create(data);

@@ -14,6 +14,7 @@ namespace PolyPlane.Net
         NewPlayer,
         NewBullet,
         NewMissile,
+        NewDecoy,
         SetID,
         GetNextID,
         ChatMessage,

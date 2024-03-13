@@ -105,8 +105,8 @@ namespace PolyPlane.GameObjects
 
         public void Update(float dt, D2DSize viewport, float renderScale, bool skipFrames = false)
         {
-            if (IsNetObject)
-                return;
+            //if (IsNetObject)
+            //    return;
 
             CurrentFrame++;
 
