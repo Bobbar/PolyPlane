@@ -402,6 +402,7 @@ namespace PolyPlane.GameObjects
 
             this.Position = position;
             this.Rotation = rotation;
+            this.Velocity = velocity;
 
             _controlWing.Deflection = this.Deflection;
 

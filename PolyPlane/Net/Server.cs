@@ -7,7 +7,9 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using ENet;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using GroBuf;
+using unvell.D2DLib;
+
 
 namespace PolyPlane.Net
 {
@@ -19,11 +21,15 @@ namespace PolyPlane.Net
         public Host ServerHost;
         public int Port;
         public Address Address;
+        public long CurrentTime;
+        
         private Thread _pollThread;
         private bool _runLoop = true;
         private const int MAX_CLIENTS = 3;
         private const int MAX_CHANNELS = 3;
         private const int CHANNEL_ID = 0;
+
+
 
         //private List<Peer> _peers = new List<Peer>();
         private Dictionary<uint, Peer> _peers = new Dictionary<uint, Peer>();
@@ -49,6 +55,34 @@ namespace PolyPlane.Net
 
             _pollThread = new Thread(PollLoop);
             _pollThread.Start();
+
+            //var onePlane = new PlanePacket();
+            //onePlane.Position = new NetPoint(100, 1234);
+            //onePlane.Velocity = new NetPoint(300, 4321);
+            //onePlane.PlaneColor = D2DColor.Red;
+            //onePlane.Rotation = 185f;
+
+            //var testPack = new PlaneListPacket(new List<PlanePacket>() { onePlane, new PlanePacket(), new PlanePacket(), new PlanePacket() });
+            //byte[] data;
+
+            //data = IO._serializer.Serialize(testPack.GetType(), testPack);
+
+
+            //var netPack = IO._serializer.Deserialize<PlaneListPacket>(data);
+
+            //using (var mem = new MemoryStream())
+            //{
+            //    Serializer.Serialize<NetPacket>(mem, testPack);
+            //    data = mem.ToArray();   
+            //}
+
+            //using (var mem = new MemoryStream(data))
+            //{
+            //    var netPacket = Serializer.Deserialize<PlaneListPacket>(mem);
+
+
+            //}
+
         }
 
         public void Stop()
@@ -86,7 +120,7 @@ namespace PolyPlane.Net
                             _peers.Add(netEvent.Peer.ID, netEvent.Peer);
 
                             //var idPacket = new NetPacket(PacketTypes.SetID, (long)netEvent.Peer.ID);
-                            var idPacket = new NetPacket(PacketTypes.SetID, new GameObjects.GameID(World.GetNextPlayerId(), 0));
+                            var idPacket = new BasicPacket(PacketTypes.SetID, new GameObjects.GameID(World.GetNextPlayerId(), 0));
                             SendIDPacket(netEvent.Peer, idPacket);
 
 
@@ -122,6 +156,7 @@ namespace PolyPlane.Net
 
                 ProcessQueue();
 
+                CurrentTime = DateTime.UtcNow.Ticks;
             }
 
         }
@@ -256,13 +291,14 @@ namespace PolyPlane.Net
             packet.CopyTo(buffer);
 
 
+
             var packetObj = IO.ByteArrayToObject(buffer) as NetPacket;
 
             //Log(packetObj.Type.ToString());
 
             if (packetObj.Type == PacketTypes.GetNextID)
             {
-                var nextId = new NetPacket(PacketTypes.GetNextID, World.GetNextObjectId());
+                var nextId = new BasicPacket(PacketTypes.GetNextID, new GameObjects.GameID(-1, World.GetNextObjectId()));
 
                 Packet idPacket = default(Packet);
                 idPacket.Create(IO.ObjectToByteArray(nextId));
