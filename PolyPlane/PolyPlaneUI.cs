@@ -1,3 +1,4 @@
+using ENet;
 using PolyPlane.GameObjects;
 using PolyPlane.Net;
 using System.Collections.Concurrent;
@@ -33,34 +34,23 @@ namespace PolyPlane
         private int _playerDeaths = 0;
         private bool _queueNextViewId = false;
         private bool _queuePrevViewId = false;
+        private bool _queueResetPlane = false;
         private bool _skipRender = false;
         private long _lastRenderTime = 0;
         private float _renderFPS = 0;
         private bool _useMultiThread = true;
         private bool _showInfo = true;
         private int _multiThreadNum = 4;
-        private float _packetDelay = 0f;
+        private bool _netIDIsSet = false;
 
         private List<GameObject> _missiles = new List<GameObject>();
         private List<SmokeTrail> _missileTrails = new List<SmokeTrail>();
-        //private List<GameObject> _targets = new List<GameObject>();
         private List<GameObject> _decoys = new List<GameObject>();
         private List<GameObjectPoly> _bullets = new List<GameObjectPoly>();
         private List<GameObject> _explosions = new List<GameObject>();
         private List<Plane> _planes = new List<Plane>();
-        //private List<GameObject> _planes = new List<GameObject>();
-
-
-        //private List<Plane> _planes = new List<Plane>();
-
-
-        //private Dictionary<long, Plane> _netPlanes = new Dictionary<long, Plane>();
-        //private List<Plane> _netPlanes = new List<Plane>();
-        private List<GameObject> _netPlanes = new List<GameObject>();
-
         private List<GameObject> _updateObjects = new List<GameObject>();
 
-        private ConcurrentQueue<GameObject> _newTargets = new ConcurrentQueue<GameObject>();
         private ConcurrentQueue<GameObject> _newDecoys = new ConcurrentQueue<GameObject>();
         private ConcurrentQueue<GameObject> _newMissiles = new ConcurrentQueue<GameObject>();
         private ConcurrentQueue<Plane> _newPlanes = new ConcurrentQueue<Plane>();
@@ -98,6 +88,10 @@ namespace PolyPlane
         private TimeSpan _renderTime = new TimeSpan();
         private TimeSpan _updateTime = new TimeSpan();
         private TimeSpan _collisionTime = new TimeSpan();
+        private TimeSpan _netTime = new TimeSpan();
+        private float _packetDelay = 0f;
+        private SmoothFloat _packetDelayAvg = new SmoothFloat(100);
+
 
         private bool _isNetGame = false;
         private bool _isServer = false;
@@ -432,6 +426,7 @@ namespace PolyPlane
             _renderTime = TimeSpan.Zero;
             _updateTime = TimeSpan.Zero;
             _collisionTime = TimeSpan.Zero;
+            _netTime = TimeSpan.Zero;
 
             GraphicsExtensions.OnScreen = 0;
             GraphicsExtensions.OffScreen = 0;
@@ -563,41 +558,19 @@ namespace PolyPlane
         }
 
 
-        private bool idSet = false;
+
         private void DoNetEvents()
         {
             long now = 0;
             long totalPacketTime = 0;
             int numPackets = 0;
 
+            SendPlaneUpdates();
+            SendMissileUpdates();
 
             if (_isServer)
             {
                 now = _server.CurrentTime;
-                //var newPacket = new Net.PlanePacket(_playerPlane, PacketTypes.PlaneUpdate);
-                //_server.SendPlaneUpdate(newPacket);
-
-
-                var newPlanesPacket = new Net.PlaneListPacket();
-                foreach (var plane in _planes)
-                {
-                    var planePacket = new Net.PlanePacket(plane);
-                    newPlanesPacket.Planes.Add(planePacket);
-                }
-
-                _server.SendPlaneUpdate(newPlanesPacket);
-
-
-
-                // Send missile updates.
-                var newMissilesPacket = new Net.MissileListPacket();
-                //var missiles = _missiles.Where(m => m.PlayerID == _playerPlane.PlayerID).ToList();
-                _missiles.ForEach(m => newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile)));
-
-                if (newMissilesPacket.Missiles.Count > 0)
-                    _server.EnqueuePacket(newMissilesPacket);
-                //_server.BroadcastPacket(newMissilesPacket);
-
 
                 while (_server.PacketReceiveQueue.Count > 0)
                 {
@@ -606,198 +579,13 @@ namespace PolyPlane
                         totalPacketTime += now - packet.FrameTime;
                         numPackets++;
 
-                        switch (packet.Type)
-                        {
-                            case Net.PacketTypes.PlaneUpdate:
-
-                                var updPacket = packet as PlaneListPacket;
-
-                                if (updPacket == null)
-                                    Debugger.Break();
-
-                                foreach (var planeUpdPacket in updPacket.Planes)
-                                {
-                                    var netPlane = GetNetPlane(planeUpdPacket.ID);
-
-                                    if (netPlane != null)
-                                    {
-                                        planeUpdPacket.SyncObj(netPlane);
-                                        netPlane.ThrustAmount = planeUpdPacket.ThrustAmt;
-                                        netPlane.Deflection = planeUpdPacket.Deflection;
-                                        netPlane.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, planeUpdPacket.Position.ToD2DPoint(), planeUpdPacket.Velocity.ToD2DPoint(), planeUpdPacket.Rotation);
-                                    }
-                                }
-
-                                break;
-
-                            case Net.PacketTypes.MissileUpdate:
-
-                                var missilePacket = packet as MissileListPacket;
-
-                                if (missilePacket == null)
-                                    Debugger.Break();
-
-                                foreach (var missileUpdate in missilePacket.Missiles)
-                                {
-                                    var netMissile = GetNetMissile(missileUpdate.ID);
-
-                                    // TODO: Sometimes missiles stop working....
-                                    if (netMissile != null)
-                                    {
-                                        var netMissileOwner = GetNetPlane(netMissile.Owner.ID, false);
-
-                                        if (netMissileOwner != null && netMissileOwner.IsNetObject)
-                                        {
-                                            missileUpdate.SyncObj(netMissile);
-
-                                            netMissile.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, missileUpdate.Position.ToD2DPoint(), missileUpdate.Velocity.ToD2DPoint(), missileUpdate.Rotation);
-                                        }
-                                    }
-                                }
-
-                                break;
-
-                            case Net.PacketTypes.NewPlayer:
-                                var planePacket = packet as PlanePacket;
-
-                                if (planePacket != null)
-                                {
-                                    var newPlane = new Plane(planePacket.Position.ToD2DPoint(), planePacket.PlaneColor);
-                                    newPlane.ID = planePacket.ID;
-                                    planePacket.SyncObj(newPlane);
-                                    newPlane.IsNetObject = true;
-                                    newPlane.Radar = new Radar(newPlane, _hudColor, _missiles, _planes);
-                                    _planes.Add(newPlane);
-                                }
-
-                                ServerSendOtherPlanes();
-
-                                break;
-
-                            case Net.PacketTypes.NewBullet:
-                                var bulletPacket = packet as BulletPacket;
-                                var bullet = new Bullet(bulletPacket.Position.ToD2DPoint(), bulletPacket.Velocity.ToD2DPoint(), bulletPacket.Rotation);
-                                bullet.ID = bulletPacket.ID;
-                                bulletPacket.SyncObj(bullet);
-                                var owner = GetNetPlane(bulletPacket.OwnerID);
-                                bullet.Owner = owner;
-
-
-                                var contains = _bullets.Any(b => b.ID.Equals(bullet.ID));
-
-                                if (!contains)
-                                    _bullets.Add(bullet);
-
-                                break;
-
-                            case Net.PacketTypes.NewMissile:
-                                var newMissilePacket = packet as MissilePacket;
-                                var missileOwner = GetNetPlane(newMissilePacket.OwnerID);
-
-                                if (missileOwner != null)
-                                {
-                                    var missileTarget = GetNetPlane(newMissilePacket.TargetID, false);
-
-
-                                    var missile = new GuidedMissile(missileOwner, newMissilePacket.Position.ToD2DPoint(), newMissilePacket.Velocity.ToD2DPoint(), newMissilePacket.Rotation);
-                                    //newMissilePacket.SyncObj(missile);
-                                    missile.ID = newMissilePacket.ID;
-                                    newMissilePacket.SyncObj(missile);
-                                    missile.Target = missileTarget;
-                                    _newMissiles.Enqueue(missile);
-
-                                    //_missiles.Add(missile);
-                                }
-
-                                break;
-
-                            case Net.PacketTypes.NewDecoy:
-                                var newDecoyPacket = packet as DecoyPacket;
-
-                                var decoyOwner = GetNetPlane(newDecoyPacket.OwnerID);
-
-                                if (decoyOwner != null)
-                                {
-                                    var decoy = new Decoy(decoyOwner);
-                                    decoy.ID = newDecoyPacket.ID;
-                                    newDecoyPacket.SyncObj(decoy);
-
-                                    bool containsDecoy = _decoys.Any(d => d.ID.Equals(decoy.ID));
-
-                                    if (!containsDecoy)
-                                        _decoys.Add(decoy);
-
-                                }
-
-                                break;
-
-                            case Net.PacketTypes.Impact:
-                                var impactPacket = packet as ImpactPacket;
-
-                                DoNetImpact(impactPacket);
-
-
-                                //if (impactPacket != null)
-                                //{
-                                //    GameObject impactor = null;
-                                //    var impactorMissile = _missiles.Where(m => m.ID.Equals(impactPacket.ImpactorID)).FirstOrDefault();
-                                //    var impactorBullet = _bullets.Where(b => b.ID.Equals(impactPacket.ImpactorID)).FirstOrDefault();
-
-                                //    if (impactorMissile != null)
-                                //        impactor = impactorMissile;
-
-                                //    if (impactorMissile == null && impactorBullet != null)
-                                //        impactor = impactorBullet;
-
-                                //    if (impactor == null)
-                                //        continue;
-
-                                //    var target = _planes.Where(p => p.ID.Equals(impactPacket.ID)).FirstOrDefault() as Plane;
-
-                                //    if (target != null)
-                                //        target.DoImpact(impactor, impactPacket.ImpactPoint.ToD2DPoint());
-
-                                //}
-                                break;
-
-                            case Net.PacketTypes.ChatMessage:
-                                break;
-
-                            case Net.PacketTypes.GetOtherPlanes:
-                                var excludeID = packet.ID;
-
-                                ServerSendOtherPlanes();
-                                break;
-
-
-                        }
+                        HandleNetPacket(packet);
                     }
                 }
-
-                //_packetDelay = (totalPacketTime / (float)numPackets) / 10000f / 1000f;
             }
             else
             {
                 now = _client.CurrentTime;
-
-                //_playerPlane.ID = _client.PlaneID;
-
-                //var newPacket = new Net.PlanePacket(_playerPlane, PacketTypes.PlaneUpdate);
-                //_client.EnqueuePacket(newPacket);
-
-                // Send plane updates
-                var newPlanesPacket = new Net.PlaneListPacket();
-                var planePacket = new Net.PlanePacket(_playerPlane);
-                newPlanesPacket.Planes.Add(planePacket);
-                _client.EnqueuePacket(newPlanesPacket);
-
-                // Send missile updates.
-                var newMissilesPacket = new Net.MissileListPacket();
-                var missiles = _missiles.Where(m => m.PlayerID == _playerPlane.PlayerID).ToList();
-                missiles.ForEach(m => newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile)));
-
-                if (newMissilesPacket.Missiles.Count > 0)
-                    _client.EnqueuePacket(newMissilesPacket);
 
                 while (_client.PacketReceiveQueue.Count > 0)
                 {
@@ -806,230 +594,169 @@ namespace PolyPlane
                         totalPacketTime += now - packet.FrameTime;
                         numPackets++;
 
-
-                        switch (packet.Type)
-                        {
-                            case Net.PacketTypes.PlaneUpdate:
-
-                                if (!idSet)
-                                    break;
-
-                                var updPacket = packet as PlaneListPacket;
-
-                                if (updPacket == null)
-                                    Debugger.Break();
-
-                                var myPlane = _playerPlane;
-
-
-                                foreach (var planeUpdPacket in updPacket.Planes)
-                                {
-                                    var netPlane = GetNetPlane(planeUpdPacket.ID);
-
-                                    if (netPlane != null)
-                                    {
-                                        planeUpdPacket.SyncObj(netPlane);
-                                        netPlane.ThrustAmount = planeUpdPacket.ThrustAmt;
-                                        netPlane.Deflection = planeUpdPacket.Deflection;
-                                        netPlane.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, planeUpdPacket.Position.ToD2DPoint(), planeUpdPacket.Velocity.ToD2DPoint(), planeUpdPacket.Rotation);
-                                    }
-                                }
-
-
-                                break;
-
-                            case Net.PacketTypes.MissileUpdate:
-
-                                var missilePacket = packet as MissileListPacket;
-
-                                if (missilePacket == null)
-                                    Debugger.Break();
-
-                                foreach (var missileUpdate in missilePacket.Missiles)
-                                {
-                                    var netMissile = GetNetMissile(missileUpdate.ID);
-
-                                    if (netMissile != null)
-                                    {
-                                        var netMissileOwner = GetNetPlane(netMissile.Owner.ID);
-
-                                        if (netMissileOwner != null && netMissileOwner.IsNetObject)
-                                        {
-                                            missileUpdate.SyncObj(netMissile);
-
-                                            netMissile.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, missileUpdate.Position.ToD2DPoint(), missileUpdate.Velocity.ToD2DPoint(), missileUpdate.Rotation);
-                                        }
-                                    }
-
-                                    //if (netMissile != null)
-                                    //{
-                                    //    missileUpdate.SyncObj(netMissile);
-
-                                    //    netMissile.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, missileUpdate.Position.ToD2DPoint(), missileUpdate.Velocity.ToD2DPoint(), missileUpdate.Rotation);
-                                    //}
-                                }
-
-                                break;
-
-                            case Net.PacketTypes.NewPlayer:
-                                //var planePacket = packet as PlanePacket;
-
-                                //if (planePacket != null)
-                                //{
-                                //    var netPlane = new Plane(planePacket.Position.ToD2DPoint(), planePacket.PlaneColor);
-                                //    _newTargets.Enqueue(netPlane);
-                                //}
-
-                                break;
-
-                            case Net.PacketTypes.GetNextID:
-                                //var planePacket = packet as PlanePacket;
-
-                                //if (planePacket != null)
-                                //{
-                                //    var netPlane = new Plane(planePacket.Position.ToD2DPoint(), planePacket.PlaneColor);
-                                //    _newTargets.Enqueue(netPlane);
-                                //}
-
-                                break;
-
-                            case Net.PacketTypes.NewBullet:
-                                var bulletPacket = packet as BulletPacket;
-                                var bullet = new Bullet(bulletPacket.Position.ToD2DPoint(), bulletPacket.Velocity.ToD2DPoint(), bulletPacket.Rotation);
-                                bullet.ID = bulletPacket.ID;
-                                bulletPacket.SyncObj(bullet);
-                                var owner = GetNetPlane(bulletPacket.OwnerID);
-                                bullet.Owner = owner;
-
-                                var contains = _bullets.Any(b => b.ID.Equals(bullet.ID));
-
-                                if (!contains)
-                                    _bullets.Add(bullet);
-
-
-                                break;
-
-                            case Net.PacketTypes.NewMissile:
-                                var newMissilePacket = packet as MissilePacket;
-                                var missileOwner = GetNetPlane(newMissilePacket.OwnerID);
-
-                                if (missileOwner != null)
-                                {
-                                    if (missileOwner.ID.Equals(_playerPlane.ID))
-                                        continue;
-
-                                    var missileTarget = GetNetPlane(newMissilePacket.TargetID, false);
-
-                                    var missile = new GuidedMissile(missileOwner, newMissilePacket.Position.ToD2DPoint(), newMissilePacket.Velocity.ToD2DPoint(), newMissilePacket.Rotation);
-                                    //newMissilePacket.SyncObj(missile);
-                                    missile.ID = newMissilePacket.ID;
-
-                                    newMissilePacket.SyncObj(missile);
-                                    missile.Target = missileTarget;
-                                    _newMissiles.Enqueue(missile);
-                                    //_missiles.Add(missile);
-                                }
-
-                                break;
-
-                            case Net.PacketTypes.NewDecoy:
-                                var newDecoyPacket = packet as DecoyPacket;
-
-                                var decoyOwner = GetNetPlane(newDecoyPacket.OwnerID);
-
-                                if (decoyOwner != null)
-                                {
-                                    var decoy = new Decoy(decoyOwner);
-                                    decoy.ID = newDecoyPacket.ID;
-                                    newDecoyPacket.SyncObj(decoy);
-
-                                    bool containsDecoy = _decoys.Any(d => d.ID.Equals(decoy.ID));
-
-                                    if (!containsDecoy)
-                                        _decoys.Add(decoy);
-
-                                }
-
-                                break;
-
-                            case Net.PacketTypes.Impact:
-                                var impactPacket = packet as ImpactPacket;
-
-                                DoNetImpact(impactPacket);
-
-                                //if (impactPacket != null)
-                                //{
-                                //    GameObject impactor = null;
-                                //    var impactorMissile = _missiles.Where(m => m.ID.Equals(impactPacket.ImpactorID)).FirstOrDefault();
-                                //    var impactorBullet = _bullets.Where(b => b.ID.Equals(impactPacket.ImpactorID)).FirstOrDefault();
-
-                                //    if (impactorMissile != null)
-                                //        impactor = impactorMissile;
-
-                                //    if (impactorMissile == null && impactorBullet != null)
-                                //        impactor = impactorBullet;
-
-                                //    if (impactor == null)
-                                //        continue;
-
-                                //    var target = _planes.Where(p => p.ID.Equals(impactPacket.ID)).FirstOrDefault() as Plane;
-
-                                //    if (target != null)
-                                //        target.DoImpact(impactor, impactPacket.ImpactPoint.ToD2DPoint());
-
-                                //}
-                                break;
-
-                            case Net.PacketTypes.ChatMessage:
-                                break;
-
-                            case PacketTypes.SetID:
-                                //_playerPlane.ID = packet.ID;
-                                idSet = true;
-
-                                _playerPlane.PlayerID = packet.ID.PlayerID;
-
-                                _client.SendNewPlanePacket(_playerPlane);
-
-                                break;
-
-                            case Net.PacketTypes.GetOtherPlanes:
-                                var listPacket = packet as Net.PlaneListPacket;
-
-
-                                foreach (var plane in listPacket.Planes)
-                                {
-                                    var existing = TryIDToPlane(plane.ID);
-
-                                    if (existing == null)
-                                    {
-                                        var newPlane = new Plane(plane.Position.ToD2DPoint(), plane.PlaneColor);
-                                        newPlane.ID = plane.ID;
-                                        newPlane.IsNetObject = true;
-                                        newPlane.Radar = new Radar(newPlane, _hudColor, _missiles, _planes);
-
-                                        _planes.Add(newPlane);
-
-                                        //_netPlanes.Add(newPlane.ID, newPlane);
-
-
-                                        //_aiPlanes.Add(newPlane);
-                                        //_targets.Add(newPlane);
-                                    }
-                                }
-
-
-
-                                break;
-
-
-                        }
+                        HandleNetPacket(packet);
                     }
                 }
             }
 
-            _packetDelay = (totalPacketTime / (float)numPackets) / 10000f / 1000f;
+            //_packetDelay = (totalPacketTime / (float)numPackets) / 10000f / 1000f;
+           
+            if (totalPacketTime > 0f && numPackets > 0)
+            {
+                var avgDelay = (totalPacketTime / (float)numPackets) / 10000f;
+                _packetDelay = _packetDelayAvg.Add(avgDelay);
+            }
+           
+        }
 
+        private void SendPlaneUpdates()
+        {
+            var newPlanesPacket = new Net.PlaneListPacket();
+
+            if (_isServer)
+            {
+                foreach (var plane in _planes)
+                {
+                    var planePacket = new Net.PlanePacket(plane);
+                    newPlanesPacket.Planes.Add(planePacket);
+                }
+
+                _server.EnqueuePacket(newPlanesPacket);
+            }
+            else
+            {
+                var planePacket = new Net.PlanePacket(_playerPlane);
+                newPlanesPacket.Planes.Add(planePacket);
+
+                _client.EnqueuePacket(newPlanesPacket);
+            }
+
+        }
+
+        private void SendMissileUpdates()
+        {
+            var newMissilesPacket = new Net.MissileListPacket();
+
+            if (_isServer)
+            {
+                _missiles.ForEach(m => newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile)));
+
+                if (newMissilesPacket.Missiles.Count > 0)
+                    _server.EnqueuePacket(newMissilesPacket);
+            }
+            else
+            {
+                var missiles = _missiles.Where(m => m.PlayerID == _playerPlane.PlayerID).ToList();
+                missiles.ForEach(m => newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile)));
+
+                if (newMissilesPacket.Missiles.Count > 0)
+                    _client.EnqueuePacket(newMissilesPacket);
+            }
+        }
+
+        private void DoNetPlaneUpdates(PlaneListPacket listPacket)
+        {
+            if (!_isServer && !_netIDIsSet)
+                return;
+
+            var now = DateTime.UtcNow.Ticks;
+            var updatedPlanes = new List<Plane>();
+
+            foreach (var planeUpdPacket in listPacket.Planes)
+            {
+                var diff = now - planeUpdPacket.FrameTime;
+                var age = diff / 10000f;
+
+                var netPlane = GetNetPlane(planeUpdPacket.ID);
+
+                if (netPlane != null)
+                {
+                    updatedPlanes.Add(netPlane);
+
+                    planeUpdPacket.SyncObj(netPlane);
+                    netPlane.ThrustAmount = planeUpdPacket.ThrustAmt;
+                    netPlane.Deflection = planeUpdPacket.Deflection;
+                    netPlane.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, planeUpdPacket.Position.ToD2DPoint(), planeUpdPacket.Velocity.ToD2DPoint(), planeUpdPacket.Rotation);
+                }
+
+                if (age > 16f)
+                    Debug.WriteLine($"{age}");
+            }
+
+            var missing = _planes.Except(updatedPlanes);
+        }
+
+        private void DoNetMissileUpdates(MissileListPacket listPacket)
+        {
+            foreach (var missileUpdate in listPacket.Missiles)
+            {
+                var netMissile = GetNetMissile(missileUpdate.ID);
+
+                // TODO: Sometimes missiles stop working....
+                if (netMissile != null)
+                {
+                    var netMissileOwner = GetNetPlane(netMissile.Owner.ID, false);
+
+                    if (netMissileOwner != null && netMissileOwner.IsNetObject)
+                    {
+                        missileUpdate.SyncObj(netMissile);
+
+                        netMissile.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, missileUpdate.Position.ToD2DPoint(), missileUpdate.Velocity.ToD2DPoint(), missileUpdate.Rotation);
+                    }
+                }
+            }
+        }
+
+        private void DoNewBullet(BulletPacket bulletPacket)
+        {
+            var bullet = new Bullet(bulletPacket.Position.ToD2DPoint(), bulletPacket.Velocity.ToD2DPoint(), bulletPacket.Rotation);
+            bullet.ID = bulletPacket.ID;
+            bulletPacket.SyncObj(bullet);
+            var owner = GetNetPlane(bulletPacket.OwnerID);
+            bullet.Owner = owner;
+
+
+            var contains = _bullets.Any(b => b.ID.Equals(bullet.ID));
+
+            if (!contains)
+                _bullets.Add(bullet);
+        }
+
+        private void DoNewMissile(MissilePacket missilePacket)
+        {
+            var missileOwner = GetNetPlane(missilePacket.OwnerID);
+
+            if (missileOwner != null)
+            {
+                if (missileOwner.ID.Equals(_playerPlane.ID))
+                    return;
+
+                var missileTarget = GetNetPlane(missilePacket.TargetID, false);
+
+                var missile = new GuidedMissile(missileOwner, missilePacket.Position.ToD2DPoint(), missilePacket.Velocity.ToD2DPoint(), missilePacket.Rotation);
+                missile.ID = missilePacket.ID;
+                missilePacket.SyncObj(missile);
+                missile.Target = missileTarget;
+                _newMissiles.Enqueue(missile);
+            }
+
+        }
+
+        private void DoNewDecoy(DecoyPacket decoyPacket)
+        {
+            var decoyOwner = GetNetPlane(decoyPacket.OwnerID);
+
+            if (decoyOwner != null)
+            {
+                var decoy = new Decoy(decoyOwner);
+                decoy.ID = decoyPacket.ID;
+                decoyPacket.SyncObj(decoy);
+
+                bool containsDecoy = _decoys.Any(d => d.ID.Equals(decoy.ID));
+
+                if (!containsDecoy)
+                    _decoys.Add(decoy);
+            }
         }
 
         private void SendNetImpact(GameObject impactor, GameObject target, D2DPoint impactPoint)
@@ -1081,7 +808,7 @@ namespace PolyPlane
                     target.Velocity = packet.Velocity.ToD2DPoint();
                     target.Position = packet.Position.ToD2DPoint();
                     var impactPoint = packet.ImpactPoint.ToD2DPoint();
-                    target.DoImpact(impactor, impactPoint);
+                    target.DoImpact(impactor, impactPoint, ignoreCooldown: true);
 
                     AddExplosion(impactPoint);
                 }
@@ -1113,8 +840,120 @@ namespace PolyPlane
             var listPacket = new Net.PlaneListPacket(otherPlanesPackets);
             listPacket.Type = PacketTypes.GetOtherPlanes;
 
-            _server.SyncOtherPlanes(listPacket);
+            _server.EnqueuePacket(listPacket);
+            //_server.SyncOtherPlanes(listPacket);
         }
+
+        private void HandleNetPacket(NetPacket packet)
+        {
+            switch (packet.Type)
+            {
+                case PacketTypes.PlaneUpdate:
+
+                    if (!_isServer && !_netIDIsSet)
+                        return;
+
+                    var updPacket = packet as PlaneListPacket;
+                    DoNetPlaneUpdates(updPacket);
+
+                    break;
+                case PacketTypes.MissileUpdate:
+
+                    var missilePacket = packet as MissileListPacket;
+                    DoNetMissileUpdates(missilePacket);
+
+                    break;
+                case PacketTypes.Impact:
+
+                    var impactPacket = packet as ImpactPacket;
+                    DoNetImpact(impactPacket);
+
+                    break;
+                case PacketTypes.NewPlayer:
+
+                    if (_isServer)
+                    {
+                        var planePacket = packet as PlanePacket;
+
+                        if (planePacket != null)
+                        {
+                            var newPlane = new Plane(planePacket.Position.ToD2DPoint(), planePacket.PlaneColor);
+                            newPlane.ID = planePacket.ID;
+                            planePacket.SyncObj(newPlane);
+                            newPlane.IsNetObject = true;
+                            newPlane.Radar = new Radar(newPlane, _hudColor, _missiles, _planes);
+                            _planes.Add(newPlane);
+                        }
+
+                        ServerSendOtherPlanes();
+                    }
+
+                    break;
+                case PacketTypes.NewBullet:
+
+                    var bulletPacket = packet as BulletPacket;
+                    DoNewBullet(bulletPacket);
+
+                    break;
+                case PacketTypes.NewMissile:
+
+                    var newMissilePacket = packet as MissilePacket;
+                    DoNewMissile(newMissilePacket);
+
+                    break;
+                case PacketTypes.NewDecoy:
+
+                    var newDecoyPacket = packet as DecoyPacket;
+                    DoNewDecoy(newDecoyPacket);
+
+                    break;
+                case PacketTypes.SetID:
+
+                    if (!_isServer)
+                    {
+                        _netIDIsSet = true;
+
+                        _playerPlane.PlayerID = packet.ID.PlayerID;
+
+                        _client.SendNewPlanePacket(_playerPlane);
+                    }
+
+                    break;
+                case PacketTypes.GetNextID:
+                    // Nuttin...
+                    break;
+                case PacketTypes.ChatMessage:
+                    // Nuttin...
+                    break;
+                case PacketTypes.GetOtherPlanes:
+
+                    if (_isServer)
+                    {
+                        ServerSendOtherPlanes();
+                    }
+                    else
+                    {
+                        var listPacket = packet as Net.PlaneListPacket;
+
+                        foreach (var plane in listPacket.Planes)
+                        {
+                            var existing = TryIDToPlane(plane.ID);
+
+                            if (existing == null)
+                            {
+                                var newPlane = new Plane(plane.Position.ToD2DPoint(), plane.PlaneColor);
+                                newPlane.ID = plane.ID;
+                                newPlane.IsNetObject = true;
+                                newPlane.Radar = new Radar(newPlane, _hudColor, _missiles, _planes);
+                                _planes.Add(newPlane);
+                            }
+                        }
+                    }
+
+                    break;
+            }
+        }
+
 
         private Plane GetNetPlane(GameID id, bool netOnly = true)
         {
@@ -1296,6 +1135,12 @@ namespace PolyPlane
             {
                 _aiPlaneViewID = GetPrevAIID();
                 _queuePrevViewId = false;
+            }
+
+            if (_queueResetPlane)
+            {
+                ResetPlane();
+                _queueResetPlane = false;
             }
         }
 
@@ -2671,13 +2516,15 @@ namespace PolyPlane
             infoText += $"Update ms: {_updateTime.TotalMilliseconds}\n";
             infoText += $"Render ms: {_renderTime.TotalMilliseconds}\n";
             infoText += $"Collision ms: {_collisionTime.TotalMilliseconds}\n";
+            infoText += $"Net ms: {_netTime.TotalMilliseconds}\n";
+
             infoText += $"Packet Delay: {_packetDelay}\n";
 
 
             infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
             infoText += $"DT: {Math.Round(World.DT, 4)}\n";
-            infoText += $"AutoPilot: {(_playerPlane.AutoPilotOn ? "On" : "Off")}\n";
-            infoText += $"Position: {_playerPlane?.Position}\n";
+            infoText += $"AutoPilot: {(viewPlane.AutoPilotOn ? "On" : "Off")}\n";
+            infoText += $"Position: {viewPlane?.Position}\n";
             infoText += $"Kills: {viewPlane.Kills}\n";
             infoText += $"Bullets (Fired/Hit): ({viewPlane.BulletsFired} / {viewPlane.BulletsHit}) \n";
             infoText += $"Missiles (Fired/Hit): ({viewPlane.MissilesFired} / {viewPlane.MissilesHit}) \n";
@@ -2836,7 +2683,8 @@ namespace PolyPlane
                     break;
 
                 case 'r':
-                    ResetPlane();
+                    //ResetPlane();
+                    _queueResetPlane = true;
                     break;
 
                 case 's':

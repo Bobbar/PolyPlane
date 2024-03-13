@@ -28,12 +28,6 @@ namespace PolyPlane.Net
         private const int CHANNEL_ID = 0;
         private const int MAX_CHANNELS = 3;
 
-        //public Client(ushort port)
-        //{
-        //    Address = new Address();
-        //    Address.Port = port;
-        //}
-
         public Client(ushort port, string ip)
         {
             Address = new Address();
@@ -64,52 +58,24 @@ namespace PolyPlane.Net
 
             packet.Create(data);
             Peer.Send(CHANNEL_ID, ref packet);
-
-        }
-
-
-        public void SendPacket(byte[] data, PacketTypes type)
-        {
-            Packet packet = default(Packet);
-
-            packet.Create(data);
-            //Peer.Send((byte)type, ref packet);
-            Peer.Send(CHANNEL_ID, ref packet);
-
         }
 
         public void SendNewPlanePacket(GameObjects.Plane plane)
         {
-            Packet reqPacket = default(Packet);
-
             var netPacket = new PlanePacket(plane, PacketTypes.NewPlayer);
-            var data = IO.ObjectToByteArray(netPacket);
-
-            reqPacket.Create(data);
-
-            Peer.Send(CHANNEL_ID, ref reqPacket);
+            EnqueuePacket(netPacket);
         }
 
         public void SendNewBulletPacket(GameObjects.Bullet bullet)
         {
-            //Packet packet = default(Packet);
             var netPacket = new BulletPacket(bullet, PacketTypes.NewBullet);
-            //var data = IO.ObjectToByteArray(netPacket);
-            //packet.Create(data);
-
             EnqueuePacket(netPacket);
-            //Peer.Send(CHANNEL_ID, ref packet);
         }
 
         public void SendNewMissilePacket(GameObjects.GuidedMissile missile)
         {
-            //Packet packet = default(Packet);
             var netPacket = new MissilePacket(missile);
-            //var data = IO.ObjectToByteArray(netPacket);
-            //packet.Create(data);
-
             EnqueuePacket(netPacket);
-            //Peer.Send(CHANNEL_ID, ref packet);
         }
 
 
@@ -126,7 +92,7 @@ namespace PolyPlane.Net
                 if (PacketSendQueue.TryDequeue(out NetPacket packet))
                 {
                     var data = IO.ObjectToByteArray(packet);
-                    SendPacket(data, packet.Type);
+                    SendPacket(data);
                 }
             }
         }
@@ -209,30 +175,7 @@ namespace PolyPlane.Net
             packet.CopyTo(buffer);
 
             var packetObj = IO.ByteArrayToObject(buffer) as NetPacket;
-
-            //Log(packetObj.Type.ToString());
-
-
             PacketReceiveQueue.Enqueue(packetObj);
-
-            //switch (packetObj.Type)
-            //{
-            //    case PacketTypes.PlaneUpdate:
-
-            //        break;
-
-            //    case PacketTypes.NewPlayer:
-            //        break;
-
-            //    case PacketTypes.SetID:
-            //        PlaneID = packetObj.ID;
-            //        break;
-
-            //    case PacketTypes.ChatMessage:
-            //        break;
-
-            //}
-
         }
 
         private void Log(string message)

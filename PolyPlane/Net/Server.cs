@@ -7,9 +7,6 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using ENet;
-using GroBuf;
-using unvell.D2DLib;
-
 
 namespace PolyPlane.Net
 {
@@ -28,10 +25,7 @@ namespace PolyPlane.Net
         private const int MAX_CLIENTS = 3;
         private const int MAX_CHANNELS = 3;
         private const int CHANNEL_ID = 0;
-
-
-
-        //private List<Peer> _peers = new List<Peer>();
+        
         private Dictionary<uint, Peer> _peers = new Dictionary<uint, Peer>();
 
         public Server(ushort port)
@@ -55,34 +49,6 @@ namespace PolyPlane.Net
 
             _pollThread = new Thread(PollLoop);
             _pollThread.Start();
-
-            //var onePlane = new PlanePacket();
-            //onePlane.Position = new NetPoint(100, 1234);
-            //onePlane.Velocity = new NetPoint(300, 4321);
-            //onePlane.PlaneColor = D2DColor.Red;
-            //onePlane.Rotation = 185f;
-
-            //var testPack = new PlaneListPacket(new List<PlanePacket>() { onePlane, new PlanePacket(), new PlanePacket(), new PlanePacket() });
-            //byte[] data;
-
-            //data = IO._serializer.Serialize(testPack.GetType(), testPack);
-
-
-            //var netPack = IO._serializer.Deserialize<PlaneListPacket>(data);
-
-            //using (var mem = new MemoryStream())
-            //{
-            //    Serializer.Serialize<NetPacket>(mem, testPack);
-            //    data = mem.ToArray();   
-            //}
-
-            //using (var mem = new MemoryStream(data))
-            //{
-            //    var netPacket = Serializer.Deserialize<PlaneListPacket>(mem);
-
-
-            //}
-
         }
 
         public void Stop()
@@ -181,7 +147,8 @@ namespace PolyPlane.Net
             var data = IO.ObjectToByteArray(netPacket);
             packet.Create(data);
 
-            ServerHost.Broadcast(CHANNEL_ID, ref packet);
+            //ServerHost.Broadcast(CHANNEL_ID, ref packet);
+            EnqueuePacket(netPacket);
 
 
             //EnqueuePacket(netPacket);
@@ -195,7 +162,8 @@ namespace PolyPlane.Net
             //var data = IO.ObjectToByteArray(netPacket);
             //packet.Create(data);
 
-            BroadcastPacket(netPacket);
+            EnqueuePacket(netPacket);
+            //BroadcastPacket(netPacket);
             //Peer.Send(CHANNEL_ID, ref packet);
         }
 
@@ -214,17 +182,26 @@ namespace PolyPlane.Net
         }
 
 
-        //public void SyncOtherPlanes(List<Net.PlanePacket> planes, ushort requestID)
-        //{
-        //    var data = IO.ObjectToByteArray(planes);
-        //    Packet planesPacket = default(Packet);
-        //    planesPacket.Create(data);
+        ////public void SyncOtherPlanes(List<Net.PlanePacket> planes, ushort requestID)
+        ////{
+        ////    var data = IO.ObjectToByteArray(planes);
+        ////    Packet planesPacket = default(Packet);
+        ////    planesPacket.Create(data);
 
-        //    var peer = _peers[requestID];
-        //    ServerHost.Broadcast(CHANNEL_ID, ref planesPacket, peer);
-        //}
+        ////    var peer = _peers[requestID];
+        ////    ServerHost.Broadcast(CHANNEL_ID, ref planesPacket, peer);
+        ////}
 
-        //public void SendPlaneUpdate(PlanePacket plane)
+        ////public void SendPlaneUpdate(PlanePacket plane)
+        ////{
+        ////    var data = IO.ObjectToByteArray(plane);
+        ////    Packet packet = default(Packet);
+        ////    packet.Create(data);
+
+        ////    ServerHost.Broadcast(CHANNEL_ID, ref packet);
+        ////    //peer.Send(CHANNEL_ID, ref packet)
+        ////}
+        //public void SendPlaneUpdate(PlaneListPacket plane)
         //{
         //    var data = IO.ObjectToByteArray(plane);
         //    Packet packet = default(Packet);
@@ -233,28 +210,19 @@ namespace PolyPlane.Net
         //    ServerHost.Broadcast(CHANNEL_ID, ref packet);
         //    //peer.Send(CHANNEL_ID, ref packet)
         //}
-        public void SendPlaneUpdate(PlaneListPacket plane)
-        {
-            var data = IO.ObjectToByteArray(plane);
-            Packet packet = default(Packet);
-            packet.Create(data);
-
-            ServerHost.Broadcast(CHANNEL_ID, ref packet);
-            //peer.Send(CHANNEL_ID, ref packet)
-        }
 
 
-        public void SyncOtherPlanes(PlaneListPacket planePacket)
-        {
-            var data = IO.ObjectToByteArray(planePacket);
-            Packet planesPacket = default(Packet);
-            planesPacket.Create(data);
+        //public void SyncOtherPlanes(PlaneListPacket planePacket)
+        //{
+        //    var data = IO.ObjectToByteArray(planePacket);
+        //    Packet planesPacket = default(Packet);
+        //    planesPacket.Create(data);
 
-            //var peer = _peers[requestID];
-            //ServerHost.Broadcast(CHANNEL_ID, ref planesPacket, peer);
+        //    //var peer = _peers[requestID];
+        //    //ServerHost.Broadcast(CHANNEL_ID, ref planesPacket, peer);
 
-            ServerHost.Broadcast(CHANNEL_ID, ref planesPacket);
-        }
+        //    ServerHost.Broadcast(CHANNEL_ID, ref planesPacket);
+        //}
 
         private void SendIDPacket(Peer peer, NetPacket packet)
         {
@@ -265,36 +233,14 @@ namespace PolyPlane.Net
             peer.Send(CHANNEL_ID, ref idPacket);
         }
 
-        private void SendPacketToPeer(Peer peer, NetPacket packet)
-        {
-
-        }
-
-        //private void ParseTestPacket(Packet packet)
-        //{
-        //    var buffer = new byte[packet.Length];
-        //    packet.CopyTo(buffer);
-
-
-        //    var packetObj = IO.ByteArrayToObject(buffer) as NetPacket;
-
-        //    PacketQueue.Enqueue(packetObj);
-        //    //if (packetObj != null)
-        //    //{
-        //    //    Log(packetObj.ToString());
-        //    //}
-        //}
+       
 
         private void ParsePacket(Packet packet, Peer peer)
         {
             var buffer = new byte[packet.Length];
             packet.CopyTo(buffer);
 
-
-
             var packetObj = IO.ByteArrayToObject(buffer) as NetPacket;
-
-            //Log(packetObj.Type.ToString());
 
             if (packetObj.Type == PacketTypes.GetNextID)
             {
@@ -306,17 +252,8 @@ namespace PolyPlane.Net
             }
             else
             {
-                //if (packetObj.Type == PacketTypes.Impact)
-                //    Debugger.Break();
-
                 PacketReceiveQueue.Enqueue(packetObj);
             }
-
-
-            //if (packetObj != null)
-            //{
-            //    Log(packetObj.ToString());
-            //}
         }
 
 
