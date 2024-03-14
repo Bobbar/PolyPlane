@@ -9,7 +9,6 @@ namespace PolyPlane.GameObjects
     public class Plane : GameObjectPoly
     {
         public float Deflection = 0f;
-        //public bool IsNetPlayer = false;
         public int BulletsFired = 0;
         public int MissilesFired = 0;
 
@@ -270,13 +269,17 @@ namespace PolyPlane.GameObjects
 
             this.Radar?.Update(dt, viewport, renderScale, skipFrames: true);
 
-            _flames.ForEach(f => f.Update(dt, viewport, renderScale));
-            _debris.ForEach(d => d.Update(dt, viewport, renderScale));
+            if (World.IsNetGame && !World.IsServer)
+            {
+                _flames.ForEach(f => f.Update(dt, viewport, renderScale));
+                _debris.ForEach(d => d.Update(dt, viewport, renderScale));
+                _contrail.Update(dt, viewport, renderScale, skipFrames: true);
+            }
 
             if (_aiBehavior != null)
                 _aiBehavior.Update(dt, viewport, renderScale, skipFrames: true);
 
-            _contrail.Update(dt, viewport, renderScale, skipFrames: true);
+
             _flamePos.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
             _gunPosition.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
             _cockpitPosition.Update(dt, viewport, renderScale * _renderOffset);
@@ -407,8 +410,8 @@ namespace PolyPlane.GameObjects
             _controlWing.Deflection = this.Deflection;
 
 
-            _flames.ForEach(f => f.Update(dt, viewport, renderScale));
-            _debris.ForEach(d => d.Update(dt, viewport, renderScale));
+            _flames.ForEach(f => f.Update(dt, viewport, renderScale, skipFrames: true));
+            _debris.ForEach(d => d.Update(dt, viewport, renderScale, skipFrames: true));
             _contrail.Update(dt, viewport, renderScale, skipFrames: false);
             _flamePos.Update(dt, viewport, renderScale * _renderOffset, skipFrames: false);
             _gunPosition.Update(dt, viewport, renderScale * _renderOffset, skipFrames: false);
@@ -726,6 +729,11 @@ namespace PolyPlane.GameObjects
                 }
             }
 
+            DoImpactImpulse(impactor, impactPos);
+        }
+
+        private void DoImpactImpulse(GameObject impactor, D2DPoint impactPos)
+        {
             float impactMass = 40f;
 
             //if (impactor is GuidedMissile missile)
@@ -743,6 +751,111 @@ namespace PolyPlane.GameObjects
             this.Velocity += forceVec / this.Mass * World.DT;
         }
 
+        public PlaneImpactResult GetImpactResult(GameObject impactor, D2DPoint impactPos)
+        {
+            var result = new PlaneImpactResult();
+            result.ImpactPoint = impactPos;
+
+            if ((!IsDamaged && !_damageCooldownTimeout.IsRunning))
+            {
+                result.DoesDamage = true;
+
+                if (this.Hits > 0)
+                {
+                    var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
+                    var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos);
+                    if (hitCockpit)
+                    {
+                        result.WasHeadshot = true;
+                    }
+
+                    if (impactor is Missile)
+                    {
+                        result.Type = ImpactType.Missile;
+                    }
+                    else
+                    {
+                        result.Type = ImpactType.Bullet;
+                    }
+                }
+
+                _damageCooldownTimeout.Restart();
+                _damageFlashTimer.Restart();
+            }
+
+            return result;
+        }
+
+        public void DoNetImpact(GameObject impactor, D2DPoint impactPos, bool doesDamage, bool wasHeadshot, bool wasMissile)
+        {
+            var attackPlane = impactor.Owner as Plane;
+
+            if (impactor is Bullet)
+                attackPlane.BulletsHit++;
+            else if (impactor is Missile)
+                attackPlane.MissilesHit++;
+
+            // Always change target to attacking plane?
+            if (this.IsAI)
+                _aiBehavior.ChangeTarget(attackPlane);
+
+            if (doesDamage)
+            {
+                if (wasHeadshot)
+                {
+                    SpawnDebris(8, impactPos, D2DColor.Red);
+                    WasHeadshot = true;
+                    IsDamaged = true;
+
+                    attackPlane.Headshots++;
+                    attackPlane.Kills++;
+                }
+                else
+                {
+                    if (wasMissile)
+                    {
+                        this.Hits -= 4;
+                        SpawnDebris(4, impactPos, this.PlaneColor);
+                    }
+                    else
+                    {
+                        this.Hits -= 2;
+                        SpawnDebris(2, impactPos, this.PlaneColor);
+                    }
+                }
+
+
+                if (nFlames < MAX_FLAMES)
+                {
+                    // Scale the impact position back to the origin of the polygon.
+                    var mat = Matrix3x2.CreateRotation(-this.Rotation * (float)(Math.PI / 180f), this.Position);
+                    mat *= Matrix3x2.CreateTranslation(new D2DPoint(-this.Position.X, -this.Position.Y));
+                    var ogPos1 = D2DPoint.Transform(impactPos, mat);
+
+                    SetOnFire(ogPos1);
+                    nFlames++;
+                }
+
+                if (this.Hits <= 0)
+                {
+                    IsDamaged = true;
+                    _damageDeflection = _rnd.NextFloat(-180, 180);
+
+                    // Award attacking plane with missiles and health?
+                    if (attackPlane.NumMissiles < Plane.MAX_MISSILES)
+                    {
+                        attackPlane.NumMissiles++;
+                    }
+
+                    attackPlane.Kills++;
+
+                    if (attackPlane.Hits < MAX_HITS)
+                        attackPlane.Hits += 2;
+                }
+            }
+
+            DoImpactImpulse(impactor, impactPos);
+        }
 
         private void SpawnDebris(int num, D2DPoint pos, D2DColor color)
         {

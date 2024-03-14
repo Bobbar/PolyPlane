@@ -105,21 +105,18 @@ namespace PolyPlane.GameObjects
 
         public void Update(float dt, D2DSize viewport, float renderScale, bool skipFrames = false)
         {
-            //if (IsNetObject)
-            //    return;
-
             CurrentFrame++;
 
-            ////if (skipFrames)
-            ////{
-            //    if (SkipFrame())
-            //        return;
+            if (skipFrames)
+            {
+                if (SkipFrame())
+                    return;
 
-            //    var multiDT = dt * this.SkipFrames;
+                var multiDT = dt * this.SkipFrames;
 
-            //    this.Update(multiDT, viewport, renderScale);
-            ////}
-            //else
+                this.Update(multiDT, viewport, renderScale);
+            }
+            else
                 this.Update(dt, viewport, renderScale);
         }
 
