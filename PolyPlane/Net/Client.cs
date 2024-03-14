@@ -127,8 +127,8 @@ namespace PolyPlane.Net
         {
             Packet packet = default(Packet);
             //packet.Create(data);
-            //packet.Create(data, PacketFlags.Reliable);
-            packet.Create(data, PacketFlags.Instant);
+            packet.Create(data, PacketFlags.Reliable);
+            //packet.Create(data, PacketFlags.Instant);
 
             Peer.Send(CHANNEL_ID, ref packet);
         }
@@ -164,7 +164,7 @@ namespace PolyPlane.Net
             var netPacket = new BasicPacket(PacketTypes.GetOtherPlanes, new GameObjects.GameID(-1, (int)Peer.ID));
             var data = IO.ObjectToByteArray(netPacket);
 
-            reqPacket.Create(data);
+            reqPacket.Create(data, PacketFlags.Reliable);
 
             Peer.Send(CHANNEL_ID, ref reqPacket);
         }

@@ -57,11 +57,7 @@ namespace PolyPlane.Net
                     obj = _serializer.Deserialize<DecoyPacket>(payloadPacket.Payload);
 
                     break;
-                case PacketTypes.SetID:
-                    obj = _serializer.Deserialize<BasicPacket>(payloadPacket.Payload);
-
-                    break;
-                case PacketTypes.GetNextID:
+                case PacketTypes.SetID or PacketTypes.GetNextID:
                     obj = _serializer.Deserialize<BasicPacket>(payloadPacket.Payload);
 
                     break;
@@ -70,6 +66,11 @@ namespace PolyPlane.Net
                     break;
                 case PacketTypes.GetOtherPlanes:
                     obj = _serializer.Deserialize<PlaneListPacket>(payloadPacket.Payload);
+
+                    break;
+
+                case PacketTypes.ExpiredObjects:
+                    obj = _serializer.Deserialize<BasicListPacket>(payloadPacket.Payload);
 
                     break;
             }
