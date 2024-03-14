@@ -50,6 +50,7 @@ namespace PolyPlane
         private List<GameObject> _explosions = new List<GameObject>();
         private List<Plane> _planes = new List<Plane>();
         private List<GameObject> _updateObjects = new List<GameObject>();
+        private List<GameObject> _expiredObjects = new List<GameObject>();
 
         private ConcurrentQueue<GameObject> _newDecoys = new ConcurrentQueue<GameObject>();
         private ConcurrentQueue<GameObject> _newMissiles = new ConcurrentQueue<GameObject>();
@@ -95,8 +96,9 @@ namespace PolyPlane
 
         private Net.Client _client;
         private Net.Server _server;
-
-
+        private ServerUI _serverUI;
+        private WaitableTimer _waitTimer = new WaitableTimer();
+        private Stopwatch _fpsTimer = new Stopwatch();
 
         private Random _rnd => Helpers.Rnd;
 
@@ -113,10 +115,23 @@ namespace PolyPlane
 
 
             _multiThreadNum = Environment.ProcessorCount - 2;
+
+
+            InitGfx();
+
+            InitPlane();
+
+            DoNetGameSetup();
+
+            StartGameThread();
         }
 
         private void PolyPlaneUI_Disposed(object? sender, EventArgs e)
         {
+            StopRender();
+            _gameThread.Join(100);
+
+            _serverUI?.Dispose();
             _client?.Stop();
             _server?.Stop();
 
@@ -130,15 +145,15 @@ namespace PolyPlane
         {
             base.OnHandleCreated(e);
 
-            InitGfx();
+            //InitGfx();
 
-            InitPlane();
+            //InitPlane();
 
-            DoNetGameSetup();
+            //DoNetGameSetup();
 
-            StartGameThread();
+            //StartGameThread();
 
-            PauseRender();
+            //PauseRender();
         }
 
         private void InitPlane()
@@ -332,6 +347,11 @@ namespace PolyPlane
 
                         this.Text += " - SERVER";
 
+                        _serverUI = new ServerUI();
+                        _serverUI.Show();
+                        _serverUI.Disposed += ServerUI_Disposed;
+                        this.Hide();
+                        this.WindowState = FormWindowState.Minimized;
                     }
                     else
                     {
@@ -348,8 +368,10 @@ namespace PolyPlane
             ResumeRender();
         }
 
-
-
+        private void ServerUI_Disposed(object? sender, EventArgs e)
+        {
+            this.Dispose();
+        }
 
         private void ResizeGfx(bool force = false)
         {
@@ -372,7 +394,15 @@ namespace PolyPlane
             {
                 _stopRenderEvent.Wait();
 
-                AdvanceAndRender();
+                if (World.IsNetGame && World.IsServer)
+                {
+                    AdvanceServer();
+                }
+                else
+                {
+                    AdvanceAndRender();
+
+                }
 
                 if (!_pauseRenderEvent.Wait(0))
                 {
@@ -382,12 +412,151 @@ namespace PolyPlane
             }
         }
 
+
+        private void AdvanceServer()
+        {
+            _updateTime = TimeSpan.Zero;
+            _collisionTime = TimeSpan.Zero;
+
+            ProcessObjQueue();
+
+            // Update/advance objects.
+            if (!_isPaused || _oneStep)
+            {
+                var partialDT = World.SUB_DT;
+
+                var objs = GetAllObjects();
+                var numObj = objs.Count;
+
+                for (int i = 0; i < World.PHYSICS_STEPS; i++)
+                {
+                    _timer.Restart();
+
+                    DoCollisions();
+
+                    _timer.Stop();
+
+                    _collisionTime += _timer.Elapsed;
+
+                    _timer.Restart();
+
+                    if (_useMultiThread)
+                    {
+                        objs.ForEachParallel(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale), _multiThreadNum);
+                    }
+                    else
+                    {
+                        objs.ForEach(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale));
+                    }
+
+                    _timer.Stop();
+                    _updateTime += _timer.Elapsed;
+                }
+
+                _timer.Restart();
+
+                World.UpdateAirDensityAndWind(World.DT);
+
+                DoDecoySuccess();
+
+                _playerBurstTimer.Update(World.DT);
+                _hudMessageTimeout.Update(World.DT);
+                _explosions.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
+                _decoys.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
+                _missileTrails.ForEach(t => t.Update(World.DT, World.ViewPortSize, World.RenderScale));
+
+                DoAIPlaneBurst(World.DT);
+                _decoyTimer.Update(World.DT);
+
+                _timer.Stop();
+                _updateTime += _timer.Elapsed;
+
+                _oneStep = false;
+            }
+
+            _timer.Restart();
+
+
+            DoNetEvents();
+
+            PruneExpiredObj();
+
+            var fpsNow = DateTime.UtcNow.Ticks;
+            var fps = TimeSpan.TicksPerSecond / (float)(fpsNow - _lastRenderTime);
+            _lastRenderTime = fpsNow;
+            _renderFPS = fps;
+
+
+            _serverUI.InfoText = GetInfo();
+
+            if (_serverUI.PauseRequested)
+            {
+                if (!_isPaused)
+                    _isPaused = true;
+                else
+                    _isPaused = false;
+
+                _serverUI.PauseRequested = false;
+            }
+
+            if (_serverUI.SpawnIAPlane)
+            {
+                SpawnAIPlane();
+                _serverUI.SpawnIAPlane = false;
+            }
+
+            FPSLimiter(60);
+        }
+
+        private void FPSLimiter(int targetFPS)
+        {
+            long ticksPerSecond = TimeSpan.TicksPerSecond;
+            long targetFrameTime = ticksPerSecond / targetFPS;
+            long waitTime = 0;
+
+            if (_fpsTimer.IsRunning)
+            {
+                long elapTime = _fpsTimer.Elapsed.Ticks;
+
+                if (elapTime < targetFrameTime)
+                {
+                    // # High accuracy, low CPU usage. #
+                    waitTime = (long)(targetFrameTime - elapTime);
+                    if (waitTime > 0)
+                    {
+                        _waitTimer.Wait(waitTime, false);
+                    }
+
+                    // # Most accurate, highest CPU usage. #
+                    //while (_fpsTimer.Elapsed.Ticks < targetFrameTime && !_loopTask.IsCompleted)
+                    //{
+                    //	Thread.SpinWait(10000);
+                    //}
+                    //elapTime = _fpsTimer.Elapsed.Ticks;
+
+                    // # Less accurate, less CPU usage. #
+                    //waitTime = (long)(targetFrameTime - elapTime);
+                    //if (waitTime > 0)
+                    //{
+                    //	Thread.Sleep(new TimeSpan(waitTime));
+                    //}
+                }
+
+                _fpsTimer.Restart();
+            }
+            else
+            {
+                _fpsTimer.Start();
+                return;
+            }
+        }
+
+
         private void AdvanceAndRender()
         {
             _renderTime = TimeSpan.Zero;
             _updateTime = TimeSpan.Zero;
             _collisionTime = TimeSpan.Zero;
-            _netTime = TimeSpan.Zero;
 
             GraphicsExtensions.OnScreen = 0;
             GraphicsExtensions.OffScreen = 0;
@@ -517,8 +686,6 @@ namespace PolyPlane
             }
         }
 
-
-
         private void DoNetEvents()
         {
             long now = 0;
@@ -527,6 +694,7 @@ namespace PolyPlane
 
             SendPlaneUpdates();
             SendMissileUpdates();
+            //SendExpiredObjects();
 
             if (World.IsServer)
             {
@@ -560,13 +728,29 @@ namespace PolyPlane
             }
 
             //_packetDelay = (totalPacketTime / (float)numPackets) / 10000f / 1000f;
-           
+
             if (totalPacketTime > 0f && numPackets > 0)
             {
                 var avgDelay = (totalPacketTime / (float)numPackets) / 10000f;
                 _packetDelay = _packetDelayAvg.Add(avgDelay);
             }
-           
+
+        }
+
+        private void SendExpiredObjects()
+        {
+            var expiredObjPacket = new Net.BasicListPacket();
+            _expiredObjects.ForEach(o => expiredObjPacket.Packets.Add(new BasicPacket(PacketTypes.ExpiredObjects, o.ID)));
+
+            if (expiredObjPacket.Packets.Count == 0)
+                return;
+
+            if (World.IsServer)
+                _server.EnqueuePacket(expiredObjPacket);
+            else
+                _client.EnqueuePacket(expiredObjPacket);
+
+            _expiredObjects.Clear();
         }
 
         private void SendPlaneUpdates()
@@ -902,9 +1086,34 @@ namespace PolyPlane
                     }
 
                     break;
+
+                case PacketTypes.ExpiredObjects:
+                    var expiredPacket = packet as Net.BasicListPacket;
+
+                    foreach (var p in expiredPacket.Packets)
+                    {
+                        var obj = GetObjectById(p.ID);
+
+                        if (obj != null)
+                            obj.IsExpired = true;
+                    }
+
+                    break;
             }
         }
 
+
+        private GameObject GetObjectById(GameID id)
+        {
+            var allObjs = GetAllObjects();
+            foreach (var obj in allObjs)
+            {
+                if (obj.ID.Equals(id))
+                    return obj;
+            }
+
+            return null;
+        }
 
         private Plane GetNetPlane(GameID id, bool netOnly = true)
         {
@@ -977,6 +1186,13 @@ namespace PolyPlane
             _updateObjects.AddRange(_missiles);
             _updateObjects.AddRange(_bullets);
             _updateObjects.AddRange(_planes);
+
+            if (World.IsServer)
+            {
+                var plrIdx = _updateObjects.IndexOf(_playerPlane);
+                _updateObjects.RemoveAt(plrIdx);
+            }
+
 
             return _updateObjects;
         }
@@ -1736,8 +1952,6 @@ namespace PolyPlane
                     plane.RotationSpeed = 0f;
                 }
 
-                if (plane.IsExpired)
-                    _planes.RemoveAt(a);
             }
 
             // Player plane.
@@ -1787,7 +2001,10 @@ namespace PolyPlane
 
                 // TODO: Remove missiles fired by destoyed player
                 if (missile.IsExpired)
+                {
+                    _expiredObjects.Add(missile);
                     _missiles.RemoveAt(o);
+                }
             }
 
             for (int o = 0; o < _missileTrails.Count; o++)
@@ -1803,7 +2020,10 @@ namespace PolyPlane
                 var plane = _planes[o];
 
                 if (plane.IsExpired)
+                {
+                    _expiredObjects.Add(plane);
                     _planes.RemoveAt(o);
+                }
             }
 
 
@@ -2274,7 +2494,7 @@ namespace PolyPlane
             ctx.DrawLine(pos, pos + (World.Wind * 2f), D2DColor.White, 2f);
         }
 
-        private void DrawInfo(D2DGraphics gfx, D2DPoint pos)
+        private string GetInfo()
         {
             var viewPlane = GetViewPlane();
 
@@ -2294,6 +2514,8 @@ namespace PolyPlane
             infoText += $"Render ms: {_renderTime.TotalMilliseconds}\n";
             infoText += $"Collision ms: {_collisionTime.TotalMilliseconds}\n";
             infoText += $"Packet Delay: {_packetDelay}\n";
+            infoText += $"Sent B/s: {(World.IsServer ? _server.BytesSentPerSecond : 0)}\n";
+            infoText += $"Rec B/s: {(World.IsServer ? _server.BytesReceivedPerSecond : 0)}\n";
 
 
             infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
@@ -2304,6 +2526,13 @@ namespace PolyPlane
             infoText += $"Bullets (Fired/Hit): ({viewPlane.BulletsFired} / {viewPlane.BulletsHit}) \n";
             infoText += $"Missiles (Fired/Hit): ({viewPlane.MissilesFired} / {viewPlane.MissilesHit}) \n";
             infoText += $"Headshots: {viewPlane.Headshots}\n";
+
+            return infoText;
+        }
+
+        private void DrawInfo(D2DGraphics gfx, D2DPoint pos)
+        {
+            var infoText = GetInfo();
 
             if (_showHelp)
             {
@@ -2427,6 +2656,10 @@ namespace PolyPlane
 
                 case 'k':
                     World.EnableTurbulence = !World.EnableTurbulence;
+
+                    var viewPlane = GetViewPlane();
+                    if (viewPlane != null)
+                        viewPlane.IsDamaged = true;
 
                     break;
 

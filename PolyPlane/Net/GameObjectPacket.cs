@@ -137,6 +137,24 @@ namespace PolyPlane.Net
         }
     }
 
+    public class BasicListPacket : NetPacket
+    {
+        public List<BasicPacket> Packets = new List<BasicPacket>();
+
+        public BasicListPacket() 
+        { 
+            this.Type = PacketTypes.ExpiredObjects;
+        }
+
+        public BasicListPacket(GameID objectId) 
+        {
+            this.Type = PacketTypes.ExpiredObjects;
+            this.ID = objectId;
+        }
+
+
+    }
+
 
     public partial class PlaneListPacket : NetPacket
     {

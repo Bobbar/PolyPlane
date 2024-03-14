@@ -20,11 +20,22 @@ namespace PolyPlane.Net
         public Address Address;
         public long CurrentTime;
 
+        public float BytesSentPerSecond;
+        public float BytesReceivedPerSecond;
+
         private Thread _pollThread;
         private bool _runLoop = true;
         private const int MAX_CLIENTS = 3;
         private const int MAX_CHANNELS = 4;
         private const int CHANNEL_ID = 0;
+
+        private SmoothFloat _bytesRecSmooth = new SmoothFloat(100);
+        private SmoothFloat _bytesSentSmooth = new SmoothFloat(100);
+
+
+        private uint _prevBytesRec = 0;
+        private uint _prevBytesSent = 0;
+        private long _lastFrameTime = 0;
 
         private Dictionary<uint, Peer> _peers = new Dictionary<uint, Peer>();
 
@@ -46,7 +57,7 @@ namespace PolyPlane.Net
             ServerHost = new Host();
             var ip = Address.GetIP();
             ServerHost.Create(Address, MAX_CLIENTS, MAX_CHANNELS);
-
+        
             _pollThread = new Thread(PollLoop);
             _pollThread.Start();
         }
@@ -121,6 +132,21 @@ namespace PolyPlane.Net
                 ProcessQueue();
 
                 CurrentTime = DateTime.UtcNow.Ticks;
+
+                var elap = CurrentTime - _lastFrameTime;
+                _lastFrameTime = CurrentTime;
+
+                var bytesRec = ServerHost.BytesReceived - _prevBytesRec;
+                _prevBytesRec += ServerHost.BytesReceived;
+
+                var bytesSent = ServerHost.BytesSent - _prevBytesSent;
+                _prevBytesSent += ServerHost.BytesSent;
+
+                var bytesRecPerSec = bytesRec / (float)elap;
+                var bytesSentPerSec = bytesSent / (float)elap;
+
+                BytesReceivedPerSecond = _bytesRecSmooth.Add(bytesRecPerSec / 10000f);
+                BytesSentPerSecond = _bytesSentSmooth.Add(bytesSentPerSec / 10000f);
             }
 
         }
@@ -188,8 +214,8 @@ namespace PolyPlane.Net
         {
             Packet packet = default(Packet);
             var data = IO.ObjectToByteArray(netPacket);
-            //packet.Create(data, PacketFlags.Reliable);
-            packet.Create(data, PacketFlags.Instant);
+            packet.Create(data, PacketFlags.Reliable);
+            //packet.Create(data, PacketFlags.Instant);
 
             return packet;
         }
@@ -199,7 +225,7 @@ namespace PolyPlane.Net
             var data = IO.ObjectToByteArray(packet);
             Packet idPacket = default(Packet);
 
-            idPacket.Create(data);
+            idPacket.Create(data, PacketFlags.Reliable);
             peer.Send(CHANNEL_ID, ref idPacket);
         }
 

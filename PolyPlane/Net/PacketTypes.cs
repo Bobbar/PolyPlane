@@ -18,7 +18,8 @@ namespace PolyPlane.Net
         SetID,
         GetNextID,
         ChatMessage,
-        GetOtherPlanes
+        GetOtherPlanes,
+        ExpiredObjects
             
     }
 }
