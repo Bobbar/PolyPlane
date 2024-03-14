@@ -22,11 +22,12 @@ namespace PolyPlane.Net
         public int Port;
         public Address Address;
         public long CurrentTime;
+
         private Thread _pollThread;
         private bool _runLoop = true;
         private const int MAX_CLIENTS = 3;
         private const int CHANNEL_ID = 0;
-        private const int MAX_CHANNELS = 3;
+        private const int MAX_CHANNELS = 4;
 
         public Client(ushort port, string ip)
         {
@@ -42,7 +43,6 @@ namespace PolyPlane.Net
 
             Peer = ClientHost.Connect(Address, MAX_CHANNELS);
 
-
             _pollThread = new Thread(PollLoop);
             _pollThread.Start();
         }
@@ -50,51 +50,6 @@ namespace PolyPlane.Net
         public void Stop()
         {
             _runLoop = false;
-        }
-
-        public void SendPacket(byte[] data)
-        {
-            Packet packet = default(Packet);
-
-            packet.Create(data);
-            Peer.Send(CHANNEL_ID, ref packet);
-        }
-
-        public void SendNewPlanePacket(GameObjects.Plane plane)
-        {
-            var netPacket = new PlanePacket(plane, PacketTypes.NewPlayer);
-            EnqueuePacket(netPacket);
-        }
-
-        public void SendNewBulletPacket(GameObjects.Bullet bullet)
-        {
-            var netPacket = new BulletPacket(bullet, PacketTypes.NewBullet);
-            EnqueuePacket(netPacket);
-        }
-
-        public void SendNewMissilePacket(GameObjects.GuidedMissile missile)
-        {
-            var netPacket = new MissilePacket(missile);
-            EnqueuePacket(netPacket);
-        }
-
-
-
-        public void EnqueuePacket(NetPacket packet)
-        {
-            PacketSendQueue.Enqueue(packet);
-        }
-
-        private void ProcessQueue()
-        {
-            while (PacketSendQueue.Count > 0)
-            {
-                if (PacketSendQueue.TryDequeue(out NetPacket packet))
-                {
-                    var data = IO.ObjectToByteArray(packet);
-                    SendPacket(data);
-                }
-            }
         }
 
         private void PollLoop()
@@ -156,6 +111,51 @@ namespace PolyPlane.Net
 
         }
 
+        private void ProcessQueue()
+        {
+            while (PacketSendQueue.Count > 0)
+            {
+                if (PacketSendQueue.TryDequeue(out NetPacket packet))
+                {
+                    var data = IO.ObjectToByteArray(packet);
+                    SendPacket(data);
+                }
+            }
+        }
+
+        public void SendPacket(byte[] data)
+        {
+            Packet packet = default(Packet);
+            //packet.Create(data);
+            //packet.Create(data, PacketFlags.Reliable);
+            packet.Create(data, PacketFlags.Instant);
+
+            Peer.Send(CHANNEL_ID, ref packet);
+        }
+
+        public void SendNewPlanePacket(GameObjects.Plane plane)
+        {
+            var netPacket = new PlanePacket(plane, PacketTypes.NewPlayer);
+            EnqueuePacket(netPacket);
+        }
+
+        public void SendNewBulletPacket(GameObjects.Bullet bullet)
+        {
+            var netPacket = new BulletPacket(bullet, PacketTypes.NewBullet);
+            EnqueuePacket(netPacket);
+        }
+
+        public void SendNewMissilePacket(GameObjects.GuidedMissile missile)
+        {
+            var netPacket = new MissilePacket(missile);
+            EnqueuePacket(netPacket);
+        }
+
+        public void EnqueuePacket(NetPacket packet)
+        {
+            PacketSendQueue.Enqueue(packet);
+        }
+
 
         private void RequestOtherPlanes()
         {
@@ -173,8 +173,8 @@ namespace PolyPlane.Net
         {
             var buffer = new byte[packet.Length];
             packet.CopyTo(buffer);
-
             var packetObj = IO.ByteArrayToObject(buffer) as NetPacket;
+
             PacketReceiveQueue.Enqueue(packetObj);
         }
 

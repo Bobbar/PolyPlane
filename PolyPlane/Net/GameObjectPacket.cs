@@ -369,6 +369,9 @@ namespace PolyPlane.Net
     {
         public GameID ImpactorID;
         public NetPoint ImpactPoint;
+        public bool DoesDamage;
+        public bool WasHeadshot;
+        public bool WasMissile;
 
         public ImpactPacket()
         {
@@ -381,6 +384,17 @@ namespace PolyPlane.Net
             //ID = targetId;
             ImpactPoint = point.ToPoint();
             Type = PacketTypes.Impact;
+        }
+
+        public ImpactPacket(GameObject targetObj, GameID impactorID, D2DPoint point, bool doesDamage, bool wasHeadshot, bool wasMissile) : base(targetObj)
+        {
+            ImpactorID = impactorID;
+            //ID = targetId;
+            ImpactPoint = point.ToPoint();
+            Type = PacketTypes.Impact;
+            DoesDamage = doesDamage;
+            WasHeadshot = wasHeadshot;
+            WasMissile = wasMissile;
         }
 
         //public ImpactPacket(GameID ownerID, NetPoint position, NetPoint velocity, float rotation, bool isExpired, GameID impactorID, NetPoint impactPoint)

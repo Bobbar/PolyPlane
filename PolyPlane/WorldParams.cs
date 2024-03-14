@@ -59,6 +59,8 @@ namespace PolyPlane
         public static bool EnableWind = false;
         public static bool EnableTurbulence = false;
         public static bool ExpireMissilesOnMiss = false;
+        public static bool IsNetGame = false;
+        public static bool IsServer = false;
 
         private static float _zoomScale = 0.11f;//0.25f;//1f;//0.35f;
         private static float _dt = 0.0325f;//0.06f;

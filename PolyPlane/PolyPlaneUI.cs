@@ -93,8 +93,6 @@ namespace PolyPlane
         private SmoothFloat _packetDelayAvg = new SmoothFloat(100);
 
 
-        private bool _isNetGame = false;
-        private bool _isServer = false;
         private Net.Client _client;
         private Net.Server _server;
 
@@ -114,25 +112,7 @@ namespace PolyPlane
             _playerBurstTimer.TriggerCallback = () => _playerPlane.FireBullet(p => AddExplosion(p));
 
 
-            //_playerBurstTimer.TriggerCallback = () => _playerPlane.FireBullet(p => 
-            //{ 
-            //    AddExplosion(p); 
-            //    if (_isNetGame)
-            //    {
-            //        if (_isServer)
-            //        {
-
-            //        }
-            //        else
-            //        {
-            //            _client.SendNewBulletPacket()
-            //        }
-            //    }
-
-            //});
-
-
-            _multiThreadNum = Environment.ProcessorCount;
+            _multiThreadNum = Environment.ProcessorCount - 2;
         }
 
         private void PolyPlaneUI_Disposed(object? sender, EventArgs e)
@@ -171,9 +151,9 @@ namespace PolyPlane
             {
                 _bullets.Add(b);
 
-                if (_isNetGame)
+                if (World.IsNetGame)
                 {
-                    if (_isServer)
+                    if (World.IsServer)
                     {
                         _server.SendNewBulletPacket(b);
 
@@ -202,9 +182,9 @@ namespace PolyPlane
                 _newMissiles.Enqueue(m);
 
 
-                if (_isNetGame)
+                if (World.IsNetGame)
                 {
-                    if (_isServer)
+                    if (World.IsServer)
                     {
                         _server.SendNewMissilePacket(m);
 
@@ -267,9 +247,9 @@ namespace PolyPlane
             {
                 _newMissiles.Enqueue(m);
 
-                if (_isNetGame)
+                if (World.IsNetGame)
                 {
-                    if (_isServer)
+                    if (World.IsServer)
                     {
                         _server.SendNewMissilePacket(m);
 
@@ -289,9 +269,9 @@ namespace PolyPlane
             {
                 _bullets.Add(b);
 
-                if (_isNetGame)
+                if (World.IsNetGame)
                 {
-                    if (_isServer)
+                    if (World.IsServer)
                     {
                         _server.SendNewBulletPacket(b);
                     }
@@ -343,10 +323,10 @@ namespace PolyPlane
                 if (config.ShowDialog() == DialogResult.OK)
                 {
                     ENet.Library.Initialize();
-                    _isNetGame = true;
+                    World.IsNetGame = true;
                     if (config.IsServer)
                     {
-                        _isServer = true;
+                        World.IsServer = true;
                         _server = new Net.Server(config.Port, config.IPAddress);
                         _server.Start();
 
@@ -355,30 +335,11 @@ namespace PolyPlane
                     }
                     else
                     {
-                        _isServer = false;
+                        World.IsServer = false;
                         _client = new Net.Client(config.Port, config.IPAddress);
                         _client.Start();
 
                         this.Text += " - CLIENT";
-
-
-                        //World.CurrentObjId = 1001;
-                        //_playerPlane.ID = 1000;
-
-                        //_client.SendPacket(IO.ObjectToByteArray(_playerPlane), PacketTypes.NewPlayer);
-                        //var planePacket = new Net.PlanePacket(_playerPlane);
-                        //planePacket.Type = PacketTypes.NewPlayer;
-                        //_client.SendNewPlanePacket(planePacket);
-                        //_client.SendNewPlanePacket(planePacket);
-
-
-
-                        //while (_client.PlaneID == -1)
-                        //{
-                        //    // Wait for ID...
-                        //}
-
-                        //_playerPlane.ID = _client.PlaneID;
 
                     }
                 }
@@ -504,7 +465,6 @@ namespace PolyPlane
                 _hudMessageTimeout.Update(World.DT);
                 _explosions.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
                 _decoys.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
-
                 _missileTrails.ForEach(t => t.Update(World.DT, World.ViewPortSize, World.RenderScale));
 
                 DoAIPlaneBurst(World.DT);
@@ -533,7 +493,7 @@ namespace PolyPlane
 
             _gfx.EndRender();
 
-            if (_isNetGame)
+            if (World.IsNetGame)
                 DoNetEvents();
 
             PruneExpiredObj();
@@ -568,7 +528,7 @@ namespace PolyPlane
             SendPlaneUpdates();
             SendMissileUpdates();
 
-            if (_isServer)
+            if (World.IsServer)
             {
                 now = _server.CurrentTime;
 
@@ -613,7 +573,7 @@ namespace PolyPlane
         {
             var newPlanesPacket = new Net.PlaneListPacket();
 
-            if (_isServer)
+            if (World.IsServer)
             {
                 foreach (var plane in _planes)
                 {
@@ -637,7 +597,7 @@ namespace PolyPlane
         {
             var newMissilesPacket = new Net.MissileListPacket();
 
-            if (_isServer)
+            if (World.IsServer)
             {
                 _missiles.ForEach(m => newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile)));
 
@@ -656,34 +616,24 @@ namespace PolyPlane
 
         private void DoNetPlaneUpdates(PlaneListPacket listPacket)
         {
-            if (!_isServer && !_netIDIsSet)
+            if (!World.IsServer && !_netIDIsSet)
                 return;
 
-            var now = DateTime.UtcNow.Ticks;
-            var updatedPlanes = new List<Plane>();
 
             foreach (var planeUpdPacket in listPacket.Planes)
             {
-                var diff = now - planeUpdPacket.FrameTime;
-                var age = diff / 10000f;
 
                 var netPlane = GetNetPlane(planeUpdPacket.ID);
 
                 if (netPlane != null)
                 {
-                    updatedPlanes.Add(netPlane);
 
                     planeUpdPacket.SyncObj(netPlane);
                     netPlane.ThrustAmount = planeUpdPacket.ThrustAmt;
                     netPlane.Deflection = planeUpdPacket.Deflection;
                     netPlane.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, planeUpdPacket.Position.ToD2DPoint(), planeUpdPacket.Velocity.ToD2DPoint(), planeUpdPacket.Rotation);
                 }
-
-                if (age > 16f)
-                    Debug.WriteLine($"{age}");
             }
-
-            var missing = _planes.Except(updatedPlanes);
         }
 
         private void DoNetMissileUpdates(MissileListPacket listPacket)
@@ -692,7 +642,6 @@ namespace PolyPlane
             {
                 var netMissile = GetNetMissile(missileUpdate.ID);
 
-                // TODO: Sometimes missiles stop working....
                 if (netMissile != null)
                 {
                     var netMissileOwner = GetNetPlane(netMissile.Owner.ID, false);
@@ -714,7 +663,6 @@ namespace PolyPlane
             bulletPacket.SyncObj(bullet);
             var owner = GetNetPlane(bulletPacket.OwnerID);
             bullet.Owner = owner;
-
 
             var contains = _bullets.Any(b => b.ID.Equals(bullet.ID));
 
@@ -755,24 +703,27 @@ namespace PolyPlane
                 bool containsDecoy = _decoys.Any(d => d.ID.Equals(decoy.ID));
 
                 if (!containsDecoy)
+                {
                     _decoys.Add(decoy);
+
+                    if (World.IsServer)
+                        _server.EnqueuePacket(decoyPacket);
+                }
             }
         }
 
-        private void SendNetImpact(GameObject impactor, GameObject target, D2DPoint impactPoint)
+        private void SendNetImpact(GameObject impactor, GameObject target, PlaneImpactResult result)
         {
-            if (!_isNetGame)
+            if (!World.IsNetGame)
                 return;
 
-            //var impactPacket = new Net.ImpactPacket(impactor.ID, target.ID, impactPoint);
-            var impactPacket = new Net.ImpactPacket(target, impactor.ID, impactPoint);
+            var impactPacket = new Net.ImpactPacket(target, impactor.ID, result.ImpactPoint, result.DoesDamage, result.WasHeadshot, result.Type == ImpactType.Missile);
 
-            if (_isServer)
+            if (World.IsServer)
             {
                 _server.EnqueuePacket(impactPacket);
                 DoNetImpact(impactPacket);
             }
-            //_server.BroadcastPacket(impactPacket);
             else
                 _client.EnqueuePacket(impactPacket);
 
@@ -808,7 +759,7 @@ namespace PolyPlane
                     target.Velocity = packet.Velocity.ToD2DPoint();
                     target.Position = packet.Position.ToD2DPoint();
                     var impactPoint = packet.ImpactPoint.ToD2DPoint();
-                    target.DoImpact(impactor, impactPoint, ignoreCooldown: true);
+                    target.DoNetImpact(impactor, impactPoint, packet.DoesDamage, packet.WasHeadshot, packet.WasMissile);
 
                     AddExplosion(impactPoint);
                 }
@@ -821,12 +772,12 @@ namespace PolyPlane
 
         private void DoNetDecoy(Decoy decoy)
         {
-            if (!_isNetGame)
+            if (!World.IsNetGame)
                 return;
 
             var decoyPacket = new Net.DecoyPacket(decoy);
 
-            if (_isServer)
+            if (World.IsServer)
                 _server.EnqueuePacket(decoyPacket);
             else
                 _client.EnqueuePacket(decoyPacket);
@@ -850,7 +801,7 @@ namespace PolyPlane
             {
                 case PacketTypes.PlaneUpdate:
 
-                    if (!_isServer && !_netIDIsSet)
+                    if (!World.IsServer && !_netIDIsSet)
                         return;
 
                     var updPacket = packet as PlaneListPacket;
@@ -871,7 +822,7 @@ namespace PolyPlane
                     break;
                 case PacketTypes.NewPlayer:
 
-                    if (_isServer)
+                    if (World.IsServer)
                     {
                         var planePacket = packet as PlanePacket;
 
@@ -909,7 +860,7 @@ namespace PolyPlane
                     break;
                 case PacketTypes.SetID:
 
-                    if (!_isServer)
+                    if (!World.IsServer)
                     {
                         _netIDIsSet = true;
 
@@ -927,7 +878,7 @@ namespace PolyPlane
                     break;
                 case PacketTypes.GetOtherPlanes:
 
-                    if (_isServer)
+                    if (World.IsServer)
                     {
                         ServerSendOtherPlanes();
                     }
@@ -988,7 +939,7 @@ namespace PolyPlane
         {
             foreach (var missile in _missiles)
             {
-                if (missile.ID.Equals(id) && !missile.Owner.ID.Equals(_playerPlane.ID))
+                if (missile.ID.Equals(id))
                     return missile as GuidedMissile;
             }
 
@@ -1024,7 +975,6 @@ namespace PolyPlane
             _updateObjects.Clear();
 
             _updateObjects.AddRange(_missiles);
-            //_updateObjects.AddRange(_targets);
             _updateObjects.AddRange(_bullets);
             _updateObjects.AddRange(_planes);
 
@@ -1116,7 +1066,7 @@ namespace PolyPlane
                     _planes.Add(plane);
             }
 
-            if (_isNetGame && _isServer && newPlanes)
+            if (World.IsNetGame && World.IsServer && newPlanes)
                 ServerSendOtherPlanes();
 
             while (_newDecoys.Count > 0)
@@ -1592,7 +1542,7 @@ namespace PolyPlane
 
         private void DoCollisions()
         {
-            if (_isNetGame && !_isServer)
+            if (World.IsNetGame && !World.IsServer)
             {
                 HandleGroundImpacts();
                 return;
@@ -1639,18 +1589,9 @@ namespace PolyPlane
                             if (missile.IsExpired)
                                 continue;
 
-                            SendNetImpact(missile, plane, pos);
+                            var impactResult = plane.GetImpactResult(missile, pos);
+                            SendNetImpact(missile, plane, impactResult);
 
-                            //if (plane.IsAI == true)
-                            //{
-                            //    //plane.DoImpact(missile, pos);
-                            //    SendNetImpact(missile, plane, pos);
-                            //}
-                            //else if (plane.IsAI == false && !_godMode)
-                            //{
-                            //    //plane.DoImpact(missile, pos);
-                            //    SendNetImpact(missile, plane, pos);
-                            //}
                         }
 
                         missile.IsExpired = true;
@@ -1675,22 +1616,11 @@ namespace PolyPlane
                         {
                             if (!plane2.IsAI && !targ.ID.Equals(_playerPlane.ID) && !plane2.IsDamaged)
                                 _playerScore++;
-                            //if (plane2.IsAI)
-                            //{
-                            //    DoNetImpact(bullet, plane2, pos);
-                            //    plane2.DoImpact(bullet, pos);
 
-                            //}
+                            var impactResult = plane2.GetImpactResult(bullet, pos);
+                            SendNetImpact(bullet, plane2, impactResult);
 
-                            //if (plane2 == _playerPlane && !_godMode)
-                            //{
-                            //    DoNetImpact(bullet, plane2, pos);
-                            //    plane2.DoImpact(bullet, pos);
-                            //}
 
-                            if (!bullet.IsExpired)
-                                SendNetImpact(bullet, plane2, pos);
-                            //plane2.DoImpact(bullet, pos);
                         }
 
                         bullet.IsExpired = true;
@@ -1738,8 +1668,8 @@ namespace PolyPlane
                 {
                     if (!_godMode)
                     {
-                        SendNetImpact(missile, _playerPlane, pos);
-                        //_playerPlane.DoImpact(missile, pos);
+                        var impactResult = _playerPlane.GetImpactResult(missile, pos);
+                        SendNetImpact(missile, _playerPlane, impactResult);
                     }
 
                     Log.Msg($"Dist Traveled: {missile.DistTraveled}");
@@ -1773,159 +1703,6 @@ namespace PolyPlane
             HandleGroundImpacts();
             //PruneExpiredObj();
         }
-
-        //private void DoCollisions()
-        //{
-        //    // Targets/AI Planes vs missiles and bullets.
-        //    for (int r = 0; r < _targets.Count; r++)
-        //    {
-        //        var targ = _targets[r] as GameObjectPoly;
-
-        //        if (targ == null)
-        //            continue;
-
-        //        if (targ is Decoy)
-        //            continue;
-
-        //        // Missiles
-        //        for (int m = 0; m < _missiles.Count; m++)
-        //        {
-        //            var missile = _missiles[m] as Missile;
-
-        //            if (missile.Owner.ID.Equals(targ.ID))
-        //                continue;
-
-        //            if (targ.CollidesWith(missile, out D2DPoint pos))
-        //            {
-        //                if (targ is Plane plane)
-        //                {
-        //                    if (plane.IsAI)
-        //                    {
-        //                        var oPlane = missile.Owner as Plane;
-
-        //                        if (!oPlane.IsAI && !targ.ID.Equals(_playerPlane.ID) && !plane.IsDamaged)
-        //                        {
-        //                            _playerScore++;
-        //                            NewHudMessage("Splash!", D2DColor.GreenYellow);
-        //                            Log.Msg($"Dist Traveled: {missile.DistTraveled}");
-        //                        }
-
-        //                        Log.Msg("AI plane hit AI plane with missile.");
-        //                    }
-
-        //                    if (plane.IsAI == true)
-        //                        plane.DoImpact(missile, pos);
-        //                    else if (plane.IsAI == false && !_godMode)
-        //                        plane.DoImpact(missile, pos);
-        //                }
-
-        //                missile.IsExpired = true;
-        //                AddExplosion(pos);
-        //            }
-        //        }
-
-        //        // Bullets
-        //        for (int b = 0; b < _bullets.Count; b++)
-        //        {
-        //            var bullet = _bullets[b];
-
-        //            if (bullet.Owner.ID.Equals(targ.ID))
-        //                continue;
-
-        //            if (targ.CollidesWith(bullet, out D2DPoint pos) && !bullet.Owner.ID.Equals(targ.ID))
-        //            {
-        //                if (!targ.IsExpired)
-        //                    AddExplosion(pos);
-
-        //                if (targ is Plane plane2)
-        //                {
-        //                    if (!plane2.IsAI && !targ.ID.Equals(_playerPlane.ID) && !plane2.IsDamaged)
-        //                        _playerScore++;
-
-        //                    if (plane2.IsAI)
-        //                        plane2.DoImpact(bullet, pos);
-
-        //                    if (plane2 == _playerPlane && !_godMode)
-        //                        plane2.DoImpact(bullet, pos);
-        //                }
-
-        //                bullet.IsExpired = true;
-        //            }
-        //        }
-
-        //        //for (int e = 0; e < _explosions.Count; e++)
-        //        //{
-        //        //    var explosion = _explosions[e];
-
-        //        //    if (explosion.Contains(targ.Position))
-        //        //    {
-        //        //        targ.IsExpired = true;
-        //        //    }
-        //        //}
-        //    }
-
-        //    // Handle missiles hit by bullets.
-        //    // And handle player plane hits by AI missiles.
-        //    for (int m = 0; m < _missiles.Count; m++)
-        //    {
-        //        var missile = _missiles[m] as Missile;
-
-        //        for (int b = 0; b < _bullets.Count; b++)
-        //        {
-        //            var bullet = _bullets[b];
-
-        //            if (bullet.Owner == missile.Owner)
-        //                continue;
-
-        //            if (missile.CollidesWith(bullet, out D2DPoint posb))
-        //            {
-        //                if (!missile.IsExpired)
-        //                    AddExplosion(posb);
-
-        //                missile.IsExpired = true;
-        //                bullet.IsExpired = true;
-        //            }
-        //        }
-
-        //        if (missile.Owner.ID.Equals(_playerPlane.ID))
-        //            continue;
-
-        //        if (_playerPlane.CollidesWith(missile, out D2DPoint pos))
-        //        {
-        //            if (!_godMode)
-        //                _playerPlane.DoImpact(missile, pos);
-
-        //            Log.Msg($"Dist Traveled: {missile.DistTraveled}");
-
-        //            missile.IsExpired = true;
-        //            AddExplosion(_playerPlane.Position);
-        //        }
-        //    }
-
-
-        //    //// Handle player plane vs bullets.
-        //    //for (int b = 0; b < _bullets.Count; b++)
-        //    //{
-        //    //    var bullet = _bullets[b];
-
-        //    //    if (bullet.Owner.ID == _playerPlane.ID)
-        //    //        continue;
-
-        //    //    if (_playerPlane.Contains(bullet, out D2DPoint pos))
-        //    //    {
-        //    //        if (!_playerPlane.IsExpired)
-        //    //            AddExplosion(_playerPlane.Position);
-
-        //    //        if (!_godMode)
-        //    //            _playerPlane.DoImpact(bullet, pos);
-
-        //    //        bullet.IsExpired = true;
-        //    //    }
-        //    //}
-
-        //    HandleGroundImpacts();
-        //    PruneExpiredObj();
-        //}
 
         private void HandleGroundImpacts()
         {
@@ -2516,8 +2293,6 @@ namespace PolyPlane
             infoText += $"Update ms: {_updateTime.TotalMilliseconds}\n";
             infoText += $"Render ms: {_renderTime.TotalMilliseconds}\n";
             infoText += $"Collision ms: {_collisionTime.TotalMilliseconds}\n";
-            infoText += $"Net ms: {_netTime.TotalMilliseconds}\n";
-
             infoText += $"Packet Delay: {_packetDelay}\n";
 
 

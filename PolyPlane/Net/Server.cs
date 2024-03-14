@@ -19,13 +19,13 @@ namespace PolyPlane.Net
         public int Port;
         public Address Address;
         public long CurrentTime;
-        
+
         private Thread _pollThread;
         private bool _runLoop = true;
         private const int MAX_CLIENTS = 3;
-        private const int MAX_CHANNELS = 3;
+        private const int MAX_CHANNELS = 4;
         private const int CHANNEL_ID = 0;
-        
+
         private Dictionary<uint, Peer> _peers = new Dictionary<uint, Peer>();
 
         public Server(ushort port)
@@ -110,8 +110,6 @@ namespace PolyPlane.Net
                         case EventType.Receive:
                             //Log("Packet received from - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP + ", Channel ID: " + netEvent.ChannelID + ", Data length: " + netEvent.Packet.Length);
 
-                            //ParseTestPacket(netEvent.Packet);
-
                             ParsePacket(netEvent.Packet, netEvent.Peer);
 
                             netEvent.Packet.Dispose();
@@ -142,29 +140,16 @@ namespace PolyPlane.Net
 
         public void SendNewBulletPacket(GameObjects.Bullet bullet)
         {
-            Packet packet = default(Packet);
             var netPacket = new BulletPacket(bullet, PacketTypes.NewBullet);
-            var data = IO.ObjectToByteArray(netPacket);
-            packet.Create(data);
 
-            //ServerHost.Broadcast(CHANNEL_ID, ref packet);
             EnqueuePacket(netPacket);
-
-
-            //EnqueuePacket(netPacket);
-            //Peer.Send(CHANNEL_ID, ref packet);
         }
 
         public void SendNewMissilePacket(GameObjects.GuidedMissile missile)
         {
-            //Packet packet = default(Packet);
             var netPacket = new MissilePacket(missile);
-            //var data = IO.ObjectToByteArray(netPacket);
-            //packet.Create(data);
 
             EnqueuePacket(netPacket);
-            //BroadcastPacket(netPacket);
-            //Peer.Send(CHANNEL_ID, ref packet);
         }
 
         public void EnqueuePacket(NetPacket packet)
@@ -174,55 +159,40 @@ namespace PolyPlane.Net
 
         public void BroadcastPacket(NetPacket netPacket)
         {
-            Packet packet = default(Packet);
-            var data = IO.ObjectToByteArray(netPacket);
-            packet.Create(data);
+            var packet = CreatePacket(netPacket);
+            var channel = GetChannel(netPacket);
 
-            ServerHost.Broadcast(CHANNEL_ID, ref packet);
+            ServerHost.Broadcast((byte)channel, ref packet);
+        }
+
+        public int GetChannel(NetPacket netpacket)
+        {
+            switch (netpacket.Type)
+            {
+                case PacketTypes.PlaneUpdate:
+                    return 0;
+
+                case PacketTypes.MissileUpdate:
+                    return 1;
+
+                case PacketTypes.NewBullet:
+                    return 2;
+
+                default:
+                    return 3;
+            }
         }
 
 
-        ////public void SyncOtherPlanes(List<Net.PlanePacket> planes, ushort requestID)
-        ////{
-        ////    var data = IO.ObjectToByteArray(planes);
-        ////    Packet planesPacket = default(Packet);
-        ////    planesPacket.Create(data);
+        private Packet CreatePacket(NetPacket netPacket)
+        {
+            Packet packet = default(Packet);
+            var data = IO.ObjectToByteArray(netPacket);
+            //packet.Create(data, PacketFlags.Reliable);
+            packet.Create(data, PacketFlags.Instant);
 
-        ////    var peer = _peers[requestID];
-        ////    ServerHost.Broadcast(CHANNEL_ID, ref planesPacket, peer);
-        ////}
-
-        ////public void SendPlaneUpdate(PlanePacket plane)
-        ////{
-        ////    var data = IO.ObjectToByteArray(plane);
-        ////    Packet packet = default(Packet);
-        ////    packet.Create(data);
-
-        ////    ServerHost.Broadcast(CHANNEL_ID, ref packet);
-        ////    //peer.Send(CHANNEL_ID, ref packet)
-        ////}
-        //public void SendPlaneUpdate(PlaneListPacket plane)
-        //{
-        //    var data = IO.ObjectToByteArray(plane);
-        //    Packet packet = default(Packet);
-        //    packet.Create(data);
-
-        //    ServerHost.Broadcast(CHANNEL_ID, ref packet);
-        //    //peer.Send(CHANNEL_ID, ref packet)
-        //}
-
-
-        //public void SyncOtherPlanes(PlaneListPacket planePacket)
-        //{
-        //    var data = IO.ObjectToByteArray(planePacket);
-        //    Packet planesPacket = default(Packet);
-        //    planesPacket.Create(data);
-
-        //    //var peer = _peers[requestID];
-        //    //ServerHost.Broadcast(CHANNEL_ID, ref planesPacket, peer);
-
-        //    ServerHost.Broadcast(CHANNEL_ID, ref planesPacket);
-        //}
+            return packet;
+        }
 
         private void SendIDPacket(Peer peer, NetPacket packet)
         {
@@ -233,8 +203,6 @@ namespace PolyPlane.Net
             peer.Send(CHANNEL_ID, ref idPacket);
         }
 
-       
-
         private void ParsePacket(Packet packet, Peer peer)
         {
             var buffer = new byte[packet.Length];
@@ -242,20 +210,32 @@ namespace PolyPlane.Net
 
             var packetObj = IO.ByteArrayToObject(buffer) as NetPacket;
 
-            if (packetObj.Type == PacketTypes.GetNextID)
+            switch (packetObj.Type)
             {
-                var nextId = new BasicPacket(PacketTypes.GetNextID, new GameObjects.GameID(-1, World.GetNextObjectId()));
+                case PacketTypes.GetNextID:
 
-                Packet idPacket = default(Packet);
-                idPacket.Create(IO.ObjectToByteArray(nextId));
-                peer.Send(CHANNEL_ID, ref idPacket);
-            }
-            else
-            {
-                PacketReceiveQueue.Enqueue(packetObj);
+                    var nextId = new BasicPacket(PacketTypes.GetNextID, new GameObjects.GameID(-1, World.GetNextObjectId()));
+
+                    Packet idPacket = default(Packet);
+                    idPacket.Create(IO.ObjectToByteArray(nextId));
+                    peer.Send(CHANNEL_ID, ref idPacket);
+
+                    break;
+
+                case PacketTypes.PlaneUpdate or PacketTypes.MissileUpdate or PacketTypes.NewBullet or PacketTypes.NewMissile or PacketTypes.Impact: // Immediately re-broadcast certain updates.
+
+                    BroadcastPacket(packetObj);
+                    PacketReceiveQueue.Enqueue(packetObj);
+
+                    break;
+
+                default:
+
+                    PacketReceiveQueue.Enqueue(packetObj);
+
+                    break;
             }
         }
-
 
         private void Log(string message)
         {
