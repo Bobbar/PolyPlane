@@ -18,7 +18,8 @@ namespace PolyPlane.Net
         public Host ServerHost;
         public int Port;
         public Address Address;
-        public long CurrentTime;
+        //public long CurrentTime;
+        public double CurrentTime;
 
         public float BytesSentPerSecond;
         public float BytesReceivedPerSecond;
@@ -35,7 +36,8 @@ namespace PolyPlane.Net
 
         private uint _prevBytesRec = 0;
         private uint _prevBytesSent = 0;
-        private long _lastFrameTime = 0;
+        //private long _lastFrameTime = 0;
+        private double _lastFrameTime = 0;
 
         private Dictionary<uint, Peer> _peers = new Dictionary<uint, Peer>();
 
@@ -131,22 +133,22 @@ namespace PolyPlane.Net
 
                 ProcessQueue();
 
-                CurrentTime = DateTime.UtcNow.Ticks;
+                CurrentTime = World.CurrentTime();
 
                 var elap = CurrentTime - _lastFrameTime;
                 _lastFrameTime = CurrentTime;
 
                 var bytesRec = ServerHost.BytesReceived - _prevBytesRec;
-                _prevBytesRec += ServerHost.BytesReceived;
+                _prevBytesRec = ServerHost.BytesReceived;
 
                 var bytesSent = ServerHost.BytesSent - _prevBytesSent;
-                _prevBytesSent += ServerHost.BytesSent;
+                _prevBytesSent = ServerHost.BytesSent;
 
-                var bytesRecPerSec = bytesRec / (float)elap;
-                var bytesSentPerSec = bytesSent / (float)elap;
+                var bytesRecPerSec = bytesRec / (float)(elap);
+                var bytesSentPerSec = bytesSent / (float)(elap);
 
-                BytesReceivedPerSecond = _bytesRecSmooth.Add(bytesRecPerSec / 10000f);
-                BytesSentPerSecond = _bytesSentSmooth.Add(bytesSentPerSec / 10000f);
+                BytesReceivedPerSecond = _bytesRecSmooth.Add(bytesRecPerSec);
+                BytesSentPerSecond = _bytesSentSmooth.Add(bytesSentPerSec);
             }
 
         }

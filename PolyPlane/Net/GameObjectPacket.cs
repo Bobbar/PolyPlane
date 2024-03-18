@@ -61,11 +61,11 @@ namespace PolyPlane.Net
     {
         public PacketTypes Type;
         public GameID ID;
-        public long FrameTime;
+        public double FrameTime;
 
         public NetPacket()
         {
-            FrameTime = DateTime.UtcNow.Ticks;
+            FrameTime = World.CurrentTime();
         }
 
         public NetPacket(GameID id) : this()
@@ -257,7 +257,7 @@ namespace PolyPlane.Net
             if (!this.ID.Equals(obj.ID))
                 throw new InvalidOperationException($"Object ID [{obj}] does not match this packet ID [{this.ID}]");
 
-            obj.Position = this.Position.ToD2DPoint();
+            //obj.Position = this.Position.ToD2DPoint();
             obj.Velocity = this.Velocity.ToD2DPoint();
             obj.Rotation = this.Rotation;
             obj.IsExpired = this.IsExpired;

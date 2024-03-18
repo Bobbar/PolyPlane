@@ -118,7 +118,7 @@ namespace PolyPlane.GameObjects
         public Action<GuidedMissile> FireMissileCallback { get; set; }
 
         private float _gForce = 0f;
-
+      
         //private float Deflection
         //{
         //    get { return _targetDeflection; }
@@ -262,17 +262,16 @@ namespace PolyPlane.GameObjects
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
-            if (this.IsNetObject)
-                return;
-
             base.Update(dt, viewport, renderScale * _renderOffset);
-
             this.Radar?.Update(dt, viewport, renderScale, skipFrames: true);
+
+            _controlWing.Deflection = this.Deflection;
+
 
             if (World.IsNetGame && !World.IsServer)
             {
-                _flames.ForEach(f => f.Update(dt, viewport, renderScale));
-                _debris.ForEach(d => d.Update(dt, viewport, renderScale));
+                _flames.ForEach(f => f.Update(dt, viewport, renderScale, skipFrames: true));
+                _debris.ForEach(d => d.Update(dt, viewport, renderScale, skipFrames: true));
                 _contrail.Update(dt, viewport, renderScale, skipFrames: true);
             }
 
@@ -355,17 +354,22 @@ namespace PolyPlane.GameObjects
 
             _force = wingForce;
 
-            this.RotationSpeed += wingTorque / this.Mass * dt;
 
-            this.Velocity += thrust / this.Mass * dt;
-            this.Velocity += wingForce / this.Mass * dt;
+            if (!this.IsNetObject)
+            {
+                this.RotationSpeed += wingTorque / this.Mass * dt;
 
-            var gravFact = 1f;
+                this.Velocity += thrust / this.Mass * dt;
+                this.Velocity += wingForce / this.Mass * dt;
 
-            if (IsDamaged)
-                gravFact = 4f;
+                var gravFact = 1f;
 
-            this.Velocity += (World.Gravity * gravFact * dt);
+                if (IsDamaged)
+                    gravFact = 4f;
+
+                this.Velocity += (World.Gravity * gravFact * dt);
+            }
+
 
             var totForce = (thrust / this.Mass * dt) + (wingForce / this.Mass * dt);
 
@@ -399,19 +403,16 @@ namespace PolyPlane.GameObjects
             //    _debris.Clear();
         }
 
-        public override void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, D2DPoint velocity, float rotation)
+        public override void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
         {
-            base.NetUpdate(dt, viewport, renderScale, position, velocity, rotation);
+            base.NetUpdate(dt, viewport, renderScale, position, velocity, rotation, frameTime);
 
-            this.Position = position;
-            this.Rotation = rotation;
-            this.Velocity = velocity;
-
+            
             _controlWing.Deflection = this.Deflection;
 
 
-            _flames.ForEach(f => f.Update(dt, viewport, renderScale, skipFrames: true));
-            _debris.ForEach(d => d.Update(dt, viewport, renderScale, skipFrames: true));
+            //_flames.ForEach(f => f.Update(dt, viewport, renderScale, skipFrames: false));
+            _debris.ForEach(d => d.Update(dt, viewport, renderScale, skipFrames: false));
             _contrail.Update(dt, viewport, renderScale, skipFrames: false);
             _flamePos.Update(dt, viewport, renderScale * _renderOffset, skipFrames: false);
             _gunPosition.Update(dt, viewport, renderScale * _renderOffset, skipFrames: false);
@@ -556,12 +557,12 @@ namespace PolyPlane.GameObjects
 
             if (this.IsAI)
             {
-                var missile = new GuidedMissile(this, target, GuidanceType.Advanced, useControlSurfaces: true, useThrustVectoring: true);
+                var missile = new GuidedMissile(this, target, GuidanceType.SimplePN, useControlSurfaces: true, useThrustVectoring: true);
                 FireMissileCallback(missile);
             }
             else
             {
-                var missile = new GuidedMissile(this, target, GuidanceType.Advanced, useControlSurfaces: true, useThrustVectoring: true);
+                var missile = new GuidedMissile(this, target, GuidanceType.SimplePN, useControlSurfaces: true, useThrustVectoring: true);
                 FireMissileCallback(missile);
             }
 

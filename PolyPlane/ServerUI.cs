@@ -41,5 +41,10 @@ namespace PolyPlane
         {
             SpawnIAPlane = true;
         }
+
+        private void InterpCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            World.InterpOn = InterpCheckBox.Checked;
+        }
     }
 }

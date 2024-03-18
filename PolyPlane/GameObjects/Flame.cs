@@ -113,7 +113,7 @@ namespace PolyPlane.GameObjects
             while (i < _parts.Count)
             {
                 var part = _parts[i];
-                part.Update(dt, viewport, renderScale, skipFrames: true);
+                part.Update(dt, viewport, renderScale, skipFrames: false);
 
                 var ageFactFade = 1f - Helpers.Factor(part.Age, MAX_AGE);
                 var ageFactSmoke = Helpers.Factor(part.Age, MAX_AGE * 3f);

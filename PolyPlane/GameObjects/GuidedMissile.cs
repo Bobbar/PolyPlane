@@ -42,7 +42,7 @@ namespace PolyPlane.GameObjects
 
         //public bool MissedTarget => _guidance.MissedTarget;
 
-        public bool MissedTarget 
+        public bool MissedTarget
         {
             get
             {
@@ -156,16 +156,54 @@ namespace PolyPlane.GameObjects
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
-            if (this.IsNetObject)
-                return;
-
-            if (_age == 0f)
-                base.Update(dt, viewport, renderScale + _renderOffset);
+            base.Update(dt, viewport, renderScale + _renderOffset);
 
             _age += dt;
 
             if (_age > LIFESPAN && MissedTarget)
                 this.IsExpired = true;
+
+            if (_useControlSurfaces)
+            {
+                _tailWing.Update(dt, viewport, renderScale + _renderOffset);
+                _noseWing.Update(dt, viewport, renderScale + _renderOffset);
+                _rocketBody.Update(dt, viewport, renderScale + _renderOffset);
+            }
+            else
+            {
+                _rocketBody.Update(dt, viewport, renderScale + _renderOffset);
+            }
+
+            _centerOfThrust.Update(dt, viewport, renderScale + _renderOffset);
+            _warheadCenterMass.Update(dt, viewport, renderScale + _renderOffset);
+            _motorCenterMass.Update(dt, viewport, renderScale + _renderOffset);
+            _flamePos.Update(dt, viewport, renderScale + _renderOffset);
+
+            float flameAngle = 0f;
+
+            if (_useThrustVectoring)
+            {
+                flameAngle = GetThrust(_useThrustVectoring).Angle();
+            }
+            else
+            {
+                const float DEF_AMT = 0.2f; // How much the flame will be deflected in relation to velocity.
+                flameAngle = this.Rotation - (Helpers.ClampAngle180(this.Rotation - this.Velocity.Angle(true)) * DEF_AMT);
+            }
+
+            // Make the flame do flamey things...(Wiggle and color)
+            var thrust = GetThrust().Length();
+            var len = this.Velocity.Length() * 0.05f;
+            len += thrust * 0.01f;
+            len *= 0.8f;
+            FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
+            _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
+
+            FlamePoly.Update(_flamePos.Position, flameAngle, renderScale + _renderOffset);
+
+            if (this.IsNetObject)
+                return;
+
 
             D2DPoint accel = D2DPoint.Zero;
 
@@ -248,45 +286,8 @@ namespace PolyPlane.GameObjects
                 _currentFuel -= BURN_RATE * dt;
             }
 
-            base.Update(dt, viewport, renderScale + _renderOffset);
+            //base.Update(dt, viewport, renderScale + _renderOffset);
 
-            if (_useControlSurfaces)
-            {
-                _tailWing.Update(dt, viewport, renderScale + _renderOffset);
-                _noseWing.Update(dt, viewport, renderScale + _renderOffset);
-                _rocketBody.Update(dt, viewport, renderScale + _renderOffset);
-            }
-            else
-            {
-                _rocketBody.Update(dt, viewport, renderScale + _renderOffset);
-            }
-
-            _centerOfThrust.Update(dt, viewport, renderScale + _renderOffset);
-            _warheadCenterMass.Update(dt, viewport, renderScale + _renderOffset);
-            _motorCenterMass.Update(dt, viewport, renderScale + _renderOffset);
-            _flamePos.Update(dt, viewport, renderScale + _renderOffset);
-
-            float flameAngle = 0f;
-
-            if (_useThrustVectoring)
-            {
-                flameAngle = GetThrust(_useThrustVectoring).Angle();
-            }
-            else
-            {
-                const float DEF_AMT = 0.2f; // How much the flame will be deflected in relation to velocity.
-                flameAngle = this.Rotation - (Helpers.ClampAngle180(this.Rotation - this.Velocity.Angle(true)) * DEF_AMT);
-            }
-
-            // Make the flame do flamey things...(Wiggle and color)
-            var thrust = GetThrust().Length();
-            var len = this.Velocity.Length() * 0.05f;
-            len += thrust * 0.01f;
-            len *= 0.8f;
-            FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
-            _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
-
-            FlamePoly.Update(_flamePos.Position, flameAngle, renderScale + _renderOffset);
 
             if (FUEL <= 0f && this.Velocity.Length() <= 5f)
                 this.IsExpired = true;
@@ -298,15 +299,11 @@ namespace PolyPlane.GameObjects
             _decoyDistractArm.Update(dt);
         }
 
-        public override void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, D2DPoint velocity, float rotation)
+        public override void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
         {
-            this.Position = position;
-            this.Velocity = velocity;
-            this.Rotation = rotation;
-
+            base.NetUpdate(dt, viewport, renderScale, position, velocity, rotation, frameTime);
 
             _tailWing.Deflection = this.Deflection;
-
 
             if (_useControlSurfaces)
             {
@@ -344,7 +341,7 @@ namespace PolyPlane.GameObjects
             _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
 
             FlamePoly.Update(_flamePos.Position, flameAngle, renderScale + _renderOffset);
-            this.Polygon.Update(this.Position, this.Rotation, renderScale + _renderOffset); 
+            this.Polygon.Update(this.Position, this.Rotation, renderScale + _renderOffset);
 
             if (FUEL <= 0f && this.Velocity.Length() <= 5f)
                 this.IsExpired = true;

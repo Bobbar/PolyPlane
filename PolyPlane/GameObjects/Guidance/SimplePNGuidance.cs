@@ -7,7 +7,7 @@
 
         public override float GetGuidanceDirection(float dt)
         {
-            const float pValue = 3f;
+            const float pValue = 5f;
 
             var target = GetTargetPosition();
             var los = target - this.Missile.Position;

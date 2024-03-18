@@ -1,29 +1,21 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics;
+using System.Numerics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
     public abstract class GameObject : IEquatable<GameObject>, ISkipFramesUpdate
     {
-        //public long ID => _id;
-
         public bool IsNetObject { get; set; } = false;
 
         public GameID ID { get; set; } = new GameID();
 
-        public int PlayerID 
-        { 
+        public int PlayerID
+        {
             get { return ID.PlayerID; }
             set { ID = new GameID(value, ID.ObjectID); }
         }
 
-        //public long ID
-        //{ 
-        //    get { return _id; }
-        //    set { _id = value; } 
-        //}
-
-        //private long _id = 0;
         public GameObject Owner { get; set; }
 
         public bool IsExpired { get; set; } = false;
@@ -65,10 +57,16 @@ namespace PolyPlane.GameObjects
             }
         }
 
+        private const int SMOOTH_AMT = 3;
+        private SmoothPos _smoothPos = new SmoothPos(SMOOTH_AMT);
+        private SmoothPos _smoothVelo = new SmoothPos(SMOOTH_AMT);
+        private SmoothFloat _smoothRot = new SmoothFloat(SMOOTH_AMT / 2);
+
+        public List<Tuple<double, D2DPoint>> PosBuffer = new List<Tuple<double, D2DPoint>>();
+
         public GameObject()
         {
             this.ID = new GameID(-1, World.GetNextObjectId());
-            //_id = World.GetNextId();
         }
 
         public GameObject(D2DPoint pos) : this(pos, D2DPoint.Zero, 0f, 0f)
@@ -124,24 +122,77 @@ namespace PolyPlane.GameObjects
         public virtual void Update(float dt, D2DSize viewport, float renderScale)
         {
             if (IsNetObject)
+            {
+                if (World.InterpOn)
+                {
+                    var nowMs = World.CurrentTime();
+
+                    //var renderTimeStamp = nowMs - (1000f / 60f);
+                    var renderTimeStamp = nowMs - (1000f / 30f);
+
+                    // Trim old updates.
+                    var buffer = PosBuffer;
+                    while (buffer.Count >= 2 && buffer[1].Item1 <= renderTimeStamp)
+                    {
+                        buffer.Shift();
+                    }
+
+
+                    if (buffer.Count >= 2 && buffer[0].Item1 <= renderTimeStamp && renderTimeStamp <= buffer[1].Item1)
+                    {
+                        var x0 = buffer[0].Item2;
+                        var x1 = buffer[1].Item2;
+
+                        var t0 = buffer[0].Item1;
+                        var t1 = buffer[1].Item1;
+
+                        var newPos = x0 + (x1 - x0) * (float)((renderTimeStamp - t0) / (t1 - t0));
+                        this.Position = _smoothPos.Add(newPos);
+                    }
+                    else
+                    {
+                        this.Position += Velocity * dt;
+                    }
+                }
+
                 return;
+            }
 
             if (this.IsExpired)
                 return;
 
             Position += Velocity * dt;
 
-            Rotation += RotationSpeed * dt;
+            if (!this.IsNetObject)
+                Rotation += RotationSpeed * dt;
 
             Wrap(viewport);
-
-
         }
 
-        public virtual void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, D2DPoint velocity, float rotation)
+        public virtual void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
         {
+            if (World.InterpOn)
+            {
+                this.Velocity = velocity;
+                this.Rotation = rotation;
 
+                var nowMs = World.CurrentTime();
+                //var nowMs = frameTime - (1000f / 60f);
+                //var nowMs = frameTime - (1000f / 30f);
+                //var nowMs = frameTime;
+
+                if (PosBuffer.Count < 10)
+                    PosBuffer.Add(new Tuple<double, Vector2>(nowMs, position));
+
+            }
+            else
+            {
+                this.Position = position;
+                this.Rotation = rotation;
+                this.Velocity = velocity;
+            }
         }
+
 
         private bool SkipFrame()
         {
@@ -151,10 +202,7 @@ namespace PolyPlane.GameObjects
         private void SetID(long id)
         {
             this.ID = new GameID(this.ID.PlayerID, id);
-
-            //this.ID = id;
         }
-     
 
         public virtual void Wrap(D2DSize viewport)
         {
