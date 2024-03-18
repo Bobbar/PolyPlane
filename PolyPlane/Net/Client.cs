@@ -21,7 +21,7 @@ namespace PolyPlane.Net
         public Peer Peer;
         public int Port;
         public Address Address;
-        public long CurrentTime;
+        public double CurrentTime;
 
         private Thread _pollThread;
         private bool _runLoop = true;
@@ -106,7 +106,7 @@ namespace PolyPlane.Net
 
                 ProcessQueue();
 
-                CurrentTime = DateTime.UtcNow.Ticks;
+                CurrentTime = World.CurrentTime();
             }
 
         }

@@ -1,9 +1,13 @@
-﻿using unvell.D2DLib;
+﻿using PolyPlane.GameObjects;
+using unvell.D2DLib;
 
 namespace PolyPlane
 {
     public static class World
     {
+
+        public static bool InterpOn = true;
+
         public const int PHYSICS_STEPS = 8;//8;
 
         public static float DT
@@ -81,6 +85,7 @@ namespace PolyPlane
         public static long CurrentObjId = 0;
         public static int CurrentPlayerId = 0;
 
+        public static GameID ViewID;
 
         public static float GetDensityAltitude(D2DPoint position)
         {
@@ -136,5 +141,9 @@ namespace PolyPlane
             return Interlocked.Increment(ref CurrentPlayerId);
         }
 
+        public static double CurrentTime()
+        {
+            return DateTime.UtcNow.TimeOfDay.TotalMilliseconds;
+        }
     }
 }

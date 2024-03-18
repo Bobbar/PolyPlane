@@ -31,6 +31,7 @@
             PauseButton = new Button();
             SpawnAIPlaneButton = new Button();
             InfoLabel = new Label();
+            InterpCheckBox = new CheckBox();
             SuspendLayout();
             // 
             // PauseButton
@@ -62,11 +63,25 @@
             InfoLabel.TabIndex = 2;
             InfoLabel.Text = "Info";
             // 
+            // InterpCheckBox
+            // 
+            InterpCheckBox.AutoSize = true;
+            InterpCheckBox.Checked = true;
+            InterpCheckBox.CheckState = CheckState.Checked;
+            InterpCheckBox.Location = new Point(363, 287);
+            InterpCheckBox.Name = "InterpCheckBox";
+            InterpCheckBox.Size = new Size(76, 19);
+            InterpCheckBox.TabIndex = 3;
+            InterpCheckBox.Text = "Interp On";
+            InterpCheckBox.UseVisualStyleBackColor = true;
+            InterpCheckBox.CheckedChanged += InterpCheckBox_CheckedChanged;
+            // 
             // ServerUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(InterpCheckBox);
             Controls.Add(InfoLabel);
             Controls.Add(SpawnAIPlaneButton);
             Controls.Add(PauseButton);
@@ -81,5 +96,6 @@
         private Button PauseButton;
         private Button SpawnAIPlaneButton;
         private Label InfoLabel;
+        private CheckBox InterpCheckBox;
     }
 }
