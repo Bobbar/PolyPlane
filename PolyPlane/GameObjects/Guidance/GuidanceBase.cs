@@ -110,10 +110,10 @@ namespace PolyPlane.GameObjects.Guidance
 
         protected D2DPoint GetTargetPosition()
         {
-            if (this.Target is Plane plane)
-                return plane.ExhaustPosition;
-            else
-                return this.Target.Position;
+            //if (this.Target is Plane plane)
+            //    return plane.ExhaustPosition;
+            //else
+            return this.Target.Position;
         }
 
         /// <summary>

@@ -10,6 +10,20 @@ namespace PolyPlane
 
         public const int PHYSICS_STEPS = 8;//8;
 
+        public const bool NET_UPDATE_SKIP_FRAMES = true;
+
+        public static float SERVER_TICK_RATE
+        {
+            get
+            {
+                if (NET_UPDATE_SKIP_FRAMES)
+                    return 30f;
+                else
+                    return 60f;
+            }
+        }
+
+
         public static float DT
         {
             get { return _dt; }

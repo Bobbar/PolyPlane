@@ -175,7 +175,7 @@ namespace PolyPlane.GameObjects
             var end = this.Position + wingVec * RenderLength;
             ctx.DrawLine(start, end, D2DColor.Black, WEIGHT + 0.5f, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Round);
             ctx.DrawLine(start, end, D2DColor.Gray, WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Round);
-            
+
             if (World.ShowAero)
             {
                 const float SCALE = 0.1f;//0.04f;
@@ -242,7 +242,7 @@ namespace PolyPlane.GameObjects
             var aoaFact = Helpers.Factor(MAX_AOA, Math.Abs(aoa));
             var coeffLift = (float)Math.Sin(2f * aoaRads) * aoaFact;
             var liftForce = AIR_DENSITY * 0.5f * veloMagSq * WING_AREA * coeffLift;
-           
+
             liftForce = Math.Clamp(liftForce, -MAX_LIFT, MAX_LIFT);
             //dragForce = Math.Clamp(dragForce, -MAX_LIFT, MAX_LIFT);
 

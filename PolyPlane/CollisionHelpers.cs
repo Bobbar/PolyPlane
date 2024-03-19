@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
-using PolyPlane.GameObjects;
+﻿using System.Numerics;
 using unvell.D2DLib;
 
 namespace PolyPlane
@@ -17,7 +10,7 @@ namespace PolyPlane
     {
         //Check if the lines are interesecting in 2d space
 
-        public static bool IsIntersecting(D2DPoint a1, D2DPoint b1,  D2DPoint a2, D2DPoint b2, out D2DPoint pos)
+        public static bool IsIntersecting(D2DPoint a1, D2DPoint b1, D2DPoint a2, D2DPoint b2, out D2DPoint pos)
         {
             D2DPoint l1_start = new D2DPoint(a1.X, a1.Y);
             D2DPoint l1_end = new D2DPoint(b1.X, b1.Y);

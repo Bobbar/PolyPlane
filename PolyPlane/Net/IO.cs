@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
-using System.Threading.Tasks;
-using GroBuf;
+﻿using GroBuf;
 using GroBuf.DataMembersExtracters;
 
 namespace PolyPlane.Net
@@ -57,7 +51,7 @@ namespace PolyPlane.Net
                     obj = _serializer.Deserialize<DecoyPacket>(payloadPacket.Payload);
 
                     break;
-                case PacketTypes.SetID or PacketTypes.GetNextID:
+                case PacketTypes.SetID or PacketTypes.GetNextID or PacketTypes.PlayerDisconnect:
                     obj = _serializer.Deserialize<BasicPacket>(payloadPacket.Payload);
 
                     break;

@@ -1,13 +1,6 @@
-﻿using System;
+﻿using ENet;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
-using ENet;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PolyPlane.Net
 {
@@ -49,6 +42,10 @@ namespace PolyPlane.Net
 
         public void Stop()
         {
+            SendPlayerDisconnectPacket((uint)PlaneID);
+
+            ProcessQueue();
+
             _runLoop = false;
         }
 
@@ -84,11 +81,12 @@ namespace PolyPlane.Net
 
                         case EventType.Disconnect:
                             Log("Client disconnected from server");
-
+                            SendPlayerDisconnectPacket(this.Peer.ID);
                             break;
 
                         case EventType.Timeout:
                             Log("Client connection timeout");
+                            SendPlayerDisconnectPacket(this.Peer.ID);
 
                             break;
 
@@ -121,6 +119,15 @@ namespace PolyPlane.Net
                     SendPacket(data);
                 }
             }
+        }
+        public void SendPlayerDisconnectPacket(uint playerID)
+        {
+            var packet = new BasicPacket(PacketTypes.PlayerDisconnect, new GameObjects.GameID(playerID));
+
+            var data = IO.ObjectToByteArray(packet);
+            SendPacket(data);
+
+            ClientHost.Flush();
         }
 
         public void SendPacket(byte[] data)
@@ -185,6 +192,10 @@ namespace PolyPlane.Net
 
         public void Dispose()
         {
+            SendPlayerDisconnectPacket(this.Peer.ID);
+            ProcessQueue();
+
+
             ClientHost.Flush();
 
             _runLoop = false;

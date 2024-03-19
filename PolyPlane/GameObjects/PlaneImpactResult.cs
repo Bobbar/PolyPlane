@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace PolyPlane.GameObjects
+﻿namespace PolyPlane.GameObjects
 {
     public class PlaneImpactResult
     {
@@ -15,8 +9,8 @@ namespace PolyPlane.GameObjects
 
         public PlaneImpactResult() { }
 
-        public PlaneImpactResult(ImpactType type, D2DPoint impactPoint, bool doesDamage) 
-        { 
+        public PlaneImpactResult(ImpactType type, D2DPoint impactPoint, bool doesDamage)
+        {
             Type = type;
             ImpactPoint = impactPoint;
             DoesDamage = doesDamage;

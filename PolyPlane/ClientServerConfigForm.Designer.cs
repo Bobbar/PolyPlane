@@ -35,6 +35,7 @@
             StartServerButton = new Button();
             StartClientButton = new Button();
             SinglePlayerButton = new Button();
+            AIPlaneCheckBox = new CheckBox();
             SuspendLayout();
             // 
             // PortTextBox
@@ -101,11 +102,23 @@
             SinglePlayerButton.UseVisualStyleBackColor = true;
             SinglePlayerButton.Click += SinglePlayerButton_Click;
             // 
+            // AIPlaneCheckBox
+            // 
+            AIPlaneCheckBox.AutoSize = true;
+            AIPlaneCheckBox.Location = new Point(309, 106);
+            AIPlaneCheckBox.Name = "AIPlaneCheckBox";
+            AIPlaneCheckBox.Size = new Size(69, 19);
+            AIPlaneCheckBox.TabIndex = 7;
+            AIPlaneCheckBox.Text = "AI Plane";
+            AIPlaneCheckBox.UseVisualStyleBackColor = true;
+            AIPlaneCheckBox.CheckedChanged += AIPlaneCheckBox_CheckedChanged;
+            // 
             // ClientServerConfigForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(555, 221);
+            Controls.Add(AIPlaneCheckBox);
             Controls.Add(SinglePlayerButton);
             Controls.Add(StartClientButton);
             Controls.Add(StartServerButton);
@@ -129,5 +142,6 @@
         private Button StartServerButton;
         private Button StartClientButton;
         private Button SinglePlayerButton;
+        private CheckBox AIPlaneCheckBox;
     }
 }

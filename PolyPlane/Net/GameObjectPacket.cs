@@ -1,13 +1,5 @@
 ﻿using PolyPlane.GameObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using unvell.D2DLib;
-using ENet;
-using GroBuf;
 
 
 namespace PolyPlane.Net
@@ -34,6 +26,30 @@ namespace PolyPlane.Net
         public D2DPoint ToD2DPoint()
         {
             return new D2DPoint(this.X, this.Y);
+        }
+
+        public static NetPoint operator -(NetPoint a, NetPoint b)
+        {
+            return new NetPoint(a.X - b.X, a.Y - b.Y);
+        }
+
+        public static NetPoint operator *(NetPoint a, NetPoint b)
+        {
+            return new NetPoint(a.X * b.X, a.Y * b.Y);
+        }
+
+        public static NetPoint operator *(NetPoint a, float val)
+        {
+            return new NetPoint(a.X * val, a.Y * val);
+        }
+
+        public static NetPoint operator +(NetPoint a, NetPoint b)
+        {
+            return new NetPoint(a.X + b.X, a.Y + b.Y);
+        }
+        public static NetPoint operator +(NetPoint a, float val)
+        {
+            return new NetPoint(a.X + val, a.Y + val);
         }
 
         public override string ToString()
@@ -141,12 +157,12 @@ namespace PolyPlane.Net
     {
         public List<BasicPacket> Packets = new List<BasicPacket>();
 
-        public BasicListPacket() 
-        { 
+        public BasicListPacket()
+        {
             this.Type = PacketTypes.ExpiredObjects;
         }
 
-        public BasicListPacket(GameID objectId) 
+        public BasicListPacket(GameID objectId)
         {
             this.Type = PacketTypes.ExpiredObjects;
             this.ID = objectId;
@@ -198,7 +214,7 @@ namespace PolyPlane.Net
         }
     }
 
-    public abstract partial class GameObjectPacket : NetPacket
+    public partial class GameObjectPacket : NetPacket
     {
         public GameID OwnerID;
         public NetPoint Position;
@@ -251,16 +267,21 @@ namespace PolyPlane.Net
 
         }
 
-
         public virtual void SyncObj(GameObject obj)
         {
             if (!this.ID.Equals(obj.ID))
                 throw new InvalidOperationException($"Object ID [{obj}] does not match this packet ID [{this.ID}]");
 
             //obj.Position = this.Position.ToD2DPoint();
-            obj.Velocity = this.Velocity.ToD2DPoint();
-            obj.Rotation = this.Rotation;
+            //obj.Velocity = this.Velocity.ToD2DPoint();
+            //obj.Rotation = this.Rotation;
             obj.IsExpired = this.IsExpired;
+        }
+
+
+        public override string ToString()
+        {
+            return $"({Position.X}, {Position.Y})";
         }
     }
 

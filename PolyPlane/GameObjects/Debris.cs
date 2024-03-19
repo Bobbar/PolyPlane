@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using unvell.D2DLib;
+﻿using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
@@ -12,7 +7,7 @@ namespace PolyPlane.GameObjects
         private D2DColor _color;
         private Flame _flame;
 
-        public Debris(D2DPoint pos, D2DPoint velo, D2DColor color) : base(pos, velo) 
+        public Debris(D2DPoint pos, D2DPoint velo, D2DColor color) : base(pos, velo)
         {
             _color = color;
             this.Polygon = new RenderPoly(GameObjectPoly.RandomPoly(8, 12));
