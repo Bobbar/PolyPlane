@@ -118,7 +118,7 @@ namespace PolyPlane.GameObjects
         public Action<GuidedMissile> FireMissileCallback { get; set; }
 
         private float _gForce = 0f;
-      
+
         //private float Deflection
         //{
         //    get { return _targetDeflection; }
@@ -265,9 +265,6 @@ namespace PolyPlane.GameObjects
             base.Update(dt, viewport, renderScale * _renderOffset);
             this.Radar?.Update(dt, viewport, renderScale, skipFrames: true);
 
-            _controlWing.Deflection = this.Deflection;
-
-
             if (World.IsNetGame && !World.IsServer)
             {
                 _flames.ForEach(f => f.Update(dt, viewport, renderScale, skipFrames: true));
@@ -328,7 +325,6 @@ namespace PolyPlane.GameObjects
                 deflection = 0f;
 
             _controlWing.Deflection = deflection;
-            Deflection = _controlWing.Deflection;
 
             foreach (var wing in Wings)
             {
@@ -357,6 +353,8 @@ namespace PolyPlane.GameObjects
 
             if (!this.IsNetObject)
             {
+                Deflection = _controlWing.Deflection;
+
                 this.RotationSpeed += wingTorque / this.Mass * dt;
 
                 this.Velocity += thrust / this.Mass * dt;
@@ -407,43 +405,7 @@ namespace PolyPlane.GameObjects
         {
             base.NetUpdate(dt, viewport, renderScale, position, velocity, rotation, frameTime);
 
-            
             _controlWing.Deflection = this.Deflection;
-
-
-            //_flames.ForEach(f => f.Update(dt, viewport, renderScale, skipFrames: false));
-            _debris.ForEach(d => d.Update(dt, viewport, renderScale, skipFrames: false));
-            _contrail.Update(dt, viewport, renderScale, skipFrames: false);
-            _flamePos.Update(dt, viewport, renderScale * _renderOffset, skipFrames: false);
-            _gunPosition.Update(dt, viewport, renderScale * _renderOffset, skipFrames: false);
-            _cockpitPosition.Update(dt, viewport, renderScale * _renderOffset);
-
-            // TODO:  This is so messy...
-            Wings.ForEach(w => w.Update(dt, viewport, renderScale * _renderOffset));
-            _centerOfThrust.Update(dt, viewport, renderScale * _renderOffset);
-            _thrustAmt.Update(dt);
-            _apAngleLimiter.Update(dt);
-            CheckForFlip();
-
-            var thrust = GetThrust(true);
-            var thrustMag = thrust.Length();
-            var flameAngle = thrust.Angle();
-            var len = this.Velocity.Length() * 0.05f;
-            len += thrustMag * 0.01f;
-            len *= 0.6f;
-            FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
-            _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
-
-            FlamePoly.Update(_flamePos.Position, flameAngle, renderScale * _renderOffset);
-
-            this.Polygon.Update(this.Position, this.Rotation, renderScale * _renderOffset);
-
-            _flipTimer.Update(dt);
-            _isLockOntoTimeout.Update(dt);
-            _damageCooldownTimeout.Update(dt);
-            _damageFlashTimer.Update(dt);
-            _expireTimeout.Update(dt);
-
         }
 
         public override void Render(RenderContext ctx)
@@ -557,12 +519,12 @@ namespace PolyPlane.GameObjects
 
             if (this.IsAI)
             {
-                var missile = new GuidedMissile(this, target, GuidanceType.SimplePN, useControlSurfaces: true, useThrustVectoring: true);
+                var missile = new GuidedMissile(this, target, GuidanceType.Advanced, useControlSurfaces: true, useThrustVectoring: true);
                 FireMissileCallback(missile);
             }
             else
             {
-                var missile = new GuidedMissile(this, target, GuidanceType.SimplePN, useControlSurfaces: true, useThrustVectoring: true);
+                var missile = new GuidedMissile(this, target, GuidanceType.Advanced, useControlSurfaces: true, useThrustVectoring: true);
                 FireMissileCallback(missile);
             }
 
@@ -735,6 +697,9 @@ namespace PolyPlane.GameObjects
 
         private void DoImpactImpulse(GameObject impactor, D2DPoint impactPos)
         {
+            if (this.IsNetObject)
+                return;
+
             float impactMass = 40f;
 
             //if (impactor is GuidedMissile missile)

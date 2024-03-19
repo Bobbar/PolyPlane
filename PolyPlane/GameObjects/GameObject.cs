@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+﻿using PolyPlane.Net;
 using System.Numerics;
 using unvell.D2DLib;
 
@@ -44,7 +44,6 @@ namespace PolyPlane.GameObjects
 
         protected float _rotation = 0f;
 
-        //protected Random _rnd = new Random();
         protected Random _rnd => Helpers.Rnd;
 
         public float RotationSpeed { get; set; }
@@ -57,16 +56,14 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private const int SMOOTH_AMT = 3;
-        private SmoothPos _smoothPos = new SmoothPos(SMOOTH_AMT);
-        private SmoothPos _smoothVelo = new SmoothPos(SMOOTH_AMT);
-        private SmoothFloat _smoothRot = new SmoothFloat(SMOOTH_AMT / 2);
-
-        public List<Tuple<double, D2DPoint>> PosBuffer = new List<Tuple<double, D2DPoint>>();
+        public InterpolationBuffer<GameObjectPacket> InterpBuffer = null;
 
         public GameObject()
         {
             this.ID = new GameID(-1, World.GetNextObjectId());
+
+            if (InterpBuffer == null)
+                InterpBuffer = new InterpolationBuffer<GameObjectPacket>(new GameObjectPacket(this), World.SERVER_TICK_RATE, (from, to, pctElap) => InterpObject(from, to, pctElap));
         }
 
         public GameObject(D2DPoint pos) : this(pos, D2DPoint.Zero, 0f, 0f)
@@ -101,6 +98,17 @@ namespace PolyPlane.GameObjects
             RotationSpeed = rotationSpeed;
         }
 
+
+        private GameObjectPacket InterpObject(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
+        {
+            this.Position = (from.Position + (to.Position - from.Position) * (float)pctElapsed).ToD2DPoint();
+            this.Velocity = (from.Velocity + (to.Velocity - from.Velocity) * (float)pctElapsed).ToD2DPoint();
+            //this.Rotation = Helpers.ClampAngle(from.Rotation + (to.Rotation - from.Rotation) * (float)pctElapsed);
+            this.Rotation = to.Rotation;
+
+            return to;
+        }
+
         public void Update(float dt, D2DSize viewport, float renderScale, bool skipFrames = false)
         {
             CurrentFrame++;
@@ -126,33 +134,7 @@ namespace PolyPlane.GameObjects
                 if (World.InterpOn)
                 {
                     var nowMs = World.CurrentTime();
-
-                    //var renderTimeStamp = nowMs - (1000f / 60f);
-                    var renderTimeStamp = nowMs - (1000f / 30f);
-
-                    // Trim old updates.
-                    var buffer = PosBuffer;
-                    while (buffer.Count >= 2 && buffer[1].Item1 <= renderTimeStamp)
-                    {
-                        buffer.Shift();
-                    }
-
-
-                    if (buffer.Count >= 2 && buffer[0].Item1 <= renderTimeStamp && renderTimeStamp <= buffer[1].Item1)
-                    {
-                        var x0 = buffer[0].Item2;
-                        var x1 = buffer[1].Item2;
-
-                        var t0 = buffer[0].Item1;
-                        var t1 = buffer[1].Item1;
-
-                        var newPos = x0 + (x1 - x0) * (float)((renderTimeStamp - t0) / (t1 - t0));
-                        this.Position = _smoothPos.Add(newPos);
-                    }
-                    else
-                    {
-                        this.Position += Velocity * dt;
-                    }
+                    InterpBuffer.GetInterpolatedState(nowMs);
                 }
 
                 return;
@@ -163,8 +145,7 @@ namespace PolyPlane.GameObjects
 
             Position += Velocity * dt;
 
-            if (!this.IsNetObject)
-                Rotation += RotationSpeed * dt;
+            Rotation += RotationSpeed * dt;
 
             Wrap(viewport);
         }
@@ -173,17 +154,12 @@ namespace PolyPlane.GameObjects
         {
             if (World.InterpOn)
             {
-                this.Velocity = velocity;
-                this.Rotation = rotation;
+                var newState = new GameObjectPacket(this);
+                newState.Position = position.ToPoint();
+                newState.Velocity = velocity.ToPoint();
+                newState.Rotation = rotation;
 
-                var nowMs = World.CurrentTime();
-                //var nowMs = frameTime - (1000f / 60f);
-                //var nowMs = frameTime - (1000f / 30f);
-                //var nowMs = frameTime;
-
-                if (PosBuffer.Count < 10)
-                    PosBuffer.Add(new Tuple<double, Vector2>(nowMs, position));
-
+                InterpBuffer.Enqueue(newState, frameTime);
             }
             else
             {

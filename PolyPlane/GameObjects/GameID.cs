@@ -1,12 +1,4 @@
-﻿using System;
-using System.CodeDom;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace PolyPlane.GameObjects
+﻿namespace PolyPlane.GameObjects
 {
     [Serializable]
     public struct GameID : IEquatable<GameID>
@@ -20,6 +12,12 @@ namespace PolyPlane.GameObjects
         {
             PlayerID = playerID;
             ObjectID = objectID;
+        }
+
+        public GameID(uint playerID)
+        {
+            PlayerID = (int)playerID;
+            ObjectID = -1;
         }
 
         public bool Equals(GameID other)
@@ -38,6 +36,5 @@ namespace PolyPlane.GameObjects
             return $"PlrID: {PlayerID}  ObjID: {ObjectID}";
         }
 
-        //public static GameID =(GameID a, GameID b)
     }
 }

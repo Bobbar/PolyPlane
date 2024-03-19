@@ -33,7 +33,7 @@ namespace PolyPlane.GameObjects
             _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
 
             this.Owner = obj;
-            Radius = Helpers.Rnd.NextFloat(4f,15f);
+            Radius = Helpers.Rnd.NextFloat(4f, 15f);
             _refPos = new FixturePoint(obj, offset);
 
             _spawnTimer.TriggerCallback = () => SpawnPart();

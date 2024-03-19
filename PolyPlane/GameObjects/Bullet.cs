@@ -37,7 +37,7 @@ namespace PolyPlane.GameObjects
             this.Velocity = velo;
         }
 
-        public Bullet(D2DPoint pos, D2DPoint velo, float rotation) : base(pos, velo, rotation) 
+        public Bullet(D2DPoint pos, D2DPoint velo, float rotation) : base(pos, velo, rotation)
         {
             this.Polygon = new RenderPoly(_poly);
         }

@@ -1,12 +1,6 @@
-﻿using System;
+﻿using ENet;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
-using System.Net.Sockets;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
-using ENet;
 
 namespace PolyPlane.Net
 {
@@ -18,7 +12,6 @@ namespace PolyPlane.Net
         public Host ServerHost;
         public int Port;
         public Address Address;
-        //public long CurrentTime;
         public double CurrentTime;
 
         public float BytesSentPerSecond;
@@ -36,7 +29,6 @@ namespace PolyPlane.Net
 
         private uint _prevBytesRec = 0;
         private uint _prevBytesSent = 0;
-        //private long _lastFrameTime = 0;
         private double _lastFrameTime = 0;
 
         private Dictionary<uint, Peer> _peers = new Dictionary<uint, Peer>();
@@ -59,7 +51,7 @@ namespace PolyPlane.Net
             ServerHost = new Host();
             var ip = Address.GetIP();
             ServerHost.Create(Address, MAX_CLIENTS, MAX_CHANNELS);
-        
+
             _pollThread = new Thread(PollLoop);
             _pollThread.Start();
         }
@@ -102,12 +94,12 @@ namespace PolyPlane.Net
                             var idPacket = new BasicPacket(PacketTypes.SetID, new GameObjects.GameID(World.GetNextPlayerId(), 0));
                             SendIDPacket(netEvent.Peer, idPacket);
 
-
-
                             break;
 
                         case EventType.Disconnect:
                             Log("Client disconnected - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
+
+                            SendPlayerDisconnectPacket(netEvent.Peer.ID);
 
                             _peers.Remove(netEvent.Peer.ID);
 
@@ -115,6 +107,9 @@ namespace PolyPlane.Net
 
                         case EventType.Timeout:
                             Log("Client timeout - ID: " + netEvent.Peer.ID + ", IP: " + netEvent.Peer.IP);
+
+
+                            SendPlayerDisconnectPacket(netEvent.Peer.ID);
 
                             _peers.Remove(netEvent.Peer.ID);
 
@@ -163,6 +158,13 @@ namespace PolyPlane.Net
                     BroadcastPacket(packet);
                 }
             }
+        }
+
+        public void SendPlayerDisconnectPacket(uint playerID)
+        {
+            var packet = new BasicPacket(PacketTypes.PlayerDisconnect, new GameObjects.GameID(playerID));
+
+            EnqueuePacket(packet);
         }
 
 
@@ -250,7 +252,7 @@ namespace PolyPlane.Net
 
                     break;
 
-                case PacketTypes.PlaneUpdate or PacketTypes.MissileUpdate or PacketTypes.NewBullet or PacketTypes.NewMissile or PacketTypes.Impact: // Immediately re-broadcast certain updates.
+                case PacketTypes.PlaneUpdate or PacketTypes.MissileUpdate or PacketTypes.NewBullet or PacketTypes.NewMissile or PacketTypes.Impact or PacketTypes.PlayerDisconnect: // Immediately re-broadcast certain updates.
 
                     BroadcastPacket(packetObj);
                     PacketReceiveQueue.Enqueue(packetObj);
