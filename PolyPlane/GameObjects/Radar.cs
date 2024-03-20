@@ -44,7 +44,6 @@ namespace PolyPlane
         private List<Plane> _planes;
 
 
-
         public Radar(Plane hostPlane, D2DColor renderColor, List<GameObject> missiles, List<Plane> planes)
         {
             HostPlane = hostPlane;
@@ -59,14 +58,6 @@ namespace PolyPlane
             _missiles = missiles;
             _planes = planes;
 
-            //_sources.Add(missiles);
-            //_sources.Add(planes);
-
-            //foreach (var source in sources)
-            //{
-            //    _sources.Add(source);
-            //}
-
             _lockTimer.TriggerCallback = () =>
             {
                 SwitchLock();
@@ -75,31 +66,6 @@ namespace PolyPlane
 
             _lostLockTimer.TriggerCallback = () => ClearLock();
         }
-
-        //public Radar(Plane hostPlane, D2DColor renderColor, params List<GameObject>[] sources)
-        //{
-        //    HostPlane = hostPlane;
-        //    _color = renderColor;
-
-        //    if (HostPlane.IsAI)
-        //    {
-        //        _hostIsAI = true;
-        //        _AIUpdateRate.Restart();
-        //    }
-
-        //    foreach (var source in sources)
-        //    {
-        //        _sources.Add(source);
-        //    }
-
-        //    _lockTimer.TriggerCallback = () =>
-        //    {
-        //        SwitchLock();
-        //        Log.Msg("Lock complete!");
-        //    };
-
-        //    _lostLockTimer.TriggerCallback = () => ClearLock();
-        //}
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
@@ -128,58 +94,6 @@ namespace PolyPlane
 
                 foreach (var plane in _planes)
                     DoSweep(plane);
-
-
-                //foreach (var src in _sources)
-                //{
-                //    foreach (var obj in src)
-                //    {
-                //        if (obj is Decoy)
-                //            continue;
-
-                //        if (obj.IsExpired)
-                //            continue;
-
-                //        if (obj.ID.Equals(HostPlane.ID)) // Really needed?
-                //            continue;
-
-                //        if (_hostIsAI)
-                //        {
-                //            var dist = this.HostPlane.Position.DistanceTo(obj.Position);
-                //            var angle = (this.HostPlane.Position - obj.Position).Angle(true);
-                //            var radDist = (_radius / _maxRange) * dist;
-                //            var radPos = this.Position - Helpers.AngleToVectorDegrees(angle, radDist);
-
-                //            if (dist > _maxRange)
-                //                radPos = this.Position - Helpers.AngleToVectorDegrees(angle, _radius);
-
-                //            var pObj = new PingObj(obj, radPos);
-
-                //            AddIfNotExists(pObj);
-                //            RefreshPing(pObj);
-                //        }
-                //        else
-                //        {
-                //            if (IsInFOV(obj, _sweepAngle, SWEEP_FOV))
-                //            {
-                //                var dist = this.HostPlane.Position.DistanceTo(obj.Position);
-                //                var angle = (this.HostPlane.Position - obj.Position).Angle(true);
-                //                var radDist = (_radius / _maxRange) * dist;
-                //                var radPos = this.Position - Helpers.AngleToVectorDegrees(angle, radDist);
-
-                //                if (dist > _maxRange)
-                //                    radPos = this.Position - Helpers.AngleToVectorDegrees(angle, _radius);
-
-                //                var pObj = new PingObj(obj, radPos);
-
-                //                AddIfNotExists(pObj);
-                //                RefreshPing(pObj);
-                //            }
-                //        }
-
-
-                //    }
-                //}
 
                 _AIUpdateRate.Restart();
             }

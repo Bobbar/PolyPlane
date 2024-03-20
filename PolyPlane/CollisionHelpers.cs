@@ -39,21 +39,21 @@ namespace PolyPlane
             float k1 = (A * l1_start.X) + (B * l1_start.Y);
             float k2 = (C * l2_start.X) + (D * l2_start.Y);
 
-            ////Step 2: are the lines parallel? -> no solutions
-            //if (IsParallel(l1_normal, l2_normal))
-            //{
-            //    pos = D2DPoint.Zero;
-            //    return false;
-            //}
+            //Step 2: are the lines parallel? -> no solutions
+            if (IsParallel(l1_normal, l2_normal))
+            {
+                pos = D2DPoint.Zero;
+                return false;
+            }
 
-            ////Step 3: are the lines the same line? -> infinite amount of solutions
-            ////Pick one point on each line and test if the vector between the points is orthogonal to one of the normals
-            //if (IsOrthogonal(l1_start - l2_start, l1_normal))
-            //{
-            //    //Return false anyway
-            //    pos = D2DPoint.Zero;
-            //    return false;
-            //}
+            //Step 3: are the lines the same line? -> infinite amount of solutions
+            //Pick one point on each line and test if the vector between the points is orthogonal to one of the normals
+            if (IsOrthogonal(l1_start - l2_start, l1_normal))
+            {
+                //Return false anyway
+                pos = D2DPoint.Zero;
+                return false;
+            }
 
             //Step 4: calculate the intersection point -> one solution
             float x_intersect = (D * k1 - B * k2) / (A * D - B * C);

@@ -1,5 +1,6 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.Net;
+using System.Diagnostics;
 
 namespace PolyPlane
 {
@@ -267,11 +268,9 @@ namespace PolyPlane
 
                 if (netPlane != null)
                 {
-                    var newPos = planeUpdPacket.Position.ToD2DPoint();
-
                     planeUpdPacket.SyncObj(netPlane);
 
-                    netPlane.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, newPos, planeUpdPacket.Velocity.ToD2DPoint(), planeUpdPacket.Rotation, planeUpdPacket.FrameTime);
+                    netPlane.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, planeUpdPacket.Position.ToD2DPoint(), planeUpdPacket.Velocity.ToD2DPoint(), planeUpdPacket.Rotation, planeUpdPacket.FrameTime);
                 }
             }
         }
@@ -307,6 +306,12 @@ namespace PolyPlane
             bulletPacket.SyncObj(bullet);
             var owner = GetNetPlane(bulletPacket.OwnerID);
             bullet.Owner = owner;
+
+            var age = World.CurrentTime() - bulletPacket.FrameTime;
+
+            // Try to spawn the bullet ahead to compensate for latency?
+            bullet.Position += bullet.Velocity * (float)(age / 1000f);
+            //bullet.Position += bullet.Velocity * (float)(age);
 
             var contains = _bullets.Any(b => b.ID.Equals(bullet.ID));
 
@@ -417,6 +422,7 @@ namespace PolyPlane
                     target.Rotation = packet.Rotation;
                     target.Velocity = packet.Velocity.ToD2DPoint();
                     target.Position = packet.Position.ToD2DPoint();
+                    target.SyncFixtures();
 
                     var impactPoint = packet.ImpactPoint.ToD2DPoint();
                     target.DoNetImpact(impactor, impactPoint, packet.DoesDamage, packet.WasHeadshot, packet.WasMissile);
@@ -424,6 +430,7 @@ namespace PolyPlane
                     target.Rotation = curRot;
                     target.Velocity = curVelo;
                     target.Position = curPos;
+                    target.SyncFixtures();
 
                     AddExplosion(impactPoint);
                 }

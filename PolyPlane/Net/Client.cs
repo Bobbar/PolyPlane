@@ -140,6 +140,17 @@ namespace PolyPlane.Net
             Peer.Send(CHANNEL_ID, ref packet);
         }
 
+        public void SendPacket(NetPacket netPacket)
+        {
+            Packet packet = default(Packet);
+            var data = IO.ObjectToByteArray(netPacket);
+            
+            packet.Create(data, PacketFlags.Reliable);
+            //packet.Create(data, PacketFlags.Instant);
+
+            Peer.Send(CHANNEL_ID, ref packet);
+        }
+
         public void SendNewPlanePacket(GameObjects.Plane plane)
         {
             var netPacket = new PlanePacket(plane, PacketTypes.NewPlayer);
@@ -149,7 +160,7 @@ namespace PolyPlane.Net
         public void SendNewBulletPacket(GameObjects.Bullet bullet)
         {
             var netPacket = new BulletPacket(bullet, PacketTypes.NewBullet);
-            EnqueuePacket(netPacket);
+            SendPacket(netPacket);
         }
 
         public void SendNewMissilePacket(GameObjects.GuidedMissile missile)

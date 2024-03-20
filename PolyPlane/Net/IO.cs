@@ -82,7 +82,7 @@ namespace PolyPlane.Net
             return new D2DPoint(point.X, point.Y);
         }
 
-        public static NetPoint ToPoint(this D2DPoint point)
+        public static NetPoint ToNetPoint(this D2DPoint point)
         {
             return new NetPoint(point.X, point.Y);
         }
