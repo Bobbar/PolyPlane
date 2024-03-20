@@ -26,6 +26,8 @@ namespace PolyPlane.GameObjects
 
         public long CurrentFrame { get; set; } = 0;
 
+        public double LastNetUpdate { get; set; } = 0;
+
         /// <summary>
         /// How many frames must pass between updates.
         /// </summary>
@@ -63,6 +65,8 @@ namespace PolyPlane.GameObjects
         public GameObject()
         {
             this.ID = new GameID(-1, World.GetNextObjectId());
+
+            HistoryBuffer.Interpolate = (from, to, pctElap) => GetInterpState(from, to, pctElap);
 
             if (InterpBuffer == null)
                 InterpBuffer = new InterpolationBuffer<GameObjectPacket>(new GameObjectPacket(this), World.SERVER_TICK_RATE, (from, to, pctElap) => InterpObject(from, to, pctElap));
@@ -113,6 +117,19 @@ namespace PolyPlane.GameObjects
 
             return to;
         }
+
+        private GameObjectPacket GetInterpState(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
+        {
+            var state = new GameObjectPacket();
+
+            state.Position = (from.Position + (to.Position - from.Position) * (float)pctElapsed);
+            state.Velocity = (from.Velocity + (to.Velocity - from.Velocity) * (float)pctElapsed);
+            state.Rotation = to.Rotation;
+
+            return state;
+        }
+
+
 
         public void Update(float dt, D2DSize viewport, float renderScale, bool skipFrames = false)
         {
@@ -182,6 +199,8 @@ namespace PolyPlane.GameObjects
                 this.Rotation = rotation;
                 this.Velocity = velocity;
             }
+
+            LastNetUpdate = frameTime;
         }
 
 
@@ -315,7 +334,78 @@ namespace PolyPlane.GameObjects
             Polygon.Update(this.Position, this.Rotation, renderScale);
         }
 
-        public virtual bool CollidesWith(GameObjectPoly obj, out D2DPoint pos, float dt = -1f)
+        public bool CollidesWithNet(GameObjectPoly obj, out D2DPoint pos, out GameObjectPacket? histState, double frameTime, float dt = -1f)
+        {
+
+            if (!this.IsObjNear(obj) || obj.Owner == this)
+            {
+                pos = D2DPoint.Zero;
+                histState = null;
+                return false;
+            }
+
+            var histPos = this.HistoryBuffer.GetHistoricalState(frameTime);
+
+            if (histPos != null)
+            {
+                var histPoly = new D2DPoint[this.Polygon.SourcePoly.Length];
+                Array.Copy(this.Polygon.SourcePoly, histPoly, this.Polygon.SourcePoly.Length);
+                Helpers.ApplyTranslation(histPoly, histPoly, histPos.Rotation, histPos.Position.ToD2DPoint(), 1f * 1.5f);
+
+                var poly1 = obj.Polygon.Poly;
+
+                if (dt < 0f)
+                    dt = World.SUB_DT;
+
+                var relVelo = histPos.Velocity.ToD2DPoint() - obj.Velocity;
+                var relVeloDTHalf = (relVelo * dt) * 0.5f;
+
+                // Velocity compensation collisions:
+                // For each point in the polygon compute two points, one for backwards 1/2 timestep and one forwards 1/2 timestep
+                // and connect a line between the two.
+                // Then check if any of these lines intersect any segments of the test polygon.
+                // I guess this is sorta similar to what Continuous Collision Detection does.
+                for (int i = 0; i < poly1.Length; i++)
+                {
+                    var pnt1 = poly1[i] - relVeloDTHalf;
+                    var pnt2 = poly1[i] + relVeloDTHalf;
+
+                    // Check for an intersection and get the exact location of the impact.
+                    if (PolyIntersect(pnt1, pnt2, histPoly, out D2DPoint iPosPoly))
+                    {
+                        pos = iPosPoly;
+                        histState = histPos;
+                        return true;
+                    }
+                }
+
+                // One last check with the center point.
+                var centerPnt1 = obj.Position - relVeloDTHalf;
+                var centerPnt2 = obj.Position + relVeloDTHalf;
+
+                if (PolyIntersect(centerPnt1, centerPnt2, histPoly, out D2DPoint iPosCenter))
+                {
+                    pos = iPosCenter;
+                    histState = histPos;
+                    return true;
+                }
+
+
+            }
+            else
+            {
+                var normalCollide = CollidesWith(obj, out D2DPoint pos2, dt);
+                pos = pos2;
+                histState = null;
+                return normalCollide;
+            }
+
+            pos = D2DPoint.Zero;
+            histState = null;
+            return false;
+        }
+
+        public bool CollidesWith(GameObjectPoly obj, out D2DPoint pos, float dt = -1f)
         {
             if (!this.IsObjNear(obj) || obj.Owner == this)
             {

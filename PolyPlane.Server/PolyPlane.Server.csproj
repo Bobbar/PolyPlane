@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="d2dlibexport" Version="1.4.1" />
+
+	  <using Include="System.Numerics.Vector2" Alias="D2DPoint" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PolyPlane\PolyPlane.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="ServerUI.cs">
+      <SubType>Form</SubType>
+    </Compile>
+  </ItemGroup>
+
+</Project>

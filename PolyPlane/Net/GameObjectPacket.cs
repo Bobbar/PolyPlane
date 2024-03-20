@@ -140,6 +140,21 @@ namespace PolyPlane.Net
         }
     }
 
+    public class SyncPacket : NetPacket
+    {
+        public double ServerTime;
+
+        public SyncPacket() : base() 
+        {
+            Type = PacketTypes.ServerSync;        
+        }
+
+        public SyncPacket(double serverTime)
+        {
+            Type = PacketTypes.ServerSync;
+            ServerTime = serverTime;
+        }
+    }
 
 
     public partial class BasicPacket : NetPacket
