@@ -32,7 +32,6 @@
             IPAddressTextBox = new TextBox();
             label1 = new Label();
             label2 = new Label();
-            StartServerButton = new Button();
             StartClientButton = new Button();
             SinglePlayerButton = new Button();
             AIPlaneCheckBox = new CheckBox();
@@ -72,23 +71,13 @@
             label2.TabIndex = 3;
             label2.Text = "Port:";
             // 
-            // StartServerButton
-            // 
-            StartServerButton.Location = new Point(139, 131);
-            StartServerButton.Name = "StartServerButton";
-            StartServerButton.Size = new Size(75, 23);
-            StartServerButton.TabIndex = 4;
-            StartServerButton.Text = "Server";
-            StartServerButton.UseVisualStyleBackColor = true;
-            StartServerButton.Click += StartServerButton_Click;
-            // 
             // StartClientButton
             // 
-            StartClientButton.Location = new Point(309, 131);
+            StartClientButton.Location = new Point(228, 133);
             StartClientButton.Name = "StartClientButton";
             StartClientButton.Size = new Size(75, 23);
             StartClientButton.TabIndex = 5;
-            StartClientButton.Text = "Client";
+            StartClientButton.Text = "Connect";
             StartClientButton.UseVisualStyleBackColor = true;
             StartClientButton.Click += StartClientButton_Click;
             // 
@@ -105,7 +94,7 @@
             // AIPlaneCheckBox
             // 
             AIPlaneCheckBox.AutoSize = true;
-            AIPlaneCheckBox.Location = new Point(309, 106);
+            AIPlaneCheckBox.Location = new Point(228, 108);
             AIPlaneCheckBox.Name = "AIPlaneCheckBox";
             AIPlaneCheckBox.Size = new Size(69, 19);
             AIPlaneCheckBox.TabIndex = 7;
@@ -121,7 +110,6 @@
             Controls.Add(AIPlaneCheckBox);
             Controls.Add(SinglePlayerButton);
             Controls.Add(StartClientButton);
-            Controls.Add(StartServerButton);
             Controls.Add(label2);
             Controls.Add(label1);
             Controls.Add(IPAddressTextBox);
@@ -139,7 +127,6 @@
         private TextBox IPAddressTextBox;
         private Label label1;
         private Label label2;
-        private Button StartServerButton;
         private Button StartClientButton;
         private Button SinglePlayerButton;
         private CheckBox AIPlaneCheckBox;

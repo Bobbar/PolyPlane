@@ -14,7 +14,9 @@
         ChatMessage,
         GetOtherPlanes,
         ExpiredObjects,
-        PlayerDisconnect
+        PlayerDisconnect,
+        PlayerReset,
+        ServerSync
 
     }
 }

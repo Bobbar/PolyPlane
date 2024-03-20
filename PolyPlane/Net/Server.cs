@@ -182,6 +182,13 @@ namespace PolyPlane.Net
             EnqueuePacket(netPacket);
         }
 
+        public void SendSyncPacket()
+        {
+            var now = World.CurrentTime();
+            var syncPacket = new SyncPacket(now);
+            BroadcastPacket(syncPacket);
+        }
+
         public void EnqueuePacket(NetPacket packet)
         {
             PacketSendQueue.Enqueue(packet);

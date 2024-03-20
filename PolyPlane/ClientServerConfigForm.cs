@@ -28,7 +28,6 @@
 
         private void StartClientButton_Click(object sender, EventArgs e)
         {
-            IsServer = false;
             IPAddress = IPAddressTextBox.Text.Trim();
             Port = ushort.Parse(PortTextBox.Text.Trim());
 

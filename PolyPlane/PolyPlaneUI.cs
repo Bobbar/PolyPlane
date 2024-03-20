@@ -90,14 +90,9 @@ namespace PolyPlane
         private double _packetDelay = 0f;
         private long _frame = 0;
 
-
         private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
 
         private Net.Client _client;
-        private Net.Server _server;
-        private ServerUI _serverUI;
-        private WaitableTimer _waitTimer = new WaitableTimer();
-        private Stopwatch _fpsTimer = new Stopwatch();
 
         private Random _rnd => Helpers.Rnd;
 
@@ -129,10 +124,8 @@ namespace PolyPlane
             StopRender();
             _gameThread.Join(100);
 
-            _serverUI?.Dispose();
             _client?.Stop();
-
-            _server?.Stop();
+            _client?.Dispose();
 
             ENet.Library.Deinitialize();
 
@@ -175,15 +168,7 @@ namespace PolyPlane
 
                 if (World.IsNetGame)
                 {
-                    if (World.IsServer)
-                    {
-                        _server.SendNewBulletPacket(b);
-
-                    }
-                    else
-                    {
-                        _client.SendNewBulletPacket(b);
-                    }
+                    _client.SendNewBulletPacket(b);
                 }
             };
 
@@ -202,20 +187,12 @@ namespace PolyPlane
 
                 if (World.IsNetGame)
                 {
-                    if (World.IsServer)
-                    {
-                        _server.SendNewMissilePacket(m);
-
-                    }
-                    else
-                    {
-                        _client.SendNewMissilePacket(m);
-                    }
+                    _client.SendNewMissilePacket(m);
                 }
 
             };
 
-            if (World.IsNetGame && !World.IsServer)
+            if (World.IsNetGame)
                 _newPlanes.Enqueue(_playerPlane);
         }
 
@@ -259,15 +236,7 @@ namespace PolyPlane
 
                 if (World.IsNetGame)
                 {
-                    if (World.IsServer)
-                    {
-                        _server.SendNewMissilePacket(m);
-
-                    }
-                    else
-                    {
-                        _client.SendNewMissilePacket(m);
-                    }
+                    _client.SendNewMissilePacket(m);
                 }
 
             };
@@ -280,14 +249,7 @@ namespace PolyPlane
 
                 if (World.IsNetGame)
                 {
-                    if (World.IsServer)
-                    {
-                        _server.SendNewBulletPacket(b);
-                    }
-                    else
-                    {
-                        _client.SendNewBulletPacket(b);
-                    }
+                    _client.SendNewBulletPacket(b);
                 }
             };
 
@@ -335,32 +297,14 @@ namespace PolyPlane
                 {
                     ENet.Library.Initialize();
                     World.IsNetGame = true;
-                    if (config.IsServer)
-                    {
-                        World.IsServer = true;
-                        _server = new Net.Server(config.Port, config.IPAddress);
-                        _server.Start();
 
-                        this.Text += " - SERVER";
+                    World.IsServer = false;
+                    _client = new Net.Client(config.Port, config.IPAddress);
+                    _client.Start();
 
-                        _serverUI = new ServerUI();
-                        _serverUI.Show();
-                        _serverUI.Disposed += ServerUI_Disposed;
-                        this.Hide();
-                        this.WindowState = FormWindowState.Minimized;
-                    }
-                    else
-                    {
-                        World.IsServer = false;
-                        _client = new Net.Client(config.Port, config.IPAddress);
-                        _client.Start();
-
-                        this.Text += " - CLIENT";
-
-                    }
+                    this.Text += " - CLIENT";
 
                     InitPlane(config.IsAI);
-
                 }
             }
 
@@ -393,161 +337,13 @@ namespace PolyPlane
             {
                 _stopRenderEvent.Wait();
 
-                if (World.IsNetGame && World.IsServer)
-                {
-                    AdvanceServer();
-                }
-                else
-                {
-                    AdvanceAndRender();
-
-                }
+                AdvanceAndRender();
 
                 if (!_pauseRenderEvent.Wait(0))
                 {
                     _isPaused = true;
                     _pauseRenderEvent.Set();
                 }
-            }
-        }
-
-
-        private void AdvanceServer()
-        {
-            _updateTime = TimeSpan.Zero;
-            _collisionTime = TimeSpan.Zero;
-
-            ProcessObjQueue();
-
-            // Update/advance objects.
-            if (!_isPaused || _oneStep)
-            {
-                var partialDT = World.SUB_DT;
-
-                var objs = GetAllObjects();
-                var numObj = objs.Count;
-
-                for (int i = 0; i < World.PHYSICS_STEPS; i++)
-                {
-                    _timer.Restart();
-
-                    DoCollisions();
-
-                    _timer.Stop();
-
-                    _collisionTime += _timer.Elapsed;
-
-                    _timer.Restart();
-
-                    if (_useMultiThread)
-                    {
-                        objs.ForEachParallel(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale), _multiThreadNum);
-                    }
-                    else
-                    {
-                        objs.ForEach(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale));
-                    }
-
-                    _timer.Stop();
-                    _updateTime += _timer.Elapsed;
-                }
-
-                _timer.Restart();
-
-                World.UpdateAirDensityAndWind(World.DT);
-
-                DoDecoySuccess();
-
-                _playerBurstTimer.Update(World.DT);
-                _hudMessageTimeout.Update(World.DT);
-                _explosions.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
-                _decoys.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
-                _missileTrails.ForEach(t => t.Update(World.DT, World.ViewPortSize, World.RenderScale));
-
-                DoAIPlaneBurst(World.DT);
-                _decoyTimer.Update(World.DT);
-
-                _timer.Stop();
-                _updateTime += _timer.Elapsed;
-
-                _oneStep = false;
-            }
-
-            _timer.Restart();
-
-
-            DoNetEvents();
-
-            DoCollisions();
-            PruneExpiredObj();
-
-            var fpsNow = DateTime.UtcNow.Ticks;
-            var fps = TimeSpan.TicksPerSecond / (float)(fpsNow - _lastRenderTime);
-            _lastRenderTime = fpsNow;
-            _renderFPS = fps;
-
-
-            _serverUI.InfoText = GetInfo();
-
-            if (_serverUI.PauseRequested)
-            {
-                if (!_isPaused)
-                    _isPaused = true;
-                else
-                    _isPaused = false;
-
-                _serverUI.PauseRequested = false;
-            }
-
-            if (_serverUI.SpawnIAPlane)
-            {
-                SpawnAIPlane();
-                _serverUI.SpawnIAPlane = false;
-            }
-
-            FPSLimiter(60);
-        }
-
-        private void FPSLimiter(int targetFPS)
-        {
-            long ticksPerSecond = TimeSpan.TicksPerSecond;
-            long targetFrameTime = ticksPerSecond / targetFPS;
-            long waitTime = 0;
-
-            if (_fpsTimer.IsRunning)
-            {
-                long elapTime = _fpsTimer.Elapsed.Ticks;
-
-                if (elapTime < targetFrameTime)
-                {
-                    // # High accuracy, low CPU usage. #
-                    waitTime = (long)(targetFrameTime - elapTime);
-                    if (waitTime > 0)
-                    {
-                        _waitTimer.Wait(waitTime, false);
-                    }
-
-                    // # Most accurate, highest CPU usage. #
-                    //while (_fpsTimer.Elapsed.Ticks < targetFrameTime && !_loopTask.IsCompleted)
-                    //{
-                    //	Thread.SpinWait(10000);
-                    //}
-                    //elapTime = _fpsTimer.Elapsed.Ticks;
-
-                    // # Less accurate, less CPU usage. #
-                    //waitTime = (long)(targetFrameTime - elapTime);
-                    //if (waitTime > 0)
-                    //{
-                    //	Thread.Sleep(new TimeSpan(waitTime));
-                    //}
-                }
-
-                _fpsTimer.Restart();
-            }
-            else
-            {
-                _fpsTimer.Start();
-                return;
             }
         }
 
@@ -581,9 +377,6 @@ namespace PolyPlane
             Plane viewPlane = GetViewPlane();
 
             World.ViewID = viewPlane.ID;
-
-            if (viewPlane == null)
-                Debugger.Break();
 
             _timer.Restart();
 
@@ -722,20 +515,6 @@ namespace PolyPlane
                     return plane as Plane;
             }
 
-
-            //foreach (var plane in _planes)
-            //{
-            //    if (plane.ID.Equals(id)) 
-            //        return plane as Plane;
-            //}
-
-
-            //foreach (var plane in _netPlanes)
-            //{
-            //    if (plane.ID.Equals(id))
-            //        return plane as Plane;
-            //}
-
             return null;
         }
 
@@ -749,18 +528,6 @@ namespace PolyPlane
 
             return null;
         }
-
-
-        //private Plane GetNetPlane(long id)
-        //{
-        //    foreach (var plane in _netPlanes)
-        //    {
-        //        if (plane.ID == id)
-        //            return plane as Plane;
-        //    }
-
-        //    return null;
-        //}
 
         private Plane GetViewPlane()
         {
@@ -781,15 +548,6 @@ namespace PolyPlane
             _updateObjects.AddRange(_missiles.Where(m => m.IsNetObject));
             _updateObjects.AddRange(_bullets.Where(b => b.IsNetObject));
             _updateObjects.AddRange(_planes.Where(p => p.IsNetObject));
-
-
-            if (World.IsServer)
-            {
-                var plrIdx = _updateObjects.IndexOf(_playerPlane);
-                if (plrIdx != -1)
-                    _updateObjects.RemoveAt(plrIdx);
-            }
-
 
             return _updateObjects;
         }
@@ -812,15 +570,6 @@ namespace PolyPlane
                 _updateObjects.AddRange(_planes);
 
             }
-
-            if (World.IsServer)
-            {
-                var plrIdx = _updateObjects.IndexOf(_playerPlane);
-
-                if (plrIdx != -1)
-                    _updateObjects.RemoveAt(plrIdx);
-            }
-
 
             return _updateObjects;
         }
@@ -874,13 +623,7 @@ namespace PolyPlane
             return plane as Plane;
         }
 
-        //private Plane TryIDToPlane(long id)
-        //{
-        //    var plane = _aiPlanes.Where(p => p.ID == id).FirstOrDefault();
-
-        //    return plane;
-        //}
-
+       
         private void ProcessObjQueue()
         {
             //while (_newTargets.Count > 0)
@@ -909,9 +652,6 @@ namespace PolyPlane
                 if (_newPlanes.TryDequeue(out Plane plane))
                     _planes.Add(plane);
             }
-
-            if (World.IsNetGame && World.IsServer && newPlanes)
-                ServerSendOtherPlanes();
 
             while (_newDecoys.Count > 0)
             {
@@ -1474,9 +1214,6 @@ namespace PolyPlane
             infoText += $"Render ms: {_renderTime.TotalMilliseconds}\n";
             infoText += $"Collision ms: {_collisionTime.TotalMilliseconds}\n";
             infoText += $"Packet Delay: {_packetDelay}\n";
-            infoText += $"Sent B/s: {(World.IsServer ? _server.BytesSentPerSecond : 0)}\n";
-            infoText += $"Rec B/s: {(World.IsServer ? _server.BytesReceivedPerSecond : 0)}\n";
-
 
             infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
             infoText += $"DT: {Math.Round(World.DT, 4)}\n";

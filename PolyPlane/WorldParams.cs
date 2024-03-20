@@ -100,6 +100,7 @@ namespace PolyPlane
         public static int CurrentPlayerId = 0;
 
         public static GameID ViewID;
+        public static double ServerTimeOffset = 0;
 
         public static float GetDensityAltitude(D2DPoint position)
         {
@@ -157,7 +158,9 @@ namespace PolyPlane
 
         public static double CurrentTime()
         {
-            return DateTime.UtcNow.TimeOfDay.TotalMilliseconds;
+            return DateTime.UtcNow.TimeOfDay.TotalMilliseconds + ServerTimeOffset;
+
+            //return DateTime.UtcNow.TimeOfDay.TotalMilliseconds;
         }
     }
 }

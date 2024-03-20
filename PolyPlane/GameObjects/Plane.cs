@@ -1,7 +1,7 @@
 ﻿using PolyPlane.AI_Behavior;
 using System.Diagnostics;
 using System.Numerics;
-
+using PolyPlane.Net;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -277,6 +277,13 @@ namespace PolyPlane.GameObjects
         {
             base.Update(dt, viewport, renderScale * _renderOffset);
             this.Radar?.Update(dt, viewport, renderScale, skipFrames: true);
+
+
+            var histState = new GameObjectPacket(this);
+            histState.Position = this.Position.ToNetPoint();
+            histState.Velocity = this.Velocity.ToNetPoint();
+            histState.Rotation = this.Rotation;
+            HistoryBuffer.Enqueue(histState, World.CurrentTime());
 
             if (World.IsNetGame && !World.IsServer)
             {
