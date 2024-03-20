@@ -32,7 +32,8 @@
 
             var offset = _offsetMedian.Add(now - updatedAt);
             var roundedOffset = Math.Ceiling(offset / (_tickRate / 2d)) * (_tickRate / 2d);
-            _buffer.Add(new BufferEntry<T>(state, updatedAt + roundedOffset + _tickRate));
+            var newState = new BufferEntry<T>(state, updatedAt + roundedOffset + _tickRate);
+            _buffer.Add(newState);
         }
 
         public T GetInterpolatedState(double now)

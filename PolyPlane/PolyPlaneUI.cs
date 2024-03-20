@@ -965,6 +965,10 @@ namespace PolyPlane
             for (int i = 0; i < firing.Length; i++)
             {
                 var plane = firing[i];
+
+                if (plane.ID.Equals(_playerPlane.ID))
+                    continue;
+
                 plane.FireBullet(p => AddExplosion(p));
             }
         }
@@ -1032,12 +1036,9 @@ namespace PolyPlane
             // Targets/AI Planes vs missiles and bullets.
             for (int r = 0; r < _planes.Count; r++)
             {
-                var targ = _planes[r] as GameObjectPoly;
+                var targ = _planes[r] as Plane;
 
                 if (targ == null)
-                    continue;
-
-                if (targ is Decoy)
                     continue;
 
                 // Missiles
@@ -1723,6 +1724,8 @@ namespace PolyPlane
             if (e.Button == MouseButtons.Left)
             {
                 _playerBurstTimer.Stop();
+                _playerPlane.FiringBurst = false;
+
             }
 
             if (e.Button == MouseButtons.Right)
@@ -1735,6 +1738,7 @@ namespace PolyPlane
             {
                 case MouseButtons.Left:
                     _playerBurstTimer.Start();
+                    _playerPlane.FiringBurst = true;
                     break;
 
                 case MouseButtons.Right:

@@ -234,8 +234,8 @@ namespace PolyPlane.Net
             if (obj.Owner != null)
                 OwnerID = obj.Owner.ID;
 
-            Position = obj.Position.ToPoint();
-            Velocity = obj.Velocity.ToPoint();
+            Position = obj.Position.ToNetPoint();
+            Velocity = obj.Velocity.ToNetPoint();
             Rotation = obj.Rotation;
             IsExpired = obj.IsExpired;
         }
@@ -249,8 +249,8 @@ namespace PolyPlane.Net
             if (obj.Owner != null)
                 OwnerID = obj.Owner.ID;
 
-            Position = obj.Position.ToPoint();
-            Velocity = obj.Velocity.ToPoint();
+            Position = obj.Position.ToNetPoint();
+            Velocity = obj.Velocity.ToNetPoint();
             Rotation = obj.Rotation;
             IsExpired = obj.IsExpired;
 
@@ -421,7 +421,7 @@ namespace PolyPlane.Net
         {
             ImpactorID = impactorID;
             //ID = targetId;
-            ImpactPoint = point.ToPoint();
+            ImpactPoint = point.ToNetPoint();
             Type = PacketTypes.Impact;
         }
 
@@ -429,7 +429,7 @@ namespace PolyPlane.Net
         {
             ImpactorID = impactorID;
             //ID = targetId;
-            ImpactPoint = point.ToPoint();
+            ImpactPoint = point.ToNetPoint();
             Type = PacketTypes.Impact;
             DoesDamage = doesDamage;
             WasHeadshot = wasHeadshot;

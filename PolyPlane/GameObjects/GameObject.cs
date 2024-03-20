@@ -56,7 +56,9 @@ namespace PolyPlane.GameObjects
             }
         }
 
+        private SmoothPos _posSmooth = new SmoothPos(5);
         public InterpolationBuffer<GameObjectPacket> InterpBuffer = null;
+        public HistoricalBuffer<GameObjectPacket> HistoryBuffer = new HistoricalBuffer<GameObjectPacket>();
 
         public GameObject()
         {
@@ -101,10 +103,13 @@ namespace PolyPlane.GameObjects
 
         private GameObjectPacket InterpObject(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
         {
-            this.Position = (from.Position + (to.Position - from.Position) * (float)pctElapsed).ToD2DPoint();
+            //this.Position = (from.Position + (to.Position - from.Position) * (float)pctElapsed).ToD2DPoint();
+            this.Position = _posSmooth.Add((from.Position + (to.Position - from.Position) * (float)pctElapsed).ToD2DPoint());
             this.Velocity = (from.Velocity + (to.Velocity - from.Velocity) * (float)pctElapsed).ToD2DPoint();
             //this.Rotation = Helpers.ClampAngle(from.Rotation + (to.Rotation - from.Rotation) * (float)pctElapsed);
             this.Rotation = to.Rotation;
+
+
 
             return to;
         }
@@ -129,15 +134,25 @@ namespace PolyPlane.GameObjects
 
         public virtual void Update(float dt, D2DSize viewport, float renderScale)
         {
+            var nowMs = World.CurrentTime();
+
+
+            //var histState = new GameObjectPacket(this);
+            //histState.Position = this.Position.ToNetPoint();
+            //histState.Velocity = this.Velocity.ToNetPoint();
+            //histState.Rotation = this.Rotation;
+            //HistoryBuffer.Enqueue(histState, nowMs);
+
+
             if (IsNetObject)
             {
                 if (World.InterpOn)
                 {
-                    var nowMs = World.CurrentTime();
                     InterpBuffer.GetInterpolatedState(nowMs);
+                    return;
+
                 }
 
-                return;
             }
 
             if (this.IsExpired)
@@ -155,8 +170,8 @@ namespace PolyPlane.GameObjects
             if (World.InterpOn)
             {
                 var newState = new GameObjectPacket(this);
-                newState.Position = position.ToPoint();
-                newState.Velocity = velocity.ToPoint();
+                newState.Position = position.ToNetPoint();
+                newState.Velocity = velocity.ToNetPoint();
                 newState.Rotation = rotation;
 
                 InterpBuffer.Enqueue(newState, frameTime);

@@ -8,6 +8,10 @@ namespace PolyPlane.GameObjects
 {
     public class Plane : GameObjectPoly
     {
+        private const int MAX_BULLETS = 30;
+
+        public int NumBullets = MAX_BULLETS;
+
         public float Deflection = 0f;
         public int BulletsFired = 0;
         public int MissilesFired = 0;
@@ -96,6 +100,7 @@ namespace PolyPlane.GameObjects
         private GameTimer _isLockOntoTimeout = new GameTimer(3f);
         private GameTimer _damageCooldownTimeout = new GameTimer(4f);
         private GameTimer _damageFlashTimer = new GameTimer(0.2f, true);
+        private GameTimer _bulletRegenTimer = new GameTimer(0.2f, true);
 
         private float _damageDeflection = 0f;
 
@@ -258,6 +263,14 @@ namespace PolyPlane.GameObjects
 
 
             _expireTimeout.TriggerCallback = () => this.IsExpired = true;
+
+            _bulletRegenTimer.TriggerCallback = () =>
+            {
+                if (NumBullets < MAX_BULLETS)
+                    NumBullets++;
+            };
+
+            _bulletRegenTimer.Start();
         }
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
@@ -275,6 +288,8 @@ namespace PolyPlane.GameObjects
             if (_aiBehavior != null)
                 _aiBehavior.Update(dt, viewport, renderScale, skipFrames: true);
 
+            if (!this.FiringBurst)
+                _bulletRegenTimer.Update(dt);
 
             _flamePos.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
             _gunPosition.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
@@ -537,11 +552,15 @@ namespace PolyPlane.GameObjects
             if (IsDamaged)
                 return;
 
+            if (this.NumBullets <= 0)
+                return;
+
             var bullet = new Bullet(this);
 
             bullet.AddExplosionCallback = addExplosion;
             FireBulletCallback(bullet);
             this.BulletsFired++;
+            this.NumBullets--;
         }
 
         //public void Pitch(bool pitchUp)
@@ -585,6 +604,18 @@ namespace PolyPlane.GameObjects
         public void Reset()
         {
             Wings.ForEach(w => w.Reset(this.Position));
+        }
+
+        /// <summary>
+        /// Update FixturePoint objects to move them to the current position.
+        /// </summary>
+        public void SyncFixtures()
+        {
+            _flamePos.Update(0f, World.ViewPortSize, World.RenderScale * _renderOffset);
+            _flames.ForEach(f => f.Update(0f, World.ViewPortSize, World.RenderScale * _renderOffset));
+            _centerOfThrust.Update(0f, World.ViewPortSize, World.RenderScale * _renderOffset);
+            _cockpitPosition.Update(0f, World.ViewPortSize, World.RenderScale * _renderOffset);
+            _gunPosition.Update(0f, World.ViewPortSize, World.RenderScale * _renderOffset);
         }
 
         public void SetOnFire()
