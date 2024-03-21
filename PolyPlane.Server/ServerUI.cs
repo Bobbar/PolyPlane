@@ -285,6 +285,7 @@ namespace PolyPlane.Server
 
         private void DoCollisions()
         {
+            const float LAG_COMP_FACT = 1f;
             var now = World.CurrentTime();
 
             // Targets/AI Planes vs missiles and bullets.
@@ -309,7 +310,7 @@ namespace PolyPlane.Server
 
                     var missileRTT = _server.GetPlayerRTT(missile.PlayerID);
 
-                    if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - (planeRTT + missileRTT)))
+                    if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - ((planeRTT + missile.LagAmount + missileRTT) * LAG_COMP_FACT)))
                     {
                         if (histState != null)
                         {
@@ -349,7 +350,7 @@ namespace PolyPlane.Server
 
                     var bulletRTT = _server.GetPlayerRTT(bullet.PlayerID);
 
-                    if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - (planeRTT + bulletRTT)))
+                    if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - ((planeRTT + bullet.LagAmount + bulletRTT) * LAG_COMP_FACT)))
                     {
                         if (!plane.IsExpired)
                             AddExplosion(pos);
@@ -813,12 +814,12 @@ namespace PolyPlane.Server
             bulletPacket.SyncObj(bullet);
             var owner = GetNetPlane(bulletPacket.OwnerID);
             bullet.Owner = owner;
+            bullet.ClientCreateTime = bulletPacket.FrameTime;
+            bullet.LagAmount = World.CurrentTime() - bulletPacket.FrameTime;
 
-            var age = World.CurrentTime() - bulletPacket.FrameTime;
 
             // Try to spawn the bullet ahead to compensate for latency?
-            //bullet.Position += bullet.Velocity * (float)(age / 1000f);
-            //bullet.Position += bullet.Velocity * (float)(age);
+            bullet.Position += bullet.Velocity * (float)(bullet.LagAmount / 1000f);
 
             var contains = _bullets.Any(b => b.ID.Equals(bullet.ID));
 
@@ -839,6 +840,7 @@ namespace PolyPlane.Server
                 missile.ID = missilePacket.ID;
                 missilePacket.SyncObj(missile);
                 missile.Target = missileTarget;
+                missile.LagAmount = World.CurrentTime() - missilePacket.FrameTime;
                 _newMissiles.Enqueue(missile);
             }
         }
@@ -1263,6 +1265,9 @@ namespace PolyPlane.Server
         private void UpdateTimer_Tick(object? sender, EventArgs e)
         {
             InfoLabel.Text = GetInfo();
+
+
+            //InfoLabel.Text = InfoText;
         }
 
         private void PauseButton_Click(object sender, EventArgs e)

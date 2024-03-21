@@ -8,11 +8,10 @@ namespace PolyPlane
 {
     public class HistoricalBuffer<T>
     {
-        private const int MAX_HIST = 200;
-        private int _histPos = 0;
+        private const int MAX_HIST = 400;
         private List<BufferEntry<T>> _history = new List<BufferEntry<T>>();
         public Func<T, T, double, T> Interpolate;
-
+        
         public HistoricalBuffer()
         {
 

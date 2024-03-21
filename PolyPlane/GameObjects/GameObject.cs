@@ -7,7 +7,8 @@ namespace PolyPlane.GameObjects
     public abstract class GameObject : IEquatable<GameObject>, ISkipFramesUpdate
     {
         public bool IsNetObject { get; set; } = false;
-
+        public double ClientCreateTime = 0;
+        public double LagAmount = 0;
         public GameID ID { get; set; } = new GameID();
 
         public int PlayerID

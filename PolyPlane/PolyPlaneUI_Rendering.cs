@@ -7,6 +7,8 @@ namespace PolyPlane
     {
         private void DrawPlaneAndObjects(RenderContext ctx, Plane plane)
         {
+            var healthBarSize = new D2DSize(80, 20);
+
             ctx.Gfx.PushTransform();
 
             var zAmt = World.ZoomScale;
@@ -35,7 +37,9 @@ namespace PolyPlane
                 if (o is Plane tplane && !tplane.ID.Equals(plane.ID))
                 {
                     o.Render(ctx);
-                    ctx.Gfx.DrawEllipse(new D2DEllipse(tplane.Position, new D2DSize(80f, 80f)), _hudColor, 2f);
+                    //ctx.Gfx.DrawEllipse(new D2DEllipse(tplane.Position, new D2DSize(80f, 80f)), _hudColor, 2f);
+
+                    DrawHealthBarClamped(ctx, tplane, new D2DPoint(tplane.Position.X, tplane.Position.Y - 110f), healthBarSize);
                 }
             });
 
@@ -48,6 +52,20 @@ namespace PolyPlane
 
             ctx.PopViewPort();
             ctx.Gfx.PopTransform();
+        }
+
+        private void DrawHealthBarClamped(RenderContext ctx, Plane plane, D2DPoint position, D2DSize size)
+        {
+            var healthPct = plane.Hits / (float)Plane.MAX_HITS;
+            ctx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), _hudColor);
+            ctx.DrawRectangle(new D2DRect(position, size), _hudColor);
+        }
+
+        private void DrawHealthBar(D2DGraphics gfx, Plane plane, D2DPoint position, D2DSize size)
+        {
+            var healthPct = plane.Hits / (float)Plane.MAX_HITS;
+            gfx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), _hudColor);
+            gfx.DrawRectangle(new D2DRect(position, size), _hudColor);
         }
 
         private void DrawHud(RenderContext ctx, D2DSize viewportsize, Plane viewPlane)
@@ -72,6 +90,9 @@ namespace PolyPlane
 
             DrawRadar(ctx, viewportsize, viewPlane);
 
+            var healthBarSize = new D2DSize(300, 30);
+            var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height - (viewportsize.height * 0.9f));
+            DrawHealthBar(ctx.Gfx, viewPlane, pos, healthBarSize);
         }
 
         private void DrawGuideIcon(D2DGraphics gfx, D2DSize viewportsize)

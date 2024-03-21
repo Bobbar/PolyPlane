@@ -1,4 +1,5 @@
 using PolyPlane.GameObjects;
+using PolyPlane.GameObjects.Animations;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using unvell.D2DLib;
@@ -36,7 +37,7 @@ namespace PolyPlane
         private long _lastRenderTime = 0;
         private float _renderFPS = 0;
         private bool _useMultiThread = true;
-        private bool _showInfo = true;
+        private bool _showInfo = false;
         private int _multiThreadNum = 4;
         private bool _netIDIsSet = false;
 
@@ -91,6 +92,12 @@ namespace PolyPlane
         private long _frame = 0;
 
         private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
+        private D2DPoint _screenShakeTrans = D2DPoint.Zero;
+        private float _screenFlashOpacity = 0f;
+        private D2DColor _screenFlashColor = D2DColor.Red;
+        private FloatAnimation _screenShakeX;
+        private FloatAnimation _screenShakeY;
+        private FloatAnimation _screenFlash;
 
         private Net.Client _client;
 
@@ -102,6 +109,10 @@ namespace PolyPlane
 
             this.MouseWheel += PolyPlaneUI_MouseWheel;
             this.Disposed += PolyPlaneUI_Disposed;
+
+            _screenFlash = new FloatAnimation(0.4f, 0f, 3f, EasingFunctions.EaseQuinticOut, v => _screenFlashOpacity = v);
+            _screenShakeX = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.X = v);
+            _screenShakeY = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.Y = v);
 
             _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
@@ -347,6 +358,8 @@ namespace PolyPlane
             }
         }
 
+        private float _shakePos = 0;
+        private float _shakeDir = 1f;
 
         private void AdvanceAndRender()
         {
@@ -380,14 +393,23 @@ namespace PolyPlane
 
             _timer.Restart();
 
+            // Sky and background.
             DrawSky(_ctx, viewPlane);
             DrawMovingBackground(_ctx, viewPlane);
 
             _timer.Stop();
             _renderTime += _timer.Elapsed;
 
-            _gfx.PushTransform();
+            DrawScreenFlash(_gfx);
+
+            _gfx.PushTransform(); // Push screen shake transform.
+            _gfx.TranslateTransform(_screenShakeTrans.X, _screenShakeTrans.Y);
+            
+
+
+            _gfx.PushTransform(); // Push scale transform.
             _gfx.ScaleTransform(World.ZoomScale, World.ZoomScale);
+
 
             // Update/advance objects.
             if (!_isPaused || _oneStep)
@@ -444,6 +466,10 @@ namespace PolyPlane
                 _decoys.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
                 _missileTrails.ForEach(t => t.Update(World.DT, World.ViewPortSize, World.RenderScale));
 
+                _screenFlash.Update(World.DT, World.ViewPortSize, World.RenderScale);
+                _screenShakeX.Update(World.DT, World.ViewPortSize, World.RenderScale);
+                _screenShakeY.Update(World.DT, World.ViewPortSize, World.RenderScale);
+
                 DoAIPlaneBurst(World.DT);
                 _decoyTimer.Update(World.DT);
 
@@ -459,9 +485,12 @@ namespace PolyPlane
             if (!_skipRender)
                 DrawPlaneAndObjects(_ctx, viewPlane);
 
-            _gfx.PopTransform();
+            _gfx.PopTransform(); // Pop scale transform.
 
             DrawHud(_ctx, new D2DSize(this.Width, this.Height), viewPlane);
+
+            _gfx.PopTransform(); // Pop screen shake transform.
+
             DrawOverlays(_ctx);
 
             _timer.Stop();
@@ -470,6 +499,7 @@ namespace PolyPlane
             _gfx.EndRender();
 
             PruneExpiredObj();
+
 
             var now = DateTime.UtcNow.Ticks;
             var fps = TimeSpan.TicksPerSecond / (float)(now - _lastRenderTime);
@@ -490,6 +520,30 @@ namespace PolyPlane
             }
         }
 
+        private void DrawScreenFlash(D2DGraphics gfx)
+        {
+            _screenFlashColor.a = _screenFlashOpacity;
+            gfx.FillRectangle(World.ViewPortRect, _screenFlashColor);
+        }
+
+        private void DoScreenShake()
+        {
+            float amt = 10f;
+            _screenShakeX.Start = _rnd.NextFloat(-amt, amt);
+            _screenShakeY.Start = _rnd.NextFloat(-amt, amt);
+
+            _screenShakeX.Reset();
+            _screenShakeY.Reset();
+        }
+
+        private void DoScreenFlash(D2DColor color)
+        {
+            //if (_screenFlash.IsPlaying)
+            //    return;
+
+            _screenFlashColor = color;
+            _screenFlash.Reset();
+        }
 
         private GameObject GetObjectById(GameID id)
         {
@@ -623,7 +677,7 @@ namespace PolyPlane
             return plane as Plane;
         }
 
-       
+
         private void ProcessObjQueue()
         {
             //while (_newTargets.Count > 0)
@@ -1348,7 +1402,9 @@ namespace PolyPlane
                     break;
 
                 case 'h':
-                    _showHelp = !_showHelp;
+                    //_showHelp = !_showHelp;
+                    DoScreenShake();
+                    DoScreenFlash(D2DColor.Green);
                     break;
 
                 case 'i':

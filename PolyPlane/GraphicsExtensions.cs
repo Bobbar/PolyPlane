@@ -126,6 +126,20 @@ namespace PolyPlane
             if (viewport.Contains(rect))
             {
                 gfx.FillRectangle(rect, color);
+
+                OnScreen++;
+            }
+            else
+                OffScreen++;
+        }
+
+        public static void FillRectangleClamped(this D2DGraphics gfx, D2DRect viewport, float x, float y, float width, float height, D2DColor color)
+        {
+            var pos = new D2DPoint(x, y);
+            if (viewport.Contains(pos))
+            {
+                gfx.FillRectangle(x, y, width, height, color);
+
                 OnScreen++;
             }
             else
