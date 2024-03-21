@@ -157,7 +157,24 @@ namespace PolyPlane
                         
 
                     break;
+
+                case PacketTypes.PlayerReset:
+
+                    var resetPack = packet as Net.BasicPacket;
+
+                    var resetPlane = GetObjectById(resetPack.ID) as Plane;
+
+                    if (resetPlane != null)
+                        resetPlane.FixPlane();
+
+                    break;
             }
+        }
+
+        private void SendPlayerReset()
+        {
+            var resetPacket = new BasicPacket(PacketTypes.PlayerReset, _playerPlane.ID);
+            _client.EnqueuePacket(resetPacket);
         }
 
         private void SendExpiredObjects()

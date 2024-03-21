@@ -110,10 +110,7 @@ namespace PolyPlane.GameObjects
             //this.Position = (from.Position + (to.Position - from.Position) * (float)pctElapsed).ToD2DPoint();
             this.Position = _posSmooth.Add((from.Position + (to.Position - from.Position) * (float)pctElapsed).ToD2DPoint());
             this.Velocity = (from.Velocity + (to.Velocity - from.Velocity) * (float)pctElapsed).ToD2DPoint();
-            //this.Rotation = Helpers.ClampAngle(from.Rotation + (to.Rotation - from.Rotation) * (float)pctElapsed);
-            this.Rotation = to.Rotation;
-
-
+            this.Rotation = Helpers.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
 
             return to;
         }
@@ -124,12 +121,10 @@ namespace PolyPlane.GameObjects
 
             state.Position = (from.Position + (to.Position - from.Position) * (float)pctElapsed);
             state.Velocity = (from.Velocity + (to.Velocity - from.Velocity) * (float)pctElapsed);
-            state.Rotation = to.Rotation;
+            state.Rotation = Helpers.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
 
             return state;
         }
-
-
 
         public void Update(float dt, D2DSize viewport, float renderScale, bool skipFrames = false)
         {
@@ -332,6 +327,13 @@ namespace PolyPlane.GameObjects
             base.Update(dt, viewport, renderScale);
 
             Polygon.Update(this.Position, this.Rotation, renderScale);
+
+            var histState = new GameObjectPacket(this);
+            histState.Position = this.Position.ToNetPoint();
+            histState.Velocity = this.Velocity.ToNetPoint();
+            histState.Rotation = this.Rotation;
+            HistoryBuffer.Enqueue(histState, World.CurrentTime());
+
         }
 
         public bool CollidesWithNet(GameObjectPoly obj, out D2DPoint pos, out GameObjectPacket? histState, double frameTime, float dt = -1f)

@@ -51,7 +51,7 @@ namespace PolyPlane.Net
                     obj = _serializer.Deserialize<DecoyPacket>(payloadPacket.Payload);
 
                     break;
-                case PacketTypes.SetID or PacketTypes.GetNextID or PacketTypes.PlayerDisconnect:
+                case PacketTypes.SetID or PacketTypes.GetNextID or PacketTypes.PlayerDisconnect or PacketTypes.PlayerReset:
                     obj = _serializer.Deserialize<BasicPacket>(payloadPacket.Payload);
 
                     break;

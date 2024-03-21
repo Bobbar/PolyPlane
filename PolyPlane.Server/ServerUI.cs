@@ -715,6 +715,17 @@ namespace PolyPlane.Server
                     DoPlayerDisconnected(disconnectPack.ID.PlayerID);
 
                     break;
+
+                case PacketTypes.PlayerReset:
+
+                    var resetPack = packet as Net.BasicPacket;
+
+                    var resetPlane = GetObjectById(resetPack.ID) as Plane;
+
+                    if (resetPlane != null)
+                        resetPlane.FixPlane();
+
+                    break;
             }
         }
 
