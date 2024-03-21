@@ -436,6 +436,11 @@ namespace PolyPlane.GameObjects
 
             _contrail.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000 && ThrustAmount > 0f);
 
+
+            ctx.Gfx.AntiAliasingOff();
+            _flames.ForEach(f => f.Render(ctx));
+            ctx.Gfx.AntiAliasingOn();
+
             if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
                 ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
 
@@ -454,9 +459,6 @@ namespace PolyPlane.GameObjects
 
             DrawBulletHoles(ctx);
 
-            ctx.Gfx.AntiAliasingOff();
-            _flames.ForEach(f => f.Render(ctx));
-            ctx.Gfx.AntiAliasingOn();
 
             //DrawFOVCone(gfx);
             //_cockpitPosition.Render(ctx);

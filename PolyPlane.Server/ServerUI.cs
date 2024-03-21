@@ -285,16 +285,15 @@ namespace PolyPlane.Server
 
         private void DoCollisions()
         {
-            const double LAG_COMP_AMT = 6f;
+            var now = World.CurrentTime();
 
             // Targets/AI Planes vs missiles and bullets.
             for (int r = 0; r < _planes.Count; r++)
             {
-                var targ = _planes[r] as Plane;
+                var plane = _planes[r] as Plane;
+                var planeRTT = _server.GetPlayerRTT(plane.PlayerID);
 
-                var age = World.CurrentTime() - (_packetDelay * LAG_COMP_AMT);
-
-                if (targ == null)
+                if (plane == null)
                     continue;
 
                 // Missiles
@@ -302,72 +301,42 @@ namespace PolyPlane.Server
                 {
                     var missile = _missiles[m] as Missile;
 
-                    if (missile.Owner.ID.Equals(targ.ID))
+                    if (missile.Owner.ID.Equals(plane.ID))
                         continue;
 
+                    if (missile.IsExpired)
+                        continue;
 
-                    if (targ.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, age))
+                    var missileRTT = _server.GetPlayerRTT(missile.PlayerID);
+
+                    if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - (planeRTT + missileRTT)))
                     {
-                        if (targ is Plane plane)
+                        if (histState != null)
                         {
-                            if (missile.IsExpired)
-                                continue;
+                            var ogState = new GameObjectPacket(plane);
 
-                            if (histState != null)
-                            {
-                                var ogState = new GameObjectPacket(plane);
+                            plane.Position = histState.Position.ToD2DPoint();
+                            plane.Velocity = histState.Velocity.ToD2DPoint();
+                            plane.Rotation = histState.Rotation;
+                            plane.SyncFixtures();
 
-                                plane.Position = histState.Position.ToD2DPoint();
-                                plane.Velocity = histState.Velocity.ToD2DPoint();
-                                plane.Rotation = histState.Rotation;
-                                plane.SyncFixtures();
+                            var impactResultM = plane.GetImpactResult(missile, pos);
+                            SendNetImpact(missile, plane, impactResultM, histState);
 
-                                var impactResultM = plane.GetImpactResult(missile, pos);
-                                SendNetImpact(missile, plane, impactResultM, histState);
-
-                                plane.Position = ogState.Position.ToD2DPoint();
-                                plane.Velocity = ogState.Velocity.ToD2DPoint();
-                                plane.Rotation = ogState.Rotation;
-                                plane.SyncFixtures();
-                            }
-                            else
-                            {
-                                var impactResultM = plane.GetImpactResult(missile, pos);
-                                SendNetImpact(missile, plane, impactResultM, histState);
-                            }
-
-                            //var impactResult = plane.GetImpactResult(missile, pos);
-                            //SendNetImpact(missile, plane, impactResult, histState);
-                            //SendNetImpact(missile, plane, impactResult);
-
+                            plane.Position = ogState.Position.ToD2DPoint();
+                            plane.Velocity = ogState.Velocity.ToD2DPoint();
+                            plane.Rotation = ogState.Rotation;
+                            plane.SyncFixtures();
+                        }
+                        else
+                        {
+                            var impactResultM = plane.GetImpactResult(missile, pos);
+                            SendNetImpact(missile, plane, impactResultM, histState);
                         }
 
                         missile.IsExpired = true;
                         AddExplosion(pos);
                     }
-
-                    //if (targ.CollidesWith(missile, out D2DPoint pos))
-                    //{
-                    //    if (targ is Plane plane)
-                    //    {
-                    //        if (plane.IsAI)
-                    //        {
-                    //            var oPlane = missile.Owner as Plane;
-
-                    //        }
-
-
-                    //        if (missile.IsExpired)
-                    //            continue;
-
-                    //        var impactResult = plane.GetImpactResult(missile, pos);
-                    //        SendNetImpact(missile, plane, impactResult);
-
-                    //    }
-
-                    //    missile.IsExpired = true;
-                    //    AddExplosion(pos);
-                    //}
                 }
 
                 // Bullets
@@ -375,42 +344,39 @@ namespace PolyPlane.Server
                 {
                     var bullet = _bullets[b];
 
-                    if (bullet.Owner.ID.Equals(targ.ID))
+                    if (bullet.Owner.ID.Equals(plane.ID))
                         continue;
 
+                    var bulletRTT = _server.GetPlayerRTT(bullet.PlayerID);
 
-
-
-                    if (targ.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, age))
+                    if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - (planeRTT + bulletRTT)))
                     {
-                        if (!targ.IsExpired)
+                        if (!plane.IsExpired)
                             AddExplosion(pos);
 
-                        if (targ is Plane plane2)
+                        if (histState != null)
                         {
-                            if (histState != null)
-                            {
-                                var ogState = new GameObjectPacket(plane2);
+                            var ogState = new GameObjectPacket(plane);
 
-                                plane2.Position = histState.Position.ToD2DPoint();
-                                plane2.Velocity = histState.Velocity.ToD2DPoint();
-                                plane2.Rotation = histState.Rotation;
-                                plane2.SyncFixtures();
+                            plane.Position = histState.Position.ToD2DPoint();
+                            plane.Velocity = histState.Velocity.ToD2DPoint();
+                            plane.Rotation = histState.Rotation;
+                            plane.SyncFixtures();
 
-                                var impactResult = plane2.GetImpactResult(bullet, pos);
-                                SendNetImpact(bullet, plane2, impactResult, histState);
+                            var impactResult = plane.GetImpactResult(bullet, pos);
+                            SendNetImpact(bullet, plane, impactResult, histState);
 
-                                plane2.Position = ogState.Position.ToD2DPoint();
-                                plane2.Velocity = ogState.Velocity.ToD2DPoint();
-                                plane2.Rotation = ogState.Rotation;
-                                plane2.SyncFixtures();
-                            }
-                            else
-                            {
-                                var impactResult = plane2.GetImpactResult(bullet, pos);
-                                SendNetImpact(bullet, plane2, impactResult, histState);
-                            }
+                            plane.Position = ogState.Position.ToD2DPoint();
+                            plane.Velocity = ogState.Velocity.ToD2DPoint();
+                            plane.Rotation = ogState.Rotation;
+                            plane.SyncFixtures();
                         }
+                        else
+                        {
+                            var impactResult = plane.GetImpactResult(bullet, pos);
+                            SendNetImpact(bullet, plane, impactResult, histState);
+                        }
+
 
                         bullet.IsExpired = true;
                     }
