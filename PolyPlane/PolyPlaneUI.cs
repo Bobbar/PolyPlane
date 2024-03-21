@@ -674,6 +674,9 @@ namespace PolyPlane
             if (_queueResetPlane)
             {
                 ResetPlane();
+
+                SendPlayerReset();
+
                 _queueResetPlane = false;
             }
         }

@@ -267,7 +267,7 @@ namespace PolyPlane.Net
 
                     break;
 
-                case PacketTypes.PlaneUpdate or PacketTypes.MissileUpdate or PacketTypes.NewBullet or PacketTypes.NewMissile or PacketTypes.Impact or PacketTypes.PlayerDisconnect:
+                case PacketTypes.PlaneUpdate or PacketTypes.MissileUpdate or PacketTypes.NewBullet or PacketTypes.NewMissile or PacketTypes.Impact or PacketTypes.PlayerDisconnect or PacketTypes.PlayerReset:
                     
                     // Immediately re-broadcast certain updates.
                     BroadcastPacket(packetObj);
