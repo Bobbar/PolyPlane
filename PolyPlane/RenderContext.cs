@@ -68,6 +68,11 @@ namespace PolyPlane
             Gfx.FillRectangleClamped(Viewport, rect, color);
         }
 
+        public void FillRectangle(float x, float y, float width, float height, D2DColor color)
+        {
+            Gfx.FillRectangleClamped(Viewport, x, y, width, height, color);
+        }
+
         public void DrawTextCenter(string text, D2DColor color, string fontName, float fontSize, D2DRect rect)
         {
             Gfx.DrawTextCenterClamped(Viewport, text, color, fontName, fontSize, rect);

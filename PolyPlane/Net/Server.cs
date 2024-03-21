@@ -49,7 +49,6 @@ namespace PolyPlane.Net
         public void Start()
         {
             ServerHost = new Host();
-            var ip = Address.GetIP();
             ServerHost.Create(Address, MAX_CLIENTS, MAX_CHANNELS);
 
             _pollThread = new Thread(PollLoop);
@@ -138,11 +137,15 @@ namespace PolyPlane.Net
                 var bytesSent = ServerHost.BytesSent - _prevBytesSent;
                 _prevBytesSent = ServerHost.BytesSent;
 
-                var bytesRecPerSec = bytesRec / (float)(elap);
-                var bytesSentPerSec = bytesSent / (float)(elap);
+                //var bytesRecPerSec = bytesRec / (float)(elap);
+                //var bytesSentPerSec = bytesSent / (float)(elap);
 
-                BytesReceivedPerSecond = _bytesRecSmooth.Add(bytesRecPerSec);
-                BytesSentPerSecond = _bytesSentSmooth.Add(bytesSentPerSec);
+                // TODO: Not so sure about this math...
+                var bytesRecPerSec = (bytesRec / (float)(elap)) * 1000f;
+                var bytesSentPerSec = (bytesSent / (float)(elap)) * 1000f;
+
+                BytesReceivedPerSecond = _bytesRecSmooth.Add(bytesRecPerSec / 1000f);
+                BytesSentPerSecond = _bytesSentSmooth.Add(bytesSentPerSec / 1000f);
             }
 
         }

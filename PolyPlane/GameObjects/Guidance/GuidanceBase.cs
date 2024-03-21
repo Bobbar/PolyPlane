@@ -113,6 +113,13 @@ namespace PolyPlane.GameObjects.Guidance
             //if (this.Target is Plane plane)
             //    return plane.ExhaustPosition;
             //else
+
+            var pos = this.Target.Position;
+
+            // Try to compensate for lag?
+            if (this.Target.IsNetObject)
+                pos = this.Target.Position + (this.Target.Velocity * (float)((World.CurrentTime() - this.Target.ClientCreateTime) / 1000f));
+
             return this.Target.Position;
         }
 

@@ -275,6 +275,8 @@ namespace PolyPlane.GameObjects
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
+            this.Hits = Math.Clamp(this.Hits, 0, MAX_HITS);
+
             base.Update(dt, viewport, renderScale * _renderOffset);
             this.Radar?.Update(dt, viewport, renderScale, skipFrames: true);
 
@@ -805,7 +807,7 @@ namespace PolyPlane.GameObjects
                     SpawnDebris(8, impactPos, D2DColor.Red);
                     WasHeadshot = true;
                     IsDamaged = true;
-
+                    Hits = 0;
                     attackPlane.Headshots++;
                     attackPlane.Kills++;
                 }

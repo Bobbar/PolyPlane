@@ -1,6 +1,6 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.Net;
-using System.Diagnostics;
+using unvell.D2DLib;
 
 namespace PolyPlane
 {
@@ -154,7 +154,7 @@ namespace PolyPlane
                     //    var diff = now - syncPack.ServerTime;
                     //    World.ServerTimeOffset = -diff;
                     //}
-                        
+
 
                     break;
 
@@ -261,11 +261,12 @@ namespace PolyPlane
             bulletPacket.SyncObj(bullet);
             var owner = GetNetPlane(bulletPacket.OwnerID);
             bullet.Owner = owner;
-
-            var age = World.CurrentTime() - bulletPacket.FrameTime;
+            bullet.ClientCreateTime = bulletPacket.FrameTime;
+            bullet.LagAmount = World.CurrentTime() - bulletPacket.FrameTime;
+            //var age = World.CurrentTime() - bulletPacket.FrameTime;
 
             // Try to spawn the bullet ahead to compensate for latency?
-            //bullet.Position += bullet.Velocity * (float)(age / 1000f);
+            bullet.Position += bullet.Velocity * (float)(bullet.LagAmount / 1000f);
             //bullet.Position += bullet.Velocity * (float)(age);
 
             var contains = _bullets.Any(b => b.ID.Equals(bullet.ID));
@@ -375,6 +376,18 @@ namespace PolyPlane
                     target.SyncFixtures();
 
                     AddExplosion(impactPoint);
+
+                    if (target.ID.Equals(_playerPlane.ID))
+                    {
+                        DoScreenShake();
+                        DoScreenFlash(D2DColor.Red);
+                    }
+
+                    if (packet.DoesDamage && impactor.Owner.ID.Equals(_playerPlane.ID))
+                    {
+                        DoScreenFlash(D2DColor.Green);
+                    }
+
                 }
             }
         }
