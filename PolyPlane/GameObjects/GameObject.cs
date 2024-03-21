@@ -348,6 +348,7 @@ namespace PolyPlane.GameObjects
 
             if (histPos != null)
             {
+                // Copy the polygon and translate it to the historical position/rotation.
                 var histPoly = new D2DPoint[this.Polygon.SourcePoly.Length];
                 Array.Copy(this.Polygon.SourcePoly, histPoly, this.Polygon.SourcePoly.Length);
                 Helpers.ApplyTranslation(histPoly, histPoly, histPos.Rotation, histPos.Position.ToD2DPoint(), 1f * 1.5f);

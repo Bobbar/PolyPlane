@@ -90,8 +90,7 @@ namespace PolyPlane.Net
 
                             _peers.Add(netEvent.Peer.ID, netEvent.Peer);
 
-                            //var idPacket = new NetPacket(PacketTypes.SetID, (long)netEvent.Peer.ID);
-                            var idPacket = new BasicPacket(PacketTypes.SetID, new GameObjects.GameID(World.GetNextPlayerId(), 0));
+                            var idPacket = new BasicPacket(PacketTypes.SetID, new GameObjects.GameID((int)netEvent.Peer.ID, 0));
                             SendIDPacket(netEvent.Peer, idPacket);
 
                             break;
@@ -220,6 +219,15 @@ namespace PolyPlane.Net
             }
         }
 
+        public uint GetPlayerRTT(int playerID)
+        {
+            if (_peers.TryGetValue((uint)playerID, out var peer))
+            {
+                return peer.RoundTripTime;
+            }
+
+            return 0;
+        }
 
         private Packet CreatePacket(NetPacket netPacket)
         {
@@ -286,6 +294,8 @@ namespace PolyPlane.Net
             ServerHost.Flush();
 
             _runLoop = false;
+
+            Thread.Sleep(30);
 
             ServerHost?.Dispose();
         }
