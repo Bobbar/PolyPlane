@@ -8,6 +8,7 @@ namespace PolyPlane.GameObjects
 {
     public class Plane : GameObjectPoly
     {
+        public float PlayerGuideAngle = 0;
         private const int MAX_BULLETS = 30;
 
         public int NumBullets = MAX_BULLETS;
@@ -85,7 +86,10 @@ namespace PolyPlane.GameObjects
         private Wing? _controlWing = null;
         private float _renderOffset = 1.5f;
         private RateLimiter _thrustAmt = new RateLimiter(0.5f);
-        private RateLimiterAngle _apAngleLimiter = new RateLimiterAngle(50f);
+        //private RateLimiterAngle _apAngleLimiter = new RateLimiterAngle(50f);
+
+
+
         private float _targetDeflection = 0f;
         private float _maxDeflection = 50f;
         private GameTimer _flipTimer = new GameTimer(2f);
@@ -312,7 +316,7 @@ namespace PolyPlane.GameObjects
                 if (_isAIPlane)
                     guideRot = GetAPGuidanceDirection(_aiBehavior.GetAIGuidance());
                 else
-                    guideRot = GetAPGuidanceDirection(_apAngleLimiter.Value);
+                    guideRot = GetAPGuidanceDirection(PlayerGuideAngle);
 
                 var veloAngle = this.Velocity.Angle(true);
                 var nextDeflect = Helpers.ClampAngle180(guideRot - veloAngle);
@@ -395,7 +399,7 @@ namespace PolyPlane.GameObjects
             Wings.ForEach(w => w.Update(dt, viewport, renderScale * _renderOffset));
             _centerOfThrust.Update(dt, viewport, renderScale * _renderOffset);
             _thrustAmt.Update(dt);
-            _apAngleLimiter.Update(dt);
+            
             CheckForFlip();
 
             var thrustMag = thrust.Length();
@@ -589,7 +593,7 @@ namespace PolyPlane.GameObjects
         public void SetAutoPilotAngle(float angle)
         {
             //_apAngleLimiter.Target = angle;
-            _apAngleLimiter.Set(angle);
+            PlayerGuideAngle = angle;
         }
 
         public void ToggleThrust()

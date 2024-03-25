@@ -1,6 +1,7 @@
 using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Animations;
 using PolyPlane.Net;
+using PolyPlane.Rendering;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using unvell.D2DLib;
@@ -9,13 +10,10 @@ namespace PolyPlane
 {
     public partial class PolyPlaneUI : Form
     {
-        private D2DDevice _device;
-        private D2DGraphics _gfx;
-        private RenderContext _ctx;
+       
         private Thread _gameThread;
 
         private const float DT_ADJ_AMT = 0.00025f;
-        private const float VIEW_SCALE = 4f;
 
         private ManualResetEventSlim _pauseRenderEvent = new ManualResetEventSlim(true);
         private ManualResetEventSlim _stopRenderEvent = new ManualResetEventSlim(true);
@@ -50,11 +48,6 @@ namespace PolyPlane
         private InterceptorTypes _interceptorType = InterceptorTypes.ControlSurfaceWithThrustVectoring;
         private TargetTypes _targetTypes = TargetTypes.Random;
 
-        private readonly D2DColor _blurColor = new D2DColor(0.01f, D2DColor.Black);
-        private readonly D2DColor _clearColor = D2DColor.Black;
-        private readonly D2DPoint _infoPosition = new D2DPoint(20, 20);
-        private readonly D2DPoint _radialPosition = new D2DPoint(600, 400);
-        private readonly D2DColor _missileOverlayColor = new D2DColor(0.5f, 0.03f, 0.03f, 0.03f);
         private readonly D2DColor _hudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
         private D2DLayer _missileOverlayLayer;
         private readonly string _defaultFontName = "Consolas";
@@ -79,19 +72,14 @@ namespace PolyPlane
         private long _frame = 0;
 
         private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
-        private D2DPoint _screenShakeTrans = D2DPoint.Zero;
-        private float _screenFlashOpacity = 0f;
-        private D2DColor _screenFlashColor = D2DColor.Red;
-        private FloatAnimation _screenShakeX;
-        private FloatAnimation _screenShakeY;
-        private FloatAnimation _screenFlash;
+      
 
         private GameObjectManager _objs = new GameObjectManager();
         private Plane _playerPlane;
 
         private NetPlayHost _client;
         private NetObjectManager _netMan;
-
+        private RenderManager _render;
 
         private Random _rnd => Helpers.Rnd;
 
@@ -101,10 +89,6 @@ namespace PolyPlane
 
             this.MouseWheel += PolyPlaneUI_MouseWheel;
             this.Disposed += PolyPlaneUI_Disposed;
-
-            _screenFlash = new FloatAnimation(0.4f, 0f, 3f, EasingFunctions.EaseQuinticOut, v => _screenFlashOpacity = v);
-            _screenShakeX = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.X = v);
-            _screenShakeY = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.Y = v);
 
             _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
@@ -119,9 +103,8 @@ namespace PolyPlane
             DoNetGameSetup();
 
 
-            _netMan.ScreenFlashCallback = color => DoScreenFlash(color);
-            _netMan.ScreenShakeCallback = () => DoScreenShake();
-
+            _netMan.ScreenFlashCallback = _render.DoScreenFlash;
+            _netMan.ScreenShakeCallback = _render.DoScreenShake;
 
             StartGameThread();
         }
@@ -136,7 +119,8 @@ namespace PolyPlane
 
             ENet.Library.Deinitialize();
 
-            _device?.Dispose();
+            _render.Dispose();
+          
             _missileOverlayLayer?.Dispose();
         }
 
@@ -281,18 +265,8 @@ namespace PolyPlane
 
         private void InitGfx()
         {
-            _device?.Dispose();
-            _device = D2DDevice.FromHwnd(this.Handle);
-            _gfx = new D2DGraphics(_device);
-            _gfx.Antialias = true;
-            _device.Resize();
-
-            _missileOverlayLayer = _device.CreateLayer();
-            _fpsGraph = new Graph(new SizeF(300, 100), new Color[] { Color.Red }, new string[] { "FPS" });
-
-            _ctx = new RenderContext(_gfx, _device);
-
-            World.UpdateViewport(this.Size);
+            _render?.Dispose();
+            _render = new RenderManager(this, _objs);
         }
 
         private void DoNetGameSetup()
@@ -305,8 +279,6 @@ namespace PolyPlane
                     World.IsNetGame = true;
 
                     World.IsServer = false;
-                    //_client = new Net.Client(config.Port, config.IPAddress);
-                    //_client.Start();
                     
                     InitPlane(config.IsAI);
 
@@ -315,9 +287,6 @@ namespace PolyPlane
                     _client.Start();
 
                     this.Text += " - CLIENT";
-
-
-                    //_netMan = new Net.NetObjectManager(_objs, )
                 }
             }
 
@@ -337,9 +306,7 @@ namespace PolyPlane
 
             StopRender();
 
-            _device?.Resize();
-
-            World.UpdateViewport(this.Size);
+            _render.ResizeGfx(force);
 
             ResumeRender();
         }
@@ -375,40 +342,11 @@ namespace PolyPlane
 
             if (World.IsNetGame)
                 _netMan.DoNetEvents();
-
-            var viewPortRect = new D2DRect(_playerPlane.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
-            _ctx.Viewport = viewPortRect;
-
-            if (_trailsOn || _motionBlur)
-                _gfx.BeginRender();
-            else
-                _gfx.BeginRender(_clearColor);
-
-            if (_motionBlur)
-                _gfx.FillRectangle(World.ViewPortRect, _blurColor);
-
+         
             Plane viewPlane = GetViewPlane();
-
             World.ViewID = viewPlane.ID;
 
             _timer.Restart();
-
-            // Sky and background.
-            DrawSky(_ctx, viewPlane);
-            DrawMovingBackground(_ctx, viewPlane);
-
-            _timer.Stop();
-            _renderTime += _timer.Elapsed;
-
-            DrawScreenFlash(_gfx);
-
-            _gfx.PushTransform(); // Push screen shake transform.
-            _gfx.TranslateTransform(_screenShakeTrans.X, _screenShakeTrans.Y);
-            
-
-            _gfx.PushTransform(); // Push scale transform.
-            _gfx.ScaleTransform(World.ZoomScale, World.ZoomScale);
-
 
             // Update/advance objects.
             if (!_isPaused || _oneStep)
@@ -460,12 +398,7 @@ namespace PolyPlane
                 DoDecoySuccess();
 
                 _playerBurstTimer.Update(World.DT);
-                _hudMessageTimeout.Update(World.DT);
-
-                _screenFlash.Update(World.DT, World.ViewPortSize, World.RenderScale);
-                _screenShakeX.Update(World.DT, World.ViewPortSize, World.RenderScale);
-                _screenShakeY.Update(World.DT, World.ViewPortSize, World.RenderScale);
-
+                
                 DoAIPlaneBurst(World.DT);
                 _decoyTimer.Update(World.DT);
 
@@ -477,22 +410,11 @@ namespace PolyPlane
 
             _timer.Restart();
 
-            // Render objects.
-            if (!_skipRender)
-                DrawPlaneAndObjects(_ctx, viewPlane);
-
-            _gfx.PopTransform(); // Pop scale transform.
-
-            DrawHud(_ctx, new D2DSize(this.Width, this.Height), viewPlane);
-
-            _gfx.PopTransform(); // Pop screen shake transform.
-
-            DrawOverlays(_ctx);
+            _render.RenderFrame(viewPlane);
 
             _timer.Stop();
-            _renderTime += _timer.Elapsed;
+            _renderTime = _timer.Elapsed;
 
-            _gfx.EndRender();
 
             _objs.PruneExpired();
 
@@ -501,11 +423,9 @@ namespace PolyPlane
             _lastRenderTime = now;
             _renderFPS = fps;
 
-            //_fpsGraph.Update(fps);
-
             if (_slewEnable)
             {
-                _playerPlane.Rotation = _guideAngle;
+                //_playerPlane.Rotation = _guideAngle;
                 _playerPlane.RotationSpeed = 0f;
                 _playerPlane.Position = _playerPlaneSlewPos;
                 _playerPlane.Reset();
@@ -515,40 +435,6 @@ namespace PolyPlane
             }
         }
 
-        private void DrawScreenFlash(D2DGraphics gfx)
-        {
-            _screenFlashColor.a = _screenFlashOpacity;
-            gfx.FillRectangle(World.ViewPortRect, _screenFlashColor);
-        }
-
-        private void DoScreenShake()
-        {
-            float amt = 10f;
-            _screenShakeX.Start = _rnd.NextFloat(-amt, amt);
-            _screenShakeY.Start = _rnd.NextFloat(-amt, amt);
-
-            _screenShakeX.Reset();
-            _screenShakeY.Reset();
-        }
-
-        private void DoScreenFlash(D2DColor color)
-        {
-            //if (_screenFlash.IsPlaying)
-            //    return;
-
-            _screenFlashColor = color;
-            _screenFlash.Reset();
-        }
-      
-        private Plane GetNetPlane(GameID id, bool netOnly = true)
-        {
-            if (_objs.TryGetObjectByID(id, out GameObject obj))
-            {
-                if (obj is Plane plane && plane.IsNetObject)
-                    return plane;
-            }
-            return null;
-        }
 
         private Plane GetViewPlane()
         {
@@ -934,12 +820,6 @@ namespace PolyPlane
             _client.EnqueuePacket(resetPacket);
         }
 
-        private void SendNetImpact(GameObject impactor, GameObject target, PlaneImpactResult result)
-        {
-            var impactPacket = new Net.ImpactPacket(target, impactor.ID, result.ImpactPoint, result.DoesDamage, result.WasHeadshot, result.Type == ImpactType.Missile);
-            _client.EnqueuePacket(impactPacket);
-        }
-
         private void DoNetDecoy(Decoy decoy)
         {
             var decoyPacket = new Net.DecoyPacket(decoy);
@@ -1216,8 +1096,7 @@ namespace PolyPlane
 
                 case 'h':
                     //_showHelp = !_showHelp;
-                    DoScreenShake();
-                    DoScreenFlash(D2DColor.Green);
+                   
                     break;
 
                 case 'i':
@@ -1249,7 +1128,8 @@ namespace PolyPlane
                 case 'o':
                     //World.ShowMissileCloseup = !World.ShowMissileCloseup;
                     //_useMultiThread = !_useMultiThread;
-                    _showInfo = !_showInfo;
+                    //_showInfo = !_showInfo;
+                    _render.ToggleInfo();
                     break;
 
                 case 'p':
@@ -1401,7 +1281,7 @@ namespace PolyPlane
             var pos = new D2DPoint(e.X, e.Y) * World.ViewPortScaleMulti;
             var angle = center.AngleTo(pos);
 
-            _guideAngle = angle;
+            //_guideAngle = angle;
             _playerPlane.SetAutoPilotAngle(angle);
         }
 
