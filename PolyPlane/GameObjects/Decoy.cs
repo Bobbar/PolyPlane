@@ -14,6 +14,7 @@ namespace PolyPlane.GameObjects
 
         public Decoy(GameObject owner) : base()
         {
+            this.PlayerID = owner.PlayerID;
             this.Owner = owner;
 
             this.Position = owner.Position;

@@ -28,11 +28,11 @@ namespace PolyPlane
             // Draw the ground.
             ctx.Gfx.FillRectangle(new D2DRect(new D2DPoint(plane.Position.X, 2000f), new D2DSize(this.Width * World.ViewPortScaleMulti, 4000f)), D2DColor.DarkGreen);
 
-            _decoys.ForEach(o => o.Render(ctx));
-            _missiles.ForEach(o => o.Render(ctx));
-            _missileTrails.ForEach(o => o.Render(ctx));
+            _objs.Decoys.ForEach(o => o.Render(ctx));
+            _objs.Missiles.ForEach(o => o.Render(ctx));
+            _objs.MissileTrails.ForEach(o => o.Render(ctx));
 
-            _planes.ForEach(o =>
+            _objs.Planes.ForEach(o =>
             {
                 if (o is Plane tplane && !tplane.ID.Equals(plane.ID))
                 {
@@ -45,8 +45,8 @@ namespace PolyPlane
 
             plane.Render(ctx);
 
-            _bullets.ForEach(o => o.Render(ctx));
-            _explosions.ForEach(o => o.Render(ctx));
+            _objs.Bullets.ForEach(o => o.Render(ctx));
+            _objs.Explosions.ForEach(o => o.Render(ctx));
 
             //DrawNearObj(_ctx.Gfx, plane);
 
@@ -267,9 +267,9 @@ namespace PolyPlane
             const float MAX_DIST = 6000f;
             var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
 
-            for (int i = 0; i < _planes.Count; i++)
+            for (int i = 0; i < _objs.Planes.Count; i++)
             {
-                var target = _planes[i];
+                var target = _objs.Planes[i];
 
                 if (target == null)
                     continue;
@@ -316,9 +316,9 @@ namespace PolyPlane
             bool warningMessage = false;
             var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
 
-            for (int i = 0; i < _missiles.Count; i++)
+            for (int i = 0; i < _objs.Missiles.Count; i++)
             {
-                var missile = _missiles[i] as GuidedMissile;
+                var missile = _objs.Missiles[i] as GuidedMissile;
 
                 if (missile == null)
                     continue;
@@ -326,7 +326,7 @@ namespace PolyPlane
                 if (missile.Owner.ID.Equals(plane.ID))
                     continue;
 
-                if (!missile.Target.ID.Equals(plane.ID))
+                if (missile.Target != null && !missile.Target.ID.Equals(plane.ID))
                     continue;
 
                 var dist = D2DPoint.Distance(plane.Position, missile.Position);

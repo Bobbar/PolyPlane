@@ -310,6 +310,7 @@ namespace PolyPlane.Net
         public bool IsDamaged;
         public bool HasCrashed;
         public bool WasHeadshot;
+        public int Hits;
 
         public PlanePacket() { }
 
@@ -321,6 +322,7 @@ namespace PolyPlane.Net
             IsDamaged = obj.IsDamaged;
             HasCrashed = obj.HasCrashed;
             WasHeadshot = obj.WasHeadshot;
+            Hits = obj.Hits;
         }
 
         public PlanePacket(Plane obj, PacketTypes type) : base(obj, type)
@@ -331,6 +333,7 @@ namespace PolyPlane.Net
             IsDamaged = obj.IsDamaged;
             HasCrashed = obj.HasCrashed;
             WasHeadshot = obj.WasHeadshot;
+            Hits = obj.Hits;
 
         }
 
@@ -343,6 +346,7 @@ namespace PolyPlane.Net
             obj.IsDamaged = IsDamaged;
             obj.HasCrashed = HasCrashed;
             obj.WasHeadshot = WasHeadshot;
+            obj.Hits = Hits;
         }
     }
 
@@ -350,18 +354,24 @@ namespace PolyPlane.Net
     public partial class BulletPacket : GameObjectPacket
     {
 
-        public BulletPacket() { }
+        public BulletPacket() 
+        {
+            Type = PacketTypes.NewBullet;
+        }
 
         public BulletPacket(GameObject obj) : base(obj)
         {
+            Type = PacketTypes.NewBullet;
         }
 
         public BulletPacket(GameObject obj, PacketTypes type) : base(obj, type)
         {
+            Type = PacketTypes.NewBullet;
         }
 
         public BulletPacket(GameID ownerID, NetPoint position, NetPoint velocity, float rotation, bool isExpired)
         {
+            Type = PacketTypes.NewBullet;
             OwnerID = ownerID;
             Position = position;
             Velocity = velocity;

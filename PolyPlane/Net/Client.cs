@@ -1,6 +1,7 @@
 ﻿using ENet;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Net.Sockets;
 
 namespace PolyPlane.Net
 {
@@ -26,6 +27,8 @@ namespace PolyPlane.Net
         {
             Address = new Address();
             Address.Port = port;
+            //Address.SetIP(ip);
+
             Address.SetHost(ip);
         }
 
@@ -104,6 +107,8 @@ namespace PolyPlane.Net
 
                 ProcessQueue();
 
+                Debug.WriteLine($"Packet loss: {Peer.PacketsLost}");
+
                 CurrentTime = World.CurrentTime();
             }
 
@@ -115,8 +120,10 @@ namespace PolyPlane.Net
             {
                 if (PacketSendQueue.TryDequeue(out NetPacket packet))
                 {
-                    var data = IO.ObjectToByteArray(packet);
-                    SendPacket(data);
+                    //Debug.WriteLine(packet.Type.ToString());
+                    //var data = IO.ObjectToByteArray(packet);
+                    //SendPacket(data);
+                    SendPacket(packet);
                 }
             }
         }
@@ -124,8 +131,9 @@ namespace PolyPlane.Net
         {
             var packet = new BasicPacket(PacketTypes.PlayerDisconnect, new GameObjects.GameID(playerID));
 
-            var data = IO.ObjectToByteArray(packet);
-            SendPacket(data);
+            //var data = IO.ObjectToByteArray(packet);
+            //SendPacket(data);
+            SendPacket(packet);
 
             ClientHost.Flush();
         }
@@ -142,12 +150,12 @@ namespace PolyPlane.Net
 
         public void SendPacket(NetPacket netPacket)
         {
+
             Packet packet = default(Packet);
             var data = IO.ObjectToByteArray(netPacket);
             
             packet.Create(data, PacketFlags.Reliable);
             //packet.Create(data, PacketFlags.Instant);
-
             Peer.Send(CHANNEL_ID, ref packet);
         }
 
@@ -159,8 +167,12 @@ namespace PolyPlane.Net
 
         public void SendNewBulletPacket(GameObjects.Bullet bullet)
         {
+            if (PlaneID == -1)
+                return;
+
             var netPacket = new BulletPacket(bullet, PacketTypes.NewBullet);
             SendPacket(netPacket);
+            // TODO: What about broadcasting some packets to all peers (peer-to-peer)?
         }
 
         public void SendNewMissilePacket(GameObjects.GuidedMissile missile)
@@ -171,12 +183,15 @@ namespace PolyPlane.Net
 
         public void EnqueuePacket(NetPacket packet)
         {
+            Debug.WriteLine($"EnQ: {packet.Type.ToString()}");
             PacketSendQueue.Enqueue(packet);
         }
 
 
         private void RequestOtherPlanes()
         {
+            Debug.WriteLine($"ReqPlanes");
+
             Packet reqPacket = default(Packet);
 
             var netPacket = new BasicPacket(PacketTypes.GetOtherPlanes, new GameObjects.GameID(-1, (int)Peer.ID));

@@ -19,7 +19,7 @@
             const float MIN_ROT_RATE = 1f; // Min rotation rate.
             const float MIN_ROT_SPEED = 1000f; // Speed at which rotation rate will be the smallest.
             const float ROT_MOD_DIST = 1000f; // Distance to begin increasing rotation rate. (Get more aggro the closer we get)
-            const float ROT_MOD_AMT = 1f; // Max amount to increase rot rate per above distance.
+            const float ROT_MOD_AMT = 2f; // Max amount to increase rot rate per above distance.
             const float IMPACT_POINT_DELTA_THRESH = 2f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
             const float MIN_CLOSE_RATE = 0.1f; // Min closing rate required to aim at predicted impact point.
 
