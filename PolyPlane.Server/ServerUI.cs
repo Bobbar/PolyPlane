@@ -1,8 +1,6 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.Net;
-using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Net;
 using unvell.D2DLib;
 
 
@@ -289,7 +287,7 @@ namespace PolyPlane.Server
 
                             var impactResultM = plane.GetImpactResult(missile, pos);
                             _netMan.SendNetImpact(missile, plane, impactResultM, histState);
-                         
+
                             plane.Position = ogState.Position.ToD2DPoint();
                             plane.Velocity = ogState.Velocity.ToD2DPoint();
                             plane.Rotation = ogState.Rotation;
@@ -611,8 +609,8 @@ namespace PolyPlane.Server
             //_newTargets.Enqueue(_playerPlane);
         }
 
-       
-       
+
+
 
 
         private Plane GetAIPlane()
@@ -711,6 +709,6 @@ namespace PolyPlane.Server
             World.InterpOn = InterpCheckBox.Checked;
         }
 
-      
+
     }
 }

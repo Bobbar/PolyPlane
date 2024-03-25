@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using ENet;
 using PolyPlane.GameObjects;
-using ENet;
+using System.Collections.Concurrent;
 
 namespace PolyPlane.Net
 {
@@ -54,7 +49,7 @@ namespace PolyPlane.Net
         public virtual void DoStop() { }
 
         public virtual void DoStart() { }
-       
+
         private void PollLoop()
         {
             Event netEvent;
@@ -153,7 +148,7 @@ namespace PolyPlane.Net
         {
             return 0;
         }
-       
+
 
         public void Dispose()
         {

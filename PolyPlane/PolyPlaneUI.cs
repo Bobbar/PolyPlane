@@ -1,8 +1,7 @@
 using PolyPlane.GameObjects;
-using PolyPlane.GameObjects.Animations;
+using PolyPlane.GameObjects.Manager;
 using PolyPlane.Net;
 using PolyPlane.Rendering;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using unvell.D2DLib;
 
@@ -10,7 +9,7 @@ namespace PolyPlane
 {
     public partial class PolyPlaneUI : Form
     {
-       
+
         private Thread _gameThread;
 
         private const float DT_ADJ_AMT = 0.00025f;
@@ -40,7 +39,7 @@ namespace PolyPlane
         private int _multiThreadNum = 4;
         private bool _netIDIsSet = false;
 
-       
+
         private D2DPoint _playerPlaneSlewPos = D2DPoint.Zero;
         private bool _slewEnable = false;
 
@@ -72,13 +71,14 @@ namespace PolyPlane
         private long _frame = 0;
 
         private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
-      
+
 
         private GameObjectManager _objs = new GameObjectManager();
         private Plane _playerPlane;
 
         private NetPlayHost _client;
         private NetObjectManager _netMan;
+        private CollisionManager _collisions;
         private RenderManager _render;
 
         private Random _rnd => Helpers.Rnd;
@@ -120,7 +120,7 @@ namespace PolyPlane
             ENet.Library.Deinitialize();
 
             _render.Dispose();
-          
+
             _missileOverlayLayer?.Dispose();
         }
 
@@ -279,11 +279,13 @@ namespace PolyPlane
                     World.IsNetGame = true;
 
                     World.IsServer = false;
-                    
+
                     InitPlane(config.IsAI);
 
-                    _client = new Net.ClientNetHost(config.Port, config.IPAddress);
+                    _client = new ClientNetHost(config.Port, config.IPAddress);
                     _netMan = new NetObjectManager(_objs, _client, _playerPlane);
+                    _collisions = new CollisionManager(_objs, _netMan);
+
                     _client.Start();
 
                     this.Text += " - CLIENT";
@@ -342,7 +344,7 @@ namespace PolyPlane
 
             if (World.IsNetGame)
                 _netMan.DoNetEvents();
-         
+
             Plane viewPlane = GetViewPlane();
             World.ViewID = viewPlane.ID;
 
@@ -360,7 +362,7 @@ namespace PolyPlane
                 {
                     _timer.Restart();
 
-                    DoCollisions();
+                    _collisions.DoCollisions();
 
                     _timer.Stop();
 
@@ -398,7 +400,7 @@ namespace PolyPlane
                 DoDecoySuccess();
 
                 _playerBurstTimer.Update(World.DT);
-                
+
                 DoAIPlaneBurst(World.DT);
                 _decoyTimer.Update(World.DT);
 
@@ -590,229 +592,6 @@ namespace PolyPlane
             _stopRenderEvent.Reset();
             Thread.Sleep(32);
         }
-
-        private void DoCollisions()
-        {
-            if (World.IsNetGame && !World.IsServer)
-            {
-                HandleGroundImpacts();
-                return;
-            }
-
-            // Targets/AI Planes vs missiles and bullets.
-            for (int r = 0; r < _objs.Planes.Count; r++)
-            {
-                var targ = _objs.Planes[r] as Plane;
-
-                if (targ == null)
-                    continue;
-
-                // Missiles
-                for (int m = 0; m < _objs.Missiles.Count; m++)
-                {
-                    var missile = _objs.Missiles[m] as Missile;
-
-                    if (missile.Owner.ID.Equals(targ.ID))
-                        continue;
-
-                    if (targ.CollidesWith(missile, out D2DPoint pos))
-                    {
-                        if (targ is Plane plane)
-                        {
-                            if (plane.IsAI)
-                            {
-                                var oPlane = missile.Owner as Plane;
-
-                                if (!oPlane.IsAI && !targ.ID.Equals(_playerPlane.ID) && !plane.IsDamaged)
-                                {
-                                    _playerScore++;
-                                    NewHudMessage("Splash!", D2DColor.GreenYellow);
-                                    Log.Msg($"Dist Traveled: {missile.DistTraveled}");
-                                }
-
-                                Log.Msg("AI plane hit AI plane with missile.");
-                            }
-
-
-                            if (missile.IsExpired)
-                                continue;
-
-                            //var impactResult = plane.GetImpactResult(missile, pos);
-                            //SendNetImpact(missile, plane, impactResult);
-
-                        }
-
-                        missile.IsExpired = true;
-                        AddExplosion(pos);
-                    }
-                }
-
-                // Bullets
-                for (int b = 0; b < _objs.Bullets.Count; b++)
-                {
-                    var bullet = _objs.Bullets[b] as Bullet;
-
-                    if (bullet.Owner.ID.Equals(targ.ID))
-                        continue;
-
-                    if (targ.CollidesWith(bullet, out D2DPoint pos) && !bullet.Owner.ID.Equals(targ.ID))
-                    {
-                        if (!targ.IsExpired)
-                            AddExplosion(pos);
-
-                        if (targ is Plane plane2)
-                        {
-                            if (!plane2.IsAI && !targ.ID.Equals(_playerPlane.ID) && !plane2.IsDamaged)
-                                _playerScore++;
-
-                            //var impactResult = plane2.GetImpactResult(bullet, pos);
-                            //SendNetImpact(bullet, plane2, impactResult);
-
-
-                        }
-
-                        bullet.IsExpired = true;
-                    }
-                }
-
-                //for (int e = 0; e < _explosions.Count; e++)
-                //{
-                //    var explosion = _explosions[e];
-
-                //    if (explosion.Contains(targ.Position))
-                //    {
-                //        targ.IsExpired = true;
-                //    }
-                //}
-            }
-
-            // Handle missiles hit by bullets.
-            // And handle player plane hits by AI missiles.
-            for (int m = 0; m < _objs.Missiles.Count; m++)
-            {
-                var missile = _objs.Missiles[m] as Missile;
-
-                for (int b = 0; b < _objs.Bullets.Count; b++)
-                {
-                    var bullet = _objs.Bullets[b] as Bullet;
-
-                    if (bullet.Owner == missile.Owner)
-                        continue;
-
-                    if (missile.CollidesWith(bullet, out D2DPoint posb))
-                    {
-                        if (!missile.IsExpired)
-                            AddExplosion(posb);
-
-                        missile.IsExpired = true;
-                        bullet.IsExpired = true;
-                    }
-                }
-
-                if (missile.Owner.ID.Equals(_playerPlane.ID))
-                    continue;
-
-                if (_playerPlane.CollidesWith(missile, out D2DPoint pos))
-                {
-                    if (!_godMode)
-                    {
-                        //var impactResult = _playerPlane.GetImpactResult(missile, pos);
-                        //SendNetImpact(missile, _playerPlane, impactResult);
-                    }
-
-                    missile.IsExpired = true;
-                    AddExplosion(_playerPlane.Position);
-                }
-            }
-
-
-            //// Handle player plane vs bullets.
-            //for (int b = 0; b < _bullets.Count; b++)
-            //{
-            //    var bullet = _bullets[b];
-
-            //    if (bullet.Owner.ID == _playerPlane.ID)
-            //        continue;
-
-            //    if (_playerPlane.Contains(bullet, out D2DPoint pos))
-            //    {
-            //        if (!_playerPlane.IsExpired)
-            //            AddExplosion(_playerPlane.Position);
-
-            //        if (!_godMode)
-            //            _playerPlane.DoImpact(bullet, pos);
-
-            //        bullet.IsExpired = true;
-            //    }
-            //}
-
-            HandleGroundImpacts();
-            //PruneExpiredObj();
-        }
-
-        private void HandleGroundImpacts()
-        {
-            // AI Planes.
-            for (int a = 0; a < _objs.Planes.Count; a++)
-            {
-                var plane = _objs.Planes[a];
-
-                if (plane.Altitude <= 0f)
-                {
-                    if (!plane.IsDamaged)
-                        plane.SetOnFire();
-
-
-                    if (!plane.HasCrashed)
-                    {
-                        var pointingRight = Helpers.IsPointingRight(plane.Rotation);
-                        if (pointingRight)
-                            plane.Rotation = 0f;
-                        else
-                            plane.Rotation = 180f;
-                    }
-
-                    plane.IsDamaged = true;
-                    plane.DoHitGround();
-                    plane.SASOn = false;
-                    //plane.Velocity = D2DPoint.Zero;
-
-                    plane.Velocity *= new D2DPoint(0.998f, 0f);
-                    plane.Position = new D2DPoint(plane.Position.X, 0f);
-                    plane.RotationSpeed = 0f;
-                }
-
-            }
-
-            // Player plane.
-            if (_playerPlane.Altitude <= 0f)
-            {
-                if (!_playerPlane.HasCrashed)
-                    _playerDeaths++;
-
-                if (!_playerPlane.IsDamaged)
-                    _playerPlane.SetOnFire();
-
-                if (!_playerPlane.HasCrashed)
-                {
-                    var pointingRight = Helpers.IsPointingRight(_playerPlane.Rotation);
-                    if (pointingRight)
-                        _playerPlane.Rotation = 0f;
-                    else
-                        _playerPlane.Rotation = 180f;
-                }
-
-                _playerPlane.IsDamaged = true;
-                _playerPlane.DoHitGround();
-                _playerPlane.SASOn = false;
-                _playerPlane.AutoPilotOn = false;
-                _playerPlane.ThrustOn = false;
-                _playerPlane.Position = new D2DPoint(_playerPlane.Position.X, 0f);
-                _playerPlane.RotationSpeed = 0f;
-                _playerPlane.Velocity *= new D2DPoint(0.998f, 0f);
-            }
-        }
-
 
         private void SendPlayerReset()
         {
@@ -1096,7 +875,7 @@ namespace PolyPlane
 
                 case 'h':
                     //_showHelp = !_showHelp;
-                   
+
                     break;
 
                 case 'i':

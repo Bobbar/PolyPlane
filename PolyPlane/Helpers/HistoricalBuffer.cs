@@ -1,17 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace PolyPlane
+﻿namespace PolyPlane
 {
     public class HistoricalBuffer<T>
     {
         private const int MAX_HIST = 400;
         private List<BufferEntry<T>> _history = new List<BufferEntry<T>>();
         public Func<T, T, double, T> Interpolate;
-        
+
         public HistoricalBuffer()
         {
 
@@ -28,7 +22,7 @@ namespace PolyPlane
 
             _history.Add(entry);
 
-           if (_history.Count > MAX_HIST)
+            if (_history.Count > MAX_HIST)
                 _history.RemoveAt(0);
         }
 
