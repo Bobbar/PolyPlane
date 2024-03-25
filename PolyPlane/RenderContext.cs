@@ -93,7 +93,6 @@ namespace PolyPlane
             Gfx.DrawTextClamped(Viewport, text, color, fontName, fontSize, new D2DRect(x, y, 99999f, 99999f), halign, valign);
         }
 
-
         public void DrawArrow(D2DPoint start, D2DPoint end, D2DColor color, float weight)
         {
             Gfx.DrawArrowClamped(Viewport, start, end, color, weight);

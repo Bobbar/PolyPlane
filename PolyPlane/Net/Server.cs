@@ -19,7 +19,7 @@ namespace PolyPlane.Net
 
         private Thread _pollThread;
         private bool _runLoop = true;
-        private const int MAX_CLIENTS = 3;
+        private const int MAX_CLIENTS = 30;
         private const int MAX_CHANNELS = 4;
         private const int CHANNEL_ID = 0;
 
@@ -152,6 +152,7 @@ namespace PolyPlane.Net
 
         private void ProcessQueue()
         {
+
             while (PacketSendQueue.Count > 0)
             {
                 if (PacketSendQueue.TryDequeue(out NetPacket packet))
@@ -173,8 +174,8 @@ namespace PolyPlane.Net
         public void SendNewBulletPacket(GameObjects.Bullet bullet)
         {
             var netPacket = new BulletPacket(bullet, PacketTypes.NewBullet);
-
-            EnqueuePacket(netPacket);
+            BroadcastPacket(netPacket);
+            //EnqueuePacket(netPacket);
         }
 
         public void SendNewMissilePacket(GameObjects.GuidedMissile missile)
@@ -196,8 +197,10 @@ namespace PolyPlane.Net
             PacketSendQueue.Enqueue(packet);
         }
 
-        public void BroadcastPacket(NetPacket netPacket)
+        private void BroadcastPacket(NetPacket netPacket)
         {
+            //Debug.WriteLine($"Send: {netPacket.Type.ToString()}");
+
             var packet = CreatePacket(netPacket);
             var channel = GetChannel(netPacket);
 
@@ -246,6 +249,9 @@ namespace PolyPlane.Net
         {
             var data = IO.ObjectToByteArray(packet);
             Packet idPacket = default(Packet);
+
+            //Debug.WriteLine($"SendID: {packet.ID}");
+
 
             idPacket.Create(data, PacketFlags.Reliable);
             peer.Send(CHANNEL_ID, ref idPacket);

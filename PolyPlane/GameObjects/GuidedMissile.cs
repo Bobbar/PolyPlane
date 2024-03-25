@@ -163,6 +163,9 @@ namespace PolyPlane.GameObjects
             if (_age > LIFESPAN && MissedTarget)
                 this.IsExpired = true;
 
+            if (this.Altitude <= 0)
+                this.IsExpired = true;
+
             if (_useControlSurfaces)
             {
                 _tailWing.Update(dt, viewport, renderScale + _renderOffset);

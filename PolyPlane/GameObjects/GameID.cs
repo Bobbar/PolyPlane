@@ -36,5 +36,10 @@
             return $"PlrID: {PlayerID}  ObjID: {ObjectID}";
         }
 
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(PlayerID, ObjectID);
+        }
+
     }
 }

@@ -530,7 +530,7 @@ namespace PolyPlane.GameObjects
 
         public void FireMissile(GameObject target)
         {
-            if (this.NumMissiles <= 0)
+            if (this.NumMissiles <= 0 || this.IsDamaged)
             {
                 Log.Msg("Click...");
                 return;
