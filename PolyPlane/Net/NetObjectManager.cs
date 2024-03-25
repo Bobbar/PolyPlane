@@ -410,6 +410,10 @@ namespace PolyPlane.Net
             var owner = GetNetPlane(bulletPacket.OwnerID);
             //var owner = _objs.GetObjectByID(bulletPacket.OwnerID);
 
+            // TODO: How to handle bullets that arrive before owner plane has been added?
+            if (owner == null)
+                return;
+
             bullet.Owner = owner;
             bullet.ClientCreateTime = bulletPacket.FrameTime;
             bullet.LagAmount = World.CurrentTime() - bulletPacket.FrameTime;

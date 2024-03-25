@@ -1,0 +1,3 @@
+- Player disconnect inconsistent.
+- Sync existing impacts for new players?
+- Combine collisions logic?
