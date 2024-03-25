@@ -77,7 +77,7 @@ namespace PolyPlane
         private Plane _playerPlane;
 
         private NetPlayHost _client;
-        private NetObjectManager _netMan;
+        private NetEventManager _netMan;
         private CollisionManager _collisions;
         private RenderManager _render;
 
@@ -97,10 +97,12 @@ namespace PolyPlane
 
             _multiThreadNum = Environment.ProcessorCount - 2;
 
-            InitGfx();
-
+           
 
             DoNetGameSetup();
+
+            InitGfx();
+
 
 
             _netMan.ScreenFlashCallback = _render.DoScreenFlash;
@@ -266,7 +268,7 @@ namespace PolyPlane
         private void InitGfx()
         {
             _render?.Dispose();
-            _render = new RenderManager(this, _objs);
+            _render = new RenderManager(this, _objs, _netMan);
         }
 
         private void DoNetGameSetup()
@@ -283,7 +285,7 @@ namespace PolyPlane
                     InitPlane(config.IsAI);
 
                     _client = new ClientNetHost(config.Port, config.IPAddress);
-                    _netMan = new NetObjectManager(_objs, _client, _playerPlane);
+                    _netMan = new NetEventManager(_objs, _client, _playerPlane);
                     _collisions = new CollisionManager(_objs, _netMan);
 
                     _client.Start();

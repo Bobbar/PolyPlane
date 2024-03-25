@@ -83,7 +83,7 @@ namespace PolyPlane
         private static float _zoomScale = 0.11f;//0.25f;//1f;//0.35f;
         private static float _dt = 0.0325f;//0.06f;
 
-        public const float MIN_COLLISION_DIST = 8000f; // Minimum distance for collisions to be considered.
+        public const float MIN_COLLISION_DIST = 15000f; // Minimum distance for collisions to be considered.
         public const float SENSOR_FOV = 60f; // TODO: Not sure this belongs here. Maybe make this unique based on missile/plane types and move it there.
 
         private const float MIN_TURB_DENS = 0.6f;

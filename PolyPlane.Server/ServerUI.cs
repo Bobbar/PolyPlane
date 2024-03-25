@@ -1,5 +1,7 @@
 ﻿using PolyPlane.GameObjects;
+using PolyPlane.GameObjects.Manager;
 using PolyPlane.Net;
+using PolyPlane.Rendering;
 using System.Diagnostics;
 using unvell.D2DLib;
 
@@ -39,11 +41,16 @@ namespace PolyPlane.Server
         private bool _clearObjs = false;
 
         private GameObjectManager _objs = new GameObjectManager();
-        private NetObjectManager _netMan;
-        private string _address;
-        private ushort _port;
+        private NetEventManager _netMan;
+        private CollisionManager _collisions;
+        private NetPlayHost _server;
+        private RenderManager _render = null;
 
-        private Net.NetPlayHost _server;
+        private bool _queueNextViewId = false;
+        private bool _queuePrevViewId = false;
+        private int _aiPlaneViewID = -1;
+
+        private Form _viewPort = null;
 
         private System.Windows.Forms.Timer _updateTimer = new System.Windows.Forms.Timer();
 
@@ -55,7 +62,6 @@ namespace PolyPlane.Server
 
             _updateTimer.Tick += UpdateTimer_Tick;
             _updateTimer.Interval = 16;
-            _updateTimer.Start();
 
 
             _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
@@ -74,9 +80,11 @@ namespace PolyPlane.Server
                 ENet.Library.Initialize();
 
                 _server = new Net.ServerNetHost(port, addy);
-                _netMan = new NetObjectManager(_objs, _server);
+                _netMan = new NetEventManager(_objs, _server);
+                _collisions = new CollisionManager(_objs, _netMan);
 
                 StartGameThread();
+                _updateTimer.Start();
 
                 AddressTextBox.Enabled = false;
                 PortTextBox.Enabled = false;
@@ -125,6 +133,9 @@ namespace PolyPlane.Server
 
             ProcessObjQueue();
 
+            Plane viewPlane = GetViewPlane();
+           
+
             // Update/advance objects.
             if (!_isPaused)
             {
@@ -137,7 +148,7 @@ namespace PolyPlane.Server
                 {
                     _timer.Restart();
 
-                    DoCollisions();
+                    _collisions.DoCollisions();
 
                     _timer.Stop();
 
@@ -168,6 +179,9 @@ namespace PolyPlane.Server
 
             _timer.Restart();
 
+            if (_render != null)
+                _render.RenderFrame(viewPlane);
+
             _netMan.DoNetEvents();
             _objs.PruneExpired();
 
@@ -177,7 +191,7 @@ namespace PolyPlane.Server
             _renderFPS = fps;
 
 
-            this.InfoText = GetInfo();
+            //this.InfoText = GetInfo();
 
             if (this.PauseRequested)
             {
@@ -241,232 +255,36 @@ namespace PolyPlane.Server
             }
         }
 
+        private Plane GetViewPlane()
+        {
+            //var idPlane = IDToPlane(_aiPlaneViewID);
+            var idPlane = _objs.GetPlaneByPlayerID(_aiPlaneViewID);
+
+            if (idPlane != null)
+            {
+                World.ViewID = idPlane.ID;
+                return idPlane;
+            }
+            else
+                return null;
+        }
 
         private void ProcessObjQueue()
         {
             _objs.SyncAll();
-        }
 
-        private void DoCollisions()
-        {
-            const float LAG_COMP_FACT = 1f;
-            var now = World.CurrentTime();
-
-            // Targets/AI Planes vs missiles and bullets.
-            for (int r = 0; r < _objs.Planes.Count; r++)
+            if (_queueNextViewId)
             {
-                var plane = _objs.Planes[r] as Plane;
-                var planeRTT = _server.GetPlayerRTT(plane.PlayerID);
-
-                if (plane == null)
-                    continue;
-
-                // Missiles
-                for (int m = 0; m < _objs.Missiles.Count; m++)
-                {
-                    var missile = _objs.Missiles[m] as Missile;
-
-                    if (missile.Owner.ID.Equals(plane.ID))
-                        continue;
-
-                    if (missile.IsExpired)
-                        continue;
-
-                    var missileRTT = _server.GetPlayerRTT(missile.PlayerID);
-
-                    if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - ((planeRTT + missile.LagAmount + missileRTT) * LAG_COMP_FACT)))
-                    {
-                        if (histState != null)
-                        {
-                            var ogState = new GameObjectPacket(plane);
-
-                            plane.Position = histState.Position.ToD2DPoint();
-                            plane.Velocity = histState.Velocity.ToD2DPoint();
-                            plane.Rotation = histState.Rotation;
-                            plane.SyncFixtures();
-
-                            var impactResultM = plane.GetImpactResult(missile, pos);
-                            _netMan.SendNetImpact(missile, plane, impactResultM, histState);
-
-                            plane.Position = ogState.Position.ToD2DPoint();
-                            plane.Velocity = ogState.Velocity.ToD2DPoint();
-                            plane.Rotation = ogState.Rotation;
-                            plane.SyncFixtures();
-                        }
-                        else
-                        {
-                            var impactResultM = plane.GetImpactResult(missile, pos);
-                            _netMan.SendNetImpact(missile, plane, impactResultM, histState);
-                        }
-
-                        missile.IsExpired = true;
-                        AddExplosion(pos);
-                    }
-                }
-
-                // Bullets
-                for (int b = 0; b < _objs.Bullets.Count; b++)
-                {
-                    var bullet = _objs.Bullets[b] as Bullet;
-
-                    if (bullet.IsExpired)
-                        continue;
-
-                    if (bullet.Owner.ID.Equals(plane.ID))
-                        continue;
-
-                    var bulletRTT = _server.GetPlayerRTT(bullet.PlayerID);
-
-                    if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - ((planeRTT + bullet.LagAmount + bulletRTT) * LAG_COMP_FACT)))
-                    {
-                        if (!plane.IsExpired)
-                            AddExplosion(pos);
-
-                        if (histState != null)
-                        {
-                            var ogState = new GameObjectPacket(plane);
-
-                            plane.Position = histState.Position.ToD2DPoint();
-                            plane.Velocity = histState.Velocity.ToD2DPoint();
-                            plane.Rotation = histState.Rotation;
-                            plane.SyncFixtures();
-
-                            var impactResult = plane.GetImpactResult(bullet, pos);
-                            _netMan.SendNetImpact(bullet, plane, impactResult, histState);
-
-                            plane.Position = ogState.Position.ToD2DPoint();
-                            plane.Velocity = ogState.Velocity.ToD2DPoint();
-                            plane.Rotation = ogState.Rotation;
-                            plane.SyncFixtures();
-                        }
-                        else
-                        {
-                            var impactResult = plane.GetImpactResult(bullet, pos);
-                            _netMan.SendNetImpact(bullet, plane, impactResult, histState);
-
-                        }
-
-
-                        bullet.IsExpired = true;
-                    }
-
-
-                    //if (targ.CollidesWith(bullet, out D2DPoint pos) && !bullet.Owner.ID.Equals(targ.ID))
-                    //{
-                    //    if (!targ.IsExpired)
-                    //        AddExplosion(pos);
-
-                    //    if (targ is Plane plane2)
-                    //    {
-
-                    //        var impactResult = plane2.GetImpactResult(bullet, pos);
-                    //        SendNetImpact(bullet, plane2, impactResult);
-                    //    }
-
-                    //    bullet.IsExpired = true;
-                    //}
-                }
-
-                //for (int e = 0; e < _explosions.Count; e++)
-                //{
-                //    var explosion = _explosions[e];
-
-                //    if (explosion.Contains(targ.Position))
-                //    {
-                //        targ.IsExpired = true;
-                //    }
-                //}
+                _aiPlaneViewID = GetNextAIID();
+                _queueNextViewId = false;
             }
 
-            // Handle missiles hit by bullets.
-            // And handle player plane hits by AI missiles.
-            for (int m = 0; m < _objs.Missiles.Count; m++)
+            if (_queuePrevViewId)
             {
-                var missile = _objs.Missiles[m] as Missile;
-
-                if (missile.IsExpired)
-                    continue;
-
-                for (int b = 0; b < _objs.Bullets.Count; b++)
-                {
-                    var bullet = _objs.Bullets[b] as Bullet;
-
-                    if (bullet.IsExpired)
-                        continue;
-
-                    if (bullet.Owner == missile.Owner)
-                        continue;
-
-                    if (missile.CollidesWith(bullet, out D2DPoint posb))
-                    {
-                        if (!missile.IsExpired)
-                            AddExplosion(posb);
-
-                        missile.IsExpired = true;
-                        bullet.IsExpired = true;
-                    }
-                }
-
+                _aiPlaneViewID = GetPrevAIID();
+                _queuePrevViewId = false;
             }
 
-
-            //// Handle player plane vs bullets.
-            //for (int b = 0; b < _objs.Bullets.Count; b++)
-            //{
-            //    var bullet = _objs.Bullets[b];
-
-            //    if (bullet.Owner.ID == _playerPlane.ID)
-            //        continue;
-
-            //    if (_playerPlane.Contains(bullet, out D2DPoint pos))
-            //    {
-            //        if (!_playerPlane.IsExpired)
-            //            AddExplosion(_playerPlane.Position);
-
-            //        if (!_godMode)
-            //            _playerPlane.DoImpact(bullet, pos);
-
-            //        bullet.IsExpired = true;
-            //    }
-            //}
-
-            HandleGroundImpacts();
-            //PruneExpiredObj();
-        }
-
-        private void HandleGroundImpacts()
-        {
-            // AI Planes.
-            for (int a = 0; a < _objs.Planes.Count; a++)
-            {
-                var plane = _objs.Planes[a];
-
-                if (plane.Altitude <= 0f)
-                {
-                    if (!plane.IsDamaged)
-                        plane.SetOnFire();
-
-
-                    if (!plane.HasCrashed)
-                    {
-                        var pointingRight = Helpers.IsPointingRight(plane.Rotation);
-                        if (pointingRight)
-                            plane.Rotation = 0f;
-                        else
-                            plane.Rotation = 180f;
-                    }
-
-                    plane.IsDamaged = true;
-                    plane.DoHitGround();
-                    plane.SASOn = false;
-                    //plane.Velocity = D2DPoint.Zero;
-
-                    plane.Velocity *= new D2DPoint(0.998f, 0f);
-                    plane.Position = new D2DPoint(plane.Position.X, 0f);
-                    plane.RotationSpeed = 0f;
-                }
-
-            }
         }
 
         private void DoDecoySuccess()
@@ -669,21 +487,98 @@ namespace PolyPlane.Server
             infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";
             infoText += $"Update ms: {_updateTime.TotalMilliseconds}\n";
             infoText += $"Collision ms: {_collisionTime.TotalMilliseconds}\n";
-            infoText += $"Packet Delay: {_packetDelay}\n";
+            infoText += $"Packet Delay: {_netMan.PacketDelay}\n";
             //infoText += $"Sent B/s: {(World.IsServer ? _server.BytesSentPerSecond : 0)}\n";
             //infoText += $"Rec B/s: {(World.IsServer ? _server.BytesReceivedPerSecond : 0)}\n";
 
             infoText += $"DT: {Math.Round(World.DT, 4)}\n";
             infoText += $"Interp: {World.InterpOn.ToString()}\n";
 
-            //if (_objs.Planes.Count > 0)
-            //{
-            //    var plane = _objs.Planes[0];
-            //    infoText += $"Pos: {plane.Position}\n";
-
-            //}
-
+         
             return infoText;
+        }
+
+
+        private int GetNextAIID()
+        {
+            if (_aiPlaneViewID == -1 && _objs.Planes.Count > 0)
+                return _objs.Planes.First().ID.PlayerID;
+
+
+            int nextId = -1;
+            for (int i = 0; i < _objs.Planes.Count; i++)
+            {
+                var plane = _objs.Planes[i];
+
+                if (plane.ID.PlayerID == _aiPlaneViewID && i + 1 < _objs.Planes.Count)
+                {
+                    nextId = _objs.Planes[i + 1].ID.PlayerID;
+                }
+                else if (plane.ID.PlayerID == _aiPlaneViewID && i + 1 >= _objs.Planes.Count)
+                {
+                    nextId = 0;
+                }
+            }
+
+            return nextId;
+        }
+
+        private int GetPrevAIID()
+        {
+            if (_aiPlaneViewID == -1 && _objs.Planes.Count > 0)
+                return _objs.Planes.Last().ID.PlayerID;
+
+            int nextId = -1;
+
+            for (int i = 0; i < _objs.Planes.Count; i++)
+            {
+                var plane = _objs.Planes[i];
+
+                if (plane.ID.PlayerID == _aiPlaneViewID && i - 1 >= 0)
+                {
+                    nextId = _objs.Planes[i - 1].ID.PlayerID;
+                }
+                else if (plane.ID.PlayerID == _aiPlaneViewID && i - 1 <= 0)
+                {
+                    nextId = _objs.Planes.Last().ID.PlayerID;
+                }
+            }
+
+            return nextId;
+        }
+
+
+        private void InitViewPort()
+        {
+
+            if (_viewPort != null)
+                return;
+
+            _viewPort = new Form();
+            _viewPort.Size = new Size(1346, 814);
+            _viewPort.KeyPress += ViewPort_KeyPress;
+            _viewPort.Show();
+
+            _render = new RenderManager(_viewPort, _objs, _netMan);
+
+
+
+        }
+
+        private void ViewPort_KeyPress(object? sender, KeyPressEventArgs e)
+        {
+            switch (e.KeyChar)
+            {
+
+                case '[':
+                    _queuePrevViewId = true;
+
+                    break;
+                case ']':
+
+                    _queueNextViewId = true;
+                    break;
+            }
         }
 
         private void UpdateTimer_Tick(object? sender, EventArgs e)
@@ -709,6 +604,11 @@ namespace PolyPlane.Server
             World.InterpOn = InterpCheckBox.Checked;
         }
 
+        private void ShowViewPortButton_Click(object sender, EventArgs e)
+        {
+            InitViewPort();
 
+
+        }
     }
 }

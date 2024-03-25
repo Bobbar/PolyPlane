@@ -37,6 +37,7 @@
             label1 = new Label();
             label2 = new Label();
             StartServerButton = new Button();
+            ShowViewPortButton = new Button();
             SuspendLayout();
             // 
             // PauseButton
@@ -126,11 +127,22 @@
             StartServerButton.UseVisualStyleBackColor = true;
             StartServerButton.Click += StartServerButton_Click;
             // 
+            // ShowViewPortButton
+            // 
+            ShowViewPortButton.Location = new Point(625, 327);
+            ShowViewPortButton.Name = "ShowViewPortButton";
+            ShowViewPortButton.Size = new Size(116, 23);
+            ShowViewPortButton.TabIndex = 9;
+            ShowViewPortButton.Text = "Show View Port";
+            ShowViewPortButton.UseVisualStyleBackColor = true;
+            ShowViewPortButton.Click += ShowViewPortButton_Click;
+            // 
             // ServerUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(ShowViewPortButton);
             Controls.Add(StartServerButton);
             Controls.Add(label2);
             Controls.Add(label1);
@@ -157,5 +169,6 @@
         private Label label1;
         private Label label2;
         private Button StartServerButton;
+        private Button ShowViewPortButton;
     }
 }
