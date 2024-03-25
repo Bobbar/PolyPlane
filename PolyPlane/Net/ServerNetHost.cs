@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ENet;
-using System.Diagnostics;
+﻿using ENet;
 
 namespace PolyPlane.Net
 {
@@ -59,7 +53,7 @@ namespace PolyPlane.Net
             ParsePacket(netEvent.Packet, netEvent.Peer);
         }
 
-       
+
         public override uint GetPlayerRTT(int playerID)
         {
             if (_peers.TryGetValue((uint)playerID, out var peer))

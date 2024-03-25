@@ -1,17 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using PolyPlane.GameObjects;
+﻿using PolyPlane.GameObjects;
 using unvell.D2DLib;
 
 namespace PolyPlane.Net
 {
     public class NetObjectManager
     {
-        public GameObjectManager _objs;
-        public NetPlayHost _host;
+        public GameObjectManager Objs;
+        public NetPlayHost Host;
         public bool IsServer = false;
         public Plane PlayerPlane = null;
 
@@ -24,16 +19,16 @@ namespace PolyPlane.Net
 
         public NetObjectManager(GameObjectManager objectManager, NetPlayHost host, Plane playerPlane)
         {
-            _objs = objectManager;
-            _host = host;
+            Objs = objectManager;
+            Host = host;
             PlayerPlane = playerPlane;
             IsServer = false;
         }
 
         public NetObjectManager(GameObjectManager objectManager, NetPlayHost host)
         {
-            _objs = objectManager;
-            _host = host;
+            Objs = objectManager;
+            Host = host;
             PlayerPlane = null;
             IsServer = true;
         }
@@ -58,9 +53,9 @@ namespace PolyPlane.Net
 
             now = World.CurrentTime();
 
-            while (_host.PacketReceiveQueue.Count > 0)
+            while (Host.PacketReceiveQueue.Count > 0)
             {
-                if (_host.PacketReceiveQueue.TryDequeue(out Net.NetPacket packet))
+                if (Host.PacketReceiveQueue.TryDequeue(out Net.NetPacket packet))
                 {
                     totalPacketTime += now - packet.FrameTime;
                     numPackets++;
@@ -105,8 +100,8 @@ namespace PolyPlane.Net
                             newPlane.ID = planePacket.ID;
                             planePacket.SyncObj(newPlane);
                             newPlane.IsNetObject = true;
-                            newPlane.Radar = new Radar(newPlane, D2DColor.GreenYellow, _objs.Missiles, _objs.Planes);
-                            _objs.AddPlane(newPlane);
+                            newPlane.Radar = new Radar(newPlane, D2DColor.GreenYellow, Objs.Missiles, Objs.Planes);
+                            Objs.AddPlane(newPlane);
                         }
 
                         ServerSendOtherPlanes();
@@ -137,9 +132,9 @@ namespace PolyPlane.Net
                     {
                         _netIDIsSet = true;
 
-                        _objs.ChangeObjID(PlayerPlane, new GameID(packet.ID.PlayerID, PlayerPlane.ID.ObjectID));
+                        Objs.ChangeObjID(PlayerPlane, new GameID(packet.ID.PlayerID, PlayerPlane.ID.ObjectID));
                         var netPacket = new PlanePacket(PlayerPlane, PacketTypes.NewPlayer);
-                        _host.EnqueuePacket(netPacket);
+                        Host.EnqueuePacket(netPacket);
                     }
 
                     break;
@@ -161,15 +156,15 @@ namespace PolyPlane.Net
 
                         foreach (var plane in listPacket.Planes)
                         {
-                            var existing = _objs.Contains(plane.ID);
+                            var existing = Objs.Contains(plane.ID);
 
                             if (!existing)
                             {
                                 var newPlane = new Plane(plane.Position.ToD2DPoint(), plane.PlaneColor);
                                 newPlane.ID = plane.ID;
                                 newPlane.IsNetObject = true;
-                                newPlane.Radar = new Radar(newPlane, D2DColor.GreenYellow, _objs.Missiles, _objs.Planes);
-                                _objs.AddPlane(newPlane);
+                                newPlane.Radar = new Radar(newPlane, D2DColor.GreenYellow, Objs.Missiles, Objs.Planes);
+                                Objs.AddPlane(newPlane);
                             }
                         }
                     }
@@ -181,7 +176,7 @@ namespace PolyPlane.Net
 
                     foreach (var p in expiredPacket.Packets)
                     {
-                        var obj = _objs.GetObjectByID(p.ID);
+                        var obj = Objs.GetObjectByID(p.ID);
 
                         if (obj != null)
                             obj.IsExpired = true;
@@ -199,7 +194,7 @@ namespace PolyPlane.Net
 
                     var resetPack = packet as Net.BasicPacket;
 
-                    var resetPlane = _objs.GetObjectByID(resetPack.ID) as Plane;
+                    var resetPlane = Objs.GetObjectByID(resetPack.ID) as Plane;
 
                     if (resetPlane != null)
                         resetPlane.FixPlane();
@@ -214,7 +209,7 @@ namespace PolyPlane.Net
 
             if (IsServer)
             {
-                foreach (var plane in _objs.Planes)
+                foreach (var plane in Objs.Planes)
                 {
                     var planePacket = new Net.PlanePacket(plane);
                     newPlanesPacket.Planes.Add(planePacket);
@@ -227,7 +222,7 @@ namespace PolyPlane.Net
             }
 
             if (newPlanesPacket.Planes.Count > 0)
-                _host.EnqueuePacket(newPlanesPacket);
+                Host.EnqueuePacket(newPlanesPacket);
         }
 
         private void SendMissileUpdates()
@@ -236,35 +231,35 @@ namespace PolyPlane.Net
 
             if (IsServer)
             {
-                _objs.Missiles.ForEach(m => newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile)));
+                Objs.Missiles.ForEach(m => newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile)));
 
 
             }
             else
             {
-                var missiles = _objs.Missiles.Where(m => m.PlayerID == PlayerPlane.PlayerID).ToList();
+                var missiles = Objs.Missiles.Where(m => m.PlayerID == PlayerPlane.PlayerID).ToList();
                 missiles.ForEach(m => newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile)));
             }
 
             if (newMissilesPacket.Missiles.Count > 0)
-                _host.EnqueuePacket(newMissilesPacket);
+                Host.EnqueuePacket(newMissilesPacket);
         }
 
         private void SendExpiredObjects()
         {
             var expiredObjPacket = new Net.BasicListPacket();
-            _objs.ExpiredObjects().ForEach(o => expiredObjPacket.Packets.Add(new BasicPacket(PacketTypes.ExpiredObjects, o.ID)));
+            Objs.ExpiredObjects().ForEach(o => expiredObjPacket.Packets.Add(new BasicPacket(PacketTypes.ExpiredObjects, o.ID)));
 
             if (expiredObjPacket.Packets.Count == 0)
                 return;
 
-            _host.EnqueuePacket(expiredObjPacket);
+            Host.EnqueuePacket(expiredObjPacket);
         }
 
         public void ServerSendOtherPlanes()
         {
             var otherPlanesPackets = new List<Net.PlanePacket>();
-            foreach (var plane in _objs.Planes)
+            foreach (var plane in Objs.Planes)
             {
                 otherPlanesPackets.Add(new Net.PlanePacket(plane as Plane));
             }
@@ -272,7 +267,7 @@ namespace PolyPlane.Net
             var listPacket = new Net.PlaneListPacket(otherPlanesPackets);
             listPacket.Type = PacketTypes.GetOtherPlanes;
 
-            _host.EnqueuePacket(listPacket);
+            Host.EnqueuePacket(listPacket);
         }
 
         public void SendNetImpact(GameObject impactor, GameObject target, PlaneImpactResult result, GameObjectPacket histState)
@@ -286,7 +281,7 @@ namespace PolyPlane.Net
                 impactPacket.Rotation = histState.Rotation;
             }
 
-            _host.EnqueuePacket(impactPacket);
+            Host.EnqueuePacket(impactPacket);
             DoNetImpact(impactPacket);
         }
 
@@ -294,7 +289,7 @@ namespace PolyPlane.Net
         {
             var decoyPacket = new Net.DecoyPacket(decoy);
 
-            _host.EnqueuePacket(decoyPacket);
+            Host.EnqueuePacket(decoyPacket);
         }
 
 
@@ -321,13 +316,13 @@ namespace PolyPlane.Net
         {
             foreach (var missileUpdate in listPacket.Missiles)
             {
-                var netMissile = _objs.GetObjectByID(missileUpdate.ID) as GuidedMissile;
+                var netMissile = Objs.GetObjectByID(missileUpdate.ID) as GuidedMissile;
 
                 if (netMissile != null)
                 {
-                    var netMissileOwner = _objs.GetObjectByID(netMissile.Owner.ID);
+                    var netMissileOwner = Objs.GetObjectByID(netMissile.Owner.ID);
 
-                    if (_objs.TryGetObjectByID(missileUpdate.TargetID, out GameObject netMissileTarget))
+                    if (Objs.TryGetObjectByID(missileUpdate.TargetID, out GameObject netMissileTarget))
                     {
                         if (netMissileTarget != null)
                             netMissile.Target = netMissileTarget;
@@ -346,7 +341,7 @@ namespace PolyPlane.Net
         {
             if (packet != null)
             {
-                var impactor = _objs.GetObjectByID(packet.ImpactorID);
+                var impactor = Objs.GetObjectByID(packet.ImpactorID);
 
                 if (impactor == null)
                     return;
@@ -356,7 +351,7 @@ namespace PolyPlane.Net
 
                 impactor.IsExpired = true;
 
-                var target = _objs.GetObjectByID(packet.ID) as Plane;
+                var target = Objs.GetObjectByID(packet.ID) as Plane;
 
                 if (target != null)
                 {
@@ -421,7 +416,7 @@ namespace PolyPlane.Net
             // Try to spawn the bullet ahead to compensate for latency?
             bullet.Position += bullet.Velocity * (float)(bullet.LagAmount / 1000f);
 
-            _objs.AddBullet(bullet);
+            Objs.AddBullet(bullet);
         }
 
         private void DoNewMissile(MissilePacket missilePacket)
@@ -438,7 +433,7 @@ namespace PolyPlane.Net
                 missilePacket.SyncObj(missile);
                 missile.Target = missileTarget;
                 missile.LagAmount = World.CurrentTime() - missilePacket.FrameTime;
-                _objs.EnqueueMissile(missile);
+                Objs.EnqueueMissile(missile);
             }
         }
 
@@ -452,21 +447,21 @@ namespace PolyPlane.Net
                 decoy.ID = decoyPacket.ID;
                 decoyPacket.SyncObj(decoy);
 
-                bool containsDecoy = _objs.Contains(decoy.ID);
+                bool containsDecoy = Objs.Contains(decoy.ID);
 
                 if (!containsDecoy)
                 {
-                    _objs.AddDecoy(decoy);
+                    Objs.AddDecoy(decoy);
 
                     if (IsServer)
-                        _host.EnqueuePacket(decoyPacket);
+                        Host.EnqueuePacket(decoyPacket);
                 }
             }
         }
 
         private void DoPlayerDisconnected(int playerID)
         {
-            var objs = _objs.GetObjectsByPlayer(playerID);
+            var objs = Objs.GetObjectsByPlayer(playerID);
 
             foreach (var obj in objs)
             {
@@ -479,13 +474,13 @@ namespace PolyPlane.Net
         private void AddExplosion(D2DPoint pos)
         {
             var explosion = new Explosion(pos, 200f, 1.4f);
-            _objs.AddExplosion(explosion);
+            Objs.AddExplosion(explosion);
         }
 
 
         private Plane GetNetPlane(GameID id, bool netOnly = true)
         {
-            foreach (var plane in _objs.Planes)
+            foreach (var plane in Objs.Planes)
             {
                 if (netOnly && !plane.IsNetObject)
                     continue;

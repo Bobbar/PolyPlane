@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using unvell.D2DLib;
+﻿using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects.Animations
 {
@@ -27,7 +22,7 @@ namespace PolyPlane.GameObjects.Animations
 
         protected Animation() { }
 
-        protected Animation(T start, T end, float duration,  Func<float, float> easeFunc, Action<T> setValFunc) 
+        protected Animation(T start, T end, float duration, Func<float, float> easeFunc, Action<T> setValFunc)
         {
             Start = start;
             End = end;

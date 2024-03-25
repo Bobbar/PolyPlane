@@ -339,7 +339,7 @@ namespace PolyPlane.GameObjects
 
         public bool CollidesWithNet(GameObjectPoly obj, out D2DPoint pos, out GameObjectPacket? histState, double frameTime, float dt = -1f)
         {
-           
+
             if (!this.IsObjNear(obj) || obj.Owner == this)
             {
                 pos = D2DPoint.Zero;

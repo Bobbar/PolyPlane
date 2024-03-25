@@ -1,7 +1,6 @@
 ﻿using PolyPlane.AI_Behavior;
 using System.Diagnostics;
 using System.Numerics;
-using PolyPlane.Net;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -399,7 +398,7 @@ namespace PolyPlane.GameObjects
             Wings.ForEach(w => w.Update(dt, viewport, renderScale * _renderOffset));
             _centerOfThrust.Update(dt, viewport, renderScale * _renderOffset);
             _thrustAmt.Update(dt);
-            
+
             CheckForFlip();
 
             var thrustMag = thrust.Length();

@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using PolyPlane.GameObjects;
-using System.Text;
-using System.Threading.Tasks;
-using unvell.D2DLib;
-using System.Diagnostics;
+﻿using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Animations;
+using System.Diagnostics;
+using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
 {
@@ -50,8 +45,8 @@ namespace PolyPlane.Rendering
         private const float VIEW_SCALE = 4f;
 
         private int Width => _renderTarget.Width;
-        private int Height => _renderTarget.Height; 
-       
+        private int Height => _renderTarget.Height;
+
 
         public RenderManager(Control renderTarget, GameObjectManager objs)
         {
@@ -70,7 +65,7 @@ namespace PolyPlane.Rendering
             _device.Resize();
             _missileOverlayLayer = _device.CreateLayer();
             _ctx = new RenderContext(_gfx, _device);
-            
+
             World.UpdateViewport(_renderTarget.Size);
 
 

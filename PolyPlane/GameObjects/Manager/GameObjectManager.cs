@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Concurrent;
 
 namespace PolyPlane.GameObjects
 {
@@ -108,6 +103,12 @@ namespace PolyPlane.GameObjects
                 _objLookup.Add(explosion.ID.GetHashCode(), explosion);
                 Explosions.Add(explosion);
             }
+        }
+
+        public void AddExplosion(D2DPoint pos)
+        {
+            var explosion = new Explosion(pos, 200f, 1.4f);
+            AddExplosion(explosion);
         }
 
         public void Clear()

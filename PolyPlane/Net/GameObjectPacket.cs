@@ -144,9 +144,9 @@ namespace PolyPlane.Net
     {
         public double ServerTime;
 
-        public SyncPacket() : base() 
+        public SyncPacket() : base()
         {
-            Type = PacketTypes.ServerSync;        
+            Type = PacketTypes.ServerSync;
         }
 
         public SyncPacket(double serverTime)
@@ -354,7 +354,7 @@ namespace PolyPlane.Net
     public partial class BulletPacket : GameObjectPacket
     {
 
-        public BulletPacket() 
+        public BulletPacket()
         {
             Type = PacketTypes.NewBullet;
         }
