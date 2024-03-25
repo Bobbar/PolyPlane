@@ -1,5 +1,6 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Animations;
+using PolyPlane.Net;
 using System.Diagnostics;
 using unvell.D2DLib;
 
@@ -31,7 +32,7 @@ namespace PolyPlane.Rendering
         private Control _renderTarget;
         private readonly D2DColor _clearColor = D2DColor.Black;
         private GameObjectManager _objs;
-
+        private NetEventManager _netMan;
 
         private D2DPoint _screenShakeTrans = D2DPoint.Zero;
         private float _screenFlashOpacity = 0f;
@@ -48,10 +49,12 @@ namespace PolyPlane.Rendering
         private int Height => _renderTarget.Height;
 
 
-        public RenderManager(Control renderTarget, GameObjectManager objs)
+        public RenderManager(Control renderTarget, GameObjectManager objs, NetEventManager netMan)
         {
             _renderTarget = renderTarget;
             _objs = objs;
+            _netMan = netMan;
+
 
             InitGfx();
         }
@@ -89,34 +92,38 @@ namespace PolyPlane.Rendering
 
             UpdateTimersAndAnims();
 
-            var viewPortRect = new D2DRect(viewplane.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
-            _ctx.Viewport = viewPortRect;
+            if (viewplane != null)
+            {
+                var viewPortRect = new D2DRect(viewplane.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
+                _ctx.Viewport = viewPortRect;
 
-            _gfx.BeginRender(_clearColor);
+                _gfx.BeginRender(_clearColor);
 
-            // Sky and background.
-            DrawSky(_ctx, viewplane);
-            DrawMovingBackground(_ctx, viewplane);
-            DrawScreenFlash(_gfx);
-
-
-            _gfx.PushTransform(); // Push screen shake transform.
-            _gfx.TranslateTransform(_screenShakeTrans.X, _screenShakeTrans.Y);
+                // Sky and background.
+                DrawSky(_ctx, viewplane);
+                DrawMovingBackground(_ctx, viewplane);
+                DrawScreenFlash(_gfx);
 
 
-            _gfx.PushTransform(); // Push scale transform.
-            _gfx.ScaleTransform(World.ZoomScale, World.ZoomScale);
+                _gfx.PushTransform(); // Push screen shake transform.
+                _gfx.TranslateTransform(_screenShakeTrans.X, _screenShakeTrans.Y);
 
 
-            DrawPlaneAndObjects(_ctx, viewplane);
+                _gfx.PushTransform(); // Push scale transform.
+                _gfx.ScaleTransform(World.ZoomScale, World.ZoomScale);
 
-            _gfx.PopTransform(); // Pop scale transform.
 
-            DrawHud(_ctx, new D2DSize(this.Width, this.Height), viewplane);
+                DrawPlaneAndObjects(_ctx, viewplane);
 
-            _gfx.PopTransform(); // Pop screen shake transform.
+                _gfx.PopTransform(); // Pop scale transform.
 
-            DrawOverlays(_ctx, viewplane);
+                DrawHud(_ctx, new D2DSize(this.Width, this.Height), viewplane);
+
+                _gfx.PopTransform(); // Pop screen shake transform.
+
+                DrawOverlays(_ctx, viewplane);
+
+            }
 
             _gfx.EndRender();
 
@@ -723,7 +730,7 @@ namespace PolyPlane.Rendering
             //infoText += $"Update ms: {_updateTime.TotalMilliseconds}\n";
             infoText += $"Render ms: {_renderTime.TotalMilliseconds}\n";
             //infoText += $"Collision ms: {_collisionTime.TotalMilliseconds}\n";
-            //infoText += $"Packet Delay: {_packetDelay}\n";
+            infoText += $"Packet Delay: {_netMan.PacketDelay}\n";
 
             infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
             infoText += $"DT: {Math.Round(World.DT, 4)}\n";

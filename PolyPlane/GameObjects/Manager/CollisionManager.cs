@@ -5,11 +5,10 @@ namespace PolyPlane.GameObjects.Manager
     public class CollisionManager
     {
         private GameObjectManager _objs;
-        private NetObjectManager _netMan;
-        //private NetPlayHost _playHost;
+        private NetEventManager _netMan;
 
 
-        public CollisionManager(GameObjectManager objs, NetObjectManager netMan)
+        public CollisionManager(GameObjectManager objs, NetEventManager netMan)
         {
             _objs = objs;
             _netMan = netMan;
@@ -24,7 +23,7 @@ namespace PolyPlane.GameObjects.Manager
                 return;
             }
 
-            const float LAG_COMP_FACT = 1f;
+            const float LAG_COMP_FACT = 1.5f;
             var now = World.CurrentTime();
 
             // Targets/AI Planes vs missiles and bullets.
@@ -49,7 +48,8 @@ namespace PolyPlane.GameObjects.Manager
 
                     var missileRTT = _netMan.Host.GetPlayerRTT(missile.PlayerID);
 
-                    if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - ((planeRTT + missile.LagAmount + missileRTT) * LAG_COMP_FACT)))
+                    //if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - ((planeRTT + missile.LagAmount + missileRTT) * LAG_COMP_FACT)))
+                    if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - ((planeRTT + missileRTT) * LAG_COMP_FACT)))
                     {
                         if (histState != null)
                         {
@@ -92,7 +92,8 @@ namespace PolyPlane.GameObjects.Manager
 
                     var bulletRTT = _netMan.Host.GetPlayerRTT(bullet.PlayerID);
 
-                    if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - ((planeRTT + bullet.LagAmount + bulletRTT) * LAG_COMP_FACT)))
+                    //if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - ((planeRTT + bullet.LagAmount + bulletRTT) * LAG_COMP_FACT)))
+                    if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - ((planeRTT + bulletRTT) * LAG_COMP_FACT)))
                     {
                         if (!plane.IsExpired)
                             _objs.AddExplosion(pos);
@@ -125,21 +126,6 @@ namespace PolyPlane.GameObjects.Manager
                         bullet.IsExpired = true;
                     }
 
-
-                    //if (targ.CollidesWith(bullet, out D2DPoint pos) && !bullet.Owner.ID.Equals(targ.ID))
-                    //{
-                    //    if (!targ.IsExpired)
-                    //        AddExplosion(pos);
-
-                    //    if (targ is Plane plane2)
-                    //    {
-
-                    //        var impactResult = plane2.GetImpactResult(bullet, pos);
-                    //        SendNetImpact(bullet, plane2, impactResult);
-                    //    }
-
-                    //    bullet.IsExpired = true;
-                    //}
                 }
 
                 //for (int e = 0; e < _explosions.Count; e++)
@@ -185,28 +171,7 @@ namespace PolyPlane.GameObjects.Manager
             }
 
 
-            //// Handle player plane vs bullets.
-            //for (int b = 0; b < _objs.Bullets.Count; b++)
-            //{
-            //    var bullet = _objs.Bullets[b];
-
-            //    if (bullet.Owner.ID == _playerPlane.ID)
-            //        continue;
-
-            //    if (_playerPlane.Contains(bullet, out D2DPoint pos))
-            //    {
-            //        if (!_playerPlane.IsExpired)
-            //            AddExplosion(_playerPlane.Position);
-
-            //        if (!_godMode)
-            //            _playerPlane.DoImpact(bullet, pos);
-
-            //        bullet.IsExpired = true;
-            //    }
-            //}
-
             HandleGroundImpacts();
-            //PruneExpiredObj();
         }
 
         private void HandleGroundImpacts()

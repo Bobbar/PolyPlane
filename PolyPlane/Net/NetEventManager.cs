@@ -3,21 +3,23 @@ using unvell.D2DLib;
 
 namespace PolyPlane.Net
 {
-    public class NetObjectManager
+    public class NetEventManager
     {
         public GameObjectManager Objs;
         public NetPlayHost Host;
         public bool IsServer = false;
         public Plane PlayerPlane = null;
+        public double PacketDelay = 0;
 
         public Action<D2DColor> ScreenFlashCallback = null;
         public Action ScreenShakeCallback = null;
 
+        private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
 
         private long _frame = 0;
         private bool _netIDIsSet = false;
 
-        public NetObjectManager(GameObjectManager objectManager, NetPlayHost host, Plane playerPlane)
+        public NetEventManager(GameObjectManager objectManager, NetPlayHost host, Plane playerPlane)
         {
             Objs = objectManager;
             Host = host;
@@ -25,7 +27,7 @@ namespace PolyPlane.Net
             IsServer = false;
         }
 
-        public NetObjectManager(GameObjectManager objectManager, NetPlayHost host)
+        public NetEventManager(GameObjectManager objectManager, NetPlayHost host)
         {
             Objs = objectManager;
             Host = host;
@@ -64,6 +66,11 @@ namespace PolyPlane.Net
                 }
             }
 
+            if (totalPacketTime > 0f && numPackets > 0)
+            {
+                var avgDelay = (totalPacketTime / (float)numPackets);
+                PacketDelay = _packetDelayAvg.Add(avgDelay);
+            }
         }
 
         private void HandleNetPacket(NetPacket packet)
@@ -163,6 +170,8 @@ namespace PolyPlane.Net
                                 var newPlane = new Plane(plane.Position.ToD2DPoint(), plane.PlaneColor);
                                 newPlane.ID = plane.ID;
                                 newPlane.IsNetObject = true;
+                                newPlane.LagAmount = World.CurrentTime() - listPacket.FrameTime;
+                                newPlane.ClientCreateTime = listPacket.FrameTime;
                                 newPlane.Radar = new Radar(newPlane, D2DColor.GreenYellow, Objs.Missiles, Objs.Planes);
                                 Objs.AddPlane(newPlane);
                             }
@@ -307,6 +316,8 @@ namespace PolyPlane.Net
                 if (netPlane != null)
                 {
                     planeUpdPacket.SyncObj(netPlane);
+
+                    netPlane.LagAmount = World.CurrentTime() - listPacket.FrameTime;
                     netPlane.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, planeUpdPacket.Position.ToD2DPoint(), planeUpdPacket.Velocity.ToD2DPoint(), planeUpdPacket.Rotation, planeUpdPacket.FrameTime);
                 }
             }
