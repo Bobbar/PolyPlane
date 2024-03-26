@@ -241,8 +241,6 @@ namespace PolyPlane.Net
             if (IsServer)
             {
                 Objs.Missiles.ForEach(m => newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile)));
-
-
             }
             else
             {
@@ -414,7 +412,7 @@ namespace PolyPlane.Net
             bullet.ID = bulletPacket.ID;
             bulletPacket.SyncObj(bullet);
             var owner = GetNetPlane(bulletPacket.OwnerID);
-            //var owner = _objs.GetObjectByID(bulletPacket.OwnerID);
+            //var owner = Objs.GetObjectByID(bulletPacket.OwnerID);
 
             // TODO: How to handle bullets that arrive before owner plane has been added?
             if (owner == null)

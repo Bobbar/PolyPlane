@@ -23,7 +23,8 @@ namespace PolyPlane.GameObjects.Manager
                 return;
             }
 
-            const float LAG_COMP_FACT = 1.5f;
+            const float LAG_COMP_OFFSET = 60f;
+
             var now = World.CurrentTime();
 
             // Targets/AI Planes vs missiles and bullets.
@@ -48,8 +49,7 @@ namespace PolyPlane.GameObjects.Manager
 
                     var missileRTT = _netMan.Host.GetPlayerRTT(missile.PlayerID);
 
-                    //if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - ((planeRTT + missile.LagAmount + missileRTT) * LAG_COMP_FACT)))
-                    if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - ((planeRTT + missileRTT) * LAG_COMP_FACT)))
+                    if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - (planeRTT + missile.LagAmount + missileRTT + LAG_COMP_OFFSET)))
                     {
                         if (histState != null)
                         {
@@ -92,8 +92,7 @@ namespace PolyPlane.GameObjects.Manager
 
                     var bulletRTT = _netMan.Host.GetPlayerRTT(bullet.PlayerID);
 
-                    //if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - ((planeRTT + bullet.LagAmount + bulletRTT) * LAG_COMP_FACT)))
-                    if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - ((planeRTT + bulletRTT) * LAG_COMP_FACT)))
+                    if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - (planeRTT + bullet.LagAmount + bulletRTT + LAG_COMP_OFFSET)))
                     {
                         if (!plane.IsExpired)
                             _objs.AddExplosion(pos);

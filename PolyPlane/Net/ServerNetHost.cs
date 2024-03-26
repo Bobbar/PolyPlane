@@ -73,16 +73,7 @@ namespace PolyPlane.Net
 
             switch (packetObj.Type)
             {
-                case PacketTypes.GetNextID:
-
-                    var nextId = new BasicPacket(PacketTypes.GetNextID, new GameObjects.GameID(-1, World.GetNextObjectId()));
-
-                    Packet idPacket = default(Packet);
-                    idPacket.Create(IO.ObjectToByteArray(nextId));
-                    peer.Send(CHANNEL_ID, ref idPacket);
-
-                    break;
-
+                
                 case PacketTypes.PlaneUpdate or PacketTypes.MissileUpdate or PacketTypes.NewBullet or PacketTypes.NewMissile or PacketTypes.Impact or PacketTypes.PlayerDisconnect or PacketTypes.PlayerReset:
 
                     // Immediately re-broadcast certain updates.

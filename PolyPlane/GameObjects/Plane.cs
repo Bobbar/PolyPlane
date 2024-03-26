@@ -83,9 +83,7 @@ namespace PolyPlane.GameObjects
         public List<Wing> Wings = new List<Wing>();
         public FixturePoint _centerOfThrust;
         private Wing? _controlWing = null;
-        private float _renderOffset = 1.5f;
         private RateLimiter _thrustAmt = new RateLimiter(0.5f);
-        //private RateLimiterAngle _apAngleLimiter = new RateLimiterAngle(50f);
 
 
 
@@ -169,6 +167,7 @@ namespace PolyPlane.GameObjects
 
         public Plane(D2DPoint pos, D2DColor color) : base(pos)
         {
+            this.RenderOffset = 1.5f;
             IsNetObject = true;
             _planeColor = color;
 
@@ -187,7 +186,7 @@ namespace PolyPlane.GameObjects
 
             //_planeColor = D2DColor.Randomly();
 
-            this.Polygon = new RenderPoly(_poly, _renderOffset);
+            this.Polygon = new RenderPoly(_poly, this.RenderOffset);
 
             InitStuff();
 
@@ -198,6 +197,8 @@ namespace PolyPlane.GameObjects
 
         public Plane(D2DPoint pos, bool isAI = false) : base(pos)
         {
+            this.RenderOffset = 1.5f;
+
             if (isAI)
             {
                 _aiBehavior = new FighterPlaneAI(this);
@@ -225,7 +226,7 @@ namespace PolyPlane.GameObjects
 
             _planeColor = D2DColor.Randomly();
 
-            this.Polygon = new RenderPoly(_poly, _renderOffset);
+            this.Polygon = new RenderPoly(_poly, this.RenderOffset);
 
             InitStuff();
 
@@ -240,8 +241,8 @@ namespace PolyPlane.GameObjects
             if (_isAIPlane)
                 defRate = 20f;
 
-            AddWing(new Wing(this, 10f * _renderOffset, 0.5f, 40f, 10000f, new D2DPoint(1.5f, 1f), defRate));
-            AddWing(new Wing(this, 5f * _renderOffset, 0.2f, 50f, 5000f, new D2DPoint(-35f, 1f), defRate), true);
+            AddWing(new Wing(this, 10f * this.RenderOffset, 0.5f, 40f, 10000f, new D2DPoint(1.5f, 1f), defRate));
+            AddWing(new Wing(this, 5f * this.RenderOffset, 0.2f, 50f, 5000f, new D2DPoint(-35f, 1f), defRate), true);
 
             var skipFrames = IsNetObject ? 1 : World.PHYSICS_STEPS;
 
@@ -280,7 +281,7 @@ namespace PolyPlane.GameObjects
         {
             this.Hits = Math.Clamp(this.Hits, 0, MAX_HITS);
 
-            base.Update(dt, viewport, renderScale * _renderOffset);
+            base.Update(dt, viewport, renderScale * this.RenderOffset);
             this.Radar?.Update(dt, viewport, renderScale, skipFrames: true);
 
             if (World.IsNetGame && !World.IsServer)
@@ -296,9 +297,9 @@ namespace PolyPlane.GameObjects
             if (!this.FiringBurst)
                 _bulletRegenTimer.Update(dt);
 
-            _flamePos.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
-            _gunPosition.Update(dt, viewport, renderScale * _renderOffset, skipFrames: true);
-            _cockpitPosition.Update(dt, viewport, renderScale * _renderOffset);
+            _flamePos.Update(dt, viewport, renderScale * this.RenderOffset, skipFrames: true);
+            _gunPosition.Update(dt, viewport, renderScale * this.RenderOffset, skipFrames: true);
+            _cockpitPosition.Update(dt, viewport, renderScale * this.RenderOffset);
 
             var wingForce = D2DPoint.Zero;
             var wingTorque = 0f;
@@ -395,8 +396,8 @@ namespace PolyPlane.GameObjects
             _gForce = gforce;
 
             // TODO:  This is so messy...
-            Wings.ForEach(w => w.Update(dt, viewport, renderScale * _renderOffset));
-            _centerOfThrust.Update(dt, viewport, renderScale * _renderOffset);
+            Wings.ForEach(w => w.Update(dt, viewport, renderScale * this.RenderOffset));
+            _centerOfThrust.Update(dt, viewport, renderScale * this.RenderOffset);
             _thrustAmt.Update(dt);
 
             CheckForFlip();
@@ -409,7 +410,7 @@ namespace PolyPlane.GameObjects
             FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
             _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
 
-            FlamePoly.Update(_flamePos.Position, flameAngle, renderScale * _renderOffset);
+            FlamePoly.Update(_flamePos.Position, flameAngle, renderScale * this.RenderOffset);
 
             _flipTimer.Update(dt);
             _isLockOntoTimeout.Update(dt);
@@ -618,11 +619,11 @@ namespace PolyPlane.GameObjects
         /// </summary>
         public void SyncFixtures()
         {
-            _flamePos.Update(0f, World.ViewPortSize, World.RenderScale * _renderOffset);
-            _flames.ForEach(f => f.Update(0f, World.ViewPortSize, World.RenderScale * _renderOffset));
-            _centerOfThrust.Update(0f, World.ViewPortSize, World.RenderScale * _renderOffset);
-            _cockpitPosition.Update(0f, World.ViewPortSize, World.RenderScale * _renderOffset);
-            _gunPosition.Update(0f, World.ViewPortSize, World.RenderScale * _renderOffset);
+            _flamePos.Update(0f, World.ViewPortSize, World.RenderScale * this.RenderOffset);
+            _flames.ForEach(f => f.Update(0f, World.ViewPortSize, World.RenderScale * this.RenderOffset));
+            _centerOfThrust.Update(0f, World.ViewPortSize, World.RenderScale * this.RenderOffset);
+            _cockpitPosition.Update(0f, World.ViewPortSize, World.RenderScale * this.RenderOffset);
+            _gunPosition.Update(0f, World.ViewPortSize, World.RenderScale * this.RenderOffset);
         }
 
         public void SetOnFire()
