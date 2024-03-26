@@ -23,54 +23,47 @@ namespace PolyPlane.Net
 
             switch (payloadPacket.Type)
             {
-                case PacketTypes.PlaneUpdate:
+                case PacketTypes.PlaneUpdate or PacketTypes.GetOtherPlanes:
                     obj = _serializer.Deserialize<PlaneListPacket>(payloadPacket.Payload);
-
                     break;
+
                 case PacketTypes.MissileUpdate:
                     obj = _serializer.Deserialize<MissileListPacket>(payloadPacket.Payload);
-
                     break;
+
                 case PacketTypes.Impact:
                     obj = _serializer.Deserialize<ImpactPacket>(payloadPacket.Payload);
-
                     break;
+
                 case PacketTypes.NewPlayer:
                     obj = _serializer.Deserialize<PlanePacket>(payloadPacket.Payload);
-
                     break;
+
                 case PacketTypes.NewBullet:
                     obj = _serializer.Deserialize<BulletPacket>(payloadPacket.Payload);
-
                     break;
+
                 case PacketTypes.NewMissile:
                     obj = _serializer.Deserialize<MissilePacket>(payloadPacket.Payload);
-
                     break;
+
                 case PacketTypes.NewDecoy:
                     obj = _serializer.Deserialize<DecoyPacket>(payloadPacket.Payload);
-
                     break;
+
                 case PacketTypes.SetID or PacketTypes.GetNextID or PacketTypes.PlayerDisconnect or PacketTypes.PlayerReset:
                     obj = _serializer.Deserialize<BasicPacket>(payloadPacket.Payload);
-
                     break;
+
                 case PacketTypes.ChatMessage:
-
-                    break;
-                case PacketTypes.GetOtherPlanes:
-                    obj = _serializer.Deserialize<PlaneListPacket>(payloadPacket.Payload);
-
                     break;
 
                 case PacketTypes.ExpiredObjects:
                     obj = _serializer.Deserialize<BasicListPacket>(payloadPacket.Payload);
-
                     break;
 
                 case PacketTypes.ServerSync:
                     obj = _serializer.Deserialize<SyncPacket>(payloadPacket.Payload);
-
                     break;
             }
 

@@ -69,7 +69,6 @@ namespace PolyPlane.GameObjects
 
         private RenderPoly FlamePoly;
         private D2DColor _flameFillColor = new D2DColor(0.6f, D2DColor.Yellow);
-        private float _renderOffset = -0.2f;
 
         private GuidanceType GuidanceType = GuidanceType.Advanced;
         private GuidanceBase _guidance;
@@ -92,6 +91,7 @@ namespace PolyPlane.GameObjects
 
         public GuidedMissile(GameObject player, D2DPoint position, D2DPoint velocity, float rotation)
         {
+            this.RenderOffset = 0.8f;
             this.PlayerID = player.ID.PlayerID;
             this.IsNetObject = true;
             _useControlSurfaces = true;
@@ -118,6 +118,7 @@ namespace PolyPlane.GameObjects
 
         public GuidedMissile(GameObject player, GameObject target, GuidanceType guidance = GuidanceType.Advanced, bool useControlSurfaces = false, bool useThrustVectoring = false) : base(player.Position, player.Velocity, player.Rotation, player, target)
         {
+            this.RenderOffset = 0.8f;
             this.PlayerID = player.ID.PlayerID;
 
             _currentFuel = FUEL;
@@ -156,7 +157,7 @@ namespace PolyPlane.GameObjects
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
-            base.Update(dt, viewport, renderScale + _renderOffset);
+            base.Update(dt, viewport, renderScale * this.RenderOffset);
 
             _age += dt;
 
@@ -168,19 +169,19 @@ namespace PolyPlane.GameObjects
 
             if (_useControlSurfaces)
             {
-                _tailWing.Update(dt, viewport, renderScale + _renderOffset);
-                _noseWing.Update(dt, viewport, renderScale + _renderOffset);
-                _rocketBody.Update(dt, viewport, renderScale + _renderOffset);
+                _tailWing.Update(dt, viewport, renderScale * this.RenderOffset);
+                _noseWing.Update(dt, viewport, renderScale * this.RenderOffset);
+                _rocketBody.Update(dt, viewport, renderScale * this.RenderOffset);
             }
             else
             {
-                _rocketBody.Update(dt, viewport, renderScale + _renderOffset);
+                _rocketBody.Update(dt, viewport, renderScale * this.RenderOffset);
             }
 
-            _centerOfThrust.Update(dt, viewport, renderScale + _renderOffset);
-            _warheadCenterMass.Update(dt, viewport, renderScale + _renderOffset);
-            _motorCenterMass.Update(dt, viewport, renderScale + _renderOffset);
-            _flamePos.Update(dt, viewport, renderScale + _renderOffset);
+            _centerOfThrust.Update(dt, viewport, renderScale * this.RenderOffset);
+            _warheadCenterMass.Update(dt, viewport, renderScale * this.RenderOffset);
+            _motorCenterMass.Update(dt, viewport, renderScale * this.RenderOffset);
+            _flamePos.Update(dt, viewport, renderScale * this.RenderOffset);
 
             float flameAngle = 0f;
 
@@ -202,7 +203,7 @@ namespace PolyPlane.GameObjects
             FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
             _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
 
-            FlamePoly.Update(_flamePos.Position, flameAngle, renderScale + _renderOffset);
+            FlamePoly.Update(_flamePos.Position, flameAngle, renderScale * this.RenderOffset);
 
             if (this.IsNetObject)
                 return;
@@ -289,7 +290,7 @@ namespace PolyPlane.GameObjects
                 _currentFuel -= BURN_RATE * dt;
             }
 
-            //base.Update(dt, viewport, renderScale + _renderOffset);
+            //base.Update(dt, viewport, renderScale * this.RenderOffset);
 
 
             if (FUEL <= 0f && this.Velocity.Length() <= 5f)
@@ -310,19 +311,19 @@ namespace PolyPlane.GameObjects
 
             if (_useControlSurfaces)
             {
-                _tailWing.Update(dt, viewport, renderScale + _renderOffset);
-                _noseWing.Update(dt, viewport, renderScale + _renderOffset);
-                _rocketBody.Update(dt, viewport, renderScale + _renderOffset);
+                _tailWing.Update(dt, viewport, renderScale * this.RenderOffset);
+                _noseWing.Update(dt, viewport, renderScale * this.RenderOffset);
+                _rocketBody.Update(dt, viewport, renderScale * this.RenderOffset);
             }
             else
             {
-                _rocketBody.Update(dt, viewport, renderScale + _renderOffset);
+                _rocketBody.Update(dt, viewport, renderScale * this.RenderOffset);
             }
 
-            _centerOfThrust.Update(dt, viewport, renderScale + _renderOffset);
-            _warheadCenterMass.Update(dt, viewport, renderScale + _renderOffset);
-            _motorCenterMass.Update(dt, viewport, renderScale + _renderOffset);
-            _flamePos.Update(dt, viewport, renderScale + _renderOffset);
+            _centerOfThrust.Update(dt, viewport, renderScale * this.RenderOffset);
+            _warheadCenterMass.Update(dt, viewport, renderScale * this.RenderOffset);
+            _motorCenterMass.Update(dt, viewport, renderScale * this.RenderOffset);
+            _flamePos.Update(dt, viewport, renderScale * this.RenderOffset);
 
             float flameAngle = 0f;
 
@@ -343,8 +344,8 @@ namespace PolyPlane.GameObjects
             FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
             _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
 
-            FlamePoly.Update(_flamePos.Position, flameAngle, renderScale + _renderOffset);
-            this.Polygon.Update(this.Position, this.Rotation, renderScale + _renderOffset);
+            FlamePoly.Update(_flamePos.Position, flameAngle, renderScale * this.RenderOffset);
+            this.Polygon.Update(this.Position, this.Rotation, renderScale * this.RenderOffset);
 
             if (FUEL <= 0f && this.Velocity.Length() <= 5f)
                 this.IsExpired = true;

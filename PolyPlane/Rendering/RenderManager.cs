@@ -11,7 +11,6 @@ namespace PolyPlane.Rendering
         private D2DDevice _device;
         private D2DGraphics _gfx;
         private RenderContext _ctx;
-        private D2DLayer _missileOverlayLayer;
 
         private readonly D2DColor _hudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
         private readonly D2DPoint _infoPosition = new D2DPoint(20, 20);
@@ -66,7 +65,6 @@ namespace PolyPlane.Rendering
             _gfx = new D2DGraphics(_device);
             _gfx.Antialias = true;
             _device.Resize();
-            _missileOverlayLayer = _device.CreateLayer();
             _ctx = new RenderContext(_gfx, _device);
 
             World.UpdateViewport(_renderTarget.Size);
@@ -165,7 +163,6 @@ namespace PolyPlane.Rendering
         public void Dispose()
         {
             _device?.Dispose();
-            _missileOverlayLayer?.Dispose();
         }
 
         public void NewHudMessage(string message, D2DColor color)
@@ -680,9 +677,6 @@ namespace PolyPlane.Rendering
 
             var rect = new D2DRect(0, 0, this.Width, this.Height);
 
-            int hits = 0;
-            int miss = 0;
-
             for (float x = 0 - (spacing * 3f); x < this.Width + roundPos.X; x += spacing)
             {
                 for (float y = 0 - (spacing * 3f); y < this.Height + roundPos.Y; y += spacing)
@@ -691,12 +685,7 @@ namespace PolyPlane.Rendering
                     pos -= roundPos;
 
                     if (rect.Contains(pos))
-                    {
                         ctx.Gfx.FillRectangle(new D2DRect(pos, d2dSz), color);
-                        hits++;
-                    }
-                    else
-                        miss++;
                 }
             }
         }
@@ -708,6 +697,37 @@ namespace PolyPlane.Rendering
             ctx.FillEllipse(new D2DEllipse(pos, new D2DSize(World.AirDensity * 10f, World.AirDensity * 10f)), D2DColor.SkyBlue);
 
             ctx.DrawLine(pos, pos + (World.Wind * 2f), D2DColor.White, 2f);
+        }
+
+        private void DrawNearObj(D2DGraphics gfx, Plane plane)
+        {
+            //_targets.ForEach(t =>
+            //{
+            //    if (t.IsObjNear(plane))
+            //        gfx.FillEllipseSimple(t.Position, 5f, D2DColor.Red);
+
+            //});
+
+            _objs.Bullets.ForEach(b =>
+            {
+                if (b.IsObjNear(plane))
+                    gfx.FillEllipseSimple(b.Position, 5f, D2DColor.Red);
+
+            });
+
+            _objs.Missiles.ForEach(m =>
+            {
+                if (m.IsObjNear(plane))
+                    gfx.FillEllipseSimple(m.Position, 5f, D2DColor.Red);
+
+            });
+
+            _objs.Decoys.ForEach(d =>
+            {
+                if (d.IsObjNear(plane))
+                    gfx.FillEllipseSimple(d.Position, 5f, D2DColor.Red);
+
+            });
         }
 
 

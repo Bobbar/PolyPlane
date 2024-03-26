@@ -2,7 +2,7 @@
 {
     public class HistoricalBuffer<T>
     {
-        private const int MAX_HIST = 500;
+        private const int MAX_HIST = 300;//500;
         private List<BufferEntry<T>> _history = new List<BufferEntry<T>>();
         public Func<T, T, double, T> Interpolate;
 
@@ -37,7 +37,7 @@
 
                 if (entry1.UpdatedAt <= timestamp && entry2.UpdatedAt >= timestamp)
                 {
-                    var pctElapsed = (now - entry1.UpdatedAt) / (entry2.UpdatedAt - entry1.UpdatedAt);
+                    var pctElapsed = (timestamp - entry1.UpdatedAt) / (entry2.UpdatedAt - entry1.UpdatedAt);
                     return Interpolate(entry1.State, entry2.State, pctElapsed);
                 }
             }

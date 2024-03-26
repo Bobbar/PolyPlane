@@ -9,6 +9,7 @@ namespace PolyPlane.GameObjects
         public bool IsNetObject { get; set; } = false;
         public double ClientCreateTime = 0;
         public double LagAmount = 0;
+        public float RenderOffset = 1f;
         public GameID ID { get; set; } = new GameID();
 
         public int PlayerID
@@ -339,7 +340,6 @@ namespace PolyPlane.GameObjects
 
         public bool CollidesWithNet(GameObjectPoly obj, out D2DPoint pos, out GameObjectPacket? histState, double frameTime, float dt = -1f)
         {
-
             if (!this.IsObjNear(obj) || obj.Owner == this)
             {
                 pos = D2DPoint.Zero;
@@ -354,7 +354,7 @@ namespace PolyPlane.GameObjects
                 // Copy the polygon and translate it to the historical position/rotation.
                 var histPoly = new D2DPoint[this.Polygon.SourcePoly.Length];
                 Array.Copy(this.Polygon.SourcePoly, histPoly, this.Polygon.SourcePoly.Length);
-                Helpers.ApplyTranslation(histPoly, histPoly, histPos.Rotation, histPos.Position.ToD2DPoint(), 1f * 1.5f);
+                Helpers.ApplyTranslation(histPoly, histPoly, histPos.Rotation, histPos.Position.ToD2DPoint(), World.RenderScale * this.RenderOffset);
 
                 var poly1 = obj.Polygon.Poly;
 

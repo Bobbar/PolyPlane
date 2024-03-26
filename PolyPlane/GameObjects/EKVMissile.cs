@@ -37,10 +37,9 @@ namespace PolyPlane.GameObjects
         private D2DColor _flameFillColor = new D2DColor(0.6f, D2DColor.Yellow);
         private D2DColor _fillColor = new D2DColor(0.4f, D2DColor.Gray);
 
-        private float _renderOffset = 0.8f;//1f;
-
         public EKVMissile(GameObject player, GameObject target) : base(player.Position, player.Velocity, 0f, player, target)
         {
+            this.RenderOffset = 1.8f;
             this.Target = target;
             this.Polygon = new RenderPoly(_missilePoly);
             this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(-4f, 0));
@@ -51,7 +50,7 @@ namespace PolyPlane.GameObjects
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
-            base.Update(dt, viewport, renderScale + _renderOffset);
+            base.Update(dt, viewport, renderScale * this.RenderOffset);
 
             var accel = D2DPoint.Zero;
 

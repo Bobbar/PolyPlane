@@ -72,16 +72,8 @@ namespace PolyPlane.Net
 
         private void RequestOtherPlanes()
         {
-            Debug.WriteLine($"ReqPlanes");
-
-            Packet reqPacket = default(Packet);
-
             var netPacket = new BasicPacket(PacketTypes.GetOtherPlanes, new GameObjects.GameID(-1, (int)Peer.ID));
-            var data = IO.ObjectToByteArray(netPacket);
-
-            reqPacket.Create(data, PacketFlags.Reliable);
-
-            Peer.Send(CHANNEL_ID, ref reqPacket);
+            SendPacket(netPacket);
         }
 
         public void SendPlayerDisconnectPacket(uint playerID)
