@@ -85,6 +85,14 @@ namespace PolyPlane.Net
             Host.Flush();
         }
 
+        public override void Dispose()
+        {
+            Peer.Disconnect(0);
+
+            Thread.Sleep(30);
+
+            base.Dispose();
+        }
 
 
     }

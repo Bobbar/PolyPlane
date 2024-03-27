@@ -290,7 +290,9 @@ namespace PolyPlane.Net
             //obj.Position = this.Position.ToD2DPoint();
             //obj.Velocity = this.Velocity.ToD2DPoint();
             //obj.Rotation = this.Rotation;
-            obj.IsExpired = this.IsExpired;
+
+            if (!obj.IsExpired) // Prevent new packets from un-expiring objects.
+                obj.IsExpired = this.IsExpired;
         }
 
 

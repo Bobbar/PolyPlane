@@ -19,6 +19,8 @@ namespace PolyPlane.Net
         private long _frame = 0;
         private bool _netIDIsSet = false;
 
+        public event EventHandler<int> PlayerIDReceived;
+
         public NetEventManager(GameObjectManager objectManager, NetPlayHost host, Plane playerPlane)
         {
             Objs = objectManager;
@@ -142,6 +144,8 @@ namespace PolyPlane.Net
                         Objs.ChangeObjID(PlayerPlane, new GameID(packet.ID.PlayerID, PlayerPlane.ID.ObjectID));
                         var netPacket = new PlanePacket(PlayerPlane, PacketTypes.NewPlayer);
                         Host.EnqueuePacket(netPacket);
+
+                        PlayerIDReceived?.Invoke(this, packet.ID.PlayerID);
                     }
 
                     break;
@@ -478,7 +482,6 @@ namespace PolyPlane.Net
                     obj.IsExpired = true;
             }
         }
-
 
         private void AddExplosion(D2DPoint pos)
         {

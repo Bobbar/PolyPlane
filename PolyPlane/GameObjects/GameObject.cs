@@ -160,7 +160,7 @@ namespace PolyPlane.GameObjects
 
             if (IsNetObject)
             {
-                if (World.InterpOn)
+                if (!World.IsServer && World.InterpOn)
                 {
                     InterpBuffer.GetInterpolatedState(nowMs);
                     return;
@@ -181,7 +181,7 @@ namespace PolyPlane.GameObjects
 
         public virtual void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
         {
-            if (World.InterpOn)
+            if (!World.IsServer && World.InterpOn)
             {
                 var newState = new GameObjectPacket(this);
                 newState.Position = position.ToNetPoint();

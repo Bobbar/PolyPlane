@@ -150,7 +150,7 @@ namespace PolyPlane.Net
         }
 
 
-        public void Dispose()
+        public virtual void Dispose()
         {
             Host.Flush();
             _runLoop = false;
