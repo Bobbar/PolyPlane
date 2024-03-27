@@ -220,6 +220,7 @@ namespace PolyPlane.GameObjects
 
                 if (plane.IsExpired)
                 {
+                    _expiredObjs.Add(plane);
                     Planes.RemoveAt(i);
                     _objLookup.Remove(plane.ID.GetHashCode());
                 }

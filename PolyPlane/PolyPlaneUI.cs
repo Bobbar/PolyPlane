@@ -80,6 +80,7 @@ namespace PolyPlane
         private NetEventManager _netMan;
         private CollisionManager _collisions;
         private RenderManager _render;
+        private FPSLimiter _fpsLimiter = new FPSLimiter();
 
         private Random _rnd => Helpers.Rnd;
 
@@ -107,8 +108,50 @@ namespace PolyPlane
             StartGameThread();
         }
 
+        private void DoNetGameSetup()
+        {
+            using (var config = new ClientServerConfigForm())
+            {
+                if (config.ShowDialog() == DialogResult.OK)
+                {
+                    ENet.Library.Initialize();
+                    World.IsNetGame = true;
+
+                    World.IsServer = false;
+
+                    InitPlane(config.IsAI);
+
+                    _client = new ClientNetHost(config.Port, config.IPAddress);
+                    _netMan = new NetEventManager(_objs, _client, _playerPlane);
+                    _collisions = new CollisionManager(_objs, _netMan);
+
+                    _netMan.PlayerIDReceived += NetMan_PlayerIDReceived;
+
+                    _client.Start();
+
+                    //this.Text += " - CLIENT";
+                }
+            }
+
+            ResumeRender();
+        }
+
+        private void NetMan_PlayerIDReceived(object? sender, int e)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(() => NetMan_PlayerIDReceived(sender, e));
+            }
+            else
+            {
+                this.Text += $" - CLIENT - ID: {e}";
+            }
+        }
+
         private void PolyPlaneUI_Disposed(object? sender, EventArgs e)
         {
+            _client.SendPlayerDisconnectPacket((uint)_playerPlane.PlayerID);
+
             StopRender();
             _gameThread.Join(100);
 
@@ -120,6 +163,7 @@ namespace PolyPlane
             _render.Dispose();
 
             _missileOverlayLayer?.Dispose();
+            _fpsLimiter?.Dispose();
         }
 
         protected override void OnHandleCreated(EventArgs e)
@@ -230,8 +274,6 @@ namespace PolyPlane
 
             };
 
-
-
             aiPlane.FireBulletCallback = b =>
             {
                 _objs.AddBullet(b);
@@ -267,32 +309,7 @@ namespace PolyPlane
             _render = new RenderManager(this, _objs, _netMan);
         }
 
-        private void DoNetGameSetup()
-        {
-            using (var config = new ClientServerConfigForm())
-            {
-                if (config.ShowDialog() == DialogResult.OK)
-                {
-                    ENet.Library.Initialize();
-                    World.IsNetGame = true;
-
-                    World.IsServer = false;
-
-                    InitPlane(config.IsAI);
-
-                    _client = new ClientNetHost(config.Port, config.IPAddress);
-                    _netMan = new NetEventManager(_objs, _client, _playerPlane);
-                    _collisions = new CollisionManager(_objs, _netMan);
-
-                    _client.Start();
-
-                    this.Text += " - CLIENT";
-                }
-            }
-
-            ResumeRender();
-        }
-
+       
         private void ServerUI_Disposed(object? sender, EventArgs e)
         {
             this.Dispose();
@@ -340,9 +357,7 @@ namespace PolyPlane
             _objs.SyncAll();
             ProcessObjQueue();
 
-            if (World.IsNetGame)
-                _netMan.DoNetEvents();
-
+         
             Plane viewPlane = GetViewPlane();
             World.ViewID = viewPlane.ID;
 
@@ -410,11 +425,16 @@ namespace PolyPlane
 
             _timer.Restart();
 
-            _render.RenderFrame(viewPlane);
+            if (!_skipRender)
+                _render.RenderFrame(viewPlane);
+            else
+                _fpsLimiter.Wait(60);
 
             _timer.Stop();
             _renderTime = _timer.Elapsed;
 
+            if (World.IsNetGame)
+                _netMan.DoNetEvents();
 
             _objs.PruneExpired();
 
@@ -449,7 +469,7 @@ namespace PolyPlane
                 return _playerPlane;
         }
 
-       
+
 
         private void ProcessObjQueue()
         {
@@ -503,7 +523,7 @@ namespace PolyPlane
             {
                 var plane = firing[i];
 
-                if (plane.ID.Equals(_playerPlane.ID))
+                if (!plane.IsAI && plane.ID.Equals(_playerPlane.ID))
                     continue;
 
                 plane.FireBullet(p => AddExplosion(p));

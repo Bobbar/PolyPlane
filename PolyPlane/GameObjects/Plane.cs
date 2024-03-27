@@ -890,6 +890,7 @@ namespace PolyPlane.GameObjects
             NumMissiles = MAX_MISSILES;
             IsDamaged = false;
             HasCrashed = false;
+            ThrustOn = true;
             _expireTimeout.Stop();
             _expireTimeout.Reset();
             _flipTimer.Restart();

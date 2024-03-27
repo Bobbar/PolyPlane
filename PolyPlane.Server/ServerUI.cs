@@ -32,8 +32,7 @@ namespace PolyPlane.Server
         private TimeSpan _netTime = new TimeSpan();
         private long _lastRenderTime = 0;
         private float _renderFPS = 0;
-        private WaitableTimer _waitTimer = new WaitableTimer();
-        private Stopwatch _fpsTimer = new Stopwatch();
+        private FPSLimiter _fpsLimiter = new FPSLimiter();
         private long _frame = 0;
         private double _packetDelay = 0f;
         private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
@@ -96,6 +95,7 @@ namespace PolyPlane.Server
         {
             _server?.Stop();
             _server?.Dispose();
+            _fpsLimiter?.Dispose();
 
 
             ENet.Library.Deinitialize();
@@ -182,8 +182,10 @@ namespace PolyPlane.Server
             if (_render != null)
                 _render.RenderFrame(viewPlane);
 
-            _netMan.DoNetEvents();
+          
             _objs.PruneExpired();
+            _netMan.DoNetEvents();
+
 
             var fpsNow = DateTime.UtcNow.Ticks;
             var fps = TimeSpan.TicksPerSecond / (float)(fpsNow - _lastRenderTime);
@@ -209,50 +211,7 @@ namespace PolyPlane.Server
                 this.SpawnIAPlane = false;
             }
 
-            FPSLimiter(60);
-        }
-
-        private void FPSLimiter(int targetFPS)
-        {
-            long ticksPerSecond = TimeSpan.TicksPerSecond;
-            long targetFrameTime = ticksPerSecond / targetFPS;
-            long waitTime = 0;
-
-            if (_fpsTimer.IsRunning)
-            {
-                long elapTime = _fpsTimer.Elapsed.Ticks;
-
-                if (elapTime < targetFrameTime)
-                {
-                    // # High accuracy, low CPU usage. #
-                    waitTime = (long)(targetFrameTime - elapTime);
-                    if (waitTime > 0)
-                    {
-                        _waitTimer.Wait(waitTime, false);
-                    }
-
-                    // # Most accurate, highest CPU usage. #
-                    //while (_fpsTimer.Elapsed.Ticks < targetFrameTime && !_loopTask.IsCompleted)
-                    //{
-                    //	Thread.SpinWait(10000);
-                    //}
-                    //elapTime = _fpsTimer.Elapsed.Ticks;
-
-                    // # Less accurate, less CPU usage. #
-                    //waitTime = (long)(targetFrameTime - elapTime);
-                    //if (waitTime > 0)
-                    //{
-                    //	Thread.Sleep(new TimeSpan(waitTime));
-                    //}
-                }
-
-                _fpsTimer.Restart();
-            }
-            else
-            {
-                _fpsTimer.Start();
-                return;
-            }
+            _fpsLimiter.Wait(60);
         }
 
         private Plane GetViewPlane()
