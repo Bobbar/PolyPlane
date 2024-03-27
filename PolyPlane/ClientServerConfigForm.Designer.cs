@@ -35,6 +35,8 @@
             StartClientButton = new Button();
             SinglePlayerButton = new Button();
             AIPlaneCheckBox = new CheckBox();
+            ServerListBox = new ListBox();
+            label3 = new Label();
             SuspendLayout();
             // 
             // PortTextBox
@@ -89,6 +91,7 @@
             SinglePlayerButton.TabIndex = 6;
             SinglePlayerButton.Text = "Solo";
             SinglePlayerButton.UseVisualStyleBackColor = true;
+            SinglePlayerButton.Visible = false;
             SinglePlayerButton.Click += SinglePlayerButton_Click;
             // 
             // AIPlaneCheckBox
@@ -102,11 +105,32 @@
             AIPlaneCheckBox.UseVisualStyleBackColor = true;
             AIPlaneCheckBox.CheckedChanged += AIPlaneCheckBox_CheckedChanged;
             // 
+            // ServerListBox
+            // 
+            ServerListBox.FormattingEnabled = true;
+            ServerListBox.ItemHeight = 15;
+            ServerListBox.Location = new Point(125, 235);
+            ServerListBox.Name = "ServerListBox";
+            ServerListBox.Size = new Size(295, 154);
+            ServerListBox.TabIndex = 8;
+            ServerListBox.SelectedValueChanged += ServerListBox_SelectedValueChanged;
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(125, 217);
+            label3.Name = "label3";
+            label3.Size = new Size(47, 15);
+            label3.TabIndex = 9;
+            label3.Text = "Servers:";
+            // 
             // ClientServerConfigForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(555, 221);
+            ClientSize = new Size(555, 419);
+            Controls.Add(label3);
+            Controls.Add(ServerListBox);
             Controls.Add(AIPlaneCheckBox);
             Controls.Add(SinglePlayerButton);
             Controls.Add(StartClientButton);
@@ -114,6 +138,7 @@
             Controls.Add(label1);
             Controls.Add(IPAddressTextBox);
             Controls.Add(PortTextBox);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
             Name = "ClientServerConfigForm";
             Text = "ClientServerConfigForm";
             Load += ClientServerConfigForm_Load;
@@ -130,5 +155,7 @@
         private Button StartClientButton;
         private Button SinglePlayerButton;
         private CheckBox AIPlaneCheckBox;
+        private ListBox ServerListBox;
+        private Label label3;
     }
 }

@@ -140,6 +140,25 @@ namespace PolyPlane.Net
         }
     }
 
+
+    public class DiscoveryPacket : NetPacket
+    {
+        public string IP;
+
+        public DiscoveryPacket() : base()
+        { 
+            Type = PacketTypes.Discovery;
+        }
+
+        public DiscoveryPacket(string ip) : base()
+        {
+            Type = PacketTypes.Discovery;
+            IP = ip;
+        }
+
+    }
+
+
     public class SyncPacket : NetPacket
     {
         public double ServerTime;
