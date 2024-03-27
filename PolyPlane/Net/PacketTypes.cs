@@ -16,7 +16,8 @@
         ExpiredObjects,
         PlayerDisconnect,
         PlayerReset,
-        ServerSync
+        ServerSync,
+        Discovery
 
     }
 }

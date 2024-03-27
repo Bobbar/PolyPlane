@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects;
+using System.Net;
 using System.Numerics;
 using unvell.D2DLib;
 
@@ -328,6 +329,21 @@ namespace PolyPlane
                 return false;
 
             return false;
+        }
+
+        public static string GetLocalIP()
+        {
+            var addys = Dns.GetHostAddresses(Dns.GetHostName());
+
+            foreach (var ip in addys)
+            {
+                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && ip.IsIPv6LinkLocal == false)
+                {
+                    return ip.ToString();
+                }
+            }
+
+            return null;
         }
 
     }

@@ -97,7 +97,7 @@ namespace PolyPlane
 
         public static D2DPoint Gravity = new D2DPoint(0, 9.8f);
         public static long CurrentObjId = 0;
-        public static int CurrentPlayerId = 0;
+        public static int CurrentPlayerId = 1000;
 
         public static GameID ViewID;
         public static double ServerTimeOffset = 0;

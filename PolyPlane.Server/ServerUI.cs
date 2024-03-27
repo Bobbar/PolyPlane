@@ -1,8 +1,10 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Manager;
 using PolyPlane.Net;
+using PolyPlane.Net.Discovery;
 using PolyPlane.Rendering;
 using System.Diagnostics;
+using System.Net;
 using unvell.D2DLib;
 
 
@@ -19,6 +21,7 @@ namespace PolyPlane.Server
         private GameTimer _burstTimer = new GameTimer(0.25f, true);
         private GameTimer _decoyTimer = new GameTimer(0.25f, true);
         private GameTimer _playerBurstTimer = new GameTimer(0.1f, true);
+        private GameTimer _discoveryTimer = new GameTimer(5f, true);
 
         private ManualResetEventSlim _pauseRenderEvent = new ManualResetEventSlim(true);
         private ManualResetEventSlim _stopRenderEvent = new ManualResetEventSlim(true);
@@ -39,8 +42,10 @@ namespace PolyPlane.Server
 
         private bool _clearObjs = false;
 
+        private string _address;
         private GameObjectManager _objs = new GameObjectManager();
         private NetEventManager _netMan;
+        private DiscoveryServer _discovery;
         private CollisionManager _collisions;
         private NetPlayHost _server;
         private RenderManager _render = null;
@@ -57,6 +62,14 @@ namespace PolyPlane.Server
         {
             InitializeComponent();
 
+            var localIP = Helpers.GetLocalIP();
+
+            if (localIP != null)
+            {
+                _address = localIP;
+                AddressTextBox.Text = localIP;
+            }
+
             this.Disposed += ServerUI_Disposed; ;
 
             _updateTimer.Tick += UpdateTimer_Tick;
@@ -65,6 +78,8 @@ namespace PolyPlane.Server
 
             _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
+
+            _discoveryTimer.TriggerCallback = () => _discovery?.BroadcastServerInfo(new DiscoveryPacket(_address));
 
             _multiThreadNum = Environment.ProcessorCount - 2;
         }
@@ -76,11 +91,17 @@ namespace PolyPlane.Server
                 World.IsNetGame = true;
                 World.IsServer = true;
                 var addy = AddressTextBox.Text.Trim();
+                _address = addy;
+
                 ENet.Library.Initialize();
 
                 _server = new Net.ServerNetHost(port, addy);
                 _netMan = new NetEventManager(_objs, _server);
+                _discovery = new DiscoveryServer();
+                _discovery.Start();
                 _collisions = new CollisionManager(_objs, _netMan);
+
+                _discoveryTimer.Start();
 
                 StartGameThread();
                 _updateTimer.Start();
@@ -97,9 +118,9 @@ namespace PolyPlane.Server
             _server?.Dispose();
             _fpsLimiter?.Dispose();
 
-
+            _discovery?.Stop();
+            _discovery?.Dispose();
             ENet.Library.Deinitialize();
-
         }
 
         private void StartGameThread()
@@ -186,6 +207,7 @@ namespace PolyPlane.Server
             _objs.PruneExpired();
             _netMan.DoNetEvents();
 
+            _discoveryTimer.Update(World.DT);
 
             var fpsNow = DateTime.UtcNow.Ticks;
             var fps = TimeSpan.TicksPerSecond / (float)(fpsNow - _lastRenderTime);

@@ -108,8 +108,10 @@ namespace PolyPlane
             StartGameThread();
         }
 
-        private void DoNetGameSetup()
+        private bool DoNetGameSetup()
         {
+            bool result = false;
+
             using (var config = new ClientServerConfigForm())
             {
                 if (config.ShowDialog() == DialogResult.OK)
@@ -121,19 +123,23 @@ namespace PolyPlane
 
                     InitPlane(config.IsAI);
 
-                    _client = new ClientNetHost(config.Port, config.IPAddress);
+                    _client = new ClientNetHost(config.Port, config.ServerIPAddress);
                     _netMan = new NetEventManager(_objs, _client, _playerPlane);
                     _collisions = new CollisionManager(_objs, _netMan);
 
                     _netMan.PlayerIDReceived += NetMan_PlayerIDReceived;
 
                     _client.Start();
-
+                    result = true;
                     //this.Text += " - CLIENT";
+
+                    ResumeRender();
                 }
             }
 
-            ResumeRender();
+            
+
+            return result;
         }
 
         private void NetMan_PlayerIDReceived(object? sender, int e)
@@ -150,17 +156,17 @@ namespace PolyPlane
 
         private void PolyPlaneUI_Disposed(object? sender, EventArgs e)
         {
-            _client.SendPlayerDisconnectPacket((uint)_playerPlane.PlayerID);
+            _client?.SendPlayerDisconnectPacket((uint)_playerPlane.PlayerID);
 
             StopRender();
-            _gameThread.Join(100);
+            _gameThread?.Join(100);
 
             _client?.Stop();
             _client?.Dispose();
 
             ENet.Library.Deinitialize();
 
-            _render.Dispose();
+            _render?.Dispose();
 
             _missileOverlayLayer?.Dispose();
             _fpsLimiter?.Dispose();

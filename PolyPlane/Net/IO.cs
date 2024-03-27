@@ -65,6 +65,10 @@ namespace PolyPlane.Net
                 case PacketTypes.ServerSync:
                     obj = _serializer.Deserialize<SyncPacket>(payloadPacket.Payload);
                     break;
+
+                case PacketTypes.Discovery:
+                    obj = _serializer.Deserialize<DiscoveryPacket>(payloadPacket.Payload);
+                    break;
             }
 
             return obj;
