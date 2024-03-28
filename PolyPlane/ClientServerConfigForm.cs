@@ -1,6 +1,5 @@
 ﻿using PolyPlane.Net;
 using PolyPlane.Net.Discovery;
-using System.Net;
 
 namespace PolyPlane
 {
@@ -26,26 +25,33 @@ namespace PolyPlane
 
             if (!string.IsNullOrEmpty(ClientIPAddress))
             {
-                _discovery = new DiscoveryServer(ClientIPAddress);
+                _discovery = new DiscoveryServer();
                 _discovery.NewDiscoveryReceived += Discovery_NewDiscoveryReceived;
-                _discovery.Start();
+                _discovery.StartListen();
             }
         }
 
         private void Discovery_NewDiscoveryReceived(object? sender, Net.DiscoveryPacket e)
         {
-            if (this.InvokeRequired)
+            try
             {
-                this.Invoke(() => Discovery_NewDiscoveryReceived(sender, e));
-            }
-            else
-            {
-                if (!_servers.Any(s => s.IP == e.IP))
+                if (this.InvokeRequired)
                 {
-                    _servers.Add(e);
+                    this.Invoke(() => Discovery_NewDiscoveryReceived(sender, e));
                 }
+                else
+                {
+                    if (!_servers.Any(s => s.IP == e.IP))
+                    {
+                        _servers.Add(e);
+                    }
 
-                UpdateListBox();
+                    UpdateListBox();
+                }
+            }
+            catch
+            {
+
             }
         }
 
@@ -75,15 +81,6 @@ namespace PolyPlane
             ServerListBox.Refresh();
         }
 
-        private void StartServerButton_Click(object sender, EventArgs e)
-        {
-            IsServer = true;
-            ServerIPAddress = IPAddressTextBox.Text.Trim();
-            Port = ushort.Parse(PortTextBox.Text.Trim());
-
-            DialogResult = DialogResult.OK;
-        }
-
         private void StartClientButton_Click(object sender, EventArgs e)
         {
             ServerIPAddress = IPAddressTextBox.Text.Trim();
@@ -102,25 +99,18 @@ namespace PolyPlane
             IsAI = AIPlaneCheckBox.Checked;
         }
 
-        private void RefreshServersButton_Click(object sender, EventArgs e)
-        {
-            _servers.Clear();
-            //ServerListBox.DisplayMember = $"{nameof(DiscoveryPacket.IP)}";
-            //ServerListBox.ValueMember = $"{nameof(DiscoveryPacket.IP)}";
-            ServerListBox.DataSource = _servers;
-            ServerListBox.DisplayMember = $"{nameof(DiscoveryPacket.IP)}";
-            ServerListBox.ValueMember = $"{nameof(DiscoveryPacket.IP)}";
-            ServerListBox.Refresh();
-
-            //_discovery?.QueryForServers(ClientIPAddress);
-        }
-
         private void ServerListBox_SelectedValueChanged(object sender, EventArgs e)
         {
             var selected = ServerListBox.SelectedItem as string;
 
             if (selected != null)
                 IPAddressTextBox.Text = selected;
+        }
+
+        private void ClientServerConfigForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            _discovery?.StopListen();
+            _discovery?.Dispose();
         }
     }
 }

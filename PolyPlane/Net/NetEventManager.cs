@@ -258,7 +258,7 @@ namespace PolyPlane.Net
 
         private void SendExpiredObjects()
         {
-            var expiredObjPacket = new Net.BasicListPacket();
+            var expiredObjPacket = new Net.BasicListPacket(PacketTypes.ExpiredObjects);
             Objs.ExpiredObjects().ForEach(o => expiredObjPacket.Packets.Add(new BasicPacket(PacketTypes.ExpiredObjects, o.ID)));
 
             if (expiredObjPacket.Packets.Count == 0)

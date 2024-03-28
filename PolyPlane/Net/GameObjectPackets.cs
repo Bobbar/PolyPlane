@@ -73,7 +73,7 @@ namespace PolyPlane.Net
         }
     }
 
-    public abstract partial class NetPacket
+    public abstract class NetPacket
     {
         public PacketTypes Type;
         public GameID ID;
@@ -84,59 +84,19 @@ namespace PolyPlane.Net
             FrameTime = World.CurrentTime();
         }
 
+        public NetPacket(PacketTypes type) : this()
+        {
+            Type = type;
+        }
+
         public NetPacket(GameID id) : this()
         {
             ID = id;
-            //ID = iD;
         }
 
-        public NetPacket(PacketTypes type, GameID id) : this()
+        public NetPacket(PacketTypes type, GameID id) : this(type)
         {
-            Type = type;
             ID = id;
-
-            //ID = iD;
-        }
-
-
-        //public NetPacket(long objectID) : this()
-        //{
-        //    ID = new GameID(-1, objectID);
-        //    //ID = iD;
-        //}
-
-        //public NetPacket(int playerID, long objectID) : this()
-        //{
-        //    ID = new GameID(playerID, objectID);
-        //    //ID = iD;
-        //}
-
-
-        public NetPacket(PacketTypes type, long objectID) : this()
-        {
-
-            Type = type;
-            ID = new GameID(-1, objectID);
-
-            //ID = iD;
-        }
-
-        public NetPacket(PacketTypes type, int playerID, long objectID) : this()
-        {
-            Type = type;
-            ID = new GameID(playerID, objectID);
-
-            //ID = iD;
-        }
-
-
-        public NetPacket(PacketTypes type, GameID id, long frameTime) : this()
-        {
-            Type = type;
-            ID = id;
-            FrameTime = frameTime;
-
-            //ID = iD;
         }
     }
 
@@ -146,7 +106,7 @@ namespace PolyPlane.Net
         public string IP;
 
         public DiscoveryPacket() : base()
-        { 
+        {
             Type = PacketTypes.Discovery;
         }
 
@@ -176,9 +136,9 @@ namespace PolyPlane.Net
     }
 
 
-    public partial class BasicPacket : NetPacket
+    public class BasicPacket : NetPacket
     {
-        public BasicPacket() { }
+        public BasicPacket() : base() { }
 
         public BasicPacket(PacketTypes type, GameID id)
         {
@@ -191,64 +151,48 @@ namespace PolyPlane.Net
     {
         public List<BasicPacket> Packets = new List<BasicPacket>();
 
-        public BasicListPacket()
+        public BasicListPacket() : base() { }
+
+        public BasicListPacket(PacketTypes type) : base(type)
         {
-            this.Type = PacketTypes.ExpiredObjects;
         }
-
-        public BasicListPacket(GameID objectId)
-        {
-            this.Type = PacketTypes.ExpiredObjects;
-            this.ID = objectId;
-        }
-
-
     }
 
 
-    public partial class PlaneListPacket : NetPacket
+    public class PlaneListPacket : NetPacket
     {
         public List<PlanePacket> Planes = new List<PlanePacket>();
 
-        public PlaneListPacket()
+        public PlaneListPacket() : base()
         {
             Type = PacketTypes.PlaneUpdate;
         }
 
-        public PlaneListPacket(List<PlanePacket> planes)
+        public PlaneListPacket(List<PlanePacket> planes) : base()
         {
             Type = PacketTypes.PlaneUpdate;
             Planes = planes;
-        }
-
-        public PlaneListPacket(List<PlanePacket> planes, PacketTypes type, GameID id, long frameTime)
-        {
-            Type = PacketTypes.PlaneUpdate;
-            Planes = planes;
-            ID = id;
-            FrameTime = frameTime;
         }
     }
 
 
-    public partial class MissileListPacket : NetPacket
+    public class MissileListPacket : NetPacket
     {
         public List<MissilePacket> Missiles = new List<MissilePacket>();
 
-
-        public MissileListPacket()
+        public MissileListPacket() : base()
         {
             Type = PacketTypes.MissileUpdate;
         }
 
-        public MissileListPacket(List<MissilePacket> missiles)
+        public MissileListPacket(List<MissilePacket> missiles) : base()
         {
             Type = PacketTypes.MissileUpdate;
             Missiles = missiles;
         }
     }
 
-    public partial class GameObjectPacket : NetPacket
+    public class GameObjectPacket : NetPacket
     {
         public GameID OwnerID;
         public NetPoint Position;
@@ -290,17 +234,6 @@ namespace PolyPlane.Net
 
         }
 
-
-        public GameObjectPacket(GameID ownerID, NetPoint position, NetPoint velocity, float rotation, bool isExpired)
-        {
-            OwnerID = ownerID;
-            Position = position;
-            Velocity = velocity;
-            Rotation = rotation;
-            IsExpired = isExpired;
-
-        }
-
         public virtual void SyncObj(GameObject obj)
         {
             if (!this.ID.Equals(obj.ID))
@@ -313,17 +246,10 @@ namespace PolyPlane.Net
             if (!obj.IsExpired) // Prevent new packets from un-expiring objects.
                 obj.IsExpired = this.IsExpired;
         }
-
-
-        public override string ToString()
-        {
-            return $"({Position.X}, {Position.Y})";
-        }
     }
 
 
-
-    public partial class PlanePacket : GameObjectPacket
+    public class PlanePacket : GameObjectPacket
     {
         public float ThrustAmt;
         public float Deflection;
@@ -372,10 +298,9 @@ namespace PolyPlane.Net
     }
 
 
-    public partial class BulletPacket : GameObjectPacket
+    public class BulletPacket : GameObjectPacket
     {
-
-        public BulletPacket()
+        public BulletPacket() : base()
         {
             Type = PacketTypes.NewBullet;
         }
@@ -385,21 +310,6 @@ namespace PolyPlane.Net
             Type = PacketTypes.NewBullet;
         }
 
-        public BulletPacket(GameObject obj, PacketTypes type) : base(obj, type)
-        {
-            Type = PacketTypes.NewBullet;
-        }
-
-        public BulletPacket(GameID ownerID, NetPoint position, NetPoint velocity, float rotation, bool isExpired)
-        {
-            Type = PacketTypes.NewBullet;
-            OwnerID = ownerID;
-            Position = position;
-            Velocity = velocity;
-            Rotation = rotation;
-            IsExpired = isExpired;
-        }
-
         public virtual void SyncObj(GameObject obj)
         {
             base.SyncObj(obj);
@@ -407,13 +317,13 @@ namespace PolyPlane.Net
     }
 
 
-    public partial class MissilePacket : GameObjectPacket
+    public class MissilePacket : GameObjectPacket
     {
         public float Deflection;
         public float CurrentFuel;
         public GameID TargetID;
 
-        public MissilePacket()
+        public MissilePacket() : base()
         {
             Type = PacketTypes.NewMissile;
         }
@@ -428,19 +338,6 @@ namespace PolyPlane.Net
             this.TargetID = obj.Target.ID;
         }
 
-        public MissilePacket(GameID ownerID, NetPoint position, NetPoint velocity, float rotation, bool isExpired, float deflection, float currentFuel, GameID targetID)
-        {
-            OwnerID = ownerID;
-            Position = position;
-            Velocity = velocity;
-            Rotation = rotation;
-            IsExpired = isExpired;
-
-            Deflection = deflection;
-            CurrentFuel = currentFuel;
-            TargetID = targetID;
-        }
-
         public virtual void SyncObj(GuidedMissile obj)
         {
             base.SyncObj(obj);
@@ -450,7 +347,7 @@ namespace PolyPlane.Net
         }
     }
 
-    public partial class ImpactPacket : GameObjectPacket
+    public class ImpactPacket : GameObjectPacket
     {
         public GameID ImpactorID;
         public NetPoint ImpactPoint;
@@ -458,16 +355,8 @@ namespace PolyPlane.Net
         public bool WasHeadshot;
         public bool WasMissile;
 
-        public ImpactPacket()
+        public ImpactPacket() : base()
         {
-            Type = PacketTypes.Impact;
-        }
-
-        public ImpactPacket(GameObject targetObj, GameID impactorID, D2DPoint point) : base(targetObj)
-        {
-            ImpactorID = impactorID;
-            //ID = targetId;
-            ImpactPoint = point.ToNetPoint();
             Type = PacketTypes.Impact;
         }
 
@@ -481,22 +370,9 @@ namespace PolyPlane.Net
             WasHeadshot = wasHeadshot;
             WasMissile = wasMissile;
         }
-
-        //public ImpactPacket(GameID ownerID, NetPoint position, NetPoint velocity, float rotation, bool isExpired, GameID impactorID, NetPoint impactPoint)
-        //{
-        //    OwnerID = ownerID;
-        //    Position = position;
-        //    Velocity = velocity;
-        //    Rotation = rotation;
-        //    IsExpired = isExpired;
-
-        //    ImpactorID = impactorID;
-        //    ImpactPoint = impactPoint;
-        //}
     }
 
-
-    public partial class DecoyPacket : GameObjectPacket
+    public class DecoyPacket : GameObjectPacket
     {
         public DecoyPacket()
         {
@@ -507,17 +383,5 @@ namespace PolyPlane.Net
         {
             Type = PacketTypes.NewDecoy;
         }
-
-        public DecoyPacket(GameID ownerID, NetPoint position, NetPoint velocity, float rotation, bool isExpired)
-        {
-            Type = PacketTypes.NewDecoy;
-            OwnerID = ownerID;
-            Position = position;
-            Velocity = velocity;
-            Rotation = rotation;
-            IsExpired = isExpired;
-
-        }
-
     }
 }

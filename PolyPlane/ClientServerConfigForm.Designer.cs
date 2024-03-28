@@ -141,6 +141,7 @@
             FormBorderStyle = FormBorderStyle.FixedDialog;
             Name = "ClientServerConfigForm";
             Text = "ClientServerConfigForm";
+            FormClosing += ClientServerConfigForm_FormClosing;
             Load += ClientServerConfigForm_Load;
             ResumeLayout(false);
             PerformLayout();

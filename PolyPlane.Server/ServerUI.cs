@@ -4,7 +4,6 @@ using PolyPlane.Net;
 using PolyPlane.Net.Discovery;
 using PolyPlane.Rendering;
 using System.Diagnostics;
-using System.Net;
 using unvell.D2DLib;
 
 
@@ -79,6 +78,7 @@ namespace PolyPlane.Server
             _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
 
+            // Periodically broadcast discovery packets.
             _discoveryTimer.TriggerCallback = () => _discovery?.BroadcastServerInfo(new DiscoveryPacket(_address));
 
             _multiThreadNum = Environment.ProcessorCount - 2;
@@ -98,7 +98,6 @@ namespace PolyPlane.Server
                 _server = new Net.ServerNetHost(port, addy);
                 _netMan = new NetEventManager(_objs, _server);
                 _discovery = new DiscoveryServer();
-                _discovery.Start();
                 _collisions = new CollisionManager(_objs, _netMan);
 
                 _discoveryTimer.Start();
@@ -118,7 +117,7 @@ namespace PolyPlane.Server
             _server?.Dispose();
             _fpsLimiter?.Dispose();
 
-            _discovery?.Stop();
+            _discovery?.StopListen();
             _discovery?.Dispose();
             ENet.Library.Deinitialize();
         }
@@ -155,7 +154,7 @@ namespace PolyPlane.Server
             ProcessObjQueue();
 
             Plane viewPlane = GetViewPlane();
-           
+
 
             // Update/advance objects.
             if (!_isPaused)
@@ -203,7 +202,7 @@ namespace PolyPlane.Server
             if (_render != null)
                 _render.RenderFrame(viewPlane);
 
-          
+
             _objs.PruneExpired();
             _netMan.DoNetEvents();
 
@@ -475,7 +474,7 @@ namespace PolyPlane.Server
             infoText += $"DT: {Math.Round(World.DT, 4)}\n";
             infoText += $"Interp: {World.InterpOn.ToString()}\n";
 
-         
+
             return infoText;
         }
 
