@@ -1,5 +1,4 @@
 ﻿using ENet;
-using System.Diagnostics;
 
 namespace PolyPlane.Net
 {

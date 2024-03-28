@@ -38,6 +38,7 @@
             Name = "PolyPlaneUI";
             Text = "PolyPlane - 2D Flight Physics";
             FormClosing += PolyPlaneUI_FormClosing;
+            Shown += PolyPlaneUI_Shown;
             KeyDown += PolyPlaneUI_KeyDown;
             KeyPress += PolyPlaneUI_KeyPress;
             KeyUp += PolyPlaneUI_KeyUp;

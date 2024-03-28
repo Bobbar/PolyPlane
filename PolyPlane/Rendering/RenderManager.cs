@@ -40,7 +40,7 @@ namespace PolyPlane.Rendering
         private FloatAnimation _screenShakeY;
         private FloatAnimation _screenFlash;
 
-        
+
 
         private const float VIEW_SCALE = 4f;
 
