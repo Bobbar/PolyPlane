@@ -104,6 +104,8 @@ namespace PolyPlane.Net
     public class DiscoveryPacket : NetPacket
     {
         public string IP;
+        public string Name;
+        public int Port;
 
         public DiscoveryPacket() : base()
         {
@@ -115,6 +117,22 @@ namespace PolyPlane.Net
             Type = PacketTypes.Discovery;
             IP = ip;
         }
+
+        public DiscoveryPacket(string ip, string name) : base()
+        {
+            Type = PacketTypes.Discovery;
+            IP = ip;
+            Name = name;
+        }
+
+        public DiscoveryPacket(string ip, string name, int port) : base()
+        {
+            Type = PacketTypes.Discovery;
+            IP = ip;
+            Name = name;
+            Port = port;
+        }
+
 
     }
 

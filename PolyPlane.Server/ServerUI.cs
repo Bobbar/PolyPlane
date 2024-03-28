@@ -1,4 +1,5 @@
-﻿using PolyPlane.GameObjects;
+﻿using PolyPlane.AI_Behavior;
+using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Manager;
 using PolyPlane.Net;
 using PolyPlane.Net.Discovery;
@@ -13,7 +14,11 @@ namespace PolyPlane.Server
     {
         public string InfoText;
         public bool PauseRequested = false;
-        public bool SpawnIAPlane = false;
+        private bool _spawnAIPlane = false;
+        private bool _spawnRandomAIPlane = false;
+        private bool _clearAIPlanes = false;
+
+        private AIPersonality _aiPersonality = AIPersonality.Normal;
         private Thread _gameThread;
         private int _multiThreadNum = 4;
 
@@ -42,6 +47,8 @@ namespace PolyPlane.Server
         private bool _clearObjs = false;
 
         private string _address;
+        private string _serverName;
+        private int _port;
         private GameObjectManager _objs = new GameObjectManager();
         private NetEventManager _netMan;
         private DiscoveryServer _discovery;
@@ -79,23 +86,30 @@ namespace PolyPlane.Server
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
 
             // Periodically broadcast discovery packets.
-            _discoveryTimer.TriggerCallback = () => _discovery?.BroadcastServerInfo(new DiscoveryPacket(_address));
+            _discoveryTimer.TriggerCallback = () => _discovery?.BroadcastServerInfo(new DiscoveryPacket(_address, _serverName, _port));
 
             _multiThreadNum = Environment.ProcessorCount - 2;
+
+
+            AITypeComboBox.Items.Clear();
+            AITypeComboBox.DataSource = Enum.GetValues<AIPersonality>();
+
         }
 
         private void StartServerButton_Click(object sender, EventArgs e)
         {
             if (ushort.TryParse(PortTextBox.Text.Trim(), out ushort port))
             {
+                _port = port;
                 World.IsNetGame = true;
                 World.IsServer = true;
                 var addy = AddressTextBox.Text.Trim();
                 _address = addy;
+                _serverName = ServerNameTextBox.Text.Trim();
 
                 ENet.Library.Initialize();
 
-                _server = new Net.ServerNetHost(port, addy);
+                _server = new ServerNetHost(port, addy);
                 _netMan = new NetEventManager(_objs, _server);
                 _discovery = new DiscoveryServer();
                 _collisions = new CollisionManager(_objs, _netMan);
@@ -108,6 +122,7 @@ namespace PolyPlane.Server
                 AddressTextBox.Enabled = false;
                 PortTextBox.Enabled = false;
                 StartServerButton.Enabled = false;
+                ServerNameTextBox.Enabled = false;
             }
         }
 
@@ -226,10 +241,23 @@ namespace PolyPlane.Server
                 this.PauseRequested = false;
             }
 
-            if (this.SpawnIAPlane)
+            if (this._spawnAIPlane)
+            {
+                SpawnAIPlane(_aiPersonality);
+                this._spawnAIPlane = false;
+            }
+
+
+            if (this._spawnRandomAIPlane)
             {
                 SpawnAIPlane();
-                this.SpawnIAPlane = false;
+                this._spawnRandomAIPlane = false;
+            }
+
+            if (_clearAIPlanes)
+            {
+                _clearAIPlanes = false;
+                RemoveAIPlanes();
             }
 
             _fpsLimiter.Wait(60);
@@ -416,7 +444,36 @@ namespace PolyPlane.Server
             var range = new D2DPoint(-40000, 40000);
             var pos = new D2DPoint(Helpers.Rnd.NextFloat(range.X, range.Y), Helpers.Rnd.NextFloat(-4000f, -17000f));
 
-            var aiPlane = new Plane(pos, isAI: true);
+            var aiPlane = new Plane(pos, Helpers.RandomEnum<AIPersonality>());
+            aiPlane.PlayerID = World.GetNextPlayerId();
+            aiPlane.Radar = new Radar(aiPlane, D2DColor.GreenYellow, _objs.Missiles, _objs.Planes);
+
+            aiPlane.Radar.SkipFrames = World.PHYSICS_STEPS;
+
+            aiPlane.FireMissileCallback = (m) =>
+            {
+                _objs.EnqueueMissile(m);
+                _server.SendNewMissilePacket(m);
+            };
+
+
+            aiPlane.FireBulletCallback = b =>
+            {
+                _objs.AddBullet(b);
+                _server.SendNewBulletPacket(b);
+            };
+
+            aiPlane.Velocity = new D2DPoint(400f, 0f);
+
+            return aiPlane;
+        }
+
+        private Plane GetAIPlane(AIPersonality personality)
+        {
+            var range = new D2DPoint(-40000, 40000);
+            var pos = new D2DPoint(Helpers.Rnd.NextFloat(range.X, range.Y), Helpers.Rnd.NextFloat(-4000f, -17000f));
+
+            var aiPlane = new Plane(pos, personality);
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, D2DColor.GreenYellow, _objs.Missiles, _objs.Planes);
 
@@ -453,6 +510,23 @@ namespace PolyPlane.Server
 
             _objs.AddPlane(aiPlane);
             _netMan.ServerSendOtherPlanes();
+        }
+
+        private void SpawnAIPlane(AIPersonality personality)
+        {
+            var aiPlane = GetAIPlane(personality);
+
+            _objs.AddPlane(aiPlane);
+            _netMan.ServerSendOtherPlanes();
+        }
+
+        private void RemoveAIPlanes()
+        {
+            foreach (var plane in _objs.Planes)
+            {
+                if (plane.IsAI)
+                    plane.IsExpired = true;
+            }
         }
 
         private string GetInfo()
@@ -576,7 +650,14 @@ namespace PolyPlane.Server
 
         private void SpawnAIPlaneButton_Click(object sender, EventArgs e)
         {
-            SpawnIAPlane = true;
+            var selected = AITypeComboBox.SelectedItem;
+
+            if (selected != null)
+            {
+                var personality = (AIPersonality)selected;
+                _aiPersonality = personality;
+                _spawnAIPlane = true;
+            }
         }
 
         private void InterpCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -587,8 +668,16 @@ namespace PolyPlane.Server
         private void ShowViewPortButton_Click(object sender, EventArgs e)
         {
             InitViewPort();
+        }
 
+        private void SpawnRandomAIButton_Click(object sender, EventArgs e)
+        {
+            _spawnRandomAIPlane = true;
+        }
 
+        private void RemoveAIPlanesButton_Click(object sender, EventArgs e)
+        {
+            _clearAIPlanes = true;
         }
     }
 }

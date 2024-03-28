@@ -212,6 +212,15 @@ namespace PolyPlane
             return vals[Rnd.Next(len)];
         }
 
+        public static T RandomEnum<T>() where T : struct, IConvertible
+        {
+            var t = typeof(T);
+            var len = Enum.GetNames(t).Length;
+            var vals = Enum.GetValues(t) as T[];
+
+            return vals[Rnd.Next(len)];
+        }
+
         public static D2DPoint ApplyTranslation(D2DPoint src, float rotation, D2DPoint translation, float scale = 1f)
         {
             var mat = Matrix3x2.CreateScale(scale);

@@ -40,6 +40,7 @@ namespace PolyPlane.GameObjects.Manager
                 for (int m = 0; m < _objs.Missiles.Count; m++)
                 {
                     var missile = _objs.Missiles[m] as Missile;
+                    var missileOwner = missile.Owner as Plane;
 
                     if (missile.Owner.ID.Equals(plane.ID))
                         continue;
@@ -48,8 +49,13 @@ namespace PolyPlane.GameObjects.Manager
                         continue;
 
                     var missileRTT = _netMan.Host.GetPlayerRTT(missile.PlayerID);
+                    var missileLagComp = (planeRTT + missile.LagAmount + missileRTT + LAG_COMP_OFFSET);
 
-                    if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - (planeRTT + missile.LagAmount + missileRTT + LAG_COMP_OFFSET)))
+                    // Don't compensate as much for AI planes?
+                    if (missileOwner.IsAI)
+                        missileLagComp = planeRTT;
+
+                    if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - missileLagComp))
                     {
                         if (histState != null)
                         {
