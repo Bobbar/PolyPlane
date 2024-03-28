@@ -38,11 +38,17 @@
             label2 = new Label();
             StartServerButton = new Button();
             ShowViewPortButton = new Button();
+            ServerNameTextBox = new TextBox();
+            label3 = new Label();
+            RemoveAIPlanesButton = new Button();
+            AITypeComboBox = new ComboBox();
+            label4 = new Label();
+            SpawnRandomAIButton = new Button();
             SuspendLayout();
             // 
             // PauseButton
             // 
-            PauseButton.Location = new Point(371, 327);
+            PauseButton.Location = new Point(364, 256);
             PauseButton.Name = "PauseButton";
             PauseButton.Size = new Size(75, 23);
             PauseButton.TabIndex = 0;
@@ -52,7 +58,7 @@
             // 
             // SpawnAIPlaneButton
             // 
-            SpawnAIPlaneButton.Location = new Point(352, 356);
+            SpawnAIPlaneButton.Location = new Point(345, 285);
             SpawnAIPlaneButton.Name = "SpawnAIPlaneButton";
             SpawnAIPlaneButton.Size = new Size(117, 23);
             SpawnAIPlaneButton.TabIndex = 1;
@@ -75,12 +81,13 @@
             InterpCheckBox.AutoSize = true;
             InterpCheckBox.Checked = true;
             InterpCheckBox.CheckState = CheckState.Checked;
-            InterpCheckBox.Location = new Point(363, 287);
+            InterpCheckBox.Location = new Point(363, 231);
             InterpCheckBox.Name = "InterpCheckBox";
             InterpCheckBox.Size = new Size(76, 19);
             InterpCheckBox.TabIndex = 3;
             InterpCheckBox.Text = "Interp On";
             InterpCheckBox.UseVisualStyleBackColor = true;
+            InterpCheckBox.Visible = false;
             InterpCheckBox.CheckedChanged += InterpCheckBox_CheckedChanged;
             // 
             // AddressTextBox
@@ -119,7 +126,7 @@
             // 
             // StartServerButton
             // 
-            StartServerButton.Location = new Point(463, 129);
+            StartServerButton.Location = new Point(468, 151);
             StartServerButton.Name = "StartServerButton";
             StartServerButton.Size = new Size(75, 23);
             StartServerButton.TabIndex = 8;
@@ -129,7 +136,7 @@
             // 
             // ShowViewPortButton
             // 
-            ShowViewPortButton.Location = new Point(625, 327);
+            ShowViewPortButton.Location = new Point(672, 415);
             ShowViewPortButton.Name = "ShowViewPortButton";
             ShowViewPortButton.Size = new Size(116, 23);
             ShowViewPortButton.TabIndex = 9;
@@ -137,11 +144,71 @@
             ShowViewPortButton.UseVisualStyleBackColor = true;
             ShowViewPortButton.Click += ShowViewPortButton_Click;
             // 
+            // ServerNameTextBox
+            // 
+            ServerNameTextBox.Location = new Point(362, 113);
+            ServerNameTextBox.Name = "ServerNameTextBox";
+            ServerNameTextBox.Size = new Size(297, 23);
+            ServerNameTextBox.TabIndex = 10;
+            ServerNameTextBox.Text = "PolyPlane Server";
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(279, 116);
+            label3.Name = "label3";
+            label3.Size = new Size(77, 15);
+            label3.TabIndex = 11;
+            label3.Text = "Server Name:";
+            // 
+            // RemoveAIPlanesButton
+            // 
+            RemoveAIPlanesButton.Location = new Point(345, 386);
+            RemoveAIPlanesButton.Name = "RemoveAIPlanesButton";
+            RemoveAIPlanesButton.Size = new Size(117, 23);
+            RemoveAIPlanesButton.TabIndex = 12;
+            RemoveAIPlanesButton.Text = "Remove AI Planes";
+            RemoveAIPlanesButton.UseVisualStyleBackColor = true;
+            RemoveAIPlanesButton.Click += RemoveAIPlanesButton_Click;
+            // 
+            // AITypeComboBox
+            // 
+            AITypeComboBox.FormattingEnabled = true;
+            AITypeComboBox.Location = new Point(319, 314);
+            AITypeComboBox.Name = "AITypeComboBox";
+            AITypeComboBox.Size = new Size(174, 23);
+            AITypeComboBox.TabIndex = 13;
+            // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Location = new Point(231, 317);
+            label4.Name = "label4";
+            label4.Size = new Size(82, 15);
+            label4.TabIndex = 14;
+            label4.Text = "AI Personality:";
+            // 
+            // SpawnRandomAIButton
+            // 
+            SpawnRandomAIButton.Location = new Point(345, 357);
+            SpawnRandomAIButton.Name = "SpawnRandomAIButton";
+            SpawnRandomAIButton.Size = new Size(117, 23);
+            SpawnRandomAIButton.TabIndex = 15;
+            SpawnRandomAIButton.Text = "Spawn Random AI";
+            SpawnRandomAIButton.UseVisualStyleBackColor = true;
+            SpawnRandomAIButton.Click += SpawnRandomAIButton_Click;
+            // 
             // ServerUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(SpawnRandomAIButton);
+            Controls.Add(label4);
+            Controls.Add(AITypeComboBox);
+            Controls.Add(RemoveAIPlanesButton);
+            Controls.Add(label3);
+            Controls.Add(ServerNameTextBox);
             Controls.Add(ShowViewPortButton);
             Controls.Add(StartServerButton);
             Controls.Add(label2);
@@ -152,6 +219,7 @@
             Controls.Add(InfoLabel);
             Controls.Add(SpawnAIPlaneButton);
             Controls.Add(PauseButton);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
             Name = "ServerUI";
             Text = "ServerUI";
             ResumeLayout(false);
@@ -170,5 +238,11 @@
         private Label label2;
         private Button StartServerButton;
         private Button ShowViewPortButton;
+        private TextBox ServerNameTextBox;
+        private Label label3;
+        private Button RemoveAIPlanesButton;
+        private ComboBox AITypeComboBox;
+        private Label label4;
+        private Button SpawnRandomAIButton;
     }
 }

@@ -37,6 +37,7 @@
             AIPlaneCheckBox = new CheckBox();
             ServerListBox = new ListBox();
             label3 = new Label();
+            ErrorLabel = new Label();
             SuspendLayout();
             // 
             // PortTextBox
@@ -53,7 +54,7 @@
             IPAddressTextBox.Name = "IPAddressTextBox";
             IPAddressTextBox.Size = new Size(100, 23);
             IPAddressTextBox.TabIndex = 1;
-            IPAddressTextBox.Text = "127.0.0.1";
+            IPAddressTextBox.Text = "SELECT A SERVER";
             // 
             // label1
             // 
@@ -124,11 +125,23 @@
             label3.TabIndex = 9;
             label3.Text = "Servers:";
             // 
+            // ErrorLabel
+            // 
+            ErrorLabel.BackColor = Color.Silver;
+            ErrorLabel.ForeColor = Color.Maroon;
+            ErrorLabel.Location = new Point(0, 18);
+            ErrorLabel.Name = "ErrorLabel";
+            ErrorLabel.Size = new Size(556, 23);
+            ErrorLabel.TabIndex = 10;
+            ErrorLabel.TextAlign = ContentAlignment.MiddleCenter;
+            ErrorLabel.Visible = false;
+            // 
             // ClientServerConfigForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(555, 419);
+            Controls.Add(ErrorLabel);
             Controls.Add(label3);
             Controls.Add(ServerListBox);
             Controls.Add(AIPlaneCheckBox);
@@ -140,7 +153,7 @@
             Controls.Add(PortTextBox);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             Name = "ClientServerConfigForm";
-            Text = "ClientServerConfigForm";
+            Text = "Join Server";
             FormClosing += ClientServerConfigForm_FormClosing;
             Load += ClientServerConfigForm_Load;
             ResumeLayout(false);
@@ -158,5 +171,6 @@
         private CheckBox AIPlaneCheckBox;
         private ListBox ServerListBox;
         private Label label3;
+        private Label ErrorLabel;
     }
 }

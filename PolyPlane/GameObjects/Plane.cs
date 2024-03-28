@@ -165,73 +165,47 @@ namespace PolyPlane.GameObjects
             new D2DPoint(-8, -1),
         };
 
+        public Plane(D2DPoint pos) : base(pos)
+        {
+            this.RenderOffset = 1.5f;
+            Thrust = 2000f;
+            _thrustAmt.Target = 1f;
+            _planeColor = D2DColor.Randomly();
+
+            InitStuff();
+        }
+
+
+
         public Plane(D2DPoint pos, D2DColor color) : base(pos)
         {
             this.RenderOffset = 1.5f;
             IsNetObject = true;
             _planeColor = color;
-
+            _isAIPlane = false;
             AutoPilotOn = false;
             ThrustOn = true;
             _thrustAmt.Target = 1f;
 
-            _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
-
-            _damageFlashTimer.TriggerCallback = () => _damageFlash = !_damageFlash;
-            _damageCooldownTimeout.TriggerCallback = () =>
-            {
-                _damageFlashTimer.Stop();
-                _damageFlash = false;
-            };
-
-            //_planeColor = D2DColor.Randomly();
-
-            this.Polygon = new RenderPoly(_poly, this.RenderOffset);
 
             InitStuff();
-
-            _controlWing.Deflection = 2f;
-            _centerOfThrust = new FixturePoint(this, new D2DPoint(-33f, 0));
-
         }
 
-        public Plane(D2DPoint pos, bool isAI = false) : base(pos)
+        public Plane(D2DPoint pos, AIPersonality personality) : this(pos)
         {
             this.RenderOffset = 1.5f;
 
-            if (isAI)
-            {
-                _aiBehavior = new FighterPlaneAI(this);
-                _aiBehavior.SkipFrames = World.PHYSICS_STEPS;
+            _aiBehavior = new FighterPlaneAI(this, personality);
+            _aiBehavior.SkipFrames = World.PHYSICS_STEPS;
 
-                _isAIPlane = true;
+            _isAIPlane = true;
 
-                Thrust = 1000f;
-            }
-            else
-            {
-                Thrust = 2000f;
-            }
+            Thrust = 1000f;
 
             _thrustAmt.Target = 1f;
 
-            _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
-
-            _damageFlashTimer.TriggerCallback = () => _damageFlash = !_damageFlash;
-            _damageCooldownTimeout.TriggerCallback = () =>
-            {
-                _damageFlashTimer.Stop();
-                _damageFlash = false;
-            };
-
             _planeColor = D2DColor.Randomly();
 
-            this.Polygon = new RenderPoly(_poly, this.RenderOffset);
-
-            InitStuff();
-
-            _controlWing.Deflection = 2f;
-            _centerOfThrust = new FixturePoint(this, new D2DPoint(-33f, 0));
         }
 
         private void InitStuff()
@@ -241,8 +215,13 @@ namespace PolyPlane.GameObjects
             if (_isAIPlane)
                 defRate = 20f;
 
+            this.Polygon = new RenderPoly(_poly, this.RenderOffset);
+
             AddWing(new Wing(this, 10f * this.RenderOffset, 0.5f, 40f, 10000f, new D2DPoint(1.5f, 1f), defRate));
             AddWing(new Wing(this, 5f * this.RenderOffset, 0.2f, 50f, 5000f, new D2DPoint(-35f, 1f), defRate), true);
+
+            _controlWing.Deflection = 2f;
+            _centerOfThrust = new FixturePoint(this, new D2DPoint(-33f, 0));
 
             var skipFrames = IsNetObject ? 1 : World.PHYSICS_STEPS;
 
@@ -275,6 +254,17 @@ namespace PolyPlane.GameObjects
             };
 
             _bulletRegenTimer.Start();
+
+
+            _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
+
+            _damageFlashTimer.TriggerCallback = () => _damageFlash = !_damageFlash;
+            _damageCooldownTimeout.TriggerCallback = () =>
+            {
+                _damageFlashTimer.Stop();
+                _damageFlash = false;
+            };
+
         }
 
         public override void Update(float dt, D2DSize viewport, float renderScale)

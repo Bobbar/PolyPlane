@@ -29,6 +29,14 @@ namespace PolyPlane.AI_Behavior
         public FighterPlaneAI(Plane plane)
         {
             _plane = plane;
+            Personality = Helpers.RandomEnum(Personality);
+            InitStuff();
+        }
+
+        public FighterPlaneAI(Plane plane, AIPersonality personality)
+        {
+            _plane = plane;
+            Personality = personality;
             InitStuff();
         }
 
@@ -37,7 +45,6 @@ namespace PolyPlane.AI_Behavior
             Plane.ThrustOn = true;
             Plane.AutoPilotOn = true;
 
-            Personality = Helpers.RandomEnum(Personality);
 
             ConfigPersonality();
 

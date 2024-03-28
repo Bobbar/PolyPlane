@@ -1,5 +1,7 @@
 ﻿using PolyPlane.Net;
 using PolyPlane.Net.Discovery;
+using System.ComponentModel;
+using System.Net;
 
 namespace PolyPlane
 {
@@ -12,7 +14,7 @@ namespace PolyPlane
         public bool IsAI = false;
 
         private DiscoveryServer _discovery;
-        private List<DiscoveryPacket> _servers = new List<DiscoveryPacket>();
+        private BindingList<ServerEntry> _serverEntries = new BindingList<ServerEntry>();
 
         public ClientServerConfigForm()
         {
@@ -29,9 +31,14 @@ namespace PolyPlane
                 _discovery.NewDiscoveryReceived += Discovery_NewDiscoveryReceived;
                 _discovery.StartListen();
             }
+
+            _serverEntries.RaiseListChangedEvents = true;
+
+            ServerListBox.DataBindings.Clear();
+            ServerListBox.DataSource = _serverEntries;
         }
 
-        private void Discovery_NewDiscoveryReceived(object? sender, Net.DiscoveryPacket e)
+        private void Discovery_NewDiscoveryReceived(object? sender, DiscoveryPacket e)
         {
             try
             {
@@ -41,12 +48,8 @@ namespace PolyPlane
                 }
                 else
                 {
-                    if (!_servers.Any(s => s.IP == e.IP))
-                    {
-                        _servers.Add(e);
-                    }
-
-                    UpdateListBox();
+                    if (!_serverEntries.Any(s => (s.IP == e.IP && s.Port == e.Port)))
+                        _serverEntries.Add(new ServerEntry(e.IP, e.Port, e.Name));
                 }
             }
             catch
@@ -69,24 +72,20 @@ namespace PolyPlane
             }
         }
 
-        private void UpdateListBox()
-        {
-            ServerListBox.Items.Clear();
-
-            foreach (var server in _servers)
-            {
-                ServerListBox.Items.Add(server.IP);
-            }
-
-            ServerListBox.Refresh();
-        }
-
         private void StartClientButton_Click(object sender, EventArgs e)
         {
-            ServerIPAddress = IPAddressTextBox.Text.Trim();
-            Port = ushort.Parse(PortTextBox.Text.Trim());
+            if (IPAddress.TryParse(IPAddressTextBox.Text.Trim(), out IPAddress addy))
+            {
+                ServerIPAddress = addy.ToString();
+                Port = ushort.Parse(PortTextBox.Text.Trim());
 
-            DialogResult = DialogResult.OK;
+                DialogResult = DialogResult.OK;
+            }
+            else
+            {
+                ErrorLabel.Text = "Invalid IP address!";
+                ErrorLabel.Visible = true;
+            }
         }
 
         private void SinglePlayerButton_Click(object sender, EventArgs e)
@@ -101,16 +100,41 @@ namespace PolyPlane
 
         private void ServerListBox_SelectedValueChanged(object sender, EventArgs e)
         {
-            var selected = ServerListBox.SelectedItem as string;
+            ErrorLabel.Visible = false;
+
+            var selected = ServerListBox.SelectedItem;
 
             if (selected != null)
-                IPAddressTextBox.Text = selected;
+            {
+                var entry = selected as ServerEntry;
+                IPAddressTextBox.Text = entry.IP;
+                PortTextBox.Text = entry.Port.ToString();
+            }
         }
 
         private void ClientServerConfigForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             _discovery?.StopListen();
             _discovery?.Dispose();
+        }
+
+        private class ServerEntry
+        {
+            public string IP { get; set; }
+            public int Port;
+            public string Name { get; set; }
+
+            public ServerEntry(string iP, int port, string name)
+            {
+                IP = iP;
+                Port = port;
+                Name = name;
+            }
+
+            public override string ToString()
+            {
+                return $"{IP} - {Name}";
+            }
         }
     }
 }

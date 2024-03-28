@@ -1,3 +1,4 @@
+using PolyPlane.AI_Behavior;
 using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Manager;
 using PolyPlane.Net;
@@ -214,7 +215,7 @@ namespace PolyPlane
         {
             var pos = new D2DPoint(_rnd.NextFloat(-(World.ViewPortSize.width * 4f), World.ViewPortSize.width * 4f), _rnd.NextFloat(-4000f, -17000f));
 
-            var aiPlane = new Plane(pos, isAI: true);
+            var aiPlane = new Plane(pos, Helpers.RandomEnum<AIPersonality>());
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, _hudColor, _objs.Missiles, _objs.Planes);
 
