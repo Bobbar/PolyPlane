@@ -101,7 +101,8 @@ namespace PolyPlane
                         _netMan.PlayerIDReceived += NetMan_PlayerIDReceived;
 
                         _client.Start();
-
+                        
+                        InitGfx();
                         StartGameThread();
                         ResumeRender();
 
@@ -117,6 +118,8 @@ namespace PolyPlane
                         _collisions.ImpactEvent += HandleNewImpact;
 
                         InitPlane();
+
+                        InitGfx();
                         StartGameThread();
                         ResumeRender();
 
@@ -1014,12 +1017,11 @@ namespace PolyPlane
 
         private void PolyPlaneUI_Shown(object sender, EventArgs e)
         {
-            InitGfx();
-
             if (!DoNetGameSetup())
             {
                 this.Close();
             }
+
         }
     }
 }

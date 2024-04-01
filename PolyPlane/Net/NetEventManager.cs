@@ -223,6 +223,11 @@ namespace PolyPlane.Net
             {
                 foreach (var plane in Objs.Planes)
                 {
+                    // Don't send updates for human planes.
+                    // Those packets are already re-broadcast by the net host.
+                    if (!plane.IsAI)
+                        continue;
+
                     var planePacket = new Net.PlanePacket(plane);
                     newPlanesPacket.Planes.Add(planePacket);
                 }
@@ -243,7 +248,13 @@ namespace PolyPlane.Net
 
             if (IsServer)
             {
-                Objs.Missiles.ForEach(m => newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile)));
+                Objs.Missiles.ForEach(m =>
+                {
+                    // Don't send updates for net missiles.
+                    // (Already re-broadcast by the net host.)
+                    if (!m.IsNetObject)
+                        newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile));
+                });
             }
             else
             {
@@ -388,7 +399,7 @@ namespace PolyPlane.Net
                     if (!IsServer)
                     {
                         //if (packet.DoesDamage)
-                            ImpactEvent?.Invoke(this, new ImpactEvent(target, impactor, packet.DoesDamage));
+                        ImpactEvent?.Invoke(this, new ImpactEvent(target, impactor, packet.DoesDamage));
 
                         AddExplosion(impactPoint);
                     }
