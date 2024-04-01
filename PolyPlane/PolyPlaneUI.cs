@@ -73,7 +73,6 @@ namespace PolyPlane
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
             _playerBurstTimer.TriggerCallback = () => _playerPlane.FireBullet(p => AddExplosion(p));
 
-
             _multiThreadNum = Environment.ProcessorCount - 2;
         }
 
@@ -83,30 +82,81 @@ namespace PolyPlane
 
             using (var config = new ClientServerConfigForm())
             {
-                if (config.ShowDialog() == DialogResult.OK)
+                switch (config.ShowDialog())
                 {
-                    ENet.Library.Initialize();
-                    World.IsNetGame = true;
+                    case DialogResult.OK:
+                        // Net game.
+                        ENet.Library.Initialize();
 
-                    World.IsServer = false;
+                        World.IsNetGame = true;
+                        World.IsServer = false;
 
-                    InitPlane(config.IsAI);
+                        InitPlane(config.IsAI);
 
-                    _client = new ClientNetHost(config.Port, config.ServerIPAddress);
-                    _netMan = new NetEventManager(_objs, _client, _playerPlane);
-                    _collisions = new CollisionManager(_objs, _netMan);
+                        _client = new ClientNetHost(config.Port, config.ServerIPAddress);
+                        _netMan = new NetEventManager(_objs, _client, _playerPlane);
+                        _collisions = new CollisionManager(_objs, _netMan);
 
-                    _netMan.PlayerIDReceived += NetMan_PlayerIDReceived;
+                        _netMan.ImpactEvent += HandleNewImpact;
+                        _netMan.PlayerIDReceived += NetMan_PlayerIDReceived;
 
-                    _client.Start();
-                    result = true;
-                    //this.Text += " - CLIENT";
+                        _client.Start();
 
-                    ResumeRender();
+                        StartGameThread();
+                        ResumeRender();
+
+                        result = true;
+                        break;
+
+                    case DialogResult.Cancel:
+                        // Solo game.
+                        World.IsNetGame = false;
+                        World.IsServer = false;
+
+                        _collisions = new CollisionManager(_objs);
+                        _collisions.ImpactEvent += HandleNewImpact;
+
+                        InitPlane();
+                        StartGameThread();
+                        ResumeRender();
+
+                        result = true;
+
+                        break;
+
+                    case DialogResult.Abort:
+                        // Aborted.
+                        result = false;
+                        break;
                 }
             }
 
             return result;
+        }
+
+        private void HandleNewImpact(object? sender, ImpactEvent e)
+        {
+            if (this.Disposing) return;
+
+            if (this.InvokeRequired)
+                this.Invoke(() => HandleNewImpact(sender, e));
+            else
+            {
+                var viewPlane = GetViewPlane();
+
+                if (viewPlane != null)
+                {
+                    if (e.Target.ID.Equals(viewPlane.ID))
+                    {
+                        _render.DoScreenFlash(D2DColor.Red);
+                        _render.DoScreenShake();
+                    }
+                    else if (e.DoesDamage && e.Impactor.Owner.ID.Equals(viewPlane.ID))
+                    {
+                        _render.DoScreenFlash(D2DColor.Green);
+                    }
+                }
+            }
         }
 
         private void NetMan_PlayerIDReceived(object? sender, int e)
@@ -183,8 +233,7 @@ namespace PolyPlane
 
             };
 
-            if (World.IsNetGame)
-                _objs.EnqueuePlane(_playerPlane);
+            _objs.EnqueuePlane(_playerPlane);
         }
 
         private void ResetPlane()
@@ -438,7 +487,8 @@ namespace PolyPlane
             {
                 ResetPlane();
 
-                SendPlayerReset();
+                if (World.IsNetGame)
+                    SendPlayerReset();
 
                 _queueResetPlane = false;
             }
@@ -543,7 +593,9 @@ namespace PolyPlane
 
             var decoy = new Decoy(plane);
             _objs.EnqueueDecoy(decoy);
-            DoNetDecoy(decoy);
+
+            if (World.IsNetGame)
+                DoNetDecoy(decoy);
         }
 
         private void DoDecoySuccess()
@@ -756,7 +808,7 @@ namespace PolyPlane
                 case 'b':
                     //_motionBlur = !_motionBlur;
                     //_trailsOn = false;
-                    //_skipRender = !_skipRender;
+                    _skipRender = !_skipRender;
                     break;
 
                 case 'c':
@@ -839,7 +891,8 @@ namespace PolyPlane
                     break;
 
                 case 'u':
-                    //SpawnAIPlane();
+                    if (!World.IsNetGame)
+                        SpawnAIPlane();
                     break;
 
                 case 'y':
@@ -961,19 +1014,9 @@ namespace PolyPlane
 
         private void PolyPlaneUI_Shown(object sender, EventArgs e)
         {
-            if (DoNetGameSetup())
-            {
-                InitGfx();
+            InitGfx();
 
-                if (_netMan != null)
-                {
-                    _netMan.ScreenFlashCallback = _render.DoScreenFlash;
-                    _netMan.ScreenShakeCallback = _render.DoScreenShake;
-                }
-
-                StartGameThread();
-            }
-            else
+            if (!DoNetGameSetup())
             {
                 this.Close();
             }

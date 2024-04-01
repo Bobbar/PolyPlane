@@ -330,12 +330,14 @@ namespace PolyPlane.GameObjects
 
             Polygon.Update(this.Position, this.Rotation, renderScale);
 
-            var histState = new GameObjectPacket(this);
-            histState.Position = this.Position.ToNetPoint();
-            histState.Velocity = this.Velocity.ToNetPoint();
-            histState.Rotation = this.Rotation;
-            HistoryBuffer.Enqueue(histState, World.CurrentTime());
-
+            if (World.IsNetGame && World.IsServer)
+            {
+                var histState = new GameObjectPacket(this);
+                histState.Position = this.Position.ToNetPoint();
+                histState.Velocity = this.Velocity.ToNetPoint();
+                histState.Rotation = this.Rotation;
+                HistoryBuffer.Enqueue(histState, World.CurrentTime());
+            }
         }
 
         public bool CollidesWithNet(GameObjectPoly obj, out D2DPoint pos, out GameObjectPacket? histState, double frameTime, float dt = -1f)
