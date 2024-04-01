@@ -95,7 +95,24 @@ namespace PolyPlane.Net.Discovery
         public void BroadcastServerInfo(DiscoveryPacket packet)
         {
             var data = IO.ObjectToByteArray(packet);
-            _udpListener.Send(data, data.Length, new IPEndPoint(IPAddress.Broadcast, PORT));
+            
+            var addys = Dns.GetHostAddresses(Dns.GetHostName());
+
+            // Broadcast to all local interfaces.
+            foreach (var addy in addys)
+            {
+                if (addy.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && addy.IsIPv6LinkLocal == false)
+                {
+                    // Set last octet to 255 to build a broadcast address for this subnet.
+                    // Ex: 10.10.80.123 => 10.10.80.255
+                    var bytes = addy.GetAddressBytes();
+                    bytes[3] = 255;
+
+                    var broadcastIP = new IPAddress(bytes);
+
+                    _udpListener.Send(data, data.Length, new IPEndPoint(broadcastIP, PORT));
+                }
+            }
         }
     }
 }
