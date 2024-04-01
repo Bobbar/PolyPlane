@@ -136,5 +136,10 @@ namespace PolyPlane
                 return $"{IP} - {Name}";
             }
         }
+
+        private void ExitButton_Click(object sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Abort;
+        }
     }
 }

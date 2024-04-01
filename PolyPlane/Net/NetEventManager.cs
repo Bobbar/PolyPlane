@@ -1,9 +1,10 @@
 ﻿using PolyPlane.GameObjects;
+using PolyPlane.GameObjects.Manager;
 using unvell.D2DLib;
 
 namespace PolyPlane.Net
 {
-    public class NetEventManager
+    public class NetEventManager : IImpactEvent
     {
         public GameObjectManager Objs;
         public NetPlayHost Host;
@@ -11,15 +12,13 @@ namespace PolyPlane.Net
         public Plane PlayerPlane = null;
         public double PacketDelay = 0;
 
-        public Action<D2DColor> ScreenFlashCallback = null;
-        public Action ScreenShakeCallback = null;
-
         private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
 
         private long _frame = 0;
         private bool _netIDIsSet = false;
 
         public event EventHandler<int> PlayerIDReceived;
+        public event EventHandler<ImpactEvent> ImpactEvent;
 
         public NetEventManager(GameObjectManager objectManager, NetPlayHost host, Plane playerPlane)
         {
@@ -386,26 +385,13 @@ namespace PolyPlane.Net
                     target.Velocity = curVelo;
                     target.Position = curPos;
                     target.SyncFixtures();
-
-
                     if (!IsServer)
                     {
+                        //if (packet.DoesDamage)
+                            ImpactEvent?.Invoke(this, new ImpactEvent(target, impactor, packet.DoesDamage));
+
                         AddExplosion(impactPoint);
-
-                        // Player hit by enemy.
-                        if (target.ID.Equals(PlayerPlane.ID))
-                        {
-                            ScreenShakeCallback();
-                            ScreenFlashCallback(D2DColor.Red);
-                        }
-
-                        // Player hit an enemy.
-                        if (packet.DoesDamage && impactor.Owner.ID.Equals(PlayerPlane.ID))
-                        {
-                            ScreenFlashCallback(D2DColor.Green);
-                        }
                     }
-
                 }
             }
         }

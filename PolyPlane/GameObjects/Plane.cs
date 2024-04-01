@@ -274,7 +274,7 @@ namespace PolyPlane.GameObjects
             base.Update(dt, viewport, renderScale * this.RenderOffset);
             this.Radar?.Update(dt, viewport, renderScale, skipFrames: true);
 
-            if (World.IsNetGame && !World.IsServer)
+            if (!World.IsNetGame || (World.IsNetGame && !World.IsServer))
             {
                 _flames.ForEach(f => f.Update(dt, viewport, renderScale, skipFrames: true));
                 _debris.ForEach(d => d.Update(dt, viewport, renderScale, skipFrames: true));
@@ -660,7 +660,7 @@ namespace PolyPlane.GameObjects
                         SpawnDebris(8, impactPos, D2DColor.Red);
                         WasHeadshot = true;
                         IsDamaged = true;
-
+                        this.Hits = 0;
                         attackPlane.Headshots++;
                         attackPlane.Kills++;
 
@@ -774,8 +774,11 @@ namespace PolyPlane.GameObjects
                     }
                 }
 
-                _damageCooldownTimeout.Restart();
-                _damageFlashTimer.Restart();
+                if (World.IsNetGame)
+                {
+                    _damageCooldownTimeout.Restart();
+                    _damageFlashTimer.Restart();
+                }
             }
 
             return result;

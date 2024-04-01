@@ -38,6 +38,7 @@
             ServerListBox = new ListBox();
             label3 = new Label();
             ErrorLabel = new Label();
+            ExitButton = new Button();
             SuspendLayout();
             // 
             // PortTextBox
@@ -92,7 +93,6 @@
             SinglePlayerButton.TabIndex = 6;
             SinglePlayerButton.Text = "Solo";
             SinglePlayerButton.UseVisualStyleBackColor = true;
-            SinglePlayerButton.Visible = false;
             SinglePlayerButton.Click += SinglePlayerButton_Click;
             // 
             // AIPlaneCheckBox
@@ -136,11 +136,22 @@
             ErrorLabel.TextAlign = ContentAlignment.MiddleCenter;
             ErrorLabel.Visible = false;
             // 
+            // ExitButton
+            // 
+            ExitButton.Location = new Point(468, 384);
+            ExitButton.Name = "ExitButton";
+            ExitButton.Size = new Size(75, 23);
+            ExitButton.TabIndex = 11;
+            ExitButton.Text = "Exit";
+            ExitButton.UseVisualStyleBackColor = true;
+            ExitButton.Click += ExitButton_Click;
+            // 
             // ClientServerConfigForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(555, 419);
+            Controls.Add(ExitButton);
             Controls.Add(ErrorLabel);
             Controls.Add(label3);
             Controls.Add(ServerListBox);
@@ -172,5 +183,6 @@
         private ListBox ServerListBox;
         private Label label3;
         private Label ErrorLabel;
+        private Button ExitButton;
     }
 }
