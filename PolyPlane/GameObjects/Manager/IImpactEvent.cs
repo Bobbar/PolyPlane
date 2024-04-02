@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace PolyPlane.GameObjects.Manager
+﻿namespace PolyPlane.GameObjects.Manager
 {
     public interface IImpactEvent
     {

@@ -366,7 +366,7 @@ namespace PolyPlane.GameObjects
             if (_decoyDistractCooldown.IsRunning || _decoyDistractArm.IsRunning)
                 return;
 
-            const int RANDO_AMT = 5;
+            const int RANDO_AMT = 3;//5;
             var randOChanceO = _rnd.Next(RANDO_AMT);
             var randOChanceO2 = _rnd.Next(RANDO_AMT);
             var lucky = randOChanceO == randOChanceO2; // :-}
