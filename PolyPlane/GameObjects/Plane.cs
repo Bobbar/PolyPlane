@@ -284,7 +284,7 @@ namespace PolyPlane.GameObjects
 
             if (!World.IsNetGame || (World.IsNetGame && !World.IsServer))
             {
-                _flames.ForEach(f => f.Update(dt, viewport, renderScale, skipFrames: true));
+                _flames.ForEach(f => f.Update(dt, viewport, renderScale, skipFrames: World.IsNetGame));
                 _debris.ForEach(d => d.Update(dt, viewport, renderScale, skipFrames: true));
                 _contrail.Update(dt, viewport, renderScale, skipFrames: true);
                 _vaporTrails.ForEach(v => v.Update(dt, viewport, renderScale * this.RenderOffset));
@@ -640,11 +640,6 @@ namespace PolyPlane.GameObjects
             flame.IsNetObject = this.IsNetObject;
             flame.SkipFrames = this.IsNetObject ? 1 : World.PHYSICS_STEPS;
             _flames.Add(flame);
-        }
-
-        public void DoImpact(GameObject impactor)
-        {
-            DoImpact(impactor, impactor.Position);
         }
 
         public void DoImpact(GameObject impactor, D2DPoint impactPos, bool ignoreCooldown = false)
