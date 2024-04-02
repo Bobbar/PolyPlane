@@ -95,7 +95,7 @@ namespace PolyPlane.Net.Discovery
         public void BroadcastServerInfo(DiscoveryPacket packet)
         {
             var data = IO.ObjectToByteArray(packet);
-            
+
             var addys = Dns.GetHostAddresses(Dns.GetHostName());
 
             // Broadcast to all local interfaces.

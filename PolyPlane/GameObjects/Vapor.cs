@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using unvell.D2DLib;
+﻿using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
@@ -69,13 +64,13 @@ namespace PolyPlane.GameObjects
             if (this.Owner != null)
                 newVelo = this.Owner.Velocity;
 
-        
+
             var veloFact = Helpers.Factor(newVelo.Length(), 1000f);
             var newRad = _radius + Helpers.Rnd.NextFloat(-2f, 2f) + (veloFact * 14f);
             var newColor = _vaporColor;
             var newEllipse = new D2DEllipse(newPos, new D2DSize(newRad, newRad));
             var newPart = new VaporPart(newEllipse, newColor, newVelo);
-        
+
             newPart.SkipFrames = this.IsNetObject ? 1 : World.PHYSICS_STEPS;
 
             if (_parts.Count < MAX_PARTS)

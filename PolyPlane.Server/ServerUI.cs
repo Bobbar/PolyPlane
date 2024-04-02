@@ -204,7 +204,7 @@ namespace PolyPlane.Server
 
                 World.UpdateAirDensityAndWind(World.DT);
 
-                DoDecoySuccess();
+                _collisions.DoDecoySuccess();
 
                 _playerBurstTimer.Update(World.DT);
 
@@ -297,74 +297,6 @@ namespace PolyPlane.Server
                 _queuePrevViewId = false;
             }
 
-        }
-
-        private void DoDecoySuccess()
-        {
-            // Test for decoy success.
-            const float MIN_DECOY_FOV = 10f;
-            var decoys = _objs.Decoys;
-
-            bool groundScatter = false;
-
-            for (int i = 0; i < _objs.Missiles.Count; i++)
-            {
-                var missile = _objs.Missiles[i] as GuidedMissile;
-                var target = missile.Target as Plane;
-
-                if (target == null)
-                    continue;
-
-                if (missile == null)
-                    continue;
-
-                // Decoys dont work if target is being painted.?
-                //if (missile.Owner.IsObjInFOV(target, World.SENSOR_FOV * 0.25f))
-                //    continue;
-
-                GameObject maxTempObj;
-                var maxTemp = 0f;
-                const float MaxEngineTemp = 1800f;
-                const float MaxDecoyTemp = 2000f;
-
-                const float EngineRadius = 4f;
-                const float DecoyRadius = 2f;
-
-                var targetDist = D2DPoint.Distance(missile.Position, target.Position);
-                var targetTemp = MaxEngineTemp * target.ThrustAmount * EngineRadius;
-                var engineArea = 4f * (float)Math.PI * (float)Math.Pow(targetDist, 2f);
-                targetTemp /= engineArea;
-
-                maxTempObj = target;
-                maxTemp = targetTemp;
-
-                for (int k = 0; k < decoys.Count; k++)
-                {
-                    var decoy = decoys[k];
-
-                    if (!missile.IsObjInFOV(decoy, MIN_DECOY_FOV))
-                        continue;
-
-                    //if (missile.Owner.IsObjInFOV(target, World.SENSOR_FOV * 0.25f) && )
-                    //    continue;
-
-                    var dist = D2DPoint.Distance(decoy.Position, missile.Position);
-                    var decoyTemp = (MaxDecoyTemp * DecoyRadius) / (4f * (float)Math.PI * (float)Math.Pow(dist, 2f));
-
-                    if (decoyTemp > maxTemp)
-                    {
-                        maxTemp = decoyTemp;
-                        maxTempObj = decoy;
-                    }
-
-                }
-
-                if (maxTempObj is Decoy)
-                {
-                    missile.DoChangeTargetChance(maxTempObj);
-                }
-
-            }
         }
 
         private void DoAIPlaneDecoys()
