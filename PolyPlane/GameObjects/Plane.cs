@@ -7,6 +7,7 @@ namespace PolyPlane.GameObjects
 {
     public class Plane : GameObjectPoly
     {
+        public string PlayerName;
         public float PlayerGuideAngle = 0;
         private const int MAX_BULLETS = 30;
 

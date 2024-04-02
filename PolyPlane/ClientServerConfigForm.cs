@@ -9,6 +9,7 @@ namespace PolyPlane
     {
         public string ServerIPAddress;
         public string ClientIPAddress;
+        public string PlayerName;
         public ushort Port;
         public bool IsServer = true;
         public bool IsAI = false;
@@ -76,6 +77,7 @@ namespace PolyPlane
         {
             if (IPAddress.TryParse(IPAddressTextBox.Text.Trim(), out IPAddress addy))
             {
+                PlayerName = PlayerNameTextBox.Text.Trim();
                 ServerIPAddress = addy.ToString();
                 Port = ushort.Parse(PortTextBox.Text.Trim());
 
@@ -90,6 +92,7 @@ namespace PolyPlane
 
         private void SinglePlayerButton_Click(object sender, EventArgs e)
         {
+            PlayerName = PlayerNameTextBox.Text.Trim();
             DialogResult = DialogResult.Cancel;
         }
 

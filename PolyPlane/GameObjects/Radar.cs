@@ -197,12 +197,19 @@ namespace PolyPlane
             {
                 gfx.DrawCrosshair(_aimedAtPingObj.RadarPos, 2f, _color, 0, 10f);
 
-                var dist = this.HostPlane.Position.DistanceTo(_aimedAtPingObj.Obj.Position);
-                var distPos = this.Position + new D2DPoint(-210f, 100f);
-                var dRect = new D2DRect(distPos, new D2DSize(100, 40));
-                gfx.FillRectangle(dRect, new D2DColor(0.5f, D2DColor.Black));
-                var info = $"D:{Math.Round(dist, 0)}\nA:{Math.Round(_aimedAtPingObj.Obj.Altitude, 0)}";
-                gfx.DrawTextCenter(info, _color, "Consolas", 15f, dRect);
+                // Draw target info.
+                var aimedAtPlane = _aimedAtPingObj.Obj as Plane;
+
+                if (aimedAtPlane != null)
+                {
+                    var dist = this.HostPlane.Position.DistanceTo(aimedAtPlane.Position);
+                    var distPos = this.Position + new D2DPoint(-220f, 100f);
+                    var dRect = new D2DRect(distPos, new D2DSize(140, 60));
+                    gfx.FillRectangle(dRect, new D2DColor(0.5f, D2DColor.Black));
+                    var info = $"D:{Math.Round(dist, 0)}\nA:{Math.Round(aimedAtPlane.Altitude, 0)}\n{aimedAtPlane.PlayerName}";
+                    gfx.DrawTextCenter(info, _color, "Consolas", 15f, dRect);
+                }
+               
             }
 
             // Draw lock circle around locked on obj.

@@ -68,11 +68,10 @@
             // 
             // InfoLabel
             // 
-            InfoLabel.AutoSize = true;
             InfoLabel.BorderStyle = BorderStyle.FixedSingle;
             InfoLabel.Location = new Point(36, 26);
             InfoLabel.Name = "InfoLabel";
-            InfoLabel.Size = new Size(30, 17);
+            InfoLabel.Size = new Size(190, 253);
             InfoLabel.TabIndex = 2;
             InfoLabel.Text = "Info";
             // 

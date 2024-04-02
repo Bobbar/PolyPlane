@@ -154,7 +154,6 @@ namespace PolyPlane.Net
             return 0;
         }
 
-
         public virtual void Dispose()
         {
             Host.Flush();

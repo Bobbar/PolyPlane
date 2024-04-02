@@ -168,11 +168,12 @@ namespace PolyPlane.Server
         {
             _updateTime = TimeSpan.Zero;
             _collisionTime = TimeSpan.Zero;
+            _renderTime = TimeSpan.Zero;
+            _netTime = TimeSpan.Zero;
 
             ProcessObjQueue();
 
             Plane viewPlane = GetViewPlane();
-
 
             // Update/advance objects.
             if (!_isPaused)
@@ -220,9 +221,16 @@ namespace PolyPlane.Server
             if (_render != null)
                 _render.RenderFrame(viewPlane);
 
+            _timer.Stop();
+            _renderTime = _timer.Elapsed;
 
             _objs.PruneExpired();
+
+
+            _timer.Restart();
             _netMan.DoNetEvents();
+            _timer.Stop();
+            _netTime = _timer.Elapsed;
 
             _discoveryTimer.Update(World.DT);
             _syncTimer.Update(World.DT);
@@ -231,9 +239,6 @@ namespace PolyPlane.Server
             var fps = TimeSpan.TicksPerSecond / (float)(fpsNow - _lastRenderTime);
             _lastRenderTime = fpsNow;
             _renderFPS = fps;
-
-
-            //this.InfoText = GetInfo();
 
             if (this.PauseRequested)
             {
@@ -269,7 +274,6 @@ namespace PolyPlane.Server
 
         private Plane GetViewPlane()
         {
-            //var idPlane = IDToPlane(_aiPlaneViewID);
             var idPlane = _objs.GetPlaneByPlayerID(_aiPlaneViewID);
 
             if (idPlane != null)
@@ -355,26 +359,6 @@ namespace PolyPlane.Server
             }
         }
 
-        private void Clear()
-        {
-
-            _objs.Clear();
-
-            //_objs.Missiles.Clear();
-            //_missileTrails.Clear();
-            ////_targets.Clear();
-            //_objs.Bullets.Clear();
-            //_explosions.Clear();
-            //_objs.Planes.Clear();
-            //_decoys.Clear();
-
-            //_newTargets.Enqueue(_playerPlane);
-        }
-
-
-
-
-
         private Plane GetAIPlane()
         {
             var range = new D2DPoint(-40000, 40000);
@@ -383,7 +367,7 @@ namespace PolyPlane.Server
             var aiPlane = new Plane(pos, Helpers.RandomEnum<AIPersonality>());
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, D2DColor.GreenYellow, _objs.Missiles, _objs.Planes);
-
+            aiPlane.PlayerName = Helpers.GetRandomName();
             aiPlane.Radar.SkipFrames = World.PHYSICS_STEPS;
 
             aiPlane.FireMissileCallback = (m) =>
@@ -473,21 +457,24 @@ namespace PolyPlane.Server
             var numObj = _objs.TotalObjects;
             infoText += $"Num Objects: {numObj}\n";
             infoText += $"AI Planes: {_objs.Planes.Count(p => !p.IsDamaged && !p.HasCrashed)}\n";
-
             infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";
-            infoText += $"Update ms: {_updateTime.TotalMilliseconds}\n";
-            infoText += $"Collision ms: {_collisionTime.TotalMilliseconds}\n";
-            infoText += $"Packet Delay: {_netMan.PacketDelay}\n";
+            infoText += $"Update ms: {Math.Round(_updateTime.TotalMilliseconds, 2)}\n";
+            infoText += $"Collision ms: {Math.Round(_collisionTime.TotalMilliseconds, 2)}\n";
+            infoText += $"Net ms: {Math.Round(_netTime.TotalMilliseconds, 2)}\n";
+
+            if (_viewPort != null)
+                infoText += $"Render ms: {Math.Round(_renderTime.TotalMilliseconds, 2)}\n";
+
+            infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
+
             //infoText += $"Sent B/s: {(World.IsServer ? _server.BytesSentPerSecond : 0)}\n";
             //infoText += $"Rec B/s: {(World.IsServer ? _server.BytesReceivedPerSecond : 0)}\n";
 
             infoText += $"DT: {Math.Round(World.DT, 4)}\n";
             infoText += $"Interp: {World.InterpOn.ToString()}\n";
 
-
             return infoText;
         }
-
 
         private int GetNextAIID()
         {
@@ -537,10 +524,8 @@ namespace PolyPlane.Server
             return nextId;
         }
 
-
         private void InitViewPort()
         {
-
             if (_viewPort != null)
                 return;
 
@@ -550,9 +535,6 @@ namespace PolyPlane.Server
             _viewPort.Show();
 
             _render = new RenderManager(_viewPort, _objs, _netMan);
-
-
-
         }
 
         private void ViewPort_KeyPress(object? sender, KeyPressEventArgs e)

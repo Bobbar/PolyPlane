@@ -269,6 +269,7 @@ namespace PolyPlane.Net
 
     public class PlanePacket : GameObjectPacket
     {
+        public string PlayerName;
         public float ThrustAmt;
         public float Deflection;
         public D2DColor PlaneColor;
@@ -281,6 +282,7 @@ namespace PolyPlane.Net
 
         public PlanePacket(Plane obj) : base(obj)
         {
+            PlayerName = obj.PlayerName;
             ThrustAmt = obj.ThrustAmount;
             Deflection = obj.Deflection;
             PlaneColor = obj.PlaneColor;
@@ -292,6 +294,7 @@ namespace PolyPlane.Net
 
         public PlanePacket(Plane obj, PacketTypes type) : base(obj, type)
         {
+            PlayerName = obj.PlayerName;
             ThrustAmt = obj.ThrustAmount;
             Deflection = obj.Deflection;
             PlaneColor = obj.PlaneColor;
@@ -306,6 +309,7 @@ namespace PolyPlane.Net
         {
             base.SyncObj(obj);
             //obj.PlaneColor = this.PlaneColor.
+            obj.PlayerName = PlayerName;
             obj.ThrustAmount = ThrustAmt;
             obj.Deflection = Deflection;
             obj.IsDamaged = IsDamaged;

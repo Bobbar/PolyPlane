@@ -244,6 +244,13 @@ namespace PolyPlane.Rendering
             var healthPct = plane.Hits / (float)Plane.MAX_HITS;
             ctx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), _hudColor);
             ctx.DrawRectangle(new D2DRect(position, size), _hudColor);
+
+            // Draw player name.
+            if (string.IsNullOrEmpty(plane.PlayerName))
+                return;
+
+            var rect = new D2DRect(position + new D2DPoint(0, -40), new D2DSize(300, 100));
+            ctx.DrawTextCenter(plane.PlayerName, _hudColor, _defaultFontName, 30f, rect);
         }
 
         private void DrawHealthBar(D2DGraphics gfx, Plane plane, D2DPoint position, D2DSize size)
@@ -251,6 +258,17 @@ namespace PolyPlane.Rendering
             var healthPct = plane.Hits / (float)Plane.MAX_HITS;
             gfx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), _hudColor);
             gfx.DrawRectangle(new D2DRect(position, size), _hudColor);
+
+            // Draw ammo.
+            gfx.DrawTextCenter($"MSL: {plane.NumMissiles}", _hudColor, _defaultFontName, 15f, new D2DRect(position + new D2DPoint(-100f, 30f), new D2DSize(50f, 20f)));
+            gfx.DrawTextCenter($"AMMO: {plane.NumBullets}", _hudColor, _defaultFontName, 15f, new D2DRect(position + new D2DPoint(100f, 30f), new D2DSize(70f, 20f)));
+
+            // Draw player name.
+            if (string.IsNullOrEmpty(plane.PlayerName))
+                return;
+
+            var rect = new D2DRect(position + new D2DPoint(0, -40), new D2DSize(300, 100));
+            gfx.DrawTextCenter(plane.PlayerName, _hudColor, _defaultFontName, 30f, rect);
         }
 
         private void DrawHud(RenderContext ctx, D2DSize viewportsize, Plane viewPlane)
@@ -262,8 +280,8 @@ namespace PolyPlane.Rendering
             DrawAltimeter(ctx.Gfx, viewportsize, viewPlane);
             DrawSpeedo(ctx.Gfx, viewportsize, viewPlane);
             DrawGMeter(ctx.Gfx, viewportsize, viewPlane);
-            DrawThrottle(ctx.Gfx, viewportsize, viewPlane);
-            DrawStats(ctx.Gfx, viewportsize, viewPlane);
+            //DrawThrottle(ctx.Gfx, viewportsize, viewPlane);
+            //DrawStats(ctx.Gfx, viewportsize, viewPlane);
 
             if (!viewPlane.IsDamaged)
             {
@@ -344,25 +362,22 @@ namespace PolyPlane.Rendering
         {
             const float W = 20f;
             const float H = 50f;
-            const float xPos = 80f;
+            const float xPos = 110f;
             const float yPos = 110f;
             var pos = new D2DPoint(xPos, (viewportsize.height * 0.5f) + yPos);
 
             var rect = new D2DRect(pos, new D2DSize(W, H));
 
-            gfx.PushTransform();
 
-            gfx.DrawTextCenter($"{plane.Hits}/{Plane.MAX_HITS}", _hudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 40f), new D2DSize(50f, 20f)));
-            gfx.DrawTextCenter($"{plane.NumMissiles}", _hudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 70f), new D2DSize(50f, 20f)));
-            gfx.DrawTextCenter($"{plane.NumBullets}", _hudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 100f), new D2DSize(50f, 20f)));
-
-            gfx.PopTransform();
+            //gfx.DrawTextCenter($"{plane.Hits}/{Plane.MAX_HITS}", _hudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 40f), new D2DSize(50f, 20f)));
+            gfx.DrawTextCenter($"MSL: {plane.NumMissiles}", _hudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 70f), new D2DSize(50f, 20f)));
+            gfx.DrawTextCenter($"AMMO: {plane.NumBullets}", _hudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 100f), new D2DSize(70f, 20f)));
         }
 
         private void DrawGMeter(D2DGraphics gfx, D2DSize viewportsize, Plane plane)
         {
             const float xPos = 80f;
-            var pos = new D2DPoint(viewportsize.width * 0.15f, viewportsize.height * 0.2f);
+            var pos = new D2DPoint(viewportsize.width * 0.1f, viewportsize.height * 0.30f);
 
             //var pos = new D2DPoint(xPos, viewportsize.height * 0.5f);
             var rect = new D2DRect(pos, new D2DSize(50, 20));
@@ -433,7 +448,7 @@ namespace PolyPlane.Rendering
             const float MARKER_STEP = 50f;//100f;
             const float xPos = 200f;
             //var pos = new D2DPoint(xPos, viewportsize.height * 0.5f);
-            var pos = new D2DPoint(viewportsize.width * 0.15f, viewportsize.height * 0.5f);
+            var pos = new D2DPoint(viewportsize.width * 0.1f, viewportsize.height * 0.5f);
 
 
             var rect = new D2DRect(pos, new D2DSize(W, H));

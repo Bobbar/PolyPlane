@@ -39,6 +39,8 @@
             label3 = new Label();
             ErrorLabel = new Label();
             ExitButton = new Button();
+            PlayerNameTextBox = new TextBox();
+            label4 = new Label();
             SuspendLayout();
             // 
             // PortTextBox
@@ -77,7 +79,7 @@
             // 
             // StartClientButton
             // 
-            StartClientButton.Location = new Point(228, 133);
+            StartClientButton.Location = new Point(228, 170);
             StartClientButton.Name = "StartClientButton";
             StartClientButton.Size = new Size(75, 23);
             StartClientButton.TabIndex = 5;
@@ -98,7 +100,7 @@
             // AIPlaneCheckBox
             // 
             AIPlaneCheckBox.AutoSize = true;
-            AIPlaneCheckBox.Location = new Point(228, 108);
+            AIPlaneCheckBox.Location = new Point(228, 145);
             AIPlaneCheckBox.Name = "AIPlaneCheckBox";
             AIPlaneCheckBox.Size = new Size(69, 19);
             AIPlaneCheckBox.TabIndex = 7;
@@ -146,11 +148,31 @@
             ExitButton.UseVisualStyleBackColor = true;
             ExitButton.Click += ExitButton_Click;
             // 
+            // PlayerNameTextBox
+            // 
+            PlayerNameTextBox.Location = new Point(205, 104);
+            PlayerNameTextBox.MaxLength = 15;
+            PlayerNameTextBox.Name = "PlayerNameTextBox";
+            PlayerNameTextBox.Size = new Size(151, 23);
+            PlayerNameTextBox.TabIndex = 12;
+            PlayerNameTextBox.Text = "Player";
+            // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Location = new Point(122, 107);
+            label4.Name = "label4";
+            label4.Size = new Size(77, 15);
+            label4.TabIndex = 13;
+            label4.Text = "Player Name:";
+            // 
             // ClientServerConfigForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(555, 419);
+            Controls.Add(label4);
+            Controls.Add(PlayerNameTextBox);
             Controls.Add(ExitButton);
             Controls.Add(ErrorLabel);
             Controls.Add(label3);
@@ -185,5 +207,7 @@
         private Label label3;
         private Label ErrorLabel;
         private Button ExitButton;
+        private TextBox PlayerNameTextBox;
+        private Label label4;
     }
 }

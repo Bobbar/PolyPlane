@@ -91,7 +91,7 @@ namespace PolyPlane
                         World.IsNetGame = true;
                         World.IsServer = false;
 
-                        InitPlane(config.IsAI);
+                        InitPlane(config.IsAI, config.PlayerName);
 
                         _client = new ClientNetHost(config.Port, config.ServerIPAddress);
                         _netMan = new NetEventManager(_objs, _client, _playerPlane);
@@ -117,7 +117,7 @@ namespace PolyPlane
                         _collisions = new CollisionManager(_objs);
                         _collisions.ImpactEvent += HandleNewImpact;
 
-                        InitPlane();
+                        InitPlane(false, config.PlayerName);
 
                         InitGfx();
                         StartGameThread();
@@ -139,7 +139,7 @@ namespace PolyPlane
 
         private void HandleNewImpact(object? sender, ImpactEvent e)
         {
-            if (this.Disposing) return;
+            if (this.Disposing || this.IsDisposed) return;
 
             if (this.InvokeRequired)
                 this.Invoke(() => HandleNewImpact(sender, e));
@@ -192,7 +192,7 @@ namespace PolyPlane
             _fpsLimiter?.Dispose();
         }
 
-        private void InitPlane(bool asAI = false)
+        private void InitPlane(bool asAI = false, string playerName = "Player")
         {
             if (asAI)
             {
@@ -204,6 +204,7 @@ namespace PolyPlane
                 _playerPlane = new Plane(new D2DPoint(this.Width * 0.5f, -5000f));
             }
 
+            _playerPlane.PlayerName = playerName;
             _playerPlane.PlayerID = World.GetNextPlayerId();
 
             _playerPlane.FireBulletCallback = b =>
@@ -270,7 +271,7 @@ namespace PolyPlane
             var aiPlane = new Plane(pos, Helpers.RandomEnum<AIPersonality>());
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, _hudColor, _objs.Missiles, _objs.Planes);
-
+            aiPlane.PlayerName = Helpers.GetRandomName();
             aiPlane.Radar.SkipFrames = World.PHYSICS_STEPS;
 
             aiPlane.FireMissileCallback = (m) =>
@@ -360,7 +361,6 @@ namespace PolyPlane
             ResizeGfx();
             _objs.SyncAll();
             ProcessObjQueue();
-
 
             Plane viewPlane = GetViewPlane();
             World.ViewID = viewPlane.ID;
@@ -797,11 +797,12 @@ namespace PolyPlane
 
                 case 'p':
 
-                //if (!_isPaused)
-                //    PauseRender();
-                //else
-                //    ResumeRender();
-                //break;
+                    //if (!_isPaused)
+                    //    PauseRender();
+                    //else
+                    //    ResumeRender();
+
+                    break;
 
                 case 'r':
                     //ResetPlane();
@@ -911,13 +912,13 @@ namespace PolyPlane
 
         private void PolyPlaneUI_MouseWheel(object? sender, MouseEventArgs e)
         {
-            if (!_shiftDown)
-            {
-                if (e.Delta > 0)
-                    _playerPlane.MoveThrottle(true);
-                else
-                    _playerPlane.MoveThrottle(false);
-            }
+            //if (!_shiftDown)
+            //{
+            //    if (e.Delta > 0)
+            //        _playerPlane.MoveThrottle(true);
+            //    else
+            //        _playerPlane.MoveThrottle(false);
+            //}
         }
 
         private void PolyPlaneUI_KeyDown(object sender, KeyEventArgs e)
