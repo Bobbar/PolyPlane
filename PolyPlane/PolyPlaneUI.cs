@@ -59,21 +59,34 @@ namespace PolyPlane
         private CollisionManager _collisions;
         private RenderManager _render;
         private FPSLimiter _fpsLimiter = new FPSLimiter();
-
+        private bool _hasFocus = true;
         private Random _rnd => Helpers.Rnd;
 
         public PolyPlaneUI()
         {
             InitializeComponent();
 
+            this.GotFocus += PolyPlaneUI_GotFocus;
+            this.LostFocus += PolyPlaneUI_LostFocus;
             this.MouseWheel += PolyPlaneUI_MouseWheel;
             this.Disposed += PolyPlaneUI_Disposed;
 
-            _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
+            _burstTimer.TriggerCallback = () => 
+            DoAIPlaneBursts();
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
             _playerBurstTimer.TriggerCallback = () => _playerPlane.FireBullet(p => AddExplosion(p));
 
             _multiThreadNum = Environment.ProcessorCount - 2;
+        }
+
+        private void PolyPlaneUI_LostFocus(object? sender, EventArgs e)
+        {
+            _hasFocus = false;
+        }
+
+        private void PolyPlaneUI_GotFocus(object? sender, EventArgs e)
+        {
+            _hasFocus = true;
         }
 
         private bool DoNetGameSetup()
@@ -444,6 +457,8 @@ namespace PolyPlane
 
             _objs.PruneExpired();
 
+            DoMouseButtons();
+
             var now = DateTime.UtcNow.Ticks;
             var fps = TimeSpan.TicksPerSecond / (float)(now - _lastRenderTime);
             _lastRenderTime = now;
@@ -461,6 +476,39 @@ namespace PolyPlane
             }
         }
 
+        private void DoMouseButtons()
+        {
+            if (_playerPlane.IsAI)
+                return;
+
+            if (!_hasFocus)
+            {
+                _playerBurstTimer.Stop();
+                _playerPlane.FiringBurst = false;
+                _playerPlane.DroppingDecoy = false;
+                return;
+            }
+
+            var buttons = Control.MouseButtons;
+
+            if (buttons.HasFlag(MouseButtons.Left))
+            {
+                _playerBurstTimer.Start();
+                _playerPlane.FiringBurst = true;
+            }
+            else
+            {
+                _playerBurstTimer.Stop();
+                _playerPlane.FiringBurst = false;
+            }
+                
+
+            if (buttons.HasFlag(MouseButtons.Right))
+                _playerPlane.DroppingDecoy = true;
+            else
+                _playerPlane.DroppingDecoy = false;
+
+        }
 
         private Plane GetViewPlane()
         {
@@ -879,30 +927,12 @@ namespace PolyPlane
 
         private void PolyPlaneUI_MouseUp(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
-            {
-                _playerBurstTimer.Stop();
-                _playerPlane.FiringBurst = false;
-
-            }
-
-            if (e.Button == MouseButtons.Right)
-                _playerPlane.DroppingDecoy = false;
         }
 
         private void PolyPlaneUI_MouseDown(object sender, MouseEventArgs e)
         {
             switch (e.Button)
             {
-                case MouseButtons.Left:
-                    _playerBurstTimer.Start();
-                    _playerPlane.FiringBurst = true;
-                    break;
-
-                case MouseButtons.Right:
-                    _playerPlane.DroppingDecoy = true;
-                    break;
-
                 case MouseButtons.Middle:
                     TargetLockedWithMissile();
                     break;

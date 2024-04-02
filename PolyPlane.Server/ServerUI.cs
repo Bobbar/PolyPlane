@@ -396,7 +396,7 @@ namespace PolyPlane.Server
             var aiPlane = new Plane(pos, personality);
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, D2DColor.GreenYellow, _objs.Missiles, _objs.Planes);
-
+            aiPlane.PlayerName = Helpers.GetRandomName();
             aiPlane.Radar.SkipFrames = World.PHYSICS_STEPS;
 
             aiPlane.FireMissileCallback = (m) =>

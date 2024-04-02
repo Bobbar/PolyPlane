@@ -127,6 +127,7 @@ namespace PolyPlane.GameObjects.Manager
                 for (int b = 0; b < _objs.Bullets.Count; b++)
                 {
                     var bullet = _objs.Bullets[b] as Bullet;
+                    var bulletOwner = bullet.Owner as Plane;
 
                     if (bullet.IsExpired)
                         continue;
@@ -142,8 +143,12 @@ namespace PolyPlane.GameObjects.Manager
                         if (_isNetGame)
                             bulletRTT = _netMan.Host.GetPlayerRTT(bullet.PlayerID);
 
+                        var bulletLagComp = planeRTT + bullet.LagAmount + bulletRTT + LAG_COMP_OFFSET;
 
-                        if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - (planeRTT + bullet.LagAmount + bulletRTT + LAG_COMP_OFFSET)))
+                        if (bulletOwner.IsAI)
+                            bulletLagComp = planeRTT;
+
+                        if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - bulletLagComp))
                         {
                             if (!bullet.IsExpired)
                                 _objs.AddBulletExplosion(pos);
