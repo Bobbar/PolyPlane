@@ -125,6 +125,9 @@ namespace PolyPlane.GameObjects
 
         private float _gForce = 0f;
 
+        private const float VAPOR_TRAIL_GS = 15f; // How many Gs before showing vapor trail.
+        private List<Vapor> _vaporTrails = new List<Vapor>();
+
         //private float Deflection
         //{
         //    get { return _targetDeflection; }
@@ -274,11 +277,17 @@ namespace PolyPlane.GameObjects
             base.Update(dt, viewport, renderScale * this.RenderOffset);
             this.Radar?.Update(dt, viewport, renderScale, skipFrames: true);
 
+            if (GForce > VAPOR_TRAIL_GS)
+                _vaporTrails.ForEach(v => v.Visible = true);
+            else
+                _vaporTrails.ForEach(v => v.Visible = false);
+
             if (!World.IsNetGame || (World.IsNetGame && !World.IsServer))
             {
                 _flames.ForEach(f => f.Update(dt, viewport, renderScale, skipFrames: true));
                 _debris.ForEach(d => d.Update(dt, viewport, renderScale, skipFrames: true));
                 _contrail.Update(dt, viewport, renderScale, skipFrames: true);
+                _vaporTrails.ForEach(v => v.Update(dt, viewport, renderScale * this.RenderOffset));
             }
 
             if (_aiBehavior != null)
@@ -423,6 +432,8 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
+            _vaporTrails.ForEach(v => v.Render(ctx));
+
             _contrail.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000 && ThrustAmount > 0f);
 
 
@@ -447,7 +458,6 @@ namespace PolyPlane.GameObjects
             ctx.Gfx.AntiAliasingOn();
 
             DrawBulletHoles(ctx);
-
 
             //DrawFOVCone(gfx);
             //_cockpitPosition.Render(ctx);
@@ -595,6 +605,8 @@ namespace PolyPlane.GameObjects
         {
             if (isControl && _controlWing == null)
                 _controlWing = wing;
+
+            _vaporTrails.Add(new Vapor(wing, D2DPoint.Zero, 2f));
 
             Wings.Add(wing);
         }

@@ -198,7 +198,7 @@ namespace PolyPlane
 
         public static void AntiAliasingOff(this D2DGraphics gfx)
         {
-            gfx.Antialias = false;
+            //gfx.Antialias = false;
         }
     }
 }

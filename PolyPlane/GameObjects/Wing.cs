@@ -31,55 +31,55 @@ namespace PolyPlane.GameObjects
         private float _maxDeflection = 40f;
         private bool _wrapped = false;
 
-        public Wing(GameObject missile, float renderLen, float area, D2DPoint position)
+        public Wing(GameObject obj, float renderLen, float area, D2DPoint position)
         {
-            FixedPosition = new FixturePoint(missile, position);
+            FixedPosition = new FixturePoint(obj, position);
 
             RenderLength = renderLen;
             Area = area;
-            Rotation = missile.Rotation;
+            Rotation = obj.Rotation;
             this.Velocity = D2DPoint.Zero;
-            _parentObject = missile;
+            _parentObject = obj;
         }
 
-        public Wing(GameObject missile, float renderLen, float area, float maxDeflection, D2DPoint position)
+        public Wing(GameObject obj, float renderLen, float area, float maxDeflection, D2DPoint position)
         {
-            FixedPosition = new FixturePoint(missile, position);
+            FixedPosition = new FixturePoint(obj, position);
 
             RenderLength = renderLen;
             Area = area;
-            Rotation = missile.Rotation;
+            Rotation = obj.Rotation;
             _maxDeflection = maxDeflection;
             this.Velocity = D2DPoint.Zero;
-            _parentObject = missile;
+            _parentObject = obj;
         }
 
-        public Wing(GameObject missile, float renderLen, float area, float maxDeflection, float maxLift, D2DPoint position)
+        public Wing(GameObject obj, float renderLen, float area, float maxDeflection, float maxLift, D2DPoint position)
         {
-            FixedPosition = new FixturePoint(missile, position);
+            FixedPosition = new FixturePoint(obj, position);
 
             RenderLength = renderLen;
             Area = area;
-            Rotation = missile.Rotation;
+            Rotation = obj.Rotation;
             MaxLift = maxLift;
 
             _maxDeflection = maxDeflection;
             this.Velocity = D2DPoint.Zero;
-            _parentObject = missile;
+            _parentObject = obj;
         }
 
-        public Wing(GameObject missile, float renderLen, float area, float maxDeflection, float maxLift, D2DPoint position, float deflectionRate)
+        public Wing(GameObject obj, float renderLen, float area, float maxDeflection, float maxLift, D2DPoint position, float deflectionRate)
         {
-            FixedPosition = new FixturePoint(missile, position);
+            FixedPosition = new FixturePoint(obj, position);
 
             RenderLength = renderLen;
             Area = area;
-            Rotation = missile.Rotation;
+            Rotation = obj.Rotation;
             MaxLift = maxLift;
 
             _maxDeflection = maxDeflection;
             this.Velocity = D2DPoint.Zero;
-            _parentObject = missile;
+            _parentObject = obj;
 
             _defRateLimit = new RateLimiter(rate: deflectionRate);
         }

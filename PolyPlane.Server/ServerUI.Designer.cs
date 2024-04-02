@@ -221,6 +221,7 @@
             Controls.Add(PauseButton);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             Name = "ServerUI";
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "ServerUI";
             ResumeLayout(false);
             PerformLayout();

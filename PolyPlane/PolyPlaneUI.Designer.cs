@@ -36,6 +36,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1330, 775);
             Name = "PolyPlaneUI";
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "PolyPlane - 2D Flight Physics";
             FormClosing += PolyPlaneUI_FormClosing;
             Shown += PolyPlaneUI_Shown;

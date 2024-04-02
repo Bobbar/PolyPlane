@@ -87,7 +87,7 @@
             // 
             // SinglePlayerButton
             // 
-            SinglePlayerButton.Location = new Point(228, 175);
+            SinglePlayerButton.Location = new Point(12, 384);
             SinglePlayerButton.Name = "SinglePlayerButton";
             SinglePlayerButton.Size = new Size(75, 23);
             SinglePlayerButton.TabIndex = 6;
@@ -164,6 +164,7 @@
             Controls.Add(PortTextBox);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             Name = "ClientServerConfigForm";
+            StartPosition = FormStartPosition.CenterParent;
             Text = "Join Server";
             FormClosing += ClientServerConfigForm_FormClosing;
             Load += ClientServerConfigForm_Load;
