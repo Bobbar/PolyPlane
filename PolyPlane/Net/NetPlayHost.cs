@@ -137,6 +137,11 @@ namespace PolyPlane.Net
             SendPacket(packet);
         }
 
+        public void SendSyncPacket()
+        {
+            var packet = new SyncPacket(World.CurrentTime());
+            SendPacket(packet);
+        }
 
         public virtual void SendPacket(NetPacket packet) { }
         public virtual void HandleConnect(Event netEvent) { }

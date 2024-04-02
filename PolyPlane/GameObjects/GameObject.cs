@@ -6,6 +6,7 @@ namespace PolyPlane.GameObjects
 {
     public abstract class GameObject : IEquatable<GameObject>, ISkipFramesUpdate
     {
+        public bool Visible = true;
         public bool IsNetObject { get; set; } = false;
         public double ClientCreateTime = 0;
         public double LagAmount = 0;
@@ -228,7 +229,7 @@ namespace PolyPlane.GameObjects
 
         public virtual void Render(RenderContext ctx)
         {
-            if (this.IsExpired)
+            if (this.IsExpired || !this.Visible)
                 return;
         }
 

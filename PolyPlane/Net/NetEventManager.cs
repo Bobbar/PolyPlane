@@ -113,6 +113,7 @@ namespace PolyPlane.Net
                         }
 
                         ServerSendOtherPlanes();
+                        Host.SendSyncPacket();
                     }
 
                     break;
@@ -211,6 +212,17 @@ namespace PolyPlane.Net
                     if (resetPlane != null)
                         resetPlane.FixPlane();
 
+                    break;
+                case PacketTypes.ServerSync:
+                    var syncPack = packet as SyncPacket;
+                    if (syncPack != null)
+                    {
+                        if (!IsServer)
+                        {
+                            var now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                            World.ServerTimeOffset = syncPack.ServerTime - now;
+                        }
+                    }
                     break;
             }
         }
@@ -413,7 +425,6 @@ namespace PolyPlane.Net
             bullet.ID = bulletPacket.ID;
             bulletPacket.SyncObj(bullet);
             var owner = GetNetPlane(bulletPacket.OwnerID);
-            //var owner = Objs.GetObjectByID(bulletPacket.OwnerID);
 
             // TODO: How to handle bullets that arrive before owner plane has been added?
             if (owner == null)

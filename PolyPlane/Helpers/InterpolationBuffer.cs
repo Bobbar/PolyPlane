@@ -25,7 +25,7 @@
                 _firstTurn = false;
             }
 
-            var now = DateTime.UtcNow.TimeOfDay.TotalMilliseconds;
+            var now = World.CurrentTime();
 
             if (_buffer.Count == 0 && _clientStartTime == -1)
                 _clientStartTime = now;

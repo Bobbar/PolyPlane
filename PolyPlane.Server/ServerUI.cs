@@ -26,6 +26,7 @@ namespace PolyPlane.Server
         private GameTimer _decoyTimer = new GameTimer(0.25f, true);
         private GameTimer _playerBurstTimer = new GameTimer(0.1f, true);
         private GameTimer _discoveryTimer = new GameTimer(5f, true);
+        private GameTimer _syncTimer = new GameTimer(10f, true);
 
         private ManualResetEventSlim _pauseRenderEvent = new ManualResetEventSlim(true);
         private ManualResetEventSlim _stopRenderEvent = new ManualResetEventSlim(true);
@@ -85,8 +86,9 @@ namespace PolyPlane.Server
             _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
 
-            // Periodically broadcast discovery packets.
+            // Periodically broadcast discovery & time sync packets.
             _discoveryTimer.TriggerCallback = () => _discovery?.BroadcastServerInfo(new DiscoveryPacket(_address, _serverName, _port));
+            _syncTimer.TriggerCallback = () => _server.SendSyncPacket();
 
             _multiThreadNum = Environment.ProcessorCount - 2;
 
@@ -115,6 +117,7 @@ namespace PolyPlane.Server
                 _collisions = new CollisionManager(_objs, _netMan);
 
                 _discoveryTimer.Start();
+                _syncTimer.Start();
 
                 StartGameThread();
                 _updateTimer.Start();
@@ -222,6 +225,7 @@ namespace PolyPlane.Server
             _netMan.DoNetEvents();
 
             _discoveryTimer.Update(World.DT);
+            _syncTimer.Update(World.DT);
 
             var fpsNow = DateTime.UtcNow.Ticks;
             var fps = TimeSpan.TicksPerSecond / (float)(fpsNow - _lastRenderTime);

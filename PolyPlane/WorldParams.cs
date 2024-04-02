@@ -158,9 +158,12 @@ namespace PolyPlane
 
         public static double CurrentTime()
         {
-            return DateTime.UtcNow.TimeOfDay.TotalMilliseconds + ServerTimeOffset;
+            var now = DateTimeOffset.Now.ToUnixTimeMilliseconds() + ServerTimeOffset;
+            return now;
 
-            //return DateTime.UtcNow.TimeOfDay.TotalMilliseconds;
+            //var now = DateTime.UtcNow.TimeOfDay.TotalMilliseconds + ServerTimeOffset;
+            //return now;
+
         }
     }
 }

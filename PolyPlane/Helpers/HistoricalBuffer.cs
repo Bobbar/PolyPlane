@@ -28,7 +28,7 @@
 
         public T GetHistoricalState(double timestamp)
         {
-            var now = DateTime.UtcNow.TimeOfDay.TotalMilliseconds;
+            var now = World.CurrentTime();
 
             for (int i = 0; i < _history.Count - 1; i++)
             {

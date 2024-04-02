@@ -42,7 +42,7 @@ namespace PolyPlane
 
         private GameTimer _burstTimer = new GameTimer(0.25f, true);
         private GameTimer _decoyTimer = new GameTimer(0.25f, true);
-        private GameTimer _playerBurstTimer = new GameTimer(0.1f, true);
+        private GameTimer _playerBurstTimer = new GameTimer(0.15f, true);
         private int _aiPlaneViewID = -1;
 
         private Stopwatch _timer = new Stopwatch();
@@ -435,7 +435,8 @@ namespace PolyPlane
                 _fpsLimiter.Wait(60);
 
             _timer.Stop();
-            _renderTime = _timer.Elapsed;
+            _renderTime += _timer.Elapsed;
+
 
             if (World.IsNetGame)
                 _netMan.DoNetEvents();

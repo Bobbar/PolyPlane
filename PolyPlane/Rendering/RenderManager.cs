@@ -39,9 +39,6 @@ namespace PolyPlane.Rendering
         private FloatAnimation _screenShakeX;
         private FloatAnimation _screenShakeY;
         private FloatAnimation _screenFlash;
-
-
-
         private const float VIEW_SCALE = 4f;
 
         private int Width => _renderTarget.Width;
@@ -68,8 +65,6 @@ namespace PolyPlane.Rendering
             _ctx = new RenderContext(_gfx, _device);
 
             World.UpdateViewport(_renderTarget.Size);
-
-
 
             _screenFlash = new FloatAnimation(0.4f, 0f, 3f, EasingFunctions.EaseQuinticOut, v => _screenFlashOpacity = v);
             _screenShakeX = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.X = v);
@@ -102,7 +97,6 @@ namespace PolyPlane.Rendering
                 DrawMovingBackground(_ctx, viewplane);
                 DrawScreenFlash(_gfx);
 
-
                 _gfx.PushTransform(); // Push screen shake transform.
                 _gfx.TranslateTransform(_screenShakeTrans.X, _screenShakeTrans.Y);
 
@@ -119,6 +113,9 @@ namespace PolyPlane.Rendering
 
                 _gfx.PopTransform(); // Pop screen shake transform.
 
+                _timer.Stop();
+                _renderTime = _timer.Elapsed;
+
                 DrawOverlays(_ctx, viewplane);
 
             }
@@ -129,9 +126,6 @@ namespace PolyPlane.Rendering
             var fps = TimeSpan.TicksPerSecond / (float)(now - _lastRenderTime);
             _lastRenderTime = now;
             _renderFPS = fps;
-
-            _timer.Stop();
-            _renderTime = _timer.Elapsed;
         }
 
         private void UpdateTimersAndAnims()
@@ -140,8 +134,6 @@ namespace PolyPlane.Rendering
             _screenFlash.Update(World.DT, World.ViewPortSize, World.RenderScale);
             _screenShakeX.Update(World.DT, World.ViewPortSize, World.RenderScale);
             _screenShakeY.Update(World.DT, World.ViewPortSize, World.RenderScale);
-
-
         }
 
         public void ResizeGfx(bool force = false)
@@ -773,7 +765,9 @@ namespace PolyPlane.Rendering
             //infoText += $"Update ms: {_updateTime.TotalMilliseconds}\n";
             infoText += $"Render ms: {_renderTime.TotalMilliseconds}\n";
             //infoText += $"Collision ms: {_collisionTime.TotalMilliseconds}\n";
-            infoText += $"Packet Delay: {_netMan.PacketDelay}\n";
+
+            if (_netMan != null)
+                infoText += $"Packet Delay: {_netMan.PacketDelay}\n";
 
             infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
             infoText += $"DT: {Math.Round(World.DT, 4)}\n";
