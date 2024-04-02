@@ -149,25 +149,15 @@ namespace PolyPlane.GameObjects
 
         public virtual void Update(float dt, D2DSize viewport, float renderScale)
         {
-            var nowMs = World.CurrentTime();
-
-
-            //var histState = new GameObjectPacket(this);
-            //histState.Position = this.Position.ToNetPoint();
-            //histState.Velocity = this.Velocity.ToNetPoint();
-            //histState.Rotation = this.Rotation;
-            //HistoryBuffer.Enqueue(histState, nowMs);
-
-
-            if (IsNetObject)
+            if (World.IsNetGame && IsNetObject)
             {
+                // Interp on clients only.
                 if (!World.IsServer && World.InterpOn)
                 {
+                    var nowMs = World.CurrentTime();
                     InterpBuffer.GetInterpolatedState(nowMs);
                     return;
-
                 }
-
             }
 
             if (this.IsExpired)

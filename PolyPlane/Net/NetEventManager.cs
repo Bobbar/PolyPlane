@@ -408,12 +408,15 @@ namespace PolyPlane.Net
                     target.Velocity = curVelo;
                     target.Position = curPos;
                     target.SyncFixtures();
+
                     if (!IsServer)
                     {
-                        //if (packet.DoesDamage)
                         ImpactEvent?.Invoke(this, new ImpactEvent(target, impactor, packet.DoesDamage));
 
-                        AddExplosion(impactPoint);
+                        if (impactor is Bullet)
+                            Objs.AddBulletExplosion(impactPoint);
+                        else
+                            Objs.AddExplosion(impactPoint);
                     }
                 }
             }
@@ -490,13 +493,6 @@ namespace PolyPlane.Net
                     obj.IsExpired = true;
             }
         }
-
-        private void AddExplosion(D2DPoint pos)
-        {
-            var explosion = new Explosion(pos, 200f, 1.4f);
-            Objs.AddExplosion(explosion);
-        }
-
 
         private Plane GetNetPlane(GameID id, bool netOnly = true)
         {

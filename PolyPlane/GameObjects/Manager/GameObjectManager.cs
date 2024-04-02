@@ -111,6 +111,12 @@ namespace PolyPlane.GameObjects
             AddExplosion(explosion);
         }
 
+        public void AddBulletExplosion(D2DPoint pos)
+        {
+            var explosion = new Explosion(pos, 50f, 0.5f);
+            AddExplosion(explosion);
+        }
+
         public void Clear()
         {
             _allLocalObjects.Clear();
