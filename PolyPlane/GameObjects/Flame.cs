@@ -1,4 +1,5 @@
-﻿using unvell.D2DLib;
+﻿using PolyPlane.Rendering;
+using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
@@ -88,7 +89,7 @@ namespace PolyPlane.GameObjects
 
             var endColor = _blackSmoke;
 
-            if (_refPos.GameObject is Plane plane && !plane.IsDamaged)
+            if (_refPos.GameObject is FighterPlane plane && !plane.IsDamaged)
                 endColor = _graySmoke;
 
             var newRad = this.Radius + Helpers.Rnd.NextFloat(-3f, 3f);

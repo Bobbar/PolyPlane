@@ -9,7 +9,7 @@ namespace PolyPlane.Net
         public GameObjectManager Objs;
         public NetPlayHost Host;
         public bool IsServer = false;
-        public Plane PlayerPlane = null;
+        public FighterPlane PlayerPlane = null;
         public double PacketDelay = 0;
 
         private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
@@ -20,7 +20,7 @@ namespace PolyPlane.Net
         public event EventHandler<int> PlayerIDReceived;
         public event EventHandler<ImpactEvent> ImpactEvent;
 
-        public NetEventManager(GameObjectManager objectManager, NetPlayHost host, Plane playerPlane)
+        public NetEventManager(GameObjectManager objectManager, NetPlayHost host, FighterPlane playerPlane)
         {
             Objs = objectManager;
             Host = host;
@@ -104,7 +104,7 @@ namespace PolyPlane.Net
 
                         if (planePacket != null)
                         {
-                            var newPlane = new Plane(planePacket.Position.ToD2DPoint(), planePacket.PlaneColor);
+                            var newPlane = new FighterPlane(planePacket.Position.ToD2DPoint(), planePacket.PlaneColor);
                             newPlane.ID = planePacket.ID;
                             planePacket.SyncObj(newPlane);
                             newPlane.IsNetObject = true;
@@ -171,7 +171,7 @@ namespace PolyPlane.Net
 
                             if (!existing)
                             {
-                                var newPlane = new Plane(plane.Position.ToD2DPoint(), plane.PlaneColor);
+                                var newPlane = new FighterPlane(plane.Position.ToD2DPoint(), plane.PlaneColor);
                                 newPlane.ID = plane.ID;
                                 newPlane.IsNetObject = true;
                                 newPlane.LagAmount = World.CurrentTime() - listPacket.FrameTime;
@@ -207,7 +207,7 @@ namespace PolyPlane.Net
 
                     var resetPack = packet as Net.BasicPacket;
 
-                    var resetPlane = Objs.GetObjectByID(resetPack.ID) as Plane;
+                    var resetPlane = Objs.GetObjectByID(resetPack.ID) as FighterPlane;
 
                     if (resetPlane != null)
                         resetPlane.FixPlane();
@@ -294,7 +294,7 @@ namespace PolyPlane.Net
             var otherPlanesPackets = new List<Net.PlanePacket>();
             foreach (var plane in Objs.Planes)
             {
-                otherPlanesPackets.Add(new Net.PlanePacket(plane as Plane));
+                otherPlanesPackets.Add(new Net.PlanePacket(plane as FighterPlane));
             }
 
             var listPacket = new Net.PlaneListPacket(otherPlanesPackets);
@@ -386,7 +386,7 @@ namespace PolyPlane.Net
 
                 impactor.IsExpired = true;
 
-                var target = Objs.GetObjectByID(packet.ID) as Plane;
+                var target = Objs.GetObjectByID(packet.ID) as FighterPlane;
 
                 if (target != null)
                 {
@@ -495,7 +495,7 @@ namespace PolyPlane.Net
             }
         }
 
-        private Plane GetNetPlane(GameID id, bool netOnly = true)
+        private FighterPlane GetNetPlane(GameID id, bool netOnly = true)
         {
             foreach (var plane in Objs.Planes)
             {
@@ -503,7 +503,7 @@ namespace PolyPlane.Net
                     continue;
 
                 if (plane.ID.Equals(id))
-                    return plane as Plane;
+                    return plane as FighterPlane;
             }
 
             return null;

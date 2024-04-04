@@ -52,7 +52,7 @@ namespace PolyPlane
         private double _packetDelay = 0f;
 
         private GameObjectManager _objs = new GameObjectManager();
-        private Plane _playerPlane;
+        private FighterPlane _playerPlane;
 
         private NetPlayHost _client;
         private NetEventManager _netMan;
@@ -214,7 +214,7 @@ namespace PolyPlane
             }
             else
             {
-                _playerPlane = new Plane(new D2DPoint(this.Width * 0.5f, -5000f));
+                _playerPlane = new FighterPlane(new D2DPoint(this.Width * 0.5f, -5000f));
             }
 
             _playerPlane.PlayerName = playerName;
@@ -277,11 +277,11 @@ namespace PolyPlane
                 _playerPlane.FireMissile(_playerPlane.Radar.LockedObj);
         }
 
-        private Plane GetAIPlane()
+        private FighterPlane GetAIPlane()
         {
             var pos = new D2DPoint(_rnd.NextFloat(-(World.ViewPortSize.width * 4f), World.ViewPortSize.width * 4f), _rnd.NextFloat(-4000f, -17000f));
 
-            var aiPlane = new Plane(pos, Helpers.RandomEnum<AIPersonality>());
+            var aiPlane = new FighterPlane(pos, Helpers.RandomEnum<AIPersonality>());
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, _hudColor, _objs.Missiles, _objs.Planes);
             aiPlane.PlayerName = Helpers.GetRandomName();
@@ -375,7 +375,7 @@ namespace PolyPlane
             _objs.SyncAll();
             ProcessObjQueue();
 
-            Plane viewPlane = GetViewPlane();
+            FighterPlane viewPlane = GetViewPlane();
             World.ViewID = viewPlane.ID;
 
             _timer.Restart();
@@ -510,7 +510,7 @@ namespace PolyPlane
 
         }
 
-        private Plane GetViewPlane()
+        private FighterPlane GetViewPlane()
         {
             var idPlane = _objs.GetPlaneByPlayerID(_aiPlaneViewID);
 
@@ -639,7 +639,7 @@ namespace PolyPlane
             _client.EnqueuePacket(decoyPacket);
         }
 
-        private void DropDecoy(Plane plane)
+        private void DropDecoy(FighterPlane plane)
         {
             if (plane.IsDamaged)
                 return;

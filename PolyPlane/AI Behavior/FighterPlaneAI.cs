@@ -5,13 +5,13 @@ namespace PolyPlane.AI_Behavior
 {
     public class FighterPlaneAI : GameObject, IAIBehavior
     {
-        public Plane Plane => _plane;
-        public Plane TargetPlane => _targetPlane;
+        public FighterPlane Plane => _plane;
+        public FighterPlane TargetPlane => _targetPlane;
         public Missile DefendingMissile = null;
         public AIPersonality Personality { get; set; }
 
-        private Plane _plane;
-        private Plane _targetPlane;
+        private FighterPlane _plane;
+        private FighterPlane _targetPlane;
         private float _sineWavePos = 0f;
         private bool _avoidingGround = false;
         private bool _gainingVelo = false;
@@ -26,14 +26,14 @@ namespace PolyPlane.AI_Behavior
         private float MAX_SPEED = 1000f;
         private float RUN_DISTANCE = 30000f; // How close before cowardly AI runs away.
 
-        public FighterPlaneAI(Plane plane)
+        public FighterPlaneAI(FighterPlane plane)
         {
             _plane = plane;
             Personality = Helpers.RandomEnum(Personality);
             InitStuff();
         }
 
-        public FighterPlaneAI(Plane plane, AIPersonality personality)
+        public FighterPlaneAI(FighterPlane plane, AIPersonality personality)
         {
             _plane = plane;
             Personality = personality;
@@ -206,7 +206,7 @@ namespace PolyPlane.AI_Behavior
             }
         }
 
-        public void ChangeTarget(Plane plane)
+        public void ChangeTarget(FighterPlane plane)
         {
             if (_changeTargetCooldown.IsRunning)
                 return;

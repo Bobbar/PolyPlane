@@ -7,18 +7,21 @@ namespace PolyPlane.GameObjects
 
         public int TotalObjects => _objLookup.Count;
 
+        private const int MAX_GROUND_IMPACTS = 1000;
 
         public List<GameObject> Missiles = new List<GameObject>();
         public List<GameObject> MissileTrails = new List<GameObject>();
         public List<GameObject> Decoys = new List<GameObject>();
         public List<GameObject> Bullets = new List<GameObject>();
         public List<GameObject> Explosions = new List<GameObject>();
-        public List<Plane> Planes = new List<Plane>();
+        public List<D2DPoint> GroundImpacts = new List<D2DPoint>();
+
+        public List<FighterPlane> Planes = new List<FighterPlane>();
 
         public ConcurrentQueue<GameObject> NewDecoys = new ConcurrentQueue<GameObject>();
         public ConcurrentQueue<GameObject> NewBullets = new ConcurrentQueue<GameObject>();
         public ConcurrentQueue<GameObject> NewMissiles = new ConcurrentQueue<GameObject>();
-        public ConcurrentQueue<Plane> NewPlanes = new ConcurrentQueue<Plane>();
+        public ConcurrentQueue<FighterPlane> NewPlanes = new ConcurrentQueue<FighterPlane>();
 
         private Dictionary<int, GameObject> _objLookup = new Dictionary<int, GameObject>();
 
@@ -67,7 +70,7 @@ namespace PolyPlane.GameObjects
             NewMissiles.Enqueue(missile);
         }
 
-        public void AddPlane(Plane plane)
+        public void AddPlane(FighterPlane plane)
         {
             if (!Contains(plane))
             {
@@ -76,7 +79,7 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public void EnqueuePlane(Plane plane)
+        public void EnqueuePlane(FighterPlane plane)
         {
             NewPlanes.Enqueue(plane);
         }
@@ -102,6 +105,9 @@ namespace PolyPlane.GameObjects
             {
                 _objLookup.Add(explosion.ID.GetHashCode(), explosion);
                 Explosions.Add(explosion);
+
+                if (explosion.Altitude <= 10f)
+                    GroundImpacts.Add(new D2DPoint(explosion.Position.X, Helpers.Rnd.NextFloat(0f, 5f)));
             }
         }
 
@@ -157,7 +163,7 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public Plane GetPlaneByPlayerID(int playerID)
+        public FighterPlane GetPlaneByPlayerID(int playerID)
         {
             return Planes.Where(p => p.PlayerID == playerID).FirstOrDefault();
         }
@@ -231,6 +237,9 @@ namespace PolyPlane.GameObjects
                     _objLookup.Remove(plane.ID.GetHashCode());
                 }
             }
+
+            if (GroundImpacts.Count > MAX_GROUND_IMPACTS)
+                GroundImpacts.RemoveAt(0);
         }
 
         private void PruneExpired(List<GameObject> objs)
@@ -276,7 +285,7 @@ namespace PolyPlane.GameObjects
 
             while (NewPlanes.Count > 0)
             {
-                if (NewPlanes.TryDequeue(out Plane plane))
+                if (NewPlanes.TryDequeue(out FighterPlane plane))
                 {
                     AddPlane(plane);
                 }

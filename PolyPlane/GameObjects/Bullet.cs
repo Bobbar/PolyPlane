@@ -1,4 +1,5 @@
-﻿using unvell.D2DLib;
+﻿using PolyPlane.Rendering;
+using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
@@ -25,7 +26,7 @@ namespace PolyPlane.GameObjects
 
         public Bullet(D2DPoint pos) : base(pos) { }
 
-        public Bullet(Plane plane) : base(plane.GunPosition, plane.Velocity, plane.Rotation)
+        public Bullet(FighterPlane plane) : base(plane.GunPosition, plane.Velocity, plane.Rotation)
         {
             this.Owner = plane;
             this.PlayerID = plane.PlayerID;

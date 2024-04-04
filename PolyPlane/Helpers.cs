@@ -308,14 +308,14 @@ namespace PolyPlane
             return c;
         }
 
-        public static float ImpactTime(GameObjects.Plane plane, Missile missile)
+        public static float ImpactTime(GameObjects.FighterPlane plane, Missile missile)
         {
             var dist = plane.Position.DistanceTo(missile.Position);
             var navTime = ImpactTime(dist, (plane.Velocity.Length() + missile.Velocity.Length()), 1f);
             return navTime;
         }
 
-        public static float ImpactTime(GameObjects.Plane plane, D2DPoint pos)
+        public static float ImpactTime(GameObjects.FighterPlane plane, D2DPoint pos)
         {
             var dist = plane.Position.DistanceTo(pos);
             var navTime = ImpactTime(dist, (plane.Velocity.Length()), 1f);

@@ -38,7 +38,7 @@ namespace PolyPlane.GameObjects.Manager
             // Targets/AI Planes vs missiles and bullets.
             for (int r = 0; r < _objs.Planes.Count; r++)
             {
-                var plane = _objs.Planes[r] as Plane;
+                var plane = _objs.Planes[r] as FighterPlane;
 
                 if (plane == null)
                     continue;
@@ -52,7 +52,7 @@ namespace PolyPlane.GameObjects.Manager
                 for (int m = 0; m < _objs.Missiles.Count; m++)
                 {
                     var missile = _objs.Missiles[m] as Missile;
-                    var missileOwner = missile.Owner as Plane;
+                    var missileOwner = missile.Owner as FighterPlane;
 
                     if (missile.Owner.ID.Equals(plane.ID))
                         continue;
@@ -127,7 +127,7 @@ namespace PolyPlane.GameObjects.Manager
                 for (int b = 0; b < _objs.Bullets.Count; b++)
                 {
                     var bullet = _objs.Bullets[b] as Bullet;
-                    var bulletOwner = bullet.Owner as Plane;
+                    var bulletOwner = bullet.Owner as FighterPlane;
 
                     if (bullet.IsExpired)
                         continue;
@@ -296,7 +296,7 @@ namespace PolyPlane.GameObjects.Manager
             for (int i = 0; i < _objs.Missiles.Count; i++)
             {
                 var missile = _objs.Missiles[i] as GuidedMissile;
-                var target = missile.Target as Plane;
+                var target = missile.Target as FighterPlane;
 
                 if (target == null)
                     continue;

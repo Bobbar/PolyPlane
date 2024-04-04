@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects;
+using PolyPlane.Rendering;
 using unvell.D2DLib;
 
 namespace PolyPlane
@@ -6,7 +7,7 @@ namespace PolyPlane
     public class Radar : GameObject
     {
         public D2DPoint Position { get; set; } = D2DPoint.Zero;
-        public Plane HostPlane;
+        public FighterPlane HostPlane;
 
         public bool HasLock = false;
         public GameObject LockedObj
@@ -41,10 +42,10 @@ namespace PolyPlane
         private GameTimer _AIUpdateRate = new GameTimer(1f);
 
         private List<GameObject> _missiles;
-        private List<Plane> _planes;
+        private List<FighterPlane> _planes;
 
 
-        public Radar(Plane hostPlane, D2DColor renderColor, List<GameObject> missiles, List<Plane> planes)
+        public Radar(FighterPlane hostPlane, D2DColor renderColor, List<GameObject> missiles, List<FighterPlane> planes)
         {
             HostPlane = hostPlane;
             _color = renderColor;
@@ -168,7 +169,7 @@ namespace PolyPlane
                 var ageFact = 1f - Helpers.Factor(p.Age, _maxAge);
                 var pColor = new D2DColor(ageFact, _color);
 
-                if (p.Obj is Plane plane)
+                if (p.Obj is FighterPlane plane)
                 {
                     if (plane.IsDamaged)
                         gfx.FillEllipse(new D2DEllipse(p.RadarPos, new D2DSize(3f, 3f)), pColor);
@@ -198,7 +199,7 @@ namespace PolyPlane
                 gfx.DrawCrosshair(_aimedAtPingObj.RadarPos, 2f, _color, 0, 10f);
 
                 // Draw target info.
-                var aimedAtPlane = _aimedAtPingObj.Obj as Plane;
+                var aimedAtPlane = _aimedAtPingObj.Obj as FighterPlane;
 
                 if (aimedAtPlane != null)
                 {
@@ -233,7 +234,7 @@ namespace PolyPlane
         {
             if (_lockedPingObj != null)
             {
-                if (_lockedPingObj.Obj is Plane plane)
+                if (_lockedPingObj.Obj is FighterPlane plane)
                     plane.IsLockedOnto();
             }
         }
@@ -245,7 +246,7 @@ namespace PolyPlane
                 _lockedPingObj = _aimedAtPingObj;
                 HasLock = true;
 
-                if (_lockedPingObj.Obj is Plane plane)
+                if (_lockedPingObj.Obj is FighterPlane plane)
                     plane.IsLockedOnto();
 
             }
@@ -264,7 +265,7 @@ namespace PolyPlane
         {
             var mostCentered = FindMostCentered();
 
-            if (LockedObj != null && (LockedObj is Plane plane && (plane.IsExpired || plane.IsDamaged || plane.HasCrashed)))
+            if (LockedObj != null && (LockedObj is FighterPlane plane && (plane.IsExpired || plane.IsDamaged || plane.HasCrashed)))
             {
                 ClearLock();
             }
@@ -313,24 +314,24 @@ namespace PolyPlane
             gfx.DrawLine(this.Position, this.Position + centerLine, color, 1f, D2DDashStyle.DashDot);
         }
 
-        public Plane FindRandomPlane()
+        public FighterPlane FindRandomPlane()
         {
             var planes = _pings.Where(p =>
-            p.Obj is Plane plane
+            p.Obj is FighterPlane plane
             && !plane.IsDamaged
             && !plane.HasCrashed).ToList();
 
             if (planes.Count == 0)
                 return null;
 
-            var rndPlane = planes[Helpers.Rnd.Next(planes.Count)].Obj as Plane;
+            var rndPlane = planes[Helpers.Rnd.Next(planes.Count)].Obj as FighterPlane;
             return rndPlane;
         }
 
-        public Plane FindNearestPlane()
+        public FighterPlane FindNearestPlane()
         {
             var planes = _pings.Where(p =>
-            p.Obj is Plane plane
+            p.Obj is FighterPlane plane
             && !plane.IsDamaged
             && !plane.HasCrashed).ToList();
 
@@ -339,7 +340,7 @@ namespace PolyPlane
             if (planes.Count == 0)
                 return null;
 
-            return planes.First().Obj as Plane;
+            return planes.First().Obj as FighterPlane;
         }
 
         //private PingObj? FindMostCentered()
@@ -371,7 +372,7 @@ namespace PolyPlane
 
             foreach (var p in _pings)
             {
-                if (p.Obj is Plane plane && !plane.IsDamaged && !plane.HasCrashed)
+                if (p.Obj is FighterPlane plane && !plane.IsDamaged && !plane.HasCrashed)
                 {
                     var fov = this.HostPlane.FOVToObject(plane);
                     var dist = this.HostPlane.Position.DistanceTo(plane.Position);

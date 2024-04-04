@@ -5,10 +5,10 @@ namespace PolyPlane.AI_Behavior
 {
     public interface IAIBehavior : ISkipFramesUpdate
     {
-        Plane Plane { get; }
-        Plane TargetPlane { get; }
+        FighterPlane Plane { get; }
+        FighterPlane TargetPlane { get; }
         float GetAIGuidance();
-        void ChangeTarget(Plane plane);
+        void ChangeTarget(FighterPlane plane);
 
     }
 }

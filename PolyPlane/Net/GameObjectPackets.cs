@@ -280,7 +280,7 @@ namespace PolyPlane.Net
 
         public PlanePacket() { }
 
-        public PlanePacket(Plane obj) : base(obj)
+        public PlanePacket(FighterPlane obj) : base(obj)
         {
             PlayerName = obj.PlayerName;
             ThrustAmt = obj.ThrustAmount;
@@ -292,7 +292,7 @@ namespace PolyPlane.Net
             Hits = obj.Hits;
         }
 
-        public PlanePacket(Plane obj, PacketTypes type) : base(obj, type)
+        public PlanePacket(FighterPlane obj, PacketTypes type) : base(obj, type)
         {
             PlayerName = obj.PlayerName;
             ThrustAmt = obj.ThrustAmount;
@@ -305,7 +305,7 @@ namespace PolyPlane.Net
 
         }
 
-        public virtual void SyncObj(Plane obj)
+        public virtual void SyncObj(FighterPlane obj)
         {
             base.SyncObj(obj);
             //obj.PlaneColor = this.PlaneColor.

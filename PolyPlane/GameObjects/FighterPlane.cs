@@ -1,11 +1,12 @@
 ﻿using PolyPlane.AI_Behavior;
+using PolyPlane.Rendering;
 using System.Diagnostics;
 using System.Numerics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Plane : GameObjectPoly
+    public class FighterPlane : GameObjectPoly
     {
         public string PlayerName;
         public float PlayerGuideAngle = 0;
@@ -169,7 +170,7 @@ namespace PolyPlane.GameObjects
             new D2DPoint(-8, -1),
         };
 
-        public Plane(D2DPoint pos) : base(pos)
+        public FighterPlane(D2DPoint pos) : base(pos)
         {
             this.RenderOffset = 1.5f;
             Thrust = 2000f;
@@ -181,7 +182,7 @@ namespace PolyPlane.GameObjects
 
 
 
-        public Plane(D2DPoint pos, D2DColor color) : base(pos)
+        public FighterPlane(D2DPoint pos, D2DColor color) : base(pos)
         {
             this.RenderOffset = 1.5f;
             IsNetObject = true;
@@ -195,7 +196,7 @@ namespace PolyPlane.GameObjects
             InitStuff();
         }
 
-        public Plane(D2DPoint pos, AIPersonality personality) : this(pos)
+        public FighterPlane(D2DPoint pos, AIPersonality personality) : this(pos)
         {
             this.RenderOffset = 1.5f;
 
@@ -241,7 +242,7 @@ namespace PolyPlane.GameObjects
 
             _contrail = new SmokeTrail(this, o =>
             {
-                var p = o as Plane;
+                var p = o as FighterPlane;
                 return p.ExhaustPosition;
             });
             _contrail.SkipFrames = skipFrames;
@@ -645,7 +646,7 @@ namespace PolyPlane.GameObjects
 
         public void DoImpact(GameObject impactor, D2DPoint impactPos, bool ignoreCooldown = false)
         {
-            var attackPlane = impactor.Owner as Plane;
+            var attackPlane = impactor.Owner as FighterPlane;
 
             if (impactor is Bullet)
                 attackPlane.BulletsHit++;
@@ -717,7 +718,7 @@ namespace PolyPlane.GameObjects
                     _damageDeflection = _rnd.NextFloat(-180, 180);
 
                     // Award attacking plane with missiles and health?
-                    if (attackPlane.NumMissiles < Plane.MAX_MISSILES)
+                    if (attackPlane.NumMissiles < FighterPlane.MAX_MISSILES)
                     {
                         attackPlane.NumMissiles++;
                     }
@@ -794,7 +795,7 @@ namespace PolyPlane.GameObjects
 
         public void DoNetImpact(GameObject impactor, D2DPoint impactPos, bool doesDamage, bool wasHeadshot, bool wasMissile)
         {
-            var attackPlane = impactor.Owner as Plane;
+            var attackPlane = impactor.Owner as FighterPlane;
 
             if (impactor is Bullet)
                 attackPlane.BulletsHit++;
@@ -848,7 +849,7 @@ namespace PolyPlane.GameObjects
                     _damageDeflection = _rnd.NextFloat(-180, 180);
 
                     // Award attacking plane with missiles and health?
-                    if (attackPlane.NumMissiles < Plane.MAX_MISSILES)
+                    if (attackPlane.NumMissiles < FighterPlane.MAX_MISSILES)
                     {
                         attackPlane.NumMissiles++;
                     }

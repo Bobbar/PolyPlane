@@ -173,7 +173,7 @@ namespace PolyPlane.Server
 
             ProcessObjQueue();
 
-            Plane viewPlane = GetViewPlane();
+            FighterPlane viewPlane = GetViewPlane();
 
             // Update/advance objects.
             if (!_isPaused)
@@ -272,7 +272,7 @@ namespace PolyPlane.Server
             _fpsLimiter.Wait(60);
         }
 
-        private Plane GetViewPlane()
+        private FighterPlane GetViewPlane()
         {
             var idPlane = _objs.GetPlaneByPlayerID(_aiPlaneViewID);
 
@@ -318,7 +318,7 @@ namespace PolyPlane.Server
             }
         }
 
-        private void DropDecoy(Plane plane)
+        private void DropDecoy(FighterPlane plane)
         {
             if (plane.IsDamaged)
                 return;
@@ -359,12 +359,12 @@ namespace PolyPlane.Server
             }
         }
 
-        private Plane GetAIPlane()
+        private FighterPlane GetAIPlane()
         {
             var range = new D2DPoint(-40000, 40000);
             var pos = new D2DPoint(Helpers.Rnd.NextFloat(range.X, range.Y), Helpers.Rnd.NextFloat(-4000f, -17000f));
 
-            var aiPlane = new Plane(pos, Helpers.RandomEnum<AIPersonality>());
+            var aiPlane = new FighterPlane(pos, Helpers.RandomEnum<AIPersonality>());
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, D2DColor.GreenYellow, _objs.Missiles, _objs.Planes);
             aiPlane.PlayerName = Helpers.GetRandomName();
@@ -388,12 +388,12 @@ namespace PolyPlane.Server
             return aiPlane;
         }
 
-        private Plane GetAIPlane(AIPersonality personality)
+        private FighterPlane GetAIPlane(AIPersonality personality)
         {
             var range = new D2DPoint(-40000, 40000);
             var pos = new D2DPoint(Helpers.Rnd.NextFloat(range.X, range.Y), Helpers.Rnd.NextFloat(-4000f, -17000f));
 
-            var aiPlane = new Plane(pos, personality);
+            var aiPlane = new FighterPlane(pos, personality);
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, D2DColor.GreenYellow, _objs.Missiles, _objs.Planes);
             aiPlane.PlayerName = Helpers.GetRandomName();

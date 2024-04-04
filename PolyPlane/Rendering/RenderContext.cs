@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using unvell.D2DLib;
 
-namespace PolyPlane
+namespace PolyPlane.Rendering
 {
     /// <summary>
     /// Provides overloads of common graphics methods which include automagic viewport clamping for performance.
@@ -33,14 +33,14 @@ namespace PolyPlane
 
         public void PushViewPort(D2DRect viewport)
         {
-            _vpStack.Push(this.Viewport);
+            _vpStack.Push(Viewport);
 
-            this.Viewport = viewport;
+            Viewport = viewport;
         }
 
         public void PopViewPort()
         {
-            this.Viewport = _vpStack.Pop();
+            Viewport = _vpStack.Pop();
         }
 
         public void FillEllipse(D2DEllipse ellipse, D2DColor color)
@@ -48,17 +48,23 @@ namespace PolyPlane
             Gfx.FillEllipseClamped(Viewport, ellipse, color);
         }
 
+        public void FillEllipseSimple(D2DPoint pos, float radius, D2DColor color)
+        {
+            Gfx.FillEllipseClamped(Viewport, new D2DEllipse(pos, new D2DSize(radius, radius)), color);
+        }
+
         public void DrawEllipse(D2DEllipse ellipse, D2DColor color, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid)
         {
             Gfx.DrawEllipseClamped(Viewport, ellipse, color, weight, dashStyle);
         }
 
+      
         public void DrawLine(D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid, D2DCapStyle startCap = D2DCapStyle.Flat, D2DCapStyle endCap = D2DCapStyle.Flat)
         {
             Gfx.DrawLineClamped(Viewport, start, end, color, weight, dashStyle, startCap, endCap);
         }
 
-        public void DrawPolygon(Vector2[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
+        public void DrawPolygon(D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
         {
             Gfx.DrawPolygonClamped(Viewport, points, strokeColor, strokeWidth, dashStyle, fillColor);
         }
