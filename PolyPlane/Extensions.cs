@@ -128,6 +128,10 @@ namespace PolyPlane
             return rect.Contains(ellipse.origin);
         }
 
+        public static D2DRect Inflate(this D2DRect rect, float width, float height)
+        {
+            return new D2DRect(rect.left - width, rect.top - height, rect.Width + 2f * width, rect.Height + 2f * height);
+        }
 
         public static T Shift<T>(this List<T> list)
         {

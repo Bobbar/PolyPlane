@@ -71,7 +71,7 @@ namespace PolyPlane
             this.MouseWheel += PolyPlaneUI_MouseWheel;
             this.Disposed += PolyPlaneUI_Disposed;
 
-            _burstTimer.TriggerCallback = () => 
+            _burstTimer.TriggerCallback = () =>
             DoAIPlaneBursts();
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
             _playerBurstTimer.TriggerCallback = () => _playerPlane.FireBullet(p => AddExplosion(p));
@@ -501,7 +501,7 @@ namespace PolyPlane
                 _playerBurstTimer.Stop();
                 _playerPlane.FiringBurst = false;
             }
-                
+
 
             if (buttons.HasFlag(MouseButtons.Right))
                 _playerPlane.DroppingDecoy = true;
@@ -845,10 +845,13 @@ namespace PolyPlane
 
                 case 'p':
 
-                    //if (!_isPaused)
-                    //    PauseRender();
-                    //else
-                    //    ResumeRender();
+                    if (World.IsNetGame)
+                        break;
+
+                    if (!_isPaused)
+                        PauseRender();
+                    else
+                        ResumeRender();
 
                     break;
 

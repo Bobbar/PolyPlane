@@ -44,6 +44,12 @@ namespace PolyPlane.Rendering
         private int Width => _renderTarget.Width;
         private int Height => _renderTarget.Height;
 
+        const int PROC_GEN_LEN = 20000;
+        private int[] _groundObjsRnd; // Random data points sampled for ground objects.
+
+        private const int NUM_CLOUDS = 2000;
+        private const float MAX_CLOUD_Y = 400000f;
+        private List<Cloud> _clouds = new List<Cloud>();
 
         public RenderManager(Control renderTarget, GameObjectManager objs, NetEventManager netMan)
         {
@@ -51,7 +57,7 @@ namespace PolyPlane.Rendering
             _objs = objs;
             _netMan = netMan;
 
-
+            InitProceduralGenStuff();
             InitGfx();
         }
 
@@ -69,6 +75,53 @@ namespace PolyPlane.Rendering
             _screenFlash = new FloatAnimation(0.4f, 0f, 3f, EasingFunctions.EaseQuinticOut, v => _screenFlashOpacity = v);
             _screenShakeX = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.X = v);
             _screenShakeY = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.Y = v);
+        }
+
+        public void InitProceduralGenStuff()
+        {
+            var rnd = new Random(1234);
+
+            _groundObjsRnd = new int[PROC_GEN_LEN];
+
+            // Random values for ground obj gen.
+            for (int i = 0; i < PROC_GEN_LEN; i++)
+                _groundObjsRnd[i] = rnd.Next(PROC_GEN_LEN);
+
+            // Generate a pseudo-random? list of clouds.
+            // I tried to do clouds procedurally, but wasn't having much luck.
+            // It turns out that we need a surprisingly few number of clouds
+            // to cover a very large area, so we will just brute force this for now.
+            var cloudRangeX = new D2DPoint(-MAX_CLOUD_Y, MAX_CLOUD_Y);
+            var cloudRangeY = new D2DPoint(-30000, -2000);
+            var cloudDeDup = new HashSet<D2DPoint>();
+            const int MIN_PNTS = 5;
+            const int MAX_PNTS = 25;
+            const int MIN_RADIUS = 5;
+            const int MAX_RADIUS = 20;
+
+            for (int i = 0; i < NUM_CLOUDS; i++)
+            {
+                var rndPos = new D2DPoint(rnd.NextFloat(cloudRangeX.X, cloudRangeX.Y), rnd.NextFloat(cloudRangeY.X, cloudRangeY.Y));
+
+                while (!cloudDeDup.Add(rndPos))
+                    rndPos = new D2DPoint(rnd.NextFloat(cloudRangeX.X, cloudRangeX.Y), rnd.NextFloat(cloudRangeY.X, cloudRangeY.Y));
+
+                var rndCloud = Cloud.RandomCloud(rnd, rndPos, MIN_PNTS, MAX_PNTS, MIN_RADIUS, MAX_RADIUS);
+                _clouds.Add(rndCloud);
+            }
+
+            // Add a more dense layer near the ground?
+            var cloudLayerRangeY = new D2DPoint(-2500, -2000);
+            for (int i = 0; i < NUM_CLOUDS / 2; i++)
+            {
+                var rndPos = new D2DPoint(rnd.NextFloat(cloudRangeX.X, cloudRangeX.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
+
+                while (!cloudDeDup.Add(rndPos))
+                    rndPos = new D2DPoint(rnd.NextFloat(cloudRangeX.X, cloudRangeX.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
+
+                var rndCloud = Cloud.RandomCloud(rnd, rndPos, MIN_PNTS, MAX_PNTS, MIN_RADIUS, MAX_RADIUS);
+                _clouds.Add(rndCloud);
+            }
         }
 
         public void ToggleInfo()
@@ -99,7 +152,6 @@ namespace PolyPlane.Rendering
 
                 _gfx.PushTransform(); // Push screen shake transform.
                 _gfx.TranslateTransform(_screenShakeTrans.X, _screenShakeTrans.Y);
-
 
                 _gfx.PushTransform(); // Push scale transform.
                 _gfx.ScaleTransform(World.ZoomScale, World.ZoomScale);
@@ -134,6 +186,7 @@ namespace PolyPlane.Rendering
             _screenFlash.Update(World.DT, World.ViewPortSize, World.RenderScale);
             _screenShakeX.Update(World.DT, World.ViewPortSize, World.RenderScale);
             _screenShakeY.Update(World.DT, World.ViewPortSize, World.RenderScale);
+            MoveClouds(World.DT);
         }
 
         public void ResizeGfx(bool force = false)
@@ -142,15 +195,10 @@ namespace PolyPlane.Rendering
                 if (World.ViewPortBaseSize.height == _renderTarget.Size.Height && World.ViewPortBaseSize.width == _renderTarget.Size.Width)
                     return;
 
-            //StopRender();
-
             _device?.Resize();
 
             World.UpdateViewport(_renderTarget.Size);
-
-            //ResumeRender();
         }
-
 
         public void Dispose()
         {
@@ -182,13 +230,9 @@ namespace PolyPlane.Rendering
 
         public void DoScreenFlash(D2DColor color)
         {
-            //if (_screenFlash.IsPlaying)
-            //    return;
-
             _screenFlashColor = color;
             _screenFlash.Reset();
         }
-
 
         private void DrawPlaneAndObjects(RenderContext ctx, Plane plane)
         {
@@ -208,7 +252,10 @@ namespace PolyPlane.Rendering
             ctx.Gfx.TranslateTransform(pos.X, pos.Y);
 
             var viewPortRect = new D2DRect(plane.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
+            viewPortRect = viewPortRect.Inflate(100f, 100f); // Inflate slightly to prevent "pop-in".
             ctx.PushViewPort(viewPortRect);
+
+            DrawGroundObjs(ctx, plane);
 
             // Draw the ground.
             ctx.Gfx.FillRectangle(new D2DRect(new D2DPoint(plane.Position.X, 2000f), new D2DSize(this.Width * World.ViewPortScaleMulti, 4000f)), D2DColor.DarkGreen);
@@ -233,10 +280,79 @@ namespace PolyPlane.Rendering
             _objs.Bullets.ForEach(o => o.Render(ctx));
             _objs.Explosions.ForEach(o => o.Render(ctx));
 
-            //DrawNearObj(_ctx.Gfx, plane);
+            DrawClouds(ctx);
 
             ctx.PopViewPort();
             ctx.Gfx.PopTransform();
+        }
+
+        private void DrawGroundObjs(RenderContext ctx, Plane plane)
+        {
+            var start = plane.Position.X - ((this.Width * World.ViewPortScaleMulti) * 0.5f);
+            var end = plane.Position.X + ((this.Width * World.ViewPortScaleMulti) * 0.5f);
+
+            for (int x = (int)start; x < (int)end; x += 1)
+            {
+                var xRound = (Math.Abs(x) % PROC_GEN_LEN);
+
+                // ????
+                var rndPnt = _groundObjsRnd[(xRound / 1)];
+                var rndPnt2 = _groundObjsRnd[(xRound / 6)];
+                var rndPnt3 = _groundObjsRnd[(xRound / 7)];
+                var rndPnt4 = _groundObjsRnd[(xRound / 20)];
+
+                var treePos = new D2DPoint(x, 0f);
+
+                // Just fiddling with numbers here to produce a decent looking result... 
+                if (rndPnt < 10)
+                    DrawTree(ctx, treePos + new D2DPoint(rndPnt * 200, 0f), ((10 - rndPnt) * 6) + 10, 40 + rndPnt);
+
+                if (rndPnt2 > PROC_GEN_LEN - 10)
+                    DrawTree(ctx, treePos, 30 + ((rndPnt2 - PROC_GEN_LEN - 10)));
+
+                if (rndPnt3 < 21)
+                    DrawPineTree(ctx, treePos, ((21 - rndPnt3) * 4));
+
+                if (rndPnt4 < 20)
+                    DrawTree(ctx, treePos, 13 + (20 - rndPnt4));
+
+                if (rndPnt4 > PROC_GEN_LEN - 50)
+                    DrawTree(ctx, treePos, (rndPnt4 - (PROC_GEN_LEN - 50) + 1) * 2, (rndPnt4 - (PROC_GEN_LEN - 50) + 1) * 6);
+            }
+        }
+
+        private void DrawTree(RenderContext ctx, D2DPoint pos, float height = 20f, float radius = 50f)
+        {
+            var trunk = new D2DPoint[]
+            {
+                new D2DPoint(-2, 0),
+                new D2DPoint(2, 0),
+                new D2DPoint(0, height),
+            };
+
+            var scale = 5f;
+            var color = D2DColor.Chocolate;
+            Helpers.ApplyTranslation(trunk, trunk, 180f, pos, scale);
+
+            ctx.DrawPolygon(trunk, color, 1f, D2DDashStyle.Solid, color);
+            ctx.FillEllipse(new D2DEllipse(pos + new D2DPoint(0, -height * scale), new D2DSize(radius, radius)), D2DColor.ForestGreen);
+        }
+
+        private void DrawPineTree(RenderContext ctx, D2DPoint pos, float height = 20f, float width = 20f)
+        {
+            var trunk = new D2DPoint[]
+            {
+                new D2DPoint(-5, 0),
+                new D2DPoint(5, 0),
+                new D2DPoint(0, height),
+            };
+
+            var scale = 5f;
+            var color = D2DColor.Green;
+            Helpers.ApplyTranslation(trunk, trunk, 180f, pos - new D2DPoint(0, height), scale);
+
+            ctx.FillRectangle(new D2DRect(pos - new D2DPoint(0, height / 2f), new D2DSize(width / 2f, height * 1f)), D2DColor.BurlyWood);
+            ctx.DrawPolygon(trunk, color, 1f, D2DDashStyle.Solid, color);
         }
 
         private void DrawHealthBarClamped(RenderContext ctx, Plane plane, D2DPoint position, D2DSize size)
@@ -280,8 +396,6 @@ namespace PolyPlane.Rendering
             DrawAltimeter(ctx.Gfx, viewportsize, viewPlane);
             DrawSpeedo(ctx.Gfx, viewportsize, viewPlane);
             DrawGMeter(ctx.Gfx, viewportsize, viewPlane);
-            //DrawThrottle(ctx.Gfx, viewportsize, viewPlane);
-            //DrawStats(ctx.Gfx, viewportsize, viewPlane);
 
             if (!viewPlane.IsDamaged)
             {
@@ -642,41 +756,26 @@ namespace PolyPlane.Rendering
             gfx.DrawText(infoText, D2DColor.GreenYellow, _defaultFontName, 12f, pos.X, pos.Y);
         }
 
-
-
         private void DrawOverlays(RenderContext ctx, Plane viewplane)
         {
             if (_showInfo)
                 DrawInfo(ctx.Gfx, _infoPosition, viewplane);
 
-            //var center = new D2DPoint(World.ViewPortSize.width * 0.5f, World.ViewPortSize.height * 0.5f);
-            //var angVec = Helpers.AngleToVectorDegrees(_testAngle);
-            //gfx.DrawLine(center, center + (angVec * 100f), D2DColor.Red);
-
-
             if (World.EnableTurbulence || World.EnableWind)
                 DrawWindAndTurbulenceOverlay(ctx);
 
-
             if (viewplane.IsDamaged)
                 ctx.Gfx.FillRectangle(World.ViewPortRect, new D2DColor(0.2f, D2DColor.Red));
-
-            //DrawFPSGraph(ctx);
-            //DrawGrid(gfx);
-
-            //DrawRadial(ctx.Gfx, _radialPosition);
         }
-
 
         private void DrawSky(RenderContext ctx, Plane viewPlane)
         {
             const float barH = 20f;
             const float MAX_ALT = 50000f;
 
-            var plrAlt = Math.Abs(viewPlane.Position.Y);
+            var plrAlt = viewPlane.Altitude;
             if (viewPlane.Position.Y >= 0)
                 plrAlt = 0f;
-
 
             var color1 = new D2DColor(0.5f, D2DColor.SkyBlue);
             var color2 = new D2DColor(0.5f, D2DColor.Black);
@@ -716,6 +815,66 @@ namespace PolyPlane.Rendering
 
                     if (rect.Contains(pos))
                         ctx.Gfx.FillRectangle(new D2DRect(pos, d2dSz), color);
+                }
+            }
+        }
+
+        private void DrawClouds(RenderContext ctx)
+        {
+            for (int i = 0; i < _clouds.Count; i++)
+            {
+                var cloud = _clouds[i];
+
+                if (ctx.Viewport.Contains(cloud.Position))
+                {
+                    DrawCloud(ctx, cloud);
+                }
+            }
+        }
+
+        private void DrawCloud(RenderContext ctx, Cloud cloud)
+        {
+            const float SCALE = 5f;
+            var color1 = new D2DColor(1f, 0.7f, 0.7f, 0.7f);
+            var color2 = D2DColor.WhiteSmoke;
+
+            var points = cloud.Points.ToArray();
+            Helpers.ApplyTranslation(points, points, cloud.Rotation, cloud.Position, SCALE);
+
+            for (int i = 0; i < points.Length; i++)
+            {
+                // Lerp slightly darker colors to give the cloud some depth.
+                var color = Helpers.LerpColor(color1, color2, (i / (float)points.Length));
+                var point = points[i];
+                var dims = cloud.Dims[i];
+                
+                //ctx.FillEllipse(new D2DEllipse(point, new D2DSize(dims.X, dims.Y)), cloud.Color);
+                ctx.FillEllipse(new D2DEllipse(point, new D2DSize(dims.X, dims.Y)), color);
+            }
+        }
+
+        private void MoveClouds(float dt)
+        {
+            const float RATE = 40f;
+            for (int i = 0; i < _clouds.Count; i++)
+            {
+                var cloud = _clouds[i];
+
+                // Smaller clouds move slightly faster?
+                cloud.Position.X += (RATE - (cloud.Radius / 2)) * dt;
+                
+                float rotDir = 1f;
+
+                // Fiddle rotation direction.
+                if (cloud.Points.Count % 2 == 0)
+                    rotDir = -1f;
+
+                cloud.Rotation = Helpers.ClampAngle(cloud.Rotation + (3f * rotDir) * dt);
+
+                // Wrap clouds.
+                if (cloud.Position.X > MAX_CLOUD_Y)
+                {
+                    cloud.Position.X = -MAX_CLOUD_Y;
                 }
             }
         }
