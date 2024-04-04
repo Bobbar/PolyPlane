@@ -439,6 +439,7 @@ namespace PolyPlane.Net
 
             // Try to spawn the bullet ahead to compensate for latency?
             bullet.Position += bullet.Velocity * (float)(bullet.LagAmount / 1000f);
+            bullet.AddExplosionCallback = Objs.AddBulletExplosion;
 
             Objs.AddBullet(bullet);
         }

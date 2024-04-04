@@ -180,7 +180,6 @@ namespace PolyPlane.AI_Behavior
 
             if (plrFOV <= MIN_OFFBORE)
             {
-                Log.Msg("FIRING BURST AT PLAYER!");
                 _fireBurstTimer.Restart();
             }
         }

@@ -70,7 +70,7 @@ namespace PolyPlane.GameObjects.Guidance
                 const int CHANCE_INIT = 10;
                 var chance = CHANCE_INIT;
 
-                var altFact = Helpers.Factor(Target.Altitude, 3000f);
+                var altFact = 1f - Helpers.Factor(Target.Altitude, 3000f);
 
                 chance -= (int)(altFact * 5);
 

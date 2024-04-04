@@ -51,6 +51,14 @@ namespace PolyPlane.GameObjects
 
             if (_age >= Lifetime)
                 this.IsExpired = true;
+
+            if (this.Altitude <= 0)
+            {
+                if (AddExplosionCallback != null)
+                    AddExplosionCallback(this.Position);
+
+                this.IsExpired = true;
+            }
         }
 
         public override void Wrap(D2DSize viewport)

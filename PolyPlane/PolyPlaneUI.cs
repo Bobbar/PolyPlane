@@ -74,7 +74,7 @@ namespace PolyPlane
             _burstTimer.TriggerCallback = () =>
             DoAIPlaneBursts();
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
-            _playerBurstTimer.TriggerCallback = () => _playerPlane.FireBullet(p => AddExplosion(p));
+            _playerBurstTimer.TriggerCallback = () => _playerPlane.FireBullet(p => _objs.AddBulletExplosion(p));
 
             _multiThreadNum = Environment.ProcessorCount - 2;
         }

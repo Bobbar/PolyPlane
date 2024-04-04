@@ -355,7 +355,7 @@ namespace PolyPlane.Server
             for (int i = 0; i < firing.Length; i++)
             {
                 var plane = firing[i];
-                plane.FireBullet(p => AddExplosion(p));
+                plane.FireBullet(p => _objs.AddBulletExplosion(p));
             }
         }
 
@@ -417,12 +417,6 @@ namespace PolyPlane.Server
             return aiPlane;
         }
 
-        private void AddExplosion(D2DPoint pos)
-        {
-            var explosion = new Explosion(pos, 200f, 1.4f);
-
-            _objs.AddExplosion(explosion);
-        }
 
         private void SpawnAIPlane()
         {
