@@ -104,6 +104,7 @@ namespace PolyPlane.GameObjects
         private GameTimer _damageCooldownTimeout = new GameTimer(4f);
         private GameTimer _damageFlashTimer = new GameTimer(0.2f, true);
         private GameTimer _bulletRegenTimer = new GameTimer(0.2f, true);
+        private GameTimer _missileRegenTimer = new GameTimer(60f, true);
 
         private float _damageDeflection = 0f;
 
@@ -260,6 +261,13 @@ namespace PolyPlane.GameObjects
 
             _bulletRegenTimer.Start();
 
+            _missileRegenTimer.TriggerCallback = () =>
+            {
+                if (NumMissiles < MAX_MISSILES)
+                    NumMissiles++;
+            };
+
+            _missileRegenTimer.Start();
 
             _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
 
@@ -297,6 +305,8 @@ namespace PolyPlane.GameObjects
 
             if (!this.FiringBurst)
                 _bulletRegenTimer.Update(dt);
+
+            _missileRegenTimer.Update(dt);
 
             _flamePos.Update(dt, viewport, renderScale * this.RenderOffset, skipFrames: true);
             _gunPosition.Update(dt, viewport, renderScale * this.RenderOffset, skipFrames: true);
@@ -717,12 +727,6 @@ namespace PolyPlane.GameObjects
                     IsDamaged = true;
                     _damageDeflection = _rnd.NextFloat(-180, 180);
 
-                    // Award attacking plane with missiles and health?
-                    if (attackPlane.NumMissiles < FighterPlane.MAX_MISSILES)
-                    {
-                        attackPlane.NumMissiles++;
-                    }
-
                     attackPlane.Kills++;
 
                     if (attackPlane.Hits < MAX_HITS)
@@ -847,12 +851,6 @@ namespace PolyPlane.GameObjects
                 {
                     IsDamaged = true;
                     _damageDeflection = _rnd.NextFloat(-180, 180);
-
-                    // Award attacking plane with missiles and health?
-                    if (attackPlane.NumMissiles < FighterPlane.MAX_MISSILES)
-                    {
-                        attackPlane.NumMissiles++;
-                    }
 
                     attackPlane.Kills++;
 
