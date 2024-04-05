@@ -29,7 +29,7 @@ namespace PolyPlane.GameObjects
             _spawnTimer.Start();
         }
 
-        public Flame(GameObject obj, D2DPoint offset) : base(obj.Position, obj.Velocity)
+        public Flame(GameObject obj, D2DPoint offset, bool hasFlame = true) : base(obj.Position, obj.Velocity)
         {
             _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
 
@@ -37,8 +37,11 @@ namespace PolyPlane.GameObjects
             Radius = Helpers.Rnd.NextFloat(4f, 15f);
             _refPos = new FixturePoint(obj, offset);
 
-            _spawnTimer.TriggerCallback = () => SpawnPart();
-            _spawnTimer.Start();
+            if (hasFlame)
+            {
+                _spawnTimer.TriggerCallback = () => SpawnPart();
+                _spawnTimer.Start();
+            }
         }
 
         public override void Update(float dt, D2DSize viewport, float renderScale)

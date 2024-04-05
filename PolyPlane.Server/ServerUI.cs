@@ -44,6 +44,12 @@ namespace PolyPlane.Server
         private long _frame = 0;
         private double _packetDelay = 0f;
         private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
+        private uint _lastRec = 0;
+        private uint _lastSent = 0;
+        private Stopwatch _bwTimer = new Stopwatch();
+        private SmoothDouble _sentSmooth = new SmoothDouble(50);
+        private SmoothDouble _recSmooth = new SmoothDouble(50);
+        private SmoothDouble _netSmooth = new SmoothDouble(50);
 
         private bool _clearObjs = false;
 
@@ -445,6 +451,9 @@ namespace PolyPlane.Server
 
         private string GetInfo()
         {
+            if (!_bwTimer.IsRunning)
+                _bwTimer.Start();
+
             string infoText = string.Empty;
             infoText += $"Paused: {_isPaused}\n\n";
 
@@ -454,13 +463,31 @@ namespace PolyPlane.Server
             infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";
             infoText += $"Update ms: {Math.Round(_updateTime.TotalMilliseconds, 2)}\n";
             infoText += $"Collision ms: {Math.Round(_collisionTime.TotalMilliseconds, 2)}\n";
-            infoText += $"Net ms: {Math.Round(_netTime.TotalMilliseconds, 2)}\n";
+            //infoText += $"Net ms: {Math.Round(_netTime.TotalMilliseconds, 2)}\n";
+            infoText += $"Net ms: {Math.Round(_netSmooth.Add(_netMan.Host.NetTime.TotalMilliseconds), 2)}\n";
 
             if (_viewPort != null)
                 infoText += $"Render ms: {Math.Round(_renderTime.TotalMilliseconds, 2)}\n";
 
             infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
 
+            infoText += $"Bytes Rec: {_netMan.Host.Host.BytesReceived}\n";
+            infoText += $"Bytes Sent: {_netMan.Host.Host.BytesSent}\n";
+
+            _bwTimer.Stop();
+            var elap = _bwTimer.Elapsed;
+            var recDiff = _netMan.Host.Host.BytesReceived - _lastRec;
+            var sentDiff = _netMan.Host.Host.BytesSent - _lastSent;
+
+            _lastRec = _netMan.Host.Host.BytesReceived;
+            _lastSent = _netMan.Host.Host.BytesSent;
+
+            var sentPerSec = _sentSmooth.Add((sentDiff / elap.TotalSeconds) / 100000f);
+            var recPerSec = _recSmooth.Add((recDiff / elap.TotalSeconds) / 100000f);
+            _bwTimer.Restart();
+
+            infoText += $"MB Rec/s: {Math.Round(recPerSec, 2)}\n";
+            infoText += $"MB Sent/s: {Math.Round(sentPerSec, 2)}\n";
             //infoText += $"Sent B/s: {(World.IsServer ? _server.BytesSentPerSecond : 0)}\n";
             //infoText += $"Rec B/s: {(World.IsServer ? _server.BytesReceivedPerSecond : 0)}\n";
 

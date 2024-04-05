@@ -35,6 +35,8 @@ namespace PolyPlane.Rendering
         private NetEventManager _netMan;
 
         private D2DPoint _screenShakeTrans = D2DPoint.Zero;
+        private D2DPoint _gforceTrans = D2DPoint.Zero;
+
         private float _screenFlashOpacity = 0f;
         private D2DColor _screenFlashColor = D2DColor.Red;
         private FloatAnimation _screenShakeX;
@@ -73,7 +75,7 @@ namespace PolyPlane.Rendering
 
             World.UpdateViewport(_renderTarget.Size);
 
-            _screenFlash = new FloatAnimation(0.4f, 0f, 3f, EasingFunctions.EaseQuinticOut, v => _screenFlashOpacity = v);
+            _screenFlash = new FloatAnimation(0.4f, 0f, 4f, EasingFunctions.EaseQuinticOut, v => _screenFlashOpacity = v);
             _screenShakeX = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.X = v);
             _screenShakeY = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.Y = v);
         }
@@ -146,13 +148,14 @@ namespace PolyPlane.Rendering
 
                 _gfx.BeginRender(_clearColor);
 
-                // Sky and background.
-                DrawSky(_ctx, viewplane);
-                DrawMovingBackground(_ctx, viewplane);
                 DrawScreenFlash(_gfx);
 
                 _gfx.PushTransform(); // Push screen shake transform.
                 _gfx.TranslateTransform(_screenShakeTrans.X, _screenShakeTrans.Y);
+
+                // Sky and background.
+                DrawSky(_ctx, viewplane);
+                DrawMovingBackground(_ctx, viewplane);
 
                 _gfx.PushTransform(); // Push scale transform.
                 _gfx.ScaleTransform(World.ZoomScale, World.ZoomScale);
@@ -162,15 +165,24 @@ namespace PolyPlane.Rendering
 
                 _gfx.PopTransform(); // Pop scale transform.
 
+
+                //_gfx.PushTransform(); // Push GForce transform.
+                //_gfx.TranslateTransform(_gforceTrans.X, _gforceTrans.Y);
+
                 DrawHud(_ctx, new D2DSize(this.Width, this.Height), viewplane);
 
                 _gfx.PopTransform(); // Pop screen shake transform.
+                //_gfx.PopTransform(); // Pop GForce transform.
 
                 _timer.Stop();
                 _renderTime = _timer.Elapsed;
 
                 DrawOverlays(_ctx, viewplane);
 
+                if (viewplane.GForce > 17f)
+                    DoScreenShake(viewplane.GForce / 10f);
+
+                //_gforceTrans = -Helpers.AngleToVectorDegrees(viewplane.GForceDirection, viewplane.GForce);
             }
 
             _gfx.EndRender();
@@ -222,6 +234,15 @@ namespace PolyPlane.Rendering
         public void DoScreenShake()
         {
             float amt = 10f;
+            _screenShakeX.Start = Helpers.Rnd.NextFloat(-amt, amt);
+            _screenShakeY.Start = Helpers.Rnd.NextFloat(-amt, amt);
+
+            _screenShakeX.Reset();
+            _screenShakeY.Reset();
+        }
+
+        public void DoScreenShake(float amt)
+        {
             _screenShakeX.Start = Helpers.Rnd.NextFloat(-amt, amt);
             _screenShakeY.Start = Helpers.Rnd.NextFloat(-amt, amt);
 
@@ -314,7 +335,10 @@ namespace PolyPlane.Rendering
                     DrawTree(ctx, treePos, 30 + ((rndPnt2 - PROC_GEN_LEN - 10)));
 
                 if (rndPnt3 < 21)
-                    DrawPineTree(ctx, treePos, ((21 - rndPnt3) * 4));
+                    DrawPineTree(ctx, treePos, ((21 - rndPnt3) * 3));
+
+                if (rndPnt3 > (PROC_GEN_LEN / 2) - 20 && rndPnt3 < (PROC_GEN_LEN / 2) + 40)
+                    DrawTree(ctx, treePos, 40, 100);
 
                 if (rndPnt4 < 20)
                     DrawTree(ctx, treePos, 13 + (20 - rndPnt4));
@@ -334,11 +358,16 @@ namespace PolyPlane.Rendering
             };
 
             var scale = 5f;
-            var color = D2DColor.Chocolate;
+            var trunkColor = D2DColor.Chocolate;
+            var leafColor = D2DColor.ForestGreen;
+
+            if (radius % 2 == 0)
+                leafColor.g -= 0.1f;
+
             Helpers.ApplyTranslation(trunk, trunk, 180f, pos, scale);
 
-            ctx.DrawPolygon(trunk, color, 1f, D2DDashStyle.Solid, color);
-            ctx.FillEllipse(new D2DEllipse(pos + new D2DPoint(0, -height * scale), new D2DSize(radius, radius)), D2DColor.ForestGreen);
+            ctx.DrawPolygon(trunk, trunkColor, 1f, D2DDashStyle.Solid, trunkColor);
+            ctx.FillEllipse(new D2DEllipse(pos + new D2DPoint(0, -height * scale), new D2DSize(radius, radius)), leafColor);
         }
 
         private void DrawPineTree(RenderContext ctx, D2DPoint pos, float height = 20f, float width = 20f)
@@ -440,7 +469,6 @@ namespace PolyPlane.Rendering
             DrawHealthBar(ctx.Gfx, viewPlane, pos, healthBarSize);
 
             ctx.Gfx.PopTransform();
-
         }
 
         private void DrawGuideIcon(D2DGraphics gfx, D2DSize viewportsize, FighterPlane viewPlane)
@@ -791,7 +819,6 @@ namespace PolyPlane.Rendering
 
         private void DrawSky(RenderContext ctx, FighterPlane viewPlane)
         {
-            const float barH = 20f;
             const float MAX_ALT = 50000f;
 
             var plrAlt = viewPlane.Altitude;
@@ -800,17 +827,10 @@ namespace PolyPlane.Rendering
 
             var color1 = new D2DColor(0.5f, D2DColor.SkyBlue);
             var color2 = new D2DColor(0.5f, D2DColor.Black);
-            var rect = new D2DRect(new D2DPoint(this.Width * 0.5f, 0), new D2DSize(this.Width, barH));
-            plrAlt += this.Height / 2f;
+            var color = Helpers.LerpColor(color1, color2, (plrAlt / MAX_ALT));
+            var rect = new D2DRect(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), new D2DSize(this.Width, this.Height));
 
-            for (float y = 0; y < this.Height; y += barH)
-            {
-                var posY = (plrAlt - y);
-                var color = Helpers.LerpColor(color1, color2, (posY / MAX_ALT));
-
-                rect.Y = y;
-                ctx.Gfx.FillRectangle(rect, color);
-            }
+            ctx.Gfx.FillRectangle(rect, color);
         }
 
         private void DrawMovingBackground(RenderContext ctx, FighterPlane viewPlane)
@@ -868,7 +888,7 @@ namespace PolyPlane.Rendering
                 var color = Helpers.LerpColor(color1, color2, (i / (float)points.Length));
                 var point = points[i];
                 var dims = cloud.Dims[i];
-                
+
                 //ctx.FillEllipse(new D2DEllipse(point, new D2DSize(dims.X, dims.Y)), cloud.Color);
                 ctx.FillEllipse(new D2DEllipse(point, new D2DSize(dims.X, dims.Y)), color);
             }
@@ -883,7 +903,7 @@ namespace PolyPlane.Rendering
 
                 // Smaller clouds move slightly faster?
                 cloud.Position.X += (RATE - (cloud.Radius / 2)) * dt;
-                
+
                 float rotDir = 1f;
 
                 // Fiddle rotation direction.

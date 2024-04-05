@@ -1,6 +1,4 @@
-﻿using System.Collections.Concurrent;
-
-namespace PolyPlane.GameObjects
+﻿namespace PolyPlane.GameObjects
 {
     public class GameObjectManager
     {
@@ -18,10 +16,10 @@ namespace PolyPlane.GameObjects
 
         public List<FighterPlane> Planes = new List<FighterPlane>();
 
-        public ConcurrentQueue<GameObject> NewDecoys = new ConcurrentQueue<GameObject>();
-        public ConcurrentQueue<GameObject> NewBullets = new ConcurrentQueue<GameObject>();
-        public ConcurrentQueue<GameObject> NewMissiles = new ConcurrentQueue<GameObject>();
-        public ConcurrentQueue<FighterPlane> NewPlanes = new ConcurrentQueue<FighterPlane>();
+        public RingBuffer<GameObject> NewDecoys = new RingBuffer<GameObject>(20);
+        public RingBuffer<GameObject> NewBullets = new RingBuffer<GameObject>(100);
+        public RingBuffer<GameObject> NewMissiles = new RingBuffer<GameObject>(10);
+        public RingBuffer<FighterPlane> NewPlanes = new RingBuffer<FighterPlane>(100);
 
         private Dictionary<int, GameObject> _objLookup = new Dictionary<int, GameObject>();
 
@@ -133,10 +131,6 @@ namespace PolyPlane.GameObjects
             Bullets.Clear();
             Explosions.Clear();
             Planes.Clear();
-            NewDecoys.Clear();
-            NewBullets.Clear();
-            NewMissiles.Clear();
-            NewPlanes.Clear();
             _objLookup.Clear();
 
         }

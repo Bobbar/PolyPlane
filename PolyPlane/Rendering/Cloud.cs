@@ -1,9 +1,4 @@
 ﻿using PolyPlane.GameObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
@@ -35,11 +30,11 @@ namespace PolyPlane.Rendering
             var nPnts = rnd.Next(minPoints, maxPoints);
             var radius = rnd.Next(minRadius, maxRadius);
             var dims = new List<D2DPoint>();
-            
+
 
             // Try to make clouds at higher altitude more thin and whispy?
             var altFact = Helpers.Factor(Math.Abs(position.Y), MAX_ALT);
-            
+
             for (int i = 0; i < nPnts; i++)
                 dims.Add(new D2DPoint(rnd.NextFloat(MIN_DIMS + (altFact * ALT_FACT_AMT), MAX_DIMS + (altFact * ALT_FACT_AMT)), rnd.NextFloat(MIN_DIMS - (altFact * ALT_FACT_AMT), MAX_DIMS - (altFact * ALT_FACT_AMT))));
 
@@ -47,7 +42,7 @@ namespace PolyPlane.Rendering
             var pnts = GameObjectPoly.RandomPoly(nPnts, radius).ToList();
             var color1 = new D2DColor(0.2f, D2DColor.White);
             var color2 = new D2DColor(0.2f, D2DColor.Gray);
-            var color = Helpers.LerpColor(color1 , color2, rnd.NextFloat(0f, 1f));
+            var color = Helpers.LerpColor(color1, color2, rnd.NextFloat(0f, 1f));
 
             var newCloud = new Cloud(position, pnts, dims, rotation, color);
             newCloud.Radius = radius;

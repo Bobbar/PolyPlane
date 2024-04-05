@@ -210,7 +210,7 @@ namespace PolyPlane
                     var info = $"D:{Math.Round(dist, 0)}\nA:{Math.Round(aimedAtPlane.Altitude, 0)}\n{aimedAtPlane.PlayerName}";
                     gfx.DrawTextCenter(info, _color, "Consolas", 15f, dRect);
                 }
-               
+
             }
 
             // Draw lock circle around locked on obj.

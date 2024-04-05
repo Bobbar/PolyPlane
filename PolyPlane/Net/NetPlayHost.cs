@@ -1,6 +1,6 @@
 ﻿using ENet;
 using PolyPlane.GameObjects;
-using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace PolyPlane.Net
 {
@@ -9,17 +9,22 @@ namespace PolyPlane.Net
         public const int MAX_CLIENTS = 30;
         public const int MAX_CHANNELS = 4;
         public const int CHANNEL_ID = 0;
+        public const int TIMEOUT = 30;
 
-        public ConcurrentQueue<NetPacket> PacketSendQueue = new ConcurrentQueue<NetPacket>();
-        public ConcurrentQueue<NetPacket> PacketReceiveQueue = new ConcurrentQueue<NetPacket>();
+        public RingBuffer<NetPacket> PacketSendQueue = new RingBuffer<NetPacket>(20);
+        public RingBuffer<NetPacket> PacketReceiveQueue = new RingBuffer<NetPacket>(20);
 
         public Host Host;
         public ushort Port;
         public Address Address;
         public double CurrentTime;
+        public TimeSpan NetTime => _netTime;
 
         private Thread _pollThread;
         private bool _runLoop = true;
+
+        private TimeSpan _netTime = TimeSpan.Zero;
+        private Stopwatch _netTimer = new Stopwatch();
 
         public NetPlayHost(ushort port, string ip)
         {
@@ -56,13 +61,15 @@ namespace PolyPlane.Net
 
             while (_runLoop)
             {
+                _netTimer.Restart();
+
                 bool polled = false;
 
                 while (!polled)
                 {
                     if (Host.CheckEvents(out netEvent) <= 0)
                     {
-                        if (Host.Service(15, out netEvent) <= 0)
+                        if (Host.Service(TIMEOUT, out netEvent) <= 0)
                             break;
 
                         polled = true;
@@ -75,6 +82,9 @@ namespace PolyPlane.Net
 
                 ProcessQueue();
                 CurrentTime = World.CurrentTime();
+
+                _netTimer.Stop();
+                _netTime = _netTimer.Elapsed;
             }
         }
 

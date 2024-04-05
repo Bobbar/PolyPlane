@@ -25,7 +25,9 @@ namespace PolyPlane.GameObjects
         public int Headshots = 0;
 
         public const int MAX_MISSILES = 6;
-        public const int MAX_HITS = 16;
+        public const int MAX_HITS = 32;
+        public const int MISSILE_DAMAGE = 8;
+        public const int BULLET_DAMAGE = 1;
         public int Hits = MAX_HITS;
 
         public Radar Radar { get; set; }
@@ -53,6 +55,8 @@ namespace PolyPlane.GameObjects
         public bool DroppingDecoy { get; set; } = false;
 
         public float GForce => _gForce;
+
+        public float GForceDirection => _gForceDir;
         public bool ThrustOn { get; set; } = false;
         public float ThrustAmount
         {
@@ -127,6 +131,7 @@ namespace PolyPlane.GameObjects
         public Action<GuidedMissile> FireMissileCallback { get; set; }
 
         private float _gForce = 0f;
+        private float _gForceDir = 0f;
 
         private const float VAPOR_TRAIL_GS = 15f; // How many Gs before showing vapor trail.
         private List<Vapor> _vaporTrails = new List<Vapor>();
@@ -405,6 +410,7 @@ namespace PolyPlane.GameObjects
 
             var gforce = totForce.Length() / dt / World.Gravity.Y;
             _gForce = gforce;
+            _gForceDir = totForce.Angle(true);
 
             // TODO:  This is so messy...
             Wings.ForEach(w => w.Update(dt, viewport, renderScale * this.RenderOffset));
@@ -431,6 +437,9 @@ namespace PolyPlane.GameObjects
 
             //if (this.HasCrashed)
             //    _debris.Clear();
+
+            if (this.IsExpired)
+                _debris.Clear();
         }
 
         public override void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
@@ -648,7 +657,8 @@ namespace PolyPlane.GameObjects
 
         public void SetOnFire(D2DPoint pos)
         {
-            var flame = new Flame(this, pos);
+            var flame = new Flame(this, pos, hasFlame: Helpers.Rnd.Next(3) == 2);
+
             flame.IsNetObject = this.IsNetObject;
             flame.SkipFrames = this.IsNetObject ? 1 : World.PHYSICS_STEPS;
             _flames.Add(flame);
@@ -667,7 +677,7 @@ namespace PolyPlane.GameObjects
             if (this.IsAI)
                 _aiBehavior.ChangeTarget(attackPlane);
 
-            if ((!IsDamaged && !_damageCooldownTimeout.IsRunning) || ignoreCooldown)
+            if (!IsDamaged)
             {
                 if (this.Hits > 0)
                 {
@@ -685,37 +695,26 @@ namespace PolyPlane.GameObjects
 
                     }
 
-                    //var cockpitDist = _cockpitPosition.Position.DistanceTo(impactPos);
-                    //if (cockpitDist <= _cockpitRadius)
-                    //{
-                    //    Debug.WriteLine("HEADSHOT!");
-                    //    SpawnDebris(8, impactPos, D2DColor.Red);
-                    //    WasHeadshot = true;
-                    //    IsDamaged = true;
-                    //}
-
 
                     if (impactor is Missile)
                     {
-                        this.Hits -= 4;
+                        this.Hits -= MISSILE_DAMAGE;
                         SpawnDebris(4, impactPos, this.PlaneColor);
                     }
                     else
                     {
-                        this.Hits -= 2;
-                        SpawnDebris(2, impactPos, this.PlaneColor);
+                        this.Hits -= BULLET_DAMAGE;
+
+                        if (Helpers.Rnd.Next(3) == 2)
+                            SpawnDebris(1, impactPos, this.PlaneColor);
                     }
 
-                    if (nFlames < MAX_FLAMES)
-                    {
-                        // Scale the impact position back to the origin of the polygon.
-                        var mat = Matrix3x2.CreateRotation(-this.Rotation * (float)(Math.PI / 180f), this.Position);
-                        mat *= Matrix3x2.CreateTranslation(new D2DPoint(-this.Position.X, -this.Position.Y));
-                        var ogPos1 = D2DPoint.Transform(impactPos, mat);
+                    // Scale the impact position back to the origin of the polygon.
+                    var mat = Matrix3x2.CreateRotation(-this.Rotation * (float)(Math.PI / 180f), this.Position);
+                    mat *= Matrix3x2.CreateTranslation(new D2DPoint(-this.Position.X, -this.Position.Y));
+                    var ogPos1 = D2DPoint.Transform(impactPos, mat);
 
-                        SetOnFire(ogPos1);
-                        nFlames++;
-                    }
+                    SetOnFire(ogPos1);
 
                     _damageCooldownTimeout.Restart();
                     _damageFlashTimer.Restart();
@@ -764,7 +763,7 @@ namespace PolyPlane.GameObjects
             var result = new PlaneImpactResult();
             result.ImpactPoint = impactPos;
 
-            if ((!IsDamaged && !_damageCooldownTimeout.IsRunning))
+            if (!IsDamaged)
             {
                 result.DoesDamage = true;
 
@@ -825,27 +824,25 @@ namespace PolyPlane.GameObjects
                 {
                     if (wasMissile)
                     {
-                        this.Hits -= 4;
+                        this.Hits -= MISSILE_DAMAGE;
                         SpawnDebris(4, impactPos, this.PlaneColor);
                     }
                     else
                     {
-                        this.Hits -= 2;
-                        SpawnDebris(2, impactPos, this.PlaneColor);
+                        this.Hits -= BULLET_DAMAGE;
+
+                        if (Helpers.Rnd.Next(3) == 2)
+                            SpawnDebris(1, impactPos, this.PlaneColor);
                     }
                 }
 
 
-                if (nFlames < MAX_FLAMES)
-                {
-                    // Scale the impact position back to the origin of the polygon.
-                    var mat = Matrix3x2.CreateRotation(-this.Rotation * (float)(Math.PI / 180f), this.Position);
-                    mat *= Matrix3x2.CreateTranslation(new D2DPoint(-this.Position.X, -this.Position.Y));
-                    var ogPos1 = D2DPoint.Transform(impactPos, mat);
+                // Scale the impact position back to the origin of the polygon.
+                var mat = Matrix3x2.CreateRotation(-this.Rotation * (float)(Math.PI / 180f), this.Position);
+                mat *= Matrix3x2.CreateTranslation(new D2DPoint(-this.Position.X, -this.Position.Y));
+                var ogPos1 = D2DPoint.Transform(impactPos, mat);
 
-                    SetOnFire(ogPos1);
-                    nFlames++;
-                }
+                SetOnFire(ogPos1);
 
                 if (this.Hits <= 0)
                 {
@@ -999,8 +996,5 @@ namespace PolyPlane.GameObjects
 
             return thrust;
         }
-
-
-
     }
 }

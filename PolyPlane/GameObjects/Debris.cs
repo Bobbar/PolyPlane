@@ -23,6 +23,9 @@ namespace PolyPlane.GameObjects
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
+            if (this.IsExpired)
+                return;
+
             base.Update(dt, viewport, renderScale);
             _flame.Update(dt, viewport, renderScale, skipFrames: false);
 

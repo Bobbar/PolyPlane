@@ -249,7 +249,7 @@ namespace PolyPlane.GameObjects.Manager
 
         private void HandleGroundImpacts()
         {
-            // AI Planes.
+            // Planes.
             for (int a = 0; a < _objs.Planes.Count; a++)
             {
                 var plane = _objs.Planes[a];
@@ -279,6 +279,27 @@ namespace PolyPlane.GameObjects.Manager
                     plane.RotationSpeed = 0f;
                 }
 
+            }
+
+            // Bullets & missiles.
+            foreach (var bullet in _objs.Bullets)
+            {
+                if (bullet.Altitude <= 0f && !bullet.IsExpired)
+                {
+                    bullet.IsExpired = true;
+
+                    _objs.AddBulletExplosion(bullet.Position);
+                }
+            }
+
+            foreach (var missile in _objs.Missiles)
+            {
+                if (missile.Altitude <= 0f && !missile.IsExpired)
+                {
+                    missile.IsExpired = true;
+
+                    _objs.AddExplosion(missile.Position);
+                }
             }
         }
 

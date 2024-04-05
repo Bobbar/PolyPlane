@@ -165,8 +165,6 @@ namespace PolyPlane.GameObjects
             if (_age > LIFESPAN && MissedTarget)
                 this.IsExpired = true;
 
-            if (this.Altitude <= 0)
-                this.IsExpired = true;
 
             if (_useControlSurfaces)
             {
@@ -277,7 +275,7 @@ namespace PolyPlane.GameObjects
 
             // Add thrust and integrate acceleration.
             accel += GetThrust(thrustVector: false) * dt / TotalMass;
-            accel += dt * (liftDrag / TotalMass);
+            accel += (liftDrag / TotalMass) * dt;
 
             this.Velocity += accel;
             this.Velocity += World.Gravity * dt;

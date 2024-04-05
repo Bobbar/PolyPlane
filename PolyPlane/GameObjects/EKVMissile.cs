@@ -74,7 +74,7 @@ namespace PolyPlane.GameObjects
                 ang += (360f / NUM_THRUSTERS);
             }
 
-            this.Velocity += dt * accel / MASS;
+            this.Velocity += (accel / MASS) * dt;
 
             _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
 
