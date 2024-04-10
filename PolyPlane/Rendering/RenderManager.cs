@@ -335,7 +335,7 @@ namespace PolyPlane.Rendering
                     DrawTree(ctx, treePos, 30 + ((rndPnt2 - PROC_GEN_LEN - 10)));
 
                 if (rndPnt3 < 21)
-                    DrawPineTree(ctx, treePos, ((21 - rndPnt3) * 3));
+                    DrawPineTree(ctx, treePos + new D2DPoint((21 - rndPnt3) * 20, 0f), ((21 - rndPnt3) * 3));
 
                 if (rndPnt3 > (PROC_GEN_LEN / 2) - 20 && rndPnt3 < (PROC_GEN_LEN / 2) + 40)
                     DrawTree(ctx, treePos, 40, 100);
@@ -876,18 +876,35 @@ namespace PolyPlane.Rendering
         private void DrawCloud(RenderContext ctx, Cloud cloud)
         {
             const float SCALE = 5f;
-            var color1 = new D2DColor(1f, 0.7f, 0.7f, 0.7f);
+            const float DARKER_COLOR = 0.6f;
+            var color1 = new D2DColor(1f, DARKER_COLOR, DARKER_COLOR, DARKER_COLOR);
             var color2 = D2DColor.WhiteSmoke;
 
             var points = cloud.Points.ToArray();
             Helpers.ApplyTranslation(points, points, cloud.Rotation, cloud.Position, SCALE);
 
+            // Find min/max height.
+            var minY = points.Min(p => p.Y);
+            var maxY = points.Max(p => p.Y);
+
             for (int i = 0; i < points.Length; i++)
             {
-                // Lerp slightly darker colors to give the cloud some depth.
-                var color = Helpers.LerpColor(color1, color2, (i / (float)points.Length));
                 var point = points[i];
                 var dims = cloud.Dims[i];
+
+                // Lerp slightly darker colors to give the cloud some depth.
+
+                //// Darken by number of clouds.
+                //var amt = Helpers.Factor(i, (float)points.Length);
+                //var color = Helpers.LerpColor(color1, color2, amt); 
+
+                ////Darker clouds on top.
+                //var amt = Helpers.Factor(point.Y, minY, maxY);
+                //var color = Helpers.LerpColor(color1, color2, amt); 
+
+                //Darker clouds on bottom.
+                var amt = Helpers.Factor(point.Y, minY, maxY);
+                var color = Helpers.LerpColor(color1, color2, 1f - amt);
 
                 //ctx.FillEllipse(new D2DEllipse(point, new D2DSize(dims.X, dims.Y)), cloud.Color);
                 ctx.FillEllipse(new D2DEllipse(point, new D2DSize(dims.X, dims.Y)), color);

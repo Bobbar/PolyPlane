@@ -15,6 +15,7 @@ namespace PolyPlane
         {
             return value1 + (value2 - value1) * amount;
         }
+
         public static float Lerp(float value1, float value2, float factor1, float factor2)
         {
             return value1 + (value2 - value1) * Factor(factor1, factor2);
@@ -70,6 +71,12 @@ namespace PolyPlane
         public static float Factor(float value1, float value2)
         {
             return Math.Clamp(value1 / value2, 0f, 1f);
+        }
+
+
+        public static float Factor(float value, float min, float max)
+        {
+            return Math.Clamp((value - min) / (max - min), 0f, 1f);
         }
 
         public static float RadsToDegrees(float rads)
