@@ -63,7 +63,9 @@ namespace PolyPlane.GameObjects.Manager
                     if (_isNetGame)
                     {
                         var missileRTT = _netMan.Host.GetPlayerRTT(missile.PlayerID);
-                        var missileLagComp = (planeRTT + missile.LagAmount + missileRTT + LAG_COMP_OFFSET);
+                        //var missileLagComp = (planeRTT + missile.LagAmount + missileRTT + LAG_COMP_OFFSET);
+                        //var missileLagComp = (planeRTT + missile.LagAmount);
+                        var missileLagComp = (missile.LagAmount);
 
                         // Don't compensate as much for AI planes?
                         if (missileOwner.IsAI)

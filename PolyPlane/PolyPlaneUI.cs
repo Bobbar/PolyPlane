@@ -32,6 +32,7 @@ namespace PolyPlane
         private float _renderFPS = 0;
         private bool _useMultiThread = true;
         private int _multiThreadNum = 4;
+        private bool _canRespawn = false;
 
         private D2DPoint _playerPlaneSlewPos = D2DPoint.Zero;
         private bool _slewEnable = false;
@@ -43,6 +44,7 @@ namespace PolyPlane
         private GameTimer _burstTimer = new GameTimer(0.25f, true);
         private GameTimer _decoyTimer = new GameTimer(0.25f, true);
         private GameTimer _playerBurstTimer = new GameTimer(0.15f, true);
+        private GameTimer _playerResetTimer = new GameTimer(15f);
         private int _aiPlaneViewID = -1;
 
         private Stopwatch _timer = new Stopwatch();
@@ -76,6 +78,12 @@ namespace PolyPlane
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
             _playerBurstTimer.TriggerCallback = () => _playerPlane.FireBullet(p => _objs.AddBulletExplosion(p));
 
+            _playerResetTimer.TriggerCallback = () =>
+            {
+                EnableRespawn();
+            };
+
+
             _multiThreadNum = Environment.ProcessorCount - 2;
         }
 
@@ -87,6 +95,12 @@ namespace PolyPlane
         private void PolyPlaneUI_GotFocus(object? sender, EventArgs e)
         {
             _hasFocus = true;
+        }
+
+        private void EnableRespawn()
+        {
+            _render.NewHudMessage("Press R to respawn.", D2DColor.Green);
+            _canRespawn = true;
         }
 
         private bool DoNetGameSetup()
@@ -255,6 +269,12 @@ namespace PolyPlane
 
         private void ResetPlane()
         {
+            if (World.IsNetGame && !_canRespawn)
+                return;
+
+            if (World.IsNetGame)
+                SendPlayerReset();
+
             _playerPlane.AutoPilotOn = true;
             _playerPlane.ThrustOn = true;
             _playerPlane.Position = new D2DPoint(this.Width * 0.5f, -5000f);
@@ -267,8 +287,11 @@ namespace PolyPlane
             _playerPlane.FixPlane();
 
             _playerPlane.Radar = new Radar(_playerPlane, _hudColor, _objs.Missiles, _objs.Planes);
-
             _playerPlane.Radar.SkipFrames = World.PHYSICS_STEPS;
+
+            _playerResetTimer.Stop();
+            _canRespawn = false;
+            _render.ClearHudMessage();
         }
 
         private void TargetLockedWithMissile()
@@ -431,6 +454,7 @@ namespace PolyPlane
                     _collisions.DoDecoySuccess();
 
                 _playerBurstTimer.Update(World.DT);
+                _playerResetTimer.Update(World.DT);
 
                 DoAIPlaneBurst(World.DT);
                 _decoyTimer.Update(World.DT);
@@ -473,6 +497,17 @@ namespace PolyPlane
                 _playerPlane.Velocity = D2DPoint.Zero;
                 //_playerPlane.HasCrashed = true;
                 //_godMode = true;
+            }
+
+            if (_playerPlane.IsDamaged && !_playerResetTimer.IsRunning)
+                _playerResetTimer.Restart(ignoreCooldown: true);
+
+            if (_playerPlane.HasCrashed)
+            {
+                EnableRespawn();
+
+                if (_playerPlane.IsAI)
+                    ResetPlane();
             }
         }
 
@@ -540,8 +575,7 @@ namespace PolyPlane
             {
                 ResetPlane();
 
-                if (World.IsNetGame)
-                    SendPlayerReset();
+             
 
                 _queueResetPlane = false;
             }
@@ -856,11 +890,14 @@ namespace PolyPlane
                     break;
 
                 case 'r':
-                    //ResetPlane();
                     _queueResetPlane = true;
                     break;
 
                 case 's':
+
+                    if (World.IsNetGame)
+                        break;
+
                     _slewEnable = !_slewEnable;
 
                     if (_slewEnable)
@@ -913,14 +950,19 @@ namespace PolyPlane
                     break;
 
                 case '[':
-                    _queuePrevViewId = true;
+
+                    if (World.IsNetGame && _playerPlane.IsDamaged)
+                        _queuePrevViewId = true;
 
                     break;
                 case ']':
-
-                    _queueNextViewId = true;
+                    if (World.IsNetGame && _playerPlane.IsDamaged)
+                        _queueNextViewId = true;
                     break;
 
+                case (char)8: //Backspace
+                    _aiPlaneViewID = _playerPlane.PlayerID;
+                    break;
                 case ' ':
                     TargetLockedWithMissile();
                     break;

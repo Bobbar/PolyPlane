@@ -225,6 +225,13 @@ namespace PolyPlane.Rendering
             _hudMessageTimeout.Restart();
         }
 
+        public void ClearHudMessage()
+        {
+            _hudMessage = null;
+            _hudMessageTimeout.Stop();
+            _hudMessageTimeout.Reset();
+        }
+
         private void DrawScreenFlash(D2DGraphics gfx)
         {
             _screenFlashColor.a = _screenFlashOpacity;
@@ -457,11 +464,11 @@ namespace PolyPlane.Rendering
                     DrawGuideIcon(ctx.Gfx, viewportsize, viewPlane);
                 }
 
-                DrawHudMessage(ctx.Gfx, viewportsize);
                 DrawPlanePointers(ctx.Gfx, viewportsize, viewPlane);
                 DrawMissilePointers(ctx.Gfx, viewportsize, viewPlane);
             }
 
+            DrawHudMessage(ctx.Gfx, viewportsize);
             DrawRadar(ctx, viewportsize, viewPlane);
 
             var healthBarSize = new D2DSize(300, 30);
@@ -487,12 +494,16 @@ namespace PolyPlane.Rendering
 
         private void DrawHudMessage(D2DGraphics gfx, D2DSize viewportsize)
         {
+            const float FONT_SIZE = 40f;
             if (_hudMessageTimeout.IsRunning && !string.IsNullOrEmpty(_hudMessage))
             {
-                var pos = new D2DPoint(viewportsize.width * 0.5f, 200f);
-                var rect = new D2DRect(pos, new D2DSize(250, 50));
+                var pos = new D2DPoint(viewportsize.width * 0.5f, 300f);
+                var initSize = new D2DSize(400, 100);
+                var size = gfx.MeasureText(_hudMessage, _defaultFontName, FONT_SIZE, initSize);
+                var rect = new D2DRect(pos, size);
+
                 gfx.FillRectangle(rect, D2DColor.Gray);
-                gfx.DrawTextCenter(_hudMessage, _hudMessageColor, _defaultFontName, 40f, rect);
+                gfx.DrawTextCenter(_hudMessage, _hudMessageColor, _defaultFontName, FONT_SIZE, rect);
             }
 
             if (!_hudMessageTimeout.IsRunning)
