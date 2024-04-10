@@ -84,6 +84,11 @@ namespace PolyPlane.Net
             Host.Flush();
         }
 
+        public override ulong PacketLoss()
+        {
+            return Peer.PacketsLost;
+        }
+
         public override void Dispose()
         {
             Peer.Disconnect(0);

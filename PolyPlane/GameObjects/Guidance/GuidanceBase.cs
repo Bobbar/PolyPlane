@@ -118,7 +118,7 @@ namespace PolyPlane.GameObjects.Guidance
 
             // Try to compensate for lag?
             if (this.Target.IsNetObject)
-                pos = this.Target.Position + (this.Target.Velocity * (float)(this.Target.LagAmount / 1000f));
+                pos = this.Target.Position + (this.Target.Velocity * ((float)(this.Target.LagAmount * 2f) / 1000f));
 
             return this.Target.Position;
         }

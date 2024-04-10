@@ -360,7 +360,10 @@ namespace PolyPlane.Net
                     if (Objs.TryGetObjectByID(missileUpdate.TargetID, out GameObject netMissileTarget))
                     {
                         if (netMissileTarget != null)
-                            netMissile.Target = netMissileTarget;
+                        {
+                            if (!netMissileTarget.ID.Equals(netMissile.Target.ID))
+                                netMissile.ChangeTarget(netMissileTarget);
+                        }
                     }
 
                     if (netMissileOwner != null && netMissileOwner.IsNetObject)

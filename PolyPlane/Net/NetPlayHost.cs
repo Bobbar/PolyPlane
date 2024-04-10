@@ -9,7 +9,7 @@ namespace PolyPlane.Net
         public const int MAX_CLIENTS = 30;
         public const int MAX_CHANNELS = 4;
         public const int CHANNEL_ID = 0;
-        public const int TIMEOUT = 30;
+        public const int TIMEOUT = 0;
 
         public RingBuffer<NetPacket> PacketSendQueue = new RingBuffer<NetPacket>(20);
         public RingBuffer<NetPacket> PacketReceiveQueue = new RingBuffer<NetPacket>(20);
@@ -158,6 +158,8 @@ namespace PolyPlane.Net
         public virtual void HandleDisconnect(Event netEvent) { }
         public virtual void HandleTimeout(Event netEvent) { }
         public virtual void HandleReceive(Event netEvent) { }
+
+        public abstract ulong PacketLoss();
 
         public virtual uint GetPlayerRTT(int playerID)
         {

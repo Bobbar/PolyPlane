@@ -11,22 +11,30 @@ namespace PolyPlane
         public const int PHYSICS_STEPS = 8;//8;
 
         public const bool NET_UPDATE_SKIP_FRAMES = true;
+        public const int NET_SERVER_FPS = 60; //120;
+        public const int NET_CLIENT_FPS = 60;
 
         public static float SERVER_TICK_RATE
         {
             get
             {
                 if (NET_UPDATE_SKIP_FRAMES)
-                    return 30f;
+                    return NET_SERVER_FPS / 2;
                 else
-                    return 60f;
+                    return NET_SERVER_FPS;
             }
         }
 
-
         public static float DT
         {
-            get { return _dt; }
+            get
+            {
+                if (World.IsServer)
+                    return _dt / (NET_SERVER_FPS / NET_CLIENT_FPS);
+                else
+                    return _dt;
+            }
+
             set
             {
                 _dt = Math.Clamp(value, 0.0004f, 1f);

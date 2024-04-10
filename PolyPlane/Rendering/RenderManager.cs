@@ -1010,7 +1010,10 @@ namespace PolyPlane.Rendering
             //infoText += $"Collision ms: {_collisionTime.TotalMilliseconds}\n";
 
             if (_netMan != null)
+            {
                 infoText += $"Packet Delay: {_netMan.PacketDelay}\n";
+                infoText += $"Packet Loss: {_netMan.Host.PacketLoss()}\n";
+            }
 
             infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
             infoText += $"DT: {Math.Round(World.DT, 4)}\n";

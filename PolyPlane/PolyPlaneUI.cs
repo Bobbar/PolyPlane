@@ -450,8 +450,9 @@ namespace PolyPlane
 
                 World.UpdateAirDensityAndWind(World.DT);
 
-                if (!World.IsNetGame)
-                    _collisions.DoDecoySuccess();
+                // TODO: Where to handle decoy success? Client or server?
+                //if (!World.IsNetGame)
+                _collisions.DoDecoySuccess();
 
                 _playerBurstTimer.Update(World.DT);
                 _playerResetTimer.Update(World.DT);
@@ -575,7 +576,7 @@ namespace PolyPlane
             {
                 ResetPlane();
 
-             
+
 
                 _queueResetPlane = false;
             }
@@ -711,6 +712,7 @@ namespace PolyPlane
             infoText += $"Render ms: {_renderTime.TotalMilliseconds}\n";
             infoText += $"Collision ms: {_collisionTime.TotalMilliseconds}\n";
             infoText += $"Packet Delay: {_packetDelay}\n";
+            infoText += $"Packet Loss: {_client.PacketLoss()}\n";
 
             infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
             infoText += $"DT: {Math.Round(World.DT, 4)}\n";

@@ -63,9 +63,7 @@ namespace PolyPlane.GameObjects.Manager
                     if (_isNetGame)
                     {
                         var missileRTT = _netMan.Host.GetPlayerRTT(missile.PlayerID);
-                        //var missileLagComp = (planeRTT + missile.LagAmount + missileRTT + LAG_COMP_OFFSET);
-                        //var missileLagComp = (planeRTT + missile.LagAmount);
-                        var missileLagComp = (missile.LagAmount);
+                        var missileLagComp = (planeRTT + missile.LagAmount + missileRTT + LAG_COMP_OFFSET);
 
                         // Don't compensate as much for AI planes?
                         if (missileOwner.IsAI)
@@ -284,13 +282,16 @@ namespace PolyPlane.GameObjects.Manager
             }
 
             // Bullets & missiles.
-            foreach (var bullet in _objs.Bullets)
+            if (!World.IsNetGame || (World.IsNetGame && !World.IsServer))
             {
-                if (bullet.Altitude <= 0f && !bullet.IsExpired)
+                foreach (var bullet in _objs.Bullets)
                 {
-                    bullet.IsExpired = true;
+                    if (bullet.Altitude <= 0f && !bullet.IsExpired)
+                    {
+                        bullet.IsExpired = true;
 
-                    _objs.AddBulletExplosion(bullet.Position);
+                        _objs.AddBulletExplosion(bullet.Position);
+                    }
                 }
             }
 

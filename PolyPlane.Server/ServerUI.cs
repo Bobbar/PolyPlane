@@ -25,7 +25,7 @@ namespace PolyPlane.Server
         private GameTimer _burstTimer = new GameTimer(0.25f, true);
         private GameTimer _decoyTimer = new GameTimer(0.25f, true);
         private GameTimer _playerBurstTimer = new GameTimer(0.1f, true);
-        private GameTimer _discoveryTimer = new GameTimer(5f, true);
+        private GameTimer _discoveryTimer = new GameTimer(2f, true);
         private GameTimer _syncTimer = new GameTimer(10f, true);
 
         private ManualResetEventSlim _pauseRenderEvent = new ManualResetEventSlim(true);
@@ -101,7 +101,6 @@ namespace PolyPlane.Server
 
             AITypeComboBox.Items.Clear();
             AITypeComboBox.DataSource = Enum.GetValues<AIPersonality>();
-
         }
 
         private void StartServerButton_Click(object sender, EventArgs e)
@@ -275,7 +274,7 @@ namespace PolyPlane.Server
                 RemoveAIPlanes();
             }
 
-            _fpsLimiter.Wait(60);
+            _fpsLimiter.Wait(World.NET_SERVER_FPS);
         }
 
         private FighterPlane GetViewPlane()

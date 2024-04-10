@@ -143,5 +143,10 @@ namespace PolyPlane.Net
             idPacket.Create(data, PacketFlags.Reliable);
             peer.Send(CHANNEL_ID, ref idPacket);
         }
+
+        public override ulong PacketLoss()
+        {
+            return 0;
+        }
     }
 }
