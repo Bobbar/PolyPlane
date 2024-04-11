@@ -149,7 +149,7 @@ namespace PolyPlane.Net
 
         public void SendSyncPacket()
         {
-            var packet = new SyncPacket(World.CurrentTime());
+            var packet = new SyncPacket(World.CurrentTime(), World.TimeOfDay, World.TimeOfDayDir);
             SendPacket(packet);
         }
 

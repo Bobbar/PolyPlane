@@ -18,7 +18,6 @@ namespace PolyPlane.Rendering
 
         private bool _showInfo = false;
 
-
         private TimeSpan _renderTime = new TimeSpan();
         private Stopwatch _timer = new Stopwatch();
         private float _renderFPS = 0;
@@ -53,6 +52,26 @@ namespace PolyPlane.Rendering
         private const int NUM_CLOUDS = 2000;
         private const float MAX_CLOUD_Y = 400000f;
         private List<Cloud> _clouds = new List<Cloud>();
+
+        private D2DColor[] _todPallet =
+        [
+            new D2DColor(1f, 0f, 0f, 0f),
+            new D2DColor(1f, 0f, 0f, 0f),
+            new D2DColor(1f, 1f, 0.67f, 0f),
+            new D2DColor(1f, 1f, 0.47f, 0f),
+            new D2DColor(1f, 1f, 0f, 0.08f),
+            new D2DColor(1f, 1f, 0f, 0.49f),
+            new D2DColor(1f, 0.86f, 0f, 1f),
+            new D2DColor(1f, 0.64f, 0.52f, 0.66f),
+            new D2DColor(1f, 0.33f, 0.35f, 0.49f),
+            new D2DColor(1f, 0.71f, 0.77f, 0.93f),
+            new D2DColor(1f, 0.91f, 0.86f, 0.89f),
+            new D2DColor(1f, 0.37f, 0.4f, 0.54f),
+        ];
+
+        private const double _gaussianSigma_2 = 0.035;
+        private double _gaussianSigma = Math.Sqrt(2.0 * Math.PI * _gaussianSigma_2);
+
 
         public RenderManager(Control renderTarget, GameObjectManager objs, NetEventManager netMan)
         {
@@ -165,7 +184,6 @@ namespace PolyPlane.Rendering
 
                 _gfx.PopTransform(); // Pop scale transform.
 
-
                 //_gfx.PushTransform(); // Push GForce transform.
                 //_gfx.TranslateTransform(_gforceTrans.X, _gforceTrans.Y);
 
@@ -232,6 +250,42 @@ namespace PolyPlane.Rendering
             _hudMessageTimeout.Reset();
         }
 
+        private D2DColor AddToDColor(D2DColor color)
+        {
+            var todColor = InterpolateColorGaussian(_todPallet, World.TimeOfDay, World.MAX_TIMEOFDAY);
+            return Helpers.LerpColor(color, todColor, 0.3f);
+        }
+
+        private D2DColor InterpolateColorGaussian(D2DColor[] colors, float value, float maxValue)
+        {
+            var x = Math.Min(1.0f, value / maxValue);
+
+            double r = 0.0, g = 0.0, b = 0.0;
+            double total = 0.0;
+            double step = 1.0 / (double)(colors.Length - 1);
+            double mu = 0.0;
+
+            for (int i = 0; i < colors.Length; i++)
+            {
+                total += Math.Exp(-(x - mu) * (x - mu) / (2.0 * _gaussianSigma_2)) / _gaussianSigma;
+                mu += step;
+            }
+
+            mu = 0.0;
+            for (int i = 0; i < colors.Length; i++)
+            {
+                var color = colors[i];
+                double percent = Math.Exp(-(x - mu) * (x - mu) / (2.0 * _gaussianSigma_2)) / _gaussianSigma;
+                mu += step;
+
+                r += color.r * percent / total;
+                g += color.g * percent / total;
+                b += color.b * percent / total;
+            }
+
+            return new D2DColor(1f, (float)r, (float)g, (float)b);
+        }
+
         private void DrawScreenFlash(D2DGraphics gfx)
         {
             _screenFlashColor.a = _screenFlashOpacity;
@@ -287,7 +341,9 @@ namespace PolyPlane.Rendering
             DrawGroundObjs(ctx, plane);
 
             // Draw the ground.
-            ctx.Gfx.FillRectangle(new D2DRect(new D2DPoint(plane.Position.X, 2000f), new D2DSize(this.Width * World.ViewPortScaleMulti, 4000f)), D2DColor.DarkGreen);
+            var groundColor = D2DColor.DarkGreen;
+            groundColor = AddToDColor(groundColor);// Add time of day color
+            ctx.Gfx.FillRectangle(new D2DRect(new D2DPoint(plane.Position.X, 2000f), new D2DSize(this.Width * World.ViewPortScaleMulti, 4000f)), groundColor);
 
             DrawGroundImpacts(ctx, plane);
 
@@ -368,6 +424,10 @@ namespace PolyPlane.Rendering
             var trunkColor = D2DColor.Chocolate;
             var leafColor = D2DColor.ForestGreen;
 
+            // Add time of day color
+            trunkColor = AddToDColor(trunkColor);
+            leafColor = AddToDColor(leafColor);
+
             if (radius % 2 == 0)
                 leafColor.g -= 0.1f;
 
@@ -387,11 +447,17 @@ namespace PolyPlane.Rendering
             };
 
             var scale = 5f;
-            var color = D2DColor.Green;
+            var trunkColor = D2DColor.BurlyWood;
+            var leafColor = D2DColor.Green;
+
+            // Add time of day color
+            trunkColor = AddToDColor(trunkColor);
+            leafColor = AddToDColor(leafColor);
+
             Helpers.ApplyTranslation(trunk, trunk, 180f, pos - new D2DPoint(0, height), scale);
 
-            ctx.FillRectangle(new D2DRect(pos - new D2DPoint(0, height / 2f), new D2DSize(width / 2f, height * 1f)), D2DColor.BurlyWood);
-            ctx.DrawPolygon(trunk, color, 1f, D2DDashStyle.Solid, color);
+            ctx.FillRectangle(new D2DRect(pos - new D2DPoint(0, height / 2f), new D2DSize(width / 2f, height * 1f)), trunkColor);
+            ctx.DrawPolygon(trunk, leafColor, 1f, D2DDashStyle.Solid, leafColor);
         }
 
         private void DrawGroundImpacts(RenderContext ctx, FighterPlane plane)
@@ -839,6 +905,10 @@ namespace PolyPlane.Rendering
             var color1 = new D2DColor(0.5f, D2DColor.SkyBlue);
             var color2 = new D2DColor(0.5f, D2DColor.Black);
             var color = Helpers.LerpColor(color1, color2, (plrAlt / MAX_ALT));
+
+            // Add time of day color.
+            color = Helpers.LerpColor(color, D2DColor.Black, World.TimeOfDay / World.MAX_TIMEOFDAY);
+
             var rect = new D2DRect(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), new D2DSize(this.Width, this.Height));
 
             ctx.Gfx.FillRectangle(rect, color);
@@ -916,6 +986,9 @@ namespace PolyPlane.Rendering
                 //Darker clouds on bottom.
                 var amt = Helpers.Factor(point.Y, minY, maxY);
                 var color = Helpers.LerpColor(color1, color2, 1f - amt);
+
+                // Add time of day color.
+                color = AddToDColor(color);
 
                 //ctx.FillEllipse(new D2DEllipse(point, new D2DSize(dims.X, dims.Y)), cloud.Color);
                 ctx.FillEllipse(new D2DEllipse(point, new D2DSize(dims.X, dims.Y)), color);
@@ -1024,6 +1097,7 @@ namespace PolyPlane.Rendering
             infoText += $"Missiles (Fired/Hit): ({viewplane.MissilesFired} / {viewplane.MissilesHit}) \n";
             infoText += $"Headshots: {viewplane.Headshots}\n";
             infoText += $"Interp: {World.InterpOn.ToString()}\n";
+            infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
 
             return infoText;
         }

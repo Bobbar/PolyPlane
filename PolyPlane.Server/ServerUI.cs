@@ -492,6 +492,7 @@ namespace PolyPlane.Server
 
             infoText += $"DT: {Math.Round(World.DT, 4)}\n";
             infoText += $"Interp: {World.InterpOn.ToString()}\n";
+            infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
 
             return infoText;
         }

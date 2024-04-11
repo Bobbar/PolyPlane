@@ -140,16 +140,21 @@ namespace PolyPlane.Net
     public class SyncPacket : NetPacket
     {
         public double ServerTime;
+        public float TimeOfDay;
+        public float TimeOfDayDir;
+
 
         public SyncPacket() : base()
         {
             Type = PacketTypes.ServerSync;
         }
 
-        public SyncPacket(double serverTime)
+        public SyncPacket(double serverTime, float timeOfDay, float timeOfDayDir)
         {
             Type = PacketTypes.ServerSync;
             ServerTime = serverTime;
+            TimeOfDay = timeOfDay;
+            TimeOfDayDir = timeOfDayDir;
         }
     }
 

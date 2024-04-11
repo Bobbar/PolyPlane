@@ -221,6 +221,8 @@ namespace PolyPlane.Net
                         {
                             var now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                             World.ServerTimeOffset = syncPack.ServerTime - now;
+                            World.TimeOfDay = syncPack.TimeOfDay;
+                            World.TimeOfDayDir = syncPack.TimeOfDayDir;
                         }
                     }
                     break;

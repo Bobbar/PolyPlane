@@ -110,6 +110,11 @@ namespace PolyPlane
         public static GameID ViewID;
         public static double ServerTimeOffset = 0;
 
+        public const float MAX_TIMEOFDAY = 20f;
+        public const float TOD_RATE = 0.03f;
+        public static float TimeOfDay = 0.1f;
+        public static float TimeOfDayDir = 1f;
+
         public static float GetDensityAltitude(D2DPoint position)
         {
             const float MAX_ALT = 60000f;
@@ -152,6 +157,19 @@ namespace PolyPlane
             {
                 Wind = D2DPoint.Zero;
             }
+
+            UpdateTOD(dt);
+        }
+
+        private static void UpdateTOD(float dt)
+        {
+            TimeOfDay += TimeOfDayDir * (TOD_RATE * dt);
+
+            if (TimeOfDay >= MAX_TIMEOFDAY)
+                TimeOfDayDir = -1f;
+
+            if (TimeOfDay <= 0.1f)
+                TimeOfDayDir = 1f;
         }
 
         public static long GetNextObjectId()
