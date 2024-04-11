@@ -85,6 +85,12 @@ namespace PolyPlane
 
 
             _multiThreadNum = Environment.ProcessorCount - 2;
+
+        }
+
+        private void Client_PeerTimeoutEvent(object? sender, ENet.Peer e)
+        {
+            _render.NewHudMessage("Timed out!?", D2DColor.Yellow);
         }
 
         private void PolyPlaneUI_LostFocus(object? sender, EventArgs e)
@@ -126,6 +132,8 @@ namespace PolyPlane
 
                         _netMan.ImpactEvent += HandleNewImpact;
                         _netMan.PlayerIDReceived += NetMan_PlayerIDReceived;
+
+                        _client.PeerTimeoutEvent += Client_PeerTimeoutEvent;
 
                         _client.Start();
 
@@ -465,6 +473,8 @@ namespace PolyPlane
 
                 _oneStep = false;
             }
+
+            _render.CollisionTime = _collisionTime;
 
             _timer.Restart();
 

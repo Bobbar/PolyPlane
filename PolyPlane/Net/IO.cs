@@ -97,7 +97,7 @@ namespace PolyPlane.Net
             return output.ToArray();
         }
 
-        public static byte[] Decompress(byte[] data)
+        private static byte[] Decompress(byte[] data)
         {
             MemoryStream input = new MemoryStream(data);
             MemoryStream output = new MemoryStream();

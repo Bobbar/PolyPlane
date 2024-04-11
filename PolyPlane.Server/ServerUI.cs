@@ -38,6 +38,9 @@ namespace PolyPlane.Server
         private TimeSpan _updateTime = new TimeSpan();
         private TimeSpan _collisionTime = new TimeSpan();
         private TimeSpan _netTime = new TimeSpan();
+        private SmoothFloat _updateTimeSmooth = new SmoothFloat(50);
+        private SmoothFloat _collisionTimeSmooth = new SmoothFloat(50);
+
         private long _lastRenderTime = 0;
         private float _renderFPS = 0;
         private FPSLimiter _fpsLimiter = new FPSLimiter();
@@ -458,10 +461,12 @@ namespace PolyPlane.Server
 
             var numObj = _objs.TotalObjects;
             infoText += $"Num Objects: {numObj}\n";
-            infoText += $"AI Planes: {_objs.Planes.Count(p => !p.IsDamaged && !p.HasCrashed)}\n";
+            infoText += $"Planes: {_objs.Planes.Count(p => !p.IsDamaged && !p.HasCrashed)}\n";
+            infoText += $"Clients: {_server.Host.PeersCount}\n";
+
             infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";
-            infoText += $"Update ms: {Math.Round(_updateTime.TotalMilliseconds, 2)}\n";
-            infoText += $"Collision ms: {Math.Round(_collisionTime.TotalMilliseconds, 2)}\n";
+            infoText += $"Update ms: {_updateTimeSmooth.Add((float)Math.Round(_updateTime.TotalMilliseconds, 2))}\n";
+            infoText += $"Collision ms: {_collisionTimeSmooth.Add((float)Math.Round(_collisionTime.TotalMilliseconds, 2))}\n";
             //infoText += $"Net ms: {Math.Round(_netTime.TotalMilliseconds, 2)}\n";
             infoText += $"Net ms: {Math.Round(_netSmooth.Add(_netMan.Host.NetTime.TotalMilliseconds), 2)}\n";
 

@@ -19,7 +19,7 @@ namespace PolyPlane.Net
 
         public event EventHandler<int> PlayerIDReceived;
         public event EventHandler<ImpactEvent> ImpactEvent;
-
+        
         public NetEventManager(GameObjectManager objectManager, NetPlayHost host, FighterPlane playerPlane)
         {
             Objs = objectManager;

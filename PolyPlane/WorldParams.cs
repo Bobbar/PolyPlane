@@ -11,7 +11,7 @@ namespace PolyPlane
         public const int PHYSICS_STEPS = 8;//8;
 
         public const bool NET_UPDATE_SKIP_FRAMES = true;
-        public const int NET_SERVER_FPS = 60; //120;
+        public const int NET_SERVER_FPS = 60;
         public const int NET_CLIENT_FPS = 60;
 
         public static float SERVER_TICK_RATE

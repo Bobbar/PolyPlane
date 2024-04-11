@@ -8,6 +8,8 @@ namespace PolyPlane.Rendering
 {
     public class RenderManager : IDisposable
     {
+        public TimeSpan CollisionTime = TimeSpan.Zero;
+
         private D2DDevice _device;
         private D2DGraphics _gfx;
         private RenderContext _ctx;
@@ -1074,13 +1076,13 @@ namespace PolyPlane.Rendering
             infoText += $"Num Objects: {numObj}\n";
             infoText += $"On Screen: {GraphicsExtensions.OnScreen}\n";
             infoText += $"Off Screen: {GraphicsExtensions.OffScreen}\n";
-            infoText += $"AI Planes: {_objs.Planes.Count(p => !p.IsDamaged && !p.HasCrashed)}\n";
+            infoText += $"Planes: {_objs.Planes.Count(p => !p.IsDamaged && !p.HasCrashed)}\n";
 
 
             infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";
             //infoText += $"Update ms: {_updateTime.TotalMilliseconds}\n";
             infoText += $"Render ms: {_renderTime.TotalMilliseconds}\n";
-            //infoText += $"Collision ms: {_collisionTime.TotalMilliseconds}\n";
+            infoText += $"Collision ms: {CollisionTime.TotalMilliseconds}\n";
 
             if (_netMan != null)
             {

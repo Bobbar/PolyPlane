@@ -90,35 +90,6 @@ namespace PolyPlane.Net
             }
         }
 
-
-        private int GetChannel(NetPacket netpacket)
-        {
-            switch (netpacket.Type)
-            {
-                case PacketTypes.PlaneUpdate:
-                    return 0;
-
-                case PacketTypes.MissileUpdate:
-                    return 1;
-
-                case PacketTypes.NewBullet:
-                    return 2;
-
-                default:
-                    return 3;
-            }
-        }
-
-        private Packet CreatePacket(NetPacket netPacket)
-        {
-            Packet packet = default(Packet);
-            var data = IO.ObjectToByteArray(netPacket);
-            packet.Create(data, PacketFlags.Reliable);
-            //packet.Create(data, PacketFlags.Instant);
-
-            return packet;
-        }
-
         private void BroadcastPacket(NetPacket netPacket)
         {
             var packet = CreatePacket(netPacket);
@@ -136,11 +107,7 @@ namespace PolyPlane.Net
 
         private void SendIDPacket(Peer peer, NetPacket packet)
         {
-            var data = IO.ObjectToByteArray(packet);
-            Packet idPacket = default(Packet);
-
-
-            idPacket.Create(data, PacketFlags.Reliable);
+            var idPacket = CreatePacket(packet);
             peer.Send(CHANNEL_ID, ref idPacket);
         }
 

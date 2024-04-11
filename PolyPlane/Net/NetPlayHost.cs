@@ -9,10 +9,10 @@ namespace PolyPlane.Net
         public const int MAX_CLIENTS = 30;
         public const int MAX_CHANNELS = 4;
         public const int CHANNEL_ID = 0;
-        public const int TIMEOUT = 0;
+        public const int TIMEOUT = 15;
 
-        public RingBuffer<NetPacket> PacketSendQueue = new RingBuffer<NetPacket>(20);
-        public RingBuffer<NetPacket> PacketReceiveQueue = new RingBuffer<NetPacket>(20);
+        public RingBuffer<NetPacket> PacketSendQueue = new RingBuffer<NetPacket>(30);
+        public RingBuffer<NetPacket> PacketReceiveQueue = new RingBuffer<NetPacket>(30);
 
         public Host Host;
         public ushort Port;
@@ -26,6 +26,8 @@ namespace PolyPlane.Net
         private TimeSpan _netTime = TimeSpan.Zero;
         private Stopwatch _netTimer = new Stopwatch();
 
+        public event EventHandler<Peer> PeerTimeoutEvent;
+        
         public NetPlayHost(ushort port, string ip)
         {
             Port = port;
@@ -76,8 +78,6 @@ namespace PolyPlane.Net
                     }
 
                     HandleEvent(netEvent);
-
-                    netEvent.Packet.Dispose();
                 }
 
                 ProcessQueue();
@@ -105,10 +105,14 @@ namespace PolyPlane.Net
 
                 case EventType.Timeout:
                     HandleTimeout(netEvent);
+
+                    PeerTimeoutEvent?.Invoke(this, netEvent.Peer);
+
                     break;
 
                 case EventType.Receive:
                     HandleReceive(netEvent);
+                    netEvent.Packet.Dispose();
                     break;
             }
         }
@@ -160,6 +164,34 @@ namespace PolyPlane.Net
         public virtual void HandleReceive(Event netEvent) { }
 
         public abstract ulong PacketLoss();
+
+        internal int GetChannel(NetPacket netpacket)
+        {
+            switch (netpacket.Type)
+            {
+                case PacketTypes.PlaneUpdate:
+                    return 0;
+
+                case PacketTypes.MissileUpdate:
+                    return 1;
+
+                case PacketTypes.NewBullet:
+                    return 2;
+
+                default:
+                    return 3;
+            }
+        }
+
+        internal Packet CreatePacket(NetPacket netPacket)
+        {
+            Packet packet = default(Packet);
+            var data = IO.ObjectToByteArray(netPacket);
+            packet.Create(data, PacketFlags.Reliable);
+            //packet.Create(data, PacketFlags.Instant);
+
+            return packet;
+        }
 
         public virtual uint GetPlayerRTT(int playerID)
         {

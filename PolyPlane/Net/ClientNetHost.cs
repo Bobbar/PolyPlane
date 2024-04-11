@@ -48,16 +48,15 @@ namespace PolyPlane.Net
             ParsePacket(netEvent.Packet);
         }
 
-        public override void SendPacket(NetPacket packet)
+        public override void SendPacket(NetPacket netPacket)
         {
-            base.SendPacket(packet);
+            base.SendPacket(netPacket);
 
-            Packet netPacket = default(Packet);
-            var data = IO.ObjectToByteArray(packet);
-
-            netPacket.Create(data, PacketFlags.Reliable);
-            //packet.Create(data, PacketFlags.Instant);
-            Peer.Send(CHANNEL_ID, ref netPacket);
+            var packet = CreatePacket(netPacket);
+            var channel = GetChannel(netPacket);
+           
+          
+            Peer.Send((byte)channel, ref packet);
         }
 
         private void ParsePacket(Packet packet)

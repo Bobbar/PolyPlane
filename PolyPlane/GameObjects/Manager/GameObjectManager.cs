@@ -2,10 +2,10 @@
 {
     public class GameObjectManager
     {
-
         public int TotalObjects => _objLookup.Count;
 
         private const int MAX_GROUND_IMPACTS = 1000;
+        private const int SPATIAL_GRID_SIDE_LEN = 7;
 
         public List<GameObject> Missiles = new List<GameObject>();
         public List<GameObject> MissileTrails = new List<GameObject>();
@@ -22,12 +22,13 @@
         public RingBuffer<FighterPlane> NewPlanes = new RingBuffer<FighterPlane>(100);
 
         private Dictionary<int, GameObject> _objLookup = new Dictionary<int, GameObject>();
+        private Dictionary<D2DPoint, List<GameObject>> _objLookupSpatial = new Dictionary<D2DPoint, List<GameObject>>();
 
         private List<GameObject> _allNetObjects = new List<GameObject>();
         private List<GameObject> _allLocalObjects = new List<GameObject>();
         private List<GameObject> _allObjects = new List<GameObject>();
         private List<GameObject> _expiredObjs = new List<GameObject>();
-
+      
 
         public void AddBullet(Bullet bullet)
         {
@@ -42,7 +43,6 @@
         {
             NewBullets.Enqueue(bullet);
         }
-
 
         public void AddMissile(GuidedMissile missile)
         {
@@ -161,7 +161,6 @@
         {
             return Planes.Where(p => p.PlayerID == playerID).FirstOrDefault();
         }
-
 
         public List<GameObject> GetAllNetObjects()
         {
@@ -299,6 +298,56 @@
             //}
         }
 
+        private void UpdateSpatialLookup()
+        {
+            _objLookupSpatial.Clear();
+            foreach (var obj in _allObjects)
+            {
+                var rndPos = GetGridIdx(obj);
+
+                if (_objLookupSpatial.TryGetValue(rndPos, out List<GameObject> objs))
+                {
+                    objs.Add(obj);
+                }
+                else
+                    _objLookupSpatial.Add(rndPos, new List<GameObject> { obj });
+            }
+        }
+
+        private D2DPoint GetGridIdx(GameObject obj)
+        {
+            return GetGridIdx(obj.Position);
+        }
+
+        private D2DPoint GetGridIdx(D2DPoint pos)
+        {
+            var roundedPos = new D2DPoint(((int)Math.Floor(pos.X)) >> SPATIAL_GRID_SIDE_LEN, ((int)Math.Floor(pos.Y) >> SPATIAL_GRID_SIDE_LEN));
+
+            return roundedPos;
+        }
+
+        public List<GameObject> GetNear(GameObject obj)
+        {
+            var rndPos = GetGridIdx(obj);
+
+            var nearObjs = new List<GameObject>();
+
+            for (int x = -1; x <= 1; x++)
+            {
+                for (int y = -1; y <= 1; y++)
+                {
+                    var xo = rndPos.X + x;
+                    var yo = rndPos.Y + y;
+                    var nPos = new D2DPoint(xo, yo);
+
+                    if (_objLookupSpatial.TryGetValue(nPos, out var n))
+                        nearObjs.AddRange(n);
+                }
+            }
+
+            return nearObjs;
+        }
+
         private void SyncObjCollections()
         {
             _allLocalObjects.Clear();
@@ -314,9 +363,8 @@
 
                 _allObjects.Add(obj);
             }
+
+            UpdateSpatialLookup();
         }
-
-
-
     }
 }
