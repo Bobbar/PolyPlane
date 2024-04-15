@@ -41,6 +41,9 @@
             ExitButton = new Button();
             PlayerNameTextBox = new TextBox();
             label4 = new Label();
+            PlanePreviewBox = new PictureBox();
+            NewColorButton = new Button();
+            ((System.ComponentModel.ISupportInitialize)PlanePreviewBox).BeginInit();
             SuspendLayout();
             // 
             // PortTextBox
@@ -133,14 +136,14 @@
             ErrorLabel.ForeColor = Color.Maroon;
             ErrorLabel.Location = new Point(0, 18);
             ErrorLabel.Name = "ErrorLabel";
-            ErrorLabel.Size = new Size(556, 23);
+            ErrorLabel.Size = new Size(772, 23);
             ErrorLabel.TabIndex = 10;
             ErrorLabel.TextAlign = ContentAlignment.MiddleCenter;
             ErrorLabel.Visible = false;
             // 
             // ExitButton
             // 
-            ExitButton.Location = new Point(468, 384);
+            ExitButton.Location = new Point(676, 384);
             ExitButton.Name = "ExitButton";
             ExitButton.Size = new Size(75, 23);
             ExitButton.TabIndex = 11;
@@ -166,11 +169,32 @@
             label4.TabIndex = 13;
             label4.Text = "Player Name:";
             // 
+            // PlanePreviewBox
+            // 
+            PlanePreviewBox.BorderStyle = BorderStyle.FixedSingle;
+            PlanePreviewBox.Location = new Point(487, 89);
+            PlanePreviewBox.Name = "PlanePreviewBox";
+            PlanePreviewBox.Size = new Size(200, 200);
+            PlanePreviewBox.TabIndex = 14;
+            PlanePreviewBox.TabStop = false;
+            // 
+            // NewColorButton
+            // 
+            NewColorButton.Location = new Point(555, 310);
+            NewColorButton.Name = "NewColorButton";
+            NewColorButton.Size = new Size(75, 23);
+            NewColorButton.TabIndex = 15;
+            NewColorButton.Text = "Next Color";
+            NewColorButton.UseVisualStyleBackColor = true;
+            NewColorButton.Click += NewColorButton_Click;
+            // 
             // ClientServerConfigForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(555, 419);
+            ClientSize = new Size(772, 419);
+            Controls.Add(NewColorButton);
+            Controls.Add(PlanePreviewBox);
             Controls.Add(label4);
             Controls.Add(PlayerNameTextBox);
             Controls.Add(ExitButton);
@@ -190,6 +214,7 @@
             Text = "Join Server";
             FormClosing += ClientServerConfigForm_FormClosing;
             Load += ClientServerConfigForm_Load;
+            ((System.ComponentModel.ISupportInitialize)PlanePreviewBox).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -209,5 +234,7 @@
         private Button ExitButton;
         private TextBox PlayerNameTextBox;
         private Label label4;
+        private PictureBox PlanePreviewBox;
+        private Button NewColorButton;
     }
 }

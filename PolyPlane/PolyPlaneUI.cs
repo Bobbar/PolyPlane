@@ -125,6 +125,7 @@ namespace PolyPlane
                         World.IsServer = false;
 
                         InitPlane(config.IsAI, config.PlayerName);
+                        _playerPlane.PlaneColor = config.PlaneColor;
 
                         _client = new ClientNetHost(config.Port, config.ServerIPAddress);
                         _netMan = new NetEventManager(_objs, _client, _playerPlane);
@@ -153,6 +154,7 @@ namespace PolyPlane
                         _collisions.ImpactEvent += HandleNewImpact;
 
                         InitPlane(false, config.PlayerName);
+                        _playerPlane.PlaneColor = config.PlaneColor;
 
                         InitGfx();
                         StartGameThread();
@@ -863,6 +865,7 @@ namespace PolyPlane
                     if (_shiftDown)
                     {
                         //World.DT += DT_ADJ_AMT;
+                        _render.HudScale += 0.01f;
                     }
                     else
                     {
@@ -876,6 +879,8 @@ namespace PolyPlane
                     if (_shiftDown)
                     {
                         //World.DT -= DT_ADJ_AMT;
+                        _render.HudScale -= 0.01f;
+
                     }
                     else
                     {

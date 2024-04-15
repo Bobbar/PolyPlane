@@ -1,7 +1,9 @@
 ﻿using PolyPlane.Net;
 using PolyPlane.Net.Discovery;
+using PolyPlane.Rendering;
 using System.ComponentModel;
 using System.Net;
+using unvell.D2DLib;
 
 namespace PolyPlane
 {
@@ -13,13 +15,24 @@ namespace PolyPlane
         public ushort Port;
         public bool IsServer = true;
         public bool IsAI = false;
+        public D2DColor PlaneColor = D2DColor.Randomly();
 
         private DiscoveryServer _discovery;
         private BindingList<ServerEntry> _serverEntries = new BindingList<ServerEntry>();
+        private PlanePreview _planePreview;
 
         public ClientServerConfigForm()
         {
             InitializeComponent();
+
+            this.Disposed += ClientServerConfigForm_Disposed;
+
+            _planePreview = new PlanePreview(PlanePreviewBox, PlaneColor);
+        }
+
+        private void ClientServerConfigForm_Disposed(object? sender, EventArgs e)
+        {
+            _planePreview?.Dispose();
         }
 
         private void ClientServerConfigForm_Load(object sender, EventArgs e)
@@ -121,6 +134,17 @@ namespace PolyPlane
             _discovery?.Dispose();
         }
 
+        private void ExitButton_Click(object sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Abort;
+        }
+
+        private void NewColorButton_Click(object sender, EventArgs e)
+        {
+            PlaneColor = D2DColor.Randomly();
+            _planePreview.PlaneColor = PlaneColor;
+        }
+
         private class ServerEntry
         {
             public string IP { get; set; }
@@ -140,9 +164,5 @@ namespace PolyPlane
             }
         }
 
-        private void ExitButton_Click(object sender, EventArgs e)
-        {
-            DialogResult = DialogResult.Abort;
-        }
     }
 }

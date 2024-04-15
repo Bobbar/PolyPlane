@@ -38,7 +38,12 @@ namespace PolyPlane.GameObjects
         public bool IsAI => _isAIPlane;
         public bool IsDefending = false;
 
-        public D2DColor PlaneColor => _planeColor;
+        public D2DColor PlaneColor
+        {
+            get { return _planeColor;  }
+            set { _planeColor = value; }
+        }
+
         public float Mass
         {
             get { return _mass; }
@@ -237,7 +242,7 @@ namespace PolyPlane.GameObjects
             var skipFrames = IsNetObject ? 1 : World.PHYSICS_SUB_STEPS;
 
             this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), 1.7f);
-            _flamePos = new FixturePoint(this, new D2DPoint(-37f, 0), skipFrames);
+            _flamePos = new FixturePoint(this, new D2DPoint(-38f, 1f), skipFrames);
             _gunPosition = new FixturePoint(this, new D2DPoint(33f, 0), skipFrames);
             _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
 
@@ -947,9 +952,11 @@ namespace PolyPlane.GameObjects
 
             this.Polygon.FlipY();
             Wings.ForEach(w => w.FlipY());
+            _flamePos.FlipY();
             _flames.ForEach(f => f.FlipY());
             _cockpitPosition.FlipY();
-
+            _gunPosition.FlipY();
+            _centerOfThrust.FlipY();
 
             if (_currentDir == Direction.Right)
                 _currentDir = Direction.Left;

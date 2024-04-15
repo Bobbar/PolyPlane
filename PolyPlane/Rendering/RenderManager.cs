@@ -10,6 +10,17 @@ namespace PolyPlane.Rendering
     {
         public TimeSpan CollisionTime = TimeSpan.Zero;
 
+        public float HudScale
+        {
+            get { return _hudScale; }
+
+            set
+            {
+                if (value > 0f && value < 10f)
+                    _hudScale = value;
+            }
+        }
+
         private D2DDevice _device;
         private D2DGraphics _gfx;
         private RenderContext _ctx;
@@ -47,6 +58,8 @@ namespace PolyPlane.Rendering
 
         private int Width => _renderTarget.Width;
         private int Height => _renderTarget.Height;
+
+        private float _hudScale = 1f;
 
         const int PROC_GEN_LEN = 20000;
         private int[] _groundObjsRnd; // Random data points sampled for ground objects.
@@ -418,7 +431,7 @@ namespace PolyPlane.Rendering
                     DrawTree(ctx, treePos + new D2DPoint(rndPnt * 20, 0f), ((rndPnt) * 6) + 20, 60 + rndPnt);
 
                 if (rndPnt == 13)
-                    DrawPineTree(ctx, treePos + new D2DPoint((21 - rndPnt) * 28, 0f), 30f);
+                    DrawPineTree(ctx, treePos + new D2DPoint((21 - rndPnt) * 28, 0f), 20f);
 
                 if (rndPnt == 15)
                     DrawTree(ctx, treePos + new D2DPoint(400, 0), 30f, 71f);
@@ -427,7 +440,7 @@ namespace PolyPlane.Rendering
                     DrawTree(ctx, treePos, 60f);
 
                 if (rndPnt == 18)
-                    DrawPineTree(ctx, treePos + new D2DPoint((rndPnt) * 25, 0f), 40f, 40f);
+                    DrawPineTree(ctx, treePos + new D2DPoint((rndPnt) * 25, 0f), 40f, 20f);
 
                 if (rndPnt == 1010)
                     DrawTree(ctx, treePos, 40f, 81f);
@@ -439,10 +452,10 @@ namespace PolyPlane.Rendering
                     DrawTree(ctx, treePos, 60f, 81f);
 
                 if (rndPnt3 == 6134)
-                    DrawPineTree(ctx, treePos + new D2DPoint((rndPnt) * 25, 0f), 60f, 51f);
+                    DrawPineTree(ctx, treePos + new D2DPoint((rndPnt) * 25, 0f), 60f, 21f + ((rndPnt % 20) * 2f));
 
                 if (rndPnt == 14562)
-                    DrawPineTree(ctx, treePos - new D2DPoint(0, 0f), 40f, 63f);
+                    DrawPineTree(ctx, treePos - new D2DPoint(0, 0f), 40f, 33f);
             }
         }
 
@@ -450,7 +463,7 @@ namespace PolyPlane.Rendering
         {
             if (!ctx.Viewport.Contains(pos))
                 return;
-            
+
             var trunk = new D2DPoint[]
             {
                 new D2DPoint(-2, 0),
@@ -489,8 +502,8 @@ namespace PolyPlane.Rendering
 
             var pineTop = new D2DPoint[]
             {
-                new D2DPoint(-5, 0),
-                new D2DPoint(5, 0),
+                new D2DPoint(-(width / 2f), 0),
+                new D2DPoint((width / 2f), 0),
                 new D2DPoint(0, height),
             };
 
@@ -563,9 +576,8 @@ namespace PolyPlane.Rendering
 
         private void DrawHud(RenderContext ctx, D2DSize viewportsize, FighterPlane viewPlane)
         {
-            float SCALE = 1f;
             ctx.Gfx.PushTransform();
-            ctx.Gfx.ScaleTransform(SCALE, SCALE, new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f));
+            ctx.Gfx.ScaleTransform(_hudScale, _hudScale, new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f));
 
             DrawAltimeter(ctx.Gfx, viewportsize, viewPlane);
             DrawSpeedo(ctx.Gfx, viewportsize, viewPlane);
@@ -668,7 +680,7 @@ namespace PolyPlane.Rendering
         private void DrawGMeter(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
         {
             const float xPos = 80f;
-            var pos = new D2DPoint(viewportsize.width * 0.1f, viewportsize.height * 0.30f);
+            var pos = new D2DPoint(viewportsize.width * 0.17f, viewportsize.height * 0.50f);
 
             //var pos = new D2DPoint(xPos, viewportsize.height * 0.5f);
             var rect = new D2DRect(pos, new D2DSize(50, 20));
