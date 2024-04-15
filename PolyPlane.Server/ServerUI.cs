@@ -191,7 +191,7 @@ namespace PolyPlane.Server
                 var objs = _objs.GetAllObjects();
                 var numObj = objs.Count;
 
-                for (int i = 0; i < World.PHYSICS_STEPS; i++)
+                for (int i = 0; i < World.PHYSICS_SUB_STEPS; i++)
                 {
                     _timer.Restart();
 
@@ -376,7 +376,7 @@ namespace PolyPlane.Server
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, D2DColor.GreenYellow, _objs.Missiles, _objs.Planes);
             aiPlane.PlayerName = Helpers.GetRandomName();
-            aiPlane.Radar.SkipFrames = World.PHYSICS_STEPS;
+            aiPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
 
             aiPlane.FireMissileCallback = (m) =>
             {
@@ -405,7 +405,7 @@ namespace PolyPlane.Server
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, D2DColor.GreenYellow, _objs.Missiles, _objs.Planes);
             aiPlane.PlayerName = Helpers.GetRandomName();
-            aiPlane.Radar.SkipFrames = World.PHYSICS_STEPS;
+            aiPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
 
             aiPlane.FireMissileCallback = (m) =>
             {

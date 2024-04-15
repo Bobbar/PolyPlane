@@ -99,6 +99,18 @@ namespace PolyPlane
 
         }
 
+        public static void FillEllipseClamped(this D2DGraphics gfx, D2DRect viewport, D2DEllipse ellipse, D2DBrush brush)
+        {
+            if (viewport.Contains(ellipse))
+            {
+                gfx.FillEllipse(ellipse, brush);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
+
+        }
+
         public static void DrawLineClamped(this D2DGraphics gfx, D2DRect viewport, D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid, D2DCapStyle startCap = D2DCapStyle.Flat, D2DCapStyle endCap = D2DCapStyle.Flat)
         {
             if (viewport.Contains(start) || viewport.Contains(end))

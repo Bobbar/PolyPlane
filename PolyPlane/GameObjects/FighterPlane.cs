@@ -207,7 +207,7 @@ namespace PolyPlane.GameObjects
             this.RenderOffset = 1.5f;
 
             _aiBehavior = new FighterPlaneAI(this, personality);
-            _aiBehavior.SkipFrames = World.PHYSICS_STEPS;
+            _aiBehavior.SkipFrames = World.PHYSICS_SUB_STEPS;
 
             _isAIPlane = true;
 
@@ -234,7 +234,7 @@ namespace PolyPlane.GameObjects
             _controlWing.Deflection = 2f;
             _centerOfThrust = new FixturePoint(this, new D2DPoint(-33f, 0));
 
-            var skipFrames = IsNetObject ? 1 : World.PHYSICS_STEPS;
+            var skipFrames = IsNetObject ? 1 : World.PHYSICS_SUB_STEPS;
 
             this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), 1.7f);
             _flamePos = new FixturePoint(this, new D2DPoint(-37f, 0), skipFrames);
@@ -660,7 +660,7 @@ namespace PolyPlane.GameObjects
             var flame = new Flame(this, pos, hasFlame: Helpers.Rnd.Next(3) == 2);
 
             flame.IsNetObject = this.IsNetObject;
-            flame.SkipFrames = this.IsNetObject ? 1 : World.PHYSICS_STEPS;
+            flame.SkipFrames = this.IsNetObject ? 1 : World.PHYSICS_SUB_STEPS;
             _flames.Add(flame);
         }
 

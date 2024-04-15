@@ -337,16 +337,11 @@ namespace PolyPlane.Rendering
             ctx.Gfx.TranslateTransform(pos.X, pos.Y);
 
             var viewPortRect = new D2DRect(plane.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
-            viewPortRect = viewPortRect.Inflate(100f, 100f); // Inflate slightly to prevent "pop-in".
+            viewPortRect = viewPortRect.Inflate(500f, 500f); // Inflate slightly to prevent "pop-in".
             ctx.PushViewPort(viewPortRect);
 
             DrawGroundObjs(ctx, plane);
-
-            // Draw the ground.
-            var groundColor = D2DColor.DarkGreen;
-            groundColor = AddToDColor(groundColor);// Add time of day color
-            ctx.Gfx.FillRectangle(new D2DRect(new D2DPoint(plane.Position.X, 2000f), new D2DSize(this.Width * World.ViewPortScaleMulti, 4000f)), groundColor);
-
+            DrawGround(ctx, plane);
             DrawGroundImpacts(ctx, plane);
 
             _objs.Decoys.ForEach(o => o.Render(ctx));
@@ -375,6 +370,30 @@ namespace PolyPlane.Rendering
             ctx.Gfx.PopTransform();
         }
 
+        private void DrawGround(RenderContext ctx, FighterPlane plane)
+        {
+            var groundPos = new D2DPoint(plane.Position.X, 0f);
+
+            if (!ctx.Viewport.Contains(groundPos))
+                return;
+
+            groundPos += new D2DPoint(0f, 2000f);
+            var color1 = D2DColor.DarkGreen;
+            var color2 = new D2DColor(1f, 0f, 0.29f, 0);
+            using (var brush = ctx.Device.CreateLinearGradientBrush(new D2DPoint(plane.Position.X, 50f), new D2DPoint(plane.Position.X, 4000f), [new D2DGradientStop(0.2f, AddToDColor(color1)), new D2DGradientStop(0.1f, AddToDColor(color2))]))
+            {
+                // Draw the ground.
+                var groundColor = D2DColor.DarkGreen;
+                groundColor = AddToDColor(groundColor);// Add time of day color
+                ctx.Gfx.FillRectangle(new D2DRect(groundPos, new D2DSize(this.Width * World.ViewPortScaleMulti, 4000f)), brush);
+            }
+
+            //// Draw the ground.
+            //var groundColor = D2DColor.DarkGreen;
+            //groundColor = AddToDColor(groundColor);// Add time of day color
+            //ctx.Gfx.FillRectangle(new D2DRect(new D2DPoint(plane.Position.X, 2000f), new D2DSize(this.Width * World.ViewPortScaleMulti, 4000f)), groundColor);
+        }
+
         private void DrawGroundObjs(RenderContext ctx, FighterPlane plane)
         {
             var start = plane.Position.X - ((this.Width * World.ViewPortScaleMulti) * 0.5f);
@@ -388,33 +407,50 @@ namespace PolyPlane.Rendering
                 var rndPnt = _groundObjsRnd[(xRound / 1)];
                 var rndPnt2 = _groundObjsRnd[(xRound / 6)];
                 var rndPnt3 = _groundObjsRnd[(xRound / 7)];
-                var rndPnt4 = _groundObjsRnd[(xRound / 20)];
 
                 var treePos = new D2DPoint(x, 0f);
 
                 // Just fiddling with numbers here to produce a decent looking result... 
-                if (rndPnt < 10)
-                    DrawTree(ctx, treePos + new D2DPoint(rndPnt * 200, 0f), ((10 - rndPnt) * 6) + 10, 40 + rndPnt);
+                if (rndPnt == 10)
+                    DrawTree(ctx, treePos + new D2DPoint(rndPnt * 200, 0f), 20, 40 + rndPnt);
 
-                if (rndPnt2 > PROC_GEN_LEN - 10)
-                    DrawTree(ctx, treePos, 30 + ((rndPnt2 - PROC_GEN_LEN - 10)));
+                if (rndPnt == 11)
+                    DrawTree(ctx, treePos + new D2DPoint(rndPnt * 20, 0f), ((rndPnt) * 6) + 20, 60 + rndPnt);
 
-                if (rndPnt3 < 21)
-                    DrawPineTree(ctx, treePos + new D2DPoint((21 - rndPnt3) * 20, 0f), ((21 - rndPnt3) * 3));
+                if (rndPnt == 13)
+                    DrawPineTree(ctx, treePos + new D2DPoint((21 - rndPnt) * 28, 0f), 30f);
 
-                if (rndPnt3 > (PROC_GEN_LEN / 2) - 20 && rndPnt3 < (PROC_GEN_LEN / 2) + 40)
-                    DrawTree(ctx, treePos, 40, 100);
+                if (rndPnt == 15)
+                    DrawTree(ctx, treePos + new D2DPoint(400, 0), 30f, 71f);
 
-                if (rndPnt4 < 20)
-                    DrawTree(ctx, treePos, 13 + (20 - rndPnt4));
+                if (rndPnt == 16)
+                    DrawTree(ctx, treePos, 60f);
 
-                if (rndPnt4 > PROC_GEN_LEN - 50)
-                    DrawTree(ctx, treePos, (rndPnt4 - (PROC_GEN_LEN - 50) + 1) * 2, (rndPnt4 - (PROC_GEN_LEN - 50) + 1) * 6);
+                if (rndPnt == 18)
+                    DrawPineTree(ctx, treePos + new D2DPoint((rndPnt) * 25, 0f), 40f, 40f);
+
+                if (rndPnt == 1010)
+                    DrawTree(ctx, treePos, 40f, 81f);
+
+                if (rndPnt == 1011)
+                    DrawTree(ctx, treePos, 100f, 72f);
+
+                if (rndPnt2 == 10235)
+                    DrawTree(ctx, treePos, 60f, 81f);
+
+                if (rndPnt3 == 6134)
+                    DrawPineTree(ctx, treePos + new D2DPoint((rndPnt) * 25, 0f), 60f, 51f);
+
+                if (rndPnt == 14562)
+                    DrawPineTree(ctx, treePos - new D2DPoint(0, 0f), 40f, 63f);
             }
         }
 
         private void DrawTree(RenderContext ctx, D2DPoint pos, float height = 20f, float radius = 50f)
         {
+            if (!ctx.Viewport.Contains(pos))
+                return;
+            
             var trunk = new D2DPoint[]
             {
                 new D2DPoint(-2, 0),
@@ -435,13 +471,23 @@ namespace PolyPlane.Rendering
 
             Helpers.ApplyTranslation(trunk, trunk, 180f, pos, scale);
 
+            var leafPos = pos + new D2DPoint(0, -height * scale);
             ctx.DrawPolygon(trunk, trunkColor, 1f, D2DDashStyle.Solid, trunkColor);
-            ctx.FillEllipse(new D2DEllipse(pos + new D2DPoint(0, -height * scale), new D2DSize(radius, radius)), leafColor);
+
+            using (var brush = ctx.Device.CreateRadialGradientBrush(leafPos, D2DPoint.Zero, radius, radius, [new D2DGradientStop(0f, leafColor), new D2DGradientStop(1f, Helpers.LerpColor(leafColor, D2DColor.Black, 0.1f))]))
+            {
+                ctx.FillEllipse(new D2DEllipse(leafPos, new D2DSize(radius, radius)), brush);
+            }
+
+            //ctx.FillEllipse(new D2DEllipse(leafPos, new D2DSize(radius, radius)), leafColor);
         }
 
         private void DrawPineTree(RenderContext ctx, D2DPoint pos, float height = 20f, float width = 20f)
         {
-            var trunk = new D2DPoint[]
+            if (!ctx.Viewport.Contains(pos))
+                return;
+
+            var pineTop = new D2DPoint[]
             {
                 new D2DPoint(-5, 0),
                 new D2DPoint(5, 0),
@@ -456,10 +502,10 @@ namespace PolyPlane.Rendering
             trunkColor = AddToDColor(trunkColor);
             leafColor = AddToDColor(leafColor);
 
-            Helpers.ApplyTranslation(trunk, trunk, 180f, pos - new D2DPoint(0, height), scale);
+            Helpers.ApplyTranslation(pineTop, pineTop, 180f, pos - new D2DPoint(0, height), scale);
 
             ctx.FillRectangle(new D2DRect(pos - new D2DPoint(0, height / 2f), new D2DSize(width / 2f, height * 1f)), trunkColor);
-            ctx.DrawPolygon(trunk, leafColor, 1f, D2DDashStyle.Solid, leafColor);
+            ctx.DrawPolygon(pineTop, leafColor, 1f, D2DDashStyle.Solid, leafColor);
         }
 
         private void DrawGroundImpacts(RenderContext ctx, FighterPlane plane)
@@ -898,7 +944,7 @@ namespace PolyPlane.Rendering
 
         private void DrawSky(RenderContext ctx, FighterPlane viewPlane)
         {
-            const float MAX_ALT = 50000f;
+            const float MAX_ALT_OFFSET = 10000f;
 
             var plrAlt = viewPlane.Altitude;
             if (viewPlane.Position.Y >= 0)
@@ -906,10 +952,11 @@ namespace PolyPlane.Rendering
 
             var color1 = new D2DColor(0.5f, D2DColor.SkyBlue);
             var color2 = new D2DColor(0.5f, D2DColor.Black);
-            var color = Helpers.LerpColor(color1, color2, (plrAlt / MAX_ALT));
+            var color = Helpers.LerpColor(color1, color2, (plrAlt / (World.MAX_ALTITUDE - MAX_ALT_OFFSET)));
 
             // Add time of day color.
-            color = Helpers.LerpColor(color, D2DColor.Black, World.TimeOfDay / World.MAX_TIMEOFDAY);
+            //color = Helpers.LerpColor(color, D2DColor.Black, World.TimeOfDay / World.MAX_TIMEOFDAY);
+            color = Helpers.LerpColor(color, D2DColor.Black, World.TimeOfDay / (World.MAX_TIMEOFDAY / 2f));
 
             var rect = new D2DRect(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), new D2DSize(this.Width, this.Height));
 

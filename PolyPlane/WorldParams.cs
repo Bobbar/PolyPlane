@@ -8,7 +8,7 @@ namespace PolyPlane
 
         public static bool InterpOn = true;
 
-        public const int PHYSICS_STEPS = 8;//8;
+        public const int PHYSICS_SUB_STEPS = 8;
 
         public const bool NET_UPDATE_SKIP_FRAMES = true;
         public const int NET_SERVER_FPS = 60;
@@ -45,7 +45,7 @@ namespace PolyPlane
         {
             get
             {
-                return DT / PHYSICS_STEPS;
+                return DT / PHYSICS_SUB_STEPS;
             }
         }
 
@@ -94,6 +94,7 @@ namespace PolyPlane
         public const float MIN_COLLISION_DIST = 250000f;// Minimum distance (squared) for collisions to be considered.
         public const float SENSOR_FOV = 60f; // TODO: Not sure this belongs here. Maybe make this unique based on missile/plane types and move it there.
 
+        public const float MAX_ALTITUDE = 60000f; // Max density altitude.  (Air density drops to zero at this altitude)
         private const float MIN_TURB_DENS = 0.6f;
         private const float MAX_TURB_DENS = 1.225f;
         private const float MAX_WIND_MAG = 100f;
@@ -110,20 +111,18 @@ namespace PolyPlane
         public static GameID ViewID;
         public static double ServerTimeOffset = 0;
 
-        public const float MAX_TIMEOFDAY = 20f;
+        public const float MAX_TIMEOFDAY = 24f;
         public const float TOD_RATE = 0.03f;
         public static float TimeOfDay = 0.1f;
         public static float TimeOfDayDir = 1f;
 
         public static float GetDensityAltitude(D2DPoint position)
         {
-            const float MAX_ALT = 60000f;
-
             if (position.Y > 0)
                 return AirDensity;
 
             var alt = Math.Abs(position.Y);
-            var fact = 1f - Helpers.Factor(alt, MAX_ALT);
+            var fact = 1f - Helpers.Factor(alt, MAX_ALTITUDE);
 
             return AirDensity * fact;
         }

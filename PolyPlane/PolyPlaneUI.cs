@@ -259,7 +259,7 @@ namespace PolyPlane
 
             _playerPlane.Radar = new Radar(_playerPlane, _hudColor, _objs.Missiles, _objs.Planes);
 
-            _playerPlane.Radar.SkipFrames = World.PHYSICS_STEPS;
+            _playerPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
 
             _playerPlane.FireMissileCallback = (m) =>
             {
@@ -295,7 +295,7 @@ namespace PolyPlane
             _playerPlane.FixPlane();
 
             _playerPlane.Radar = new Radar(_playerPlane, _hudColor, _objs.Missiles, _objs.Planes);
-            _playerPlane.Radar.SkipFrames = World.PHYSICS_STEPS;
+            _playerPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
 
             _playerResetTimer.Stop();
             _canRespawn = false;
@@ -316,7 +316,7 @@ namespace PolyPlane
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, _hudColor, _objs.Missiles, _objs.Planes);
             aiPlane.PlayerName = Helpers.GetRandomName();
-            aiPlane.Radar.SkipFrames = World.PHYSICS_STEPS;
+            aiPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
 
             aiPlane.FireMissileCallback = (m) =>
             {
@@ -419,7 +419,7 @@ namespace PolyPlane
                 var localObjs = _objs.GetAllLocalObjects();
                 var numObj = localObjs.Count;
 
-                for (int i = 0; i < World.PHYSICS_STEPS; i++)
+                for (int i = 0; i < World.PHYSICS_SUB_STEPS; i++)
                 {
                     _timer.Restart();
 

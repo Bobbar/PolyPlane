@@ -100,7 +100,7 @@ namespace PolyPlane.GameObjects
             var newEllipse = new D2DEllipse(newPos, new D2DSize(newRad, newRad));
             var newPart = new FlamePart(newEllipse, newColor, endColor, newVelo);
             //newPart.IsNetObject = this.IsNetObject;
-            newPart.SkipFrames = this.IsNetObject ? 1 : World.PHYSICS_STEPS;
+            newPart.SkipFrames = this.IsNetObject ? 1 : World.PHYSICS_SUB_STEPS;
 
             if (_parts.Count < MAX_PARTS)
                 _parts.Add(newPart);

@@ -47,6 +47,11 @@ namespace PolyPlane.Rendering
             Gfx.FillEllipseClamped(Viewport, ellipse, color);
         }
 
+        public void FillEllipse(D2DEllipse ellipse, D2DBrush brush)
+        {
+            Gfx.FillEllipseClamped(Viewport, ellipse, brush);
+        }
+
         public void FillEllipseSimple(D2DPoint pos, float radius, D2DColor color)
         {
             Gfx.FillEllipseClamped(Viewport, new D2DEllipse(pos, new D2DSize(radius, radius)), color);
