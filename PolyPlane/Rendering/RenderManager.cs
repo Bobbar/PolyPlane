@@ -38,6 +38,7 @@ namespace PolyPlane.Rendering
         private string _hudMessage = string.Empty;
         private D2DColor _hudMessageColor = D2DColor.Red;
         private GameTimer _hudMessageTimeout = new GameTimer(5f);
+        private List<EventMessage> _messageEvents = new List<EventMessage>();
 
         private readonly string _defaultFontName = "Consolas";
 
@@ -159,6 +160,16 @@ namespace PolyPlane.Rendering
                 var rndCloud = Cloud.RandomCloud(rnd, rndPos, MIN_PNTS, MAX_PNTS, MIN_RADIUS, MAX_RADIUS);
                 _clouds.Add(rndCloud);
             }
+        }
+
+        public void AddNewEventMessage(string message, EventType type)
+        {
+            _messageEvents.Add(new EventMessage(message, type));
+        }
+
+        public void AddNewEventMessage(EventMessage msg)
+        {
+            _messageEvents.Add(msg);
         }
 
         public void ToggleInfo()
@@ -601,7 +612,39 @@ namespace PolyPlane.Rendering
             var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height - (viewportsize.height * 0.9f));
             DrawHealthBar(ctx.Gfx, viewPlane, pos, healthBarSize);
 
+
+            DrawMessages(ctx.Gfx, viewportsize, viewPlane);
+
             ctx.Gfx.PopTransform();
+        }
+
+        private void DrawMessages(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
+        {
+            const float FONT_SIZE = 10f;
+            const int MAX_LINES = 10;
+            const float WIDTH = 300f;
+            const float HEIGHT = 100f;
+
+            var lineSize = new D2DSize(WIDTH, HEIGHT / MAX_LINES);
+            var boxPos = new D2DPoint(viewportsize.width * 0.17f, viewportsize.height * 0.80f);
+            var linePos = boxPos;
+
+            var start = 0;
+
+            if (_messageEvents.Count >= MAX_LINES)
+                start = _messageEvents.Count - MAX_LINES;
+
+            for (int i = start; i < _messageEvents.Count; i++)
+            {
+                var msg = _messageEvents[i];
+                var rect = new D2DRect(linePos, lineSize);
+
+                gfx.DrawText(msg.Message, _hudColor, _defaultFontName, FONT_SIZE, rect);
+
+                linePos += new D2DPoint(0, lineSize.height);
+            }
+
+            gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, _hudColor);
         }
 
         private void DrawGuideIcon(D2DGraphics gfx, D2DSize viewportsize, FighterPlane viewPlane)

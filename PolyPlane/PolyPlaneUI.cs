@@ -84,8 +84,21 @@ namespace PolyPlane
             };
 
 
+            _objs.PlayerKilledEvent += PlayerKilledEvent;
+            _objs.NewPlayerEvent += NewPlayerEvent;
+
             _multiThreadNum = Environment.ProcessorCount - 2;
 
+        }
+
+        private void NewPlayerEvent(object? sender, FighterPlane e)
+        {
+            _render?.AddNewEventMessage($"{e.PlayerName} has connected.", EventType.Net);
+        }
+
+        private void PlayerKilledEvent(object? sender, EventMessage e)
+        {
+            _render?.AddNewEventMessage(e);
         }
 
         private void Client_PeerTimeoutEvent(object? sender, ENet.Peer e)

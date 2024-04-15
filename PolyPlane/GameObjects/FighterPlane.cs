@@ -135,6 +135,8 @@ namespace PolyPlane.GameObjects
         public Action<Bullet> FireBulletCallback { get; set; }
         public Action<GuidedMissile> FireMissileCallback { get; set; }
 
+        public Action<FighterPlane, GameObject> PlayerKilledCallback { get; set; }
+
         private float _gForce = 0f;
         private float _gForceDir = 0f;
 
@@ -697,7 +699,6 @@ namespace PolyPlane.GameObjects
                         this.Hits = 0;
                         attackPlane.Headshots++;
                         attackPlane.Kills++;
-
                     }
 
 
@@ -735,6 +736,9 @@ namespace PolyPlane.GameObjects
 
                     if (attackPlane.Hits < MAX_HITS)
                         attackPlane.Hits += 2;
+
+                    PlayerKilledCallback?.Invoke(this, impactor);
+
                 }
             }
 
@@ -858,6 +862,8 @@ namespace PolyPlane.GameObjects
 
                     if (attackPlane.Hits < MAX_HITS)
                         attackPlane.Hits += 2;
+
+                    PlayerKilledCallback?.Invoke(this, impactor);
                 }
             }
 

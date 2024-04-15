@@ -1,4 +1,6 @@
-﻿namespace PolyPlane.GameObjects
+﻿using PolyPlane.Rendering;
+
+namespace PolyPlane.GameObjects
 {
     public class GameObjectManager
     {
@@ -28,7 +30,9 @@
         private List<GameObject> _allLocalObjects = new List<GameObject>();
         private List<GameObject> _allObjects = new List<GameObject>();
         private List<GameObject> _expiredObjs = new List<GameObject>();
-      
+
+        public event EventHandler<EventMessage> PlayerKilledEvent;
+        public event EventHandler<FighterPlane> NewPlayerEvent;
 
         public void AddBullet(Bullet bullet)
         {
@@ -74,6 +78,10 @@
             {
                 _objLookup.Add(plane.ID.GetHashCode(), plane);
                 Planes.Add(plane);
+
+                plane.PlayerKilledCallback = HandlePlayerKilled;
+
+                NewPlayerEvent?.Invoke(this, plane);
             }
         }
 
@@ -233,6 +241,20 @@
 
             if (GroundImpacts.Count > MAX_GROUND_IMPACTS)
                 GroundImpacts.RemoveAt(0);
+        }
+
+        private void HandlePlayerKilled(FighterPlane plane, GameObject impactor)
+        {
+            var impactorPlayer = impactor.Owner as FighterPlane;
+
+            if (impactorPlayer == null)
+                return;
+
+            if (plane.WasHeadshot)
+                PlayerKilledEvent?.Invoke(this, new EventMessage($"{impactorPlayer.PlayerName} headshot {plane.PlayerName} with {(impactor is Bullet ? "bullets." : "a missile.")}", EventType.Kill));
+            else
+                PlayerKilledEvent?.Invoke(this, new EventMessage($"{impactorPlayer.PlayerName} destroyed {plane.PlayerName} with {(impactor is Bullet ? "bullets." : "a missile.")}", EventType.Kill));
+
         }
 
         private void PruneExpired(List<GameObject> objs)
