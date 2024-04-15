@@ -215,6 +215,45 @@ namespace PolyPlane.Net
         }
     }
 
+    public class NewPlayerPacket : NetPacket
+    {
+        public string Name;
+        public D2DColor PlaneColor;
+        public NetPoint Position;
+
+        public NewPlayerPacket() : base() 
+        {
+            Type = PacketTypes.NewPlayer;
+        }
+
+        public NewPlayerPacket(FighterPlane plane)
+        {
+            Type = PacketTypes.NewPlayer;
+            Name = plane.PlayerName;
+            PlaneColor = plane.PlaneColor;
+            Position = plane.Position.ToNetPoint();
+            ID = plane.ID;
+        }
+    }
+
+    public class PlayerListPacket : NetPacket
+    {
+        public List<NewPlayerPacket> Players = new List<NewPlayerPacket>();
+
+        public PlayerListPacket() : base()
+        { 
+        }
+
+        public PlayerListPacket(PacketTypes type) : base(type)
+        {
+        }
+
+        public PlayerListPacket(PacketTypes type, List<NewPlayerPacket> players) : base(type)
+        {
+            Players = players;
+        }
+    }
+
     public class GameObjectPacket : NetPacket
     {
         public GameID OwnerID;
@@ -274,10 +313,8 @@ namespace PolyPlane.Net
 
     public class PlanePacket : GameObjectPacket
     {
-        public string PlayerName;
         public float ThrustAmt;
         public float Deflection;
-        public D2DColor PlaneColor;
         public bool IsDamaged;
         public bool HasCrashed;
         public bool WasHeadshot;
@@ -287,10 +324,8 @@ namespace PolyPlane.Net
 
         public PlanePacket(FighterPlane obj) : base(obj)
         {
-            PlayerName = obj.PlayerName;
             ThrustAmt = obj.ThrustAmount;
             Deflection = obj.Deflection;
-            PlaneColor = obj.PlaneColor;
             IsDamaged = obj.IsDamaged;
             HasCrashed = obj.HasCrashed;
             WasHeadshot = obj.WasHeadshot;
@@ -299,22 +334,17 @@ namespace PolyPlane.Net
 
         public PlanePacket(FighterPlane obj, PacketTypes type) : base(obj, type)
         {
-            PlayerName = obj.PlayerName;
             ThrustAmt = obj.ThrustAmount;
             Deflection = obj.Deflection;
-            PlaneColor = obj.PlaneColor;
             IsDamaged = obj.IsDamaged;
             HasCrashed = obj.HasCrashed;
             WasHeadshot = obj.WasHeadshot;
             Hits = obj.Hits;
-
         }
 
         public virtual void SyncObj(FighterPlane obj)
         {
             base.SyncObj(obj);
-            //obj.PlaneColor = this.PlaneColor.
-            obj.PlayerName = PlayerName;
             obj.ThrustAmount = ThrustAmt;
             obj.Deflection = Deflection;
             obj.IsDamaged = IsDamaged;

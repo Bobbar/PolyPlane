@@ -100,13 +100,13 @@ namespace PolyPlane.Net
 
                     if (IsServer)
                     {
-                        var planePacket = packet as PlanePacket;
+                        var planePacket = packet as NewPlayerPacket;
 
                         if (planePacket != null)
                         {
                             var newPlane = new FighterPlane(planePacket.Position.ToD2DPoint(), planePacket.PlaneColor);
                             newPlane.ID = planePacket.ID;
-                            planePacket.SyncObj(newPlane);
+                            newPlane.PlayerName = planePacket.Name;
                             newPlane.IsNetObject = true;
                             newPlane.Radar = new Radar(newPlane, D2DColor.GreenYellow, Objs.Missiles, Objs.Planes);
                             Objs.AddPlane(newPlane);
@@ -142,7 +142,7 @@ namespace PolyPlane.Net
                         _netIDIsSet = true;
 
                         Objs.ChangeObjID(PlayerPlane, new GameID(packet.ID.PlayerID, PlayerPlane.ID.ObjectID));
-                        var netPacket = new PlanePacket(PlayerPlane, PacketTypes.NewPlayer);
+                        var netPacket = new NewPlayerPacket(PlayerPlane);
                         Host.EnqueuePacket(netPacket);
 
                         PlayerIDReceived?.Invoke(this, packet.ID.PlayerID);
@@ -163,16 +163,17 @@ namespace PolyPlane.Net
                     }
                     else
                     {
-                        var listPacket = packet as Net.PlaneListPacket;
+                        var listPacket = packet as Net.PlayerListPacket;
 
-                        foreach (var plane in listPacket.Planes)
+                        foreach (var player in listPacket.Players)
                         {
-                            var existing = Objs.Contains(plane.ID);
+                            var existing = Objs.Contains(player.ID);
 
                             if (!existing)
                             {
-                                var newPlane = new FighterPlane(plane.Position.ToD2DPoint(), plane.PlaneColor);
-                                newPlane.ID = plane.ID;
+                                var newPlane = new FighterPlane(player.Position.ToD2DPoint(), player.PlaneColor);
+                                newPlane.ID = player.ID;
+                                newPlane.PlayerName = player.Name;
                                 newPlane.IsNetObject = true;
                                 newPlane.LagAmount = World.CurrentTime() - listPacket.FrameTime;
                                 newPlane.ClientCreateTime = listPacket.FrameTime;
@@ -293,15 +294,14 @@ namespace PolyPlane.Net
 
         public void ServerSendOtherPlanes()
         {
-            var otherPlanesPackets = new List<Net.PlanePacket>();
+            var otherPlanesPackets = new List<NewPlayerPacket>();
+
             foreach (var plane in Objs.Planes)
             {
-                otherPlanesPackets.Add(new Net.PlanePacket(plane as FighterPlane));
+                otherPlanesPackets.Add(new NewPlayerPacket(plane));
             }
 
-            var listPacket = new Net.PlaneListPacket(otherPlanesPackets);
-            listPacket.Type = PacketTypes.GetOtherPlanes;
-
+            var listPacket = new Net.PlayerListPacket(PacketTypes.GetOtherPlanes, otherPlanesPackets);
             Host.EnqueuePacket(listPacket);
         }
 

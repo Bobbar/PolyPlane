@@ -34,8 +34,12 @@ namespace PolyPlane.Net
 
             switch (payloadPacket.Type)
             {
-                case PacketTypes.PlaneUpdate or PacketTypes.GetOtherPlanes:
+                case PacketTypes.PlaneUpdate:
                     obj = _serializer.Deserialize<PlaneListPacket>(payloadBytes);
+                    break;
+
+                case PacketTypes.GetOtherPlanes:
+                    obj = _serializer.Deserialize<PlayerListPacket>(payloadBytes);
                     break;
 
                 case PacketTypes.MissileUpdate:
@@ -47,7 +51,7 @@ namespace PolyPlane.Net
                     break;
 
                 case PacketTypes.NewPlayer:
-                    obj = _serializer.Deserialize<PlanePacket>(payloadBytes);
+                    obj = _serializer.Deserialize<NewPlayerPacket>(payloadBytes);
                     break;
 
                 case PacketTypes.NewBullet:
