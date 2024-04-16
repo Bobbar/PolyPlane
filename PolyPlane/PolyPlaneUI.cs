@@ -189,24 +189,31 @@ namespace PolyPlane
         {
             if (this.Disposing || this.IsDisposed) return;
 
-            if (this.InvokeRequired)
-                this.Invoke(() => HandleNewImpact(sender, e));
-            else
+            try
             {
-                var viewPlane = GetViewPlane();
-
-                if (viewPlane != null)
+                if (this.InvokeRequired)
+                    this.Invoke(() => HandleNewImpact(sender, e));
+                else
                 {
-                    if (e.Target.ID.Equals(viewPlane.ID))
+                    var viewPlane = GetViewPlane();
+
+                    if (viewPlane != null)
                     {
-                        _render.DoScreenFlash(D2DColor.Red);
-                        _render.DoScreenShake();
-                    }
-                    else if (e.DoesDamage && e.Impactor.Owner.ID.Equals(viewPlane.ID))
-                    {
-                        _render.DoScreenFlash(D2DColor.Green);
+                        if (e.Target.ID.Equals(viewPlane.ID))
+                        {
+                            _render.DoScreenFlash(D2DColor.Red);
+                            _render.DoScreenShake();
+                        }
+                        else if (e.DoesDamage && e.Impactor.Owner.ID.Equals(viewPlane.ID))
+                        {
+                            _render.DoScreenFlash(D2DColor.Green);
+                        }
                     }
                 }
+            }
+            catch
+            {
+                // Catch object disposed exceptions.
             }
         }
 

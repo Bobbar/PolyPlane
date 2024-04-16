@@ -744,14 +744,12 @@ namespace PolyPlane.Rendering
         {
             const float MIN_ALT = 3000f;
             const float W = 80f;
-            const float H = 400f;
+            const float H = 350f;
             const float HalfW = W * 0.5f;
             const float HalfH = H * 0.5f;
             const float MARKER_STEP = 100f;
-            const float xPos = 200f;
-            //var pos = new D2DPoint(viewportsize.width - xPos, viewportsize.height * 0.5f);
-            var pos = new D2DPoint(viewportsize.width * 0.85f, viewportsize.height * 0.4f);
-
+            
+            var pos = new D2DPoint(viewportsize.width * 0.85f, viewportsize.height * 0.3f);
             var rect = new D2DRect(pos, new D2DSize(W, H));
             var alt = plane.Altitude;
             var startAlt = alt - (alt % MARKER_STEP) + MARKER_STEP;
@@ -773,12 +771,17 @@ namespace PolyPlane.Rendering
                 gfx.FillRectangle(new D2DRect(s.X, s.Y, W, (pos.Y + (H * 0.5f)) - s.Y), altWarningColor);
             }
 
-            for (float y = 0; y < H; y += MARKER_STEP)
+            for (float y = 0; y <= H; y += MARKER_STEP)
             {
                 if (y % MARKER_STEP == 0)
                 {
-                    var start = new D2DPoint(pos.X - HalfW, (pos.Y - y + HalfH - MARKER_STEP) + (alt % MARKER_STEP));
-                    var end = new D2DPoint(pos.X + HalfW, (pos.Y - y + HalfH - MARKER_STEP) + (alt % MARKER_STEP));
+                    var posY = (pos.Y - y + HalfH - MARKER_STEP) + (alt % MARKER_STEP);
+
+                    if (posY < (pos.Y - HalfH))
+                        continue;
+                    
+                    var start = new D2DPoint(pos.X - HalfW, posY);
+                    var end = new D2DPoint(pos.X + HalfW, posY);
 
                     var div = y / MARKER_STEP;
                     var altMarker = startAlt + (-HalfH + (div * MARKER_STEP));
@@ -797,15 +800,12 @@ namespace PolyPlane.Rendering
         private void DrawSpeedo(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
         {
             const float W = 80f;
-            const float H = 400f;
+            const float H = 350f;
             const float HalfW = W * 0.5f;
             const float HalfH = H * 0.5f;
-            const float MARKER_STEP = 50f;//100f;
-            const float xPos = 200f;
-            //var pos = new D2DPoint(xPos, viewportsize.height * 0.5f);
-            var pos = new D2DPoint(viewportsize.width * 0.15f, viewportsize.height * 0.4f);
+            const float MARKER_STEP = 50f;
 
-
+            var pos = new D2DPoint(viewportsize.width * 0.15f, viewportsize.height * 0.3f);
             var rect = new D2DRect(pos, new D2DSize(W, H));
             var spd = plane.Velocity.Length();
             var startSpd = (spd) - (spd % (MARKER_STEP)) + MARKER_STEP;
@@ -875,10 +875,11 @@ namespace PolyPlane.Rendering
 
         private void DrawRadar(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)
         {
-            var pos = new D2DPoint(viewportsize.width * 0.65f, viewportsize.height * 0.7f);
+            const float SCALE = 0.8f;
+            var pos = new D2DPoint(viewportsize.width * 0.8f, viewportsize.height * 0.75f);
 
             ctx.Gfx.PushTransform();
-            ctx.Gfx.ScaleTransform(0.9f, 0.9f, pos);
+            ctx.Gfx.ScaleTransform(SCALE, SCALE, pos);
 
             plane.Radar.Position = pos;
             plane.Radar.Render(ctx);
