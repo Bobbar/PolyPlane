@@ -254,10 +254,8 @@ namespace PolyPlane.Rendering
 
         public void ResizeGfx(bool force = false)
         {
-            var curSize = GetViewportScaled();
-
             if (!force)
-                if (World.ViewPortBaseSize.width == curSize.Width && World.ViewPortBaseSize.height == curSize.Height)
+                if (World.ViewPortBaseSize.width == this.Width && World.ViewPortBaseSize.height == this.Height)
                     return;
 
             _device?.Resize();
@@ -1081,8 +1079,8 @@ namespace PolyPlane.Rendering
             var color1 = new D2DColor(1f, DARKER_COLOR, DARKER_COLOR, DARKER_COLOR);
             var color2 = D2DColor.WhiteSmoke;
 
-            var points = cloud.Points.ToArray();
-            Helpers.ApplyTranslation(points, points, cloud.Rotation, cloud.Position, SCALE);
+            var points = cloud.Points;
+            Helpers.ApplyTranslation(cloud.PointsOrigin, cloud.Points, cloud.Rotation, cloud.Position, SCALE);
 
             // Find min/max height.
             var minY = points.Min(p => p.Y);
@@ -1110,7 +1108,6 @@ namespace PolyPlane.Rendering
                 // Add time of day color.
                 color = AddToDColor(color);
 
-                //ctx.FillEllipse(new D2DEllipse(point, new D2DSize(dims.X, dims.Y)), cloud.Color);
                 ctx.FillEllipse(new D2DEllipse(point, new D2DSize(dims.X, dims.Y)), color);
             }
         }
@@ -1128,7 +1125,7 @@ namespace PolyPlane.Rendering
                 float rotDir = 1f;
 
                 // Fiddle rotation direction.
-                if (cloud.Points.Count % 2 == 0)
+                if (cloud.Points.Length % 2 == 0)
                     rotDir = -1f;
 
                 cloud.Rotation = Helpers.ClampAngle(cloud.Rotation + (3f * rotDir) * dt);

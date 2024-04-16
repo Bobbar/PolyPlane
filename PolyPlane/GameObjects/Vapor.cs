@@ -121,7 +121,7 @@ namespace PolyPlane.GameObjects
             {
                 base.Update(dt, viewport, renderScale);
 
-                this.Velocity += -this.Velocity * 0.9999f * dt;
+                this.Velocity += -this.Velocity * (dt * 1.5f);
 
                 _ellipse.origin = this.Position;
 
