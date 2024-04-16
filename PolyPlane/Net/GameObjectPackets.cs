@@ -149,7 +149,7 @@ namespace PolyPlane.Net
             Type = PacketTypes.ServerSync;
         }
 
-        public SyncPacket(double serverTime, float timeOfDay, float timeOfDayDir)
+        public SyncPacket(double serverTime, float timeOfDay, float timeOfDayDir) : base()
         {
             Type = PacketTypes.ServerSync;
             ServerTime = serverTime;
@@ -163,7 +163,7 @@ namespace PolyPlane.Net
     {
         public BasicPacket() : base() { }
 
-        public BasicPacket(PacketTypes type, GameID id)
+        public BasicPacket(PacketTypes type, GameID id) : base()
         {
             Type = type;
             ID = id;
@@ -226,7 +226,7 @@ namespace PolyPlane.Net
             Type = PacketTypes.NewPlayer;
         }
 
-        public NewPlayerPacket(FighterPlane plane)
+        public NewPlayerPacket(FighterPlane plane) : base()
         {
             Type = PacketTypes.NewPlayer;
             Name = plane.PlayerName;

@@ -289,7 +289,7 @@ namespace PolyPlane.Rendering
             _hudMessageTimeout.Reset();
         }
 
-        private D2DColor AddToDColor(D2DColor color)
+        private D2DColor AddTimeOfDayColor(D2DColor color)
         {
             var todColor = InterpolateColorGaussian(_todPallet, World.TimeOfDay, World.MAX_TIMEOFDAY);
             return Helpers.LerpColor(color, todColor, 0.3f);
@@ -417,11 +417,9 @@ namespace PolyPlane.Rendering
             groundPos += new D2DPoint(0f, 2000f);
             var color1 = D2DColor.DarkGreen;
             var color2 = new D2DColor(1f, 0f, 0.29f, 0);
-            using (var brush = ctx.Device.CreateLinearGradientBrush(new D2DPoint(plane.Position.X, 50f), new D2DPoint(plane.Position.X, 4000f), [new D2DGradientStop(0.2f, AddToDColor(color1)), new D2DGradientStop(0.1f, AddToDColor(color2))]))
+            using (var brush = ctx.Device.CreateLinearGradientBrush(new D2DPoint(plane.Position.X, 50f), new D2DPoint(plane.Position.X, 4000f), [new D2DGradientStop(0.2f, AddTimeOfDayColor(color1)), new D2DGradientStop(0.1f, AddTimeOfDayColor(color2))]))
             {
                 // Draw the ground.
-                var groundColor = D2DColor.DarkGreen;
-                groundColor = AddToDColor(groundColor);// Add time of day color
                 ctx.Gfx.FillRectangle(new D2DRect(groundPos, new D2DSize(this.Width * World.ViewPortScaleMulti, 4000f)), brush);
             }
 
@@ -500,8 +498,8 @@ namespace PolyPlane.Rendering
             var leafColor = D2DColor.ForestGreen;
 
             // Add time of day color
-            trunkColor = AddToDColor(trunkColor);
-            leafColor = AddToDColor(leafColor);
+            trunkColor = AddTimeOfDayColor(trunkColor);
+            leafColor = AddTimeOfDayColor(leafColor);
 
             if (radius % 2 == 0)
                 leafColor.g -= 0.1f;
@@ -536,8 +534,8 @@ namespace PolyPlane.Rendering
             var leafColor = D2DColor.Green;
 
             // Add time of day color
-            trunkColor = AddToDColor(trunkColor);
-            leafColor = AddToDColor(leafColor);
+            trunkColor = AddTimeOfDayColor(trunkColor);
+            leafColor = AddTimeOfDayColor(leafColor);
 
             Helpers.ApplyTranslation(pineTop, pineTop, 180f, pos - new D2DPoint(0, height), scale);
 
@@ -1106,7 +1104,7 @@ namespace PolyPlane.Rendering
                 var color = Helpers.LerpColor(color1, color2, 1f - amt);
 
                 // Add time of day color.
-                color = AddToDColor(color);
+                color = AddTimeOfDayColor(color);
 
                 ctx.FillEllipse(new D2DEllipse(point, new D2DSize(dims.X, dims.Y)), color);
             }

@@ -19,7 +19,7 @@ namespace PolyPlane.Net
 
         public event EventHandler<int> PlayerIDReceived;
         public event EventHandler<ImpactEvent> ImpactEvent;
-        
+
         public NetEventManager(GameObjectManager objectManager, NetPlayHost host, FighterPlane playerPlane)
         {
             Objs = objectManager;
@@ -49,10 +49,8 @@ namespace PolyPlane.Net
             {
                 SendPlaneUpdates();
                 SendMissileUpdates();
-                //_server.SendSyncPacket();
+                SendExpiredObjects();
             }
-
-            SendExpiredObjects();
 
             now = World.CurrentTime();
 
@@ -283,8 +281,15 @@ namespace PolyPlane.Net
 
         private void SendExpiredObjects()
         {
-            var expiredObjPacket = new Net.BasicListPacket(PacketTypes.ExpiredObjects);
-            Objs.ExpiredObjects().ForEach(o => expiredObjPacket.Packets.Add(new BasicPacket(PacketTypes.ExpiredObjects, o.ID)));
+            var expiredObjPacket = new BasicListPacket(PacketTypes.ExpiredObjects);
+
+            // Collect expried objs and remove them as we go.
+            var expiredObjs = Objs.ExpiredObjects();
+            while (expiredObjs.Count > 0)
+            {
+                expiredObjPacket.Packets.Add(new BasicPacket(PacketTypes.ExpiredObjects, expiredObjs[0].ID));
+                expiredObjs.RemoveAt(0);
+            }
 
             if (expiredObjPacket.Packets.Count == 0)
                 return;

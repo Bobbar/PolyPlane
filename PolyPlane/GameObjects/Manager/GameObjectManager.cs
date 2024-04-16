@@ -219,8 +219,6 @@ namespace PolyPlane.GameObjects
 
         public void PruneExpired()
         {
-            _expiredObjs.Clear();
-
             PruneExpired(Missiles);
             PruneExpired(MissileTrails);
             PruneExpired(Decoys);
