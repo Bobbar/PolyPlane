@@ -9,7 +9,7 @@ namespace PolyPlane.Net
         public const int MAX_CLIENTS = 30;
         public const int MAX_CHANNELS = 4;
         public const int CHANNEL_ID = 0;
-        public const int TIMEOUT = 15;
+        public const int TIMEOUT = 0;
 
         public RingBuffer<NetPacket> PacketSendQueue = new RingBuffer<NetPacket>(30);
         public RingBuffer<NetPacket> PacketReceiveQueue = new RingBuffer<NetPacket>(30);
@@ -22,7 +22,6 @@ namespace PolyPlane.Net
 
         private Thread _pollThread;
         private bool _runLoop = true;
-
         private TimeSpan _netTime = TimeSpan.Zero;
         private Stopwatch _netTimer = new Stopwatch();
 
@@ -35,7 +34,6 @@ namespace PolyPlane.Net
             Address = new Address();
             Address.Port = port;
             Address.SetIP(ip);
-            //Address.SetHost(ip);
         }
 
         public void Start()
@@ -136,7 +134,7 @@ namespace PolyPlane.Net
         public void SendNewBulletPacket(Bullet bullet)
         {
             var netPacket = new BulletPacket(bullet);
-            SendPacket(netPacket);
+            EnqueuePacket(netPacket);
         }
 
         public void SendNewMissilePacket(GuidedMissile missile)
@@ -148,13 +146,13 @@ namespace PolyPlane.Net
         public void SendPlayerDisconnectPacket(uint playerID)
         {
             var packet = new BasicPacket(PacketTypes.PlayerDisconnect, new GameID(playerID));
-            SendPacket(packet);
+            EnqueuePacket(packet);
         }
 
         public void SendSyncPacket()
         {
             var packet = new SyncPacket(World.CurrentTime(), World.TimeOfDay, World.TimeOfDayDir);
-            SendPacket(packet);
+            EnqueuePacket(packet);
         }
 
         public virtual void SendPacket(NetPacket packet) { }
@@ -186,9 +184,9 @@ namespace PolyPlane.Net
         internal Packet CreatePacket(NetPacket netPacket)
         {
             Packet packet = default(Packet);
-            var data = IO.ObjectToByteArray(netPacket);
-            packet.Create(data, PacketFlags.Reliable);
-            //packet.Create(data, PacketFlags.Instant);
+            var data = Serialization.ObjectToByteArray(netPacket);
+            //packet.Create(data, PacketFlags.Reliable);
+            packet.Create(data, PacketFlags.Instant);
 
             return packet;
         }

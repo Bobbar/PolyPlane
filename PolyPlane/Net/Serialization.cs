@@ -4,7 +4,7 @@ using System.IO.Compression;
 
 namespace PolyPlane.Net
 {
-    public static class IO
+    public static class Serialization
     {
         public static bool EnableCompression = true;
 

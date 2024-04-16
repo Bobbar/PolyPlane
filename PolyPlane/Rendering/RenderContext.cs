@@ -73,6 +73,11 @@ namespace PolyPlane.Rendering
             Gfx.DrawPolygonClamped(Viewport, points, strokeColor, strokeWidth, dashStyle, fillColor);
         }
 
+        public void DrawPolygon(D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DBrush fillBrush)
+        {
+            Gfx.DrawPolygonClamped(Viewport, points, strokeColor, strokeWidth, dashStyle, fillBrush);
+        }
+
         public void FillRectangle(D2DRect rect, D2DColor color)
         {
             Gfx.FillRectangleClamped(Viewport, rect, color);

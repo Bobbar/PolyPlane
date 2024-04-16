@@ -133,6 +133,17 @@ namespace PolyPlane
                 OffScreen++;
         }
 
+        public static void DrawPolygonClamped(this D2DGraphics gfx, D2DRect viewport, D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DBrush fillBrush)
+        {
+            if (viewport.Contains(points))
+            {
+                gfx.DrawPolygon(points, strokeColor, strokeWidth, dashStyle, fillBrush);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
+        }
+
         public static void FillRectangleClamped(this D2DGraphics gfx, D2DRect viewport, D2DRect rect, D2DColor color)
         {
             if (viewport.Contains(rect))

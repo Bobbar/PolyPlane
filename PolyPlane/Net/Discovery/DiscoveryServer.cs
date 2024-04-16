@@ -59,7 +59,7 @@ namespace PolyPlane.Net.Discovery
                 while (_running)
                 {
                     var recBuff = _udpListener.Receive(ref from);
-                    var packet = IO.ByteArrayToObject(recBuff) as NetPacket;
+                    var packet = Serialization.ByteArrayToObject(recBuff) as NetPacket;
 
                     if (packet != null)
                     {
@@ -94,7 +94,7 @@ namespace PolyPlane.Net.Discovery
 
         public void BroadcastServerInfo(DiscoveryPacket packet)
         {
-            var data = IO.ObjectToByteArray(packet);
+            var data = Serialization.ObjectToByteArray(packet);
 
             var addys = Dns.GetHostAddresses(Dns.GetHostName());
 

@@ -54,7 +54,6 @@ namespace PolyPlane.Net
 
             var packet = CreatePacket(netPacket);
             var channel = GetChannel(netPacket);
-           
           
             Peer.Send((byte)channel, ref packet);
         }
@@ -63,7 +62,7 @@ namespace PolyPlane.Net
         {
             var buffer = new byte[packet.Length];
             packet.CopyTo(buffer);
-            var packetObj = IO.ByteArrayToObject(buffer) as NetPacket;
+            var packetObj = Serialization.ByteArrayToObject(buffer) as NetPacket;
 
             PacketReceiveQueue.Enqueue(packetObj);
         }
@@ -71,15 +70,13 @@ namespace PolyPlane.Net
         private void RequestOtherPlanes()
         {
             var netPacket = new BasicPacket(PacketTypes.GetOtherPlanes, new GameObjects.GameID(-1, (int)Peer.ID));
-            SendPacket(netPacket);
+            EnqueuePacket(netPacket);
         }
 
         public void SendPlayerDisconnectPacket(uint playerID)
         {
             var packet = new BasicPacket(PacketTypes.PlayerDisconnect, new GameObjects.GameID(playerID));
-
-            SendPacket(packet);
-
+            EnqueuePacket(packet);
             Host.Flush();
         }
 

@@ -69,15 +69,15 @@ namespace PolyPlane.Net
             var buffer = new byte[packet.Length];
             packet.CopyTo(buffer);
 
-            var packetObj = IO.ByteArrayToObject(buffer) as NetPacket;
+            var packetObj = Serialization.ByteArrayToObject(buffer) as NetPacket;
 
             switch (packetObj.Type)
             {
 
                 case PacketTypes.PlaneUpdate or PacketTypes.MissileUpdate or PacketTypes.NewBullet or PacketTypes.NewMissile or PacketTypes.Impact or PacketTypes.PlayerDisconnect or PacketTypes.PlayerReset:
 
-                    // Immediately re-broadcast certain updates.
-                    BroadcastPacket(packetObj);
+                    // Queue certain updates to re-broadcast ASAP.
+                    PacketSendQueue.Enqueue(packetObj);
                     PacketReceiveQueue.Enqueue(packetObj);
 
                     break;
