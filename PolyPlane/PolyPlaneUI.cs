@@ -256,7 +256,7 @@ namespace PolyPlane
             }
             else
             {
-                _playerPlane = new FighterPlane(new D2DPoint(this.Width * 0.5f, -5000f));
+                _playerPlane = new FighterPlane(new D2DPoint(Helpers.Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), -5000f));
             }
 
             _playerPlane.PlayerName = playerName;
@@ -305,7 +305,7 @@ namespace PolyPlane
 
             _playerPlane.AutoPilotOn = true;
             _playerPlane.ThrustOn = true;
-            _playerPlane.Position = new D2DPoint(this.Width * 0.5f, -5000f);
+            _playerPlane.Position = new D2DPoint(Helpers.Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), -5000f);
             _playerPlane.Velocity = new D2DPoint(500f, 0f);
             _playerPlane.RotationSpeed = 0f;
             _playerPlane.Rotation = 0f;
@@ -330,7 +330,7 @@ namespace PolyPlane
 
         private FighterPlane GetAIPlane()
         {
-            var pos = new D2DPoint(_rnd.NextFloat(-(World.ViewPortSize.width * 4f), World.ViewPortSize.width * 4f), _rnd.NextFloat(-4000f, -17000f));
+            var pos = new D2DPoint(_rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), _rnd.NextFloat(-4000f, -17000f));
 
             var aiPlane = new FighterPlane(pos, Helpers.RandomEnum<AIPersonality>());
             aiPlane.PlayerID = World.GetNextPlayerId();
@@ -909,12 +909,12 @@ namespace PolyPlane
 
                 case '[':
 
-                    if (World.IsNetGame && _playerPlane.IsDamaged)
+                    if ((_playerPlane.IsDamaged || _playerPlane.HasCrashed))
                         _queuePrevViewId = true;
 
                     break;
                 case ']':
-                    if (World.IsNetGame && _playerPlane.IsDamaged)
+                    if ((_playerPlane.IsDamaged || _playerPlane.HasCrashed))
                         _queueNextViewId = true;
                     break;
 

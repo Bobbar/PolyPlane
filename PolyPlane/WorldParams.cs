@@ -105,6 +105,7 @@ namespace PolyPlane
         private static RandomVariationVector _windVariation = new RandomVariationVector(MAX_WIND_MAG, 10f, 50f);
 
         public static D2DPoint Gravity = new D2DPoint(0, 9.8f);
+        public static readonly D2DPoint PlaneSpawnRange = new D2DPoint(-60000, 60000);
         public static long CurrentObjId = 0;
         public static int CurrentPlayerId = 1000;
 

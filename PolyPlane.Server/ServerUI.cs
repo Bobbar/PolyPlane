@@ -369,7 +369,7 @@ namespace PolyPlane.Server
 
         private FighterPlane GetAIPlane()
         {
-            var range = new D2DPoint(-40000, 40000);
+            var range = World.PlaneSpawnRange;
             var pos = new D2DPoint(Helpers.Rnd.NextFloat(range.X, range.Y), Helpers.Rnd.NextFloat(-4000f, -17000f));
 
             var aiPlane = new FighterPlane(pos, Helpers.RandomEnum<AIPersonality>());
@@ -398,7 +398,7 @@ namespace PolyPlane.Server
 
         private FighterPlane GetAIPlane(AIPersonality personality)
         {
-            var range = new D2DPoint(-40000, 40000);
+            var range = World.PlaneSpawnRange;
             var pos = new D2DPoint(Helpers.Rnd.NextFloat(range.X, range.Y), Helpers.Rnd.NextFloat(-4000f, -17000f));
 
             var aiPlane = new FighterPlane(pos, personality);

@@ -15,6 +15,7 @@ namespace PolyPlane.AI_Behavior
         private float _sineWavePos = 0f;
         private bool _avoidingGround = false;
         private bool _gainingVelo = false;
+        private bool _reverseDirection = false;
 
         private GameTimer _fireBurstTimer = new GameTimer(2f, 6f);
         private GameTimer _fireMissileCooldown = new GameTimer(6f);
@@ -221,6 +222,10 @@ namespace PolyPlane.AI_Behavior
         public float GetAIGuidance()
         {
             var patrolDir = Helpers.ClampAngle(Helpers.RadsToDegrees((float)Math.Sin(_sineWavePos)));
+
+            if (_reverseDirection)
+                patrolDir = Helpers.ClampAngle(patrolDir + 180f);
+
             var toRight = Helpers.IsPointingRight(this.Plane.Rotation);
             var groundPos = new D2DPoint(this.Plane.Position.X, 0f);
             var impactTime = Helpers.ImpactTime(this.Plane, groundPos);
@@ -257,7 +262,7 @@ namespace PolyPlane.AI_Behavior
             }
 
             // Pitch up if we get too low.
-            if (this.Plane.Altitude < 4000f || impactTime < 20f)
+            if (this.Plane.Altitude < 4000f || impactTime < 15f)
             {
                 _avoidingGround = true;
             }
@@ -289,6 +294,16 @@ namespace PolyPlane.AI_Behavior
                     angle = 0f;
                 else
                     angle = 180f;
+            }
+
+            // Stay within the spawn area when not actively targeting another plane.
+            if (this.TargetPlane == null)
+            {
+                if (this.Plane.Position.X > World.PlaneSpawnRange.Y + 10000f && !_reverseDirection)
+                    _reverseDirection = true;
+
+                if (this.Plane.Position.X < World.PlaneSpawnRange.X - 10000f && _reverseDirection)
+                    _reverseDirection = false;
             }
 
             var finalAngle = angle;
