@@ -251,9 +251,9 @@ namespace PolyPlane.GameObjects
                 return;
 
             if (plane.WasHeadshot)
-                PlayerKilledEvent?.Invoke(this, new EventMessage($"{impactorPlayer.PlayerName} headshot {plane.PlayerName} with {(impactor is Bullet ? "bullets." : "a missile.")}", EventType.Kill));
+                PlayerKilledEvent?.Invoke(this, new EventMessage($"'{impactorPlayer.PlayerName}' headshot '{plane.PlayerName}' with {(impactor is Bullet ? "bullets." : "a missile.")}", EventType.Kill));
             else
-                PlayerKilledEvent?.Invoke(this, new EventMessage($"{impactorPlayer.PlayerName} destroyed {plane.PlayerName} with {(impactor is Bullet ? "bullets." : "a missile.")}", EventType.Kill));
+                PlayerKilledEvent?.Invoke(this, new EventMessage($"'{impactorPlayer.PlayerName}' destroyed '{plane.PlayerName}' with {(impactor is Bullet ? "bullets." : "a missile.")}", EventType.Kill));
 
         }
 

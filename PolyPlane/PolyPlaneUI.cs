@@ -13,8 +13,6 @@ namespace PolyPlane
 
         private Thread _gameThread;
 
-        private const float DT_ADJ_AMT = 0.00025f;
-
         private ManualResetEventSlim _pauseRenderEvent = new ManualResetEventSlim(true);
         private ManualResetEventSlim _stopRenderEvent = new ManualResetEventSlim(true);
 
@@ -93,7 +91,7 @@ namespace PolyPlane
 
         private void NewPlayerEvent(object? sender, FighterPlane e)
         {
-            _render?.AddNewEventMessage($"{e.PlayerName} has connected.", EventType.Net);
+            _render?.AddNewEventMessage($"'{e.PlayerName}' has joined.", EventType.Net);
         }
 
         private void PlayerKilledEvent(object? sender, EventMessage e)
@@ -330,7 +328,7 @@ namespace PolyPlane
             var aiPlane = new FighterPlane(pos, Helpers.RandomEnum<AIPersonality>());
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, _hudColor, _objs.Missiles, _objs.Planes);
-            aiPlane.PlayerName = Helpers.GetRandomName();
+            aiPlane.PlayerName = "(BOT) " + Helpers.GetRandomName();
             aiPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
 
             aiPlane.FireMissileCallback = (m) =>

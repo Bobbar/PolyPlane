@@ -32,9 +32,9 @@
             // 
             // PolyPlaneUI
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1330, 775);
+            AutoScaleDimensions = new SizeF(96F, 96F);
+            AutoScaleMode = AutoScaleMode.Dpi;
+            ClientSize = new Size(1008, 729);
             Name = "PolyPlaneUI";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "PolyPlane - 2D Flight Physics";

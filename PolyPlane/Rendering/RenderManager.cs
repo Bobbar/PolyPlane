@@ -56,9 +56,11 @@ namespace PolyPlane.Rendering
         private FloatAnimation _screenShakeY;
         private FloatAnimation _screenFlash;
         private const float VIEW_SCALE = 4f;
+        private const float DEFAULT_DPI = 96f;
+        private int _currentDPI = 96;
 
-        private int Width => _renderTarget.Width;
-        private int Height => _renderTarget.Height;
+        private int Width => (int)(_renderTarget.Width / (_renderTarget.DeviceDpi / DEFAULT_DPI));
+        private int Height => (int)(_renderTarget.Height / (_renderTarget.DeviceDpi / DEFAULT_DPI));
 
         private float _hudScale = 1f;
 
@@ -108,7 +110,10 @@ namespace PolyPlane.Rendering
             _device.Resize();
             _ctx = new RenderContext(_gfx, _device);
 
-            World.UpdateViewport(_renderTarget.Size);
+            _currentDPI = _renderTarget.DeviceDpi;
+
+            var scaleSize = GetViewportScaled();
+            World.UpdateViewport(scaleSize);
 
             _screenFlash = new FloatAnimation(0.4f, 0f, 4f, EasingFunctions.EaseQuinticOut, v => _screenFlashOpacity = v);
             _screenShakeX = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.X = v);
@@ -213,7 +218,8 @@ namespace PolyPlane.Rendering
                 //_gfx.PushTransform(); // Push GForce transform.
                 //_gfx.TranslateTransform(_gforceTrans.X, _gforceTrans.Y);
 
-                DrawHud(_ctx, new D2DSize(this.Width, this.Height), viewplane);
+                var hudVPSize = new D2DSize(this.Width, this.Height);
+                DrawHud(_ctx, hudVPSize, viewplane);
 
                 _gfx.PopTransform(); // Pop screen shake transform.
                 //_gfx.PopTransform(); // Pop GForce transform.
@@ -248,13 +254,22 @@ namespace PolyPlane.Rendering
 
         public void ResizeGfx(bool force = false)
         {
+            var curSize = GetViewportScaled();
+
             if (!force)
-                if (World.ViewPortBaseSize.height == _renderTarget.Size.Height && World.ViewPortBaseSize.width == _renderTarget.Size.Width)
+                if (World.ViewPortBaseSize.width == curSize.Width && World.ViewPortBaseSize.height == curSize.Height)
                     return;
 
             _device?.Resize();
 
-            World.UpdateViewport(_renderTarget.Size);
+            var scaleSize = GetViewportScaled();
+            World.UpdateViewport(scaleSize);
+        }
+
+        private Size GetViewportScaled()
+        {
+            var scaleSize = new Size((int)((float)_renderTarget.Size.Width / ((float)_currentDPI / (float)DEFAULT_DPI)), (int)((float)_renderTarget.Size.Height / ((float)_currentDPI / DEFAULT_DPI)));
+            return scaleSize;
         }
 
         public void Dispose()
@@ -592,7 +607,6 @@ namespace PolyPlane.Rendering
 
             DrawAltimeter(ctx.Gfx, viewportsize, viewPlane);
             DrawSpeedo(ctx.Gfx, viewportsize, viewPlane);
-            DrawGMeter(ctx.Gfx, viewportsize, viewPlane);
 
             if (!viewPlane.IsDamaged)
             {
@@ -609,9 +623,8 @@ namespace PolyPlane.Rendering
             DrawRadar(ctx, viewportsize, viewPlane);
 
             var healthBarSize = new D2DSize(300, 30);
-            var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height - (viewportsize.height * 0.9f));
+            var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height - (viewportsize.height * 0.85f));
             DrawHealthBar(ctx.Gfx, viewPlane, pos, healthBarSize);
-
 
             DrawMessages(ctx.Gfx, viewportsize, viewPlane);
 
@@ -622,11 +635,11 @@ namespace PolyPlane.Rendering
         {
             const float FONT_SIZE = 10f;
             const int MAX_LINES = 10;
-            const float WIDTH = 300f;
+            const float WIDTH = 400f;
             const float HEIGHT = 100f;
 
             var lineSize = new D2DSize(WIDTH, HEIGHT / MAX_LINES);
-            var boxPos = new D2DPoint(viewportsize.width * 0.17f, viewportsize.height * 0.80f);
+            var boxPos = new D2DPoint(viewportsize.width * 0.25f, viewportsize.height * 0.75f);
             var linePos = boxPos;
 
             var start = 0;
@@ -723,7 +736,7 @@ namespace PolyPlane.Rendering
         private void DrawGMeter(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
         {
             const float xPos = 80f;
-            var pos = new D2DPoint(viewportsize.width * 0.17f, viewportsize.height * 0.50f);
+            var pos = new D2DPoint(viewportsize.width * 0.17f + 50f, viewportsize.height * 0.50f);
 
             //var pos = new D2DPoint(xPos, viewportsize.height * 0.5f);
             var rect = new D2DRect(pos, new D2DSize(50, 20));
@@ -741,7 +754,7 @@ namespace PolyPlane.Rendering
             const float MARKER_STEP = 100f;
             const float xPos = 200f;
             //var pos = new D2DPoint(viewportsize.width - xPos, viewportsize.height * 0.5f);
-            var pos = new D2DPoint(viewportsize.width * 0.9f, viewportsize.height * 0.5f);
+            var pos = new D2DPoint(viewportsize.width * 0.85f, viewportsize.height * 0.4f);
 
             var rect = new D2DRect(pos, new D2DSize(W, H));
             var alt = plane.Altitude;
@@ -794,7 +807,7 @@ namespace PolyPlane.Rendering
             const float MARKER_STEP = 50f;//100f;
             const float xPos = 200f;
             //var pos = new D2DPoint(xPos, viewportsize.height * 0.5f);
-            var pos = new D2DPoint(viewportsize.width * 0.1f, viewportsize.height * 0.5f);
+            var pos = new D2DPoint(viewportsize.width * 0.15f, viewportsize.height * 0.4f);
 
 
             var rect = new D2DRect(pos, new D2DSize(W, H));
@@ -820,8 +833,11 @@ namespace PolyPlane.Rendering
                 }
             }
 
-            var actualRect = new D2DRect(new D2DPoint(pos.X, pos.Y + HalfH + 20f), new D2DSize(60f, 20f));
-            gfx.DrawTextCenter(Math.Round(spd, 0).ToString(), _hudColor, _defaultFontName, 15f, actualRect);
+            var speedRect = new D2DRect(new D2DPoint(pos.X, pos.Y + HalfH + 20f), new D2DSize(60f, 20f));
+            gfx.DrawTextCenter(Math.Round(spd, 0).ToString(), _hudColor, _defaultFontName, 15f, speedRect);
+
+            var gforceRect = new D2DRect(new D2DPoint(pos.X, pos.Y - HalfH - 20f), new D2DSize(60f, 20f));
+            gfx.DrawText($"G {Math.Round(plane.GForce, 1)}", _hudColor, _defaultFontName, 15f, gforceRect);
         }
 
         private void DrawPlanePointers(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
@@ -863,7 +879,7 @@ namespace PolyPlane.Rendering
 
         private void DrawRadar(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)
         {
-            var pos = new D2DPoint(viewportsize.width * 0.7f, viewportsize.height * 0.7f);
+            var pos = new D2DPoint(viewportsize.width * 0.65f, viewportsize.height * 0.7f);
 
             ctx.Gfx.PushTransform();
             ctx.Gfx.ScaleTransform(0.9f, 0.9f, pos);
@@ -1202,6 +1218,10 @@ namespace PolyPlane.Rendering
             infoText += $"Headshots: {viewplane.Headshots}\n";
             infoText += $"Interp: {World.InterpOn.ToString()}\n";
             infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
+            infoText += $"VP: {this.Width}, {this.Height}\n";
+            infoText += $"DPI: {this._renderTarget.DeviceDpi}\n";
+
+
 
             return infoText;
         }
