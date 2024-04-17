@@ -93,7 +93,6 @@ namespace PolyPlane.GameObjects
 
         public GuidedMissile(GameObject player, D2DPoint position, D2DPoint velocity, float rotation)
         {
-            this.RenderOffset = 0.8f;
             this.PlayerID = player.ID.PlayerID;
             this.IsNetObject = true;
             _useControlSurfaces = true;
@@ -109,7 +108,6 @@ namespace PolyPlane.GameObjects
 
         public GuidedMissile(GameObject player, GameObject target, GuidanceType guidance = GuidanceType.Advanced, bool useControlSurfaces = false, bool useThrustVectoring = false) : base(player.Position, player.Velocity, player.Rotation, player, target)
         {
-            this.RenderOffset = 0.8f;
             this.PlayerID = player.ID.PlayerID;
             this.GuidanceType = guidance;
             this.Target = target;
@@ -138,7 +136,7 @@ namespace PolyPlane.GameObjects
 
         private void InitStuff(bool useControlSurfaces)
         {
-            this.RenderOffset = 0.8f;
+            this.RenderOffset = 0.9f;
 
             _centerOfThrust = new FixturePoint(this, new D2DPoint(-22, 0));
             _warheadCenterMass = new FixturePoint(this, new D2DPoint(4f, 0));
