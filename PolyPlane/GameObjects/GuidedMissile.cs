@@ -6,6 +6,8 @@ namespace PolyPlane.GameObjects
 {
     public class GuidedMissile : Missile
     {
+        public bool FlameOn = false;
+
         public GuidanceBase Guidance => _guidance;
         public float CurrentFuel
         {
@@ -64,6 +66,7 @@ namespace PolyPlane.GameObjects
         private float _currentFuel = 0f;
         private float _gForce = 0f;
         private float _gForcePeak = 0f;
+        private float _initRotation = 0f;
 
         private RenderPoly FlamePoly;
         private D2DColor _flameFillColor = new D2DColor(0.6f, D2DColor.Yellow);
@@ -82,6 +85,7 @@ namespace PolyPlane.GameObjects
         private FixturePoint _flamePos;
         private GameTimer _decoyDistractCooldown = new GameTimer(1f);
         private GameTimer _decoyDistractArm = new GameTimer(2f);
+        private GameTimer _igniteCooldown = new GameTimer(1f);
 
         public float Deflection = 0f;
 
@@ -111,13 +115,23 @@ namespace PolyPlane.GameObjects
             this.Target = target;
             this.Owner = player;
             this.Rotation = player.Rotation;
-
+            _initRotation = this.Rotation;
             _currentFuel = FUEL;
             _useControlSurfaces = useControlSurfaces;
             _useThrustVectoring = useThrustVectoring;
 
             _guidance = GetGuidance(target);
             _decoyDistractArm.Start();
+
+            var ownerPlane = this.Owner as FighterPlane;
+            if (ownerPlane != null)
+            {
+                const float EJECT_FORCE = 200f;
+                var toRight = ownerPlane.FlipDirection == Direction.Right;
+                var rotVec = Helpers.AngleToVectorDegrees(ownerPlane.Rotation + (toRight ? 180f : 0f));
+                var topVec = new D2DPoint(rotVec.Y, -rotVec.X);
+                this.Velocity += topVec * EJECT_FORCE;
+            }
 
             InitStuff(_useControlSurfaces);
         }
@@ -146,6 +160,9 @@ namespace PolyPlane.GameObjects
             {
                 _rocketBody = new Wing(this, 4f, 0.4f, D2DPoint.Zero);
             }
+
+            _igniteCooldown.TriggerCallback = () => FlameOn = true;
+            _igniteCooldown.Restart();
         }
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
@@ -230,6 +247,9 @@ namespace PolyPlane.GameObjects
             // Apply guidance.
             var guideRotation = _guidance.GuideTo(dt);
 
+            if (!this.FlameOn)
+                guideRotation = _initRotation;
+
             if (_useControlSurfaces)
             {
                 const float TAIL_AUTH = 1f;
@@ -289,6 +309,7 @@ namespace PolyPlane.GameObjects
 
             _decoyDistractCooldown.Update(dt);
             _decoyDistractArm.Update(dt);
+            _igniteCooldown.Update(dt);
         }
 
         public override void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
@@ -421,7 +442,7 @@ namespace PolyPlane.GameObjects
             if (_useThrustVectoring)
                 _flameFillColor = D2DColor.Orange;
 
-            if (_currentFuel > 0f)
+            if (_currentFuel > 0f && FlameOn)
                 ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
 
             var fillColor = D2DColor.White;
@@ -497,7 +518,7 @@ namespace PolyPlane.GameObjects
         {
             var thrust = D2DPoint.Zero;
 
-            if (_currentFuel > 0f)
+            if (_currentFuel > 0f && FlameOn)
             {
                 D2DPoint vec;
 

@@ -45,8 +45,7 @@ namespace PolyPlane.GameObjects
 
             var dist = this.Position.DistanceTo(_prevPos);
 
-
-            if (dist >= TRAIL_DIST)
+            if (dist >= TRAIL_DIST && (_gameObject is GuidedMissile missile && missile.FlameOn))
             {
                 if (_posSelector != null)
                     _trailQueue.Enqueue(_posSelector.Invoke(_gameObject));
@@ -121,6 +120,9 @@ namespace PolyPlane.GameObjects
 
                 lastPos = nextPos;
             }
+
+            if (_trailQueue.Count > 0)
+                ctx.FillEllipse(new D2DEllipse(_trailQueue.First(), new D2DSize(50f, 50f)), _trailColor);
 
             if (_gameObject.IsExpired)
                 ctx.FillEllipse(new D2DEllipse(_trailQueue.Last(), new D2DSize(50f, 50f)), _trailColor);

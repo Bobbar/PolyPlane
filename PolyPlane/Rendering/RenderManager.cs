@@ -552,6 +552,34 @@ namespace PolyPlane.Rendering
             ctx.DrawPolygon(pineTop, leafColor, 1f, D2DDashStyle.Solid, leafColor);
         }
 
+
+        //private void DrawHouse(RenderContext ctx, D2DPoint pos)
+        //{
+        //    var housePoly = new D2DPoint[]
+        //    {
+        //        new D2DPoint(0f, -1f),
+        //        new D2DPoint(1f, -1f),
+        //        new D2DPoint(1f, 1f),
+        //        new D2DPoint(0f, 1f),
+        //    };
+
+        //    var roofPoly = new D2DPoint[]
+        //    {
+        //        new D2DPoint(-0.2f, -1f),
+        //        new D2DPoint(0.5f, -1.8f),
+        //        new D2DPoint(1.2f, -1f),
+        //    };
+
+        //    const float SCALE = 200f;
+        //    Helpers.ApplyTranslation(housePoly, housePoly, 0f, pos, SCALE);
+        //    Helpers.ApplyTranslation(roofPoly, roofPoly, 0f, pos , SCALE);
+
+
+        //    ctx.DrawPolygon(housePoly, D2DColor.Gray, 1, D2DDashStyle.Solid, D2DColor.Gray);
+        //    ctx.DrawPolygon(roofPoly, D2DColor.Gray, 1, D2DDashStyle.Solid, D2DColor.DarkRed);
+        //}
+
+
         private void DrawGroundImpacts(RenderContext ctx, FighterPlane plane)
         {
             if (_groundClipLayer == null)

@@ -397,6 +397,7 @@ namespace PolyPlane.Net
     {
         public float Deflection;
         public float CurrentFuel;
+        public bool FlameOn;
         public GameID TargetID;
 
         public MissilePacket() : base()
@@ -409,6 +410,7 @@ namespace PolyPlane.Net
             Type = PacketTypes.NewMissile;
 
             this.OwnerID = obj.Owner.ID;
+            this.FlameOn = obj.FlameOn;
             this.Deflection = obj.Deflection;
             this.CurrentFuel = obj.CurrentFuel;
             this.TargetID = obj.Target.ID;
@@ -420,6 +422,7 @@ namespace PolyPlane.Net
 
             obj.Deflection = this.Deflection;
             obj.CurrentFuel = this.CurrentFuel;
+            obj.FlameOn = this.FlameOn;
         }
     }
 

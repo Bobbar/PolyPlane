@@ -262,7 +262,7 @@ namespace PolyPlane
 
         private void CheckForLock()
         {
-            var mostCentered = FindMostCentered();
+            var mostCentered = FindMostCenteredAndClosest();
 
             if (LockedObj != null && (LockedObj is FighterPlane plane && (plane.IsExpired || plane.IsDamaged || plane.HasCrashed)))
             {
@@ -363,7 +363,29 @@ namespace PolyPlane
         //    return mostCentered;
         //}
 
-        private PingObj? FindMostCentered()
+        //private PingObj? FindMostCentered()
+        //{
+        //    PingObj? mostCentered = null;
+        //    var minFov = float.MaxValue;
+
+        //    foreach (var p in _pings)
+        //    {
+        //        if (p.Obj is FighterPlane plane && !plane.IsDamaged && !plane.HasCrashed)
+        //        {
+        //            var fov = this.HostPlane.FOVToObject(plane);
+        //            if (fov <= (World.SENSOR_FOV * 0.5f) && fov < minFov)
+        //            {
+        //                minFov = fov;
+        //                mostCentered = p;
+        //            }
+        //        }
+        //    }
+
+        //    return mostCentered;
+        //}
+
+
+        private PingObj? FindMostCenteredAndClosest()
         {
             PingObj? mostCentered = null;
             var minFov = float.MaxValue;
@@ -384,7 +406,6 @@ namespace PolyPlane
                     }
                 }
             }
-
 
             return mostCentered;
         }
