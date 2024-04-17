@@ -198,7 +198,6 @@ namespace PolyPlane.Rendering
 
                 _gfx.BeginRender(_clearColor);
 
-                DrawScreenFlash(_gfx);
 
                 _gfx.PushTransform(); // Push screen shake transform.
                 _gfx.TranslateTransform(_screenShakeTrans.X, _screenShakeTrans.Y);
@@ -231,6 +230,8 @@ namespace PolyPlane.Rendering
 
                 if (viewplane.GForce > 17f)
                     DoScreenShake(viewplane.GForce / 10f);
+
+                DrawScreenFlash(_gfx);
 
                 //_gforceTrans = -Helpers.AngleToVectorDegrees(viewplane.GForceDirection, viewplane.GForce);
             }

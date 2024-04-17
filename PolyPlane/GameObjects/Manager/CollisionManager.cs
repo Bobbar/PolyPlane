@@ -372,6 +372,12 @@ namespace PolyPlane.GameObjects.Manager
         {
             const float GROUND_SCATTER_ALT = 3000f;
 
+            if (missile.IsNetObject)
+                return;
+
+            if (missile.Guidance == null)
+                return;
+
             if (missile.Target != null)
             {
                 if (missile.Target.Altitude <= GROUND_SCATTER_ALT)
