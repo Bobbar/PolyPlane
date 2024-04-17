@@ -9,13 +9,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="d2dlibexport" Version="1.4.1" />
-
 	  <using Include="System.Numerics.Vector2" Alias="D2DPoint" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\PolyPlane\PolyPlane.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="d2dlibexport">
+      <HintPath>..\PolyPlane\d2dlibexport.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
