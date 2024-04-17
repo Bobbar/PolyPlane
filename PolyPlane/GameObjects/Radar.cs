@@ -62,7 +62,6 @@ namespace PolyPlane
             _lockTimer.TriggerCallback = () =>
             {
                 SwitchLock();
-                Log.Msg("Lock complete!");
             };
 
             _lostLockTimer.TriggerCallback = () => ClearLock();

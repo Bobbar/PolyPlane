@@ -71,9 +71,9 @@ namespace PolyPlane
             this.MouseWheel += PolyPlaneUI_MouseWheel;
             this.Disposed += PolyPlaneUI_Disposed;
 
-            _burstTimer.TriggerCallback = () =>
-            DoAIPlaneBursts();
+            _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
+
             _playerBurstTimer.TriggerCallback = () => _playerPlane.FireBullet(p => _objs.AddBulletExplosion(p));
 
             _playerResetTimer.TriggerCallback = () =>
@@ -568,7 +568,6 @@ namespace PolyPlane
                 _playerPlane.FiringBurst = false;
             }
 
-
             if (buttons.HasFlag(MouseButtons.Right))
                 _playerPlane.DroppingDecoy = true;
             else
@@ -649,9 +648,6 @@ namespace PolyPlane
 
         private void DoAIPlaneDecoys()
         {
-            if (_playerPlane.DroppingDecoy)
-                DropDecoy(_playerPlane);
-
             var dropping = _objs.Planes.Where(p => p.DroppingDecoy).ToArray();
 
             if (dropping.Length == 0)
@@ -706,6 +702,12 @@ namespace PolyPlane
 
         private void DropDecoy(FighterPlane plane)
         {
+            if (plane.NumDecoys <= 0)
+            {
+                plane.NumDecoys = 0;
+                return;
+            }
+
             if (plane.IsDamaged)
                 return;
 
@@ -714,6 +716,8 @@ namespace PolyPlane
 
             if (World.IsNetGame)
                 DoNetDecoy(decoy);
+
+            plane.NumDecoys--;
         }
 
         private void AddExplosion(D2DPoint pos)

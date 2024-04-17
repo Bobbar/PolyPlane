@@ -80,6 +80,11 @@ namespace PolyPlane.Net
             Host.Flush();
         }
 
+        public override uint GetPlayerRTT(int playerID)
+        {
+            return Peer.RoundTripTime;
+        }
+
         public override ulong PacketLoss()
         {
             return Peer.PacketsLost;

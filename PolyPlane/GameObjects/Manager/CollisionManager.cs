@@ -325,7 +325,7 @@ namespace PolyPlane.GameObjects.Manager
                 GameObject maxTempObj;
                 var maxTemp = 0f;
                 const float MaxEngineTemp = 1800f;
-                const float MaxDecoyTemp = 2000f;
+                const float MaxDecoyTemp = 3000f;
 
                 const float EngineRadius = 4f;
                 const float DecoyRadius = 2f;
@@ -364,6 +364,40 @@ namespace PolyPlane.GameObjects.Manager
                     missile.DoChangeTargetChance(maxTempObj);
                 }
 
+                HandleGroundScatter(missile);
+            }
+        }
+
+        private void HandleGroundScatter(GuidedMissile missile)
+        {
+            const float GROUND_SCATTER_ALT = 3000f;
+
+            if (missile.Target != null)
+            {
+                if (missile.Target.Altitude <= GROUND_SCATTER_ALT)
+                {
+                    const int CHANCE_INIT = 10;
+                    var chance = CHANCE_INIT;
+
+                    var altFact = 1f - Helpers.Factor(missile.Target.Altitude, GROUND_SCATTER_ALT);
+
+                    chance -= (int)(altFact * 5);
+
+                    if (!missile.Guidance.GroundScatterInCooldown)
+                    {
+                        var rnd1 = Helpers.Rnd.Next(chance);
+                        var rnd2 = Helpers.Rnd.Next(chance);
+                        if (rnd1 == rnd2)
+                        {
+                            missile.Guidance.LostInGround = true;
+                            Log.Msg("Lost in ground scatter....");
+                        }
+                    }
+                }
+                else
+                {
+                    missile.Guidance.LostInGround = false;
+                }
             }
         }
     }

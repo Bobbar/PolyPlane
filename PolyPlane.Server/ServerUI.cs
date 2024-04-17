@@ -328,12 +328,20 @@ namespace PolyPlane.Server
 
         private void DropDecoy(FighterPlane plane)
         {
+            if (plane.NumDecoys <= 0)
+            {
+                plane.NumDecoys = 0;
+                return;
+            }
+
             if (plane.IsDamaged)
                 return;
 
             var decoy = new Decoy(plane);
             _objs.EnqueueDecoy(decoy);
             _netMan.SendNewDecoy(decoy);
+
+            plane.NumDecoys--;
         }
 
         private void DoAIPlaneBurst(float dt)
@@ -367,41 +375,18 @@ namespace PolyPlane.Server
             }
         }
 
-        private FighterPlane GetAIPlane()
+        private FighterPlane GetAIPlane(AIPersonality? personality = null)
         {
             var range = World.PlaneSpawnRange;
             var pos = new D2DPoint(Helpers.Rnd.NextFloat(range.X, range.Y), Helpers.Rnd.NextFloat(-4000f, -17000f));
 
-            var aiPlane = new FighterPlane(pos, Helpers.RandomEnum<AIPersonality>());
-            aiPlane.PlayerID = World.GetNextPlayerId();
-            aiPlane.Radar = new Radar(aiPlane, D2DColor.GreenYellow, _objs.Missiles, _objs.Planes);
-            aiPlane.PlayerName = "(BOT) " + Helpers.GetRandomName();
-            aiPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
+            FighterPlane aiPlane;
 
-            aiPlane.FireMissileCallback = (m) =>
-            {
-                _objs.EnqueueMissile(m);
-                _server.SendNewMissilePacket(m);
-            };
+            if (personality.HasValue)
+                aiPlane = new FighterPlane(pos, personality.Value);
+            else
+                aiPlane = new FighterPlane(pos, Helpers.RandomEnum<AIPersonality>());
 
-
-            aiPlane.FireBulletCallback = b =>
-            {
-                _objs.AddBullet(b);
-                _server.SendNewBulletPacket(b);
-            };
-
-            aiPlane.Velocity = new D2DPoint(400f, 0f);
-
-            return aiPlane;
-        }
-
-        private FighterPlane GetAIPlane(AIPersonality personality)
-        {
-            var range = World.PlaneSpawnRange;
-            var pos = new D2DPoint(Helpers.Rnd.NextFloat(range.X, range.Y), Helpers.Rnd.NextFloat(-4000f, -17000f));
-
-            var aiPlane = new FighterPlane(pos, personality);
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, D2DColor.GreenYellow, _objs.Missiles, _objs.Planes);
             aiPlane.PlayerName = "(BOT) " + Helpers.GetRandomName();

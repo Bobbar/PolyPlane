@@ -17,8 +17,31 @@ namespace PolyPlane.GameObjects.Guidance
         private GameTimer _groundScatterTimer = new GameTimer(2f);
         private GameTimer _armTimer = new GameTimer(ARM_TIME);
 
+        public bool GroundScatterInCooldown
+        {
+            get
+            {
+                if (_groundScatterTimer.IsRunning)
+                    return true;
+
+                if (!_groundScatterTimer.IsRunning)
+                {
+                    _groundScatterTimer.Restart();
+                    return false;
+                }
+
+                return false;
+            }
+        }
+
+        public bool LostInGround
+        {
+            get { return _lostInGround; }
+            set { _lostInGround = value; }
+        }
+
         public bool MissedTarget => _missedTarget || _lostInGround;
-        public bool _missedTarget = false;
+        private bool _missedTarget = false;
         private bool _lostInGround = false;
 
         protected GuidanceBase(Missile missile, GameObject target)
@@ -64,41 +87,11 @@ namespace PolyPlane.GameObjects.Guidance
                 }
             }
 
-
-            if (Target.Altitude <= 3000f)
-            {
-                const int CHANCE_INIT = 10;
-                var chance = CHANCE_INIT;
-
-                var altFact = 1f - Helpers.Factor(Target.Altitude, 3000f);
-
-                chance -= (int)(altFact * 5);
-
-                if (!_groundScatterTimer.IsRunning)
-                {
-                    _groundScatterTimer.Restart();
-
-                    var rnd1 = Helpers.Rnd.Next(chance);
-                    var rnd2 = Helpers.Rnd.Next(chance);
-                    if (rnd1 == rnd2)
-                    {
-                        _lostInGround = true;
-                        _missedTarget = true;
-                        Log.Msg("Lost in ground scatter....");
-                    }
-
-                }
-            }
-            else
-                _lostInGround = false;
-
-
             if (_missedTarget || _lostInGround)
                 rotation = Missile.Rotation;
 
             if (float.IsNaN(rotation))
                 Debugger.Break();
-
 
             // Lerp from current rotation towards guidance rotation as we 
             // approach the specified arm time.

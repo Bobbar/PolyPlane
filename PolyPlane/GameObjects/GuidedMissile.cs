@@ -6,6 +6,7 @@ namespace PolyPlane.GameObjects
 {
     public class GuidedMissile : Missile
     {
+        public GuidanceBase Guidance => _guidance;
         public float CurrentFuel
         {
             get { return _currentFuel; }
@@ -41,8 +42,6 @@ namespace PolyPlane.GameObjects
         public bool IsDistracted = false;
         public float TargetDistance { get; set; } = 0f;
 
-        //public bool MissedTarget => _guidance.MissedTarget;
-
         public bool MissedTarget
         {
             get
@@ -54,12 +53,10 @@ namespace PolyPlane.GameObjects
             }
         }
 
-
-
         private readonly float THURST_VECTOR_AMT = 1f;
         private readonly float LIFESPAN = 40f;
-        private readonly float BURN_RATE = 0.04f;//0.06f;
-        private readonly float THRUST = 84f;//126f;
+        private readonly float BURN_RATE = 0.04f;
+        private readonly float THRUST = 84f;
         private readonly float MASS = 0.478f;
         private readonly float FUEL = 0.375f;
 
@@ -103,43 +100,41 @@ namespace PolyPlane.GameObjects
             this.Rotation = rotation;
             this.Owner = player;
 
-            _centerOfThrust = new FixturePoint(this, new D2DPoint(-22, 0));
-            _warheadCenterMass = new FixturePoint(this, new D2DPoint(4f, 0));
-            _motorCenterMass = new FixturePoint(this, new D2DPoint(-11f, 0));
-            _flamePos = new FixturePoint(this, new D2DPoint(-22f, 0));
-
-            this.Polygon = new RenderPoly(_missilePoly, new D2DPoint(-2f, 0f));
-            this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(6f, 0));
-
-            var liftscale = 1.5f;
-            _tailWing = new Wing(this, 4f, 0.002f, 50f, 85.1f * liftscale, new D2DPoint(-22f, 0));
-            _rocketBody = new Wing(this, 0f, 0.00159f, 0f, 26.6f * liftscale, D2DPoint.Zero);
-            _noseWing = new Wing(this, 4f, 0.00053f, 20f, 74.4f * liftscale, new D2DPoint(19.5f, 0));
+            InitStuff(_useControlSurfaces);
         }
 
         public GuidedMissile(GameObject player, GameObject target, GuidanceType guidance = GuidanceType.Advanced, bool useControlSurfaces = false, bool useThrustVectoring = false) : base(player.Position, player.Velocity, player.Rotation, player, target)
         {
             this.RenderOffset = 0.8f;
             this.PlayerID = player.ID.PlayerID;
+            this.GuidanceType = guidance;
+            this.Target = target;
+            this.Owner = player;
+            this.Rotation = player.Rotation;
 
             _currentFuel = FUEL;
+            _useControlSurfaces = useControlSurfaces;
+            _useThrustVectoring = useThrustVectoring;
+
+            _guidance = GetGuidance(target);
+            _decoyDistractArm.Start();
+
+            InitStuff(_useControlSurfaces);
+        }
+
+        private void InitStuff(bool useControlSurfaces)
+        {
+            this.RenderOffset = 0.8f;
 
             _centerOfThrust = new FixturePoint(this, new D2DPoint(-22, 0));
             _warheadCenterMass = new FixturePoint(this, new D2DPoint(4f, 0));
             _motorCenterMass = new FixturePoint(this, new D2DPoint(-11f, 0));
             _flamePos = new FixturePoint(this, new D2DPoint(-22f, 0));
 
-            this.GuidanceType = guidance;
-            this.Target = target;
-            this.Owner = player;
             this.Polygon = new RenderPoly(_missilePoly, new D2DPoint(-2f, 0f));
             this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(6f, 0));
-            this.Rotation = player.Rotation;
 
-            _useControlSurfaces = useControlSurfaces;
-            _useThrustVectoring = useThrustVectoring;
-
-            if (_useControlSurfaces)
+            if (useControlSurfaces)
             {
                 var liftscale = 1.5f;
                 _tailWing = new Wing(this, 4f, 0.002f, 50f, 85.1f * liftscale, new D2DPoint(-22f, 0));
@@ -151,9 +146,6 @@ namespace PolyPlane.GameObjects
             {
                 _rocketBody = new Wing(this, 4f, 0.4f, D2DPoint.Zero);
             }
-
-            _guidance = GetGuidance(target);
-            _decoyDistractArm.Start();
         }
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
@@ -288,9 +280,6 @@ namespace PolyPlane.GameObjects
             {
                 _currentFuel -= BURN_RATE * dt;
             }
-
-            //base.Update(dt, viewport, renderScale * this.RenderOffset);
-
 
             if (FUEL <= 0f && this.Velocity.Length() <= 5f)
                 this.IsExpired = true;

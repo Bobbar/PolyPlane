@@ -585,8 +585,9 @@ namespace PolyPlane.Rendering
             gfx.DrawRectangle(new D2DRect(position, size), _hudColor);
 
             // Draw ammo.
-            gfx.DrawTextCenter($"MSL: {plane.NumMissiles}", _hudColor, _defaultFontName, 15f, new D2DRect(position + new D2DPoint(-100f, 30f), new D2DSize(50f, 20f)));
-            gfx.DrawTextCenter($"AMMO: {plane.NumBullets}", _hudColor, _defaultFontName, 15f, new D2DRect(position + new D2DPoint(100f, 30f), new D2DSize(70f, 20f)));
+            gfx.DrawTextCenter($"MSL: {plane.NumMissiles}", _hudColor, _defaultFontName, 15f, new D2DRect(position + new D2DPoint(-110f, 30f), new D2DSize(50f, 20f)));
+            gfx.DrawTextCenter($"DECOY: {plane.NumDecoys}", _hudColor, _defaultFontName, 15f, new D2DRect(position + new D2DPoint(0, 30f), new D2DSize(80f, 20f)));
+            gfx.DrawTextCenter($"AMMO: {plane.NumBullets}", _hudColor, _defaultFontName, 15f, new D2DRect(position + new D2DPoint(110f, 30f), new D2DSize(70f, 20f)));
 
             // Draw player name.
             if (string.IsNullOrEmpty(plane.PlayerName))
@@ -1201,6 +1202,7 @@ namespace PolyPlane.Rendering
             if (_netMan != null)
             {
                 infoText += $"Packet Delay: {_netMan.PacketDelay}\n";
+                infoText += $"Latency: {_netMan.Host.GetPlayerRTT(0)}\n";
                 infoText += $"Packet Loss: {_netMan.Host.PacketLoss()}\n";
             }
 

@@ -10,9 +10,10 @@ namespace PolyPlane.GameObjects
     {
         public string PlayerName;
         public float PlayerGuideAngle = 0;
-        private const int MAX_BULLETS = 30;
 
+        public int NumMissiles = MAX_MISSILES;
         public int NumBullets = MAX_BULLETS;
+        public int NumDecoys = MAX_DECOYS;
 
         public float Deflection = 0f;
         public int BulletsFired = 0;
@@ -24,6 +25,8 @@ namespace PolyPlane.GameObjects
         public int Kills = 0;
         public int Headshots = 0;
 
+        public const int MAX_DECOYS = 10;
+        public const int MAX_BULLETS = 30;
         public const int MAX_MISSILES = 6;
         public const int MAX_HITS = 32;
         public const int MISSILE_DAMAGE = 8;
@@ -33,7 +36,6 @@ namespace PolyPlane.GameObjects
         public Radar Radar { get; set; }
         public bool HasRadarLock = false;
 
-        public int NumMissiles = MAX_MISSILES;
 
         public bool IsAI => _isAIPlane;
         public bool IsDefending = false;
@@ -113,6 +115,7 @@ namespace PolyPlane.GameObjects
         private GameTimer _damageCooldownTimeout = new GameTimer(4f);
         private GameTimer _damageFlashTimer = new GameTimer(0.2f, true);
         private GameTimer _bulletRegenTimer = new GameTimer(0.2f, true);
+        private GameTimer _decoyRegenTimer = new GameTimer(0.5f, true);
         private GameTimer _missileRegenTimer = new GameTimer(60f, true);
 
         private float _damageDeflection = 0f;
@@ -281,6 +284,16 @@ namespace PolyPlane.GameObjects
 
             _missileRegenTimer.Start();
 
+
+            _decoyRegenTimer.TriggerCallback = () =>
+            {
+                if (NumDecoys < MAX_DECOYS)
+                    NumDecoys++;
+            };
+
+            _decoyRegenTimer.Start();
+
+
             _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
 
             _damageFlashTimer.TriggerCallback = () => _damageFlash = !_damageFlash;
@@ -319,6 +332,9 @@ namespace PolyPlane.GameObjects
                 _bulletRegenTimer.Update(dt);
 
             _missileRegenTimer.Update(dt);
+
+            if (!this.DroppingDecoy)
+                _decoyRegenTimer.Update(dt);
 
             _flamePos.Update(dt, viewport, renderScale * this.RenderOffset, skipFrames: true);
             _gunPosition.Update(dt, viewport, renderScale * this.RenderOffset, skipFrames: true);
