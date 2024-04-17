@@ -270,7 +270,7 @@ namespace PolyPlane.GameObjects
             accel += (liftDrag / TotalMass) * dt;
 
             this.Velocity += accel;
-            this.Velocity += World.Gravity * dt;
+            this.Velocity += (World.Gravity * 2f) * dt;
 
             var gforce = accel.Length() / dt / 9.8f;
             _gForce = gforce;
@@ -281,7 +281,7 @@ namespace PolyPlane.GameObjects
                 _currentFuel -= BURN_RATE * dt;
             }
 
-            if (FUEL <= 0f && this.Velocity.Length() <= 5f)
+            if (FUEL <= 0f && this.Velocity.Length() <= 20f)
                 this.IsExpired = true;
 
             if (Target.IsExpired && _age > LIFESPAN)
