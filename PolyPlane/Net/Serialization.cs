@@ -71,6 +71,7 @@ namespace PolyPlane.Net
                     break;
 
                 case PacketTypes.ChatMessage:
+                    obj = _serializer.Deserialize<ChatPacket>(payloadBytes);
                     break;
 
                 case PacketTypes.ExpiredObjects:

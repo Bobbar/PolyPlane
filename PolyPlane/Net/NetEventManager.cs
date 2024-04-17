@@ -8,6 +8,7 @@ namespace PolyPlane.Net
     {
         public GameObjectManager Objs;
         public NetPlayHost Host;
+        public ChatInterface ChatInterface;
         public bool IsServer = false;
         public FighterPlane PlayerPlane = null;
         public double PacketDelay = 0;
@@ -19,6 +20,7 @@ namespace PolyPlane.Net
 
         public event EventHandler<int> PlayerIDReceived;
         public event EventHandler<ImpactEvent> ImpactEvent;
+        public event EventHandler<ChatPacket> NewChatMessage;
 
         public NetEventManager(GameObjectManager objectManager, NetPlayHost host, FighterPlane playerPlane)
         {
@@ -26,6 +28,7 @@ namespace PolyPlane.Net
             Host = host;
             PlayerPlane = playerPlane;
             IsServer = false;
+            ChatInterface = new ChatInterface(this, playerPlane.PlayerName);
         }
 
         public NetEventManager(GameObjectManager objectManager, NetPlayHost host)
@@ -34,6 +37,7 @@ namespace PolyPlane.Net
             Host = host;
             PlayerPlane = null;
             IsServer = true;
+            ChatInterface = new ChatInterface(this, "Player");
         }
 
         public void DoNetEvents()
@@ -151,7 +155,10 @@ namespace PolyPlane.Net
                     // Nuttin...
                     break;
                 case PacketTypes.ChatMessage:
-                    // Nuttin...
+                    
+                    var chatPacket = packet as ChatPacket;
+                    NewChatMessage?.Invoke(this, chatPacket);
+
                     break;
                 case PacketTypes.GetOtherPlanes:
 

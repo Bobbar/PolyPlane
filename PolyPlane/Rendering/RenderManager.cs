@@ -97,8 +97,16 @@ namespace PolyPlane.Rendering
             _objs = objs;
             _netMan = netMan;
 
+            if (_netMan != null)
+                _netMan.NewChatMessage += NetMan_NewChatMessage;
+
             InitProceduralGenStuff();
             InitGfx();
+        }
+
+        private void NetMan_NewChatMessage(object? sender, ChatPacket e)
+        {
+            AddNewEventMessage($"{e.PlayerName}: {e.Message}", EventType.Chat);
         }
 
         public void InitGfx()
@@ -649,13 +657,39 @@ namespace PolyPlane.Rendering
             {
                 var msg = _messageEvents[i];
                 var rect = new D2DRect(linePos, lineSize);
+                var color = _hudColor;
 
-                gfx.DrawText(msg.Message, _hudColor, _defaultFontName, FONT_SIZE, rect);
+                switch (msg.Type)
+                {
+                    case EventType.Chat:
+                        color = D2DColor.White;
+                        break;
+                }
+
+                gfx.DrawText(msg.Message, color, _defaultFontName, FONT_SIZE, rect);
 
                 linePos += new D2DPoint(0, lineSize.height);
             }
 
             gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, _hudColor);
+
+            // Draw current chat message.
+            if (_netMan != null)
+            {
+                if (_netMan.ChatInterface.ChatIsActive)
+                {
+                    var rect = new D2DRect(new D2DPoint(boxPos.X, boxPos.Y + HEIGHT + 6f), lineSize);
+
+                    var curText = _netMan.ChatInterface.CurrentText;
+
+                    if (string.IsNullOrEmpty(curText))
+                        gfx.DrawText("Type chat message...", _hudColor, _defaultFontName, FONT_SIZE, rect);
+                    else
+                        gfx.DrawText(_netMan.ChatInterface.CurrentText, D2DColor.White, _defaultFontName, FONT_SIZE, rect);
+
+                    gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y + HEIGHT, WIDTH, lineSize.height + 5f, _hudColor);
+                }
+            }
         }
 
         private void DrawGuideIcon(D2DGraphics gfx, D2DSize viewportsize, FighterPlane viewPlane)
@@ -750,7 +784,7 @@ namespace PolyPlane.Rendering
             const float HalfW = W * 0.5f;
             const float HalfH = H * 0.5f;
             const float MARKER_STEP = 100f;
-            
+
             var pos = new D2DPoint(viewportsize.width * 0.85f, viewportsize.height * 0.3f);
             var rect = new D2DRect(pos, new D2DSize(W, H));
             var alt = plane.Altitude;
@@ -781,7 +815,7 @@ namespace PolyPlane.Rendering
 
                     if (posY < (pos.Y - HalfH))
                         continue;
-                    
+
                     var start = new D2DPoint(pos.X - HalfW, posY);
                     var end = new D2DPoint(pos.X + HalfW, posY);
 

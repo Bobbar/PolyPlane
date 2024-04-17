@@ -540,6 +540,17 @@ namespace PolyPlane
                 if (_playerPlane.IsAI)
                     ResetPlane();
             }
+
+            // Flight straight and level while player is typeing.
+            if (_netMan != null && _netMan.ChatInterface.ChatIsActive)
+            {
+                var toRight = Helpers.IsPointingRight(_playerPlane.Rotation);
+
+                if (toRight)
+                    _playerPlane.SetAutoPilotAngle(0f);
+                else
+                    _playerPlane.SetAutoPilotAngle(180f);
+            }
         }
 
         private void DoMouseButtons()
@@ -776,6 +787,14 @@ namespace PolyPlane
 
         private void PolyPlaneUI_KeyPress(object sender, KeyPressEventArgs e)
         {
+            if (_netMan != null)
+            {
+                _netMan.ChatInterface.NewKeyPress(e.KeyChar);
+
+                if (_netMan.ChatInterface.ChatIsActive)
+                    return;
+            }
+
             switch (e.KeyChar)
             {
                 case 'a':
@@ -974,7 +993,6 @@ namespace PolyPlane
             var pos = new D2DPoint(e.X, e.Y) * World.ViewPortScaleMulti;
             var angle = center.AngleTo(pos);
 
-            //_guideAngle = angle;
             _playerPlane.SetAutoPilotAngle(angle);
         }
 

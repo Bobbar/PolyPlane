@@ -100,6 +100,25 @@ namespace PolyPlane.Net
         }
     }
 
+    public class ChatPacket : NetPacket
+    {
+        public string Message;
+        public string PlayerName;
+
+        public ChatPacket() : base() 
+        {
+            Type = PacketTypes.ChatMessage;
+        }
+
+        public ChatPacket(string message, string playerName) : base() 
+        {
+            Type = PacketTypes.ChatMessage;
+            Message = message;
+            PlayerName = playerName;
+        }
+
+    }
+
 
     public class DiscoveryPacket : NetPacket
     {

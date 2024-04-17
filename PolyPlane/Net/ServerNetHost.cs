@@ -74,7 +74,7 @@ namespace PolyPlane.Net
             switch (packetObj.Type)
             {
 
-                case PacketTypes.PlaneUpdate or PacketTypes.MissileUpdate or PacketTypes.NewBullet or PacketTypes.NewMissile or PacketTypes.Impact or PacketTypes.PlayerDisconnect or PacketTypes.PlayerReset:
+                case PacketTypes.PlaneUpdate or PacketTypes.MissileUpdate or PacketTypes.ChatMessage or PacketTypes.NewBullet or PacketTypes.NewMissile or PacketTypes.Impact or PacketTypes.PlayerDisconnect or PacketTypes.PlayerReset:
 
                     // Queue certain updates to re-broadcast ASAP.
                     PacketSendQueue.Enqueue(packetObj);

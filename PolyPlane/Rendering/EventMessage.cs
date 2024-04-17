@@ -24,6 +24,7 @@ namespace PolyPlane.Rendering
     {
         Hit,
         Kill,
-        Net
+        Net,
+        Chat
     }
 }

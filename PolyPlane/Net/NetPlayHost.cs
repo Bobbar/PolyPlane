@@ -155,6 +155,12 @@ namespace PolyPlane.Net
             EnqueuePacket(packet);
         }
 
+        public void SendNewChatPacket(string message, string playerName)
+        {
+            var packet = new ChatPacket(message.Trim(), playerName);
+            EnqueuePacket(packet);
+        }
+
         public virtual void SendPacket(NetPacket packet) { }
         public virtual void HandleConnect(Event netEvent) { }
         public virtual void HandleDisconnect(Event netEvent) { }
