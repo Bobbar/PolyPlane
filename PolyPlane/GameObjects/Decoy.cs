@@ -13,13 +13,20 @@ namespace PolyPlane.GameObjects
         private float _age = 0f;
         private float _direction = 1f;
 
-        public Decoy(GameObject owner) : base()
+        public Decoy(FighterPlane owner) : base()
         {
             this.PlayerID = owner.PlayerID;
             this.Owner = owner;
 
             this.Position = owner.Position;
             this.Velocity = owner.Velocity;
+
+            // Make the decoy shoot out from the top of the plane.
+            const float EJECT_FORCE = 100f;
+            var toRight = owner.FlipDirection == Direction.Right;
+            var rotVec = Helpers.AngleToVectorDegrees(owner.Rotation + (toRight ? 0f : 180f));
+            var topVec = new D2DPoint(rotVec.Y, -rotVec.X);
+            this.Velocity += topVec * EJECT_FORCE;
         }
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
@@ -43,11 +50,5 @@ namespace PolyPlane.GameObjects
         {
             ctx.FillEllipse(new D2DEllipse(this.Position, _radius + _currentFlash, _radius + _currentFlash), D2DColor.Yellow);
         }
-
-        //public override bool Contains(D2DPoint pnt)
-        //{
-        //    var dist = this.Position.DistanceTo(pnt);
-        //    return dist <= _radius + _flashAmt;
-        //}
     }
 }

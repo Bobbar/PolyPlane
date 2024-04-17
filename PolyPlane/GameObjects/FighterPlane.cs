@@ -8,6 +8,7 @@ namespace PolyPlane.GameObjects
 {
     public class FighterPlane : GameObjectPoly
     {
+        public Direction FlipDirection => _currentDir;
         public string PlayerName;
         public float PlayerGuideAngle = 0;
 
@@ -25,7 +26,7 @@ namespace PolyPlane.GameObjects
         public int Kills = 0;
         public int Headshots = 0;
 
-        public const int MAX_DECOYS = 10;
+        public const int MAX_DECOYS = 15;
         public const int MAX_BULLETS = 30;
         public const int MAX_MISSILES = 6;
         public const int MAX_HITS = 32;
