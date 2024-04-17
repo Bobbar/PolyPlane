@@ -385,6 +385,7 @@ namespace PolyPlane.Rendering
             _objs.Decoys.ForEach(o => o.Render(ctx));
             _objs.Missiles.ForEach(o => o.Render(ctx));
             _objs.MissileTrails.ForEach(o => o.Render(ctx));
+            _objs.Bullets.ForEach(o => o.Render(ctx));
 
             _objs.Planes.ForEach(o =>
             {
@@ -399,7 +400,6 @@ namespace PolyPlane.Rendering
 
             plane.Render(ctx);
 
-            _objs.Bullets.ForEach(o => o.Render(ctx));
             _objs.Explosions.ForEach(o => o.Render(ctx));
 
             DrawClouds(ctx);

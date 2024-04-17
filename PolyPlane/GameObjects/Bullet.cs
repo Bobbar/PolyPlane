@@ -32,6 +32,7 @@ namespace PolyPlane.GameObjects
             this.PlayerID = plane.PlayerID;
 
             this.Polygon = new RenderPoly(_poly);
+            this.Polygon.Update(this.Position, this.Rotation, World.RenderScale * this.RenderOffset);
 
             var velo = (Helpers.AngleToVectorDegrees(plane.Rotation, Bullet.Speed));
             velo += plane.Velocity;
@@ -41,8 +42,8 @@ namespace PolyPlane.GameObjects
         public Bullet(D2DPoint pos, D2DPoint velo, float rotation) : base(pos, velo, rotation)
         {
             this.Polygon = new RenderPoly(_poly);
+            this.Polygon.Update(this.Position, this.Rotation, World.RenderScale * this.RenderOffset);
         }
-
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
@@ -75,10 +76,7 @@ namespace PolyPlane.GameObjects
         public override void Render(RenderContext ctx)
         {
             ctx.Gfx.AntiAliasingOff();
-            //ctx.FillEllipse(new D2DEllipse(this.Position, new D2DSize(5, 5)), D2DColor.Goldenrod);
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, D2DColor.Yellow);
-            //ctx.Gfx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, D2DColor.Yellow);
-
             ctx.Gfx.AntiAliasingOn();
         }
     }
