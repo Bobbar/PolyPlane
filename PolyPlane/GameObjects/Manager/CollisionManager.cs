@@ -50,10 +50,8 @@ namespace PolyPlane.GameObjects.Manager
 
                 var nearObjs = _objs.GetNear(plane);
 
-                for (int o = 0; o < nearObjs.Count; o++)
+                foreach (var obj in nearObjs)
                 {
-                    var obj = nearObjs[o];
-
                     if (obj is Missile missile)
                     {
                         var missileOwner = missile.Owner as FighterPlane;

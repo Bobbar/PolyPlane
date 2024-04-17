@@ -346,7 +346,7 @@ namespace PolyPlane.GameObjects
             return roundedPos;
         }
 
-        public List<GameObject> GetNear(GameObject obj)
+        public IEnumerable<GameObject> GetNear(GameObject obj)
         {
             var rndPos = GetGridIdx(obj);
 
@@ -360,12 +360,11 @@ namespace PolyPlane.GameObjects
                     var yo = rndPos.Y + y;
                     var nPos = new D2DPoint(xo, yo);
 
-                    if (_objLookupSpatial.TryGetValue(nPos, out var n))
-                        nearObjs.AddRange(n);
+                    if (_objLookupSpatial.TryGetValue(nPos, out var ns))
+                        foreach (var o in ns)
+                            yield return o;
                 }
             }
-
-            return nearObjs;
         }
 
         private void SyncObjCollections()
