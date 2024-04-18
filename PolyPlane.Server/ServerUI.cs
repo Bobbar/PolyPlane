@@ -19,6 +19,7 @@ namespace PolyPlane.Server
 
         private AIPersonality _aiPersonality = AIPersonality.Normal;
         private Thread _gameThread;
+        private bool _killThread = false;
         private int _multiThreadNum = 4;
 
         private GameTimer _burstTimer = new GameTimer(0.25f, true);
@@ -136,6 +137,7 @@ namespace PolyPlane.Server
 
         private void ServerUI_Disposed(object? sender, EventArgs e)
         {
+            _killThread = true;
             _server?.Stop();
             _server?.Dispose();
             _fpsLimiter?.Dispose();
@@ -156,7 +158,7 @@ namespace PolyPlane.Server
 
         private void GameLoop()
         {
-            while (!this.Disposing)
+            while (!this.Disposing && !_killThread)
             {
                 AdvanceServer();
 

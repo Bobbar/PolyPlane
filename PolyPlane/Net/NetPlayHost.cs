@@ -226,9 +226,10 @@ namespace PolyPlane.Net
 
         public virtual void Dispose()
         {
+            Host.Flush();
+
             _runLoop = false;
             Thread.Sleep(30);
-            Host.Flush();
             Host?.Dispose();
             ENet.Library.Deinitialize();
 

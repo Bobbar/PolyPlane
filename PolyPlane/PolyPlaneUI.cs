@@ -698,8 +698,8 @@ namespace PolyPlane
 
         private void StopRender()
         {
+            _killRender = true;
             _stopRenderEvent.Reset();
-            Thread.Sleep(32);
         }
 
         private void SendPlayerReset()
@@ -997,14 +997,6 @@ namespace PolyPlane
             var angle = center.AngleTo(pos);
 
             _playerPlane.SetAutoPilotAngle(angle);
-        }
-
-        private void PolyPlaneUI_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            _gameThread?.Join(1000);
-            //_renderThread.Wait(1000);
-
-
         }
 
         private void PolyPlaneUI_Shown(object sender, EventArgs e)
