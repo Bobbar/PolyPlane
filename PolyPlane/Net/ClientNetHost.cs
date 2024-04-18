@@ -92,7 +92,7 @@ namespace PolyPlane.Net
 
         public override void Dispose()
         {
-            Peer.Disconnect(0);
+            Peer.DisconnectNow(0);
 
             Thread.Sleep(30);
 

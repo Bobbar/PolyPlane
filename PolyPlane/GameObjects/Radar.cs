@@ -262,6 +262,12 @@ namespace PolyPlane
 
         private void CheckForLock()
         {
+            if (this.HostPlane.IsDamaged)
+            {
+                ClearLock();
+                return;
+            }
+
             var mostCentered = FindMostCenteredAndClosest();
 
             if (LockedObj != null && (LockedObj is FighterPlane plane && (plane.IsExpired || plane.IsDamaged || plane.HasCrashed)))

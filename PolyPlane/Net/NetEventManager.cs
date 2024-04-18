@@ -349,7 +349,7 @@ namespace PolyPlane.Net
             foreach (var planeUpdPacket in listPacket.Planes)
             {
                 var netPlane = GetNetPlane(planeUpdPacket.ID);
-
+               
                 if (netPlane != null)
                 {
                     planeUpdPacket.SyncObj(netPlane);
@@ -446,7 +446,7 @@ namespace PolyPlane.Net
             bullet.ID = bulletPacket.ID;
             bulletPacket.SyncObj(bullet);
             var owner = GetNetPlane(bulletPacket.OwnerID);
-
+           
             // TODO: How to handle bullets that arrive before owner plane has been added?
             if (owner == null)
                 return;
@@ -465,7 +465,7 @@ namespace PolyPlane.Net
         private void DoNewMissile(MissilePacket missilePacket)
         {
             var missileOwner = GetNetPlane(missilePacket.OwnerID);
-
+         
             if (missileOwner != null)
             {
                 var missileTarget = GetNetPlane(missilePacket.TargetID, false);
@@ -515,13 +515,15 @@ namespace PolyPlane.Net
 
         private FighterPlane GetNetPlane(GameID id, bool netOnly = true)
         {
-            foreach (var plane in Objs.Planes)
+            if (Objs.TryGetObjectByID(id, out GameObject obj))
             {
-                if (netOnly && !plane.IsNetObject)
-                    continue;
+                if (obj != null && obj is FighterPlane plane)
+                {
+                    if (netOnly && !plane.IsNetObject)
+                        return null;
 
-                if (plane.ID.Equals(id))
-                    return plane as FighterPlane;
+                    return plane;
+                }
             }
 
             return null;

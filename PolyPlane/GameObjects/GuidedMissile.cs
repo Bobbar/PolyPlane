@@ -159,7 +159,14 @@ namespace PolyPlane.GameObjects
                 _rocketBody = new Wing(this, 4f, 0.4f, D2DPoint.Zero);
             }
 
-            _igniteCooldown.TriggerCallback = () => FlameOn = true;
+            _igniteCooldown.TriggerCallback = () =>
+            {
+                FlameOn = true;
+
+                // Add a quick impulse/boost when we ignite.
+                this.Velocity += Helpers.AngleToVectorDegrees(_initRotation, 200f);
+            };
+
             _igniteCooldown.Restart();
         }
 
