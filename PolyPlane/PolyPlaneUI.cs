@@ -236,6 +236,7 @@ namespace PolyPlane
             _client?.SendPlayerDisconnectPacket((uint)_playerPlane.PlayerID);
 
             StopRender();
+            _killRender = true;
             _gameThread?.Join(100);
 
             _client?.Stop();
@@ -698,7 +699,6 @@ namespace PolyPlane
 
         private void StopRender()
         {
-            _killRender = true;
             _stopRenderEvent.Reset();
         }
 
