@@ -164,7 +164,7 @@ namespace PolyPlane.GameObjects
                 FlameOn = true;
 
                 // Add a quick impulse/boost when we ignite.
-                this.Velocity += Helpers.AngleToVectorDegrees(_initRotation, 200f);
+                this.Velocity += Helpers.AngleToVectorDegrees(_initRotation, 100f);
             };
 
             _igniteCooldown.Restart();
