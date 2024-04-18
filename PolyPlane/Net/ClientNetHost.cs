@@ -54,7 +54,7 @@ namespace PolyPlane.Net
 
             var packet = CreatePacket(netPacket);
             var channel = GetChannel(netPacket);
-          
+
             Peer.Send((byte)channel, ref packet);
         }
 

@@ -7,7 +7,7 @@ namespace PolyPlane.Net
     public abstract class NetPlayHost : IDisposable
     {
         public const int MAX_CLIENTS = 30;
-        public const int MAX_CHANNELS = 4;
+        public const int MAX_CHANNELS = 7;
         public const int CHANNEL_ID = 0;
         public const int TIMEOUT = 0;
 
@@ -17,7 +17,6 @@ namespace PolyPlane.Net
         public Host Host;
         public ushort Port;
         public Address Address;
-        public double CurrentTime;
         public TimeSpan NetTime => _netTime;
 
         private Thread _pollThread;
@@ -26,7 +25,7 @@ namespace PolyPlane.Net
         private Stopwatch _netTimer = new Stopwatch();
 
         public event EventHandler<Peer> PeerTimeoutEvent;
-        
+
         public NetPlayHost(ushort port, string ip)
         {
             Port = port;
@@ -38,6 +37,8 @@ namespace PolyPlane.Net
 
         public void Start()
         {
+            ENet.Library.Initialize();
+
             DoStart();
 
             _pollThread = new Thread(PollLoop);
@@ -79,7 +80,6 @@ namespace PolyPlane.Net
                 }
 
                 ProcessQueue();
-                CurrentTime = World.CurrentTime();
 
                 _netTimer.Stop();
                 _netTime = _netTimer.Elapsed;
@@ -182,17 +182,39 @@ namespace PolyPlane.Net
                 case PacketTypes.NewBullet:
                     return 2;
 
-                default:
+                case PacketTypes.NewMissile:
                     return 3;
+
+                case PacketTypes.NewDecoy:
+                    return 4;
+
+                case PacketTypes.ExpiredObjects:
+                    return 5;
+
+                default:
+                    return 6;
+            }
+        }
+
+        internal PacketFlags GetPacketFlags(NetPacket netpacket)
+        {
+            switch (netpacket.Type)
+            {
+                case PacketTypes.PlaneUpdate or PacketTypes.MissileUpdate:
+                    return PacketFlags.Instant;
+
+                default:
+                    return PacketFlags.Reliable;
             }
         }
 
         internal Packet CreatePacket(NetPacket netPacket)
         {
-            Packet packet = default(Packet);
+            Packet packet = default;
             var data = Serialization.ObjectToByteArray(netPacket);
-            //packet.Create(data, PacketFlags.Reliable);
-            packet.Create(data, PacketFlags.Instant);
+            var flags = GetPacketFlags(netPacket);
+
+            packet.Create(data, flags);
 
             return packet;
         }
@@ -208,6 +230,8 @@ namespace PolyPlane.Net
             _runLoop = false;
             Thread.Sleep(30);
             Host?.Dispose();
+            ENet.Library.Deinitialize();
+
         }
     }
 }

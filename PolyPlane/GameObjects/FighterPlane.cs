@@ -1,6 +1,5 @@
 ﻿using PolyPlane.AI_Behavior;
 using PolyPlane.Rendering;
-using System.Diagnostics;
 using System.Numerics;
 using unvell.D2DLib;
 
@@ -15,6 +14,7 @@ namespace PolyPlane.GameObjects
         public int NumMissiles = MAX_MISSILES;
         public int NumBullets = MAX_BULLETS;
         public int NumDecoys = MAX_DECOYS;
+        public int Hits = MAX_HITS;
 
         public float Deflection = 0f;
         public int BulletsFired = 0;
@@ -32,38 +32,22 @@ namespace PolyPlane.GameObjects
         public const int MAX_HITS = 32;
         public const int MISSILE_DAMAGE = 8;
         public const int BULLET_DAMAGE = 1;
-        public int Hits = MAX_HITS;
 
-        public Radar Radar { get; set; }
-        public bool HasRadarLock = false;
-
+        private readonly float MASS = 90f;
 
         public bool IsAI => _isAIPlane;
         public bool IsDefending = false;
 
         public D2DColor PlaneColor
         {
-            get { return _planeColor;  }
+            get { return _planeColor; }
             set { _planeColor = value; }
         }
-
-        public float Mass
-        {
-            get { return _mass; }
-
-            set { _mass = value; }
-        }
-
-        private float _mass = 90f;
-        private const int MAX_FLAMES = 10;
-        private int nFlames = 0;
 
         public float Thrust { get; set; } = 10f;
         public bool FiringBurst { get; set; } = false;
         public bool DroppingDecoy { get; set; } = false;
-
         public float GForce => _gForce;
-
         public float GForceDirection => _gForceDir;
         public bool ThrustOn { get; set; } = false;
         public float ThrustAmount
@@ -72,54 +56,33 @@ namespace PolyPlane.GameObjects
 
             set { _thrustAmt.Set(value); }
         }
-
-
-        //public float ThrustAmount => _thrustAmt.Value;
         public bool AutoPilotOn { get; set; } = false;
         public bool SASOn { get; set; } = true;
         public bool HasCrashed { get; set; } = false;
         public bool WasHeadshot { get; set; } = false;
-
         public D2DPoint GunPosition => _gunPosition.Position;
         public D2DPoint ExhaustPosition => _centerOfThrust.Position;
         public bool IsDamaged { get; set; } = false;
-
-        public IAIBehavior _aiBehavior;
-
-        public bool IsEngaged
-        {
-            get
-            {
-                return IsAI && _engageTimer.IsRunning;
-            }
-        }
 
         public List<Wing> Wings = new List<Wing>();
         public FixturePoint _centerOfThrust;
         private Wing? _controlWing = null;
         private RateLimiter _thrustAmt = new RateLimiter(0.5f);
-
-
-
-        private float _targetDeflection = 0f;
-        private float _maxDeflection = 50f;
-        private GameTimer _flipTimer = new GameTimer(2f);
         private Direction _currentDir = Direction.Right;
         private Direction _queuedDir = Direction.Right;
-        private D2DPoint _force = D2DPoint.Zero;
         private bool _isAIPlane = false;
-        private bool _damageFlash = false;
 
-        private GameTimer _engageTimer;
+        private GameTimer _flipTimer = new GameTimer(2f);
         private GameTimer _expireTimeout = new GameTimer(100f);
         private GameTimer _isLockOntoTimeout = new GameTimer(3f);
-        private GameTimer _damageCooldownTimeout = new GameTimer(4f);
-        private GameTimer _damageFlashTimer = new GameTimer(0.2f, true);
         private GameTimer _bulletRegenTimer = new GameTimer(0.2f, true);
         private GameTimer _decoyRegenTimer = new GameTimer(0.5f, true);
         private GameTimer _missileRegenTimer = new GameTimer(60f, true);
 
         private float _damageDeflection = 0f;
+        private float _gForce = 0f;
+        private float _gForceDir = 0f;
+        private int _throttlePos = 0;
 
         private RenderPoly FlamePoly;
         private D2DLayer _polyClipLayer = null;
@@ -131,35 +94,22 @@ namespace PolyPlane.GameObjects
         private D2DColor _planeColor;
         private D2DColor _cockpitColor = new D2DColor(0.5f, D2DColor.LightBlue);
         private SmokeTrail _contrail;
-        private int _throttlePos = 0;
-
         private List<Flame> _flames = new List<Flame>();
         private List<Debris> _debris = new List<Debris>();
+        private const float VAPOR_TRAIL_GS = 15f; // How many Gs before showing vapor trail.
+        private List<Vapor> _vaporTrails = new List<Vapor>();
+        private Vapor _gunSmoke;
+
+        public Radar Radar { get; set; }
+        public bool HasRadarLock = false;
 
         public Action<Bullet> FireBulletCallback { get; set; }
         public Action<GuidedMissile> FireMissileCallback { get; set; }
-
         public Action<FighterPlane, GameObject> PlayerKilledCallback { get; set; }
 
-        private float _gForce = 0f;
-        private float _gForceDir = 0f;
+        public IAIBehavior _aiBehavior;
 
-        private const float VAPOR_TRAIL_GS = 15f; // How many Gs before showing vapor trail.
-        private List<Vapor> _vaporTrails = new List<Vapor>();
-
-        //private float Deflection
-        //{
-        //    get { return _targetDeflection; }
-        //    set
-        //    {
-        //        if (value >= -_maxDeflection && value <= _maxDeflection)
-        //            _targetDeflection = value;
-        //        else
-        //            _targetDeflection = Math.Sign(value) * _maxDeflection;
-        //    }
-        //}
-
-        private readonly D2DPoint[] _poly = new D2DPoint[]
+        private readonly D2DPoint[] _planePoly = new D2DPoint[]
         {
             new D2DPoint(28,0),
             new D2DPoint(25,-2),
@@ -189,7 +139,6 @@ namespace PolyPlane.GameObjects
 
         public FighterPlane(D2DPoint pos) : base(pos)
         {
-            this.RenderOffset = 1.5f;
             Thrust = 2000f;
             _thrustAmt.Target = 1f;
             _planeColor = D2DColor.Randomly();
@@ -197,11 +146,8 @@ namespace PolyPlane.GameObjects
             InitStuff();
         }
 
-
-
         public FighterPlane(D2DPoint pos, D2DColor color) : base(pos)
         {
-            this.RenderOffset = 1.5f;
             IsNetObject = true;
             _planeColor = color;
             _isAIPlane = false;
@@ -209,14 +155,11 @@ namespace PolyPlane.GameObjects
             ThrustOn = true;
             _thrustAmt.Target = 1f;
 
-
             InitStuff();
         }
 
-        public FighterPlane(D2DPoint pos, AIPersonality personality) : this(pos)
+        public FighterPlane(D2DPoint pos, AIPersonality personality) : base(pos)
         {
-            this.RenderOffset = 1.5f;
-
             _aiBehavior = new FighterPlaneAI(this, personality);
             _aiBehavior.SkipFrames = World.PHYSICS_SUB_STEPS;
 
@@ -228,16 +171,19 @@ namespace PolyPlane.GameObjects
 
             _planeColor = D2DColor.Randomly();
 
+            InitStuff();
         }
 
         private void InitStuff()
         {
+            this.RenderOffset = 1.5f;
+
             float defRate = 50f;
 
             if (_isAIPlane)
                 defRate = 20f;
 
-            this.Polygon = new RenderPoly(_poly, this.RenderOffset);
+            this.Polygon = new RenderPoly(_planePoly, this.RenderOffset);
 
             AddWing(new Wing(this, 10f * this.RenderOffset, 0.5f, 40f, 10000f, new D2DPoint(1.5f, 1f), defRate));
             AddWing(new Wing(this, 5f * this.RenderOffset, 0.2f, 50f, 5000f, new D2DPoint(-35f, 1f), defRate), true);
@@ -249,9 +195,9 @@ namespace PolyPlane.GameObjects
 
             this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), 1.7f);
             _flamePos = new FixturePoint(this, new D2DPoint(-38f, 1f), skipFrames);
-            _gunPosition = new FixturePoint(this, new D2DPoint(33f, 0), skipFrames);
+            _gunPosition = new FixturePoint(this, new D2DPoint(35f, 0), skipFrames);
             _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
-
+            _gunSmoke = new Vapor(_gunPosition, D2DPoint.Zero, 8f, new D2DColor(0.7f, D2DColor.BurlyWood));
 
             _flamePos.IsNetObject = this.IsNetObject;
             _gunPosition.IsNetObject = this.IsNetObject;
@@ -294,16 +240,7 @@ namespace PolyPlane.GameObjects
 
             _decoyRegenTimer.Start();
 
-
             _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
-
-            _damageFlashTimer.TriggerCallback = () => _damageFlash = !_damageFlash;
-            _damageCooldownTimeout.TriggerCallback = () =>
-            {
-                _damageFlashTimer.Stop();
-                _damageFlash = false;
-            };
-
         }
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
@@ -318,36 +255,31 @@ namespace PolyPlane.GameObjects
             else
                 _vaporTrails.ForEach(v => v.Visible = false);
 
+            if (this.FiringBurst && this.NumBullets > 0)
+                _gunSmoke.Visible = true;
+            else
+                _gunSmoke.Visible = false;
+
             if (!World.IsNetGame || (World.IsNetGame && !World.IsServer))
             {
                 _flames.ForEach(f => f.Update(dt, viewport, renderScale, skipFrames: World.IsNetGame));
                 _debris.ForEach(d => d.Update(dt, viewport, renderScale, skipFrames: true));
                 _contrail.Update(dt, viewport, renderScale, skipFrames: true);
                 _vaporTrails.ForEach(v => v.Update(dt, viewport, renderScale * this.RenderOffset));
+                _gunSmoke.Update(dt, viewport, renderScale * this.RenderOffset);
             }
-
-            if (_aiBehavior != null)
-                _aiBehavior.Update(dt, viewport, renderScale, skipFrames: true);
-
-            if (!this.FiringBurst)
-                _bulletRegenTimer.Update(dt);
-
-            _missileRegenTimer.Update(dt);
-
-            if (!this.DroppingDecoy)
-                _decoyRegenTimer.Update(dt);
 
             _flamePos.Update(dt, viewport, renderScale * this.RenderOffset, skipFrames: true);
             _gunPosition.Update(dt, viewport, renderScale * this.RenderOffset, skipFrames: true);
             _cockpitPosition.Update(dt, viewport, renderScale * this.RenderOffset);
 
+            if (_aiBehavior != null)
+                _aiBehavior.Update(dt, viewport, renderScale, skipFrames: true);
+
             var wingForce = D2DPoint.Zero;
             var wingTorque = 0f;
-
             var thrust = GetThrust(true);
-
             var deflection = this.Deflection;
-
 
             if (AutoPilotOn)
             {
@@ -407,19 +339,18 @@ namespace PolyPlane.GameObjects
                 ThrustOn = false;
                 _thrustAmt.Set(0f);
                 _controlWing.Deflection = _damageDeflection;
+                FiringBurst = false;
             }
-
-            _force = wingForce;
 
 
             if (!this.IsNetObject)
             {
                 Deflection = _controlWing.Deflection;
 
-                this.RotationSpeed += wingTorque / this.Mass * dt;
+                this.RotationSpeed += wingTorque / this.MASS * dt;
 
-                this.Velocity += thrust / this.Mass * dt;
-                this.Velocity += wingForce / this.Mass * dt;
+                this.Velocity += thrust / this.MASS * dt;
+                this.Velocity += wingForce / this.MASS * dt;
 
                 var gravFact = 1f;
 
@@ -430,7 +361,7 @@ namespace PolyPlane.GameObjects
             }
 
 
-            var totForce = (thrust / this.Mass * dt) + (wingForce / this.Mass * dt);
+            var totForce = (thrust / this.MASS * dt) + (wingForce / this.MASS * dt);
 
             var gforce = totForce.Length() / dt / World.Gravity.Y;
             _gForce = gforce;
@@ -455,9 +386,15 @@ namespace PolyPlane.GameObjects
 
             _flipTimer.Update(dt);
             _isLockOntoTimeout.Update(dt);
-            _damageCooldownTimeout.Update(dt);
-            _damageFlashTimer.Update(dt);
             _expireTimeout.Update(dt);
+
+            if (!this.FiringBurst)
+                _bulletRegenTimer.Update(dt);
+
+            _missileRegenTimer.Update(dt);
+
+            if (!this.DroppingDecoy)
+                _decoyRegenTimer.Update(dt);
 
             //if (this.HasCrashed)
             //    _debris.Clear();
@@ -481,7 +418,6 @@ namespace PolyPlane.GameObjects
 
             _contrail.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000 && ThrustAmount > 0f);
 
-
             ctx.Gfx.AntiAliasingOff();
             _flames.ForEach(f => f.Render(ctx));
             ctx.Gfx.AntiAliasingOn();
@@ -489,14 +425,9 @@ namespace PolyPlane.GameObjects
             if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
                 ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
 
-            var color = _planeColor;
-            if (_damageFlash && !this.IsDamaged)
-                color = new D2DColor(0.2f, _planeColor);
-
-            ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, color);
+            ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, _planeColor);
             Wings.ForEach(w => w.Render(ctx));
             DrawCockpit(ctx.Gfx);
-
 
             ctx.Gfx.AntiAliasingOff();
             _debris.ForEach(d => d.Render(ctx));
@@ -504,9 +435,12 @@ namespace PolyPlane.GameObjects
 
             DrawBulletHoles(ctx);
 
+            _gunSmoke.Render(ctx);
+
             //DrawFOVCone(gfx);
             //_cockpitPosition.Render(ctx);
             //_centerOfThrust.Render(ctx);
+            //_gunPosition.Render(ctx);
         }
 
         private void DrawBulletHoles(RenderContext ctx)
@@ -527,6 +461,10 @@ namespace PolyPlane.GameObjects
                     ctx.Gfx.FillEllipseSimple(flame.Position, 5f, D2DColor.Gray);
                     ctx.Gfx.FillEllipseSimple(flame.Position, 3f, D2DColor.Black);
                 }
+
+                // Simulate muzzle flash?
+                if (this.FiringBurst && this.NumBullets > 0)
+                    ctx.Gfx.FillEllipseSimple(_gunPosition.Position, 8f, new D2DColor(0.3f, D2DColor.Orange));
 
                 ctx.Gfx.PopLayer();
             }
@@ -565,18 +503,6 @@ namespace PolyPlane.GameObjects
             HasRadarLock = true;
         }
 
-        public void EngagePlayer(float duration)
-        {
-            if (_engageTimer.IsRunning == false)
-            {
-                _engageTimer.Interval = duration;
-                _engageTimer.Reset();
-                _engageTimer.Start();
-
-                Log.Msg("Engaging Player!");
-            }
-        }
-
         public void FireMissile(GameObject target)
         {
             if (this.NumMissiles <= 0 || this.IsDamaged)
@@ -608,6 +534,9 @@ namespace PolyPlane.GameObjects
             if (this.NumBullets <= 0)
                 return;
 
+            if (this.IsNetObject)
+                return;
+
             var bullet = new Bullet(this);
 
             bullet.AddExplosionCallback = addExplosion;
@@ -615,16 +544,6 @@ namespace PolyPlane.GameObjects
             this.BulletsFired++;
             this.NumBullets--;
         }
-
-        //public void Pitch(bool pitchUp)
-        //{
-        //    float amt = 1f;//0.5f;
-
-        //    if (pitchUp)
-        //        this.Deflection += amt;
-        //    else
-        //        this.Deflection -= amt;
-        //}
 
         private float GetAPGuidanceDirection(float dir)
         {
@@ -637,7 +556,6 @@ namespace PolyPlane.GameObjects
 
         public void SetAutoPilotAngle(float angle)
         {
-            //_apAngleLimiter.Target = angle;
             PlayerGuideAngle = angle;
         }
 
@@ -675,7 +593,7 @@ namespace PolyPlane.GameObjects
 
         public void SetOnFire()
         {
-            var offset = Helpers.RandOPointInPoly(_poly);
+            var offset = Helpers.RandOPointInPoly(_planePoly);
             SetOnFire(offset);
         }
 
@@ -688,7 +606,13 @@ namespace PolyPlane.GameObjects
             _flames.Add(flame);
         }
 
-        public void DoImpact(GameObject impactor, D2DPoint impactPos, bool ignoreCooldown = false)
+        public void DoImpact(GameObject impactor, D2DPoint impactPos)
+        {
+            var result = GetImpactResult(impactor, impactPos);
+            HandleImpactResult(impactor, result);
+        }
+
+        public void HandleImpactResult(GameObject impactor, PlaneImpactResult result)
         {
             var attackPlane = impactor.Owner as FighterPlane;
 
@@ -701,48 +625,39 @@ namespace PolyPlane.GameObjects
             if (this.IsAI)
                 _aiBehavior.ChangeTarget(attackPlane);
 
-            if (!IsDamaged)
+            if (result.DoesDamage)
             {
-                if (this.Hits > 0)
+                if (result.WasHeadshot)
                 {
-                    var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
-                    var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos);
-                    if (hitCockpit)
-                    {
-                        Debug.WriteLine("HEADSHOT!");
-                        SpawnDebris(8, impactPos, D2DColor.Red);
-                        WasHeadshot = true;
-                        IsDamaged = true;
-                        this.Hits = 0;
-                        attackPlane.Headshots++;
-                        attackPlane.Kills++;
-                    }
-
-
-                    if (impactor is Missile)
+                    SpawnDebris(8, result.ImpactPoint, D2DColor.Red);
+                    WasHeadshot = true;
+                    IsDamaged = true;
+                    Hits = 0;
+                    attackPlane.Headshots++;
+                    attackPlane.Kills++;
+                }
+                else
+                {
+                    if (result.Type == ImpactType.Missile)
                     {
                         this.Hits -= MISSILE_DAMAGE;
-                        SpawnDebris(4, impactPos, this.PlaneColor);
+                        SpawnDebris(4, result.ImpactPoint, this.PlaneColor);
                     }
                     else
                     {
                         this.Hits -= BULLET_DAMAGE;
 
                         if (Helpers.Rnd.Next(3) == 2)
-                            SpawnDebris(1, impactPos, this.PlaneColor);
+                            SpawnDebris(1, result.ImpactPoint, this.PlaneColor);
                     }
-
-                    // Scale the impact position back to the origin of the polygon.
-                    var mat = Matrix3x2.CreateRotation(-this.Rotation * (float)(Math.PI / 180f), this.Position);
-                    mat *= Matrix3x2.CreateTranslation(new D2DPoint(-this.Position.X, -this.Position.Y));
-                    var ogPos1 = D2DPoint.Transform(impactPos, mat);
-
-                    SetOnFire(ogPos1);
-
-                    _damageCooldownTimeout.Restart();
-                    _damageFlashTimer.Restart();
                 }
 
+                // Scale the impact position back to the origin of the polygon.
+                var mat = Matrix3x2.CreateRotation(-this.Rotation * (float)(Math.PI / 180f), this.Position);
+                mat *= Matrix3x2.CreateTranslation(new D2DPoint(-this.Position.X, -this.Position.Y));
+                var ogPos1 = D2DPoint.Transform(result.ImpactPoint, mat);
+
+                SetOnFire(ogPos1);
 
                 if (this.Hits <= 0)
                 {
@@ -751,15 +666,14 @@ namespace PolyPlane.GameObjects
 
                     attackPlane.Kills++;
 
-                    if (attackPlane.Hits < MAX_HITS)
-                        attackPlane.Hits += 2;
+                    //if (attackPlane.Hits < MAX_HITS)
+                    //    attackPlane.Hits += 2;
 
                     PlayerKilledCallback?.Invoke(this, impactor);
-
                 }
             }
 
-            DoImpactImpulse(impactor, impactPos);
+            DoImpactImpulse(impactor, result.ImpactPoint);
         }
 
         private void DoImpactImpulse(GameObject impactor, D2DPoint impactPos)
@@ -780,8 +694,8 @@ namespace PolyPlane.GameObjects
             var impactTq = GetTorque(impactPos, forceVec);
 
 
-            this.RotationSpeed += impactTq / this.Mass * World.DT;
-            this.Velocity += forceVec / this.Mass * World.DT;
+            this.RotationSpeed += impactTq / this.MASS * World.DT;
+            this.Velocity += forceVec / this.MASS * World.DT;
         }
 
         public PlaneImpactResult GetImpactResult(GameObject impactor, D2DPoint impactPos)
@@ -811,80 +725,9 @@ namespace PolyPlane.GameObjects
                         result.Type = ImpactType.Bullet;
                     }
                 }
-
-                if (World.IsNetGame)
-                {
-                    _damageCooldownTimeout.Restart();
-                    _damageFlashTimer.Restart();
-                }
             }
 
             return result;
-        }
-
-        public void DoNetImpact(GameObject impactor, D2DPoint impactPos, bool doesDamage, bool wasHeadshot, bool wasMissile)
-        {
-            var attackPlane = impactor.Owner as FighterPlane;
-
-            if (impactor is Bullet)
-                attackPlane.BulletsHit++;
-            else if (impactor is Missile)
-                attackPlane.MissilesHit++;
-
-            // Always change target to attacking plane?
-            if (this.IsAI)
-                _aiBehavior.ChangeTarget(attackPlane);
-
-            if (doesDamage)
-            {
-                if (wasHeadshot)
-                {
-                    SpawnDebris(8, impactPos, D2DColor.Red);
-                    WasHeadshot = true;
-                    IsDamaged = true;
-                    Hits = 0;
-                    attackPlane.Headshots++;
-                    attackPlane.Kills++;
-                }
-                else
-                {
-                    if (wasMissile)
-                    {
-                        this.Hits -= MISSILE_DAMAGE;
-                        SpawnDebris(4, impactPos, this.PlaneColor);
-                    }
-                    else
-                    {
-                        this.Hits -= BULLET_DAMAGE;
-
-                        if (Helpers.Rnd.Next(3) == 2)
-                            SpawnDebris(1, impactPos, this.PlaneColor);
-                    }
-                }
-
-
-                // Scale the impact position back to the origin of the polygon.
-                var mat = Matrix3x2.CreateRotation(-this.Rotation * (float)(Math.PI / 180f), this.Position);
-                mat *= Matrix3x2.CreateTranslation(new D2DPoint(-this.Position.X, -this.Position.Y));
-                var ogPos1 = D2DPoint.Transform(impactPos, mat);
-
-                SetOnFire(ogPos1);
-
-                if (this.Hits <= 0)
-                {
-                    IsDamaged = true;
-                    _damageDeflection = _rnd.NextFloat(-180, 180);
-
-                    attackPlane.Kills++;
-
-                    if (attackPlane.Hits < MAX_HITS)
-                        attackPlane.Hits += 2;
-
-                    PlayerKilledCallback?.Invoke(this, impactor);
-                }
-            }
-
-            DoImpactImpulse(impactor, impactPos);
         }
 
         private void SpawnDebris(int num, D2DPoint pos, D2DColor color)
@@ -909,10 +752,10 @@ namespace PolyPlane.GameObjects
 
         public void FixPlane()
         {
-            this.Hits = MAX_HITS;
-            this.NumBullets = MAX_BULLETS;
-            nFlames = 0;
+            Hits = MAX_HITS;
+            NumBullets = MAX_BULLETS;
             NumMissiles = MAX_MISSILES;
+            NumDecoys = MAX_DECOYS;
             IsDamaged = false;
             HasCrashed = false;
             ThrustOn = true;

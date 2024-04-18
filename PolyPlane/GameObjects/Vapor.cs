@@ -26,6 +26,20 @@ namespace PolyPlane.GameObjects
             _spawnTimer.Start();
         }
 
+        public Vapor(GameObject obj, D2DPoint offset, float radius, D2DColor color)
+        {
+            _vaporColor = color;
+            _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
+
+            this.Owner = obj;
+            _refPos = new FixturePoint(obj, offset);
+            _radius = radius;
+
+            _spawnTimer.TriggerCallback = () => SpawnPart();
+            _spawnTimer.Start();
+        }
+
+
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
             base.Update(dt, viewport, renderScale);

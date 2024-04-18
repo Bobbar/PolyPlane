@@ -105,12 +105,12 @@ namespace PolyPlane.Net
         public string Message;
         public string PlayerName;
 
-        public ChatPacket() : base() 
+        public ChatPacket() : base()
         {
             Type = PacketTypes.ChatMessage;
         }
 
-        public ChatPacket(string message, string playerName) : base() 
+        public ChatPacket(string message, string playerName) : base()
         {
             Type = PacketTypes.ChatMessage;
             Message = message;
@@ -240,7 +240,7 @@ namespace PolyPlane.Net
         public D2DColor PlaneColor;
         public NetPoint Position;
 
-        public NewPlayerPacket() : base() 
+        public NewPlayerPacket() : base()
         {
             Type = PacketTypes.NewPlayer;
         }
@@ -260,7 +260,7 @@ namespace PolyPlane.Net
         public List<NewPlayerPacket> Players = new List<NewPlayerPacket>();
 
         public PlayerListPacket() : base()
-        { 
+        {
         }
 
         public PlayerListPacket(PacketTypes type) : base(type)
@@ -337,6 +337,7 @@ namespace PolyPlane.Net
         public bool IsDamaged;
         public bool HasCrashed;
         public bool WasHeadshot;
+        public bool FiringBurst;
         public int Hits;
 
         public PlanePacket() { }
@@ -349,6 +350,7 @@ namespace PolyPlane.Net
             HasCrashed = obj.HasCrashed;
             WasHeadshot = obj.WasHeadshot;
             Hits = obj.Hits;
+            FiringBurst = obj.FiringBurst;
         }
 
         public PlanePacket(FighterPlane obj, PacketTypes type) : base(obj, type)
@@ -369,6 +371,7 @@ namespace PolyPlane.Net
             obj.IsDamaged = IsDamaged;
             obj.HasCrashed = HasCrashed;
             obj.WasHeadshot = WasHeadshot;
+            obj.FiringBurst = FiringBurst;
             obj.Hits = Hits;
         }
     }

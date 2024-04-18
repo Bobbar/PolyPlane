@@ -5,7 +5,6 @@ using PolyPlane.Net;
 using PolyPlane.Net.Discovery;
 using PolyPlane.Rendering;
 using System.Diagnostics;
-using unvell.D2DLib;
 
 
 namespace PolyPlane.Server
@@ -117,8 +116,6 @@ namespace PolyPlane.Server
                 _address = addy;
                 _serverName = ServerNameTextBox.Text.Trim();
 
-                ENet.Library.Initialize();
-
                 _server = new ServerNetHost(port, addy);
                 _netMan = new NetEventManager(_objs, _server);
                 _discovery = new DiscoveryServer();
@@ -145,7 +142,6 @@ namespace PolyPlane.Server
 
             _discovery?.StopListen();
             _discovery?.Dispose();
-            ENet.Library.Deinitialize();
         }
 
         private void StartGameThread()
@@ -388,7 +384,7 @@ namespace PolyPlane.Server
                 aiPlane = new FighterPlane(pos, Helpers.RandomEnum<AIPersonality>());
 
             aiPlane.PlayerID = World.GetNextPlayerId();
-            aiPlane.Radar = new Radar(aiPlane, D2DColor.GreenYellow, _objs.Missiles, _objs.Planes);
+            aiPlane.Radar = new Radar(aiPlane, World.HudColor, _objs.Missiles, _objs.Planes);
             aiPlane.PlayerName = "(BOT) " + Helpers.GetRandomName();
             aiPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
 

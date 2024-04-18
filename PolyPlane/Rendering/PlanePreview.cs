@@ -24,13 +24,13 @@ namespace PolyPlane.Rendering
             _targetControl = target;
 
             InitGfx();
-            
+
             PlaneColor = planeColor;
             _plane = new FighterPlane(D2DPoint.Zero, PlaneColor);
             _plane.IsNetObject = false;
 
             _renderThread = new Thread(RenderLoop);
-            _renderThread.Start();  
+            _renderThread.Start();
 
         }
 
@@ -55,7 +55,7 @@ namespace PolyPlane.Rendering
                 _gfx.EndRender();
             }
         }
-       
+
         private void InitGfx()
         {
             _device?.Dispose();

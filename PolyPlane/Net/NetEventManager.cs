@@ -1,6 +1,5 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Manager;
-using unvell.D2DLib;
 
 namespace PolyPlane.Net
 {
@@ -110,7 +109,7 @@ namespace PolyPlane.Net
                             newPlane.ID = planePacket.ID;
                             newPlane.PlayerName = planePacket.Name;
                             newPlane.IsNetObject = true;
-                            newPlane.Radar = new Radar(newPlane, D2DColor.GreenYellow, Objs.Missiles, Objs.Planes);
+                            newPlane.Radar = new Radar(newPlane, World.HudColor, Objs.Missiles, Objs.Planes);
                             Objs.AddPlane(newPlane);
                         }
 
@@ -155,7 +154,7 @@ namespace PolyPlane.Net
                     // Nuttin...
                     break;
                 case PacketTypes.ChatMessage:
-                    
+
                     var chatPacket = packet as ChatPacket;
                     NewChatMessage?.Invoke(this, chatPacket);
 
@@ -182,7 +181,7 @@ namespace PolyPlane.Net
                                 newPlane.IsNetObject = true;
                                 newPlane.LagAmount = World.CurrentTime() - listPacket.FrameTime;
                                 newPlane.ClientCreateTime = listPacket.FrameTime;
-                                newPlane.Radar = new Radar(newPlane, D2DColor.GreenYellow, Objs.Missiles, Objs.Planes);
+                                newPlane.Radar = new Radar(newPlane, World.HudColor, Objs.Missiles, Objs.Planes);
                                 Objs.AddPlane(newPlane);
                             }
                         }
@@ -418,8 +417,10 @@ namespace PolyPlane.Net
                     target.Position = packet.Position.ToD2DPoint();
                     target.SyncFixtures();
 
+                    // TODO: Consider sending the planes flip direction over the net, as it is likely to not be in sync with clients.
                     var impactPoint = packet.ImpactPoint.ToD2DPoint();
-                    target.DoNetImpact(impactor, impactPoint, packet.DoesDamage, packet.WasHeadshot, packet.WasMissile);
+                    var result = new PlaneImpactResult(packet.WasMissile ? ImpactType.Missile : ImpactType.Bullet, impactPoint, packet.DoesDamage);
+                    target.HandleImpactResult(impactor, result);
 
                     target.Rotation = curRot;
                     target.Velocity = curVelo;

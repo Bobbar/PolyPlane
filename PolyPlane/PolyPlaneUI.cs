@@ -74,7 +74,11 @@ namespace PolyPlane
             _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
 
-            _playerBurstTimer.TriggerCallback = () => _playerPlane.FireBullet(p => _objs.AddBulletExplosion(p));
+            _playerBurstTimer.TriggerCallback = () =>
+            {
+                _playerPlane.FireBullet(p => _objs.AddBulletExplosion(p));
+                _render.DoScreenShake(2f);
+            };
 
             _playerResetTimer.TriggerCallback = () =>
             {
@@ -130,8 +134,6 @@ namespace PolyPlane
                 {
                     case DialogResult.OK:
                         // Net game.
-                        ENet.Library.Initialize();
-
                         World.IsNetGame = true;
                         World.IsServer = false;
 
@@ -238,8 +240,6 @@ namespace PolyPlane
 
             _client?.Stop();
             _client?.Dispose();
-
-            ENet.Library.Deinitialize();
 
             _render?.Dispose();
 
@@ -651,6 +651,9 @@ namespace PolyPlane
                 var plane = firing[i];
 
                 if (!plane.IsAI && plane.ID.Equals(_playerPlane.ID))
+                    continue;
+
+                if (plane.IsNetObject)
                     continue;
 
                 plane.FireBullet(p => AddExplosion(p));

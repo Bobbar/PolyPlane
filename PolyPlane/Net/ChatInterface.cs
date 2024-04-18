@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace PolyPlane.Net
+﻿namespace PolyPlane.Net
 {
     public class ChatInterface
     {
@@ -46,7 +40,7 @@ namespace PolyPlane.Net
                     }
                     else
                         return false;
-                   
+
                 case (char)13:
                     SendCurrentMessage();
                     return true;

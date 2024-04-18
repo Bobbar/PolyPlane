@@ -26,7 +26,6 @@ namespace PolyPlane.Rendering
         private RenderContext _ctx;
         private D2DLayer _groundClipLayer = null;
 
-        private readonly D2DColor _hudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
         private readonly D2DPoint _infoPosition = new D2DPoint(20, 20);
 
         private bool _showInfo = false;
@@ -400,8 +399,6 @@ namespace PolyPlane.Rendering
                 if (o is FighterPlane tplane && !tplane.ID.Equals(plane.ID))
                 {
                     o.Render(ctx);
-                    //ctx.Gfx.DrawEllipse(new D2DEllipse(tplane.Position, new D2DSize(80f, 80f)), _hudColor, 2f);
-
                     DrawHealthBarClamped(ctx, tplane, new D2DPoint(tplane.Position.X, tplane.Position.Y - 110f), healthBarSize);
                 }
             });
@@ -604,34 +601,34 @@ namespace PolyPlane.Rendering
         private void DrawHealthBarClamped(RenderContext ctx, FighterPlane plane, D2DPoint position, D2DSize size)
         {
             var healthPct = plane.Hits / (float)FighterPlane.MAX_HITS;
-            ctx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), _hudColor);
-            ctx.DrawRectangle(new D2DRect(position, size), _hudColor);
+            ctx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), World.HudColor);
+            ctx.DrawRectangle(new D2DRect(position, size), World.HudColor);
 
             // Draw player name.
             if (string.IsNullOrEmpty(plane.PlayerName))
                 return;
 
             var rect = new D2DRect(position + new D2DPoint(0, -40), new D2DSize(300, 100));
-            ctx.DrawTextCenter(plane.PlayerName, _hudColor, _defaultFontName, 30f, rect);
+            ctx.DrawTextCenter(plane.PlayerName, World.HudColor, _defaultFontName, 30f, rect);
         }
 
         private void DrawHealthBar(D2DGraphics gfx, FighterPlane plane, D2DPoint position, D2DSize size)
         {
             var healthPct = plane.Hits / (float)FighterPlane.MAX_HITS;
-            gfx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), _hudColor);
-            gfx.DrawRectangle(new D2DRect(position, size), _hudColor);
+            gfx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), World.HudColor);
+            gfx.DrawRectangle(new D2DRect(position, size), World.HudColor);
 
             // Draw ammo.
-            gfx.DrawTextCenter($"MSL: {plane.NumMissiles}", _hudColor, _defaultFontName, 15f, new D2DRect(position + new D2DPoint(-110f, 30f), new D2DSize(50f, 20f)));
-            gfx.DrawTextCenter($"DECOY: {plane.NumDecoys}", _hudColor, _defaultFontName, 15f, new D2DRect(position + new D2DPoint(0, 30f), new D2DSize(80f, 20f)));
-            gfx.DrawTextCenter($"AMMO: {plane.NumBullets}", _hudColor, _defaultFontName, 15f, new D2DRect(position + new D2DPoint(110f, 30f), new D2DSize(70f, 20f)));
+            gfx.DrawTextCenter($"MSL: {plane.NumMissiles}", World.HudColor, _defaultFontName, 15f, new D2DRect(position + new D2DPoint(-110f, 30f), new D2DSize(50f, 20f)));
+            gfx.DrawTextCenter($"DECOY: {plane.NumDecoys}", World.HudColor, _defaultFontName, 15f, new D2DRect(position + new D2DPoint(0, 30f), new D2DSize(80f, 20f)));
+            gfx.DrawTextCenter($"AMMO: {plane.NumBullets}", World.HudColor, _defaultFontName, 15f, new D2DRect(position + new D2DPoint(110f, 30f), new D2DSize(70f, 20f)));
 
             // Draw player name.
             if (string.IsNullOrEmpty(plane.PlayerName))
                 return;
 
             var rect = new D2DRect(position + new D2DPoint(0, -40), new D2DSize(300, 100));
-            gfx.DrawTextCenter(plane.PlayerName, _hudColor, _defaultFontName, 30f, rect);
+            gfx.DrawTextCenter(plane.PlayerName, World.HudColor, _defaultFontName, 30f, rect);
         }
 
         private void DrawHud(RenderContext ctx, D2DSize viewportsize, FighterPlane viewPlane)
@@ -685,7 +682,7 @@ namespace PolyPlane.Rendering
             {
                 var msg = _messageEvents[i];
                 var rect = new D2DRect(linePos, lineSize);
-                var color = _hudColor;
+                var color = World.HudColor;
 
                 switch (msg.Type)
                 {
@@ -699,7 +696,7 @@ namespace PolyPlane.Rendering
                 linePos += new D2DPoint(0, lineSize.height);
             }
 
-            gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, _hudColor);
+            gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, World.HudColor);
 
             // Draw current chat message.
             if (_netMan != null)
@@ -711,11 +708,11 @@ namespace PolyPlane.Rendering
                     var curText = _netMan.ChatInterface.CurrentText;
 
                     if (string.IsNullOrEmpty(curText))
-                        gfx.DrawText("Type chat message...", _hudColor, _defaultFontName, FONT_SIZE, rect);
+                        gfx.DrawText("Type chat message...", World.HudColor, _defaultFontName, FONT_SIZE, rect);
                     else
                         gfx.DrawText(_netMan.ChatInterface.CurrentText, D2DColor.White, _defaultFontName, FONT_SIZE, rect);
 
-                    gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y + HEIGHT, WIDTH, lineSize.height + 5f, _hudColor);
+                    gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y + HEIGHT, WIDTH, lineSize.height + 5f, World.HudColor);
                 }
             }
         }
@@ -727,11 +724,11 @@ namespace PolyPlane.Rendering
 
             var mouseAngle = viewPlane.PlayerGuideAngle;
             var mouseVec = Helpers.AngleToVectorDegrees(mouseAngle, DIST);
-            gfx.DrawEllipse(new D2DEllipse(pos + mouseVec, new D2DSize(5f, 5f)), _hudColor, 2f);
+            gfx.DrawEllipse(new D2DEllipse(pos + mouseVec, new D2DSize(5f, 5f)), World.HudColor, 2f);
 
             var planeAngle = viewPlane.Rotation;
             var planeVec = Helpers.AngleToVectorDegrees(planeAngle, DIST);
-            gfx.DrawCrosshair(pos + planeVec, 2f, _hudColor, 5f, 20f);
+            gfx.DrawCrosshair(pos + planeVec, 2f, World.HudColor, 5f, 20f);
         }
 
         private void DrawHudMessage(D2DGraphics gfx, D2DSize viewportsize)
@@ -767,12 +764,12 @@ namespace PolyPlane.Rendering
 
             gfx.PushTransform();
 
-            gfx.DrawRectangle(rect, _hudColor);
-            gfx.DrawTextCenter("THR", _hudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 40f), new D2DSize(50f, 20f)));
+            gfx.DrawRectangle(rect, World.HudColor);
+            gfx.DrawTextCenter("THR", World.HudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 40f), new D2DSize(50f, 20f)));
 
             var throtRect = new D2DRect(pos.X - (W * 0.5f), pos.Y - (H * 0.5f), W, (H * plane.ThrustAmount));
             gfx.RotateTransform(180f, pos);
-            gfx.FillRectangle(throtRect, _hudColor);
+            gfx.FillRectangle(throtRect, World.HudColor);
 
             gfx.PopTransform();
         }
@@ -788,9 +785,9 @@ namespace PolyPlane.Rendering
             var rect = new D2DRect(pos, new D2DSize(W, H));
 
 
-            //gfx.DrawTextCenter($"{plane.Hits}/{Plane.MAX_HITS}", _hudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 40f), new D2DSize(50f, 20f)));
-            gfx.DrawTextCenter($"MSL: {plane.NumMissiles}", _hudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 70f), new D2DSize(50f, 20f)));
-            gfx.DrawTextCenter($"AMMO: {plane.NumBullets}", _hudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 100f), new D2DSize(70f, 20f)));
+            //gfx.DrawTextCenter($"{plane.Hits}/{Plane.MAX_HITS}", World.HudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 40f), new D2DSize(50f, 20f)));
+            gfx.DrawTextCenter($"MSL: {plane.NumMissiles}", World.HudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 70f), new D2DSize(50f, 20f)));
+            gfx.DrawTextCenter($"AMMO: {plane.NumBullets}", World.HudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 100f), new D2DSize(70f, 20f)));
         }
 
         private void DrawGMeter(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
@@ -801,7 +798,7 @@ namespace PolyPlane.Rendering
             //var pos = new D2DPoint(xPos, viewportsize.height * 0.5f);
             var rect = new D2DRect(pos, new D2DSize(50, 20));
 
-            gfx.DrawText($"G {Math.Round(plane.GForce, 1)}", _hudColor, _defaultFontName, 15f, rect);
+            gfx.DrawText($"G {Math.Round(plane.GForce, 1)}", World.HudColor, _defaultFontName, 15f, rect);
         }
 
         private void DrawAltimeter(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
@@ -822,7 +819,7 @@ namespace PolyPlane.Rendering
             var highestAlt = startAlt + MARKER_STEP;
             var lowestAlt = startAlt - (MARKER_STEP * 2f);
 
-            gfx.DrawRectangle(rect, _hudColor);
+            gfx.DrawRectangle(rect, World.HudColor);
             gfx.DrawLine(new D2DPoint(pos.X - HalfW, pos.Y), new D2DPoint(pos.X + HalfW, pos.Y), D2DColor.GreenYellow, 1f, D2DDashStyle.Solid);
 
             if (highestAlt <= MIN_ALT || lowestAlt <= MIN_ALT)
@@ -850,14 +847,14 @@ namespace PolyPlane.Rendering
                     var div = y / MARKER_STEP;
                     var altMarker = startAlt + (-HalfH + (div * MARKER_STEP));
 
-                    gfx.DrawLine(start, end, _hudColor, 1f, D2DDashStyle.Dash);
+                    gfx.DrawLine(start, end, World.HudColor, 1f, D2DDashStyle.Dash);
                     var textRect = new D2DRect(start - new D2DPoint(25f, 0f), new D2DSize(60f, 30f));
-                    gfx.DrawTextCenter(altMarker.ToString(), _hudColor, _defaultFontName, 15f, textRect);
+                    gfx.DrawTextCenter(altMarker.ToString(), World.HudColor, _defaultFontName, 15f, textRect);
                 }
             }
 
             var actualRect = new D2DRect(new D2DPoint(pos.X, pos.Y + HalfH + 20f), new D2DSize(60f, 20f));
-            gfx.DrawTextCenter(Math.Round(alt, 0).ToString(), _hudColor, _defaultFontName, 15f, actualRect);
+            gfx.DrawTextCenter(Math.Round(alt, 0).ToString(), World.HudColor, _defaultFontName, 15f, actualRect);
         }
 
 
@@ -874,7 +871,7 @@ namespace PolyPlane.Rendering
             var spd = plane.Velocity.Length();
             var startSpd = (spd) - (spd % (MARKER_STEP)) + MARKER_STEP;
 
-            gfx.DrawRectangle(rect, _hudColor);
+            gfx.DrawRectangle(rect, World.HudColor);
             gfx.DrawLine(new D2DPoint(pos.X - HalfW, pos.Y), new D2DPoint(pos.X + HalfW, pos.Y), D2DColor.GreenYellow, 1f, D2DDashStyle.Solid);
 
             for (float y = 0; y < H; y += MARKER_STEP)
@@ -887,17 +884,17 @@ namespace PolyPlane.Rendering
                     var div = y / MARKER_STEP;
                     var altMarker = startSpd + (-HalfH + (div * MARKER_STEP));
 
-                    gfx.DrawLine(start, end, _hudColor, 1f, D2DDashStyle.Dash);
+                    gfx.DrawLine(start, end, World.HudColor, 1f, D2DDashStyle.Dash);
                     var textRect = new D2DRect(start - new D2DPoint(25f, 0f), new D2DSize(60f, 30f));
-                    gfx.DrawTextCenter(altMarker.ToString(), _hudColor, _defaultFontName, 15f, textRect);
+                    gfx.DrawTextCenter(altMarker.ToString(), World.HudColor, _defaultFontName, 15f, textRect);
                 }
             }
 
             var speedRect = new D2DRect(new D2DPoint(pos.X, pos.Y + HalfH + 20f), new D2DSize(60f, 20f));
-            gfx.DrawTextCenter(Math.Round(spd, 0).ToString(), _hudColor, _defaultFontName, 15f, speedRect);
+            gfx.DrawTextCenter(Math.Round(spd, 0).ToString(), World.HudColor, _defaultFontName, 15f, speedRect);
 
             var gforceRect = new D2DRect(new D2DPoint(pos.X, pos.Y - HalfH - 20f), new D2DSize(60f, 20f));
-            gfx.DrawText($"G {Math.Round(plane.GForce, 1)}", _hudColor, _defaultFontName, 15f, gforceRect);
+            gfx.DrawText($"G {Math.Round(plane.GForce, 1)}", World.HudColor, _defaultFontName, 15f, gforceRect);
         }
 
         private void DrawPlanePointers(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
@@ -925,14 +922,14 @@ namespace PolyPlane.Rendering
                 var angle = dir.Angle(true);
                 var vec = Helpers.AngleToVectorDegrees(angle);
 
-                gfx.DrawArrow(pos + (vec * 250f), pos + (vec * 270f), _hudColor, 2f);
+                gfx.DrawArrow(pos + (vec * 250f), pos + (vec * 270f), World.HudColor, 2f);
             }
 
             if (plane.Radar.HasLock)
             {
                 var lockPos = pos + new D2DPoint(0f, -200f);
                 var lRect = new D2DRect(lockPos, new D2DSize(120, 30));
-                gfx.DrawTextCenter("LOCKED", _hudColor, _defaultFontName, 25f, lRect);
+                gfx.DrawTextCenter("LOCKED", World.HudColor, _defaultFontName, 25f, lRect);
 
             }
         }
