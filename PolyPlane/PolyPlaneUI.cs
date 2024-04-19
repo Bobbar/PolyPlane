@@ -77,7 +77,9 @@ namespace PolyPlane
             _playerBurstTimer.TriggerCallback = () =>
             {
                 _playerPlane.FireBullet(p => _objs.AddBulletExplosion(p));
-                _render.DoScreenShake(2f);
+
+                if (!_playerPlane.IsDamaged && _playerPlane.NumBullets > 0)
+                    _render.DoScreenShake(2f);
             };
 
             _playerResetTimer.TriggerCallback = () =>

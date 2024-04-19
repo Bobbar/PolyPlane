@@ -760,6 +760,7 @@ namespace PolyPlane.GameObjects
             _expireTimeout.Reset();
             _flipTimer.Restart();
             _flames.Clear();
+            _debris.Clear();
             _thrustAmt.Target = 1f;
             WasHeadshot = false;
         }
