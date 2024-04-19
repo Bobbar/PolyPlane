@@ -829,10 +829,8 @@ namespace PolyPlane.GameObjects
 
         private void CheckForFlip()
         {
-            if (this.Rotation > 90f && this.Rotation < 270f)
-                FlipPoly(Direction.Left);
-            else if (this.Rotation > 0f && this.Rotation < 90f || this.Rotation > 270 && this.Rotation < 360f)
-                FlipPoly(Direction.Right);
+            var pointingRight = Helpers.IsPointingRight(this.Rotation);
+            FlipPoly(pointingRight ? Direction.Right : Direction.Left);
         }
 
         private D2DPoint GetThrust(bool thrustVector = false)

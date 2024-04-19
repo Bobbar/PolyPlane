@@ -345,10 +345,18 @@ namespace PolyPlane.GameObjects
 
             if (histPos != null)
             {
-                // Copy the polygon and translate it to the historical position/rotation.
-                var histPoly = new D2DPoint[this.Polygon.SourcePoly.Length];
-                Array.Copy(this.Polygon.SourcePoly, histPoly, this.Polygon.SourcePoly.Length);
-                Helpers.ApplyTranslation(histPoly, histPoly, histPos.Rotation, histPos.Position.ToD2DPoint(), World.RenderScale * this.RenderOffset);
+                // Create a copy of the polygon and translate it to the historical position/rotation.
+                var histPoly = new RenderPoly(this.Polygon.SourcePoly, World.RenderScale * this.RenderOffset);
+                histPoly.Update(histPos.Position.ToD2DPoint(), histPos.Rotation, World.RenderScale);
+
+                // Flip plane poly to correct orientation.
+                if (this is FighterPlane)
+                {
+                    var pointingRight = Helpers.IsPointingRight(histPos.Rotation);
+
+                    if (!pointingRight)
+                        histPoly.FlipY();
+                }
 
                 var poly1 = obj.Polygon.Poly;
 
@@ -369,7 +377,7 @@ namespace PolyPlane.GameObjects
                     var pnt2 = poly1[i] + relVeloDTHalf;
 
                     // Check for an intersection and get the exact location of the impact.
-                    if (PolyIntersect(pnt1, pnt2, histPoly, out D2DPoint iPosPoly))
+                    if (PolyIntersect(pnt1, pnt2, histPoly.Poly, out D2DPoint iPosPoly))
                     {
                         pos = iPosPoly;
                         histState = histPos;
@@ -381,7 +389,7 @@ namespace PolyPlane.GameObjects
                 var centerPnt1 = obj.Position - relVeloDTHalf;
                 var centerPnt2 = obj.Position + relVeloDTHalf;
 
-                if (PolyIntersect(centerPnt1, centerPnt2, histPoly, out D2DPoint iPosCenter))
+                if (PolyIntersect(centerPnt1, centerPnt2, histPoly.Poly, out D2DPoint iPosCenter))
                 {
                     pos = iPosCenter;
                     histState = histPos;
