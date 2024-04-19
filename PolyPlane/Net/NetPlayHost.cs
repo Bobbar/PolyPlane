@@ -25,6 +25,7 @@ namespace PolyPlane.Net
         private Stopwatch _netTimer = new Stopwatch();
 
         public event EventHandler<Peer> PeerTimeoutEvent;
+        public event EventHandler<Peer> PeerDisconnectedEvent;
 
         public NetPlayHost(ushort port, string ip)
         {
@@ -219,17 +220,28 @@ namespace PolyPlane.Net
             return packet;
         }
 
+        internal void FireDisconnectEvent(Peer peer)
+        {
+            PeerDisconnectedEvent?.Invoke(this, peer);
+        }
+
+        public abstract void Disconnect(int playerID);
+
         public virtual uint GetPlayerRTT(int playerID)
         {
             return 0;
         }
 
+        public abstract Peer? GetPeer(int playerID);
+       
         public virtual void Dispose()
         {
-            Host.Flush();
+            Host?.Flush();
 
+
+            Task.Delay(30).Wait();
             _runLoop = false;
-            Thread.Sleep(30);
+
             Host?.Dispose();
             ENet.Library.Deinitialize();
 

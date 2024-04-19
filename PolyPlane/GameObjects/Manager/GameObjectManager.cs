@@ -140,7 +140,8 @@ namespace PolyPlane.GameObjects
             Explosions.Clear();
             Planes.Clear();
             _objLookup.Clear();
-
+            _objLookupSpatial.Clear();
+            _expiredObjs.Clear();
         }
 
         public GameObject GetObjectByID(GameID gameID)

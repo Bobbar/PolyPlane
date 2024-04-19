@@ -55,6 +55,14 @@ namespace PolyPlane.Net
             var packet = CreatePacket(netPacket);
             var channel = GetChannel(netPacket);
 
+            if (Peer.State != PeerState.Connected)
+            {
+                // Disconnect and stop processing packets.
+                FireDisconnectEvent(Peer);
+                this.DoStop();
+                return;
+            }
+
             Peer.Send((byte)channel, ref packet);
         }
 
@@ -90,6 +98,17 @@ namespace PolyPlane.Net
             return Peer.PacketsLost;
         }
 
+        public override void Disconnect(int playerID)
+        {
+            Peer.DisconnectNow(0);
+            Host.Flush();
+        }
+
+        public override Peer? GetPeer(int playerID)
+        {
+            return Peer;
+        }
+
         public override void Dispose()
         {
             Peer.DisconnectNow(0);
@@ -98,7 +117,5 @@ namespace PolyPlane.Net
 
             base.Dispose();
         }
-
-
     }
 }

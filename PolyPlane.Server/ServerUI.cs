@@ -4,6 +4,7 @@ using PolyPlane.GameObjects.Manager;
 using PolyPlane.Net;
 using PolyPlane.Net.Discovery;
 using PolyPlane.Rendering;
+using System.ComponentModel;
 using System.Diagnostics;
 
 
@@ -16,6 +17,7 @@ namespace PolyPlane.Server
         private bool _spawnAIPlane = false;
         private bool _spawnRandomAIPlane = false;
         private bool _clearAIPlanes = false;
+        private bool _stopRender = false;
 
         private AIPersonality _aiPersonality = AIPersonality.Normal;
         private Thread _gameThread;
@@ -69,6 +71,7 @@ namespace PolyPlane.Server
         private bool _queueNextViewId = false;
         private bool _queuePrevViewId = false;
         private int _aiPlaneViewID = -1;
+        private BindingList<NetPlayer> _currentPlayers = new BindingList<NetPlayer>();
 
         private Form _viewPort = null;
 
@@ -89,7 +92,7 @@ namespace PolyPlane.Server
             this.Disposed += ServerUI_Disposed; ;
 
             _updateTimer.Tick += UpdateTimer_Tick;
-            _updateTimer.Interval = 16;
+            _updateTimer.Interval = 32;
 
 
             _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
@@ -104,6 +107,13 @@ namespace PolyPlane.Server
 
             AITypeComboBox.Items.Clear();
             AITypeComboBox.DataSource = Enum.GetValues<AIPersonality>();
+
+            _currentPlayers.RaiseListChangedEvents = true;
+
+            PlayersListBox.DataBindings.Clear();
+            PlayersListBox.DataSource = _currentPlayers;
+
+            ChatMessageTextBox.MaxLength = ChatInterface.MAX_CHARS;
         }
 
         private void StartServerButton_Click(object sender, EventArgs e)
@@ -122,6 +132,13 @@ namespace PolyPlane.Server
                 _discovery = new DiscoveryServer();
                 _collisions = new CollisionManager(_objs, _netMan);
 
+                _netMan.PlayerDisconnected += NetMan_PlayerDisconnected;
+                _netMan.PlayerJoined += NetMan_PlayerJoined;
+                _netMan.NewChatMessage += NetMan_NewChatMessage;
+
+                _objs.PlayerKilledEvent += PlayerKilledEvent; ;
+                _objs.NewPlayerEvent += NewPlayerEvent; ;
+
                 _discoveryTimer.Start();
                 _syncTimer.Start();
 
@@ -132,6 +149,74 @@ namespace PolyPlane.Server
                 PortTextBox.Enabled = false;
                 StartServerButton.Enabled = false;
                 ServerNameTextBox.Enabled = false;
+            }
+        }
+
+        private void NewPlayerEvent(object? sender, FighterPlane e)
+        {
+            AddNewEventMessage($"'{e.PlayerName}' has joined.");
+        }
+
+        private void PlayerKilledEvent(object? sender, EventMessage e)
+        {
+            AddNewEventMessage(e.Message);
+        }
+
+        private void NetMan_NewChatMessage(object? sender, ChatPacket e)
+        {
+            AddNewEventMessage($"{e.PlayerName}: {e.Message}");
+        }
+
+        private void NetMan_PlayerJoined(object? sender, int e)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(() => NetMan_PlayerJoined(sender, e));
+            }
+            else
+            {
+                var playerPlane = _objs.GetPlaneByPlayerID(e);
+                if (playerPlane != null)
+                {
+                    var netPlayer = new NetPlayer(playerPlane.ID, playerPlane.PlayerName);
+                    var peer = _server.GetPeer(playerPlane.PlayerID);
+                    if (peer.HasValue)
+                    {
+                        netPlayer.IP = peer.Value.IP;
+                        netPlayer.Latency = peer.Value.RoundTripTime.ToString();
+                    }
+
+                    _currentPlayers.Add(netPlayer);
+                }
+            }
+        }
+
+        private void NetMan_PlayerDisconnected(object? sender, int e)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(() => NetMan_PlayerDisconnected(sender, e));
+            }
+            else
+            {
+                var netPlayer = _currentPlayers.Where(p => p.ID.PlayerID == e).FirstOrDefault();
+                if (netPlayer != null)
+                {
+                    _currentPlayers.Remove(netPlayer);
+                }
+            }
+        }
+
+        private void AddNewEventMessage(string message)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(() => AddNewEventMessage(message));
+            }
+            else
+            {
+                ChatBox.Items.Add(message);
+                ChatBox.TopIndex = ChatBox.Items.Count - 1;
             }
         }
 
@@ -224,7 +309,7 @@ namespace PolyPlane.Server
 
             _timer.Restart();
 
-            if (_render != null)
+            if (_render != null && !_stopRender)
                 _render.RenderFrame(viewPlane);
 
             _timer.Stop();
@@ -434,6 +519,50 @@ namespace PolyPlane.Server
             }
         }
 
+        private void UpdatePlayerList()
+        {
+            for (int i = 0; i < _currentPlayers.Count; i++)
+            {
+                var player = _currentPlayers[i];
+                var contains = _objs.Contains(player.ID);
+
+                if (!contains)
+                    _currentPlayers.RemoveAt(i);
+            }
+
+            for (int i = 0; i < _currentPlayers.Count; i++)
+            {
+                var player = _currentPlayers[i];
+
+                var peer = _server.GetPeer(player.ID.PlayerID);
+                if (peer.HasValue)
+                {
+                    if (peer.Value.RoundTripTime.ToString() != player.Latency)
+                    {
+                        player.Latency = peer.Value.RoundTripTime.ToString();
+                        _currentPlayers.ResetItem(i);
+                    }
+                }
+            }
+        }
+
+        private void KickSelectedPlayer()
+        {
+            if (PlayersListBox.SelectedIndex < 0)
+                return;
+
+            var player = _currentPlayers[PlayersListBox.SelectedIndex];
+
+            var playerPlane = _objs.GetPlaneByPlayerID(player.ID.PlayerID);
+            if (playerPlane != null)
+                playerPlane.IsExpired = true;
+
+            //player.IsExpired = true;
+
+            var kickPacket = new BasicPacket(PacketTypes.KickPlayer, player.ID);
+            _server.EnqueuePacket(kickPacket);
+        }
+
         private string GetInfo()
         {
             if (!_bwTimer.IsRunning)
@@ -541,9 +670,22 @@ namespace PolyPlane.Server
             _viewPort = new Form();
             _viewPort.Size = new Size(1346, 814);
             _viewPort.KeyPress += ViewPort_KeyPress;
+            _viewPort.Disposed += ViewPort_Disposed;
             _viewPort.Show();
 
             _render = new RenderManager(_viewPort, _objs, _netMan);
+            _stopRender = false;
+        }
+
+        private void ViewPort_Disposed(object? sender, EventArgs e)
+        {
+            // TODO: Figure out why we get no output after the first time the viewport is closed and reopened.
+            _stopRender = true;
+            _render?.Dispose();
+            _render = null;
+            _viewPort.KeyPress -= ViewPort_KeyPress;
+            _viewPort.Disposed -= ViewPort_Disposed;
+            _viewPort = null;
         }
 
         private void ViewPort_KeyPress(object? sender, KeyPressEventArgs e)
@@ -565,9 +707,7 @@ namespace PolyPlane.Server
         private void UpdateTimer_Tick(object? sender, EventArgs e)
         {
             InfoLabel.Text = GetInfo();
-
-
-            //InfoLabel.Text = InfoText;
+            UpdatePlayerList();
         }
 
         private void PauseButton_Click(object sender, EventArgs e)
@@ -605,6 +745,26 @@ namespace PolyPlane.Server
         private void RemoveAIPlanesButton_Click(object sender, EventArgs e)
         {
             _clearAIPlanes = true;
+        }
+
+        private void kickToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            KickSelectedPlayer();
+        }
+
+        private void SentChatButton_Click(object sender, EventArgs e)
+        {
+            _netMan.ChatInterface.SendMessage(ChatMessageTextBox.Text);
+            ChatMessageTextBox.Text = string.Empty;
+        }
+
+        private void ChatMessageTextBox_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == (char)Keys.Enter)
+            {
+                _netMan.ChatInterface.SendMessage(ChatMessageTextBox.Text);
+                ChatMessageTextBox.Text = string.Empty;
+            }
         }
     }
 }

@@ -5,7 +5,7 @@
         public string CurrentText => _currentText;
         public bool ChatIsActive = false;
 
-        private const int MAX_CHARS = 50;
+        public const int MAX_CHARS = 50;
         private string _currentText = string.Empty;
         private readonly string _playerName;
         private NetEventManager _netMan = null;
@@ -75,6 +75,17 @@
 
             if (!string.IsNullOrEmpty(_currentText))
                 _netMan.Host.SendNewChatPacket(_currentText, _playerName);
+
+            ChatIsActive = false;
+            _currentText = string.Empty;
+        }
+
+        public void SendMessage(string message)
+        {
+            message = message.Trim();
+
+            if (!string.IsNullOrEmpty(message))
+                _netMan.Host.SendNewChatPacket(message, _playerName);
 
             ChatIsActive = false;
             _currentText = string.Empty;

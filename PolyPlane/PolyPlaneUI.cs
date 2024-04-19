@@ -85,22 +85,31 @@ namespace PolyPlane
                 EnableRespawn();
             };
 
-
-            _objs.PlayerKilledEvent += PlayerKilledEvent;
-            _objs.NewPlayerEvent += NewPlayerEvent;
-
             _multiThreadNum = Environment.ProcessorCount - 2;
-
         }
 
-        private void NewPlayerEvent(object? sender, FighterPlane e)
+        private void NetMan_PlayerKicked(object? sender, int e)
         {
-            _render?.AddNewEventMessage($"'{e.PlayerName}' has joined.", EventType.Net);
+            var playerPlane = _objs.GetPlaneByPlayerID(e);
+
+            if (playerPlane != null)
+            {
+                _render?.AddNewEventMessage($"'{playerPlane.PlayerName}' has been kicked.", EventType.Net);
+
+
+                if (playerPlane.ID.Equals(_playerPlane.ID))
+                    _render?.NewHudMessage("You have been kicked from the server!", D2DColor.Blue);
+            }
         }
 
-        private void PlayerKilledEvent(object? sender, EventMessage e)
+        private void NetMan_PlayerDisconnected(object? sender, int e)
         {
-            _render?.AddNewEventMessage(e);
+            var playerPlane = _objs.GetPlaneByPlayerID(e);
+
+            if (playerPlane != null)
+            {
+                _render?.AddNewEventMessage($"'{playerPlane.PlayerName}' has left.", EventType.Net);
+            }
         }
 
         private void Client_PeerTimeoutEvent(object? sender, ENet.Peer e)
@@ -130,7 +139,7 @@ namespace PolyPlane
 
             using (var config = new ClientServerConfigForm())
             {
-                switch (config.ShowDialog())
+                switch (config.ShowDialog(this))
                 {
                     case DialogResult.OK:
                         // Net game.
@@ -146,8 +155,12 @@ namespace PolyPlane
 
                         _netMan.ImpactEvent += HandleNewImpact;
                         _netMan.PlayerIDReceived += NetMan_PlayerIDReceived;
+                        _netMan.PlayerDisconnected += NetMan_PlayerDisconnected;
+                        _netMan.PlayerKicked += NetMan_PlayerKicked;
 
                         _client.PeerTimeoutEvent += Client_PeerTimeoutEvent;
+                        _client.PeerDisconnectedEvent += Client_PeerDisconnectedEvent;
+
 
                         _client.Start();
 
@@ -185,6 +198,46 @@ namespace PolyPlane
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Return to server/game config screen.
+        /// </summary>
+        private void ResetGame()
+        {
+            World.IsNetGame = false;
+            World.IsServer = false;
+
+            _killRender = true;
+
+            Task.Delay(100).Wait();
+
+            _objs.Clear();
+
+            _netMan.ImpactEvent -= HandleNewImpact;
+            _netMan.PlayerIDReceived -= NetMan_PlayerIDReceived;
+            _netMan.PlayerDisconnected -= NetMan_PlayerDisconnected;
+            _netMan.PlayerKicked -= NetMan_PlayerKicked;
+
+            _client.PeerTimeoutEvent -= Client_PeerTimeoutEvent;
+            _client.PeerDisconnectedEvent -= Client_PeerDisconnectedEvent;
+
+            _client?.Stop();
+            _client?.Dispose();
+
+            DoNetGameSetup();
+        }
+
+        private void Client_PeerDisconnectedEvent(object? sender, ENet.Peer e)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(() => Client_PeerDisconnectedEvent(sender, e));
+            }
+            else
+            {
+                ResetGame();
+            }
         }
 
         private void HandleNewImpact(object? sender, ImpactEvent e)
@@ -373,6 +426,7 @@ namespace PolyPlane
 
         private void StartGameThread()
         {
+            _killRender = false;
             _gameThread = new Thread(GameLoop);
             _gameThread.Priority = ThreadPriority.AboveNormal;
             _gameThread.Start();

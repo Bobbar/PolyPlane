@@ -36,7 +36,7 @@ namespace PolyPlane.Rendering
         private long _lastRenderTime = 0;
         private string _hudMessage = string.Empty;
         private D2DColor _hudMessageColor = D2DColor.Red;
-        private GameTimer _hudMessageTimeout = new GameTimer(5f);
+        private GameTimer _hudMessageTimeout = new GameTimer(10f);
         private List<EventMessage> _messageEvents = new List<EventMessage>();
 
         private readonly string _defaultFontName = "Consolas";
@@ -99,8 +99,21 @@ namespace PolyPlane.Rendering
             if (_netMan != null)
                 _netMan.NewChatMessage += NetMan_NewChatMessage;
 
+            _objs.PlayerKilledEvent += PlayerKilledEvent;
+            _objs.NewPlayerEvent += NewPlayerEvent;
+
             InitProceduralGenStuff();
             InitGfx();
+        }
+
+        private void PlayerKilledEvent(object? sender, EventMessage e)
+        {
+            AddNewEventMessage(e);
+        }
+
+        private void NewPlayerEvent(object? sender, FighterPlane e)
+        {
+            AddNewEventMessage($"'{e.PlayerName}' has joined.", EventType.Net);
         }
 
         private void NetMan_NewChatMessage(object? sender, ChatPacket e)
@@ -280,6 +293,7 @@ namespace PolyPlane.Rendering
 
         public void Dispose()
         {
+            _groundClipLayer?.Dispose();
             _device?.Dispose();
         }
 

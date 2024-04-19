@@ -17,7 +17,8 @@
         PlayerDisconnect,
         PlayerReset,
         ServerSync,
-        Discovery
+        Discovery,
+        KickPlayer
 
     }
 }

@@ -20,6 +20,9 @@ namespace PolyPlane.Net
         public event EventHandler<int> PlayerIDReceived;
         public event EventHandler<ImpactEvent> ImpactEvent;
         public event EventHandler<ChatPacket> NewChatMessage;
+        public event EventHandler<int> PlayerKicked;
+        public event EventHandler<int> PlayerDisconnected;
+        public event EventHandler<int> PlayerJoined;
 
         public NetEventManager(GameObjectManager objectManager, NetPlayHost host, FighterPlane playerPlane)
         {
@@ -28,6 +31,7 @@ namespace PolyPlane.Net
             PlayerPlane = playerPlane;
             IsServer = false;
             ChatInterface = new ChatInterface(this, playerPlane.PlayerName);
+            AttachEvents();
         }
 
         public NetEventManager(GameObjectManager objectManager, NetPlayHost host)
@@ -36,7 +40,23 @@ namespace PolyPlane.Net
             Host = host;
             PlayerPlane = null;
             IsServer = true;
-            ChatInterface = new ChatInterface(this, "Player");
+            ChatInterface = new ChatInterface(this, "Server");
+            AttachEvents();
+        }
+
+        private void AttachEvents()
+        {
+            Host.PeerDisconnectedEvent += Host_PeerDisconnectedEvent;
+        }
+
+        private void Host_PeerDisconnectedEvent(object? sender, ENet.Peer e)
+        {
+            if (!IsServer)
+            {
+                var otherObjs = Objs.GetAllNetObjects();
+                foreach (var obj in otherObjs)
+                    obj.IsExpired = true;
+            }
         }
 
         public void DoNetEvents()
@@ -98,10 +118,10 @@ namespace PolyPlane.Net
 
                     break;
                 case PacketTypes.NewPlayer:
+                    var planePacket = packet as NewPlayerPacket;
 
                     if (IsServer)
                     {
-                        var planePacket = packet as NewPlayerPacket;
 
                         if (planePacket != null)
                         {
@@ -116,6 +136,8 @@ namespace PolyPlane.Net
                         ServerSendOtherPlanes();
                         Host.SendSyncPacket();
                     }
+
+                    PlayerJoined?.Invoke(this, planePacket.ID.PlayerID);
 
                     break;
                 case PacketTypes.NewBullet:
@@ -230,6 +252,22 @@ namespace PolyPlane.Net
                             World.TimeOfDayDir = syncPack.TimeOfDayDir;
                         }
                     }
+                    break;
+
+                case PacketTypes.KickPlayer:
+                    var kickPacket = packet as BasicPacket;
+
+                    if (!IsServer)
+                    {
+                        if (kickPacket.ID.Equals(PlayerPlane.ID))
+                        {
+                            Host.SendPlayerDisconnectPacket((uint)kickPacket.ID.PlayerID);
+                            Host.Disconnect(kickPacket.ID.PlayerID);
+                        }
+                    }
+
+                    PlayerKicked?.Invoke(this, kickPacket.ID.PlayerID);
+
                     break;
             }
         }
@@ -349,7 +387,7 @@ namespace PolyPlane.Net
             foreach (var planeUpdPacket in listPacket.Planes)
             {
                 var netPlane = GetNetPlane(planeUpdPacket.ID);
-               
+
                 if (netPlane != null)
                 {
                     planeUpdPacket.SyncObj(netPlane);
@@ -446,7 +484,7 @@ namespace PolyPlane.Net
             bullet.ID = bulletPacket.ID;
             bulletPacket.SyncObj(bullet);
             var owner = GetNetPlane(bulletPacket.OwnerID);
-           
+
             // TODO: How to handle bullets that arrive before owner plane has been added?
             if (owner == null)
                 return;
@@ -465,7 +503,7 @@ namespace PolyPlane.Net
         private void DoNewMissile(MissilePacket missilePacket)
         {
             var missileOwner = GetNetPlane(missilePacket.OwnerID);
-         
+
             if (missileOwner != null)
             {
                 var missileTarget = GetNetPlane(missilePacket.TargetID, false);
@@ -504,6 +542,10 @@ namespace PolyPlane.Net
 
         private void DoPlayerDisconnected(int playerID)
         {
+            var playerPlane = Objs.GetPlaneByPlayerID(playerID);
+            if (playerPlane != null)
+                PlayerDisconnected?.Invoke(this, playerPlane.ID.PlayerID);
+
             var objs = Objs.GetObjectsByPlayer(playerID);
 
             foreach (var obj in objs)

@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             PauseButton = new Button();
             SpawnAIPlaneButton = new Button();
             InfoLabel = new Label();
@@ -44,11 +45,20 @@
             AITypeComboBox = new ComboBox();
             label4 = new Label();
             SpawnRandomAIButton = new Button();
+            PlayersListBox = new ListBox();
+            PlayerListContextMenu = new ContextMenuStrip(components);
+            kickToolStripMenuItem = new ToolStripMenuItem();
+            ChatBox = new ListBox();
+            label5 = new Label();
+            ChatMessageTextBox = new TextBox();
+            SentChatButton = new Button();
+            label6 = new Label();
+            PlayerListContextMenu.SuspendLayout();
             SuspendLayout();
             // 
             // PauseButton
             // 
-            PauseButton.Location = new Point(364, 256);
+            PauseButton.Location = new Point(720, 173);
             PauseButton.Name = "PauseButton";
             PauseButton.Size = new Size(75, 23);
             PauseButton.TabIndex = 0;
@@ -58,7 +68,7 @@
             // 
             // SpawnAIPlaneButton
             // 
-            SpawnAIPlaneButton.Location = new Point(345, 285);
+            SpawnAIPlaneButton.Location = new Point(701, 202);
             SpawnAIPlaneButton.Name = "SpawnAIPlaneButton";
             SpawnAIPlaneButton.Size = new Size(117, 23);
             SpawnAIPlaneButton.TabIndex = 1;
@@ -69,7 +79,7 @@
             // InfoLabel
             // 
             InfoLabel.BorderStyle = BorderStyle.FixedSingle;
-            InfoLabel.Location = new Point(36, 26);
+            InfoLabel.Location = new Point(34, 16);
             InfoLabel.Name = "InfoLabel";
             InfoLabel.Size = new Size(190, 306);
             InfoLabel.TabIndex = 2;
@@ -80,7 +90,7 @@
             InterpCheckBox.AutoSize = true;
             InterpCheckBox.Checked = true;
             InterpCheckBox.CheckState = CheckState.Checked;
-            InterpCheckBox.Location = new Point(363, 231);
+            InterpCheckBox.Location = new Point(719, 148);
             InterpCheckBox.Name = "InterpCheckBox";
             InterpCheckBox.Size = new Size(76, 19);
             InterpCheckBox.TabIndex = 3;
@@ -91,7 +101,7 @@
             // 
             // AddressTextBox
             // 
-            AddressTextBox.Location = new Point(362, 75);
+            AddressTextBox.Location = new Point(504, 20);
             AddressTextBox.Name = "AddressTextBox";
             AddressTextBox.Size = new Size(100, 23);
             AddressTextBox.TabIndex = 4;
@@ -99,7 +109,7 @@
             // 
             // PortTextBox
             // 
-            PortTextBox.Location = new Point(559, 75);
+            PortTextBox.Location = new Point(701, 20);
             PortTextBox.Name = "PortTextBox";
             PortTextBox.Size = new Size(100, 23);
             PortTextBox.TabIndex = 5;
@@ -108,7 +118,7 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(304, 78);
+            label1.Location = new Point(446, 23);
             label1.Name = "label1";
             label1.Size = new Size(52, 15);
             label1.TabIndex = 6;
@@ -117,7 +127,7 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(521, 78);
+            label2.Location = new Point(663, 23);
             label2.Name = "label2";
             label2.Size = new Size(32, 15);
             label2.TabIndex = 7;
@@ -125,27 +135,28 @@
             // 
             // StartServerButton
             // 
-            StartServerButton.Location = new Point(468, 151);
+            StartServerButton.BackColor = Color.PaleGreen;
+            StartServerButton.Location = new Point(610, 90);
             StartServerButton.Name = "StartServerButton";
-            StartServerButton.Size = new Size(75, 23);
+            StartServerButton.Size = new Size(85, 37);
             StartServerButton.TabIndex = 8;
             StartServerButton.Text = "Start Server";
-            StartServerButton.UseVisualStyleBackColor = true;
+            StartServerButton.UseVisualStyleBackColor = false;
             StartServerButton.Click += StartServerButton_Click;
             // 
             // ShowViewPortButton
             // 
-            ShowViewPortButton.Location = new Point(672, 415);
+            ShowViewPortButton.Location = new Point(770, 501);
             ShowViewPortButton.Name = "ShowViewPortButton";
             ShowViewPortButton.Size = new Size(116, 23);
             ShowViewPortButton.TabIndex = 9;
-            ShowViewPortButton.Text = "Show View Port";
+            ShowViewPortButton.Text = "Spectate";
             ShowViewPortButton.UseVisualStyleBackColor = true;
             ShowViewPortButton.Click += ShowViewPortButton_Click;
             // 
             // ServerNameTextBox
             // 
-            ServerNameTextBox.Location = new Point(362, 113);
+            ServerNameTextBox.Location = new Point(504, 58);
             ServerNameTextBox.Name = "ServerNameTextBox";
             ServerNameTextBox.Size = new Size(297, 23);
             ServerNameTextBox.TabIndex = 10;
@@ -154,7 +165,7 @@
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(279, 116);
+            label3.Location = new Point(421, 61);
             label3.Name = "label3";
             label3.Size = new Size(77, 15);
             label3.TabIndex = 11;
@@ -162,7 +173,7 @@
             // 
             // RemoveAIPlanesButton
             // 
-            RemoveAIPlanesButton.Location = new Point(345, 386);
+            RemoveAIPlanesButton.Location = new Point(701, 313);
             RemoveAIPlanesButton.Name = "RemoveAIPlanesButton";
             RemoveAIPlanesButton.Size = new Size(117, 23);
             RemoveAIPlanesButton.TabIndex = 12;
@@ -173,7 +184,7 @@
             // AITypeComboBox
             // 
             AITypeComboBox.FormattingEnabled = true;
-            AITypeComboBox.Location = new Point(319, 314);
+            AITypeComboBox.Location = new Point(675, 231);
             AITypeComboBox.Name = "AITypeComboBox";
             AITypeComboBox.Size = new Size(174, 23);
             AITypeComboBox.TabIndex = 13;
@@ -181,7 +192,7 @@
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(231, 317);
+            label4.Location = new Point(587, 234);
             label4.Name = "label4";
             label4.Size = new Size(82, 15);
             label4.TabIndex = 14;
@@ -189,7 +200,7 @@
             // 
             // SpawnRandomAIButton
             // 
-            SpawnRandomAIButton.Location = new Point(345, 357);
+            SpawnRandomAIButton.Location = new Point(701, 284);
             SpawnRandomAIButton.Name = "SpawnRandomAIButton";
             SpawnRandomAIButton.Size = new Size(117, 23);
             SpawnRandomAIButton.TabIndex = 15;
@@ -197,11 +208,85 @@
             SpawnRandomAIButton.UseVisualStyleBackColor = true;
             SpawnRandomAIButton.Click += SpawnRandomAIButton_Click;
             // 
+            // PlayersListBox
+            // 
+            PlayersListBox.ContextMenuStrip = PlayerListContextMenu;
+            PlayersListBox.FormattingEnabled = true;
+            PlayersListBox.ItemHeight = 15;
+            PlayersListBox.Location = new Point(250, 108);
+            PlayersListBox.Name = "PlayersListBox";
+            PlayersListBox.Size = new Size(313, 214);
+            PlayersListBox.TabIndex = 16;
+            // 
+            // PlayerListContextMenu
+            // 
+            PlayerListContextMenu.Items.AddRange(new ToolStripItem[] { kickToolStripMenuItem });
+            PlayerListContextMenu.Name = "PlayerListContextMenu";
+            PlayerListContextMenu.Size = new Size(97, 26);
+            // 
+            // kickToolStripMenuItem
+            // 
+            kickToolStripMenuItem.Name = "kickToolStripMenuItem";
+            kickToolStripMenuItem.Size = new Size(96, 22);
+            kickToolStripMenuItem.Text = "Kick";
+            kickToolStripMenuItem.Click += kickToolStripMenuItem_Click;
+            // 
+            // ChatBox
+            // 
+            ChatBox.FormattingEnabled = true;
+            ChatBox.ItemHeight = 15;
+            ChatBox.Location = new Point(34, 349);
+            ChatBox.Name = "ChatBox";
+            ChatBox.Size = new Size(529, 139);
+            ChatBox.TabIndex = 17;
+            // 
+            // label5
+            // 
+            label5.AutoSize = true;
+            label5.Location = new Point(250, 90);
+            label5.Name = "label5";
+            label5.Size = new Size(63, 15);
+            label5.TabIndex = 18;
+            label5.Text = "Player List:";
+            // 
+            // ChatMessageTextBox
+            // 
+            ChatMessageTextBox.Location = new Point(34, 494);
+            ChatMessageTextBox.Name = "ChatMessageTextBox";
+            ChatMessageTextBox.Size = new Size(448, 23);
+            ChatMessageTextBox.TabIndex = 19;
+            ChatMessageTextBox.KeyPress += ChatMessageTextBox_KeyPress;
+            // 
+            // SentChatButton
+            // 
+            SentChatButton.Location = new Point(488, 493);
+            SentChatButton.Name = "SentChatButton";
+            SentChatButton.Size = new Size(75, 23);
+            SentChatButton.TabIndex = 20;
+            SentChatButton.Text = "Send";
+            SentChatButton.UseVisualStyleBackColor = true;
+            SentChatButton.Click += SentChatButton_Click;
+            // 
+            // label6
+            // 
+            label6.AutoSize = true;
+            label6.Location = new Point(34, 331);
+            label6.Name = "label6";
+            label6.Size = new Size(95, 15);
+            label6.TabIndex = 21;
+            label6.Text = "Chat and Events:";
+            // 
             // ServerUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(898, 536);
+            Controls.Add(label6);
+            Controls.Add(SentChatButton);
+            Controls.Add(ChatMessageTextBox);
+            Controls.Add(label5);
+            Controls.Add(ChatBox);
+            Controls.Add(PlayersListBox);
             Controls.Add(SpawnRandomAIButton);
             Controls.Add(label4);
             Controls.Add(AITypeComboBox);
@@ -222,6 +307,7 @@
             Name = "ServerUI";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "ServerUI";
+            PlayerListContextMenu.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
         }
@@ -244,5 +330,13 @@
         private ComboBox AITypeComboBox;
         private Label label4;
         private Button SpawnRandomAIButton;
+        private ListBox PlayersListBox;
+        private ContextMenuStrip PlayerListContextMenu;
+        private ToolStripMenuItem kickToolStripMenuItem;
+        private ListBox ChatBox;
+        private Label label5;
+        private TextBox ChatMessageTextBox;
+        private Button SentChatButton;
+        private Label label6;
     }
 }

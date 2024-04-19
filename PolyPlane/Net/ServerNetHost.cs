@@ -115,5 +115,22 @@ namespace PolyPlane.Net
         {
             return 0;
         }
+
+        public override Peer? GetPeer(int playerID)
+        {
+            if (_peers.TryGetValue((uint)playerID, out var peer))
+             return peer;
+
+            return null;
+        }
+
+        public override void Disconnect(int playerID)
+        {
+            if (_peers.TryGetValue((uint)playerID, out Peer peer))
+            {
+                peer.DisconnectNow(0);
+                _peers.Remove((uint)playerID);
+            }
+        }
     }
 }
