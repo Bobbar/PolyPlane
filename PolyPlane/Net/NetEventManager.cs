@@ -419,7 +419,7 @@ namespace PolyPlane.Net
 
                     // TODO: Consider sending the planes flip direction over the net, as it is likely to not be in sync with clients.
                     var impactPoint = packet.ImpactPoint.ToD2DPoint();
-                    var result = new PlaneImpactResult(packet.WasMissile ? ImpactType.Missile : ImpactType.Bullet, impactPoint, packet.DoesDamage);
+                    var result = new PlaneImpactResult(packet.WasMissile ? ImpactType.Missile : ImpactType.Bullet, impactPoint, packet.DoesDamage, packet.WasHeadshot);
                     target.HandleImpactResult(impactor, result);
 
                     target.Rotation = curRot;

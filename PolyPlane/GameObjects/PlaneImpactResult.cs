@@ -9,11 +9,12 @@
 
         public PlaneImpactResult() { }
 
-        public PlaneImpactResult(ImpactType type, D2DPoint impactPoint, bool doesDamage)
+        public PlaneImpactResult(ImpactType type, D2DPoint impactPoint, bool doesDamage, bool wasHeadshot)
         {
             Type = type;
             ImpactPoint = impactPoint;
             DoesDamage = doesDamage;
+            WasHeadshot = wasHeadshot;
         }
     }
 
