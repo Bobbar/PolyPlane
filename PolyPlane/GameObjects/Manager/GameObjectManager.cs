@@ -235,6 +235,7 @@ namespace PolyPlane.GameObjects
                     _expiredObjs.Add(plane);
                     Planes.RemoveAt(i);
                     _objLookup.Remove(plane.ID.GetHashCode());
+                    plane.Dispose();
                 }
             }
 
@@ -267,6 +268,7 @@ namespace PolyPlane.GameObjects
                     objs.RemoveAt(i);
                     _objLookup.Remove(obj.ID.GetHashCode());
                     _expiredObjs.Add(obj);
+                    obj.Dispose();
                 }
             }
         }

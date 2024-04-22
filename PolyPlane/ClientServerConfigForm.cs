@@ -141,6 +141,15 @@ namespace PolyPlane
 
         private void NewColorButton_Click(object sender, EventArgs e)
         {
+            if (PlaneColorDialog.ShowDialog(this) == DialogResult.OK)
+            {
+                PlaneColor = PlaneColorDialog.Color.ToD2DColor();
+                _planePreview.PlaneColor = PlaneColor;
+            }
+        }
+
+        private void RandomColorButton_Click(object sender, EventArgs e)
+        {
             PlaneColor = D2DColor.Randomly();
             _planePreview.PlaneColor = PlaneColor;
         }
@@ -164,5 +173,6 @@ namespace PolyPlane
             }
         }
 
+      
     }
 }

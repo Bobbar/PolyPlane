@@ -9,7 +9,7 @@ namespace PolyPlane.GameObjects.Guidance
         public D2DPoint CurrentAimPoint { get; set; }
 
         protected Missile Missile { get; set; }
-        protected GameObject Target { get; set; }
+        public GameObject Target { get; set; }
 
         private const float ARM_TIME = 3f;
 

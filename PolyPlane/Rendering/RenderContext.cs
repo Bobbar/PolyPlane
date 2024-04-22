@@ -10,6 +10,18 @@ namespace PolyPlane.Rendering
         public D2DGraphics Gfx;
         public D2DDevice Device;
         public D2DRect Viewport;
+
+        public float CurrentScale
+        {
+            get
+            {
+                if (Gfx != null)
+                    return Gfx.GetTransform().M11;
+
+                return 1f;
+            }
+        }
+
         private Stack<D2DRect> _vpStack = new Stack<D2DRect>();
 
         public RenderContext() { }
@@ -55,6 +67,11 @@ namespace PolyPlane.Rendering
         public void FillEllipseSimple(D2DPoint pos, float radius, D2DColor color)
         {
             Gfx.FillEllipseClamped(Viewport, new D2DEllipse(pos, new D2DSize(radius, radius)), color);
+        }
+
+        public void FillEllipseSimple(D2DPoint pos, float radius, D2DBrush brush)
+        {
+            Gfx.FillEllipseClamped(Viewport, new D2DEllipse(pos, new D2DSize(radius, radius)), brush);
         }
 
         public void DrawEllipse(D2DEllipse ellipse, D2DColor color, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid)

@@ -5,7 +5,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public abstract class GameObject : IEquatable<GameObject>, ISkipFramesUpdate
+    public abstract class GameObject : IEquatable<GameObject>, ISkipFramesUpdate, IDisposable
     {
         public bool Visible = true;
         public bool IsNetObject { get; set; } = false;
@@ -150,6 +150,8 @@ namespace PolyPlane.GameObjects
 
         public virtual void Update(float dt, D2DSize viewport, float renderScale)
         {
+            CurrentFrame++;
+
             if (World.IsNetGame && IsNetObject)
             {
                 // Interp on clients only.
@@ -283,6 +285,8 @@ namespace PolyPlane.GameObjects
         {
             return this.ID.Equals(other.ID);
         }
+
+        public virtual void Dispose() { }
     }
 
 
@@ -611,7 +615,6 @@ namespace PolyPlane.GameObjects
 
             return poly;
         }
-
     }
 
 }

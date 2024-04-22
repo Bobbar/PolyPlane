@@ -42,7 +42,9 @@
             PlayerNameTextBox = new TextBox();
             label4 = new Label();
             PlanePreviewBox = new PictureBox();
-            NewColorButton = new Button();
+            ChooseColorButton = new Button();
+            PlaneColorDialog = new ColorDialog();
+            RandomColorButton = new Button();
             ((System.ComponentModel.ISupportInitialize)PlanePreviewBox).BeginInit();
             SuspendLayout();
             // 
@@ -178,22 +180,37 @@
             PlanePreviewBox.TabIndex = 14;
             PlanePreviewBox.TabStop = false;
             // 
-            // NewColorButton
+            // ChooseColorButton
             // 
-            NewColorButton.Location = new Point(555, 310);
-            NewColorButton.Name = "NewColorButton";
-            NewColorButton.Size = new Size(75, 23);
-            NewColorButton.TabIndex = 15;
-            NewColorButton.Text = "Next Color";
-            NewColorButton.UseVisualStyleBackColor = true;
-            NewColorButton.Click += NewColorButton_Click;
+            ChooseColorButton.Location = new Point(612, 310);
+            ChooseColorButton.Name = "ChooseColorButton";
+            ChooseColorButton.Size = new Size(75, 40);
+            ChooseColorButton.TabIndex = 15;
+            ChooseColorButton.Text = "Choose Color";
+            ChooseColorButton.UseVisualStyleBackColor = true;
+            ChooseColorButton.Click += NewColorButton_Click;
+            // 
+            // PlaneColorDialog
+            // 
+            PlaneColorDialog.SolidColorOnly = true;
+            // 
+            // RandomColorButton
+            // 
+            RandomColorButton.Location = new Point(487, 310);
+            RandomColorButton.Name = "RandomColorButton";
+            RandomColorButton.Size = new Size(75, 40);
+            RandomColorButton.TabIndex = 16;
+            RandomColorButton.Text = "Random Color";
+            RandomColorButton.UseVisualStyleBackColor = true;
+            RandomColorButton.Click += RandomColorButton_Click;
             // 
             // ClientServerConfigForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(772, 419);
-            Controls.Add(NewColorButton);
+            Controls.Add(RandomColorButton);
+            Controls.Add(ChooseColorButton);
             Controls.Add(PlanePreviewBox);
             Controls.Add(label4);
             Controls.Add(PlayerNameTextBox);
@@ -235,6 +252,8 @@
         private TextBox PlayerNameTextBox;
         private Label label4;
         private PictureBox PlanePreviewBox;
-        private Button NewColorButton;
+        private Button ChooseColorButton;
+        private ColorDialog PlaneColorDialog;
+        private Button RandomColorButton;
     }
 }

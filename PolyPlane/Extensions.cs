@@ -143,5 +143,10 @@ namespace PolyPlane
             return item;
         }
 
+        public static D2DColor ToD2DColor(this Color color)
+        {
+            return D2DColor.FromGDIColor(color);
+        }
+
     }
 }

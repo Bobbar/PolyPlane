@@ -25,6 +25,10 @@ namespace PolyPlane.Rendering
         private D2DGraphics _gfx;
         private RenderContext _ctx;
         private D2DLayer _groundClipLayer = null;
+        private D2DRadialGradientBrush _bulletLightingBrush = null;
+        private D2DRadialGradientBrush _missileLightingBrush = null;
+        private D2DRadialGradientBrush _muzzleFlashBrush = null;
+        private D2DRadialGradientBrush _decoyLightBrush = null;
 
         private readonly D2DPoint _infoPosition = new D2DPoint(20, 20);
 
@@ -294,6 +298,10 @@ namespace PolyPlane.Rendering
         public void Dispose()
         {
             _groundClipLayer?.Dispose();
+            _bulletLightingBrush?.Dispose();
+            _missileLightingBrush?.Dispose();
+            _muzzleFlashBrush?.Dispose();
+            _decoyLightBrush?.Dispose();
             _device?.Dispose();
         }
 
@@ -414,6 +422,7 @@ namespace PolyPlane.Rendering
                 {
                     o.Render(ctx);
                     DrawHealthBarClamped(ctx, tplane, new D2DPoint(tplane.Position.X, tplane.Position.Y - 110f), healthBarSize);
+                    DrawMuzzleFlash(ctx, tplane);
                 }
             });
 
@@ -422,9 +431,80 @@ namespace PolyPlane.Rendering
             _objs.Explosions.ForEach(o => o.Render(ctx));
 
             DrawClouds(ctx);
+            DrawLightingEffects(ctx, plane);
+            DrawMuzzleFlash(ctx, plane);
 
             ctx.PopViewPort();
             ctx.Gfx.PopTransform();
+        }
+
+        private void DrawLightingEffects(RenderContext ctx, FighterPlane plane)
+        {
+            const float BULLET_LIGHT_RADIUS = 60f;
+            if (_bulletLightingBrush == null)
+                _bulletLightingBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, BULLET_LIGHT_RADIUS, BULLET_LIGHT_RADIUS, new D2DGradientStop[] { new D2DGradientStop(1.4f, D2DColor.Transparent), new D2DGradientStop(0f, new D2DColor(0.2f, D2DColor.Yellow)) });
+
+            const float MISSILE_LIGHT_RADIUS = 70f;
+            if (_missileLightingBrush == null)
+                _missileLightingBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, MISSILE_LIGHT_RADIUS, MISSILE_LIGHT_RADIUS, new D2DGradientStop[] { new D2DGradientStop(1.4f, D2DColor.Transparent), new D2DGradientStop(0f, new D2DColor(0.2f, D2DColor.Yellow)) });
+
+            const float DECOY_LIGHT_RADIUS = 90f;
+            if (_decoyLightBrush == null)
+                _decoyLightBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, DECOY_LIGHT_RADIUS, DECOY_LIGHT_RADIUS, new D2DGradientStop[] { new D2DGradientStop(1.4f, D2DColor.Transparent), new D2DGradientStop(0f, new D2DColor(0.3f, D2DColor.LightYellow)) });
+
+            _objs.Bullets.ForEach(o =>
+            {
+                if (ctx.Viewport.Contains(o.Position))
+                {
+                    ctx.Gfx.PushTransform();
+                    ctx.Gfx.TranslateTransform(o.Position.X * ctx.CurrentScale, o.Position.Y * ctx.CurrentScale);
+                    ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, BULLET_LIGHT_RADIUS, _bulletLightingBrush);
+                    ctx.Gfx.PopTransform();
+                }
+            });
+
+            _objs.Missiles.ForEach(o =>
+            {
+                if (o is GuidedMissile missile && missile.FlameOn && missile.CurrentFuel > 0f)
+                {
+                    if (ctx.Viewport.Contains(missile.Position))
+                    {
+                        ctx.Gfx.PushTransform();
+                        ctx.Gfx.TranslateTransform(missile.CenterOfThrust.X * ctx.CurrentScale, missile.CenterOfThrust.Y * ctx.CurrentScale);
+                        ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, MISSILE_LIGHT_RADIUS, _missileLightingBrush);
+                        ctx.Gfx.PopTransform();
+                    }
+                }
+            });
+
+            _objs.Decoys.ForEach(o =>
+            {
+                if (o is Decoy decoy)
+                {
+                    if (ctx.Viewport.Contains(decoy.Position) && (decoy.CurrentFrame % 21 == 0 || decoy.CurrentFrame % 33 == 0))
+                    {
+                        ctx.Gfx.PushTransform();
+                        ctx.Gfx.TranslateTransform(decoy.Position.X * ctx.CurrentScale, decoy.Position.Y * ctx.CurrentScale);
+                        ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, DECOY_LIGHT_RADIUS, _decoyLightBrush);
+                        ctx.Gfx.PopTransform();
+                    }
+                }
+            });
+        }
+
+        private void DrawMuzzleFlash(RenderContext ctx, FighterPlane plane)
+        {
+            const float MUZZ_FLASH_RADIUS = 60f;
+            if (_muzzleFlashBrush == null)
+                _muzzleFlashBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, MUZZ_FLASH_RADIUS, MUZZ_FLASH_RADIUS, new D2DGradientStop[] { new D2DGradientStop(1.4f, D2DColor.Transparent), new D2DGradientStop(0f, new D2DColor(0.4f, D2DColor.Orange)) });
+
+            if (plane.FiringBurst && plane.NumBullets > 0 && plane.CurrentFrame % 10 == 0)
+            {
+                ctx.Gfx.PushTransform();
+                ctx.Gfx.TranslateTransform(plane.GunPosition.X * ctx.CurrentScale, plane.GunPosition.Y * ctx.CurrentScale);
+                ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, MUZZ_FLASH_RADIUS, _muzzleFlashBrush);
+                ctx.Gfx.PopTransform();
+            }
         }
 
         private void DrawGround(RenderContext ctx, FighterPlane plane)
@@ -448,6 +528,34 @@ namespace PolyPlane.Rendering
             //groundColor = AddToDColor(groundColor);// Add time of day color
             //ctx.Gfx.FillRectangle(new D2DRect(new D2DPoint(plane.Position.X, 2000f), new D2DSize(this.Width * World.ViewPortScaleMulti, 4000f)), groundColor);
         }
+
+        private void DrawGroundImpacts(RenderContext ctx, FighterPlane plane)
+        {
+            if (_groundClipLayer == null)
+                _groundClipLayer = ctx.Device.CreateLayer();
+
+            var color1 = new D2DColor(1f, 0.56f, 0.32f, 0.18f);
+            var color2 = new D2DColor(1f, 0.35f, 0.2f, 0.1f);
+            var rect = new D2DRect(new D2DPoint(plane.Position.X, 2000f), new D2DSize(this.Width * World.ViewPortScaleMulti, 4000f));
+
+            using (var clipGeo = ctx.Device.CreateRectangleGeometry(rect))
+            {
+                ctx.Gfx.PushLayer(_groundClipLayer, ctx.Viewport, clipGeo);
+                foreach (var impact in _objs.GroundImpacts)
+                {
+                    ctx.FillEllipseSimple(impact, 15f, color1);
+                    ctx.FillEllipseSimple(impact, 11f, color2);
+                }
+
+                //_objs.Bullets.ForEach(b =>
+                //{
+                //    ctx.FillEllipseSimple(b.Position, 80f, new D2DColor(0.1f, D2DColor.Yellow));
+                //});
+
+                ctx.Gfx.PopLayer();
+            }
+        }
+
 
         private void DrawGroundObjs(RenderContext ctx, FighterPlane plane)
         {
@@ -591,26 +699,6 @@ namespace PolyPlane.Rendering
         //}
 
 
-        private void DrawGroundImpacts(RenderContext ctx, FighterPlane plane)
-        {
-            if (_groundClipLayer == null)
-                _groundClipLayer = ctx.Device.CreateLayer();
-
-            var color1 = new D2DColor(1f, 0.56f, 0.32f, 0.18f);
-            var color2 = new D2DColor(1f, 0.35f, 0.2f, 0.1f);
-            var rect = new D2DRect(new D2DPoint(plane.Position.X, 2000f), new D2DSize(this.Width * World.ViewPortScaleMulti, 4000f));
-
-            using (var clipGeo = ctx.Device.CreateRectangleGeometry(rect))
-            {
-                ctx.Gfx.PushLayer(_groundClipLayer, ctx.Viewport, clipGeo);
-                foreach (var impact in _objs.GroundImpacts)
-                {
-                    ctx.FillEllipseSimple(impact, 15f, color1);
-                    ctx.FillEllipseSimple(impact, 11f, color2);
-                }
-                ctx.Gfx.PopLayer();
-            }
-        }
 
         private void DrawHealthBarClamped(RenderContext ctx, FighterPlane plane, D2DPoint position, D2DSize size)
         {

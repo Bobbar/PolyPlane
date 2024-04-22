@@ -462,10 +462,6 @@ namespace PolyPlane.GameObjects
                     ctx.Gfx.FillEllipseSimple(flame.Position, 3f, D2DColor.Black);
                 }
 
-                // Simulate muzzle flash?
-                if (this.FiringBurst && this.NumBullets > 0)
-                    ctx.Gfx.FillEllipseSimple(_gunPosition.Position, 8f, new D2DColor(0.3f, D2DColor.Orange));
-
                 ctx.Gfx.PopLayer();
             }
         }
@@ -864,6 +860,17 @@ namespace PolyPlane.GameObjects
             thrust = vec;
 
             return thrust;
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+
+            _polyClipLayer?.Dispose();
+            _contrail.Clear();
+            _flames.Clear();
+            _debris.Clear();
+            _vaporTrails.Clear();
         }
     }
 }
