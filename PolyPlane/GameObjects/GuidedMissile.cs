@@ -371,7 +371,9 @@ namespace PolyPlane.GameObjects
         public void ChangeTarget(GameObject target)
         {
             this.Target = target;
-            _guidance.Target = target;
+
+            if (_guidance != null)
+                _guidance.Target = target;
         }
 
         public void DoChangeTargetChance(GameObject target)

@@ -132,10 +132,10 @@ namespace PolyPlane.GameObjects
 
         public void Update(float dt, D2DSize viewport, float renderScale, bool skipFrames = false)
         {
-            CurrentFrame++;
-
             if (skipFrames)
             {
+                CurrentFrame++;
+
                 if (SkipFrame())
                     return;
 
@@ -150,7 +150,8 @@ namespace PolyPlane.GameObjects
 
         public virtual void Update(float dt, D2DSize viewport, float renderScale)
         {
-            CurrentFrame++;
+            if (SkipFrames == 1)
+                CurrentFrame++;
 
             if (World.IsNetGame && IsNetObject)
             {
