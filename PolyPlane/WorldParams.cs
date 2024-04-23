@@ -180,7 +180,7 @@ namespace PolyPlane
         {
             TimeOfDay += TimeOfDayDir * (TOD_RATE * dt);
 
-            if (TimeOfDay >= MAX_TIMEOFDAY)
+            if (TimeOfDay >= MAX_TIMEOFDAY - 0.2f)
                 TimeOfDayDir = -1f;
 
             if (TimeOfDay <= 0.1f)

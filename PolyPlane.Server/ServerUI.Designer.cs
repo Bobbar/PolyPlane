@@ -53,7 +53,10 @@
             ChatMessageTextBox = new TextBox();
             SentChatButton = new Button();
             label6 = new Label();
+            TimeOfDaySlider = new TrackBar();
+            TimeOfDayLabel = new Label();
             PlayerListContextMenu.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)TimeOfDaySlider).BeginInit();
             SuspendLayout();
             // 
             // PauseButton
@@ -276,11 +279,31 @@
             label6.TabIndex = 21;
             label6.Text = "Chat and Events:";
             // 
+            // TimeOfDaySlider
+            // 
+            TimeOfDaySlider.Location = new Point(652, 349);
+            TimeOfDaySlider.Name = "TimeOfDaySlider";
+            TimeOfDaySlider.Size = new Size(212, 45);
+            TimeOfDaySlider.TabIndex = 22;
+            TimeOfDaySlider.Scroll += TimeOfDaySlider_Scroll;
+            TimeOfDaySlider.ValueChanged += TimeOfDaySlider_ValueChanged;
+            // 
+            // TimeOfDayLabel
+            // 
+            TimeOfDayLabel.AutoSize = true;
+            TimeOfDayLabel.Location = new Point(652, 397);
+            TimeOfDayLabel.Name = "TimeOfDayLabel";
+            TimeOfDayLabel.Size = new Size(72, 15);
+            TimeOfDayLabel.TabIndex = 23;
+            TimeOfDayLabel.Text = "Time of day:";
+            // 
             // ServerUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(898, 536);
+            Controls.Add(TimeOfDayLabel);
+            Controls.Add(TimeOfDaySlider);
             Controls.Add(label6);
             Controls.Add(SentChatButton);
             Controls.Add(ChatMessageTextBox);
@@ -308,6 +331,7 @@
             StartPosition = FormStartPosition.CenterScreen;
             Text = "ServerUI";
             PlayerListContextMenu.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)TimeOfDaySlider).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -338,5 +362,7 @@
         private TextBox ChatMessageTextBox;
         private Button SentChatButton;
         private Label label6;
+        private TrackBar TimeOfDaySlider;
+        private Label TimeOfDayLabel;
     }
 }

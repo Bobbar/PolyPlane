@@ -114,6 +114,8 @@ namespace PolyPlane.Server
             PlayersListBox.DataSource = _currentPlayers;
 
             ChatMessageTextBox.MaxLength = ChatInterface.MAX_CHARS;
+
+            TimeOfDaySlider.Maximum = (int)World.MAX_TIMEOFDAY;
         }
 
         private void StartServerButton_Click(object sender, EventArgs e)
@@ -748,6 +750,9 @@ namespace PolyPlane.Server
         {
             InfoLabel.Text = GetInfo();
             UpdatePlayerList();
+
+            TimeOfDaySlider.Value = (int)World.TimeOfDay;
+            TimeOfDayLabel.Text = $"Time of day: {Math.Round(World.TimeOfDay, 2)}";
         }
 
         private void PauseButton_Click(object sender, EventArgs e)
@@ -805,6 +810,16 @@ namespace PolyPlane.Server
                 _netMan.ChatInterface.SendMessage(ChatMessageTextBox.Text);
                 ChatMessageTextBox.Text = string.Empty;
             }
+        }
+
+        private void TimeOfDaySlider_Scroll(object sender, EventArgs e)
+        {
+            World.TimeOfDay = TimeOfDaySlider.Value;
+        }
+
+        private void TimeOfDaySlider_ValueChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
