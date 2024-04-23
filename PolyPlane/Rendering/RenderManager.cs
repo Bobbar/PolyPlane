@@ -73,6 +73,9 @@ namespace PolyPlane.Rendering
 
         private const int NUM_CLOUDS = 2000;
         private const float MAX_CLOUD_Y = 400000f;
+        private const float CLOUD_SCALE = 5f;
+        private const float GROUND_OBJ_SCALE = 4f;
+
         private List<Cloud> _clouds = new List<Cloud>();
 
         private D2DColor[] _todPallet =
@@ -629,7 +632,6 @@ namespace PolyPlane.Rendering
             var trunkTrans = new D2DPoint[trunk.Length];
             Array.Copy(trunk, trunkTrans, trunk.Length);
 
-            var scale = 5f;
             var trunkColor = D2DColor.Chocolate;
             var leafColor = D2DColor.ForestGreen;
 
@@ -643,22 +645,23 @@ namespace PolyPlane.Rendering
             // Draw shadows.
             ctx.Gfx.PushTransform();
 
-            var shadowColor = new D2DColor(0.4f, Helpers.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.6f));
-            var shadowLeaf = pos - new D2DPoint(0, (-height * scale) - (radius));
+            var shadowColor = new D2DColor(0.4f, Helpers.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.7f));
+            var shadowLeaf = pos - new D2DPoint(0, (-height * GROUND_OBJ_SCALE) - (radius));
             var shadowAngle = Helpers.Lerp(-40f, 40f, Helpers.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
-            
+
             ctx.Gfx.RotateTransform(shadowAngle, pos);
-            Helpers.ApplyTranslation(trunk, trunkTrans, 0f, pos, scale);
-          
+            ctx.Gfx.ScaleTransform(1f, 2f);
+            Helpers.ApplyTranslation(trunk, trunkTrans, 0f, pos, GROUND_OBJ_SCALE);
+
             ctx.DrawPolygon(trunkTrans, shadowColor, 1f, D2DDashStyle.Solid, shadowColor);
             ctx.FillEllipse(new D2DEllipse(shadowLeaf, new D2DSize(radius, radius)), shadowColor);
             ctx.Gfx.PopTransform();
 
 
             // Draw tree.
-            Helpers.ApplyTranslation(trunk, trunkTrans, 180f, pos, scale);
+            Helpers.ApplyTranslation(trunk, trunkTrans, 180f, pos, GROUND_OBJ_SCALE);
 
-            var leafPos = pos + new D2DPoint(0, (-height * scale) - radius);
+            var leafPos = pos + new D2DPoint(0, (-height * GROUND_OBJ_SCALE) - radius);
             ctx.DrawPolygon(trunkTrans, trunkColor, 1f, D2DDashStyle.Solid, trunkColor);
 
             using (var brush = ctx.Device.CreateRadialGradientBrush(leafPos, D2DPoint.Zero, radius, radius, [new D2DGradientStop(0f, leafColor), new D2DGradientStop(1f, Helpers.LerpColor(leafColor, D2DColor.Black, 0.1f))]))
@@ -681,7 +684,6 @@ namespace PolyPlane.Rendering
 
             var pineTopTrans = new D2DPoint[pineTop.Length];
 
-            var scale = 5f;
             var trunkColor = D2DColor.BurlyWood;
             var leafColor = D2DColor.Green;
 
@@ -695,11 +697,12 @@ namespace PolyPlane.Rendering
 
             var shadowTrunkPos = pos + new D2DPoint(0, height / 2f);
             var shadowTopPos = pos + new D2DPoint(0, height);
-            var shadowColor = new D2DColor(0.4f, Helpers.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.6f));
+            var shadowColor = new D2DColor(0.4f, Helpers.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.7f));
             var shadowAngle = Helpers.Lerp(-40f, 40f, Helpers.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
 
             ctx.Gfx.RotateTransform(shadowAngle, pos);
-            Helpers.ApplyTranslation(pineTop, pineTopTrans, 0f, shadowTopPos, scale);
+            ctx.Gfx.ScaleTransform(1f, 2f);
+            Helpers.ApplyTranslation(pineTop, pineTopTrans, 0f, shadowTopPos, GROUND_OBJ_SCALE);
 
             ctx.FillRectangle(new D2DRect(shadowTrunkPos, new D2DSize(width / 2f, height * 1f)), shadowColor);
             ctx.DrawPolygon(pineTopTrans, shadowColor, 1f, D2DDashStyle.Solid, shadowColor);
@@ -707,7 +710,7 @@ namespace PolyPlane.Rendering
 
 
             // Draw tree.
-            Helpers.ApplyTranslation(pineTop, pineTopTrans, 180f, pos - new D2DPoint(0, height), scale);
+            Helpers.ApplyTranslation(pineTop, pineTopTrans, 180f, pos - new D2DPoint(0, height), GROUND_OBJ_SCALE);
             ctx.FillRectangle(new D2DRect(topPos, new D2DSize(width / 2f, height * 1f)), trunkColor);
             ctx.DrawPolygon(pineTopTrans, leafColor, 1f, D2DDashStyle.Solid, leafColor);
         }
@@ -1295,18 +1298,18 @@ namespace PolyPlane.Rendering
                 {
                     DrawCloud(ctx, cloud);
                 }
+
+                DrawCloudShadow(ctx, cloud);
             }
         }
 
         private void DrawCloud(RenderContext ctx, Cloud cloud)
         {
-            const float SCALE = 5f;
             const float DARKER_COLOR = 0.6f;
             var color1 = new D2DColor(1f, DARKER_COLOR, DARKER_COLOR, DARKER_COLOR);
             var color2 = D2DColor.WhiteSmoke;
 
             var points = cloud.Points;
-            Helpers.ApplyTranslation(cloud.PointsOrigin, cloud.Points, cloud.Rotation, cloud.Position, SCALE);
 
             // Find min/max height.
             var minY = points.Min(p => p.Y);
@@ -1338,6 +1341,27 @@ namespace PolyPlane.Rendering
             }
         }
 
+        private void DrawCloudShadow(RenderContext ctx, Cloud cloud)
+        {
+            var shadowColor = new D2DColor(0.05f, Helpers.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.7f));
+
+            if (cloud.Position.Y < -8000f)
+                return;
+
+            for (int i = 0; i < cloud.Points.Length; i++)
+            {
+                var point = cloud.Points[i];
+                var dims = cloud.Dims[i];
+
+                var groundPos = new D2DPoint(point.X, -80f + Math.Abs((point.Y * 0.1f)));
+                var todOffset = Helpers.Lerp(600f, -600f, Helpers.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
+                groundPos.X += todOffset;
+
+                if (ctx.Viewport.Contains(groundPos))
+                    ctx.FillEllipse(new D2DEllipse(groundPos, new D2DSize(dims.X * 3f, dims.Y * 0.5f)), shadowColor);
+            }
+        }
+
         private void MoveClouds(float dt)
         {
             const float RATE = 40f;
@@ -1361,6 +1385,8 @@ namespace PolyPlane.Rendering
                 {
                     cloud.Position.X = -MAX_CLOUD_Y;
                 }
+
+                Helpers.ApplyTranslation(cloud.PointsOrigin, cloud.Points, cloud.Rotation, cloud.Position, CLOUD_SCALE);
             }
         }
 
