@@ -325,6 +325,12 @@ namespace PolyPlane.Rendering
             return Helpers.LerpColor(color, todColor, 0.3f);
         }
 
+        private D2DColor GetTimeOfDayColor()
+        {
+            var todColor = InterpolateColorGaussian(_todPallet, World.TimeOfDay, World.MAX_TIMEOFDAY);
+            return todColor;
+        }
+
         private D2DColor InterpolateColorGaussian(D2DColor[] colors, float value, float maxValue)
         {
             var x = Math.Min(1.0f, value / maxValue);
@@ -408,8 +414,8 @@ namespace PolyPlane.Rendering
 
             ctx.PushViewPort(viewPortRect);
 
-            DrawGroundObjs(ctx, plane);
             DrawGround(ctx, plane);
+            DrawGroundObjs(ctx, plane);
             DrawGroundImpacts(ctx, plane);
 
             _objs.Decoys.ForEach(o => o.Render(ctx));
@@ -569,9 +575,7 @@ namespace PolyPlane.Rendering
 
                 // ????
                 var rndPnt = _groundObjsRnd[(xRound / 1)];
-                var rndPnt2 = _groundObjsRnd[(xRound / 6)];
                 var rndPnt3 = _groundObjsRnd[(xRound / 7)];
-
                 var treePos = new D2DPoint(x, 0f);
 
                 // Just fiddling with numbers here to produce a decent looking result... 
@@ -582,7 +586,7 @@ namespace PolyPlane.Rendering
                     DrawTree(ctx, treePos + new D2DPoint(rndPnt * 20, 0f), ((rndPnt) * 6) + 20, 60 + rndPnt);
 
                 if (rndPnt == 13)
-                    DrawPineTree(ctx, treePos + new D2DPoint((21 - rndPnt) * 28, 0f), 20f);
+                    DrawPineTree(ctx, treePos + new D2DPoint((21 - rndPnt) * 28, 0f), 35f);
 
                 if (rndPnt == 15)
                     DrawTree(ctx, treePos + new D2DPoint(400, 0), 30f, 71f);
@@ -597,16 +601,16 @@ namespace PolyPlane.Rendering
                     DrawTree(ctx, treePos, 40f, 81f);
 
                 if (rndPnt == 1011)
-                    DrawTree(ctx, treePos, 100f, 72f);
+                    DrawTree(ctx, treePos, 70f, 72f);
 
-                if (rndPnt2 == 10235)
-                    DrawTree(ctx, treePos, 60f, 81f);
+                if (rndPnt == 8413)
+                    DrawTree(ctx, treePos + new D2DPoint(treePos.X % 3 == 0 ? 100f : -300f, 0f), 60f + (treePos.X % 3 == 0 ? 10f : 20f), 81f);
 
                 if (rndPnt3 == 6134)
                     DrawPineTree(ctx, treePos + new D2DPoint((rndPnt) * 25, 0f), 60f, 21f + ((rndPnt % 20) * 2f));
 
                 if (rndPnt == 14562)
-                    DrawPineTree(ctx, treePos - new D2DPoint(0, 0f), 40f, 33f);
+                    DrawPineTree(ctx, treePos - new D2DPoint(100f, 0f), 60f, 33f);
             }
         }
 
@@ -614,13 +618,16 @@ namespace PolyPlane.Rendering
         {
             if (!ctx.Viewport.Contains(pos) && !ctx.Viewport.Contains(pos - new D2DPoint(0, (height + radius))))
                 return;
-
             var trunk = new D2DPoint[]
             {
                 new D2DPoint(-2, 0),
                 new D2DPoint(2, 0),
-                new D2DPoint(0, height),
+                new D2DPoint(0.5f, height),
+                new D2DPoint(-0.5f, height),
             };
+
+            var trunkTrans = new D2DPoint[trunk.Length];
+            Array.Copy(trunk, trunkTrans, trunk.Length);
 
             var scale = 5f;
             var trunkColor = D2DColor.Chocolate;
@@ -633,17 +640,31 @@ namespace PolyPlane.Rendering
             if (radius % 2 == 0)
                 leafColor.g -= 0.1f;
 
-            Helpers.ApplyTranslation(trunk, trunk, 180f, pos, scale);
+            // Draw shadows.
+            ctx.Gfx.PushTransform();
 
-            var leafPos = pos + new D2DPoint(0, -height * scale);
-            ctx.DrawPolygon(trunk, trunkColor, 1f, D2DDashStyle.Solid, trunkColor);
+            var shadowColor = new D2DColor(0.4f, Helpers.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.6f));
+            var shadowLeaf = pos - new D2DPoint(0, (-height * scale) - (radius));
+            var shadowAngle = Helpers.Lerp(-40f, 40f, Helpers.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
+            
+            ctx.Gfx.RotateTransform(shadowAngle, pos);
+            Helpers.ApplyTranslation(trunk, trunkTrans, 0f, pos, scale);
+          
+            ctx.DrawPolygon(trunkTrans, shadowColor, 1f, D2DDashStyle.Solid, shadowColor);
+            ctx.FillEllipse(new D2DEllipse(shadowLeaf, new D2DSize(radius, radius)), shadowColor);
+            ctx.Gfx.PopTransform();
+
+
+            // Draw tree.
+            Helpers.ApplyTranslation(trunk, trunkTrans, 180f, pos, scale);
+
+            var leafPos = pos + new D2DPoint(0, (-height * scale) - radius);
+            ctx.DrawPolygon(trunkTrans, trunkColor, 1f, D2DDashStyle.Solid, trunkColor);
 
             using (var brush = ctx.Device.CreateRadialGradientBrush(leafPos, D2DPoint.Zero, radius, radius, [new D2DGradientStop(0f, leafColor), new D2DGradientStop(1f, Helpers.LerpColor(leafColor, D2DColor.Black, 0.1f))]))
             {
                 ctx.FillEllipse(new D2DEllipse(leafPos, new D2DSize(radius, radius)), brush);
             }
-
-            //ctx.FillEllipse(new D2DEllipse(leafPos, new D2DSize(radius, radius)), leafColor);
         }
 
         private void DrawPineTree(RenderContext ctx, D2DPoint pos, float height = 20f, float width = 20f)
@@ -658,6 +679,8 @@ namespace PolyPlane.Rendering
                 new D2DPoint(0, height),
             };
 
+            var pineTopTrans = new D2DPoint[pineTop.Length];
+
             var scale = 5f;
             var trunkColor = D2DColor.BurlyWood;
             var leafColor = D2DColor.Green;
@@ -665,11 +688,28 @@ namespace PolyPlane.Rendering
             // Add time of day color
             trunkColor = AddTimeOfDayColor(trunkColor);
             leafColor = AddTimeOfDayColor(leafColor);
+            var topPos = pos - new D2DPoint(0, height / 2f);
 
-            Helpers.ApplyTranslation(pineTop, pineTop, 180f, pos - new D2DPoint(0, height), scale);
+            // Draw shadow.
+            ctx.Gfx.PushTransform();
 
-            ctx.FillRectangle(new D2DRect(pos - new D2DPoint(0, height / 2f), new D2DSize(width / 2f, height * 1f)), trunkColor);
-            ctx.DrawPolygon(pineTop, leafColor, 1f, D2DDashStyle.Solid, leafColor);
+            var shadowTrunkPos = pos + new D2DPoint(0, height / 2f);
+            var shadowTopPos = pos + new D2DPoint(0, height);
+            var shadowColor = new D2DColor(0.4f, Helpers.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.6f));
+            var shadowAngle = Helpers.Lerp(-40f, 40f, Helpers.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
+
+            ctx.Gfx.RotateTransform(shadowAngle, pos);
+            Helpers.ApplyTranslation(pineTop, pineTopTrans, 0f, shadowTopPos, scale);
+
+            ctx.FillRectangle(new D2DRect(shadowTrunkPos, new D2DSize(width / 2f, height * 1f)), shadowColor);
+            ctx.DrawPolygon(pineTopTrans, shadowColor, 1f, D2DDashStyle.Solid, shadowColor);
+            ctx.Gfx.PopTransform();
+
+
+            // Draw tree.
+            Helpers.ApplyTranslation(pineTop, pineTopTrans, 180f, pos - new D2DPoint(0, height), scale);
+            ctx.FillRectangle(new D2DRect(topPos, new D2DSize(width / 2f, height * 1f)), trunkColor);
+            ctx.DrawPolygon(pineTopTrans, leafColor, 1f, D2DDashStyle.Solid, leafColor);
         }
 
 
