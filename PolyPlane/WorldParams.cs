@@ -87,6 +87,7 @@ namespace PolyPlane
         public static bool ExpireMissilesOnMiss = false;
         public static bool IsNetGame = false;
         public static bool IsServer = false;
+        public static bool RespawnAIPlanes = true;
 
         private static float _zoomScale = 0.11f;
         private static float _dt = 0.0325f;

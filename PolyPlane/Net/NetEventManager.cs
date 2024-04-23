@@ -23,6 +23,7 @@ namespace PolyPlane.Net
         public event EventHandler<int> PlayerKicked;
         public event EventHandler<int> PlayerDisconnected;
         public event EventHandler<int> PlayerJoined;
+        public event EventHandler<FighterPlane> PlayerRespawned;
 
         public NetEventManager(GameObjectManager objectManager, NetPlayHost host, FighterPlane playerPlane)
         {
@@ -237,7 +238,10 @@ namespace PolyPlane.Net
                     var resetPlane = Objs.GetObjectByID(resetPack.ID) as FighterPlane;
 
                     if (resetPlane != null)
+                    {
                         resetPlane.FixPlane();
+                        PlayerRespawned?.Invoke(this, resetPlane);
+                    }
 
                     break;
                 case PacketTypes.ServerSync:

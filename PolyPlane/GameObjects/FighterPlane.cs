@@ -7,6 +7,7 @@ namespace PolyPlane.GameObjects
 {
     public class FighterPlane : GameObjectPoly
     {
+        public bool AIRespawnReady = false;
         public Direction FlipDirection => _currentDir;
         public string PlayerName;
         public float PlayerGuideAngle = 0;
@@ -73,7 +74,7 @@ namespace PolyPlane.GameObjects
         private bool _isAIPlane = false;
 
         private GameTimer _flipTimer = new GameTimer(2f);
-        private GameTimer _expireTimeout = new GameTimer(100f);
+        private GameTimer _expireTimeout = new GameTimer(30f);
         private GameTimer _isLockOntoTimeout = new GameTimer(3f);
         private GameTimer _bulletRegenTimer = new GameTimer(0.2f, true);
         private GameTimer _decoyRegenTimer = new GameTimer(0.4f, true);
@@ -215,7 +216,13 @@ namespace PolyPlane.GameObjects
             _contrail.IsNetObject = this.IsNetObject;
 
 
-            _expireTimeout.TriggerCallback = () => this.IsExpired = true;
+            _expireTimeout.TriggerCallback = () =>
+            {
+                if (!World.RespawnAIPlanes)
+                    this.IsExpired = true;
+                else
+                    this.AIRespawnReady = true;
+            };
 
             _bulletRegenTimer.TriggerCallback = () =>
             {
@@ -778,6 +785,7 @@ namespace PolyPlane.GameObjects
             _easePhysicsComplete = false;
             _easePhysicsTimer.Stop();
             _easePhysicsTimer.Reset();
+            AIRespawnReady = false;
         }
 
         public void MoveThrottle(bool up)

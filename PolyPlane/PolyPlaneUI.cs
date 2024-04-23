@@ -90,6 +90,11 @@ namespace PolyPlane
             _multiThreadNum = Environment.ProcessorCount - 2;
         }
 
+        private void NetMan_PlayerRespawned(object? sender, FighterPlane e)
+        {
+            _render?.AddNewEventMessage($"'{e.PlayerName}' has respawned.", EventType.Net);
+        }
+
         private void NetMan_PlayerKicked(object? sender, int e)
         {
             var playerPlane = _objs.GetPlaneByPlayerID(e);
@@ -159,7 +164,7 @@ namespace PolyPlane
                         _netMan.PlayerIDReceived += NetMan_PlayerIDReceived;
                         _netMan.PlayerDisconnected += NetMan_PlayerDisconnected;
                         _netMan.PlayerKicked += NetMan_PlayerKicked;
-
+                        _netMan.PlayerRespawned += NetMan_PlayerRespawned;
                         _client.PeerTimeoutEvent += Client_PeerTimeoutEvent;
                         _client.PeerDisconnectedEvent += Client_PeerDisconnectedEvent;
 
@@ -201,6 +206,8 @@ namespace PolyPlane
 
             return result;
         }
+
+      
 
         /// <summary>
         /// Return to server/game config screen.

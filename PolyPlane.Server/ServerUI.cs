@@ -134,6 +134,7 @@ namespace PolyPlane.Server
 
                 _netMan.PlayerDisconnected += NetMan_PlayerDisconnected;
                 _netMan.PlayerJoined += NetMan_PlayerJoined;
+                _netMan.PlayerRespawned += NetMan_PlayerRespawned;
                 _netMan.NewChatMessage += NetMan_NewChatMessage;
 
                 _objs.PlayerKilledEvent += PlayerKilledEvent; ;
@@ -150,6 +151,11 @@ namespace PolyPlane.Server
                 StartServerButton.Enabled = false;
                 ServerNameTextBox.Enabled = false;
             }
+        }
+
+        private void NetMan_PlayerRespawned(object? sender, FighterPlane e)
+        {
+            AddNewEventMessage($"'{e.PlayerName}' has respawned.");
         }
 
         private void NewPlayerEvent(object? sender, FighterPlane e)
@@ -360,7 +366,41 @@ namespace PolyPlane.Server
                 RemoveAIPlanes();
             }
 
+            HandleAIPlaneRespawn();
+
             _fpsLimiter.Wait(World.NET_SERVER_FPS);
+        }
+
+        private void HandleAIPlaneRespawn()
+        {
+            if (!World.RespawnAIPlanes)
+                return;
+
+            foreach (var plane in _objs.Planes)
+            {
+                if (plane.IsAI && plane.HasCrashed && plane.AIRespawnReady)
+                {
+                    ResetPlane(plane);
+                }
+            }
+        }
+
+        private void ResetPlane(FighterPlane plane)
+        {
+            var resetPacket = new BasicPacket(PacketTypes.PlayerReset, plane.ID);
+            _server.EnqueuePacket(resetPacket);
+
+            plane.AutoPilotOn = true;
+            plane.ThrustOn = true;
+            plane.Position = new D2DPoint(Helpers.Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), -5000f);
+            plane.Velocity = new D2DPoint(500f, 0f);
+            plane.SyncFixtures();
+            plane.RotationSpeed = 0f;
+            plane.Rotation = 0f;
+            plane.SASOn = true;
+            plane.IsDamaged = false;
+            plane.Reset();
+            plane.FixPlane();
         }
 
         private FighterPlane GetViewPlane()
