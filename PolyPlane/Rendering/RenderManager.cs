@@ -9,6 +9,7 @@ namespace PolyPlane.Rendering
     public class RenderManager : IDisposable
     {
         public TimeSpan CollisionTime = TimeSpan.Zero;
+        public TimeSpan UpdateTime = TimeSpan.Zero;
 
         public float HudScale
         {
@@ -34,7 +35,7 @@ namespace PolyPlane.Rendering
 
         private bool _showInfo = false;
 
-        private TimeSpan _renderTime = new TimeSpan();
+        private SmoothDouble _renderTimeSmooth = new SmoothDouble(10);
         private Stopwatch _timer = new Stopwatch();
         private float _renderFPS = 0;
         private long _lastRenderTime = 0;
@@ -210,7 +211,6 @@ namespace PolyPlane.Rendering
         {
             ResizeGfx();
 
-            _renderTime = TimeSpan.Zero;
             _timer.Restart();
 
             UpdateTimersAndAnims();
@@ -247,9 +247,6 @@ namespace PolyPlane.Rendering
                 _gfx.PopTransform(); // Pop screen shake transform.
                 //_gfx.PopTransform(); // Pop GForce transform.
 
-                _timer.Stop();
-                _renderTime = _timer.Elapsed;
-
                 DrawOverlays(_ctx, viewplane);
 
                 if (viewplane.GForce > 17f)
@@ -259,6 +256,9 @@ namespace PolyPlane.Rendering
 
                 //_gforceTrans = -Helpers.AngleToVectorDegrees(viewplane.GForceDirection, viewplane.GForce);
             }
+
+            _timer.Stop();
+            _renderTimeSmooth.Add(_timer.Elapsed.TotalMilliseconds);
 
             _gfx.EndRender();
 
@@ -404,7 +404,8 @@ namespace PolyPlane.Rendering
             ctx.Gfx.TranslateTransform(pos.X, pos.Y);
 
             var viewPortRect = new D2DRect(plane.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
-            viewPortRect = viewPortRect.Inflate(500f, 500f); // Inflate slightly to prevent "pop-in".
+            viewPortRect = viewPortRect.Inflate(200f, 200f); // Inflate slightly to prevent "pop-in".
+
             ctx.PushViewPort(viewPortRect);
 
             DrawGroundObjs(ctx, plane);
@@ -611,7 +612,7 @@ namespace PolyPlane.Rendering
 
         private void DrawTree(RenderContext ctx, D2DPoint pos, float height = 20f, float radius = 50f)
         {
-            if (!ctx.Viewport.Contains(pos))
+            if (!ctx.Viewport.Contains(pos) && !ctx.Viewport.Contains(pos - new D2DPoint(0, (height + radius))))
                 return;
 
             var trunk = new D2DPoint[]
@@ -647,7 +648,7 @@ namespace PolyPlane.Rendering
 
         private void DrawPineTree(RenderContext ctx, D2DPoint pos, float height = 20f, float width = 20f)
         {
-            if (!ctx.Viewport.Contains(pos))
+            if (!ctx.Viewport.Contains(pos) && !ctx.Viewport.Contains(pos - new D2DPoint(0, height)))
                 return;
 
             var pineTop = new D2DPoint[]
@@ -1371,17 +1372,16 @@ namespace PolyPlane.Rendering
             string infoText = string.Empty;
             //infoText += $"Paused: {_isPaused}\n\n";
 
-
             var numObj = _objs.TotalObjects;
             infoText += $"Num Objects: {numObj}\n";
             infoText += $"On Screen: {GraphicsExtensions.OnScreen}\n";
             infoText += $"Off Screen: {GraphicsExtensions.OffScreen}\n";
             infoText += $"Planes: {_objs.Planes.Count(p => !p.IsDamaged && !p.HasCrashed)}\n";
 
-
             infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";
-            //infoText += $"Update ms: {_updateTime.TotalMilliseconds}\n";
-            infoText += $"Render ms: {_renderTime.TotalMilliseconds}\n";
+            infoText += $"Update ms: {Math.Round(UpdateTime.TotalMilliseconds, 2)}\n";
+            infoText += $"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}\n";
+
             infoText += $"Collision ms: {CollisionTime.TotalMilliseconds}\n";
 
             if (_netMan != null)
@@ -1403,8 +1403,6 @@ namespace PolyPlane.Rendering
             infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
             infoText += $"VP: {this.Width}, {this.Height}\n";
             infoText += $"DPI: {this._renderTarget.DeviceDpi}\n";
-
-
 
             return infoText;
         }

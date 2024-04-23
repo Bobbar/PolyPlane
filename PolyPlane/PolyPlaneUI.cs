@@ -552,6 +552,7 @@ namespace PolyPlane
             }
 
             _render.CollisionTime = _collisionTime;
+            _render.UpdateTime = _updateTime;
 
             _timer.Restart();
 
