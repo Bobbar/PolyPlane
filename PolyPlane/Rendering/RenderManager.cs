@@ -496,7 +496,7 @@ namespace PolyPlane.Rendering
         {
             const float MUZZ_FLASH_RADIUS = 60f;
             if (_muzzleFlashBrush == null)
-                _muzzleFlashBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, MUZZ_FLASH_RADIUS, MUZZ_FLASH_RADIUS, new D2DGradientStop[] { new D2DGradientStop(1.4f, D2DColor.Transparent), new D2DGradientStop(0f, new D2DColor(0.4f, D2DColor.Orange)) });
+                _muzzleFlashBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, MUZZ_FLASH_RADIUS, MUZZ_FLASH_RADIUS, new D2DGradientStop[] { new D2DGradientStop(1.4f, D2DColor.Transparent), new D2DGradientStop(0f, new D2DColor(0.3f, D2DColor.Orange)) });
 
             if (plane.FiringBurst && plane.NumBullets > 0 && plane.CurrentFrame % 10 == 0)
             {
@@ -931,7 +931,10 @@ namespace PolyPlane.Rendering
                 if (s.Y < pos.Y - HalfH)
                     s.Y = pos.Y - HalfH;
 
-                gfx.FillRectangle(new D2DRect(s.X, s.Y, W, (pos.Y + (H * 0.5f)) - s.Y), altWarningColor);
+                var sRect = new D2DRect(s.X, s.Y, W, (pos.Y + (H * 0.5f)) - s.Y);
+
+                if (sRect.Height > 0f)
+                    gfx.FillRectangle(sRect, altWarningColor);
             }
 
             for (float y = 0; y <= H; y += MARKER_STEP)
@@ -962,6 +965,7 @@ namespace PolyPlane.Rendering
 
         private void DrawSpeedo(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
         {
+            const float MIN_SPEED = 250f;
             const float W = 80f;
             const float H = 350f;
             const float HalfW = W * 0.5f;
@@ -971,10 +975,29 @@ namespace PolyPlane.Rendering
             var pos = new D2DPoint(viewportsize.width * 0.15f, viewportsize.height * 0.3f);
             var rect = new D2DRect(pos, new D2DSize(W, H));
             var spd = plane.Velocity.Length();
-            var startSpd = (spd) - (spd % (MARKER_STEP)) + MARKER_STEP;
+            var startSpd = (spd) - (spd % (MARKER_STEP));// + MARKER_STEP;
+            var spdWarningColor = new D2DColor(0.2f, D2DColor.Red);
+
+            var highestSpd = startSpd + MARKER_STEP;
+            //var lowestSpd = startSpd - (MARKER_STEP * 2f);
+            var lowestSpd = (startSpd - HalfH) - MARKER_STEP;
 
             gfx.DrawRectangle(rect, World.HudColor);
             gfx.DrawLine(new D2DPoint(pos.X - HalfW, pos.Y), new D2DPoint(pos.X + HalfW, pos.Y), D2DColor.GreenYellow, 1f, D2DDashStyle.Solid);
+
+            if (highestSpd <= MIN_SPEED || lowestSpd <= MIN_SPEED)
+            {
+                var s = new D2DPoint(pos.X - HalfW, (pos.Y + (spd - MIN_SPEED)));
+
+                if (s.Y < pos.Y - HalfH)
+                    s.Y = pos.Y - HalfH;
+
+                var sRect = new D2DRect(s.X, s.Y, W, (pos.Y + (H * 0.5f)) - s.Y);
+
+                if (sRect.Height > 0f)
+                    gfx.FillRectangle(sRect, spdWarningColor);
+            }
+
 
             for (float y = 0; y < H; y += MARKER_STEP)
             {

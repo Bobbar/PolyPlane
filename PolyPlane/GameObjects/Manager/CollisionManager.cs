@@ -316,6 +316,10 @@ namespace PolyPlane.GameObjects.Manager
                 if (missile == null)
                     continue;
 
+                // No sense in trying to control missiles we don't have control of...
+                if (missile.IsNetObject)
+                    continue;
+
                 // Decoys dont work if target is being painted.?
                 //if (missile.Owner.IsObjInFOV(target, World.SENSOR_FOV * 0.25f))
                 //    continue;

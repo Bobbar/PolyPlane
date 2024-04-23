@@ -57,10 +57,10 @@ namespace PolyPlane.GameObjects
 
         private readonly float THURST_VECTOR_AMT = 1f;
         private readonly float LIFESPAN = 40f;
-        private readonly float BURN_RATE = 0.04f;
-        private readonly float THRUST = 84f;
-        private readonly float MASS = 0.478f;
-        private readonly float FUEL = 0.375f;
+        private readonly float BURN_RATE = 1f;
+        private readonly float THRUST = 2200f;
+        private readonly float MASS = 22.5f;
+        private readonly float FUEL = 10f;
 
         private float _age = 0;
         private float _currentFuel = 0f;
@@ -148,10 +148,10 @@ namespace PolyPlane.GameObjects
 
             if (useControlSurfaces)
             {
-                var liftscale = 1.5f;
-                _tailWing = new Wing(this, 4f, 0.002f, 50f, 85.1f * liftscale, new D2DPoint(-22f, 0));
-                _rocketBody = new Wing(this, 0f, 0.00159f, 0f, 26.6f * liftscale, D2DPoint.Zero);
-                _noseWing = new Wing(this, 4f, 0.00053f, 20f, 74.4f * liftscale, new D2DPoint(19.5f, 0));
+                var liftScale = 0.6f;
+                _tailWing = new Wing(this, 4f, 0.1f, 50f, 4000f * liftScale, new D2DPoint(-22f, 0));
+                _rocketBody = new Wing(this, 0f, 0.075f, 1250f * liftScale, D2DPoint.Zero);
+                _noseWing = new Wing(this, 4f, 0.025f, 20f, 3500f * liftScale, new D2DPoint(19.5f, 0));
 
             }
             else
@@ -164,7 +164,8 @@ namespace PolyPlane.GameObjects
                 FlameOn = true;
 
                 // Add a quick impulse/boost when we ignite.
-                this.Velocity += Helpers.AngleToVectorDegrees(_initRotation, 100f);
+                const float BOOST_AMT = 90f;
+                this.Velocity += Helpers.AngleToVectorDegrees(_initRotation, BOOST_AMT);
             };
 
             _igniteCooldown.Restart();

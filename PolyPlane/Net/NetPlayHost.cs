@@ -233,7 +233,7 @@ namespace PolyPlane.Net
         }
 
         public abstract Peer? GetPeer(int playerID);
-       
+
         public virtual void Dispose()
         {
             Host?.Flush();

@@ -119,7 +119,7 @@ namespace PolyPlane.Net
         public override Peer? GetPeer(int playerID)
         {
             if (_peers.TryGetValue((uint)playerID, out var peer))
-             return peer;
+                return peer;
 
             return null;
         }

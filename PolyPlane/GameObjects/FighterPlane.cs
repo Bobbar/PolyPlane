@@ -76,8 +76,10 @@ namespace PolyPlane.GameObjects
         private GameTimer _expireTimeout = new GameTimer(100f);
         private GameTimer _isLockOntoTimeout = new GameTimer(3f);
         private GameTimer _bulletRegenTimer = new GameTimer(0.2f, true);
-        private GameTimer _decoyRegenTimer = new GameTimer(0.5f, true);
+        private GameTimer _decoyRegenTimer = new GameTimer(0.4f, true);
         private GameTimer _missileRegenTimer = new GameTimer(60f, true);
+        private GameTimer _easePhysicsTimer = new GameTimer(3f, true);
+        private bool _easePhysicsComplete = false;
 
         private float _damageDeflection = 0f;
         private float _gForce = 0f;
@@ -241,6 +243,9 @@ namespace PolyPlane.GameObjects
             _decoyRegenTimer.Start();
 
             _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
+
+            _easePhysicsTimer.Start();
+            _easePhysicsTimer.TriggerCallback = () => _easePhysicsComplete = true;
         }
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
@@ -332,8 +337,8 @@ namespace PolyPlane.GameObjects
 
             if (IsDamaged)
             {
-                wingForce *= 0.2f;
-                wingTorque *= 0.2f;
+                wingForce *= 0.3f;
+                wingTorque *= 0.3f;
                 AutoPilotOn = false;
                 SASOn = false;
                 ThrustOn = false;
@@ -347,10 +352,19 @@ namespace PolyPlane.GameObjects
             {
                 Deflection = _controlWing.Deflection;
 
-                this.RotationSpeed += wingTorque / this.MASS * dt;
+                // Ease in physics.
+                var easeFact = 1f;
 
-                this.Velocity += thrust / this.MASS * dt;
-                this.Velocity += wingForce / this.MASS * dt;
+                if (!_easePhysicsComplete)
+                    _easePhysicsTimer.Start();
+
+                if (!_easePhysicsComplete && _easePhysicsTimer.IsRunning)
+                    easeFact = Helpers.Factor(_easePhysicsTimer.Value, _easePhysicsTimer.Interval);
+
+                // Integrate torque, thrust and wing force.
+                this.RotationSpeed += (wingTorque * easeFact) / this.MASS * dt;
+                this.Velocity += (thrust * easeFact) / this.MASS * dt;
+                this.Velocity += (wingForce * easeFact) / this.MASS * dt;
 
                 var gravFact = 1f;
 
@@ -384,6 +398,7 @@ namespace PolyPlane.GameObjects
 
             FlamePoly.Update(_flamePos.Position, flameAngle, renderScale * this.RenderOffset);
 
+            _easePhysicsTimer.Update(dt);
             _flipTimer.Update(dt);
             _isLockOntoTimeout.Update(dt);
             _expireTimeout.Update(dt);
@@ -759,6 +774,10 @@ namespace PolyPlane.GameObjects
             _debris.Clear();
             _thrustAmt.Target = 1f;
             WasHeadshot = false;
+            PlayerGuideAngle = 0f;
+            _easePhysicsComplete = false;
+            _easePhysicsTimer.Stop();
+            _easePhysicsTimer.Reset();
         }
 
         public void MoveThrottle(bool up)

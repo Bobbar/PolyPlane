@@ -401,6 +401,7 @@ namespace PolyPlane.Net
         public float Deflection;
         public float CurrentFuel;
         public bool FlameOn;
+        public bool IsDistracted;
         public GameID TargetID;
 
         public MissilePacket() : base()
@@ -417,6 +418,7 @@ namespace PolyPlane.Net
             this.Deflection = obj.Deflection;
             this.CurrentFuel = obj.CurrentFuel;
             this.TargetID = obj.Target.ID;
+            this.IsDistracted = obj.IsDistracted;
         }
 
         public virtual void SyncObj(GuidedMissile obj)
@@ -426,6 +428,7 @@ namespace PolyPlane.Net
             obj.Deflection = this.Deflection;
             obj.CurrentFuel = this.CurrentFuel;
             obj.FlameOn = this.FlameOn;
+            obj.IsDistracted = this.IsDistracted;
         }
     }
 

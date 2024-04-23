@@ -115,8 +115,21 @@ namespace PolyPlane
 
         public const float MAX_TIMEOFDAY = 24f;
         public const float TOD_RATE = 0.02f;
-        public static float TimeOfDay = 5f;
+
+        public static float TimeOfDay
+        {
+            get { return _timeOfDay; }
+
+            set
+            {
+                _timeOfDay = value % MAX_TIMEOFDAY;
+            }
+        }
+
+
         public static float TimeOfDayDir = -1f;
+
+        private static float _timeOfDay = 5f;
 
         public static float GetDensityAltitude(D2DPoint position)
         {
