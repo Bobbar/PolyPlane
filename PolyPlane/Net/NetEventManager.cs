@@ -143,7 +143,7 @@ namespace PolyPlane.Net
                     break;
                 case PacketTypes.NewBullet:
 
-                    var bulletPacket = packet as BulletPacket;
+                    var bulletPacket = packet as GameObjectPacket;
                     DoNewBullet(bulletPacket);
 
                     break;
@@ -155,7 +155,7 @@ namespace PolyPlane.Net
                     break;
                 case PacketTypes.NewDecoy:
 
-                    var newDecoyPacket = packet as DecoyPacket;
+                    var newDecoyPacket = packet as GameObjectPacket;
                     DoNewDecoy(newDecoyPacket);
 
                     break;
@@ -375,9 +375,7 @@ namespace PolyPlane.Net
 
         public void SendNewDecoy(Decoy decoy)
         {
-            var decoyPacket = new Net.DecoyPacket(decoy);
-
-            Host.EnqueuePacket(decoyPacket);
+            Host.SendNewDecoyPacket(decoy);
         }
 
 
@@ -482,7 +480,7 @@ namespace PolyPlane.Net
             }
         }
 
-        private void DoNewBullet(BulletPacket bulletPacket)
+        private void DoNewBullet(GameObjectPacket bulletPacket)
         {
             var bullet = new Bullet(bulletPacket.Position.ToD2DPoint(), bulletPacket.Velocity.ToD2DPoint(), bulletPacket.Rotation);
             bullet.ID = bulletPacket.ID;
@@ -522,7 +520,7 @@ namespace PolyPlane.Net
             }
         }
 
-        private void DoNewDecoy(DecoyPacket decoyPacket)
+        private void DoNewDecoy(GameObjectPacket decoyPacket)
         {
             var decoyOwner = GetNetPlane(decoyPacket.OwnerID);
 

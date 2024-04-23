@@ -774,8 +774,7 @@ namespace PolyPlane
 
         private void DoNetDecoy(Decoy decoy)
         {
-            var decoyPacket = new Net.DecoyPacket(decoy);
-            _client.EnqueuePacket(decoyPacket);
+            _netMan.SendNewDecoy(decoy);
         }
 
         private void DropDecoy(FighterPlane plane)

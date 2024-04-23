@@ -134,7 +134,7 @@ namespace PolyPlane.Net
 
         public void SendNewBulletPacket(Bullet bullet)
         {
-            var netPacket = new BulletPacket(bullet);
+            var netPacket = new GameObjectPacket(bullet, PacketTypes.NewBullet);
             EnqueuePacket(netPacket);
         }
 
@@ -160,6 +160,12 @@ namespace PolyPlane.Net
         {
             var packet = new ChatPacket(message.Trim(), playerName);
             EnqueuePacket(packet);
+        }
+
+        public void SendNewDecoyPacket(Decoy decoy)
+        {
+            var packet = new GameObjectPacket(decoy, PacketTypes.NewDecoy);
+            EnqueuePacket(packet);  
         }
 
         public virtual void SendPacket(NetPacket packet) { }

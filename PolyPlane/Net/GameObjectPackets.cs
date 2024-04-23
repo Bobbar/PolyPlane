@@ -116,9 +116,7 @@ namespace PolyPlane.Net
             Message = message;
             PlayerName = playerName;
         }
-
     }
-
 
     public class DiscoveryPacket : NetPacket
     {
@@ -151,8 +149,6 @@ namespace PolyPlane.Net
             Name = name;
             Port = port;
         }
-
-
     }
 
 
@@ -376,26 +372,6 @@ namespace PolyPlane.Net
         }
     }
 
-
-    public class BulletPacket : GameObjectPacket
-    {
-        public BulletPacket() : base()
-        {
-            Type = PacketTypes.NewBullet;
-        }
-
-        public BulletPacket(GameObject obj) : base(obj)
-        {
-            Type = PacketTypes.NewBullet;
-        }
-
-        public virtual void SyncObj(GameObject obj)
-        {
-            base.SyncObj(obj);
-        }
-    }
-
-
     public class MissilePacket : GameObjectPacket
     {
         public float Deflection;
@@ -454,19 +430,6 @@ namespace PolyPlane.Net
             DoesDamage = doesDamage;
             WasHeadshot = wasHeadshot;
             WasMissile = wasMissile;
-        }
-    }
-
-    public class DecoyPacket : GameObjectPacket
-    {
-        public DecoyPacket()
-        {
-            Type = PacketTypes.NewDecoy;
-        }
-
-        public DecoyPacket(GameObject decoy) : base(decoy)
-        {
-            Type = PacketTypes.NewDecoy;
         }
     }
 }

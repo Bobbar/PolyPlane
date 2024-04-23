@@ -54,16 +54,12 @@ namespace PolyPlane.Net
                     obj = _serializer.Deserialize<NewPlayerPacket>(payloadBytes);
                     break;
 
-                case PacketTypes.NewBullet:
-                    obj = _serializer.Deserialize<BulletPacket>(payloadBytes);
-                    break;
-
                 case PacketTypes.NewMissile:
                     obj = _serializer.Deserialize<MissilePacket>(payloadBytes);
                     break;
 
-                case PacketTypes.NewDecoy:
-                    obj = _serializer.Deserialize<DecoyPacket>(payloadBytes);
+                case PacketTypes.NewDecoy or PacketTypes.NewBullet:
+                    obj = _serializer.Deserialize<GameObjectPacket>(payloadBytes);
                     break;
 
                 case PacketTypes.SetID or PacketTypes.GetNextID or PacketTypes.PlayerDisconnect or PacketTypes.PlayerReset or PacketTypes.KickPlayer:
