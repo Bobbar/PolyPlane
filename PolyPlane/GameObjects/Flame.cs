@@ -6,9 +6,13 @@ namespace PolyPlane.GameObjects
     public class Flame : GameObject
     {
         public float Radius { get; set; }
+        public D2DSize HoleSize { get; set; }
 
         private const int MAX_PARTS = 50;
         private const float MAX_AGE = 20f;
+        private const float MIN_HOLE_SZ = 2f;
+        private const float MAX_HOLE_SZ = 6f;
+
         private List<FlamePart> _parts = new List<FlamePart>();
         private D2DColor _flameColor = new D2DColor(0.6f, D2DColor.Yellow);
         private D2DColor _blackSmoke = new D2DColor(0.6f, D2DColor.Black);
@@ -27,6 +31,8 @@ namespace PolyPlane.GameObjects
 
             _spawnTimer.TriggerCallback = () => SpawnPart();
             _spawnTimer.Start();
+
+            HoleSize = new D2DSize(Helpers.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ), Helpers.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ));
         }
 
         public Flame(GameObject obj, D2DPoint offset, bool hasFlame = true) : base(obj.Position, obj.Velocity)
@@ -42,6 +48,8 @@ namespace PolyPlane.GameObjects
                 _spawnTimer.TriggerCallback = () => SpawnPart();
                 _spawnTimer.Start();
             }
+
+            HoleSize = new D2DSize(Helpers.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ), Helpers.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ));
         }
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
@@ -54,6 +62,7 @@ namespace PolyPlane.GameObjects
             {
                 _refPos.Update(dt, viewport, renderScale);
                 this.Position = _refPos.Position;
+                this.Rotation = _refPos.Rotation;
             }
 
             if (this.Owner != null && this.Owner.IsExpired)

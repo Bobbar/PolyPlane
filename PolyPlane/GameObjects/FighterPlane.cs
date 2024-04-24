@@ -484,8 +484,15 @@ namespace PolyPlane.GameObjects
 
                 foreach (var flame in _flames)
                 {
-                    ctx.Gfx.FillEllipseSimple(flame.Position, 5f, D2DColor.Gray);
-                    ctx.Gfx.FillEllipseSimple(flame.Position, 3f, D2DColor.Black);
+                    var outsideSz = new D2DSize(flame.HoleSize.width + 2f, flame.HoleSize.height + 2f);
+
+                    ctx.Gfx.PushTransform();
+                    ctx.Gfx.RotateTransform(flame.Rotation, flame.Position);
+
+                    ctx.Gfx.FillEllipse(new D2DEllipse(flame.Position, outsideSz), D2DColor.Gray);
+                    ctx.Gfx.FillEllipse(new D2DEllipse(flame.Position, flame.HoleSize), D2DColor.Black);
+
+                    ctx.Gfx.PopTransform();
                 }
 
                 ctx.Gfx.PopLayer();

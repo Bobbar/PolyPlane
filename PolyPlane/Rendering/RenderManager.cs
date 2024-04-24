@@ -578,16 +578,12 @@ namespace PolyPlane.Rendering
             using (var clipGeo = ctx.Device.CreateRectangleGeometry(rect))
             {
                 ctx.Gfx.PushLayer(_groundClipLayer, ctx.Viewport, clipGeo);
+
                 foreach (var impact in _objs.GroundImpacts)
                 {
                     ctx.FillEllipseSimple(impact, 15f, color1);
                     ctx.FillEllipseSimple(impact, 11f, color2);
                 }
-
-                //_objs.Bullets.ForEach(b =>
-                //{
-                //    ctx.FillEllipseSimple(b.Position, 80f, new D2DColor(0.1f, D2DColor.Yellow));
-                //});
 
                 ctx.Gfx.PopLayer();
             }
