@@ -18,7 +18,8 @@
         PlayerReset,
         ServerSync,
         Discovery,
-        KickPlayer
+        KickPlayer,
+        ImpactList
 
     }
 }

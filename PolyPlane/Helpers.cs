@@ -383,5 +383,12 @@ namespace PolyPlane
 
             return Name;
         }
+
+        public static D2DPoint ScaleToOrigin(GameObject obj, D2DPoint point)
+        {
+            var mat = Matrix3x2.CreateRotation(-obj.Rotation * (float)(Math.PI / 180f), obj.Position);
+            mat *= Matrix3x2.CreateTranslation(new D2DPoint(-obj.Position.X, -obj.Position.Y));
+            return D2DPoint.Transform(point, mat);
+        }
     }
 }

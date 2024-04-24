@@ -424,4 +424,20 @@ namespace PolyPlane.Net
             WasMissile = wasMissile;
         }
     }
+
+    public class ImpactListPacket : GameObjectPacket
+    {
+        public List<ImpactPacket> Impacts = new List<ImpactPacket>();
+
+        public ImpactListPacket() : base()
+        {
+            Type = PacketTypes.ImpactList;
+        }
+
+        public ImpactListPacket(List<ImpactPacket> impacts) : base()
+        {
+            Type = PacketTypes.ImpactList;
+            Impacts = impacts;
+        }
+    }
 }

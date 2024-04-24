@@ -13,6 +13,7 @@ namespace PolyPlane.Net
         public double PacketDelay = 0;
 
         private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
+        private Dictionary<int, List<ImpactPacket>> _impacts = new Dictionary<int, List<ImpactPacket>>();
 
         private long _frame = 0;
         private bool _netIDIsSet = false;
@@ -187,6 +188,7 @@ namespace PolyPlane.Net
                     if (IsServer)
                     {
                         ServerSendOtherPlanes();
+                        ServerSendExistingImpacts();
                     }
                     else
                     {
@@ -228,6 +230,7 @@ namespace PolyPlane.Net
                 case PacketTypes.PlayerDisconnect:
                     var disconnectPack = packet as Net.BasicPacket;
                     DoPlayerDisconnected(disconnectPack.ID.PlayerID);
+                    ClearImpacts(disconnectPack.ID.PlayerID);
 
                     break;
 
@@ -239,6 +242,7 @@ namespace PolyPlane.Net
 
                     if (resetPlane != null)
                     {
+                        ClearImpacts(resetPack.ID.PlayerID);
                         resetPlane.FixPlane();
                         PlayerRespawned?.Invoke(this, resetPlane);
                     }
@@ -270,9 +274,68 @@ namespace PolyPlane.Net
                         }
                     }
 
+                    ClearImpacts(kickPacket.ID.PlayerID);
                     PlayerKicked?.Invoke(this, kickPacket.ID.PlayerID);
 
                     break;
+
+                case PacketTypes.ImpactList:
+
+                    if (!IsServer)
+                    {
+                        var impactsPacket = packet as ImpactListPacket;
+
+                        if (impactsPacket != null)
+                        {
+                            HandleNewImpactList(impactsPacket);
+                        }
+                    }
+                    break;
+            }
+        }
+
+        private void SaveImpact(ImpactPacket impactPacket)
+        {
+            if (!this.IsServer)
+                return;
+
+            if (_impacts.TryGetValue(impactPacket.ID.PlayerID, out var impacts))
+                impacts.Add(impactPacket);
+            else
+                _impacts.Add(impactPacket.ID.PlayerID, new List<ImpactPacket>() { impactPacket });
+        }
+
+        private void ClearImpacts(int playerID)
+        {
+            if (!this.IsServer)
+                return;
+
+            if (_impacts.ContainsKey(playerID))
+                _impacts.Remove(playerID);
+        }
+
+        private void HandleNewImpactList(ImpactListPacket impacts)
+        {
+            foreach (var impact in impacts.Impacts)
+            {
+                var plane = Objs.GetPlaneByPlayerID(impact.ID.PlayerID);
+
+                if (plane != null)
+                {
+                    var ogState = new PlanePacket(plane);
+
+                    plane.Rotation = impact.Rotation;
+                    plane.Velocity = impact.Velocity.ToD2DPoint();
+                    plane.Position = impact.Position.ToD2DPoint();
+                    plane.SyncFixtures();
+
+                    plane.AddImpact(impact.ImpactPoint.ToD2DPoint());
+
+                    plane.Rotation = ogState.Rotation;
+                    plane.Velocity = ogState.Velocity.ToD2DPoint();
+                    plane.Position = ogState.Position.ToD2DPoint();
+                    plane.SyncFixtures();
+                }
             }
         }
 
@@ -354,13 +417,26 @@ namespace PolyPlane.Net
                 otherPlanesPackets.Add(new NewPlayerPacket(plane));
             }
 
-            var listPacket = new Net.PlayerListPacket(PacketTypes.GetOtherPlanes, otherPlanesPackets);
+            var listPacket = new PlayerListPacket(PacketTypes.GetOtherPlanes, otherPlanesPackets);
             Host.EnqueuePacket(listPacket);
+        }
+
+        public void ServerSendExistingImpacts()
+        {
+            var impactsPacket = new ImpactListPacket();
+
+            foreach (var impactList in _impacts.Values)
+            {
+                impactsPacket.Impacts.AddRange(impactList);
+            }
+
+            Host.EnqueuePacket(impactsPacket);
         }
 
         public void SendNetImpact(GameObject impactor, GameObject target, PlaneImpactResult result, GameObjectPacket histState)
         {
-            var impactPacket = new Net.ImpactPacket(target, impactor.ID, result.ImpactPoint, result.DoesDamage, result.WasHeadshot, result.Type == ImpactType.Missile);
+            var impactPacket = new ImpactPacket(target, impactor.ID, result.ImpactPoint, result.DoesDamage, result.WasHeadshot, result.Type == ImpactType.Missile);
+            SaveImpact(impactPacket);   
 
             if (histState != null)
             {
@@ -448,23 +524,21 @@ namespace PolyPlane.Net
                 {
                     // Move the plane to the server position, do the impact, then move it back.
                     // This is to make sure the impacts/bullet holes show up in the correct place.
-                    var curRot = target.Rotation;
-                    var curVelo = target.Velocity;
-                    var curPos = target.Position;
+
+                    var ogState = new PlanePacket(target);
 
                     target.Rotation = packet.Rotation;
                     target.Velocity = packet.Velocity.ToD2DPoint();
                     target.Position = packet.Position.ToD2DPoint();
                     target.SyncFixtures();
 
-                    // TODO: Consider sending the planes flip direction over the net, as it is likely to not be in sync with clients.
                     var impactPoint = packet.ImpactPoint.ToD2DPoint();
                     var result = new PlaneImpactResult(packet.WasMissile ? ImpactType.Missile : ImpactType.Bullet, impactPoint, packet.DoesDamage, packet.WasHeadshot);
                     target.HandleImpactResult(impactor, result);
 
-                    target.Rotation = curRot;
-                    target.Velocity = curVelo;
-                    target.Position = curPos;
+                    target.Rotation = ogState.Rotation;
+                    target.Velocity = ogState.Velocity.ToD2DPoint();
+                    target.Position = ogState.Position.ToD2DPoint();
                     target.SyncFixtures();
 
                     if (!IsServer)

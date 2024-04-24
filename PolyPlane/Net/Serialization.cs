@@ -81,6 +81,10 @@ namespace PolyPlane.Net
                 case PacketTypes.Discovery:
                     obj = _serializer.Deserialize<DiscoveryPacket>(payloadBytes);
                     break;
+
+                case PacketTypes.ImpactList:
+                    obj = _serializer.Deserialize<ImpactListPacket>(payloadBytes);
+                    break;
             }
 
             return obj;

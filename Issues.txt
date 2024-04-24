@@ -1,2 +1,0 @@
-- Sync existing impacts for new players?
-- AI plane IDs can conflict with Net players.

@@ -675,11 +675,9 @@ namespace PolyPlane.GameObjects
                 }
 
                 // Scale the impact position back to the origin of the polygon.
-                var mat = Matrix3x2.CreateRotation(-this.Rotation * (float)(Math.PI / 180f), this.Position);
-                mat *= Matrix3x2.CreateTranslation(new D2DPoint(-this.Position.X, -this.Position.Y));
-                var ogPos1 = D2DPoint.Transform(result.ImpactPoint, mat);
+                var ogPos = Helpers.ScaleToOrigin(this, result.ImpactPoint);
 
-                SetOnFire(ogPos1);
+                SetOnFire(ogPos);
 
                 if (this.Hits <= 0)
                 {
@@ -747,6 +745,16 @@ namespace PolyPlane.GameObjects
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Adds cosmetic impact (bullet holes/flames) without doing damage or impulse.
+        /// </summary>
+        /// <param name="impactPos"></param>
+        public void AddImpact(D2DPoint impactPos)
+        {
+            var ogPos = Helpers.ScaleToOrigin(this, impactPos);
+            SetOnFire(ogPos);
         }
 
         private void SpawnDebris(int num, D2DPoint pos, D2DColor color)
