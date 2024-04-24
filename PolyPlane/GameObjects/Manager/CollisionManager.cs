@@ -242,12 +242,8 @@ namespace PolyPlane.GameObjects.Manager
             {
                 var plane = _objs.Planes[a];
 
-                if (plane.Altitude <= 0f)
+                if (plane.Altitude <= 0f && !plane.InResetCooldown)
                 {
-                    if (!plane.IsDamaged)
-                        plane.SetOnFire();
-
-
                     if (!plane.HasCrashed)
                     {
                         var pointingRight = Helpers.IsPointingRight(plane.Rotation);
@@ -255,18 +251,14 @@ namespace PolyPlane.GameObjects.Manager
                             plane.Rotation = 0f;
                         else
                             plane.Rotation = 180f;
-                    }
 
-                    plane.IsDamaged = true;
-                    plane.DoHitGround();
-                    plane.SASOn = false;
-                    //plane.Velocity = D2DPoint.Zero;
+                        plane.DoHitGround();
+                    }
 
                     plane.Velocity *= new D2DPoint(0.998f, 0f);
                     plane.Position = new D2DPoint(plane.Position.X, 0f);
                     plane.RotationSpeed = 0f;
                 }
-
             }
 
             // Bullets & missiles.

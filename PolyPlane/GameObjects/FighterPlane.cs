@@ -7,6 +7,11 @@ namespace PolyPlane.GameObjects
 {
     public class FighterPlane : GameObjectPoly
     {
+        public bool InResetCooldown
+        {
+            get { return !_easePhysicsComplete; }
+        }
+
         public bool AIRespawnReady = false;
         public Direction FlipDirection => _currentDir;
         public string PlayerName;
@@ -380,7 +385,6 @@ namespace PolyPlane.GameObjects
 
                 this.Velocity += (World.Gravity * gravFact * dt);
             }
-
 
             var totForce = (thrust / this.MASS * dt) + (wingForce / this.MASS * dt);
 
@@ -758,11 +762,17 @@ namespace PolyPlane.GameObjects
 
         public void DoHitGround()
         {
+            if (!_easePhysicsComplete)
+                return;
+
             if (_isAIPlane)
                 _expireTimeout.Start();
 
             HasCrashed = true;
+            IsDamaged = true;
+            SASOn = false;
             _flipTimer.Stop();
+            SetOnFire();
         }
 
         public void FixPlane()
@@ -774,8 +784,7 @@ namespace PolyPlane.GameObjects
             IsDamaged = false;
             HasCrashed = false;
             ThrustOn = true;
-            _expireTimeout.Stop();
-            _expireTimeout.Reset();
+            _expireTimeout.Restart();
             _flipTimer.Restart();
             _flames.Clear();
             _debris.Clear();
@@ -783,8 +792,7 @@ namespace PolyPlane.GameObjects
             WasHeadshot = false;
             PlayerGuideAngle = 0f;
             _easePhysicsComplete = false;
-            _easePhysicsTimer.Stop();
-            _easePhysicsTimer.Reset();
+            _easePhysicsTimer.Restart();
             AIRespawnReady = false;
         }
 

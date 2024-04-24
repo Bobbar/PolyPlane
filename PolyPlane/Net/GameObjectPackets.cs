@@ -328,10 +328,9 @@ namespace PolyPlane.Net
 
     public class PlanePacket : GameObjectPacket
     {
-        public float ThrustAmt;
         public float Deflection;
         public bool IsDamaged;
-        public bool HasCrashed;
+        //public bool HasCrashed;
         public bool WasHeadshot;
         public bool FiringBurst;
         public int Hits;
@@ -340,10 +339,9 @@ namespace PolyPlane.Net
 
         public PlanePacket(FighterPlane obj) : base(obj)
         {
-            ThrustAmt = obj.ThrustAmount;
             Deflection = obj.Deflection;
             IsDamaged = obj.IsDamaged;
-            HasCrashed = obj.HasCrashed;
+            //HasCrashed = obj.HasCrashed;
             WasHeadshot = obj.WasHeadshot;
             Hits = obj.Hits;
             FiringBurst = obj.FiringBurst;
@@ -351,10 +349,9 @@ namespace PolyPlane.Net
 
         public PlanePacket(FighterPlane obj, PacketTypes type) : base(obj, type)
         {
-            ThrustAmt = obj.ThrustAmount;
             Deflection = obj.Deflection;
             IsDamaged = obj.IsDamaged;
-            HasCrashed = obj.HasCrashed;
+            //HasCrashed = obj.HasCrashed;
             WasHeadshot = obj.WasHeadshot;
             Hits = obj.Hits;
         }
@@ -362,10 +359,9 @@ namespace PolyPlane.Net
         public virtual void SyncObj(FighterPlane obj)
         {
             base.SyncObj(obj);
-            obj.ThrustAmount = ThrustAmt;
             obj.Deflection = Deflection;
             obj.IsDamaged = IsDamaged;
-            obj.HasCrashed = HasCrashed;
+            //obj.HasCrashed = HasCrashed;
             obj.WasHeadshot = WasHeadshot;
             obj.FiringBurst = FiringBurst;
             obj.Hits = Hits;
