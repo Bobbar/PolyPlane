@@ -171,7 +171,7 @@ namespace PolyPlane
                 if (p.Obj is FighterPlane plane)
                 {
                     if (plane.IsDamaged)
-                        gfx.FillEllipse(new D2DEllipse(p.RadarPos, new D2DSize(3f, 3f)), pColor);
+                        gfx.DrawEllipse(new D2DEllipse(p.RadarPos, new D2DSize(4f, 4f)), pColor);
                     else
                         gfx.FillRectangle(new D2DRect(p.RadarPos, new D2DSize(6f, 6f)), pColor);
                 }

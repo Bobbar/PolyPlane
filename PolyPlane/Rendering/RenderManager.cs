@@ -989,7 +989,7 @@ namespace PolyPlane.Rendering
             const float H = 350f;
             const float HalfW = W * 0.5f;
             const float HalfH = H * 0.5f;
-            const float MARKER_STEP = 100f;
+            const float MARKER_STEP = 175f;
 
             var pos = new D2DPoint(viewportsize.width * 0.85f, viewportsize.height * 0.3f);
             var rect = new D2DRect(pos, new D2DSize(W, H));

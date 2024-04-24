@@ -330,7 +330,6 @@ namespace PolyPlane.Net
     {
         public float Deflection;
         public bool IsDamaged;
-        //public bool HasCrashed;
         public bool WasHeadshot;
         public bool FiringBurst;
         public int Hits;
@@ -341,7 +340,6 @@ namespace PolyPlane.Net
         {
             Deflection = obj.Deflection;
             IsDamaged = obj.IsDamaged;
-            //HasCrashed = obj.HasCrashed;
             WasHeadshot = obj.WasHeadshot;
             Hits = obj.Hits;
             FiringBurst = obj.FiringBurst;
@@ -351,7 +349,6 @@ namespace PolyPlane.Net
         {
             Deflection = obj.Deflection;
             IsDamaged = obj.IsDamaged;
-            //HasCrashed = obj.HasCrashed;
             WasHeadshot = obj.WasHeadshot;
             Hits = obj.Hits;
         }
@@ -361,7 +358,6 @@ namespace PolyPlane.Net
             base.SyncObj(obj);
             obj.Deflection = Deflection;
             obj.IsDamaged = IsDamaged;
-            //obj.HasCrashed = HasCrashed;
             obj.WasHeadshot = WasHeadshot;
             obj.FiringBurst = FiringBurst;
             obj.Hits = Hits;
