@@ -334,6 +334,12 @@ namespace PolyPlane.Rendering
             return todColor;
         }
 
+        private D2DColor GetShadowColor()
+        {
+            var shadowColor = new D2DColor(0.4f, Helpers.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.7f));
+            return shadowColor;
+        }
+
         private D2DColor InterpolateColorGaussian(D2DColor[] colors, float value, float maxValue)
         {
             var x = Math.Min(1.0f, value / maxValue);
@@ -430,12 +436,14 @@ namespace PolyPlane.Rendering
             {
                 if (o is FighterPlane tplane && !tplane.ID.Equals(plane.ID))
                 {
+                    DrawPlaneShadow(ctx, tplane);
                     o.Render(ctx);
                     DrawHealthBarClamped(ctx, tplane, new D2DPoint(tplane.Position.X, tplane.Position.Y - 110f), healthBarSize);
                     DrawMuzzleFlash(ctx, tplane);
                 }
             });
 
+            DrawPlaneShadow(ctx, plane);
             plane.Render(ctx);
 
             _objs.Explosions.ForEach(o => o.Render(ctx));
@@ -446,6 +454,25 @@ namespace PolyPlane.Rendering
 
             ctx.PopViewPort();
             ctx.Gfx.PopTransform();
+        }
+
+        private void DrawPlaneShadow(RenderContext ctx, FighterPlane plane)
+        {
+            const float MAX_WIDTH = 100f;
+            const float HEIGHT = 10f;
+            const float MAX_SIZE_ALT = 500f;
+            const float MAX_SHOW_ALT = 1400f;
+            const float Y_POS = 20f;
+
+            if (plane.Altitude > MAX_SHOW_ALT)
+                return;
+
+            var shadowPos = new D2DPoint(plane.Position.X, Y_POS);
+            var shadowWidth = Helpers.Lerp(0, MAX_WIDTH, Helpers.Factor(MAX_SIZE_ALT, plane.Altitude));
+            if (plane.Altitude <= 0f)
+                shadowWidth = MAX_WIDTH;
+
+            ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(shadowWidth, HEIGHT)), GetShadowColor());
         }
 
         private void DrawLightingEffects(RenderContext ctx, FighterPlane plane)
@@ -645,12 +672,12 @@ namespace PolyPlane.Rendering
             // Draw shadows.
             ctx.Gfx.PushTransform();
 
-            var shadowColor = new D2DColor(0.4f, Helpers.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.7f));
+            var shadowColor = GetShadowColor();
             var shadowLeaf = pos - new D2DPoint(0, (-height * GROUND_OBJ_SCALE) - (radius));
             var shadowAngle = Helpers.Lerp(-40f, 40f, Helpers.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
 
             ctx.Gfx.RotateTransform(shadowAngle, pos);
-            ctx.Gfx.ScaleTransform(1f, 2f);
+            ctx.Gfx.ScaleTransform(1f, 2f, pos);
             Helpers.ApplyTranslation(trunk, trunkTrans, 0f, pos, GROUND_OBJ_SCALE);
 
             ctx.DrawPolygon(trunkTrans, shadowColor, 1f, D2DDashStyle.Solid, shadowColor);
@@ -697,11 +724,11 @@ namespace PolyPlane.Rendering
 
             var shadowTrunkPos = pos + new D2DPoint(0, height / 2f);
             var shadowTopPos = pos + new D2DPoint(0, height);
-            var shadowColor = new D2DColor(0.4f, Helpers.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.7f));
+            var shadowColor = GetShadowColor();
             var shadowAngle = Helpers.Lerp(-40f, 40f, Helpers.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
 
             ctx.Gfx.RotateTransform(shadowAngle, pos);
-            ctx.Gfx.ScaleTransform(1f, 2f);
+            ctx.Gfx.ScaleTransform(1f, 2f, pos);
             Helpers.ApplyTranslation(pineTop, pineTopTrans, 0f, shadowTopPos, GROUND_OBJ_SCALE);
 
             ctx.FillRectangle(new D2DRect(shadowTrunkPos, new D2DSize(width / 2f, height * 1f)), shadowColor);
