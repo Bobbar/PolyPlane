@@ -1,6 +1,5 @@
 ﻿using PolyPlane.AI_Behavior;
 using PolyPlane.Rendering;
-using System.Numerics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -780,8 +779,8 @@ namespace PolyPlane.GameObjects
             if (!_easePhysicsComplete)
                 return;
 
-            if (_isAIPlane)
-                _expireTimeout.Start();
+            if (_isAIPlane && !_expireTimeout.IsRunning)
+                _expireTimeout.Restart();
 
             HasCrashed = true;
             IsDamaged = true;
@@ -799,7 +798,7 @@ namespace PolyPlane.GameObjects
             IsDamaged = false;
             HasCrashed = false;
             ThrustOn = true;
-            _expireTimeout.Restart();
+            _expireTimeout.Stop();
             _flipTimer.Restart();
             _flames.Clear();
             _debris.Clear();

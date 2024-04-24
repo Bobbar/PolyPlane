@@ -528,7 +528,6 @@ namespace PolyPlane.Net
                     var ogState = new PlanePacket(target);
 
                     target.Rotation = packet.Rotation;
-                    target.Velocity = packet.Velocity.ToD2DPoint();
                     target.Position = packet.Position.ToD2DPoint();
                     target.SyncFixtures();
 
@@ -537,7 +536,6 @@ namespace PolyPlane.Net
                     target.HandleImpactResult(impactor, result);
 
                     target.Rotation = ogState.Rotation;
-                    target.Velocity = ogState.Velocity.ToD2DPoint();
                     target.Position = ogState.Position.ToD2DPoint();
                     target.SyncFixtures();
 
