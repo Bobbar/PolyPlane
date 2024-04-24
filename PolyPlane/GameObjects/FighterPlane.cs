@@ -349,8 +349,8 @@ namespace PolyPlane.GameObjects
 
             if (IsDamaged)
             {
-                wingForce *= 0.3f;
-                wingTorque *= 0.3f;
+                wingForce *= 0.2f;
+                wingTorque *= 0.2f;
                 AutoPilotOn = false;
                 SASOn = false;
                 ThrustOn = false;
