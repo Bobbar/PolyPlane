@@ -768,8 +768,7 @@ namespace PolyPlane
 
         private void SendPlayerReset()
         {
-            var resetPacket = new BasicPacket(PacketTypes.PlayerReset, _playerPlane.ID);
-            _client.EnqueuePacket(resetPacket);
+            _netMan.SendPlaneReset(_playerPlane);
         }
 
         private void DoNetDecoy(Decoy decoy)

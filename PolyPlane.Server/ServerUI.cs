@@ -386,8 +386,7 @@ namespace PolyPlane.Server
 
         private void ResetPlane(FighterPlane plane)
         {
-            var resetPacket = new BasicPacket(PacketTypes.PlayerReset, plane.ID);
-            _server.EnqueuePacket(resetPacket);
+            _netMan.SendPlaneReset(plane);
 
             plane.AutoPilotOn = true;
             plane.ThrustOn = true;

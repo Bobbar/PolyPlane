@@ -419,7 +419,7 @@ namespace PolyPlane.Rendering
             ctx.Gfx.TranslateTransform(pos.X, pos.Y);
 
             var viewPortRect = new D2DRect(plane.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
-            viewPortRect = viewPortRect.Inflate(200f, 200f); // Inflate slightly to prevent "pop-in".
+            viewPortRect = viewPortRect.Inflate(300f, 200f); // Inflate slightly to prevent "pop-in".
 
             ctx.PushViewPort(viewPortRect);
 
