@@ -810,16 +810,22 @@ namespace PolyPlane.Rendering
 
         private void DrawMessages(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
         {
+            const float SCALE = 1.3f;
             const float FONT_SIZE = 10f;
             const int MAX_LINES = 10;
             const float WIDTH = 400f;
             const float HEIGHT = 100f;
 
             var lineSize = new D2DSize(WIDTH, HEIGHT / MAX_LINES);
-            var boxPos = new D2DPoint(viewportsize.width * 0.25f, viewportsize.height * 0.75f);
+            var boxPos = new D2DPoint(viewportsize.width * 0.30f, viewportsize.height * 0.7f);
             var linePos = boxPos;
 
             var start = 0;
+
+            gfx.PushTransform();
+            gfx.ScaleTransform(SCALE, SCALE, boxPos);
+
+            gfx.FillRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, new D2DColor(0.05f, World.HudColor));
 
             if (_messageEvents.Count >= MAX_LINES)
                 start = _messageEvents.Count - MAX_LINES;
@@ -828,7 +834,7 @@ namespace PolyPlane.Rendering
             {
                 var msg = _messageEvents[i];
                 var rect = new D2DRect(linePos, lineSize);
-                var color = World.HudColor;
+                var color = Helpers.LerpColor(World.HudColor, D2DColor.WhiteSmoke, 0.3f);
 
                 switch (msg.Type)
                 {
@@ -861,6 +867,8 @@ namespace PolyPlane.Rendering
                     gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y + HEIGHT, WIDTH, lineSize.height + 5f, World.HudColor);
                 }
             }
+
+            gfx.PopTransform();
         }
 
         private void DrawGuideIcon(D2DGraphics gfx, D2DSize viewportsize, FighterPlane viewPlane)
@@ -1071,6 +1079,7 @@ namespace PolyPlane.Rendering
             const float MIN_DIST = 600f;
             const float MAX_DIST = 10000f;
             var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
+            var color = Helpers.LerpColor(World.HudColor, D2DColor.WhiteSmoke, 0.3f);
 
             for (int i = 0; i < _objs.Planes.Count; i++)
             {
@@ -1091,15 +1100,14 @@ namespace PolyPlane.Rendering
                 var angle = dir.Angle(true);
                 var vec = Helpers.AngleToVectorDegrees(angle);
 
-                gfx.DrawArrow(pos + (vec * 250f), pos + (vec * 270f), World.HudColor, 2f);
+                gfx.DrawArrow(pos + (vec * 250f), pos + (vec * 270f), color, 2f);
             }
 
             if (plane.Radar.HasLock)
             {
                 var lockPos = pos + new D2DPoint(0f, -200f);
                 var lRect = new D2DRect(lockPos, new D2DSize(120, 30));
-                gfx.DrawTextCenter("LOCKED", World.HudColor, _defaultFontName, 25f, lRect);
-
+                gfx.DrawTextCenter("LOCKED", color, _defaultFontName, 25f, lRect);
             }
         }
 
