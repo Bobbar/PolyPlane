@@ -87,15 +87,15 @@ namespace PolyPlane.Rendering
             var shadowColor = GetShadowColor(timeOfDayColor);
             var shadowLeaf = this.Position - new D2DPoint(0, (-this.Height * scale) - (this.Radius));
             var shadowAngle = Helpers.Lerp(-40f, 40f, Helpers.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
+            var shadowPosOffset = new D2DPoint(0f, -4f); // Small offset to shift the shadow polys "up" to hide the corners under the tree.
 
             ctx.Gfx.RotateTransform(shadowAngle, this.Position);
             ctx.Gfx.ScaleTransform(1f, 2f, this.Position);
-            Helpers.ApplyTranslation(trunk, trunkTrans, 0f, this.Position, scale);
+            Helpers.ApplyTranslation(trunk, trunkTrans, 0f, this.Position + shadowPosOffset, scale);
 
             ctx.DrawPolygon(trunkTrans, shadowColor, 1f, D2DDashStyle.Solid, shadowColor);
-            ctx.FillEllipse(new D2DEllipse(shadowLeaf, new D2DSize(this.Radius, this.Radius)), shadowColor);
+            ctx.FillEllipse(new D2DEllipse(shadowLeaf + shadowPosOffset, new D2DSize(this.Radius, this.Radius)), shadowColor);
             ctx.Gfx.PopTransform();
-
 
             // Draw tree.
             Helpers.ApplyTranslation(trunk, trunkTrans, 180f, this.Position, scale);
