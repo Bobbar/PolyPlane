@@ -36,7 +36,7 @@ namespace PolyPlane.Rendering
             for (int i = 0; i < nPnts; i++)
             {
                 var dimsX = rnd.NextFloat(MIN_DIMS + (altFact * ALT_FACT_AMT), MAX_DIMS + (altFact * ALT_FACT_AMT));
-                var dimsY = rnd.NextFloat(MIN_DIMS + (altFact * ALT_FACT_AMT), MAX_DIMS + (altFact * ALT_FACT_AMT));
+                var dimsY = rnd.NextFloat(MIN_DIMS - (altFact * ALT_FACT_AMT), MAX_DIMS - (altFact * ALT_FACT_AMT));
                 dims.Add(new D2DPoint(dimsX, dimsY));
             }
 
