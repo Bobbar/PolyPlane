@@ -200,7 +200,7 @@ namespace PolyPlane.GameObjects
 
             var skipFrames = IsNetObject ? 1 : World.PHYSICS_SUB_STEPS;
 
-            this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), 1.7f);
+            this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), this.RenderOffset);
             _flamePos = new FixturePoint(this, new D2DPoint(-38f, 1f), skipFrames);
             _gunPosition = new FixturePoint(this, new D2DPoint(35f, 0), skipFrames);
             _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
