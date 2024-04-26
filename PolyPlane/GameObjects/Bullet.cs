@@ -52,8 +52,13 @@ namespace PolyPlane.GameObjects
             _age += dt;
 
             if (_age >= Lifetime)
+            {
+                AddExplosionCallback(this.Position);
                 this.IsExpired = true;
+            }
 
+            this.Velocity += (World.Gravity * dt);
+            this.Velocity += (-this.Velocity * 0.03f * dt);
         }
 
         public override void Wrap(D2DSize viewport)
