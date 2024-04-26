@@ -712,29 +712,35 @@ namespace PolyPlane.Rendering
             var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height - (viewportsize.height * 0.85f));
             DrawHealthBar(ctx.Gfx, viewPlane, pos, healthBarSize);
 
-            DrawMessages(ctx.Gfx, viewportsize, viewPlane);
+            DrawMessageBox(ctx, viewportsize, viewPlane);
 
             ctx.Gfx.PopTransform();
         }
 
-        private void DrawMessages(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
+        private void DrawMessageBox(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)
         {
-            const float SCALE = 1.3f;
+            const float SCALE = 1f;
+            const float ACTIVE_SCALE = 1.4f;
             const float FONT_SIZE = 10f;
             const int MAX_LINES = 10;
             const float WIDTH = 400f;
             const float HEIGHT = 100f;
 
             var lineSize = new D2DSize(WIDTH, HEIGHT / MAX_LINES);
-            var boxPos = new D2DPoint(viewportsize.width * 0.30f, viewportsize.height * 0.7f);
+            var chatActive = _netMan != null && _netMan.ChatInterface.ChatIsActive;
+            var scale = SCALE;
+
+            if (chatActive)
+                scale = ACTIVE_SCALE;
+
+            var boxPos = new D2DPoint(160f * ((HudScale * 2f) * scale), viewportsize.height - ((100f * (HudScale * 2f)) * scale));
             var linePos = boxPos;
 
+            ctx.Gfx.PushTransform();
+            ctx.Gfx.ScaleTransform(scale, scale, boxPos);
+            ctx.Gfx.FillRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, new D2DColor(0.05f, World.HudColor));
+
             var start = 0;
-
-            gfx.PushTransform();
-            gfx.ScaleTransform(SCALE, SCALE, boxPos);
-
-            gfx.FillRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, new D2DColor(0.05f, World.HudColor));
 
             if (_messageEvents.Count >= MAX_LINES)
                 start = _messageEvents.Count - MAX_LINES;
@@ -752,32 +758,29 @@ namespace PolyPlane.Rendering
                         break;
                 }
 
-                gfx.DrawText(msg.Message, color, _defaultFontName, FONT_SIZE, rect);
+                ctx.Gfx.DrawText(msg.Message, color, _defaultFontName, FONT_SIZE, rect);
 
                 linePos += new D2DPoint(0, lineSize.height);
             }
 
-            gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, World.HudColor);
+            ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, World.HudColor);
 
             // Draw current chat message.
-            if (_netMan != null)
+            if (chatActive)
             {
-                if (_netMan.ChatInterface.ChatIsActive)
-                {
-                    var rect = new D2DRect(new D2DPoint(boxPos.X, boxPos.Y + HEIGHT + 6f), lineSize);
+                var rect = new D2DRect(new D2DPoint(boxPos.X, boxPos.Y + HEIGHT + 6f), lineSize);
 
-                    var curText = _netMan.ChatInterface.CurrentText;
+                var curText = _netMan.ChatInterface.CurrentText;
 
-                    if (string.IsNullOrEmpty(curText))
-                        gfx.DrawText("Type chat message...", World.HudColor, _defaultFontName, FONT_SIZE, rect);
-                    else
-                        gfx.DrawText(_netMan.ChatInterface.CurrentText, D2DColor.White, _defaultFontName, FONT_SIZE, rect);
+                if (string.IsNullOrEmpty(curText))
+                    ctx.Gfx.DrawText("Type chat message...", World.HudColor, _defaultFontName, FONT_SIZE, rect);
+                else
+                    ctx.Gfx.DrawText(_netMan.ChatInterface.CurrentText, D2DColor.White, _defaultFontName, FONT_SIZE, rect);
 
-                    gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y + HEIGHT, WIDTH, lineSize.height + 5f, World.HudColor);
-                }
+                ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y + HEIGHT, WIDTH, lineSize.height + 5f, World.HudColor);
             }
 
-            gfx.PopTransform();
+            ctx.Gfx.PopTransform();
         }
 
         private void DrawGuideIcon(D2DGraphics gfx, D2DSize viewportsize, FighterPlane viewPlane)
@@ -1023,7 +1026,7 @@ namespace PolyPlane.Rendering
         private void DrawRadar(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)
         {
             const float SCALE = 0.8f;
-            var pos = new D2DPoint(viewportsize.width * 0.8f, viewportsize.height * 0.75f);
+            var pos = new D2DPoint(viewportsize.width - (100f * (HudScale * 2.5f)), viewportsize.height - (90f * (HudScale * 2.5f)));
 
             ctx.Gfx.PushTransform();
             ctx.Gfx.ScaleTransform(SCALE, SCALE, pos);
@@ -1377,6 +1380,7 @@ namespace PolyPlane.Rendering
             }
 
             infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
+            infoText += $"HUD Scale: {_hudScale}\n";
             infoText += $"DT: {Math.Round(World.DT, 4)}\n";
             infoText += $"AutoPilot: {(viewplane.AutoPilotOn ? "On" : "Off")}\n";
             infoText += $"Position: {viewplane?.Position}\n";
