@@ -229,6 +229,7 @@ namespace PolyPlane.GameObjects.Manager
             }
 
             HandleGroundImpacts();
+            HandleFieldWrap();
         }
 
         private void HandleGroundImpacts()
@@ -285,6 +286,26 @@ namespace PolyPlane.GameObjects.Manager
             {
                 if (decoy.Altitude <= 0f)
                     decoy.IsExpired = true;
+            }
+        }
+
+        // Quietly wrap any planes that try to leave the field.
+        private void HandleFieldWrap()
+        {
+            foreach (var plane in _objs.Planes)
+            {
+                if (plane.Position.X > World.FieldXBounds.Y)
+                {
+                    plane.Position = new D2DPoint(World.FieldXBounds.X, plane.Position.Y);
+                    plane.SyncFixtures();
+                    plane.Reset();
+                }
+                else if (plane.Position.X < World.FieldXBounds.X)
+                {
+                    plane.Position = new D2DPoint(World.FieldXBounds.Y, plane.Position.Y);
+                    plane.SyncFixtures();
+                    plane.Reset();
+                }
             }
         }
 

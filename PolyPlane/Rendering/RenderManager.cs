@@ -71,7 +71,7 @@ namespace PolyPlane.Rendering
         private const int NUM_CLOUDS = 2000;
         private const int NUM_TREES = 1000;
 
-        private const float MAX_CLOUD_Y = 400000f;
+        private const float MAX_CLOUD_X = 400000f;
         private const float CLOUD_SCALE = 5f;
         private const float GROUND_OBJ_SCALE = 4f;
 
@@ -156,7 +156,7 @@ namespace PolyPlane.Rendering
             // I tried to do clouds procedurally, but wasn't having much luck.
             // It turns out that we need a surprisingly few number of clouds
             // to cover a very large area, so we will just brute force this for now.
-            var cloudRangeX = new D2DPoint(-MAX_CLOUD_Y, MAX_CLOUD_Y);
+            var cloudRangeX = new D2DPoint(-MAX_CLOUD_X, MAX_CLOUD_X);
             var cloudRangeY = new D2DPoint(-30000, -2000);
             var cloudDeDup = new HashSet<D2DPoint>();
             const int MIN_PNTS = 5;
@@ -1310,9 +1310,9 @@ namespace PolyPlane.Rendering
                 cloud.Rotation = Helpers.ClampAngle(cloud.Rotation + (3f * rotDir) * dt);
 
                 // Wrap clouds.
-                if (cloud.Position.X > MAX_CLOUD_Y)
+                if (cloud.Position.X > MAX_CLOUD_X)
                 {
-                    cloud.Position.X = -MAX_CLOUD_Y;
+                    cloud.Position.X = -MAX_CLOUD_X;
                 }
 
                 Helpers.ApplyTranslation(cloud.PointsOrigin, cloud.Points, cloud.Rotation, cloud.Position, CLOUD_SCALE);
