@@ -207,7 +207,7 @@ namespace PolyPlane
             return result;
         }
 
-      
+
 
         /// <summary>
         /// Return to server/game config screen.
@@ -563,7 +563,7 @@ namespace PolyPlane
 
             _timer.Restart();
 
-            if (!_skipRender)
+            if (!_skipRender && this.WindowState != FormWindowState.Minimized)
                 _render.RenderFrame(viewPlane);
             else
                 _fpsLimiter.Wait(60);
