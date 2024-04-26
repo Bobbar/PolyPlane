@@ -1079,7 +1079,7 @@ namespace PolyPlane.Rendering
                 if (dist < MIN_DIST / 2f || dist > MAX_DIST)
                     continue;
 
-                if (!missile.MissedTarget)
+                if (!missile.MissedTarget && warningMessage)
                     gfx.DrawArrow(pos1, pos2, color, (distFact * 30f) + 1f);
             }
 
