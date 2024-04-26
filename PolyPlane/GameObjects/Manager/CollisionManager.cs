@@ -280,6 +280,12 @@ namespace PolyPlane.GameObjects.Manager
                     _objs.AddExplosion(missile.Position);
                 }
             }
+
+            foreach (var decoy in _objs.Decoys)
+            {
+                if (decoy.Altitude <= 0f)
+                    decoy.IsExpired = true;
+            }
         }
 
         /// <summary>

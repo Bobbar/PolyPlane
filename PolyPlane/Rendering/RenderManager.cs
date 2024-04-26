@@ -197,16 +197,17 @@ namespace PolyPlane.Rendering
             var leafColorNormal = D2DColor.ForestGreen;
             var trunkColorPine = D2DColor.BurlyWood;
             var leafColorPine = D2DColor.Green;
+            var minDist = rnd.NextFloat(20f, 200f);
 
             for (int i = 0; i < NUM_TREES; i++)
             {
                 var rndPos = new D2DPoint(rnd.NextFloat(cloudRangeX.X, cloudRangeX.Y), 0f);
 
-                while (!treeDeDup.Add(rndPos) || (_trees.Count > 0 && _trees.Min(t => t.Position.DistanceTo(rndPos)) < 100f))
+                while (!treeDeDup.Add(rndPos) || (_trees.Count > 0 && _trees.Min(t => t.Position.DistanceTo(rndPos)) < minDist))
                     rndPos = new D2DPoint(rnd.NextFloat(cloudRangeX.X, cloudRangeX.Y), 0f);
 
                 var type = rnd.Next(10);
-                var height = rnd.NextFloat(20f, 60f);
+                var height = 10f + (rnd.NextFloat(1f, 3f) * 20f);
 
                 Tree newTree;
 
@@ -229,6 +230,9 @@ namespace PolyPlane.Rendering
                 }
 
                 _trees.Add(newTree);
+
+                if (i % 50 == 0)
+                    minDist = rnd.NextFloat(20f, 200f);
             }
         }
 
@@ -456,7 +460,7 @@ namespace PolyPlane.Rendering
             ctx.PushViewPort(viewPortRect);
 
             DrawGround(ctx, plane);
-            DrawGroundObjs(ctx, plane);
+            DrawGroundObjs(ctx, plane); 
             DrawGroundImpacts(ctx, plane);
 
             _objs.Decoys.ForEach(o => o.Render(ctx));
@@ -583,13 +587,16 @@ namespace PolyPlane.Rendering
             if (!ctx.Viewport.Contains(groundPos))
                 return;
 
-            groundPos += new D2DPoint(0f, 2000f);
+            const float HEIGHT = 300f;
+            var yPos = HEIGHT / ctx.CurrentScale;
+            groundPos += new D2DPoint(0f, yPos);
+
             var color1 = D2DColor.DarkGreen;
             var color2 = new D2DColor(1f, 0f, 0.29f, 0);
             using (var brush = ctx.Device.CreateLinearGradientBrush(new D2DPoint(plane.Position.X, 50f), new D2DPoint(plane.Position.X, 4000f), [new D2DGradientStop(0.2f, AddTimeOfDayColor(color1)), new D2DGradientStop(0.1f, AddTimeOfDayColor(color2))]))
             {
                 // Draw the ground.
-                ctx.Gfx.FillRectangle(new D2DRect(groundPos, new D2DSize(this.Width * World.ViewPortScaleMulti, 4000f)), brush);
+                ctx.Gfx.FillRectangle(new D2DRect(groundPos, new D2DSize(this.Width * World.ViewPortScaleMulti, (HEIGHT * 2f) / ctx.CurrentScale)), brush);
             }
         }
 
