@@ -159,10 +159,10 @@ namespace PolyPlane.Rendering
             var cloudRangeX = new D2DPoint(-MAX_CLOUD_X, MAX_CLOUD_X);
             var cloudRangeY = new D2DPoint(-30000, -2000);
             var cloudDeDup = new HashSet<D2DPoint>();
-            const int MIN_PNTS = 5;
-            const int MAX_PNTS = 25;
+            const int MIN_PNTS = 12;
+            const int MAX_PNTS = 28;
             const int MIN_RADIUS = 5;
-            const int MAX_RADIUS = 20;
+            const int MAX_RADIUS = 30;
 
             for (int i = 0; i < NUM_CLOUDS; i++)
             {
@@ -1237,6 +1237,8 @@ namespace PolyPlane.Rendering
 
             var points = cloud.Points;
 
+            Helpers.ApplyTranslation(points, points, cloud.Position, 0f, D2DPoint.Zero, cloud.ScaleX, cloud.ScaleY);
+
             // Find min/max height.
             var minY = points.Min(p => p.Y);
             var maxY = points.Max(p => p.Y);
@@ -1272,7 +1274,9 @@ namespace PolyPlane.Rendering
             if (cloud.Position.Y < -8000f)
                 return;
 
-            if (!ctx.Viewport.Contains(new D2DPoint(cloud.Position.X, 0f)))
+            var todOffset = Helpers.Lerp(600f, -600f, Helpers.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
+
+            if (!ctx.Viewport.Contains(new D2DPoint(cloud.Position.X + todOffset, 0f)))
                 return;
 
             var shadowColor = new D2DColor(0.05f, Helpers.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.7f));
@@ -1283,11 +1287,10 @@ namespace PolyPlane.Rendering
                 var dims = cloud.Dims[i];
 
                 var groundPos = new D2DPoint(point.X, -80f + Math.Abs((point.Y * 0.1f)));
-                var todOffset = Helpers.Lerp(600f, -600f, Helpers.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
                 groundPos.X += todOffset;
 
                 if (ctx.Viewport.Contains(groundPos))
-                    ctx.FillEllipse(new D2DEllipse(groundPos, new D2DSize(dims.X * 3f, dims.Y * 0.5f)), shadowColor);
+                    ctx.FillEllipse(new D2DEllipse(groundPos, new D2DSize(dims.X * 4f, dims.Y * 0.5f)), shadowColor);
             }
         }
 
@@ -1298,8 +1301,9 @@ namespace PolyPlane.Rendering
             {
                 var cloud = _clouds[i];
 
-                // Smaller clouds move slightly faster?
-                cloud.Position.X += (RATE - (cloud.Radius / 2)) * dt;
+                var altFact = 30f * Helpers.Factor(Math.Abs(cloud.Position.Y), 30000f); // Higher clouds move slower?
+                var sizeOffset = (cloud.Radius / 2f); // Smaller clouds move slightly faster?
+                cloud.Position.X += ((RATE - altFact) - sizeOffset) * dt;
 
                 float rotDir = 1f;
 
@@ -1307,7 +1311,7 @@ namespace PolyPlane.Rendering
                 if (cloud.Points.Length % 2 == 0)
                     rotDir = -1f;
 
-                cloud.Rotation = Helpers.ClampAngle(cloud.Rotation + (3f * rotDir) * dt);
+                cloud.Rotation = Helpers.ClampAngle(cloud.Rotation + (0.8f * rotDir) * dt);
 
                 // Wrap clouds.
                 if (cloud.Position.X > MAX_CLOUD_X)

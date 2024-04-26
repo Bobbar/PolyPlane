@@ -250,6 +250,19 @@ namespace PolyPlane
             }
         }
 
+        public static void ApplyTranslation(D2DPoint[] src, D2DPoint[] dst, D2DPoint center, float rotation, D2DPoint translation, float scaleX = 1f, float scaleY = 1f)
+        {
+            var mat = Matrix3x2.CreateScale(scaleX, scaleY, center);
+            mat *= Matrix3x2.CreateRotation(rotation * (float)(Math.PI / 180f), center);
+            mat *= Matrix3x2.CreateTranslation(translation);
+
+            for (int i = 0; i < dst.Length; i++)
+            {
+                var transPnt = D2DPoint.Transform(src[i], mat);
+                dst[i] = transPnt;
+            }
+        }
+
         public static D2DColor LerpColor(D2DColor color1, D2DColor color2, float amount)
         {
             var newColor = new D2DColor(

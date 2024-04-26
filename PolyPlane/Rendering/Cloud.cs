@@ -10,6 +10,8 @@ namespace PolyPlane.Rendering
         public List<D2DPoint> Dims = new List<D2DPoint>();
         public float Rotation = 0f;
         public float Radius = 0f;
+        public float ScaleX = 1f;
+        public float ScaleY = 1f;
 
         public Cloud(D2DPoint position, List<D2DPoint> points, List<D2DPoint> dims, float rotation)
         {
@@ -40,11 +42,14 @@ namespace PolyPlane.Rendering
                 dims.Add(new D2DPoint(dimsX, dimsY));
             }
 
-            var rotation = rnd.NextFloat(0, 360);
-            var pnts = GameObjectPoly.RandomPoly(nPnts, radius).ToList();
+            var rotation = 0f;
+            var poly = GameObjectPoly.RandomPoly(nPnts, radius);
+            var pnts = poly.ToList();
 
             var newCloud = new Cloud(position, pnts, dims, rotation);
             newCloud.Radius = radius;
+            newCloud.ScaleX = rnd.NextFloat(1.5f, 3f);
+            newCloud.ScaleY = rnd.NextFloat(0.3f, 0.5f);
 
             return newCloud;
         }
