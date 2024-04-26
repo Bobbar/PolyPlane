@@ -35,6 +35,8 @@ namespace PolyPlane.GameObjects
 
             this.Velocity *= 0.998f;
 
+            this.Velocity += ((World.Gravity * 2f) * dt);
+
             _currentFlash += _direction * (_flashRate * dt);
 
             if (_currentFlash >= _flashAmt || _currentFlash <= 0f)
