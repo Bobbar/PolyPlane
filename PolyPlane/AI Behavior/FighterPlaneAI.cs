@@ -148,7 +148,7 @@ namespace PolyPlane.AI_Behavior
 
             const float MAX_DIST = 40000f;
 
-            if (this.Plane.Radar.HasLock && this.Plane.Radar.LockedObj != null)
+            if (this.Plane.Radar.HasLock && this.Plane.Radar.LockedObj != null && this.Plane.Radar.LockedObj.ID.Equals(TargetPlane.ID))
             {
                 var dist = this.Plane.Position.DistanceTo(this.Plane.Radar.LockedObj.Position);
 

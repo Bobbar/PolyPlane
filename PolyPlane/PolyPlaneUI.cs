@@ -315,7 +315,6 @@ namespace PolyPlane
             if (asAI)
             {
                 _playerPlane = GetAIPlane();
-
             }
             else
             {
@@ -400,7 +399,7 @@ namespace PolyPlane
             aiPlane.Radar = new Radar(aiPlane, _hudColor, _objs.Missiles, _objs.Planes);
             aiPlane.PlayerName = "(BOT) " + Helpers.GetRandomName();
             aiPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
-
+            
             aiPlane.FireMissileCallback = (m) =>
             {
                 _objs.EnqueueMissile(m);
@@ -602,7 +601,7 @@ namespace PolyPlane
             {
                 EnableRespawn();
 
-                if (_playerPlane.IsAI)
+                if (_playerPlane.IsAI && _playerPlane.AIRespawnReady)
                     ResetPlane();
             }
 
