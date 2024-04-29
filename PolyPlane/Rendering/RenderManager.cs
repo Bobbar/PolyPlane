@@ -476,6 +476,10 @@ namespace PolyPlane.Rendering
                     o.Render(ctx);
                     DrawHealthBarClamped(ctx, tplane, new D2DPoint(tplane.Position.X, tplane.Position.Y - 110f), healthBarSize);
                     DrawMuzzleFlash(ctx, tplane);
+
+                    // Draw circle around locked on plane.
+                    if (plane.Radar.LockedObj != null && plane.Radar.LockedObj.ID.Equals(tplane.ID))
+                        ctx.DrawEllipse(new D2DEllipse(tplane.Position, new D2DSize(80f, 80f)), World.HudColor, 4f);
                 }
             });
 
@@ -708,7 +712,7 @@ namespace PolyPlane.Rendering
                     DrawGuideIcon(ctx.Gfx, viewportsize, viewPlane);
                 }
 
-                DrawPlanePointers(ctx.Gfx, viewportsize, viewPlane);
+                DrawPlanePointers(ctx, viewportsize, viewPlane);
                 DrawMissilePointers(ctx.Gfx, viewportsize, viewPlane);
             }
 
@@ -993,7 +997,7 @@ namespace PolyPlane.Rendering
             gfx.DrawText($"G {Math.Round(plane.GForce, 1)}", World.HudColor, _defaultFontName, 15f, gforceRect);
         }
 
-        private void DrawPlanePointers(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
+        private void DrawPlanePointers(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)
         {
             const float MIN_DIST = 600f;
             const float MAX_DIST = 10000f;
@@ -1019,14 +1023,16 @@ namespace PolyPlane.Rendering
                 var angle = dir.Angle(true);
                 var vec = Helpers.AngleToVectorDegrees(angle);
 
-                gfx.DrawArrow(pos + (vec * 250f), pos + (vec * 270f), color, 2f);
+                ctx.Gfx.DrawArrow(pos + (vec * 250f), pos + (vec * 270f), color, 2f);
+
+
             }
 
             if (plane.Radar.HasLock)
             {
                 var lockPos = pos + new D2DPoint(0f, -200f);
                 var lRect = new D2DRect(lockPos, new D2DSize(120, 30));
-                gfx.DrawTextCenter("LOCKED", color, _defaultFontName, 25f, lRect);
+                ctx.Gfx.DrawTextCenter("LOCKED", color, _defaultFontName, 25f, lRect);
             }
         }
 
