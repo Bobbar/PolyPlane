@@ -188,7 +188,7 @@ namespace PolyPlane.GameObjects
             float defRate = 50f;
 
             if (_isAIPlane)
-                defRate = 20f;
+                defRate = 30f;
 
             this.Polygon = new RenderPoly(_planePoly, this.RenderOffset);
 
@@ -857,7 +857,7 @@ namespace PolyPlane.GameObjects
 
         private void FlipPoly()
         {
-            if (_currentDir == _queuedDir)
+            if (_currentDir == _queuedDir || this.HasCrashed)
                 return;
 
             this.Polygon.FlipY();

@@ -220,7 +220,7 @@ namespace PolyPlane.AI_Behavior
 
         public float GetAIGuidance()
         {
-            const float MIN_IMPACT_TIME = 8f; // Min ground impact time to consider avoiding ground.
+            const float MIN_IMPACT_TIME = 6f; // Min ground impact time to consider avoiding ground.
             var patrolDir = Helpers.ClampAngle(Helpers.RadsToDegrees((float)Math.Sin(_sineWavePos)));
 
             if (_reverseDirection)
@@ -258,6 +258,14 @@ namespace PolyPlane.AI_Behavior
                 angle = aimAmt;
             }
 
+            var velo = this.Plane.Velocity.Length();
+            if (velo < 100f)
+                _gainingVelo = true;
+            else if (velo > 200f)
+                _gainingVelo = false;
+
+            if (_gainingVelo)
+                angle = Helpers.MaintainAltitudeAngle(this.Plane, this.Plane.Altitude);
 
             // Pitch up if we about to impact with ground.
             if ((groundImpactTime > 0f && groundImpactTime < MIN_IMPACT_TIME) || this.Plane.Altitude < 300f)
@@ -273,15 +281,6 @@ namespace PolyPlane.AI_Behavior
             // Climb until no longer in danger of ground collision.
             if (_avoidingGround)
                 angle = Helpers.MaintainAltitudeAngle(this.Plane, 2000f);
-
-                var velo = this.Plane.Velocity.Length();
-            if (velo < 100f)
-                _gainingVelo = true;
-            else if (velo > 200f)
-                _gainingVelo = false;
-
-            if (_gainingVelo)
-                angle = Helpers.MaintainAltitudeAngle(this.Plane, this.Plane.Altitude);
 
             // Stay within the spawn area when not actively targeting another plane.
             if (this.TargetPlane == null)

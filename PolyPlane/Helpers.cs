@@ -363,8 +363,8 @@ namespace PolyPlane
         public static float GroundImpactTime(GameObject obj)
         {
             var groundPos = new D2DPoint(obj.Position.X, 0f);
-            var groundPos1 = new D2DPoint(obj.Position.X - World.ViewPortSize.width, 0f);
-            var groundPos2 = new D2DPoint(obj.Position.X + World.ViewPortSize.width, 0f);
+            var groundPos1 = new D2DPoint(obj.Position.X - 99999f, 0f);
+            var groundPos2 = new D2DPoint(obj.Position.X + 99999f, 0f);
 
             // Find where our current velocity vector intersects the ground.
             if (CollisionHelpers.IsIntersecting(obj.Position, obj.Position + (obj.Velocity * 1000f), groundPos1, groundPos2, out D2DPoint iPos))
