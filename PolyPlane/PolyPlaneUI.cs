@@ -399,7 +399,6 @@ namespace PolyPlane
             aiPlane.Radar = new Radar(aiPlane, _hudColor, _objs.Missiles, _objs.Planes);
             aiPlane.PlayerName = "(BOT) " + Helpers.GetRandomName();
             aiPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
-            
             aiPlane.FireMissileCallback = (m) =>
             {
                 _objs.EnqueueMissile(m);
@@ -605,15 +604,11 @@ namespace PolyPlane
                     ResetPlane();
             }
 
-            // Flight straight and level while player is typeing.
+            // Hold current altitude while player is typeing.
             if (_netMan != null && _netMan.ChatInterface.ChatIsActive)
             {
-                var toRight = Helpers.IsPointingRight(_playerPlane.Rotation);
-
-                if (toRight)
-                    _playerPlane.SetAutoPilotAngle(0f);
-                else
-                    _playerPlane.SetAutoPilotAngle(180f);
+                var altHoldAngle = Helpers.MaintainAltitudeAngle(_playerPlane, _playerPlane.Altitude);
+                _playerPlane.SetAutoPilotAngle(altHoldAngle);
             }
         }
 

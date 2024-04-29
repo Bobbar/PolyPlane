@@ -786,6 +786,7 @@ namespace PolyPlane.GameObjects
             IsDamaged = true;
             SASOn = false;
             _flipTimer.Stop();
+            Hits = 0;
             SetOnFire();
         }
 

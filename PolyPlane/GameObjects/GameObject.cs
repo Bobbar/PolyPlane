@@ -62,6 +62,10 @@ namespace PolyPlane.GameObjects
             }
         }
 
+        public float VerticalSpeed => _verticalSpeed;
+
+        private float _verticalSpeed = 0f;
+        private float _prevAlt = 0f;
         private SmoothPos _posSmooth = new SmoothPos(5);
         public InterpolationBuffer<GameObjectPacket> InterpBuffer = null;
         public HistoricalBuffer<GameObjectPacket> HistoryBuffer = new HistoricalBuffer<GameObjectPacket>();
@@ -170,6 +174,10 @@ namespace PolyPlane.GameObjects
             Position += Velocity * dt;
 
             Rotation += RotationSpeed * dt;
+
+            var altDiff = this.Altitude - _prevAlt;
+            _verticalSpeed = altDiff;
+            _prevAlt = this.Altitude;
 
             Wrap(viewport);
         }

@@ -349,6 +349,61 @@ namespace PolyPlane
             return (finalVelo - velo) / accel;
         }
 
+        public static float ClosingRate(GameObject obj, D2DPoint pos, D2DPoint velo)
+        {
+            var nextPos1 = pos + velo;
+            var nextPos2 = obj.Position + obj.Velocity;
+
+            var curDist = pos.DistanceTo(obj.Position);
+            var nextDist = nextPos1.DistanceTo(nextPos2);
+
+            return curDist - nextDist;
+        }
+
+        public static float GroundImpactTime(GameObject obj)
+        {
+            var groundPos = new D2DPoint(obj.Position.X, 0f);
+            var groundPos1 = new D2DPoint(obj.Position.X - World.ViewPortSize.width, 0f);
+            var groundPos2 = new D2DPoint(obj.Position.X + World.ViewPortSize.width, 0f);
+
+            // Find where our current velocity vector intersects the ground.
+            if (CollisionHelpers.IsIntersecting(obj.Position, obj.Position + (obj.Velocity * 1000f), groundPos1, groundPos2, out D2DPoint iPos))
+                groundPos = iPos;
+
+            var groundDist = obj.Position.DistanceTo(groundPos);
+            var closingRate = ClosingRate(obj, groundPos, D2DPoint.Zero);
+            var impactTime = groundDist / closingRate;
+
+            return impactTime;
+        }
+
+        /// <summary>
+        /// Returns the angle required to ascend/descend to and maintain the specified altitude.
+        /// </summary>
+        /// <param name="obj">Target object.</param>
+        /// <param name="targAlt">Target altitude.</param>
+        /// <returns>Guidance angle.</returns>
+        public static float MaintainAltitudeAngle(GameObject obj, float targAlt)
+        {
+            const float defAmt = 30f;
+            var toRight = IsPointingRight(obj.Rotation);
+            var alt = obj.Altitude;
+            var altDiff = alt - targAlt;
+            var sign = Math.Sign(altDiff);
+
+            var vsFact = (2000f * Factor(Math.Abs(obj.VerticalSpeed), 1f)) + 200f;
+            var fact = Factor(Math.Abs(altDiff), vsFact);
+
+            var amt = (defAmt * fact) * sign;
+            var altDir = 0f;
+            if (!toRight)
+                altDir = 180f - amt;
+            else
+                altDir = amt;
+
+            return altDir;
+        }
+
         public static bool IsPointingRight(float angle)
         {
             var rot180 = ClampAngle180(angle);
