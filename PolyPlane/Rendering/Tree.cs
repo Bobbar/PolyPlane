@@ -62,10 +62,9 @@ namespace PolyPlane.Rendering
 
         public override void Render(RenderContext ctx, D2DColor timeOfDayColor, float scale)
         {
-            var leafColor = Helpers.LerpColor(this.LeafColor, timeOfDayColor, 0.3f);
 
             if (_leafBrush == null)
-                _leafBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, this.Radius, this.Radius, [new D2DGradientStop(0f, leafColor), new D2DGradientStop(1f, Helpers.LerpColor(leafColor, D2DColor.Black, 0.1f))]);
+                _leafBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, this.Radius, this.Radius, [new D2DGradientStop(0f, this.LeafColor), new D2DGradientStop(1f, Helpers.LerpColor(this.LeafColor, D2DColor.Black, 0.2f))]);
 
             var trunk = new D2DPoint[]
             {
@@ -109,7 +108,7 @@ namespace PolyPlane.Rendering
             ctx.Gfx.FillEllipse(new D2DEllipse(D2DPoint.Zero, new D2DSize(this.Radius, this.Radius)), _leafBrush);
 
             // Add time of day color to leafs.
-            var todOverlay = new D2DColor(0.1f, timeOfDayColor);
+            var todOverlay = new D2DColor(0.2f, timeOfDayColor);
             ctx.Gfx.FillEllipse(new D2DEllipse(D2DPoint.Zero, new D2DSize(this.Radius, this.Radius)), todOverlay);
 
             ctx.Gfx.PopTransform();

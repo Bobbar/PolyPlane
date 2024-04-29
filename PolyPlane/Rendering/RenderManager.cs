@@ -360,7 +360,7 @@ namespace PolyPlane.Rendering
 
         private D2DColor AddTimeOfDayColor(D2DColor color)
         {
-            var todColor = InterpolateColorGaussian(_todPallet, World.TimeOfDay, World.MAX_TIMEOFDAY);
+            var todColor = GetTimeOfDayColor();
             return Helpers.LerpColor(color, todColor, 0.3f);
         }
 
@@ -631,7 +631,7 @@ namespace PolyPlane.Rendering
                 {
                     tree.Render(ctx, GetTimeOfDayColor(), GROUND_OBJ_SCALE);
                 }
-            }
+            } 
         }
 
         //private void DrawHouse(RenderContext ctx, D2DPoint pos)
@@ -1113,47 +1113,6 @@ namespace PolyPlane.Rendering
             return (navigationTime < minImpactTime && closingRate > 0f && missile.Target == plane);
         }
 
-        public void DrawInfo(D2DGraphics gfx, D2DPoint pos, FighterPlane viewplane)
-        {
-            var infoText = GetInfo(viewplane);
-
-            //if (_showHelp)
-            //{
-            //    infoText += $@"
-            //H: Hide help
-
-            //P: Pause
-            //B: Motion Blur
-            //T: Trails
-            //N: Pause/One Step
-            //R: Spawn Target
-            //A: Spawn target at click pos
-            //M: Move ship to click pos
-            //C: Clear all
-            //I: Toggle Aero Display
-            //O: Toggle Missile View
-            //U: Toggle Guidance Tracking Dots
-            //S: Toggle Missile Type
-            //Y: Cycle Target Types
-            //K: Toggle Turbulence
-            //L: Toggle Wind
-            //+/-: Zoom
-            //Shift + (+/-): Change Delta Time
-            //S: Missile Type
-            //Shift + Mouse-Wheel or E: Guidance Type
-            //Left-Click: Thrust ship
-            //Right-Click: Fire auto cannon
-            //Middle-Click or Enter: Fire missile (Hold Shift to fire all types)
-            //Mouse-Wheel: Rotate ship";
-            //}
-            //else
-            //{
-            //    infoText += "\n";
-            //    infoText += "H: Show help";
-            //}
-
-            gfx.DrawText(infoText, D2DColor.GreenYellow, _defaultFontName, 12f, pos.X, pos.Y);
-        }
 
         private void DrawOverlays(RenderContext ctx, FighterPlane viewplane)
         {
@@ -1180,7 +1139,8 @@ namespace PolyPlane.Rendering
             var color = Helpers.LerpColor(color1, color2, (plrAlt / (World.MAX_ALTITUDE - MAX_ALT_OFFSET)));
 
             // Add time of day color.
-            color = Helpers.LerpColor(color, D2DColor.Black, World.TimeOfDay / (World.MAX_TIMEOFDAY / 2f));
+            color = Helpers.LerpColor(color, D2DColor.Black, Helpers.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY - 5f));
+            color = Helpers.LerpColor(color, AddTimeOfDayColor(color), 0.2f);
 
             var rect = new D2DRect(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), new D2DSize(this.Width, this.Height));
 
@@ -1363,6 +1323,48 @@ namespace PolyPlane.Rendering
             });
         }
 
+
+        public void DrawInfo(D2DGraphics gfx, D2DPoint pos, FighterPlane viewplane)
+        {
+            var infoText = GetInfo(viewplane);
+
+            //if (_showHelp)
+            //{
+            //    infoText += $@"
+            //H: Hide help
+
+            //P: Pause
+            //B: Motion Blur
+            //T: Trails
+            //N: Pause/One Step
+            //R: Spawn Target
+            //A: Spawn target at click pos
+            //M: Move ship to click pos
+            //C: Clear all
+            //I: Toggle Aero Display
+            //O: Toggle Missile View
+            //U: Toggle Guidance Tracking Dots
+            //S: Toggle Missile Type
+            //Y: Cycle Target Types
+            //K: Toggle Turbulence
+            //L: Toggle Wind
+            //+/-: Zoom
+            //Shift + (+/-): Change Delta Time
+            //S: Missile Type
+            //Shift + Mouse-Wheel or E: Guidance Type
+            //Left-Click: Thrust ship
+            //Right-Click: Fire auto cannon
+            //Middle-Click or Enter: Fire missile (Hold Shift to fire all types)
+            //Mouse-Wheel: Rotate ship";
+            //}
+            //else
+            //{
+            //    infoText += "\n";
+            //    infoText += "H: Show help";
+            //}
+
+            gfx.DrawText(infoText, D2DColor.GreenYellow, _defaultFontName, 12f, pos.X, pos.Y);
+        }
 
         private string GetInfo(FighterPlane viewplane)
         {
