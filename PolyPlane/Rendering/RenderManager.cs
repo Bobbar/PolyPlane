@@ -587,7 +587,7 @@ namespace PolyPlane.Rendering
             if (!ctx.Viewport.Contains(groundPos))
                 return;
 
-            const float HEIGHT = 300f;
+            const float HEIGHT = 500f;
             var yPos = HEIGHT / ctx.CurrentScale;
             groundPos += new D2DPoint(0f, yPos);
 

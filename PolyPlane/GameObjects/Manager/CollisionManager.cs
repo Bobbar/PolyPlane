@@ -28,6 +28,7 @@ namespace PolyPlane.GameObjects.Manager
             if (_netMan != null && !_netMan.IsServer)
             {
                 HandleGroundImpacts();
+                HandleFieldWrap();
                 return;
             }
 
