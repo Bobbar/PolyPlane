@@ -489,11 +489,19 @@ namespace PolyPlane.Rendering
             _objs.Explosions.ForEach(o => o.Render(ctx));
 
             DrawClouds(ctx);
+            DrawPlaneCloudShadows(ctx);
             DrawLightingEffects(ctx, plane);
             DrawMuzzleFlash(ctx, plane);
 
             ctx.PopViewPort();
             ctx.Gfx.PopTransform();
+        }
+
+        private void DrawPlaneCloudShadows(RenderContext ctx)
+        {
+            var shadowColor = new D2DColor(0.07f, GetShadowColor());
+            foreach (var plane in _objs.Planes)
+                ctx.DrawPolygon(plane.Polygon.Poly, shadowColor, 0f, D2DDashStyle.Solid, shadowColor);
         }
 
         private void DrawPlaneShadow(RenderContext ctx, FighterPlane plane)
