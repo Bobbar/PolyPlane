@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(PolyPlaneUI));
             SuspendLayout();
             // 
             // PolyPlaneUI
@@ -35,6 +36,7 @@
             AutoScaleDimensions = new SizeF(96F, 96F);
             AutoScaleMode = AutoScaleMode.Dpi;
             ClientSize = new Size(1008, 729);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "PolyPlaneUI";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "PolyPlane - 2D Flight Physics";
