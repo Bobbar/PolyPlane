@@ -34,6 +34,7 @@ namespace PolyPlane.Rendering
         private readonly D2DPoint _infoPosition = new D2DPoint(20, 20);
 
         private bool _showInfo = false;
+        private bool _showHelp = false;
 
         private SmoothDouble _renderTimeSmooth = new SmoothDouble(10);
         private Stopwatch _timer = new Stopwatch();
@@ -251,6 +252,11 @@ namespace PolyPlane.Rendering
             _showInfo = !_showInfo;
         }
 
+        public void ToggleHelp()
+        {
+            _showHelp = !_showHelp;
+        }
+
         public void RenderFrame(FighterPlane viewplane)
         {
             ResizeGfx();
@@ -460,7 +466,7 @@ namespace PolyPlane.Rendering
             ctx.PushViewPort(viewPortRect);
 
             DrawGround(ctx, plane);
-            DrawGroundObjs(ctx, plane); 
+            DrawGroundObjs(ctx, plane);
             DrawGroundImpacts(ctx, plane);
 
             _objs.Decoys.ForEach(o => o.Render(ctx));
@@ -581,7 +587,7 @@ namespace PolyPlane.Rendering
         {
             const float MUZZ_FLASH_RADIUS = 60f;
             if (_muzzleFlashBrush == null)
-                _muzzleFlashBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, MUZZ_FLASH_RADIUS, MUZZ_FLASH_RADIUS, new D2DGradientStop[] { new D2DGradientStop(1.4f, D2DColor.Transparent), new D2DGradientStop(0f, new D2DColor(0.3f, D2DColor.Orange)) });
+                _muzzleFlashBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, MUZZ_FLASH_RADIUS, MUZZ_FLASH_RADIUS, new D2DGradientStop[] { new D2DGradientStop(1.4f, D2DColor.Transparent), new D2DGradientStop(0.2f, new D2DColor(0.3f, D2DColor.Orange)) });
 
             if (plane.FiringBurst && plane.NumBullets > 0 && plane.CurrentFrame % 10 == 0)
             {
@@ -643,7 +649,7 @@ namespace PolyPlane.Rendering
                 {
                     tree.Render(ctx, GetTimeOfDayColor(), GROUND_OBJ_SCALE);
                 }
-            } 
+            }
         }
 
         //private void DrawHouse(RenderContext ctx, D2DPoint pos)
@@ -1114,24 +1120,21 @@ namespace PolyPlane.Rendering
             {
                 var lockRect = new D2DRect(pos - new D2DPoint(0, -160), new D2DSize(120, 30));
                 gfx.DrawTextCenter("LOCK", D2DColor.Red, _defaultFontName, 30f, lockRect);
-
             }
         }
 
         private bool MissileIsImpactThreat(FighterPlane plane, Missile missile, float minImpactTime)
         {
             var navigationTime = Helpers.ImpactTime(plane, missile);
-            var closingRate = plane.ClosingRate(missile);
 
-            // Is it going to hit soon, and has positive closing rate and is actively targeting us?
-            return (navigationTime < minImpactTime && closingRate > 0f && missile.Target == plane);
+            // Is it going to hit soon and is actively targeting us?
+            return (navigationTime < minImpactTime && missile.Target.ID.Equals(plane.ID));
         }
 
 
         private void DrawOverlays(RenderContext ctx, FighterPlane viewplane)
         {
-            if (_showInfo)
-                DrawInfo(ctx.Gfx, _infoPosition, viewplane);
+            DrawInfo(ctx.Gfx, _infoPosition, viewplane);
 
             if (World.EnableTurbulence || World.EnableWind)
                 DrawWindAndTurbulenceOverlay(ctx);
@@ -1342,62 +1345,38 @@ namespace PolyPlane.Rendering
         {
             var infoText = GetInfo(viewplane);
 
-            //if (_showHelp)
-            //{
-            //    infoText += $@"
-            //H: Hide help
+            if (_showHelp)
+            {
+                infoText += "\nH: Hide help\n";
 
-            //P: Pause
-            //B: Motion Blur
-            //T: Trails
-            //N: Pause/One Step
-            //R: Spawn Target
-            //A: Spawn target at click pos
-            //M: Move ship to click pos
-            //C: Clear all
-            //I: Toggle Aero Display
-            //O: Toggle Missile View
-            //U: Toggle Guidance Tracking Dots
-            //S: Toggle Missile Type
-            //Y: Cycle Target Types
-            //K: Toggle Turbulence
-            //L: Toggle Wind
-            //+/-: Zoom
-            //Shift + (+/-): Change Delta Time
-            //S: Missile Type
-            //Shift + Mouse-Wheel or E: Guidance Type
-            //Left-Click: Thrust ship
-            //Right-Click: Fire auto cannon
-            //Middle-Click or Enter: Fire missile (Hold Shift to fire all types)
-            //Mouse-Wheel: Rotate ship";
-            //}
-            //else
-            //{
-            //    infoText += "\n";
-            //    infoText += "H: Show help";
-            //}
+                if (!World.IsNetGame)
+                {
+                    infoText += $"P: Pause\n";
+                    infoText += $"U: Spawn AI Plane\n";
+                }
+
+                infoText += $"(+/-): Zoom\n";
+                infoText += $"Shift + (+/-): HUD Scale\n";
+                infoText += $"Left-Click: Fire Bullets\n";
+                infoText += $"Right-Click: Drop Decoys\n";
+                infoText += $"Middle-Click/Space Bar: Fire Missile\n";
+
+            }
+            else
+            {
+                infoText += "\n";
+                infoText += "H: Show help";
+            }
 
             gfx.DrawText(infoText, D2DColor.GreenYellow, _defaultFontName, 12f, pos.X, pos.Y);
         }
 
         private string GetInfo(FighterPlane viewplane)
         {
-            //var viewPlane = GetViewPlane();
-
             string infoText = string.Empty;
-            //infoText += $"Paused: {_isPaused}\n\n";
 
             var numObj = _objs.TotalObjects;
-            infoText += $"Num Objects: {numObj}\n";
-            infoText += $"On Screen: {GraphicsExtensions.OnScreen}\n";
-            infoText += $"Off Screen: {GraphicsExtensions.OffScreen}\n";
-            infoText += $"Planes: {_objs.Planes.Count(p => !p.IsDamaged && !p.HasCrashed)}\n";
-
             infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";
-            infoText += $"Update ms: {Math.Round(UpdateTime.TotalMilliseconds, 2)}\n";
-            infoText += $"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}\n";
-
-            infoText += $"Collision ms: {CollisionTime.TotalMilliseconds}\n";
 
             if (_netMan != null)
             {
@@ -1406,19 +1385,31 @@ namespace PolyPlane.Rendering
                 infoText += $"Packet Loss: {_netMan.Host.PacketLoss()}\n";
             }
 
-            infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
-            infoText += $"HUD Scale: {_hudScale}\n";
-            infoText += $"DT: {Math.Round(World.DT, 4)}\n";
-            infoText += $"AutoPilot: {(viewplane.AutoPilotOn ? "On" : "Off")}\n";
-            infoText += $"Position: {viewplane?.Position}\n";
-            infoText += $"Kills: {viewplane.Kills}\n";
-            infoText += $"Bullets (Fired/Hit): ({viewplane.BulletsFired} / {viewplane.BulletsHit}) \n";
-            infoText += $"Missiles (Fired/Hit): ({viewplane.MissilesFired} / {viewplane.MissilesHit}) \n";
-            infoText += $"Headshots: {viewplane.Headshots}\n";
-            infoText += $"Interp: {World.InterpOn.ToString()}\n";
-            infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
-            infoText += $"VP: {this.Width}, {this.Height}\n";
-            infoText += $"DPI: {this._renderTarget.DeviceDpi}\n";
+            if (_showInfo)
+            {
+                infoText += $"Num Objects: {numObj}\n";
+                infoText += $"On Screen: {GraphicsExtensions.OnScreen}\n";
+                infoText += $"Off Screen: {GraphicsExtensions.OffScreen}\n";
+                infoText += $"Planes: {_objs.Planes.Count(p => !p.IsDamaged && !p.HasCrashed)}\n";
+                infoText += $"Update ms: {Math.Round(UpdateTime.TotalMilliseconds, 2)}\n";
+                infoText += $"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}\n";
+                infoText += $"Collision ms: {CollisionTime.TotalMilliseconds}\n";
+
+                infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
+                infoText += $"HUD Scale: {_hudScale}\n";
+                infoText += $"DT: {Math.Round(World.DT, 4)}\n";
+                infoText += $"AutoPilot: {(viewplane.AutoPilotOn ? "On" : "Off")}\n";
+                infoText += $"Position: {viewplane?.Position}\n";
+                infoText += $"Kills: {viewplane.Kills}\n";
+                infoText += $"Bullets (Fired/Hit): ({viewplane.BulletsFired} / {viewplane.BulletsHit}) \n";
+                infoText += $"Missiles (Fired/Hit): ({viewplane.MissilesFired} / {viewplane.MissilesHit}) \n";
+                infoText += $"Headshots: {viewplane.Headshots}\n";
+                infoText += $"Interp: {World.InterpOn.ToString()}\n";
+                infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
+                infoText += $"VP: {this.Width}, {this.Height}\n";
+                infoText += $"DPI: {this._renderTarget.DeviceDpi}\n";
+
+            }
 
             return infoText;
         }

@@ -136,7 +136,7 @@ namespace PolyPlane
 
         private void EnableRespawn()
         {
-            _render.NewHudMessage("Press R to respawn.", D2DColor.Green);
+            _render.NewHudMessage("Press any key to respawn.", D2DColor.Green);
             _canRespawn = true;
         }
 
@@ -355,6 +355,21 @@ namespace PolyPlane
             };
 
             _objs.EnqueuePlane(_playerPlane);
+        }
+
+        private void ResetAIPlane(FighterPlane plane)
+        {
+            plane.AutoPilotOn = true;
+            plane.ThrustOn = true;
+            plane.Position = new D2DPoint(Helpers.Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), -5000f);
+            plane.Velocity = new D2DPoint(500f, 0f);
+            plane.SyncFixtures();
+            plane.RotationSpeed = 0f;
+            plane.Rotation = 0f;
+            plane.SASOn = true;
+            plane.IsDamaged = false;
+            plane.Reset();
+            plane.FixPlane();
         }
 
         private void ResetPlane()
@@ -610,6 +625,22 @@ namespace PolyPlane
                 var altHoldAngle = Helpers.MaintainAltitudeAngle(_playerPlane, _playerPlane.Altitude);
                 _playerPlane.SetAutoPilotAngle(altHoldAngle);
             }
+
+            HandleAIPlaneRespawn();
+        }
+
+        private void HandleAIPlaneRespawn()
+        {
+            if (!World.RespawnAIPlanes)
+                return;
+
+            foreach (var plane in _objs.Planes)
+            {
+                if (plane.IsAI && plane.HasCrashed && plane.AIRespawnReady)
+                {
+                    ResetAIPlane(plane);
+                }
+            }
         }
 
         private void DoMouseButtons()
@@ -854,6 +885,12 @@ namespace PolyPlane
                     return;
             }
 
+            if (_canRespawn)
+            {
+                _queueResetPlane = true;
+                return;
+            }
+
             switch (e.KeyChar)
             {
                 case 'a':
@@ -878,7 +915,7 @@ namespace PolyPlane
 
                 case 'h':
                     //_showHelp = !_showHelp;
-
+                    _render.ToggleHelp();
                     break;
 
                 case 'i':

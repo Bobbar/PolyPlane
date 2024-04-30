@@ -331,7 +331,9 @@ namespace PolyPlane
         public static float ImpactTime(GameObjects.FighterPlane plane, Missile missile)
         {
             var dist = plane.Position.DistanceTo(missile.Position);
-            var navTime = ImpactTime(dist, (plane.Velocity.Length() + missile.Velocity.Length()), 1f);
+            var closingRate = ClosingRate(plane, missile);
+
+            var navTime = dist / closingRate;
             return navTime;
         }
 
@@ -355,6 +357,17 @@ namespace PolyPlane
             var nextPos2 = obj.Position + obj.Velocity;
 
             var curDist = pos.DistanceTo(obj.Position);
+            var nextDist = nextPos1.DistanceTo(nextPos2);
+
+            return curDist - nextDist;
+        }
+
+        public static float ClosingRate(GameObject objA, GameObject objB)
+        {
+            var nextPos1 = objA.Position + objA.Velocity;
+            var nextPos2 = objB.Position + objB.Velocity;
+
+            var curDist = objA.Position.DistanceTo(objB.Position);
             var nextDist = nextPos1.DistanceTo(nextPos2);
 
             return curDist - nextDist;
