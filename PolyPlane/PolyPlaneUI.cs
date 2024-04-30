@@ -136,7 +136,7 @@ namespace PolyPlane
 
         private void EnableRespawn()
         {
-            _render.NewHudMessage("Press any key to respawn.", D2DColor.Green);
+            _render.NewHudMessage("Press 'R' to respawn.", D2DColor.Green);
             _canRespawn = true;
         }
 
@@ -397,6 +397,7 @@ namespace PolyPlane
             _playerResetTimer.Stop();
             _canRespawn = false;
             _render.ClearHudMessage();
+            _aiPlaneViewID = _playerPlane.PlayerID;
         }
 
         private void TargetLockedWithMissile()
@@ -883,12 +884,6 @@ namespace PolyPlane
 
                 if (_netMan.ChatInterface.ChatIsActive)
                     return;
-            }
-
-            if (_canRespawn)
-            {
-                _queueResetPlane = true;
-                return;
             }
 
             switch (e.KeyChar)

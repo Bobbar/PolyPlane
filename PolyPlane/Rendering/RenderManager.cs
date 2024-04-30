@@ -1355,12 +1355,16 @@ namespace PolyPlane.Rendering
                     infoText += $"U: Spawn AI Plane\n";
                 }
 
+                infoText += $"Y: Start Chat Message\n";
                 infoText += $"(+/-): Zoom\n";
                 infoText += $"Shift + (+/-): HUD Scale\n";
                 infoText += $"Left-Click: Fire Bullets\n";
                 infoText += $"Right-Click: Drop Decoys\n";
                 infoText += $"Middle-Click/Space Bar: Fire Missile\n";
 
+                infoText += $"\nSpectate (While crashed)\n";
+                infoText += $"([/]): Prev/Next Spectate Plane\n";
+                infoText += $"Backspace: Reset Spectate\n";
             }
             else
             {
