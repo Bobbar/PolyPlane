@@ -133,7 +133,6 @@ namespace PolyPlane.GameObjects
             if (_trailQueue.Count == 0)
                 return;
 
-
             var lastPos = _trailQueue.First();
             foreach (var trail in _trailQueue)
             {

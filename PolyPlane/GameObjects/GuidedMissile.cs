@@ -7,6 +7,7 @@ namespace PolyPlane.GameObjects
     public class GuidedMissile : Missile
     {
         public bool FlameOn = false;
+        private bool IsActivated = false;
 
         public GuidanceBase Guidance => _guidance;
         public float CurrentFuel
@@ -86,10 +87,8 @@ namespace PolyPlane.GameObjects
         private GameTimer _decoyDistractCooldown = new GameTimer(1f);
         private GameTimer _decoyDistractArm = new GameTimer(2f);
         private GameTimer _igniteCooldown = new GameTimer(1f);
-
+        private Vapor _vaporTrail;
         public float Deflection = 0f;
-
-        private D2DPoint _com = D2DPoint.Zero;
 
         public GuidedMissile(GameObject player, D2DPoint position, D2DPoint velocity, float rotation)
         {
@@ -97,6 +96,7 @@ namespace PolyPlane.GameObjects
             this.IsNetObject = true;
             _useControlSurfaces = true;
             _useThrustVectoring = true;
+            _currentFuel = FUEL;
 
             this.Position = position;
             this.Velocity = velocity;
@@ -138,6 +138,8 @@ namespace PolyPlane.GameObjects
         {
             this.RenderOffset = 0.9f;
 
+            _vaporTrail = new Vapor(this, new D2DPoint(-33f, 0), 10f, new D2DColor(0.2f, D2DColor.WhiteSmoke), false);
+
             _centerOfThrust = new FixturePoint(this, new D2DPoint(-22, 0));
             _warheadCenterMass = new FixturePoint(this, new D2DPoint(4f, 0));
             _motorCenterMass = new FixturePoint(this, new D2DPoint(-11f, 0));
@@ -161,6 +163,7 @@ namespace PolyPlane.GameObjects
 
             _igniteCooldown.TriggerCallback = () =>
             {
+                IsActivated = true;
                 FlameOn = true;
 
                 // Add a quick impulse/boost when we ignite.
@@ -196,6 +199,7 @@ namespace PolyPlane.GameObjects
             _warheadCenterMass.Update(dt, viewport, renderScale * this.RenderOffset);
             _motorCenterMass.Update(dt, viewport, renderScale * this.RenderOffset);
             _flamePos.Update(dt, viewport, renderScale * this.RenderOffset);
+            _vaporTrail.Update(dt, viewport, renderScale * this.RenderOffset);
 
             float flameAngle = 0f;
 
@@ -253,7 +257,7 @@ namespace PolyPlane.GameObjects
             // Apply guidance.
             var guideRotation = _guidance.GuideTo(dt);
 
-            if (!this.FlameOn)
+            if (!this.IsActivated)
                 guideRotation = _initRotation;
 
             if (_useControlSurfaces)
@@ -316,6 +320,9 @@ namespace PolyPlane.GameObjects
             _decoyDistractCooldown.Update(dt);
             _decoyDistractArm.Update(dt);
             _igniteCooldown.Update(dt);
+
+            if (_currentFuel <= 0f)
+                FlameOn = false;
         }
 
         public override void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
@@ -426,55 +433,27 @@ namespace PolyPlane.GameObjects
 
         public override void Wrap(D2DSize viewport)
         {
-            //var padding = 2000f;
-
-            //if (this.Position.X < -padding)
-            //    IsExpired = true;
-
-            //if (this.Position.X > viewport.width + padding)
-            //    IsExpired = true;
-
-            //if (this.Position.Y < -padding)
-            //    IsExpired = true;
-
-            //if (this.Position.Y > viewport.height + padding)
-            //    IsExpired = true;
         }
 
         public override void Render(RenderContext ctx)
         {
-            //gfx.DrawLine(this.Position, this.Position + (AngleToVector(this.Rotation) * 50f), D2DColor.White);
-            //gfx.DrawLine(this.Position, this.Position + (this.Velocity * 1f), D2DColor.Blue);
+            if (IsActivated)
+                _vaporTrail.Render(ctx);
 
             if (_useThrustVectoring)
                 _flameFillColor = D2DColor.Orange;
 
-            if (_currentFuel > 0f && FlameOn)
+            if (FlameOn)
                 ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
 
             var fillColor = D2DColor.White;
-
-            //if (_guidance.MissedTarget)
-            //    fillColor = D2DColor.Orange;
-
-            //if (Target is Decoy)
-            //    fillColor = D2DColor.Yellow;
-
-
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.White, 0.5f, D2DDashStyle.Solid, fillColor);
-
-            //DrawFuelGauge(gfx);
 
             if (_useControlSurfaces)
             {
                 _tailWing.Render(ctx);
                 _noseWing.Render(ctx);
-
-                //var totLift = _tailWing.LiftVector + _noseWing.LiftVector + _rocketBody.LiftVector;
-                //gfx.DrawLine(this.Position, this.Position + (totLift * 1.4f), D2DColor.SkyBlue, 0.5f, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
             }
-
-            //_rocketBody.Render(gfx);
 
             if (World.ShowTracking)
             {
@@ -482,8 +461,6 @@ namespace PolyPlane.GameObjects
                 ctx.FillEllipse(new D2DEllipse(_guidance.StableAimPoint, new D2DSize(4f, 4f)), D2DColor.Blue);
                 ctx.FillEllipse(new D2DEllipse(_guidance.ImpactPoint, new D2DSize(3f, 3f)), D2DColor.Red);
             }
-
-            //this.DrawVeloLines(ctx.Gfx);
         }
 
         private void DrawFOVCone(D2DGraphics gfx)

@@ -10,13 +10,14 @@ namespace PolyPlane.GameObjects
         private GameTimer _spawnTimer = new GameTimer(0.05f, true);
         private float _radius = 5f;
         private D2DColor _vaporColor = new D2DColor(0.3f, D2DColor.White);
-
+        private bool _veloSizing = true;
         private const int MAX_PARTS = 20;
         private const float MAX_AGE = 1f;
 
-        public Vapor(GameObject obj, D2DPoint offset, float radius)
+        public Vapor(GameObject obj, D2DPoint offset, float radius, bool veloSizing = true)
         {
             _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
+            _veloSizing = veloSizing;
 
             this.Owner = obj;
             _refPos = new FixturePoint(obj, offset);
@@ -26,10 +27,11 @@ namespace PolyPlane.GameObjects
             _spawnTimer.Start();
         }
 
-        public Vapor(GameObject obj, D2DPoint offset, float radius, D2DColor color)
+        public Vapor(GameObject obj, D2DPoint offset, float radius, D2DColor color, bool veloSizing = true)
         {
             _vaporColor = color;
             _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
+            _veloSizing = veloSizing;
 
             this.Owner = obj;
             _refPos = new FixturePoint(obj, offset);
@@ -80,8 +82,18 @@ namespace PolyPlane.GameObjects
                 newVelo = this.Owner.Velocity;
 
 
-            var veloFact = Helpers.Factor(newVelo.Length(), 1000f);
-            var newRad = _radius + Helpers.Rnd.NextFloat(-2f, 2f) + (veloFact * 14f);
+            float newRad = 0f;
+
+            if (_veloSizing)
+            {
+                var veloFact = Helpers.Factor(newVelo.Length(), 1000f);
+                newRad = _radius + Helpers.Rnd.NextFloat(-2f, 2f) + (veloFact * 14f);
+            }
+            else
+            {
+                newRad = _radius + Helpers.Rnd.NextFloat(-2f, 2f);
+            }
+
             var newColor = _vaporColor;
             var newEllipse = new D2DEllipse(newPos, new D2DSize(newRad, newRad));
             var newPart = new VaporPart(newEllipse, newColor, newVelo);
