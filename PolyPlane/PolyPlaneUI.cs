@@ -1023,12 +1023,12 @@ namespace PolyPlane
 
                 case '[':
 
-                    if ((_playerPlane.IsDamaged || _playerPlane.HasCrashed))
+                    if ((_playerPlane.IsDamaged || _playerPlane.HasCrashed || _playerPlane.IsAI))
                         _queuePrevViewId = true;
 
                     break;
                 case ']':
-                    if ((_playerPlane.IsDamaged || _playerPlane.HasCrashed))
+                    if ((_playerPlane.IsDamaged || _playerPlane.HasCrashed || _playerPlane.IsAI))
                         _queueNextViewId = true;
                     break;
 

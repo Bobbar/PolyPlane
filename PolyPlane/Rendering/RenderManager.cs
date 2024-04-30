@@ -470,7 +470,15 @@ namespace PolyPlane.Rendering
             DrawGroundImpacts(ctx, plane);
 
             _objs.Decoys.ForEach(o => o.Render(ctx));
-            _objs.Missiles.ForEach(o => o.Render(ctx));
+            _objs.Missiles.ForEach(o =>
+            {
+                o.Render(ctx);
+
+                // Circle enemy missiles.
+                if (!o.Owner.ID.Equals(plane.ID))
+                    ctx.DrawEllipse(new D2DEllipse(o.Position, new D2DSize(50f, 50f)), new D2DColor(0.4f, D2DColor.Red), 8f);
+            });
+
             _objs.MissileTrails.ForEach(o => o.Render(ctx));
             _objs.Bullets.ForEach(o => o.Render(ctx));
 
@@ -1066,7 +1074,7 @@ namespace PolyPlane.Rendering
 
         private void DrawMissilePointers(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
         {
-            const float MIN_DIST = 3000f;
+            const float MIN_DIST = 1000f;
             const float MAX_DIST = 20000f;
 
             bool warningMessage = false;

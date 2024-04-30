@@ -87,7 +87,6 @@ namespace PolyPlane.GameObjects
         private GameTimer _decoyDistractCooldown = new GameTimer(1f);
         private GameTimer _decoyDistractArm = new GameTimer(2f);
         private GameTimer _igniteCooldown = new GameTimer(1f);
-        private Vapor _vaporTrail;
         public float Deflection = 0f;
 
         public GuidedMissile(GameObject player, D2DPoint position, D2DPoint velocity, float rotation)
@@ -137,8 +136,6 @@ namespace PolyPlane.GameObjects
         private void InitStuff(bool useControlSurfaces)
         {
             this.RenderOffset = 0.9f;
-
-            _vaporTrail = new Vapor(this, new D2DPoint(-33f, 0), 10f, new D2DColor(0.2f, D2DColor.WhiteSmoke), false);
 
             _centerOfThrust = new FixturePoint(this, new D2DPoint(-22, 0));
             _warheadCenterMass = new FixturePoint(this, new D2DPoint(4f, 0));
@@ -199,7 +196,6 @@ namespace PolyPlane.GameObjects
             _warheadCenterMass.Update(dt, viewport, renderScale * this.RenderOffset);
             _motorCenterMass.Update(dt, viewport, renderScale * this.RenderOffset);
             _flamePos.Update(dt, viewport, renderScale * this.RenderOffset);
-            _vaporTrail.Update(dt, viewport, renderScale * this.RenderOffset);
 
             float flameAngle = 0f;
 
@@ -437,9 +433,6 @@ namespace PolyPlane.GameObjects
 
         public override void Render(RenderContext ctx)
         {
-            if (IsActivated)
-                _vaporTrail.Render(ctx);
-
             if (_useThrustVectoring)
                 _flameFillColor = D2DColor.Orange;
 
