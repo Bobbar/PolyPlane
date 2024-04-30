@@ -275,7 +275,6 @@ namespace PolyPlane.Net
         public NetPoint Position;
         public NetPoint Velocity;
         public float Rotation;
-        public bool IsExpired;
 
         public GameObjectPacket() : base()
         {
@@ -292,7 +291,6 @@ namespace PolyPlane.Net
             Position = obj.Position.ToNetPoint();
             Velocity = obj.Velocity.ToNetPoint();
             Rotation = obj.Rotation;
-            IsExpired = obj.IsExpired;
         }
 
 
@@ -307,8 +305,6 @@ namespace PolyPlane.Net
             Position = obj.Position.ToNetPoint();
             Velocity = obj.Velocity.ToNetPoint();
             Rotation = obj.Rotation;
-            IsExpired = obj.IsExpired;
-
         }
 
         public virtual void SyncObj(GameObject obj)
@@ -319,9 +315,6 @@ namespace PolyPlane.Net
             //obj.Position = this.Position.ToD2DPoint();
             //obj.Velocity = this.Velocity.ToD2DPoint();
             //obj.Rotation = this.Rotation;
-
-            if (!obj.IsExpired) // Prevent new packets from un-expiring objects.
-                obj.IsExpired = this.IsExpired;
         }
     }
 
@@ -330,7 +323,6 @@ namespace PolyPlane.Net
     {
         public float Deflection;
         public bool IsDamaged;
-        public bool WasHeadshot;
         public bool FiringBurst;
         public int Hits;
         public int Kills;
@@ -341,7 +333,6 @@ namespace PolyPlane.Net
         {
             Deflection = obj.Deflection;
             IsDamaged = obj.IsDamaged;
-            WasHeadshot = obj.WasHeadshot;
             Hits = obj.Hits;
             FiringBurst = obj.FiringBurst;
             Kills = obj.Kills;
@@ -352,7 +343,6 @@ namespace PolyPlane.Net
             base.SyncObj(obj);
             obj.Deflection = Deflection;
             obj.IsDamaged = IsDamaged;
-            obj.WasHeadshot = WasHeadshot;
             obj.FiringBurst = FiringBurst;
             obj.Hits = Hits;
             obj.Kills = Kills;
