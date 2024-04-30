@@ -333,6 +333,7 @@ namespace PolyPlane.Net
         public bool WasHeadshot;
         public bool FiringBurst;
         public int Hits;
+        public int Kills;
 
         public PlanePacket() { }
 
@@ -343,14 +344,7 @@ namespace PolyPlane.Net
             WasHeadshot = obj.WasHeadshot;
             Hits = obj.Hits;
             FiringBurst = obj.FiringBurst;
-        }
-
-        public PlanePacket(FighterPlane obj, PacketTypes type) : base(obj, type)
-        {
-            Deflection = obj.Deflection;
-            IsDamaged = obj.IsDamaged;
-            WasHeadshot = obj.WasHeadshot;
-            Hits = obj.Hits;
+            Kills = obj.Kills;
         }
 
         public virtual void SyncObj(FighterPlane obj)
@@ -361,6 +355,7 @@ namespace PolyPlane.Net
             obj.WasHeadshot = WasHeadshot;
             obj.FiringBurst = FiringBurst;
             obj.Hits = Hits;
+            obj.Kills = Kills;
         }
     }
 

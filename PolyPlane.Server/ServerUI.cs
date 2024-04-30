@@ -582,6 +582,19 @@ namespace PolyPlane.Server
                     }
                 }
             }
+
+            for (int i = 0; i < _currentPlayers.Count; i++)
+            {
+                var player = _currentPlayers[i];
+
+                var playerPlane = _objs.GetPlaneByPlayerID(player.ID.PlayerID);
+                if (playerPlane != null)
+                {
+                    player.Score = playerPlane.Kills;
+                    _currentPlayers.ResetItem(i);
+                }
+            }
+
         }
 
         private void KickSelectedPlayer()

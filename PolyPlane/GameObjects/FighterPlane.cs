@@ -83,7 +83,7 @@ namespace PolyPlane.GameObjects
         private GameTimer _bulletRegenTimer = new GameTimer(0.2f, true);
         private GameTimer _decoyRegenTimer = new GameTimer(0.4f, true);
         private GameTimer _missileRegenTimer = new GameTimer(60f, true);
-        private GameTimer _easePhysicsTimer = new GameTimer(3f, true);
+        private GameTimer _easePhysicsTimer = new GameTimer(5f, true);
         private bool _easePhysicsComplete = false;
 
         private float _damageDeflection = 0f;
@@ -662,7 +662,6 @@ namespace PolyPlane.GameObjects
                     IsDamaged = true;
                     Hits = 0;
                     attackPlane.Headshots++;
-                    attackPlane.Kills++;
                 }
                 else
                 {
