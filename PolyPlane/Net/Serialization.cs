@@ -93,7 +93,7 @@ namespace PolyPlane.Net
         private static byte[] Compress(byte[] data)
         {
             MemoryStream output = new MemoryStream();
-            using (DeflateStream dstream = new DeflateStream(output, CompressionLevel.Fastest))
+            using (DeflateStream dstream = new DeflateStream(output, CompressionLevel.SmallestSize))
             {
                 dstream.Write(data, 0, data.Length);
             }
