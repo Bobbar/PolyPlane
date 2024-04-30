@@ -216,6 +216,13 @@ namespace PolyPlane.GameObjects
 
         public virtual void Wrap(D2DSize viewport)
         {
+            // Clamp all objects to ground level.
+            if (this.Altitude <= 0f)
+            {
+                this.Position = new D2DPoint(this.Position.X, 0f);
+                this.Velocity = new D2DPoint(this.Velocity.X, 0f);
+            }
+                
             //if (this.Position.X < 0f)
             //    this.Position = new D2DPoint(viewport.width, this.Position.Y);
 

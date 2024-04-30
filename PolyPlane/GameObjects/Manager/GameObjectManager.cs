@@ -269,6 +269,11 @@ namespace PolyPlane.GameObjects
                     _objLookup.Remove(obj.ID.GetHashCode());
                     _expiredObjs.Add(obj);
                     obj.Dispose();
+
+                    if (obj is GuidedMissile missile)
+                        AddExplosion(missile.Position);
+                    else if (obj is Bullet bullet)
+                        AddBulletExplosion(bullet.Position);
                 }
             }
         }

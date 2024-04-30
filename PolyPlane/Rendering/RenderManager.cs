@@ -1177,13 +1177,12 @@ namespace PolyPlane.Rendering
             float spacing = 75f;
             const float size = 4f;
             var d2dSz = new D2DSize(size, size);
-            var color = new D2DColor(0.4f, D2DColor.Gray);
+            var color = new D2DColor(0.3f, D2DColor.Gray);
 
             var plrPos = viewPlane.Position;
             plrPos /= World.ViewPortScaleMulti;
             var roundPos = new D2DPoint((plrPos.X) % spacing, (plrPos.Y) % spacing);
-            roundPos *= 4f;
-
+            roundPos *= 3f;
             var rect = new D2DRect(0, 0, this.Width, this.Height);
 
             for (float x = 0 - (spacing * 3f); x < this.Width + roundPos.X; x += spacing)
@@ -1392,7 +1391,7 @@ namespace PolyPlane.Rendering
 
             if (_netMan != null)
             {
-                infoText += $"Packet Delay: {_netMan.PacketDelay}\n";
+                infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
                 infoText += $"Latency: {_netMan.Host.GetPlayerRTT(0)}\n";
                 infoText += $"Packet Loss: {_netMan.Host.PacketLoss()}\n";
             }
@@ -1405,7 +1404,7 @@ namespace PolyPlane.Rendering
                 infoText += $"Planes: {_objs.Planes.Count(p => !p.IsDamaged && !p.HasCrashed)}\n";
                 infoText += $"Update ms: {Math.Round(UpdateTime.TotalMilliseconds, 2)}\n";
                 infoText += $"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}\n";
-                infoText += $"Collision ms: {CollisionTime.TotalMilliseconds}\n";
+                infoText += $"Collision ms: {Math.Round(CollisionTime.TotalMilliseconds, 2)}\n";
 
                 infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
                 infoText += $"HUD Scale: {_hudScale}\n";

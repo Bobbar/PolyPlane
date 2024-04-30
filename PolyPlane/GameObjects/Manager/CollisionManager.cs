@@ -74,9 +74,6 @@ namespace PolyPlane.GameObjects.Manager
 
                             if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - missileLagComp))
                             {
-                                if (!missile.IsExpired)
-                                    _objs.AddExplosion(pos);
-
 
                                 if (histState != null)
                                 {
@@ -148,8 +145,6 @@ namespace PolyPlane.GameObjects.Manager
 
                             if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - bulletLagComp))
                             {
-                                if (!bullet.IsExpired)
-                                    _objs.AddBulletExplosion(pos);
 
                                 if (histState != null)
                                 {
@@ -182,8 +177,6 @@ namespace PolyPlane.GameObjects.Manager
                             {
                                 if (!bullet.IsExpired)
                                 {
-                                    _objs.AddBulletExplosion(pos);
-
                                     var result = plane.GetImpactResult(bullet, pos);
 
                                     ImpactEvent?.Invoke(this, new ImpactEvent(plane, bullet, result.DoesDamage));

@@ -124,7 +124,7 @@ namespace PolyPlane.GameObjects
             if (_trailQueue.Count > 0 && _trailQueue.Count < TRAIL_LEN - 1)
                 ctx.FillEllipse(new D2DEllipse(_trailQueue.First(), new D2DSize(50f, 50f)), _trailColor);
 
-            if (_gameObject.IsExpired)
+            if (_gameObject.IsExpired && _gameObject is GuidedMissile missile && missile.FlameOn)
                 ctx.FillEllipse(new D2DEllipse(_trailQueue.Last(), new D2DSize(50f, 50f)), _trailColor);
         }
 
@@ -151,7 +151,7 @@ namespace PolyPlane.GameObjects
                 lastPos = nextPos;
             }
 
-            if (_gameObject.IsExpired)
+            if (_gameObject.IsExpired && _gameObject is GuidedMissile missile && missile.FlameOn)
                 ctx.FillEllipse(new D2DEllipse(_trailQueue.Last(), new D2DSize(50f, 50f)), _trailColor);
         }
     }
