@@ -41,7 +41,7 @@ namespace PolyPlane
 
         private GameTimer _burstTimer = new GameTimer(0.25f, true);
         private GameTimer _decoyTimer = new GameTimer(0.25f, true);
-        private GameTimer _playerBurstTimer = new GameTimer(0.15f, true);
+        private GameTimer _playerBurstTimer = new GameTimer(0.25f, true);
         private GameTimer _playerResetTimer = new GameTimer(15f);
         private int _aiPlaneViewID = -1;
 
