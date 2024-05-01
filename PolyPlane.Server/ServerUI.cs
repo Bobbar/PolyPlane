@@ -138,8 +138,10 @@ namespace PolyPlane.Server
                 _netMan.PlayerRespawned += NetMan_PlayerRespawned;
                 _netMan.NewChatMessage += NetMan_NewChatMessage;
 
-                _objs.PlayerKilledEvent += PlayerKilledEvent; ;
-                _objs.NewPlayerEvent += NewPlayerEvent; ;
+                _objs.PlayerKilledEvent += PlayerKilledEvent;
+                _objs.NewPlayerEvent += NewPlayerEvent;
+
+                _server.PeerDisconnectedEvent += Server_PeerDisconnectedEvent;
 
                 _discoveryTimer.Start();
                 _syncTimer.Start();
@@ -198,6 +200,7 @@ namespace PolyPlane.Server
             }
         }
 
+        // TODO: These events are probably redundant...
         private void NetMan_PlayerDisconnected(object? sender, int e)
         {
             if (this.InvokeRequired)
@@ -207,6 +210,22 @@ namespace PolyPlane.Server
             else
             {
                 var netPlayer = _currentPlayers.Where(p => p.ID.PlayerID == e).FirstOrDefault();
+                if (netPlayer != null)
+                {
+                    _currentPlayers.Remove(netPlayer);
+                }
+            }
+        }
+
+        private void Server_PeerDisconnectedEvent(object? sender, ENet.Peer e)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(() => Server_PeerDisconnectedEvent(sender, e));
+            }
+            else
+            {
+                var netPlayer = _currentPlayers.Where(p => p.ID.PlayerID == e.ID).FirstOrDefault();
                 if (netPlayer != null)
                 {
                     _currentPlayers.Remove(netPlayer);

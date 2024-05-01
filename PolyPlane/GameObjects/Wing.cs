@@ -126,35 +126,6 @@ namespace PolyPlane.GameObjects
             Reset(this.Position);
         }
 
-        public override void Wrap(D2DSize viewport)
-        {
-            //base.Wrap(viewport);
-
-            if (this.Position.X < 0f)
-            {
-                this.Position = new D2DPoint(viewport.width, this.Position.Y);
-                _prevPosition = this.Position;
-            }
-
-            if (this.Position.X > viewport.width)
-            {
-                this.Position = new D2DPoint(0, this.Position.Y);
-                _prevPosition = this.Position;
-            }
-
-            if (this.Position.Y < 0f)
-            {
-                this.Position = new D2DPoint(this.Position.X, viewport.height);
-                _prevPosition = this.Position;
-            }
-
-            if (this.Position.Y > viewport.height)
-            {
-                this.Position = new D2DPoint(this.Position.X, 0);
-                _prevPosition = this.Position;
-            }
-        }
-
         public override void Render(RenderContext ctx)
         {
             //// Draw a fixed box behind the moving wing. Helps to visualize deflection.
@@ -203,9 +174,6 @@ namespace PolyPlane.GameObjects
 
             var veloFact = Helpers.Factor(veloMag, minVelo);
 
-            //veloMag *= veloFact;
-            //veloMagSq *= veloFact;
-
             // Compute velo tangent. For lift/drag and rotation calcs.
             var veloNorm = D2DPoint.Normalize(velo);
             var veloNormTan = new D2DPoint(veloNorm.Y, -veloNorm.X);
@@ -223,12 +191,10 @@ namespace PolyPlane.GameObjects
             float WING_AREA = this.Area; // Area of the wing. Effects lift & drag forces.
             float MAX_LIFT = this.MaxLift; // Max lift force allowed.
             const float MAX_AOA = 30f; // Max AoA allowed before lift force reduces. (Stall)
-            //float AIR_DENSITY = World.AirDensity;
             float AIR_DENSITY = World.GetDensityAltitude(this.Position);
-
-
             const float PARASITIC_DRAG = 1f;
 
+            // Reduce velo as we approach the minimum. (Increases stall effect)
             veloMag *= veloFact;
             veloMagSq *= veloFact;
 
@@ -244,7 +210,6 @@ namespace PolyPlane.GameObjects
 
             liftForce = Math.Clamp(liftForce, -MAX_LIFT, MAX_LIFT);
             dragForce = Math.Clamp(dragForce, -MAX_LIFT * 2f, MAX_LIFT * 2f);
-
 
             var dragVec = -veloNorm * dragForce;
             var liftVec = veloNormTan * liftForce;

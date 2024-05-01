@@ -58,21 +58,6 @@ namespace PolyPlane.GameObjects
                 _prevPos = this.Position;
             }
 
-
-
-            //_trailFrame++;
-
-            //if (_trailFrame % TRAIL_STEP == 0)
-            //{
-            //    if (_posSelector != null)
-            //        _trailQueue.Enqueue(_posSelector.Invoke(_gameObject));
-            //    else
-            //        _trailQueue.Enqueue(_gameObject.Position);
-
-            //    if (_trailQueue.Count == TRAIL_LEN)
-            //        _trailQueue.Dequeue();
-            //}
-
             this.Position = _gameObject.Position;
         }
 
@@ -139,11 +124,6 @@ namespace PolyPlane.GameObjects
                 var nextPos = trail;
 
                 var color = _trailColor;
-
-                //if (!visiblePredicate.Invoke(nextPos))
-                //    color = D2DColor.Transparent;
-
-                //ctx.DrawLine(lastPos, nextPos, color, 2f);
 
                 if (visiblePredicate.Invoke(nextPos))
                     ctx.DrawLine(lastPos, nextPos, color, 2f);

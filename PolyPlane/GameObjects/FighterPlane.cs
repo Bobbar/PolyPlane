@@ -38,8 +38,6 @@ namespace PolyPlane.GameObjects
         public const int MISSILE_DAMAGE = 8;
         public const int BULLET_DAMAGE = 1;
 
-        private readonly float MASS = 90f;
-
         public bool IsAI => _isAIPlane;
         public bool IsDefending = false;
 
@@ -68,14 +66,23 @@ namespace PolyPlane.GameObjects
         public D2DPoint GunPosition => _gunPosition.Position;
         public D2DPoint ExhaustPosition => _centerOfThrust.Position;
         public bool IsDamaged { get; set; } = false;
+        public Radar Radar { get; set; }
+        public bool HasRadarLock = false;
+
+        public Action<Bullet> FireBulletCallback { get; set; }
+        public Action<GuidedMissile> FireMissileCallback { get; set; }
+        public Action<FighterPlane, GameObject> PlayerKilledCallback { get; set; }
 
         public List<Wing> Wings = new List<Wing>();
         public FixturePoint _centerOfThrust;
+
+
         private Wing? _controlWing = null;
         private RateLimiter _thrustAmt = new RateLimiter(0.5f);
         private Direction _currentDir = Direction.Right;
         private Direction _queuedDir = Direction.Right;
         private bool _isAIPlane = false;
+        private readonly float MASS = 90f;
 
         private GameTimer _flipTimer = new GameTimer(2f);
         private GameTimer _expireTimeout = new GameTimer(30f);
@@ -107,14 +114,7 @@ namespace PolyPlane.GameObjects
         private List<Vapor> _vaporTrails = new List<Vapor>();
         private Vapor _gunSmoke;
 
-        public Radar Radar { get; set; }
-        public bool HasRadarLock = false;
-
-        public Action<Bullet> FireBulletCallback { get; set; }
-        public Action<GuidedMissile> FireMissileCallback { get; set; }
-        public Action<FighterPlane, GameObject> PlayerKilledCallback { get; set; }
-
-        public IAIBehavior _aiBehavior;
+        private IAIBehavior _aiBehavior;
 
         private readonly D2DPoint[] _planePoly = new D2DPoint[]
         {
@@ -691,9 +691,6 @@ namespace PolyPlane.GameObjects
 
                     attackPlane.Kills++;
 
-                    //if (attackPlane.Hits < MAX_HITS)
-                    //    attackPlane.Hits += 2;
-
                     PlayerKilledCallback?.Invoke(this, impactor);
                 }
             }
@@ -886,14 +883,9 @@ namespace PolyPlane.GameObjects
             if (!ThrustOn)
                 return thrust;
 
-            //if (ThrustOn)
-            //    _thrustAmt.Target = 1f;
-            //else
-            //    _thrustAmt.Target = 0f;
-
             const float thrustVectorAmt = 1f;
             const float thrustBoostAmt = 1000f;
-            const float thrustBoostMaxSpd = 200f;//600f;
+            const float thrustBoostMaxSpd = 200f;
 
             D2DPoint vec;
 

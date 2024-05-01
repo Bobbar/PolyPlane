@@ -170,7 +170,12 @@ namespace PolyPlane.Net
 
         public virtual void SendPacket(NetPacket packet) { }
         public virtual void HandleConnect(Event netEvent) { }
-        public virtual void HandleDisconnect(Event netEvent) { }
+
+        public virtual void HandleDisconnect(Event netEvent) 
+        {
+            PeerDisconnectedEvent?.Invoke(this, netEvent.Peer);
+        }
+
         public virtual void HandleTimeout(Event netEvent) { }
         public virtual void HandleReceive(Event netEvent) { }
 
@@ -242,15 +247,10 @@ namespace PolyPlane.Net
 
         public virtual void Dispose()
         {
-            Host?.Flush();
-
-
-            Task.Delay(30).Wait();
             _runLoop = false;
-
+            Host?.Flush();
             Host?.Dispose();
             ENet.Library.Deinitialize();
-
         }
     }
 }

@@ -12,7 +12,6 @@
 
         public InterpolationBuffer(T restingState, double tickRate, Func<T, T, double, T> interpolate)
         {
-            //_resetingState = restingState;
             _tickRate = tickRate;
             _interpolate = interpolate;
         }

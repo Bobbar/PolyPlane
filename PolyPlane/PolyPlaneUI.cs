@@ -299,7 +299,6 @@ namespace PolyPlane
 
             StopRender();
             _killRender = true;
-            _gameThread?.Join(100);
 
             _client?.Stop();
             _client?.Dispose();

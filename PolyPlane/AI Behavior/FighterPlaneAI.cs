@@ -130,7 +130,6 @@ namespace PolyPlane.AI_Behavior
         {
             if (this.TargetPlane == null || this.TargetPlane.IsExpired || this.TargetPlane.HasCrashed || this.TargetPlane.IsDamaged)
             {
-                //var rndTarg = this.Plane.Radar.FindRandomPlane();
                 var rndTarg = this.Plane.Radar.FindNearestPlane();
 
                 _targetPlane = rndTarg;

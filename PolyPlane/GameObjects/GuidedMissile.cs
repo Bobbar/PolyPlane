@@ -6,36 +6,20 @@ namespace PolyPlane.GameObjects
 {
     public class GuidedMissile : Missile
     {
+        public float Deflection = 0f;
         public bool FlameOn = false;
-        private bool IsActivated = false;
 
         public GuidanceBase Guidance => _guidance;
+
         public float CurrentFuel
         {
             get { return _currentFuel; }
             set { _currentFuel = value; }
         }
+
         public D2DPoint CenterOfThrust => _centerOfThrust.Position;
 
-        private static readonly D2DPoint[] _missilePoly = new D2DPoint[]
-        {
-            new D2DPoint(28, 0),
-            new D2DPoint(25, 2),
-            new D2DPoint(-20, 2),
-            new D2DPoint(-22, 4),
-            new D2DPoint(-22, -4),
-            new D2DPoint(-20, -2),
-            new D2DPoint(25, -2)
-        };
-
-
-        private static readonly D2DPoint[] _flamePoly = new D2DPoint[]
-        {
-            new D2DPoint(-8, 2),
-            new D2DPoint(-10, 0),
-            new D2DPoint(-8, -2),
-        };
-
+       
         public float TotalMass
         {
             get { return MASS + _currentFuel; }
@@ -56,6 +40,7 @@ namespace PolyPlane.GameObjects
             }
         }
 
+        private bool IsActivated = false;
         private readonly float THURST_VECTOR_AMT = 1f;
         private readonly float LIFESPAN = 40f;
         private readonly float BURN_RATE = 1f;
@@ -87,7 +72,24 @@ namespace PolyPlane.GameObjects
         private GameTimer _decoyDistractCooldown = new GameTimer(1f);
         private GameTimer _decoyDistractArm = new GameTimer(2f);
         private GameTimer _igniteCooldown = new GameTimer(1f);
-        public float Deflection = 0f;
+
+        private static readonly D2DPoint[] _missilePoly =
+        [
+            new D2DPoint(28, 0),
+            new D2DPoint(25, 2),
+            new D2DPoint(-20, 2),
+            new D2DPoint(-22, 4),
+            new D2DPoint(-22, -4),
+            new D2DPoint(-20, -2),
+            new D2DPoint(25, -2)
+        ];
+
+        private static readonly D2DPoint[] _flamePoly =
+        [
+            new D2DPoint(-8, 2),
+            new D2DPoint(-10, 0),
+            new D2DPoint(-8, -2),
+        ];
 
         public GuidedMissile(GameObject player, D2DPoint position, D2DPoint velocity, float rotation)
         {
@@ -425,10 +427,6 @@ namespace PolyPlane.GameObjects
             }
 
             return new AdvancedGuidance(this, target);
-        }
-
-        public override void Wrap(D2DSize viewport)
-        {
         }
 
         public override void Render(RenderContext ctx)

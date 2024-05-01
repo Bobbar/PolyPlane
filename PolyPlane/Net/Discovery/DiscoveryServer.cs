@@ -33,20 +33,12 @@ namespace PolyPlane.Net.Discovery
         public void StopListen()
         {
             _running = false;
-
             _udpListener?.Close();
-
-            _listenThread?.Join(150);
         }
 
         public void Dispose()
         {
             _running = false;
-
-            Thread.Sleep(30);
-
-            _listenThread?.Join(150);
-
             _udpListener?.Close();
             _udpListener?.Dispose();
         }

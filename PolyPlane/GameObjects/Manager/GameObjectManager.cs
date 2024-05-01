@@ -270,6 +270,7 @@ namespace PolyPlane.GameObjects
                     _expiredObjs.Add(obj);
                     obj.Dispose();
 
+                    // Add explosions when missiles & bullets are expired.
                     if (obj is GuidedMissile missile)
                         AddExplosion(missile.Position);
                     else if (obj is Bullet bullet)

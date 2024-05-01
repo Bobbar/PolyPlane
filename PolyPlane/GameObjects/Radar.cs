@@ -32,7 +32,7 @@ namespace PolyPlane
         private float _maxRange = 40000f;
         private float _maxAge = 2f;
         private readonly float SWEEP_RATE = 300f;
-        private float _radius = 150f;//100f;
+        private float _radius = 150f;
         private bool _hostIsAI = false;
         private D2DColor _color = D2DColor.Green;
         private List<List<GameObject>> _sources = new List<List<GameObject>>();
@@ -420,17 +420,11 @@ namespace PolyPlane
         {
             GuidedMissile nearest = null;
 
-
             var threats = _pings.Where(p => p.Obj is GuidedMissile missile
             && !missile.IsDistracted && !missile.MissedTarget
-            && missile.Target == HostPlane
+            && missile.Target.ID.Equals(HostPlane.ID)
             && missile.ClosingRate(HostPlane) > 0f
             && Helpers.ImpactTime(HostPlane, missile) <= MIN_IMPACT_TIME).ToList();
-
-            // var threats = _pings.Where(p => p.Obj is GuidedMissile missile
-            //&& !missile.IsDistracted && !missile.MissedTarget
-            //&& missile.ClosingRate(HostPlane) > 0f
-            //&& Helpers.ImpactTime(HostPlane, missile) <= MIN_IMPACT_TIME).ToList();
 
             threats.OrderBy(p => Helpers.ImpactTime(HostPlane, p.Obj as Missile)).ToList();
 

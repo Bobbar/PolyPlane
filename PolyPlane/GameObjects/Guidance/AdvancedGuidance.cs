@@ -117,7 +117,7 @@
             // This considers the target velocity as well as the change in angular velocity.
 
             D2DPoint predicted = targetPos;
-            const int MAX_FTI = 3000;//6000; // Max iterations allowed.
+            const int MAX_FTI = 3000; // Max iterations allowed.
 
             if (timeToImpact >= 1 && timeToImpact < MAX_FTI)
             {

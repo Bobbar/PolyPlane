@@ -109,7 +109,6 @@ namespace PolyPlane.GameObjects.Manager
 
                                     var result = plane.GetImpactResult(missile, pos);
 
-                                    //if (result.DoesDamage)
                                     ImpactEvent?.Invoke(this, new ImpactEvent(plane, missile, result.DoesDamage));
                                 }
 
@@ -192,7 +191,6 @@ namespace PolyPlane.GameObjects.Manager
             }
 
             // Handle missiles hit by bullets.
-            // And handle player plane hits by AI missiles.
             for (int m = 0; m < _objs.Missiles.Count; m++)
             {
                 var missile = _objs.Missiles[m] as Missile;
@@ -258,28 +256,14 @@ namespace PolyPlane.GameObjects.Manager
                 foreach (var bullet in _objs.Bullets)
                 {
                     if (bullet.Altitude <= 0f && !bullet.IsExpired)
-                    {
                         bullet.IsExpired = true;
-
-                        _objs.AddBulletExplosion(bullet.Position);
-                    }
                 }
             }
 
             foreach (var missile in _objs.Missiles)
             {
                 if (missile.Altitude <= 0f && !missile.IsExpired)
-                {
                     missile.IsExpired = true;
-
-                    _objs.AddExplosion(missile.Position);
-                }
-            }
-
-            foreach (var decoy in _objs.Decoys)
-            {
-                if (decoy.Altitude <= 0f)
-                    decoy.IsExpired = true;
             }
         }
 
@@ -328,10 +312,6 @@ namespace PolyPlane.GameObjects.Manager
                 // No sense in trying to control missiles we don't have control of...
                 if (missile.IsNetObject)
                     continue;
-
-                // Decoys dont work if target is being painted.?
-                //if (missile.Owner.IsObjInFOV(target, World.SENSOR_FOV * 0.25f))
-                //    continue;
 
                 GameObject maxTempObj;
                 var maxTemp = 0f;

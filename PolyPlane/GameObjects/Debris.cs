@@ -11,7 +11,7 @@ namespace PolyPlane.GameObjects
         public Debris(D2DPoint pos, D2DPoint velo, D2DColor color) : base(pos, velo)
         {
             _color = color;
-            this.Polygon = new RenderPoly(GameObjectPoly.RandomPoly(8, 12));
+            this.Polygon = new RenderPoly(RandomPoly(8, 12));
 
             this.RotationSpeed = Helpers.Rnd.NextFloat(-200f, 200f);
 

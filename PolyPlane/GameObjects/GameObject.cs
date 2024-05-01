@@ -138,7 +138,6 @@ namespace PolyPlane.GameObjects
 
         private GameObjectPacket InterpObject(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
         {
-            //this.Position = (from.Position + (to.Position - from.Position) * (float)pctElapsed).ToD2DPoint();
             this.Position = _posSmooth.Add((from.Position + (to.Position - from.Position) * (float)pctElapsed).ToD2DPoint());
             this.Velocity = (from.Velocity + (to.Velocity - from.Velocity) * (float)pctElapsed).ToD2DPoint();
             this.Rotation = Helpers.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
@@ -245,18 +244,6 @@ namespace PolyPlane.GameObjects
                 this.Position = new D2DPoint(this.Position.X, 0f);
                 this.Velocity = new D2DPoint(this.Velocity.X, 0f);
             }
-
-            //if (this.Position.X < 0f)
-            //    this.Position = new D2DPoint(viewport.width, this.Position.Y);
-
-            //if (this.Position.X > viewport.width)
-            //    this.Position = new D2DPoint(0, this.Position.Y);
-
-            //if (this.Position.Y < 0f)
-            //    this.Position = new D2DPoint(this.Position.X, viewport.height);
-
-            //if (this.Position.Y > viewport.height)
-            //    this.Position = new D2DPoint(this.Position.X, 0);
         }
 
         public virtual void Render(RenderContext ctx)
@@ -631,7 +618,6 @@ namespace PolyPlane.GameObjects
 
         public static D2DPoint[] RandomPoly(int nPoints, int radius)
         {
-            //var rnd = new Random();
             var rnd = Helpers.Rnd;
 
             var poly = new D2DPoint[nPoints];
