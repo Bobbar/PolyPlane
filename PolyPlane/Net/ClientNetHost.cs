@@ -59,7 +59,7 @@ namespace PolyPlane.Net
             {
                 // Disconnect and stop processing packets.
                 FireDisconnectEvent(Peer);
-                this.DoStop();
+                this.Stop();
                 return;
             }
 
@@ -113,7 +113,7 @@ namespace PolyPlane.Net
         {
             Peer.DisconnectNow(0);
             
-            Thread.Sleep(30);
+            //Thread.Sleep(30);
 
             base.Dispose();
         }

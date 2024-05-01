@@ -241,6 +241,7 @@ namespace PolyPlane
 
             _client?.Stop();
             _client?.Dispose();
+            _client = null;
 
             DoNetGameSetup();
         }
