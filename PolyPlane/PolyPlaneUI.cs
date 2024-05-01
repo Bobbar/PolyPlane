@@ -74,6 +74,14 @@ namespace PolyPlane
             _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
 
+            _playerBurstTimer.StartCallback = () =>
+            {
+                _playerPlane.FireBullet(p => _objs.AddBulletExplosion(p));
+
+                if (!_playerPlane.IsDamaged && _playerPlane.NumBullets > 0)
+                    _render.DoScreenShake(2f);
+            };
+
             _playerBurstTimer.TriggerCallback = () =>
             {
                 _playerPlane.FireBullet(p => _objs.AddBulletExplosion(p));
@@ -666,6 +674,7 @@ namespace PolyPlane
             else
             {
                 _playerBurstTimer.Stop();
+                _playerBurstTimer.Reset();
                 _playerPlane.FiringBurst = false;
             }
 
@@ -714,16 +723,14 @@ namespace PolyPlane
 
         private void DoAIPlaneBurst(float dt)
         {
-            if (_objs.Planes.Any(p => p.FiringBurst))
+            if (_objs.Planes.Any(p => p.FiringBurst && p.IsAI))
             {
-                if (!_burstTimer.IsRunning)
-                {
-                    _burstTimer.Restart();
-                }
+                    _burstTimer.Start();
             }
             else
             {
                 _burstTimer.Stop();
+                _burstTimer.Reset();
             }
 
             _burstTimer.Update(dt);

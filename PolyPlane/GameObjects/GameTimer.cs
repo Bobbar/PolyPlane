@@ -84,24 +84,23 @@
                     TriggerCallback();
 
                 _hasFired = true;
-                Stop();
 
                 if (Cooldown > 0f)
                     _isInCooldown = true;
 
                 if (AutoRestart)
-                {
-                    Restart();
-                }
+                    Reset();
+                else
+                    Stop();
             }
         }
 
         public void Start()
         {
-            _isRunning = true;
-
-            if (StartCallback != null)
+            if (!_isRunning && StartCallback != null)
                 StartCallback();
+
+            _isRunning = true;
         }
 
         public void Stop()

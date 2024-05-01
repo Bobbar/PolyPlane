@@ -57,8 +57,6 @@ namespace PolyPlane.AI_Behavior
             _dropDecoysTimer.StartCallback = () => this.Plane.DroppingDecoy = true;
             _dropDecoysTimer.TriggerCallback = () => this.Plane.DroppingDecoy = false;
 
-            _fireBurstTimer.AutoRestart = true;
-
             _fireMissileCooldown = new GameTimer(Helpers.Rnd.NextFloat(MIN_MISSILE_TIME, MAX_MISSILE_TIME));
             _fireMissileCooldown.Start();
         }
@@ -179,6 +177,7 @@ namespace PolyPlane.AI_Behavior
 
             if (plrFOV <= MIN_OFFBORE)
             {
+                //_fireBurstTimer.Stop();
                 _fireBurstTimer.Restart();
             }
         }
