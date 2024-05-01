@@ -17,11 +17,11 @@ namespace PolyPlane.Net
         public Host Host;
         public ushort Port;
         public Address Address;
-        public TimeSpan NetTime => _netTime;
+        public double NetTime => _netTimeSmooth.Current;
 
         private Thread _pollThread;
         private bool _runLoop = true;
-        private TimeSpan _netTime = TimeSpan.Zero;
+        private SmoothDouble _netTimeSmooth = new SmoothDouble(200);
         private Stopwatch _netTimer = new Stopwatch();
 
         public event EventHandler<Peer> PeerTimeoutEvent;
@@ -83,7 +83,7 @@ namespace PolyPlane.Net
                 ProcessQueue();
 
                 _netTimer.Stop();
-                _netTime = _netTimer.Elapsed;
+                _netTimeSmooth.Add(_netTimer.Elapsed.TotalMilliseconds);
             }
         }
 
