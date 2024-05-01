@@ -443,7 +443,7 @@ namespace PolyPlane.Net
         public void SendNetImpact(GameObject impactor, GameObject target, PlaneImpactResult result, GameObjectPacket histState)
         {
             var impactPacket = new ImpactPacket(target, impactor.ID, result.ImpactPoint, result.DoesDamage, result.WasHeadshot, result.Type == ImpactType.Missile);
-            SaveImpact(impactPacket);   
+            SaveImpact(impactPacket);
 
             if (histState != null)
             {

@@ -88,7 +88,7 @@ namespace PolyPlane.AI_Behavior
             ConsiderNewTarget();
             ConsiderDropDecoy();
 
-            var velo = this.Plane.Velocity.Length();
+            var velo = this.Plane.AirSpeedTrue;
 
             if (velo > MAX_SPEED)
                 this.Plane.ThrustOn = false;
@@ -258,7 +258,7 @@ namespace PolyPlane.AI_Behavior
                 angle = aimAmt;
             }
 
-            var velo = this.Plane.Velocity.Length();
+            var velo = this.Plane.AirSpeedIndicated;
             if (velo < 150f)
                 _gainingVelo = true;
             else if (velo > 220f)
@@ -302,7 +302,7 @@ namespace PolyPlane.AI_Behavior
             const float pValue = 5f;
 
             var los = target.Position - this.Plane.Position;
-            var navigationTime = los.Length() / (this.Plane.Velocity.Length() * World.DT);
+            var navigationTime = los.Length() / (this.Plane.AirSpeedTrue * World.DT);
             var targRelInterceptPos = los + ((target.Velocity * World.DT) * navigationTime);
 
             targRelInterceptPos *= pValue;

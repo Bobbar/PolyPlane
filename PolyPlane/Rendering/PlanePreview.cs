@@ -26,7 +26,7 @@ namespace PolyPlane.Rendering
             InitGfx();
 
             PlaneColor = planeColor;
-            _plane = new FighterPlane(D2DPoint.Zero, PlaneColor);
+            _plane = new FighterPlane(new D2DPoint(0, -20f), PlaneColor);
             _plane.IsNetObject = false;
 
             _renderThread = new Thread(RenderLoop);
@@ -38,12 +38,14 @@ namespace PolyPlane.Rendering
         {
             var center = new D2DPoint(_targetControl.Width / 2f, _targetControl.Height / 2f);
             var vpSize = new D2DSize(_targetControl.Width / VIEW_SCALE, _targetControl.Height / VIEW_SCALE);
-            var viewPortRect = new D2DRect(center, vpSize);
+            var viewPortRect = new D2DRect(center, vpSize).Inflate(400f, 400f);
             _ctx.Viewport = viewPortRect;
 
             while (!disposedValue)
             {
                 _gfx.BeginRender(_clearColor);
+                _gfx.PushTransform();
+                _gfx.TranslateTransform(0f, 90f);
 
                 _plane.PlaneColor = PlaneColor;
                 _plane.Update(World.DT, vpSize, World.RenderScale);
@@ -52,6 +54,7 @@ namespace PolyPlane.Rendering
                 _plane.Rotation = _angle;
                 _plane.Render(_ctx);
 
+                _gfx.PopTransform();
                 _gfx.EndRender();
             }
         }

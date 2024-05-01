@@ -315,7 +315,7 @@ namespace PolyPlane.GameObjects
 
             // Apply some stability control to try to prevent thrust vectoring from spinning the plane.
             const float MIN_DEF_SPD = 300f; // Minimum speed required for full deflection.
-            var velo = this.Velocity.Length();
+            var velo = this.AirSpeedIndicated;
             if (_thrustAmt.Value > 0f && SASOn)
             {
                 var spdFact = Helpers.Factor(velo, MIN_DEF_SPD);

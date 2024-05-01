@@ -64,6 +64,29 @@ namespace PolyPlane.GameObjects
 
         public float VerticalSpeed => _verticalSpeed;
 
+        /// <summary>
+        /// Air speed relative to altitude & air density.
+        /// </summary>
+        public float AirSpeedIndicated
+        {
+            get
+            {
+                var dens = World.GetDensityAltitude(this.Position);
+                return this.Velocity.Length() * dens;
+            }
+        }
+
+        /// <summary>
+        /// True air speed.
+        /// </summary>
+        public float AirSpeedTrue
+        {
+            get
+            {
+                return this.Velocity.Length();
+            }
+        }
+
         private float _verticalSpeed = 0f;
         private float _prevAlt = 0f;
         private SmoothPos _posSmooth = new SmoothPos(5);
@@ -222,7 +245,7 @@ namespace PolyPlane.GameObjects
                 this.Position = new D2DPoint(this.Position.X, 0f);
                 this.Velocity = new D2DPoint(this.Velocity.X, 0f);
             }
-                
+
             //if (this.Position.X < 0f)
             //    this.Position = new D2DPoint(viewport.width, this.Position.Y);
 

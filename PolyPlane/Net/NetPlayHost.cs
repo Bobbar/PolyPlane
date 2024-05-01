@@ -165,7 +165,7 @@ namespace PolyPlane.Net
         public void SendNewDecoyPacket(Decoy decoy)
         {
             var packet = new GameObjectPacket(decoy, PacketTypes.NewDecoy);
-            EnqueuePacket(packet);  
+            EnqueuePacket(packet);
         }
 
         public virtual void SendPacket(NetPacket packet) { }

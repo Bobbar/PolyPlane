@@ -971,7 +971,8 @@ namespace PolyPlane.Rendering
 
             var pos = new D2DPoint(viewportsize.width * 0.15f, viewportsize.height * 0.3f);
             var rect = new D2DRect(pos, new D2DSize(W, H));
-            var spd = plane.Velocity.Length();
+            var spd = plane.AirSpeedIndicated;
+
             var startSpd = (spd) - (spd % (MARKER_STEP)) + MARKER_STEP;
             var spdWarningColor = new D2DColor(0.2f, D2DColor.Red);
 
