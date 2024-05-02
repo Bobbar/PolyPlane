@@ -1,20 +1,39 @@
-﻿using GroBuf;
-using GroBuf.DataMembersExtracters;
+﻿using NetStack.Buffers;
+using NetStack.Serialization;
 using System.IO.Compression;
 
 namespace PolyPlane.Net
 {
+    static class BufferPool
+    {
+        [ThreadStatic]
+        private static BitBuffer bitBuffer;
+
+        public static BitBuffer GetBitBuffer()
+        {
+            if (bitBuffer == null)
+                bitBuffer = new BitBuffer(1024);
+
+            return bitBuffer;
+        }
+    }
+
     public static class Serialization
     {
         public static bool EnableCompression = true;
 
-        private static Serializer _serializer = new Serializer(new FieldsExtractor(), options: GroBufOptions.WriteEmptyObjects);
+        private static ArrayPool<byte> _buffers = ArrayPool<byte>.Create(1024, 50);
 
         public static byte[] ObjectToByteArray(NetPacket obj)
         {
-            var payloadBytes = _serializer.Serialize(obj.GetType(), obj);
-            var payload = new PayloadPacket(obj.Type, payloadBytes);
-            var bytes = _serializer.Serialize<PayloadPacket>(payload);
+            var data = BufferPool.GetBitBuffer();
+
+            SerializeType(obj, data);
+
+            var bytes = _buffers.Rent(data.Length);
+            data.ToArray(bytes);
+            data.Clear();
+            _buffers.Return(bytes);
 
             if (EnableCompression)
                 bytes = Compress(bytes);
@@ -22,73 +41,160 @@ namespace PolyPlane.Net
             return bytes;
         }
 
+     
         public static object ByteArrayToObject(byte[] arrBytes)
         {
+            var data = BufferPool.GetBitBuffer();
+
             if (EnableCompression)
                 arrBytes = Decompress(arrBytes);
 
-            var payloadPacket = _serializer.Deserialize<PayloadPacket>(arrBytes);
-            var payloadBytes = payloadPacket.Payload;
+            data.FromArray(arrBytes, arrBytes.Length);
+
+            var type = (PacketTypes)data.PeekByte();
 
             object obj = null;
 
-            switch (payloadPacket.Type)
+            switch (type)
             {
                 case PacketTypes.PlaneUpdate:
-                    obj = _serializer.Deserialize<PlaneListPacket>(payloadBytes);
+                    obj = new PlaneListPacket(data);
                     break;
 
                 case PacketTypes.GetOtherPlanes:
-                    obj = _serializer.Deserialize<PlayerListPacket>(payloadBytes);
+                    obj = new PlayerListPacket(data);
                     break;
 
                 case PacketTypes.MissileUpdate:
-                    obj = _serializer.Deserialize<MissileListPacket>(payloadBytes);
+                    obj = new MissileListPacket(data);
                     break;
 
                 case PacketTypes.Impact:
-                    obj = _serializer.Deserialize<ImpactPacket>(payloadBytes);
+                    obj = new ImpactPacket(data);
                     break;
 
                 case PacketTypes.NewPlayer:
-                    obj = _serializer.Deserialize<NewPlayerPacket>(payloadBytes);
+                    obj = new NewPlayerPacket(data);
                     break;
 
                 case PacketTypes.NewMissile:
-                    obj = _serializer.Deserialize<MissilePacket>(payloadBytes);
+                    obj = new MissilePacket(data);
                     break;
 
                 case PacketTypes.NewDecoy or PacketTypes.NewBullet:
-                    obj = _serializer.Deserialize<GameObjectPacket>(payloadBytes);
+                    obj = new GameObjectPacket(data);
                     break;
 
                 case PacketTypes.SetID or PacketTypes.GetNextID or PacketTypes.PlayerDisconnect or PacketTypes.PlayerReset or PacketTypes.KickPlayer:
-                    obj = _serializer.Deserialize<BasicPacket>(payloadBytes);
+                    obj = new BasicPacket(data);
                     break;
 
                 case PacketTypes.ChatMessage:
-                    obj = _serializer.Deserialize<ChatPacket>(payloadBytes);
+                    obj = new ChatPacket(data);
                     break;
 
                 case PacketTypes.ExpiredObjects:
-                    obj = _serializer.Deserialize<BasicListPacket>(payloadBytes);
+                    obj = new BasicListPacket(data);
                     break;
 
                 case PacketTypes.ServerSync:
-                    obj = _serializer.Deserialize<SyncPacket>(payloadBytes);
+                    obj = new SyncPacket(data);
                     break;
 
                 case PacketTypes.Discovery:
-                    obj = _serializer.Deserialize<DiscoveryPacket>(payloadBytes);
+                    obj = new DiscoveryPacket(data);
                     break;
 
                 case PacketTypes.ImpactList:
-                    obj = _serializer.Deserialize<ImpactListPacket>(payloadBytes);
+                    obj = new ImpactListPacket(data);
                     break;
             }
 
+            data.Clear();
+
             return obj;
         }
+
+
+        private static void SerializeType(NetPacket packet, BitBuffer data)
+        {
+            var type = packet.Type;
+
+            switch (type)
+            {
+                case PacketTypes.PlaneUpdate:
+                    var planeUpdate = packet as PlaneListPacket;
+                    planeUpdate.Serialize(data);
+                    break;
+
+                case PacketTypes.GetOtherPlanes: // TODO: Maybe split this into Request & Sent.
+
+                    // Clients sent a basic packet to request.
+                    // Server sends a list packet as a response.
+                    if (packet is PlayerListPacket playerList)
+                        playerList.Serialize(data);
+                    else if (packet is BasicPacket basicPack)
+                        basicPack.Serialize(data);
+
+                    break;
+
+                case PacketTypes.MissileUpdate:
+                    var missileListPacket = packet as MissileListPacket;
+                    missileListPacket.Serialize(data);
+                    break;
+
+                case PacketTypes.Impact:
+                    var impactPacket = packet as ImpactPacket;
+                    impactPacket.Serialize(data);
+                    break;
+
+                case PacketTypes.NewPlayer:
+                    var newPlayerPacket = packet as NewPlayerPacket;
+                    newPlayerPacket.Serialize(data);
+                    break;
+
+                case PacketTypes.NewMissile:
+                    var missilePacket = packet as MissilePacket;
+                    missilePacket.Serialize(data);
+                    break;
+
+                case PacketTypes.NewDecoy or PacketTypes.NewBullet:
+                    var gameObjectPacket = packet as GameObjectPacket;
+                    gameObjectPacket.Serialize(data);
+                    break;
+
+                case PacketTypes.SetID or PacketTypes.GetNextID or PacketTypes.PlayerDisconnect or PacketTypes.PlayerReset or PacketTypes.KickPlayer:
+                    var basicPacket = packet as BasicPacket;
+                    basicPacket.Serialize(data);
+                    break;
+
+                case PacketTypes.ChatMessage:
+                    var chatPacket = packet as ChatPacket;
+                    chatPacket.Serialize(data);
+                    break;
+
+                case PacketTypes.ExpiredObjects:
+                    var basicListPacket = packet as BasicListPacket;
+                    basicListPacket.Serialize(data);
+                    break;
+
+                case PacketTypes.ServerSync:
+                    var syncPacket = packet as SyncPacket;
+                    syncPacket.Serialize(data);
+                    break;
+
+                case PacketTypes.Discovery:
+                    var discoveryPacket = packet as DiscoveryPacket;
+                    discoveryPacket.Serialize(data);
+                    break;
+
+                case PacketTypes.ImpactList:
+                    var impactListPacket = packet as ImpactListPacket;
+                    impactListPacket.Serialize(data);
+                    break;
+            }
+        }
+
 
         private static byte[] Compress(byte[] data)
         {
@@ -114,23 +220,5 @@ namespace PolyPlane.Net
             input.Dispose();
             return output.ToArray();
         }
-
-        public static D2DPoint ToD2DPoint(this PointF point)
-        {
-            return new D2DPoint(point.X, point.Y);
-        }
-
-        public static D2DPoint ToD2DPoint(this NetPoint point)
-        {
-            return new D2DPoint(point.X, point.Y);
-        }
-
-        public static NetPoint ToNetPoint(this D2DPoint point)
-        {
-            return new NetPoint(point.X, point.Y);
-        }
-
-
-
     }
 }

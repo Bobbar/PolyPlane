@@ -138,8 +138,8 @@ namespace PolyPlane.GameObjects
 
         private GameObjectPacket InterpObject(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
         {
-            this.Position = _posSmooth.Add((from.Position + (to.Position - from.Position) * (float)pctElapsed).ToD2DPoint());
-            this.Velocity = (from.Velocity + (to.Velocity - from.Velocity) * (float)pctElapsed).ToD2DPoint();
+            this.Position = _posSmooth.Add((from.Position + (to.Position - from.Position) * (float)pctElapsed));
+            this.Velocity = (from.Velocity + (to.Velocity - from.Velocity) * (float)pctElapsed);
             this.Rotation = Helpers.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
 
             return to;
@@ -209,8 +209,8 @@ namespace PolyPlane.GameObjects
             if (!World.IsServer && World.InterpOn)
             {
                 var newState = new GameObjectPacket(this);
-                newState.Position = position.ToNetPoint();
-                newState.Velocity = velocity.ToNetPoint();
+                newState.Position = position;
+                newState.Velocity = velocity;
                 newState.Rotation = rotation;
 
                 InterpBuffer.Enqueue(newState, frameTime);
@@ -355,8 +355,8 @@ namespace PolyPlane.GameObjects
             if (World.IsNetGame && World.IsServer)
             {
                 var histState = new GameObjectPacket(this);
-                histState.Position = this.Position.ToNetPoint();
-                histState.Velocity = this.Velocity.ToNetPoint();
+                histState.Position = this.Position;
+                histState.Velocity = this.Velocity;
                 histState.Rotation = this.Rotation;
                 HistoryBuffer.Enqueue(histState, World.CurrentTime());
             }
@@ -377,7 +377,7 @@ namespace PolyPlane.GameObjects
             {
                 // Create a copy of the polygon and translate it to the historical position/rotation.
                 var histPoly = new RenderPoly(this.Polygon.SourcePoly, World.RenderScale * this.RenderOffset);
-                histPoly.Update(histPos.Position.ToD2DPoint(), histPos.Rotation, World.RenderScale);
+                histPoly.Update(histPos.Position, histPos.Rotation, World.RenderScale);
 
                 // Flip plane poly to correct orientation.
                 if (this is FighterPlane)
@@ -393,7 +393,7 @@ namespace PolyPlane.GameObjects
                 if (dt < 0f)
                     dt = World.SUB_DT;
 
-                var relVelo = histPos.Velocity.ToD2DPoint() - obj.Velocity;
+                var relVelo = histPos.Velocity - obj.Velocity;
                 var relVeloDTHalf = (relVelo * dt) * 0.5f;
 
                 // Velocity compensation collisions:

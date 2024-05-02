@@ -81,12 +81,13 @@ namespace PolyPlane.Net
 
             while (Host.PacketReceiveQueue.Count > 0)
             {
-                if (Host.PacketReceiveQueue.TryDequeue(out Net.NetPacket packet))
+                if (Host.PacketReceiveQueue.TryDequeue(out object packet))
                 {
-                    totalPacketTime += now - packet.FrameTime;
+                    var netPacket = (NetPacket)packet;
+                    totalPacketTime += now - netPacket.FrameTime;
                     numPackets++;
 
-                    HandleNetPacket(packet);
+                    HandleNetPacket(netPacket);
                 }
             }
 
@@ -127,7 +128,7 @@ namespace PolyPlane.Net
 
                         if (planePacket != null)
                         {
-                            var newPlane = new FighterPlane(planePacket.Position.ToD2DPoint(), planePacket.PlaneColor);
+                            var newPlane = new FighterPlane(planePacket.Position, planePacket.PlaneColor);
                             newPlane.ID = planePacket.ID;
                             newPlane.PlayerName = planePacket.Name;
                             newPlane.IsNetObject = true;
@@ -200,7 +201,7 @@ namespace PolyPlane.Net
 
                             if (!existing)
                             {
-                                var newPlane = new FighterPlane(player.Position.ToD2DPoint(), player.PlaneColor);
+                                var newPlane = new FighterPlane(player.Position, player.PlaneColor);
                                 newPlane.ID = player.ID;
                                 newPlane.PlayerName = player.Name;
                                 newPlane.IsNetObject = true;
@@ -325,15 +326,15 @@ namespace PolyPlane.Net
                     var ogState = new PlanePacket(plane);
 
                     plane.Rotation = impact.Rotation;
-                    plane.Velocity = impact.Velocity.ToD2DPoint();
-                    plane.Position = impact.Position.ToD2DPoint();
+                    plane.Velocity = impact.Velocity;
+                    plane.Position = impact.Position;
                     plane.SyncFixtures();
 
-                    plane.AddImpact(impact.ImpactPoint.ToD2DPoint());
+                    plane.AddImpact(impact.ImpactPoint);
 
                     plane.Rotation = ogState.Rotation;
-                    plane.Velocity = ogState.Velocity.ToD2DPoint();
-                    plane.Position = ogState.Position.ToD2DPoint();
+                    plane.Velocity = ogState.Velocity;
+                    plane.Position = ogState.Position;
                     plane.SyncFixtures();
                 }
             }
@@ -478,7 +479,7 @@ namespace PolyPlane.Net
                     planeUpdPacket.SyncObj(netPlane);
 
                     netPlane.LagAmount = World.CurrentTime() - listPacket.FrameTime;
-                    netPlane.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, planeUpdPacket.Position.ToD2DPoint(), planeUpdPacket.Velocity.ToD2DPoint(), planeUpdPacket.Rotation, planeUpdPacket.FrameTime);
+                    netPlane.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, planeUpdPacket.Position, planeUpdPacket.Velocity, planeUpdPacket.Rotation, planeUpdPacket.FrameTime);
                 }
             }
         }
@@ -505,7 +506,7 @@ namespace PolyPlane.Net
                     if (netMissileOwner != null && netMissileOwner.IsNetObject)
                     {
                         missileUpdate.SyncObj(netMissile);
-                        netMissile.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, missileUpdate.Position.ToD2DPoint(), missileUpdate.Velocity.ToD2DPoint(), missileUpdate.Rotation, missileUpdate.FrameTime);
+                        netMissile.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, missileUpdate.Position, missileUpdate.Velocity, missileUpdate.Rotation, missileUpdate.FrameTime);
                     }
                 }
             }
@@ -535,15 +536,15 @@ namespace PolyPlane.Net
                     var ogState = new PlanePacket(target);
 
                     target.Rotation = packet.Rotation;
-                    target.Position = packet.Position.ToD2DPoint();
+                    target.Position = packet.Position;
                     target.SyncFixtures();
 
-                    var impactPoint = packet.ImpactPoint.ToD2DPoint();
+                    var impactPoint = packet.ImpactPoint;
                     var result = new PlaneImpactResult(packet.WasMissile ? ImpactType.Missile : ImpactType.Bullet, impactPoint, packet.DoesDamage, packet.WasHeadshot);
                     target.HandleImpactResult(impactor, result);
 
                     target.Rotation = ogState.Rotation;
-                    target.Position = ogState.Position.ToD2DPoint();
+                    target.Position = ogState.Position;
                     target.SyncFixtures();
 
                     if (!IsServer)
@@ -561,7 +562,7 @@ namespace PolyPlane.Net
 
         private void DoNewBullet(GameObjectPacket bulletPacket)
         {
-            var bullet = new Bullet(bulletPacket.Position.ToD2DPoint(), bulletPacket.Velocity.ToD2DPoint(), bulletPacket.Rotation);
+            var bullet = new Bullet(bulletPacket.Position, bulletPacket.Velocity, bulletPacket.Rotation);
             bullet.ID = bulletPacket.ID;
             bulletPacket.SyncObj(bullet);
             var owner = GetNetPlane(bulletPacket.OwnerID);
@@ -589,7 +590,7 @@ namespace PolyPlane.Net
             {
                 var missileTarget = GetNetPlane(missilePacket.TargetID, false);
 
-                var missile = new GuidedMissile(missileOwner, missilePacket.Position.ToD2DPoint(), missilePacket.Velocity.ToD2DPoint(), missilePacket.Rotation);
+                var missile = new GuidedMissile(missileOwner, missilePacket.Position, missilePacket.Velocity, missilePacket.Rotation);
                 missile.IsNetObject = true;
                 missile.ID = missilePacket.ID;
                 missilePacket.SyncObj(missile);

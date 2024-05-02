@@ -1,4 +1,6 @@
-﻿namespace PolyPlane.GameObjects
+﻿using NetStack.Serialization;
+
+namespace PolyPlane.GameObjects
 {
     [Serializable]
     public struct GameID : IEquatable<GameID>
@@ -18,6 +20,18 @@
         {
             PlayerID = (int)playerID;
             ObjectID = -1;
+        }
+
+        public void Serialize(BitBuffer data)
+        {
+            data.AddInt(PlayerID)
+            .AddLong(ObjectID);
+        }
+
+        public void Deserialize(BitBuffer data)
+        {
+            PlayerID = data.ReadInt();
+            ObjectID = data.ReadLong();
         }
 
         public bool Equals(GameID other)

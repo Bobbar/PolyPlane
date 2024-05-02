@@ -1,10 +1,12 @@
 ﻿using PolyPlane.GameObjects;
 using unvell.D2DLib;
+using NetStack.Quantization;
 
 namespace PolyPlane
 {
     public static class World
     {
+        public static BoundedRange[] WorldBounds = new BoundedRange[2];
 
         public static bool InterpOn = true;
 
@@ -13,6 +15,12 @@ namespace PolyPlane
         public const bool NET_UPDATE_SKIP_FRAMES = true;
         public const int NET_SERVER_FPS = 60;
         public const int NET_CLIENT_FPS = 60;
+
+        static World()
+        {
+            WorldBounds[0] = new BoundedRange(-350000f, 350000, 0.05f);
+            WorldBounds[1] = new BoundedRange(-100000f, 50000f, 0.05f);
+        }
 
         public static float SERVER_TICK_RATE
         {
@@ -199,13 +207,11 @@ namespace PolyPlane
             return Interlocked.Increment(ref CurrentPlayerId);
         }
 
-        public static double CurrentTime()
+        public static long CurrentTime()
         {
             var now = DateTimeOffset.Now.ToUnixTimeMilliseconds() + ServerTimeOffset;
-            return now;
+            return (long)Math.Floor(now);
 
-            //var now = DateTime.UtcNow.TimeOfDay.TotalMilliseconds + ServerTimeOffset;
-            //return now;
 
         }
     }

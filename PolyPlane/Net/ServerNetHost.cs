@@ -66,11 +66,12 @@ namespace PolyPlane.Net
 
         private void ParsePacket(Packet packet, Peer peer)
         {
-            var buffer = new byte[packet.Length];
+            var buffer = _buffers.Rent(packet.Length);
             packet.CopyTo(buffer);
+            _buffers.Return(buffer);
 
             var packetObj = Serialization.ByteArrayToObject(buffer) as NetPacket;
-
+            
             switch (packetObj.Type)
             {
 

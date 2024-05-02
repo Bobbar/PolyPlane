@@ -79,14 +79,14 @@ namespace PolyPlane.GameObjects.Manager
                                 {
                                     var ogState = new GameObjectPacket(plane);
 
-                                    plane.Position = histState.Position.ToD2DPoint();
+                                    plane.Position = histState.Position;
                                     plane.Rotation = histState.Rotation;
                                     plane.SyncFixtures();
 
                                     var impactResultM = plane.GetImpactResult(missile, pos);
                                     _netMan.SendNetImpact(missile, plane, impactResultM, histState);
 
-                                    plane.Position = ogState.Position.ToD2DPoint();
+                                    plane.Position = ogState.Position;
                                     plane.Rotation = ogState.Rotation;
                                     plane.SyncFixtures();
                                 }
@@ -149,14 +149,14 @@ namespace PolyPlane.GameObjects.Manager
                                 {
                                     var ogState = new GameObjectPacket(plane);
 
-                                    plane.Position = histState.Position.ToD2DPoint();
+                                    plane.Position = histState.Position;
                                     plane.Rotation = histState.Rotation;
                                     plane.SyncFixtures();
 
                                     var impactResult = plane.GetImpactResult(bullet, pos);
                                     _netMan.SendNetImpact(bullet, plane, impactResult, histState);
 
-                                    plane.Position = ogState.Position.ToD2DPoint();
+                                    plane.Position = ogState.Position;
                                     plane.Rotation = ogState.Rotation;
                                     plane.SyncFixtures();
                                 }

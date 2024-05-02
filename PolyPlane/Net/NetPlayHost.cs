@@ -1,6 +1,8 @@
 ﻿using ENet;
 using PolyPlane.GameObjects;
 using System.Diagnostics;
+using NetStack.Buffers;
+using NetStack.Threading;
 
 namespace PolyPlane.Net
 {
@@ -11,8 +13,8 @@ namespace PolyPlane.Net
         public const int CHANNEL_ID = 0;
         public const int TIMEOUT = 0;
 
-        public RingBuffer<NetPacket> PacketSendQueue = new RingBuffer<NetPacket>(30);
-        public RingBuffer<NetPacket> PacketReceiveQueue = new RingBuffer<NetPacket>(30);
+        public ConcurrentBuffer PacketSendQueue = new ConcurrentBuffer(32);
+        public ConcurrentBuffer PacketReceiveQueue = new ConcurrentBuffer(32);
 
         public Host Host;
         public ushort Port;
@@ -23,6 +25,7 @@ namespace PolyPlane.Net
         private bool _runLoop = true;
         private SmoothDouble _netTimeSmooth = new SmoothDouble(200);
         private Stopwatch _netTimer = new Stopwatch();
+        protected ArrayPool<byte> _buffers = ArrayPool<byte>.Create(1024, 50);
 
         public event EventHandler<Peer> PeerTimeoutEvent;
         public event EventHandler<Peer> PeerDisconnectedEvent;
@@ -63,8 +66,6 @@ namespace PolyPlane.Net
 
             while (_runLoop)
             {
-                _netTimer.Restart();
-
                 bool polled = false;
 
                 while (!polled)
@@ -81,9 +82,6 @@ namespace PolyPlane.Net
                 }
 
                 ProcessQueue();
-
-                _netTimer.Stop();
-                _netTimeSmooth.Add(_netTimer.Elapsed.TotalMilliseconds);
             }
         }
 
@@ -120,9 +118,9 @@ namespace PolyPlane.Net
         {
             while (PacketSendQueue.Count > 0)
             {
-                if (PacketSendQueue.TryDequeue(out NetPacket packet))
+                if (PacketSendQueue.TryDequeue(out object packet))
                 {
-                    SendPacket(packet);
+                    SendPacket((NetPacket)packet);
                 }
             }
         }

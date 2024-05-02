@@ -32,7 +32,10 @@
 
   <ItemGroup>
     <PackageReference Include="ENet-CSharp" Version="2.4.8" />
-    <PackageReference Include="GroBuf" Version="1.9.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Net\NetStack\" />
   </ItemGroup>
 
 </Project>

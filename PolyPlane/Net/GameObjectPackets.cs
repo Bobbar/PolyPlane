@@ -1,87 +1,24 @@
-﻿using PolyPlane.GameObjects;
+﻿using NetStack.Serialization;
+using PolyPlane.GameObjects;
 using unvell.D2DLib;
 
 
 namespace PolyPlane.Net
 {
-
-    public struct NetPoint
-    {
-        public float X;
-        public float Y;
-
-        public NetPoint() { }
-        public NetPoint(float x, float y)
-        {
-            X = x;
-            Y = y;
-        }
-
-        public NetPoint(D2DPoint point)
-        {
-            X = point.X;
-            Y = point.Y;
-        }
-
-        public D2DPoint ToD2DPoint()
-        {
-            return new D2DPoint(this.X, this.Y);
-        }
-
-        public static NetPoint operator -(NetPoint a, NetPoint b)
-        {
-            return new NetPoint(a.X - b.X, a.Y - b.Y);
-        }
-
-        public static NetPoint operator *(NetPoint a, NetPoint b)
-        {
-            return new NetPoint(a.X * b.X, a.Y * b.Y);
-        }
-
-        public static NetPoint operator *(NetPoint a, float val)
-        {
-            return new NetPoint(a.X * val, a.Y * val);
-        }
-
-        public static NetPoint operator +(NetPoint a, NetPoint b)
-        {
-            return new NetPoint(a.X + b.X, a.Y + b.Y);
-        }
-        public static NetPoint operator +(NetPoint a, float val)
-        {
-            return new NetPoint(a.X + val, a.Y + val);
-        }
-
-        public override string ToString()
-        {
-            return $"({this.X}, {this.Y})";
-        }
-    }
-
-
-    public struct PayloadPacket
-    {
-        public PacketTypes Type;
-        public byte[] Payload;
-
-        public PayloadPacket() { }
-
-        public PayloadPacket(PacketTypes type, byte[] payload)
-        {
-            this.Type = type;
-            this.Payload = payload;
-        }
-    }
-
     public abstract class NetPacket
     {
         public PacketTypes Type;
         public GameID ID;
-        public double FrameTime;
+        public long FrameTime;
 
         public NetPacket()
         {
             FrameTime = World.CurrentTime();
+        }
+
+        public NetPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
         }
 
         public NetPacket(PacketTypes type) : this()
@@ -98,6 +35,20 @@ namespace PolyPlane.Net
         {
             ID = id;
         }
+
+        public virtual void Serialize(BitBuffer data)
+        {
+            data.AddByte((byte)Type);
+            ID.Serialize(data);
+            data.AddLong(FrameTime);
+        }
+
+        public virtual void Deserialize(BitBuffer data)
+        {
+            Type = (PacketTypes)data.ReadByte();
+            ID.Deserialize(data);
+            FrameTime = data.ReadLong();
+        }
     }
 
     public class ChatPacket : NetPacket
@@ -110,11 +61,31 @@ namespace PolyPlane.Net
             Type = PacketTypes.ChatMessage;
         }
 
+        public ChatPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
+
         public ChatPacket(string message, string playerName) : base()
         {
             Type = PacketTypes.ChatMessage;
             Message = message;
             PlayerName = playerName;
+        }
+
+        public virtual void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+
+            data.AddString(Message);
+            data.AddString(PlayerName);
+        }
+
+        public virtual void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+            Message = data.ReadString();
+            PlayerName = data.ReadString();
         }
     }
 
@@ -124,10 +95,16 @@ namespace PolyPlane.Net
         public string Name;
         public int Port;
 
+        public DiscoveryPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
+
         public DiscoveryPacket() : base()
         {
             Type = PacketTypes.Discovery;
         }
+
 
         public DiscoveryPacket(string ip) : base()
         {
@@ -148,34 +125,78 @@ namespace PolyPlane.Net
             IP = ip;
             Name = name;
             Port = port;
+            this.ID = new GameID(123, 321);
+
+        }
+
+        public virtual void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+            data.AddString(IP);
+            data.AddString(Name);
+            data.AddInt(Port);
+        }
+
+        public virtual void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+            IP = data.ReadString();
+            Name = data.ReadString();
+            Port = data.ReadInt();
         }
     }
 
 
     public class SyncPacket : NetPacket
     {
-        public double ServerTime;
+        public long ServerTime;
         public float TimeOfDay;
         public float TimeOfDayDir;
 
+        public SyncPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
 
         public SyncPacket() : base()
         {
             Type = PacketTypes.ServerSync;
         }
 
-        public SyncPacket(double serverTime, float timeOfDay, float timeOfDayDir) : base()
+        public SyncPacket(long serverTime, float timeOfDay, float timeOfDayDir) : base()
         {
             Type = PacketTypes.ServerSync;
             ServerTime = serverTime;
             TimeOfDay = timeOfDay;
             TimeOfDayDir = timeOfDayDir;
         }
+
+        public virtual void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+
+            data.AddLong(ServerTime);
+            TimeOfDay.Serialize(data);
+            TimeOfDayDir.Serialize(data);
+        }
+
+        public virtual void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+            ServerTime = data.ReadLong();
+            TimeOfDay.Deserialize(data);
+            TimeOfDayDir.Deserialize(data);
+        }
     }
 
 
     public class BasicPacket : NetPacket
     {
+        public BasicPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
+
         public BasicPacket() : base() { }
 
         public BasicPacket(PacketTypes type, GameID id) : base()
@@ -189,10 +210,31 @@ namespace PolyPlane.Net
     {
         public List<BasicPacket> Packets = new List<BasicPacket>();
 
+        public BasicListPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
+
         public BasicListPacket() : base() { }
 
         public BasicListPacket(PacketTypes type) : base(type)
         {
+        }
+
+        public virtual void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+            data.AddInt(Packets.Count);
+            foreach (var packet in Packets)
+                packet.Serialize(data);
+        }
+
+        public virtual void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+            var len = data.ReadInt();
+            for (int i = 0; i < len; i++)
+                Packets.Add(new BasicPacket(data));
         }
     }
 
@@ -200,6 +242,11 @@ namespace PolyPlane.Net
     public class PlaneListPacket : NetPacket
     {
         public List<PlanePacket> Planes = new List<PlanePacket>();
+
+        public PlaneListPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
 
         public PlaneListPacket() : base()
         {
@@ -211,12 +258,33 @@ namespace PolyPlane.Net
             Type = PacketTypes.PlaneUpdate;
             Planes = planes;
         }
+
+        public virtual void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+            data.AddInt(Planes.Count);
+            foreach (var packet in Planes)
+                packet.Serialize(data);
+        }
+
+        public virtual void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+            var len = data.ReadInt();
+            for (int i = 0; i < len; i++)
+                Planes.Add(new PlanePacket(data));
+        }
     }
 
 
     public class MissileListPacket : NetPacket
     {
         public List<MissilePacket> Missiles = new List<MissilePacket>();
+
+        public MissileListPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
 
         public MissileListPacket() : base()
         {
@@ -228,13 +296,34 @@ namespace PolyPlane.Net
             Type = PacketTypes.MissileUpdate;
             Missiles = missiles;
         }
+
+        public virtual void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+            data.AddInt(Missiles.Count);
+            foreach (var packet in Missiles)
+                packet.Serialize(data);
+        }
+
+        public virtual void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+            var len = data.ReadInt();
+            for (int i = 0; i < len; i++)
+                Missiles.Add(new MissilePacket(data));
+        }
     }
 
     public class NewPlayerPacket : NetPacket
     {
         public string Name;
         public D2DColor PlaneColor;
-        public NetPoint Position;
+        public D2DPoint Position;
+
+        public NewPlayerPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
 
         public NewPlayerPacket() : base()
         {
@@ -246,14 +335,35 @@ namespace PolyPlane.Net
             Type = PacketTypes.NewPlayer;
             Name = plane.PlayerName;
             PlaneColor = plane.PlaneColor;
-            Position = plane.Position.ToNetPoint();
+            Position = plane.Position;
             ID = plane.ID;
+        }
+
+        public virtual void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+            data.AddString(Name);
+            PlaneColor.Serialize(data);
+            Position.Serialize(data);
+        }
+
+        public virtual void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+            Name = data.ReadString();
+            PlaneColor.Deserialize(data);
+            Position.Deserialize(data);
         }
     }
 
     public class PlayerListPacket : NetPacket
     {
         public List<NewPlayerPacket> Players = new List<NewPlayerPacket>();
+
+        public PlayerListPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
 
         public PlayerListPacket() : base()
         {
@@ -267,14 +377,36 @@ namespace PolyPlane.Net
         {
             Players = players;
         }
+
+        public virtual void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+            data.AddInt(Players.Count);
+            foreach (var packet in Players)
+                packet.Serialize(data);
+        }
+
+        public virtual void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+            var len = data.ReadInt();
+            for (int i = 0; i < len; i++)
+                Players.Add(new NewPlayerPacket(data));
+        }
+
     }
 
     public class GameObjectPacket : NetPacket
     {
         public GameID OwnerID;
-        public NetPoint Position;
-        public NetPoint Velocity;
+        public D2DPoint Position;
+        public D2DPoint Velocity;
         public float Rotation;
+
+        public GameObjectPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
 
         public GameObjectPacket() : base()
         {
@@ -288,8 +420,8 @@ namespace PolyPlane.Net
             if (obj.Owner != null)
                 OwnerID = obj.Owner.ID;
 
-            Position = obj.Position.ToNetPoint();
-            Velocity = obj.Velocity.ToNetPoint();
+            Position = obj.Position;
+            Velocity = obj.Velocity;
             Rotation = obj.Rotation;
         }
 
@@ -302,8 +434,8 @@ namespace PolyPlane.Net
             if (obj.Owner != null)
                 OwnerID = obj.Owner.ID;
 
-            Position = obj.Position.ToNetPoint();
-            Velocity = obj.Velocity.ToNetPoint();
+            Position = obj.Position;
+            Velocity = obj.Velocity;
             Rotation = obj.Rotation;
         }
 
@@ -316,6 +448,26 @@ namespace PolyPlane.Net
             //obj.Velocity = this.Velocity.ToD2DPoint();
             //obj.Rotation = this.Rotation;
         }
+
+        public override void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+
+            OwnerID.Serialize(data);
+            Position.Serialize(data);
+            Velocity.Serialize(data);
+            Rotation.Serialize(data);
+        }
+
+        public override void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+
+            OwnerID.Deserialize(data);
+            Position.Deserialize(data);
+            Velocity.Deserialize(data);
+            Rotation.Deserialize(data);
+        }
     }
 
 
@@ -326,6 +478,12 @@ namespace PolyPlane.Net
         public bool FiringBurst;
         public int Hits;
         public int Kills;
+
+        public PlanePacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
+
 
         public PlanePacket() { }
 
@@ -347,6 +505,28 @@ namespace PolyPlane.Net
             obj.Hits = Hits;
             obj.Kills = Kills;
         }
+
+        public override void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+
+            Deflection.Serialize(data);
+            data.AddBool(IsDamaged);
+            data.AddBool(FiringBurst);
+            data.AddInt(Hits);
+            data.AddInt(Kills);
+        }
+
+        public override void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+
+            Deflection.Deserialize(data);
+            IsDamaged = data.ReadBool();
+            FiringBurst = data.ReadBool();
+            Hits = data.ReadInt();
+            Kills = data.ReadInt();
+        }
     }
 
     public class MissilePacket : GameObjectPacket
@@ -354,6 +534,11 @@ namespace PolyPlane.Net
         public float Deflection;
         public bool FlameOn;
         public GameID TargetID;
+
+        public MissilePacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
 
         public MissilePacket() : base()
         {
@@ -377,15 +562,38 @@ namespace PolyPlane.Net
             obj.Deflection = this.Deflection;
             obj.FlameOn = this.FlameOn;
         }
+
+        public override void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+
+            Deflection.Serialize(data);
+            data.AddBool(FlameOn);
+            TargetID.Serialize(data);
+        }
+
+        public override void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+
+            Deflection.Deserialize(data);
+            FlameOn = data.ReadBool();
+            TargetID.Deserialize(data);
+        }
     }
 
     public class ImpactPacket : GameObjectPacket
     {
         public GameID ImpactorID;
-        public NetPoint ImpactPoint;
+        public D2DPoint ImpactPoint;
         public bool DoesDamage;
         public bool WasHeadshot;
         public bool WasMissile;
+
+        public ImpactPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
 
         public ImpactPacket() : base()
         {
@@ -396,17 +604,43 @@ namespace PolyPlane.Net
         {
             ImpactorID = impactorID;
             //ID = targetId;
-            ImpactPoint = point.ToNetPoint();
+            ImpactPoint = point;
             Type = PacketTypes.Impact;
             DoesDamage = doesDamage;
             WasHeadshot = wasHeadshot;
             WasMissile = wasMissile;
+        }
+
+        public override void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+            ImpactorID.Serialize(data);
+            ImpactPoint.Serialize(data);
+            data.AddBool(DoesDamage);
+            data.AddBool(WasHeadshot);
+            data.AddBool(WasMissile);
+        }
+
+        public override void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+            ImpactorID.Deserialize(data);
+            ImpactPoint.Deserialize(data);
+            DoesDamage = data.ReadBool();
+            WasHeadshot = data.ReadBool();
+            WasMissile = data.ReadBool();
         }
     }
 
     public class ImpactListPacket : GameObjectPacket
     {
         public List<ImpactPacket> Impacts = new List<ImpactPacket>();
+
+        public ImpactListPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
+
 
         public ImpactListPacket() : base()
         {
@@ -417,6 +651,22 @@ namespace PolyPlane.Net
         {
             Type = PacketTypes.ImpactList;
             Impacts = impacts;
+        }
+
+        public virtual void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+            data.AddInt(Impacts.Count);
+            foreach (var packet in Impacts)
+                packet.Serialize(data);
+        }
+
+        public virtual void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+            var len = data.ReadInt();
+            for (int i = 0; i < len; i++)
+                Impacts.Add(new ImpactPacket(data));
         }
     }
 }
