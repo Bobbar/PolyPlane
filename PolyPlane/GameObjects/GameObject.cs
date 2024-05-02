@@ -352,7 +352,7 @@ namespace PolyPlane.GameObjects
 
             Polygon.Update(this.Position, this.Rotation, renderScale);
 
-            if (World.IsNetGame && World.IsServer)
+            if (World.IsNetGame && World.IsServer && (this is FighterPlane || this is GuidedMissile))
             {
                 var histState = new GameObjectPacket(this);
                 histState.Position = this.Position;

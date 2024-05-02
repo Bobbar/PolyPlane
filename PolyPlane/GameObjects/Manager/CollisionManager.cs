@@ -32,7 +32,7 @@ namespace PolyPlane.GameObjects.Manager
                 return;
             }
 
-            const float LAG_COMP_OFFSET = 40f;
+            const float LAG_COMP_OFFSET = 5f;
 
             var now = World.CurrentTime();
 

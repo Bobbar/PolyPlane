@@ -2,10 +2,9 @@
 {
     public class HistoricalBuffer<T>
     {
-        private const int MAX_HIST = 300;
+        private const int MAX_HIST = 50;
         private List<BufferEntry<T>> _history = new List<BufferEntry<T>>();
         public Func<T, T, double, T> Interpolate;
-
         public HistoricalBuffer()
         {
 
