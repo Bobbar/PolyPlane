@@ -8,6 +8,9 @@ namespace PolyPlane.Net
 {
     public abstract class NetPlayHost : IDisposable
     {
+        public event EventHandler<Peer> PeerTimeoutEvent;
+        public event EventHandler<Peer> PeerDisconnectedEvent;
+
         public const int MAX_CLIENTS = 30;
         public const int MAX_CHANNELS = 7;
         public const int CHANNEL_ID = 0;
@@ -19,16 +22,11 @@ namespace PolyPlane.Net
         public Host Host;
         public ushort Port;
         public Address Address;
-        public double NetTime => _netTimeSmooth.Current;
 
         private Thread _pollThread;
         private bool _runLoop = true;
-        private SmoothDouble _netTimeSmooth = new SmoothDouble(200);
-        private Stopwatch _netTimer = new Stopwatch();
-        protected ArrayPool<byte> _buffers = ArrayPool<byte>.Create(2048, 50);
 
-        public event EventHandler<Peer> PeerTimeoutEvent;
-        public event EventHandler<Peer> PeerDisconnectedEvent;
+        protected ArrayPool<byte> _buffers = ArrayPool<byte>.Create(2048, 50);
 
         public NetPlayHost(ushort port, string ip)
         {

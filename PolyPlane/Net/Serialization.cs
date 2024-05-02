@@ -26,9 +26,9 @@ namespace PolyPlane.Net
 
         public static byte[] ObjectToByteArray(NetPacket obj)
         {
-            var data = BufferPool.GetBitBuffer();
+             var data = BufferPool.GetBitBuffer();
 
-           obj.Serialize(data);
+            obj.Serialize(data);
 
             var bytes = _buffers.Rent(data.Length);
             data.ToArray(bytes);
@@ -41,7 +41,7 @@ namespace PolyPlane.Net
             return bytes;
         }
 
-     
+
         public static object ByteArrayToObject(byte[] arrBytes)
         {
             var data = BufferPool.GetBitBuffer();
@@ -118,7 +118,7 @@ namespace PolyPlane.Net
         private static byte[] Compress(byte[] data)
         {
             MemoryStream output = new MemoryStream();
-            using (DeflateStream dstream = new DeflateStream(output, CompressionLevel.SmallestSize))
+            using (DeflateStream dstream = new DeflateStream(output, CompressionLevel.Fastest))
             {
                 dstream.Write(data, 0, data.Length);
             }

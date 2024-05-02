@@ -649,7 +649,6 @@ namespace PolyPlane.Server
             infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";
             infoText += $"Update ms: {_updateTimeSmooth.Add((float)Math.Round(_updateTime.TotalMilliseconds, 2))}\n";
             infoText += $"Collision ms: {_collisionTimeSmooth.Add((float)Math.Round(_collisionTime.TotalMilliseconds, 2))}\n";
-            infoText += $"Net ms: {Math.Round(_netMan.Host.NetTime, 2)}\n";
 
             if (_viewPort != null)
                 infoText += $"Render ms: {Math.Round(_renderTime.TotalMilliseconds, 2)}\n";
