@@ -25,7 +25,7 @@ namespace PolyPlane.Net
         private bool _runLoop = true;
         private SmoothDouble _netTimeSmooth = new SmoothDouble(200);
         private Stopwatch _netTimer = new Stopwatch();
-        protected ArrayPool<byte> _buffers = ArrayPool<byte>.Create(1024, 50);
+        protected ArrayPool<byte> _buffers = ArrayPool<byte>.Create(2048, 50);
 
         public event EventHandler<Peer> PeerTimeoutEvent;
         public event EventHandler<Peer> PeerDisconnectedEvent;
@@ -223,7 +223,6 @@ namespace PolyPlane.Net
             Packet packet = default;
             var data = Serialization.ObjectToByteArray(netPacket);
             var flags = GetPacketFlags(netPacket);
-
             packet.Create(data, flags);
 
             return packet;

@@ -21,6 +21,7 @@
  */
 
 using System;
+using System.Diagnostics;
 
 #if ENABLE_MONO || ENABLE_IL2CPP
 	using UnityEngine;
@@ -65,7 +66,7 @@ namespace NetStack.Buffers {
 			#if ENABLE_MONO || ENABLE_IL2CPP
 				Debug.Log(Output(module, message));
 			#else
-				Console.WriteLine(Output(module, message));
+				Debug.WriteLine(Output(module, message));
 			#endif
 		}
 
@@ -74,7 +75,7 @@ namespace NetStack.Buffers {
 				Debug.LogWarning(Output(module, message));
 			#else
 				Console.ForegroundColor = ConsoleColor.Yellow;
-				Console.WriteLine(Output(module, message));
+            Debug.WriteLine(Output(module, message));
 				Console.ResetColor();
 			#endif
 		}

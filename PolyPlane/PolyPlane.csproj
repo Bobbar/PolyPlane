@@ -9,6 +9,8 @@
     <ApplicationIcon>PolyPlaneIcon.ico</ApplicationIcon>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'" />
+
   <ItemGroup>
     <Content Include="PolyPlaneIcon.ico" />
   </ItemGroup>

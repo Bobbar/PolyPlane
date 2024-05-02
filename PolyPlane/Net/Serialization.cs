@@ -22,7 +22,7 @@ namespace PolyPlane.Net
     {
         public static bool EnableCompression = true;
 
-        private static ArrayPool<byte> _buffers = ArrayPool<byte>.Create(1024, 50);
+        private static ArrayPool<byte> _buffers = ArrayPool<byte>.Create(2048, 50);
 
         public static byte[] ObjectToByteArray(NetPacket obj)
         {
