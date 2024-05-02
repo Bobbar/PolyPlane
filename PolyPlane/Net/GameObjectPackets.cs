@@ -73,7 +73,8 @@ namespace PolyPlane.Net
             PlayerName = playerName;
         }
 
-        public virtual void Serialize(BitBuffer data)
+
+        public override void Serialize(BitBuffer data)
         {
             base.Serialize(data);
 
@@ -81,7 +82,7 @@ namespace PolyPlane.Net
             data.AddString(PlayerName);
         }
 
-        public virtual void Deserialize(BitBuffer data)
+        public override void Deserialize(BitBuffer data)
         {
             base.Deserialize(data);
             Message = data.ReadString();
@@ -129,7 +130,7 @@ namespace PolyPlane.Net
 
         }
 
-        public virtual void Serialize(BitBuffer data)
+        public override void Serialize(BitBuffer data)
         {
             base.Serialize(data);
             data.AddString(IP);
@@ -137,7 +138,7 @@ namespace PolyPlane.Net
             data.AddInt(Port);
         }
 
-        public virtual void Deserialize(BitBuffer data)
+        public override void Deserialize(BitBuffer data)
         {
             base.Deserialize(data);
             IP = data.ReadString();
@@ -171,7 +172,7 @@ namespace PolyPlane.Net
             TimeOfDayDir = timeOfDayDir;
         }
 
-        public virtual void Serialize(BitBuffer data)
+        public override void Serialize(BitBuffer data)
         {
             base.Serialize(data);
 
@@ -180,7 +181,7 @@ namespace PolyPlane.Net
             TimeOfDayDir.Serialize(data);
         }
 
-        public virtual void Deserialize(BitBuffer data)
+        public override void Deserialize(BitBuffer data)
         {
             base.Deserialize(data);
             ServerTime = data.ReadLong();
@@ -221,7 +222,7 @@ namespace PolyPlane.Net
         {
         }
 
-        public virtual void Serialize(BitBuffer data)
+        public override void Serialize(BitBuffer data)
         {
             base.Serialize(data);
             data.AddInt(Packets.Count);
@@ -229,7 +230,7 @@ namespace PolyPlane.Net
                 packet.Serialize(data);
         }
 
-        public virtual void Deserialize(BitBuffer data)
+        public override void Deserialize(BitBuffer data)
         {
             base.Deserialize(data);
             var len = data.ReadInt();
@@ -259,7 +260,7 @@ namespace PolyPlane.Net
             Planes = planes;
         }
 
-        public virtual void Serialize(BitBuffer data)
+        public override void Serialize(BitBuffer data)
         {
             base.Serialize(data);
             data.AddInt(Planes.Count);
@@ -267,7 +268,7 @@ namespace PolyPlane.Net
                 packet.Serialize(data);
         }
 
-        public virtual void Deserialize(BitBuffer data)
+        public override void Deserialize(BitBuffer data)
         {
             base.Deserialize(data);
             var len = data.ReadInt();
@@ -297,7 +298,7 @@ namespace PolyPlane.Net
             Missiles = missiles;
         }
 
-        public virtual void Serialize(BitBuffer data)
+        public override void Serialize(BitBuffer data)
         {
             base.Serialize(data);
             data.AddInt(Missiles.Count);
@@ -305,7 +306,7 @@ namespace PolyPlane.Net
                 packet.Serialize(data);
         }
 
-        public virtual void Deserialize(BitBuffer data)
+        public override void Deserialize(BitBuffer data)
         {
             base.Deserialize(data);
             var len = data.ReadInt();
@@ -339,7 +340,7 @@ namespace PolyPlane.Net
             ID = plane.ID;
         }
 
-        public virtual void Serialize(BitBuffer data)
+        public override void Serialize(BitBuffer data)
         {
             base.Serialize(data);
             data.AddString(Name);
@@ -347,7 +348,7 @@ namespace PolyPlane.Net
             Position.Serialize(data);
         }
 
-        public virtual void Deserialize(BitBuffer data)
+        public override void Deserialize(BitBuffer data)
         {
             base.Deserialize(data);
             Name = data.ReadString();
@@ -378,7 +379,7 @@ namespace PolyPlane.Net
             Players = players;
         }
 
-        public virtual void Serialize(BitBuffer data)
+        public override void Serialize(BitBuffer data)
         {
             base.Serialize(data);
             data.AddInt(Players.Count);
@@ -386,7 +387,7 @@ namespace PolyPlane.Net
                 packet.Serialize(data);
         }
 
-        public virtual void Deserialize(BitBuffer data)
+        public override void Deserialize(BitBuffer data)
         {
             base.Deserialize(data);
             var len = data.ReadInt();
@@ -653,7 +654,7 @@ namespace PolyPlane.Net
             Impacts = impacts;
         }
 
-        public virtual void Serialize(BitBuffer data)
+        public override void Serialize(BitBuffer data)
         {
             base.Serialize(data);
             data.AddInt(Impacts.Count);
@@ -661,7 +662,7 @@ namespace PolyPlane.Net
                 packet.Serialize(data);
         }
 
-        public virtual void Deserialize(BitBuffer data)
+        public override void Deserialize(BitBuffer data)
         {
             base.Deserialize(data);
             var len = data.ReadInt();
