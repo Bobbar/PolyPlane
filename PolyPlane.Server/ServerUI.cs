@@ -41,6 +41,7 @@ namespace PolyPlane.Server
         private TimeSpan _netTime = new TimeSpan();
         private SmoothFloat _updateTimeSmooth = new SmoothFloat(50);
         private SmoothFloat _collisionTimeSmooth = new SmoothFloat(50);
+        private SmoothFloat _netTimeSmooth = new SmoothFloat(50);
 
         private long _lastRenderTime = 0;
         private float _renderFPS = 0;
@@ -346,6 +347,7 @@ namespace PolyPlane.Server
             _netMan.DoNetEvents();
             _timer.Stop();
             _netTime = _timer.Elapsed;
+            _netTimeSmooth.Add((float)_netTime.TotalMilliseconds);
 
             _discoveryTimer.Update(World.DT);
             _syncTimer.Update(World.DT);
@@ -648,6 +650,7 @@ namespace PolyPlane.Server
             infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";
             infoText += $"Update ms: {_updateTimeSmooth.Add((float)Math.Round(_updateTime.TotalMilliseconds, 2))}\n";
             infoText += $"Collision ms: {_collisionTimeSmooth.Add((float)Math.Round(_collisionTime.TotalMilliseconds, 2))}\n";
+            infoText += $"Net ms: {_netTimeSmooth.Add((float)Math.Round(_collisionTime.TotalMilliseconds, 2))}\n";
 
             if (_viewPort != null)
                 infoText += $"Render ms: {Math.Round(_renderTime.TotalMilliseconds, 2)}\n";
