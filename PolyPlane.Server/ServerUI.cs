@@ -409,7 +409,7 @@ namespace PolyPlane.Server
 
             plane.AutoPilotOn = true;
             plane.ThrustOn = true;
-            plane.Position = new D2DPoint(Helpers.Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), -5000f);
+            plane.Position = Helpers.FindSafeSpawnPoint(_objs);
             plane.Velocity = new D2DPoint(500f, 0f);
             plane.SyncFixtures();
             plane.RotationSpeed = 0f;
@@ -517,8 +517,7 @@ namespace PolyPlane.Server
 
         private FighterPlane GetAIPlane(AIPersonality? personality = null)
         {
-            var range = World.PlaneSpawnRange;
-            var pos = new D2DPoint(Helpers.Rnd.NextFloat(range.X, range.Y), Helpers.Rnd.NextFloat(-4000f, -17000f));
+            var pos = Helpers.FindSafeSpawnPoint(_objs);
 
             FighterPlane aiPlane;
 

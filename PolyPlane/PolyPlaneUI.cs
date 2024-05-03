@@ -326,7 +326,7 @@ namespace PolyPlane
             }
             else
             {
-                _playerPlane = new FighterPlane(new D2DPoint(Helpers.Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), -5000f));
+                _playerPlane = new FighterPlane(Helpers.FindSafeSpawnPoint(_objs));
             }
 
             _playerPlane.PlayerName = playerName;
@@ -342,13 +342,10 @@ namespace PolyPlane
                 }
             };
 
-
             _playerPlane.AutoPilotOn = true;
             _playerPlane.ThrustOn = true;
             _playerPlane.Velocity = new D2DPoint(500f, 0f);
-
             _playerPlane.Radar = new Radar(_playerPlane, _hudColor, _objs.Missiles, _objs.Planes);
-
             _playerPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
 
             _playerPlane.FireMissileCallback = (m) =>
@@ -369,7 +366,7 @@ namespace PolyPlane
         {
             plane.AutoPilotOn = true;
             plane.ThrustOn = true;
-            plane.Position = new D2DPoint(Helpers.Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), -5000f);
+            plane.Position = Helpers.FindSafeSpawnPoint(_objs);
             plane.Velocity = new D2DPoint(500f, 0f);
             plane.SyncFixtures();
             plane.RotationSpeed = 0f;
@@ -390,7 +387,7 @@ namespace PolyPlane
 
             _playerPlane.AutoPilotOn = true;
             _playerPlane.ThrustOn = true;
-            _playerPlane.Position = new D2DPoint(Helpers.Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), -5000f);
+            _playerPlane.Position = Helpers.FindSafeSpawnPoint(_objs);
             _playerPlane.Velocity = new D2DPoint(500f, 0f);
             _playerPlane.RotationSpeed = 0f;
             _playerPlane.Rotation = 0f;
@@ -416,7 +413,7 @@ namespace PolyPlane
 
         private FighterPlane GetAIPlane()
         {
-            var pos = new D2DPoint(_rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), _rnd.NextFloat(-4000f, -17000f));
+            var pos = Helpers.FindSafeSpawnPoint(_objs);
 
             var aiPlane = new FighterPlane(pos, Helpers.RandomEnum<AIPersonality>());
             aiPlane.PlayerID = World.GetNextPlayerId();

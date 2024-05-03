@@ -69,7 +69,7 @@ namespace PolyPlane.Net
             double totalPacketTime = 0;
             int numPackets = 0;
 
-            // Send plane & missile updates every other frame.
+            // Send updates every other frame.
             if (_frame % 2 == 0)
             {
                 SendPlaneUpdates();

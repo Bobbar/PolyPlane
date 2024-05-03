@@ -471,5 +471,30 @@ namespace PolyPlane
             mat *= Matrix3x2.CreateTranslation(new D2DPoint(-obj.Position.X, -obj.Position.Y));
             return D2DPoint.Transform(point, mat);
         }
+
+        public static D2DPoint FindSafeSpawnPoint(GameObjectManager objs)
+        {
+            const float MIN_DIST = 10000f;
+            const float MIN_ALT = 4000f;
+            const float MAX_ALT = 12000f;
+
+            var point = new D2DPoint(Helpers.Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Helpers.Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
+            if (objs.Planes.Count == 0)
+                return point;
+
+            var min = objs.Planes.Min(p => p.Position.DistanceTo(point));
+
+            for (int i = 0; i < 3000; i++)
+            {
+                point = new D2DPoint(Helpers.Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Helpers.Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
+                min = objs.Planes.Min(p => p.Position.DistanceTo(point));
+
+                if (min >= MIN_DIST)
+                    break;
+            }
+
+            return point;
+        }
+
     }
 }
