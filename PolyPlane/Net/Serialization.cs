@@ -26,7 +26,7 @@ namespace PolyPlane.Net
 
         public static byte[] ObjectToByteArray(NetPacket obj)
         {
-             var data = BufferPool.GetBitBuffer();
+            var data = BufferPool.GetBitBuffer();
 
             obj.Serialize(data);
 

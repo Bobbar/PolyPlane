@@ -19,7 +19,7 @@ namespace PolyPlane.GameObjects
 
         public D2DPoint CenterOfThrust => _centerOfThrust.Position;
 
-       
+
         public float TotalMass
         {
             get { return MASS + _currentFuel; }

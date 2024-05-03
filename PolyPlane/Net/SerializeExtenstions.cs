@@ -1,32 +1,27 @@
 ﻿using NetStack.Quantization;
 using NetStack.Serialization;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
+using PolyPlane.GameObjects;
 using unvell.D2DLib;
 
 namespace PolyPlane.Net
 {
     public static class SerializeExtenstions
     {
-        public static void Serialize(this D2DPoint vec, BitBuffer data)
+        public static void AddD2DPoint(this BitBuffer data, D2DPoint point)
         {
-            var quant = BoundedRange.Quantize(vec, World.WorldBounds);
+            var quant = BoundedRange.Quantize(point, World.WorldBounds);
             data.AddUInt(quant.x);
             data.AddUInt(quant.y);
         }
 
-        public static void Deserialize(this ref D2DPoint vec, BitBuffer data)
+        public static D2DPoint ReadD2DPoint(this BitBuffer data)
         {
             var quant = new QuantizedVector2(data.ReadUInt(), data.ReadUInt());
-            vec = BoundedRange.Dequantize(quant, World.WorldBounds);
-
+            return BoundedRange.Dequantize(quant, World.WorldBounds);
         }
 
-        public static void Serialize(this D2DColor color, BitBuffer data)
+
+        public static void AddD2DColor(this BitBuffer data, D2DColor color)
         {
             data.AddUShort(HalfPrecision.Quantize(color.a));
             data.AddUShort(HalfPrecision.Quantize(color.r));
@@ -34,23 +29,38 @@ namespace PolyPlane.Net
             data.AddUShort(HalfPrecision.Quantize(color.b));
         }
 
-        public static void Deserialize(this ref D2DColor color, BitBuffer data)
+        public static D2DColor ReadD2DColor(this BitBuffer data)
         {
+            var color = new D2DColor();
             color.a = HalfPrecision.Dequantize(data.ReadUShort());
             color.r = HalfPrecision.Dequantize(data.ReadUShort());
             color.g = HalfPrecision.Dequantize(data.ReadUShort());
             color.b = HalfPrecision.Dequantize(data.ReadUShort());
+            return color;
         }
 
-        public static void Serialize(this float value, BitBuffer data)
+
+        public static void AddFloat(this BitBuffer data, float value)
         {
             var quant = HalfPrecision.Quantize(value);
             data.AddUShort(quant);
         }
 
-        public static void Deserialize(this ref float value, BitBuffer data)
+        public static float ReadFloat(this BitBuffer data)
         {
-            value = HalfPrecision.Dequantize(data.ReadUShort());
+            return HalfPrecision.Dequantize(data.ReadUShort());
+        }
+
+
+        public static void AddGameID(this BitBuffer data, GameID id)
+        {
+            data.AddInt(id.PlayerID)
+                .AddLong(id.ObjectID);
+        }
+
+        public static GameID ReadGameID(this BitBuffer data)
+        {
+            return new GameID(data.ReadInt(), data.ReadLong());
         }
     }
 }

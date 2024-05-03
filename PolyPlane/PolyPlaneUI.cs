@@ -726,7 +726,7 @@ namespace PolyPlane
         {
             if (_objs.Planes.Any(p => p.FiringBurst && p.IsAI))
             {
-                    _burstTimer.Start();
+                _burstTimer.Start();
             }
             else
             {

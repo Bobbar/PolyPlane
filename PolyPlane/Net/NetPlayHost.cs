@@ -1,8 +1,7 @@
 ﻿using ENet;
-using PolyPlane.GameObjects;
-using System.Diagnostics;
 using NetStack.Buffers;
 using NetStack.Threading;
+using PolyPlane.GameObjects;
 
 namespace PolyPlane.Net
 {
@@ -167,7 +166,7 @@ namespace PolyPlane.Net
         public virtual void SendPacket(NetPacket packet) { }
         public virtual void HandleConnect(Event netEvent) { }
 
-        public virtual void HandleDisconnect(Event netEvent) 
+        public virtual void HandleDisconnect(Event netEvent)
         {
             PeerDisconnectedEvent?.Invoke(this, netEvent.Peer);
         }

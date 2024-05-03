@@ -24,7 +24,7 @@ namespace PolyPlane.GameObjects
         {
             base.Update(dt, viewport, renderScale);
 
-            _currentRadius = MaxRadius *  EasingFunctions.EaseOutBack(_age / Duration);
+            _currentRadius = MaxRadius * EasingFunctions.EaseOutBack(_age / Duration);
 
             _age += dt;
 

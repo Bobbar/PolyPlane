@@ -71,7 +71,7 @@ namespace PolyPlane.Net
             _buffers.Return(buffer);
 
             var packetObj = Serialization.ByteArrayToObject(buffer) as NetPacket;
-            
+
             switch (packetObj.Type)
             {
 
