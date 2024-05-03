@@ -7,6 +7,7 @@ namespace PolyPlane
     public static class World
     {
         public static BoundedRange[] WorldBounds = new BoundedRange[2];
+        public static BoundedRange[] VeloBounds = new BoundedRange[2];
 
         public static bool InterpOn = true;
 
@@ -19,7 +20,10 @@ namespace PolyPlane
         static World()
         {
             WorldBounds[0] = new BoundedRange(-350000f, 350000, 0.05f);
-            WorldBounds[1] = new BoundedRange(-100000f, 50000f, 0.05f);
+            WorldBounds[1] = new BoundedRange(-100000f, 1000f, 0.05f);
+
+            VeloBounds[0] = new BoundedRange(-5000f, 5000f, 0.05f);
+            VeloBounds[1] = new BoundedRange(-5000f, 5000f, 0.05f);
         }
 
         public static float SERVER_TICK_RATE

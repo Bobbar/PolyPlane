@@ -20,6 +20,19 @@ namespace PolyPlane.Net
             return BoundedRange.Dequantize(quant, World.WorldBounds);
         }
 
+        public static void AddD2DPoint(this BitBuffer data, D2DPoint point, BoundedRange[] bounds)
+        {
+            var quant = BoundedRange.Quantize(point, bounds);
+            data.AddUInt(quant.x);
+            data.AddUInt(quant.y);
+        }
+
+        public static D2DPoint ReadD2DPoint(this BitBuffer data, BoundedRange[] bounds)
+        {
+            var quant = new QuantizedVector2(data.ReadUInt(), data.ReadUInt());
+            return BoundedRange.Dequantize(quant, bounds);
+        }
+
 
         public static void AddD2DColor(this BitBuffer data, D2DColor color)
         {

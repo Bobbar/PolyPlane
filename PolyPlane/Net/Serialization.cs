@@ -22,18 +22,15 @@ namespace PolyPlane.Net
     {
         public const bool EnableCompression = true;
 
-        private static ArrayPool<byte> _buffers = ArrayPool<byte>.Create(2048, 50);
-
         public static byte[] ObjectToByteArray(NetPacket obj)
         {
             var data = BufferPool.GetBitBuffer();
 
             obj.Serialize(data);
 
-            var bytes = _buffers.Rent(data.Length);
+            var bytes = new byte[data.Length];
             data.ToArray(bytes);
             data.Clear();
-            _buffers.Return(bytes);
 
             if (EnableCompression)
                 bytes = Compress(bytes);

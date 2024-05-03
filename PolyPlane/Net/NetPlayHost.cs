@@ -25,8 +25,6 @@ namespace PolyPlane.Net
         private Thread _pollThread;
         private bool _runLoop = true;
 
-        protected ArrayPool<byte> _buffers = ArrayPool<byte>.Create(2048, 50);
-
         public NetPlayHost(ushort port, string ip)
         {
             Port = port;

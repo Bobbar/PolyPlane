@@ -400,7 +400,7 @@ namespace PolyPlane.Net
 
             data.AddGameID(OwnerID);
             data.AddD2DPoint(Position);
-            data.AddD2DPoint(Velocity);
+            data.AddD2DPoint(Velocity, World.VeloBounds);
             data.AddFloat(Rotation);
         }
 
@@ -410,7 +410,7 @@ namespace PolyPlane.Net
 
             OwnerID = data.ReadGameID();
             Position = data.ReadD2DPoint();
-            Velocity = data.ReadD2DPoint();
+            Velocity = data.ReadD2DPoint(World.VeloBounds);
             Rotation = data.ReadFloat();
         }
     }
