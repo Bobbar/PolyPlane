@@ -20,7 +20,7 @@ namespace PolyPlane.Net
 
     public static class Serialization
     {
-        public static bool EnableCompression = true;
+        public const bool EnableCompression = true;
 
         private static ArrayPool<byte> _buffers = ArrayPool<byte>.Create(2048, 50);
 
@@ -40,7 +40,6 @@ namespace PolyPlane.Net
 
             return bytes;
         }
-
 
         public static object ByteArrayToObject(byte[] arrBytes)
         {
@@ -118,7 +117,7 @@ namespace PolyPlane.Net
         private static byte[] Compress(byte[] data)
         {
             MemoryStream output = new MemoryStream();
-            using (DeflateStream dstream = new DeflateStream(output, CompressionLevel.Fastest))
+            using (DeflateStream dstream = new DeflateStream(output, CompressionLevel.SmallestSize))
             {
                 dstream.Write(data, 0, data.Length);
             }

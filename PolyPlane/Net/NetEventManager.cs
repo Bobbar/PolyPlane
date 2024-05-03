@@ -59,6 +59,8 @@ namespace PolyPlane.Net
                 foreach (var obj in otherObjs)
                     obj.IsExpired = true;
             }
+            else
+                ClearImpacts((int)e.ID);
         }
 
         public void DoNetEvents()
@@ -551,10 +553,6 @@ namespace PolyPlane.Net
                     {
                         ImpactEvent?.Invoke(this, new ImpactEvent(target, impactor, packet.DoesDamage));
 
-                        if (impactor is Bullet)
-                            Objs.AddBulletExplosion(impactPoint);
-                        else
-                            Objs.AddExplosion(impactPoint);
                     }
                 }
             }
