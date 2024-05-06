@@ -15,8 +15,8 @@ namespace PolyPlane.Net
         public const int CHANNEL_ID = 0;
         public const int TIMEOUT = 0;
 
-        public ConcurrentBuffer PacketSendQueue = new ConcurrentBuffer(32);
-        public ConcurrentBuffer PacketReceiveQueue = new ConcurrentBuffer(32);
+        public ConcurrentBuffer PacketSendQueue = new ConcurrentBuffer(64);
+        public ConcurrentBuffer PacketReceiveQueue = new ConcurrentBuffer(64);
 
         public Host Host;
         public ushort Port;
