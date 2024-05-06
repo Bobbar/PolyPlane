@@ -360,7 +360,7 @@ namespace PolyPlane.Net
                     if (!plane.IsAI)
                         continue;
 
-                    var planePacket = new PlanePacket(plane);
+                    var planePacket = new PlanePacket(plane, PacketTypes.PlaneUpdate);
                     newPlanesPacket.Planes.Add(planePacket);
                 }
 
@@ -369,7 +369,7 @@ namespace PolyPlane.Net
             }
             else
             {
-                var planePacket = new PlanePacket(PlayerPlane);
+                var planePacket = new PlanePacket(PlayerPlane, PacketTypes.PlaneUpdate);
                 planePacket.Type = PacketTypes.PlaneUpdate;
                 Host.EnqueuePacket(planePacket);
             }
@@ -386,14 +386,14 @@ namespace PolyPlane.Net
                     // Don't send updates for net missiles.
                     // (Already re-broadcast by the net host.)
                     if (!m.IsNetObject)
-                        newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile));
+                        newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile, PacketTypes.MissileUpdate));
                 });
             }
             else
             {
                 var missiles = Objs.Missiles.Where(m => m.PlayerID == PlayerPlane.PlayerID);
                 foreach (var m in missiles)
-                    newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile));
+                    newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile, PacketTypes.MissileUpdate));
             }
 
             if (newMissilesPacket.Missiles.Count > 0)
@@ -412,10 +412,8 @@ namespace PolyPlane.Net
                 expiredObjs.RemoveAt(0);
             }
 
-            if (expiredObjPacket.Packets.Count == 0)
-                return;
-
-            Host.EnqueuePacket(expiredObjPacket);
+            if (expiredObjPacket.Packets.Count > 0)
+                Host.EnqueuePacket(expiredObjPacket);
         }
 
         public void ServerSendOtherPlanes()

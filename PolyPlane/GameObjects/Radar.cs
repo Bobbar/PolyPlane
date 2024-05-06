@@ -331,7 +331,7 @@ namespace PolyPlane
             if (planes.Count() == 0)
                 return null;
 
-            return planes.First().Obj as FighterPlane;
+            return planes.FirstOrDefault().Obj as FighterPlane;
         }
 
         //private PingObj? FindMostCentered()
@@ -412,12 +412,17 @@ namespace PolyPlane
             && missile.ClosingRate(HostPlane) > 0f
             && Helpers.ImpactTime(HostPlane, missile) <= MIN_IMPACT_TIME);
 
-            threats.OrderBy(p => Helpers.ImpactTime(HostPlane, p.Obj as Missile));
-
             if (threats.Count() == 0)
                 return nearest;
 
-            return threats.First().Obj as GuidedMissile;
+            threats = threats.OrderBy(p => Helpers.ImpactTime(HostPlane, p.Obj as Missile));
+
+            var first = threats.FirstOrDefault();
+
+            if (first != null && first.Obj != null)
+                nearest = first.Obj as GuidedMissile;
+
+            return nearest;
         }
 
         private bool IsInFOV(GameObject obj, float sweepAngle, float fov)

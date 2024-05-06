@@ -9,15 +9,12 @@ namespace PolyPlane.Net
     {
         public static void AddD2DPoint(this BitBuffer data, D2DPoint point)
         {
-            var quant = BoundedRange.Quantize(point, World.WorldBounds);
-            data.AddUInt(quant.x);
-            data.AddUInt(quant.y);
+            AddD2DPoint(data, point, World.WorldBounds);
         }
 
         public static D2DPoint ReadD2DPoint(this BitBuffer data)
         {
-            var quant = new QuantizedVector2(data.ReadUInt(), data.ReadUInt());
-            return BoundedRange.Dequantize(quant, World.WorldBounds);
+            return ReadD2DPoint(data, World.WorldBounds);
         }
 
         public static void AddD2DPoint(this BitBuffer data, D2DPoint point, BoundedRange[] bounds)

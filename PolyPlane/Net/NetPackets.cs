@@ -387,7 +387,7 @@ namespace PolyPlane.Net
         public virtual void SyncObj(GameObject obj)
         {
             if (!this.ID.Equals(obj.ID))
-                throw new InvalidOperationException($"Object ID [{obj}] does not match this packet ID [{this.ID}]");
+                throw new InvalidOperationException($"Object ID [{obj.ID}] does not match this packet ID [{this.ID}]");
 
             //obj.Position = this.Position.ToD2DPoint();
             //obj.Velocity = this.Velocity.ToD2DPoint();
@@ -430,6 +430,15 @@ namespace PolyPlane.Net
         }
 
         public PlanePacket(FighterPlane obj) : base(obj)
+        {
+            Deflection = obj.Deflection;
+            IsDamaged = obj.IsDamaged;
+            Hits = obj.Hits;
+            FiringBurst = obj.FiringBurst;
+            Kills = obj.Kills;
+        }
+
+        public PlanePacket(FighterPlane obj, PacketTypes type) : base(obj, type)
         {
             Deflection = obj.Deflection;
             IsDamaged = obj.IsDamaged;
@@ -482,10 +491,8 @@ namespace PolyPlane.Net
             this.Deserialize(data);
         }
 
-        public MissilePacket(GuidedMissile obj) : base(obj)
+        public MissilePacket(GuidedMissile obj, PacketTypes type) : base(obj, type)
         {
-            Type = PacketTypes.NewMissile;
-
             this.OwnerID = obj.Owner.ID;
             this.FlameOn = obj.FlameOn;
             this.Deflection = obj.Deflection;
@@ -534,10 +541,9 @@ namespace PolyPlane.Net
 
         public ImpactPacket(GameObject targetObj, GameID impactorID, D2DPoint point, bool doesDamage, bool wasHeadshot, bool wasMissile) : base(targetObj)
         {
-            ImpactorID = impactorID;
-            //ID = targetId;
-            ImpactPoint = point;
             Type = PacketTypes.Impact;
+            ImpactorID = impactorID;
+            ImpactPoint = point;
             DoesDamage = doesDamage;
             WasHeadshot = wasHeadshot;
             WasMissile = wasMissile;

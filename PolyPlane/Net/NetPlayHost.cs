@@ -133,7 +133,7 @@ namespace PolyPlane.Net
 
         public void SendNewMissilePacket(GuidedMissile missile)
         {
-            var netPacket = new MissilePacket(missile);
+            var netPacket = new MissilePacket(missile, PacketTypes.NewMissile);
             EnqueuePacket(netPacket);
         }
 
