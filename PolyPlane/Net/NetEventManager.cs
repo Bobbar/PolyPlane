@@ -104,10 +104,16 @@ namespace PolyPlane.Net
         {
             switch (packet.Type)
             {
+                case PacketTypes.PlaneListUpdate:
+
+                    var planeListPacket = packet as PlaneListPacket;
+                    DoNetPlaneUpdates(planeListPacket);
+
+                    break;
                 case PacketTypes.PlaneUpdate:
 
-                    var updPacket = packet as PlaneListPacket;
-                    DoNetPlaneUpdates(updPacket);
+                    var planePacket = packet as PlanePacket;
+                    DoNetPlaneUpdate(planePacket);
 
                     break;
                 case PacketTypes.MissileUpdate:
@@ -123,16 +129,15 @@ namespace PolyPlane.Net
 
                     break;
                 case PacketTypes.NewPlayer:
-                    var planePacket = packet as NewPlayerPacket;
+                    var playerPacket = packet as NewPlayerPacket;
 
                     if (IsServer)
                     {
-
-                        if (planePacket != null)
+                        if (playerPacket != null)
                         {
-                            var newPlane = new FighterPlane(planePacket.Position, planePacket.PlaneColor);
-                            newPlane.ID = planePacket.ID;
-                            newPlane.PlayerName = planePacket.Name;
+                            var newPlane = new FighterPlane(playerPacket.Position, playerPacket.PlaneColor);
+                            newPlane.ID = playerPacket.ID;
+                            newPlane.PlayerName = playerPacket.Name;
                             newPlane.IsNetObject = true;
                             newPlane.Radar = new Radar(newPlane, World.HudColor, Objs.Missiles, Objs.Planes);
                             Objs.AddPlane(newPlane);
@@ -142,7 +147,7 @@ namespace PolyPlane.Net
                         Host.SendSyncPacket();
                     }
 
-                    PlayerJoined?.Invoke(this, planePacket.ID.PlayerID);
+                    PlayerJoined?.Invoke(this, playerPacket.ID.PlayerID);
 
                     break;
                 case PacketTypes.NewBullet:
@@ -195,7 +200,7 @@ namespace PolyPlane.Net
                     }
                     else
                     {
-                        var listPacket = packet as Net.PlayerListPacket;
+                        var listPacket = packet as PlayerListPacket;
 
                         foreach (var player in listPacket.Players)
                         {
@@ -218,7 +223,7 @@ namespace PolyPlane.Net
                     break;
 
                 case PacketTypes.ExpiredObjects:
-                    var expiredPacket = packet as Net.BasicListPacket;
+                    var expiredPacket = packet as BasicListPacket;
 
                     foreach (var p in expiredPacket.Packets)
                     {
@@ -231,7 +236,7 @@ namespace PolyPlane.Net
                     break;
 
                 case PacketTypes.PlayerDisconnect:
-                    var disconnectPack = packet as Net.BasicPacket;
+                    var disconnectPack = packet as BasicPacket;
                     DoPlayerDisconnected(disconnectPack.ID.PlayerID);
                     ClearImpacts(disconnectPack.ID.PlayerID);
 
@@ -239,7 +244,7 @@ namespace PolyPlane.Net
 
                 case PacketTypes.PlayerReset:
 
-                    var resetPack = packet as Net.BasicPacket;
+                    var resetPack = packet as BasicPacket;
 
                     var resetPlane = Objs.GetObjectByID(resetPack.ID) as FighterPlane;
 
@@ -344,10 +349,10 @@ namespace PolyPlane.Net
 
         private void SendPlaneUpdates()
         {
-            var newPlanesPacket = new Net.PlaneListPacket();
-
             if (IsServer)
             {
+                var newPlanesPacket = new PlaneListPacket();
+
                 foreach (var plane in Objs.Planes)
                 {
                     // Don't send updates for human planes.
@@ -355,23 +360,24 @@ namespace PolyPlane.Net
                     if (!plane.IsAI)
                         continue;
 
-                    var planePacket = new Net.PlanePacket(plane);
+                    var planePacket = new PlanePacket(plane);
                     newPlanesPacket.Planes.Add(planePacket);
                 }
+
+                if (newPlanesPacket.Planes.Count > 0)
+                    Host.EnqueuePacket(newPlanesPacket);
             }
             else
             {
-                var planePacket = new Net.PlanePacket(PlayerPlane);
-                newPlanesPacket.Planes.Add(planePacket);
+                var planePacket = new PlanePacket(PlayerPlane);
+                planePacket.Type = PacketTypes.PlaneUpdate;
+                Host.EnqueuePacket(planePacket);
             }
-
-            if (newPlanesPacket.Planes.Count > 0)
-                Host.EnqueuePacket(newPlanesPacket);
         }
 
         private void SendMissileUpdates()
         {
-            var newMissilesPacket = new Net.MissileListPacket();
+            var newMissilesPacket = new MissileListPacket();
 
             if (IsServer)
             {
@@ -385,8 +391,9 @@ namespace PolyPlane.Net
             }
             else
             {
-                var missiles = Objs.Missiles.Where(m => m.PlayerID == PlayerPlane.PlayerID).ToList();
-                missiles.ForEach(m => newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile)));
+                var missiles = Objs.Missiles.Where(m => m.PlayerID == PlayerPlane.PlayerID);
+                foreach (var m in missiles)
+                    newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile));
             }
 
             if (newMissilesPacket.Missiles.Count > 0)
@@ -474,15 +481,23 @@ namespace PolyPlane.Net
 
             foreach (var planeUpdPacket in listPacket.Planes)
             {
-                var netPlane = GetNetPlane(planeUpdPacket.ID);
+                DoNetPlaneUpdate(planeUpdPacket);
+            }
+        }
 
-                if (netPlane != null)
-                {
-                    planeUpdPacket.SyncObj(netPlane);
+        private void DoNetPlaneUpdate(PlanePacket planePacket)
+        {
+            if (!IsServer && !_netIDIsSet)
+                return;
 
-                    netPlane.LagAmount = World.CurrentTime() - listPacket.FrameTime;
-                    netPlane.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, planeUpdPacket.Position, planeUpdPacket.Velocity, planeUpdPacket.Rotation, planeUpdPacket.FrameTime);
-                }
+            var netPlane = GetNetPlane(planePacket.ID);
+
+            if (netPlane != null)
+            {
+                planePacket.SyncObj(netPlane);
+
+                netPlane.LagAmount = World.CurrentTime() - planePacket.FrameTime;
+                netPlane.NetUpdate(World.DT, World.ViewPortSize, World.RenderScale, planePacket.Position, planePacket.Velocity, planePacket.Rotation, planePacket.FrameTime);
             }
         }
 

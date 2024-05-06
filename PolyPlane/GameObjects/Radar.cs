@@ -319,30 +319,16 @@ namespace PolyPlane
             gfx.DrawLine(this.Position, this.Position + centerLine, color, 1f, D2DDashStyle.DashDot);
         }
 
-        public FighterPlane FindRandomPlane()
-        {
-            var planes = _pings.Where(p =>
-            p.Obj is FighterPlane plane
-            && !plane.IsDamaged
-            && !plane.HasCrashed).ToList();
-
-            if (planes.Count == 0)
-                return null;
-
-            var rndPlane = planes[Helpers.Rnd.Next(planes.Count)].Obj as FighterPlane;
-            return rndPlane;
-        }
-
         public FighterPlane FindNearestPlane()
         {
             var planes = _pings.Where(p =>
             p.Obj is FighterPlane plane
             && !plane.IsDamaged
-            && !plane.HasCrashed).ToList();
+            && !plane.HasCrashed);
 
-            planes = planes.OrderBy(p => this.HostPlane.Position.DistanceTo(p.Obj.Position)).ToList();
+            planes = planes.OrderBy(p => this.HostPlane.Position.DistanceTo(p.Obj.Position));
 
-            if (planes.Count == 0)
+            if (planes.Count() == 0)
                 return null;
 
             return planes.First().Obj as FighterPlane;
@@ -424,11 +410,11 @@ namespace PolyPlane
             && !missile.IsDistracted && !missile.MissedTarget
             && missile.Target.ID.Equals(HostPlane.ID)
             && missile.ClosingRate(HostPlane) > 0f
-            && Helpers.ImpactTime(HostPlane, missile) <= MIN_IMPACT_TIME).ToList();
+            && Helpers.ImpactTime(HostPlane, missile) <= MIN_IMPACT_TIME);
 
-            threats.OrderBy(p => Helpers.ImpactTime(HostPlane, p.Obj as Missile)).ToList();
+            threats.OrderBy(p => Helpers.ImpactTime(HostPlane, p.Obj as Missile));
 
-            if (threats.Count == 0)
+            if (threats.Count() == 0)
                 return nearest;
 
             return threats.First().Obj as GuidedMissile;

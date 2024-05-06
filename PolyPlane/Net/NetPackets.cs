@@ -212,7 +212,7 @@ namespace PolyPlane.Net
 
         public PlaneListPacket() : base()
         {
-            Type = PacketTypes.PlaneUpdate;
+            Type = PacketTypes.PlaneListUpdate;
         }
 
         public PlaneListPacket(BitBuffer data)

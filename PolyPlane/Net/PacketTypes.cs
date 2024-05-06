@@ -3,6 +3,7 @@
     public enum PacketTypes
     {
         PlaneUpdate,
+        PlaneListUpdate,
         MissileUpdate,
         Impact,
         NewPlayer,

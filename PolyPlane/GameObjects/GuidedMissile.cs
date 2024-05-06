@@ -328,50 +328,6 @@ namespace PolyPlane.GameObjects
             base.NetUpdate(dt, viewport, renderScale, position, velocity, rotation, frameTime);
 
             _tailWing.Deflection = this.Deflection;
-
-            if (_useControlSurfaces)
-            {
-                _tailWing.Update(dt, viewport, renderScale * this.RenderOffset);
-                _noseWing.Update(dt, viewport, renderScale * this.RenderOffset);
-                _rocketBody.Update(dt, viewport, renderScale * this.RenderOffset);
-            }
-            else
-            {
-                _rocketBody.Update(dt, viewport, renderScale * this.RenderOffset);
-            }
-
-            _centerOfThrust.Update(dt, viewport, renderScale * this.RenderOffset);
-            _warheadCenterMass.Update(dt, viewport, renderScale * this.RenderOffset);
-            _motorCenterMass.Update(dt, viewport, renderScale * this.RenderOffset);
-            _flamePos.Update(dt, viewport, renderScale * this.RenderOffset);
-
-            float flameAngle = 0f;
-
-            if (_useThrustVectoring)
-            {
-                flameAngle = GetThrust(_useThrustVectoring).Angle();
-            }
-            else
-            {
-                const float DEF_AMT = 0.2f; // How much the flame will be deflected in relation to velocity.
-                flameAngle = this.Rotation - (Helpers.ClampAngle180(this.Rotation - this.Velocity.Angle(true)) * DEF_AMT);
-            }
-
-            var thrust = GetThrust().Length();
-            var len = this.Velocity.Length() * 0.05f;
-            len += thrust * 0.01f;
-            len *= 0.8f;
-            FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
-            _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
-
-            FlamePoly.Update(_flamePos.Position, flameAngle, renderScale * this.RenderOffset);
-            this.Polygon.Update(this.Position, this.Rotation, renderScale * this.RenderOffset);
-
-            if (FUEL <= 0f && this.Velocity.Length() <= 5f)
-                this.IsExpired = true;
-
-            if (Target.IsExpired && _age > LIFESPAN)
-                this.IsExpired = true;
         }
 
         public void ChangeTarget(GameObject target)

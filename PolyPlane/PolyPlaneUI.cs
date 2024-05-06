@@ -264,7 +264,7 @@ namespace PolyPlane
 
             try
             {
-                if (this.InvokeRequired)
+                if (this.InvokeRequired && !this.Disposing)
                     this.Invoke(() => HandleNewImpact(sender, e));
                 else
                 {

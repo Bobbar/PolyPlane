@@ -1,5 +1,4 @@
-﻿using NetStack.Buffers;
-using NetStack.Serialization;
+﻿using NetStack.Serialization;
 using System.IO.Compression;
 
 namespace PolyPlane.Net
@@ -53,8 +52,12 @@ namespace PolyPlane.Net
 
             switch (type)
             {
-                case PacketTypes.PlaneUpdate:
+                case PacketTypes.PlaneListUpdate:
                     obj = new PlaneListPacket(data);
+                    break;
+
+                case PacketTypes.PlaneUpdate:
+                    obj = new PlanePacket(data);
                     break;
 
                 case PacketTypes.GetOtherPlanes:
