@@ -53,9 +53,6 @@ namespace PolyPlane.GameObjects
 
             if (_age >= Lifetime)
                 this.IsExpired = true;
-
-            this.Velocity += (World.Gravity * dt);
-            this.Velocity += (-this.Velocity * 0.03f * dt);
         }
 
         public override void Render(RenderContext ctx)
