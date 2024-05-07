@@ -113,7 +113,7 @@ namespace PolyPlane
         private const float MAX_WIND_MAG = 100f;
         public static float AirDensity = 1.225f;
         public static D2DPoint Wind = D2DPoint.Zero;
-
+        private static SmoothDouble _serverTimeOffsetSmooth = new SmoothDouble(10);
         private static RandomVariationFloat _airDensVariation = new RandomVariationFloat(MIN_TURB_DENS, MAX_TURB_DENS, 0.2f, 5f);
         private static RandomVariationVector _windVariation = new RandomVariationVector(MAX_WIND_MAG, 10f, 50f);
 
@@ -126,7 +126,12 @@ namespace PolyPlane
         public static int CurrentPlayerId = 1000;
 
         public static GameID ViewID;
-        public static double ServerTimeOffset = 0;
+
+        public static double ServerTimeOffset
+        {
+            get { return _serverTimeOffsetSmooth.Current; }
+            set { _serverTimeOffsetSmooth.Add(value); }
+        }
 
         public const float MAX_TIMEOFDAY = 24f;
         public const float TOD_RATE = 0.02f;

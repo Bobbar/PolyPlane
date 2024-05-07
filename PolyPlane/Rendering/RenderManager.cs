@@ -1422,6 +1422,8 @@ namespace PolyPlane.Rendering
                 infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
                 infoText += $"VP: {this.Width}, {this.Height}\n";
                 infoText += $"DPI: {this._renderTarget.DeviceDpi}\n";
+                infoText += $"TimeOffset: {World.ServerTimeOffset}\n";
+
 
             }
 

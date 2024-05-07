@@ -18,9 +18,9 @@ namespace PolyPlane.GameObjects
 
         public List<FighterPlane> Planes = new List<FighterPlane>();
 
-        public RingBuffer<GameObject> NewDecoys = new RingBuffer<GameObject>(20);
+        public RingBuffer<GameObject> NewDecoys = new RingBuffer<GameObject>(50);
         public RingBuffer<GameObject> NewBullets = new RingBuffer<GameObject>(100);
-        public RingBuffer<GameObject> NewMissiles = new RingBuffer<GameObject>(10);
+        public RingBuffer<GameObject> NewMissiles = new RingBuffer<GameObject>(50);
         public RingBuffer<FighterPlane> NewPlanes = new RingBuffer<FighterPlane>(100);
 
         private Dictionary<int, GameObject> _objLookup = new Dictionary<int, GameObject>();
