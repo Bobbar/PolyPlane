@@ -231,11 +231,6 @@ namespace PolyPlane.GameObjects
             return this.CurrentFrame % this.SkipFrames != 0;
         }
 
-        private void SetID(long id)
-        {
-            this.ID = new GameID(this.ID.PlayerID, id);
-        }
-
         public virtual void Wrap(D2DSize viewport)
         {
             // Clamp all objects to ground level.

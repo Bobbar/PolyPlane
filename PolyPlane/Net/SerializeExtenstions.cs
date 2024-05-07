@@ -65,12 +65,12 @@ namespace PolyPlane.Net
         public static void AddGameID(this BitBuffer data, GameID id)
         {
             data.AddInt(id.PlayerID)
-                .AddLong(id.ObjectID);
+                .AddInt(id.ObjectID);
         }
 
         public static GameID ReadGameID(this BitBuffer data)
         {
-            return new GameID(data.ReadInt(), data.ReadLong());
+            return new GameID(data.ReadInt(), data.ReadInt());
         }
     }
 }

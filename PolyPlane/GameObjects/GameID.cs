@@ -1,14 +1,13 @@
 ﻿namespace PolyPlane.GameObjects
 {
-    [Serializable]
     public struct GameID : IEquatable<GameID>
     {
         public int PlayerID;
-        public long ObjectID;
+        public int ObjectID;
 
         public GameID() { }
 
-        public GameID(int playerID, long objectID)
+        public GameID(int playerID, int objectID)
         {
             PlayerID = playerID;
             ObjectID = objectID;
