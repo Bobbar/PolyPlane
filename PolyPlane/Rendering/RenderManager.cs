@@ -1122,12 +1122,14 @@ namespace PolyPlane.Rendering
             if (warningMessage)
             {
                 var rect = new D2DRect(pos - new D2DPoint(0, -200), new D2DSize(120, 30));
+                gfx.DrawRectangle(rect, D2DColor.Red);
                 gfx.DrawTextCenter("MISSILE", D2DColor.Red, _defaultFontName, 30f, rect);
             }
 
             if (plane.HasRadarLock)
             {
                 var lockRect = new D2DRect(pos - new D2DPoint(0, -160), new D2DSize(120, 30));
+                gfx.DrawRectangle(lockRect, D2DColor.Red);
                 gfx.DrawTextCenter("LOCK", D2DColor.Red, _defaultFontName, 30f, lockRect);
             }
         }
