@@ -1,5 +1,4 @@
 ﻿using ENet;
-using NetStack.Buffers;
 using NetStack.Threading;
 using PolyPlane.GameObjects;
 
@@ -103,7 +102,8 @@ namespace PolyPlane.Net
                     break;
 
                 case EventType.Receive:
-                    HandleReceive(netEvent);
+                    var packet = ParsePacket(netEvent.Packet);
+                    HandleReceive(packet);
                     netEvent.Packet.Dispose();
                     break;
             }
@@ -170,7 +170,19 @@ namespace PolyPlane.Net
         }
 
         public virtual void HandleTimeout(Event netEvent) { }
-        public virtual void HandleReceive(Event netEvent) { }
+
+        public virtual void HandleReceive(NetPacket netPacket) { }
+
+        internal NetPacket ParsePacket(Packet packet)
+        {
+            var buffer = new byte[packet.Length];
+
+            packet.CopyTo(buffer);
+
+            var packetObj = Serialization.ByteArrayToObject(buffer) as NetPacket;
+
+            return packetObj;
+        }
 
         public abstract ulong PacketLoss();
 

@@ -7,8 +7,7 @@ namespace PolyPlane.Net
         public Peer Peer;
 
         public ClientNetHost(ushort port, string ip) : base(port, ip)
-        {
-        }
+        { }
 
         public override void DoStart()
         {
@@ -41,11 +40,11 @@ namespace PolyPlane.Net
             SendPlayerDisconnectPacket(netEvent.Peer.ID);
         }
 
-        public override void HandleReceive(Event netEvent)
+        public override void HandleReceive(NetPacket netPacket)
         {
-            base.HandleReceive(netEvent);
+            base.HandleReceive(netPacket);
 
-            ParsePacket(netEvent.Packet);
+            PacketReceiveQueue.Enqueue(netPacket);
         }
 
         public override void SendPacket(NetPacket netPacket)
@@ -64,17 +63,6 @@ namespace PolyPlane.Net
             }
 
             Peer.Send((byte)channel, ref packet);
-        }
-
-        private void ParsePacket(Packet packet)
-        {
-            var buffer = new byte[packet.Length];
-
-            packet.CopyTo(buffer);
-
-            var packetObj = Serialization.ByteArrayToObject(buffer) as NetPacket;
-
-            PacketReceiveQueue.Enqueue(packetObj);
         }
 
         private void RequestOtherPlanes()

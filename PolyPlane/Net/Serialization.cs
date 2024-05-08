@@ -84,7 +84,7 @@ namespace PolyPlane.Net
                     obj = new GameObjectPacket(data);
                     break;
 
-                case PacketTypes.SetID or PacketTypes.GetNextID or PacketTypes.PlayerDisconnect or PacketTypes.PlayerReset or PacketTypes.KickPlayer:
+                case PacketTypes.SetID or PacketTypes.PlayerDisconnect or PacketTypes.PlayerReset or PacketTypes.KickPlayer:
                     obj = new BasicPacket(data);
                     break;
 

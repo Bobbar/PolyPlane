@@ -11,7 +11,6 @@
         NewMissile,
         NewDecoy,
         SetID,
-        GetNextID,
         ChatMessage,
         GetOtherPlanes,
         ExpiredObjects,

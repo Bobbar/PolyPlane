@@ -7,8 +7,7 @@ namespace PolyPlane.Net
         private Dictionary<uint, Peer> _peers = new Dictionary<uint, Peer>();
 
         public ServerNetHost(ushort port, string ip) : base(port, ip)
-        {
-        }
+        { }
 
         public override void DoStart()
         {
@@ -46,13 +45,34 @@ namespace PolyPlane.Net
             _peers.Remove(netEvent.Peer.ID);
         }
 
-        public override void HandleReceive(Event netEvent)
+        public override void HandleReceive(NetPacket netPackett)
         {
-            base.HandleReceive(netEvent);
+            base.HandleReceive(netPackett);
 
-            ParsePacket(netEvent.Packet, netEvent.Peer);
+            switch (netPackett.Type)
+            {
+                case PacketTypes.PlaneUpdate 
+                or PacketTypes.MissileUpdate
+                or PacketTypes.ChatMessage 
+                or PacketTypes.NewBullet 
+                or PacketTypes.NewMissile 
+                or PacketTypes.Impact 
+                or PacketTypes.PlayerDisconnect 
+                or PacketTypes.PlayerReset:
+
+                    // Queue certain updates to re-broadcast ASAP.
+                    PacketSendQueue.Enqueue(netPackett);
+                    PacketReceiveQueue.Enqueue(netPackett);
+
+                    break;
+
+                default:
+
+                    PacketReceiveQueue.Enqueue(netPackett);
+
+                    break;
+            }
         }
-
 
         public override uint GetPlayerRTT(int playerID)
         {
@@ -62,33 +82,6 @@ namespace PolyPlane.Net
             }
 
             return 0;
-        }
-
-        private void ParsePacket(Packet packet, Peer peer)
-        {
-            var buffer = new byte[packet.Length];
-
-            packet.CopyTo(buffer);
-
-            var packetObj = Serialization.ByteArrayToObject(buffer) as NetPacket;
-
-            switch (packetObj.Type)
-            {
-
-                case PacketTypes.PlaneUpdate or PacketTypes.MissileUpdate or PacketTypes.ChatMessage or PacketTypes.NewBullet or PacketTypes.NewMissile or PacketTypes.Impact or PacketTypes.PlayerDisconnect or PacketTypes.PlayerReset:
-
-                    // Queue certain updates to re-broadcast ASAP.
-                    PacketSendQueue.Enqueue(packetObj);
-                    PacketReceiveQueue.Enqueue(packetObj);
-
-                    break;
-
-                default:
-
-                    PacketReceiveQueue.Enqueue(packetObj);
-
-                    break;
-            }
         }
 
         private void BroadcastPacket(NetPacket netPacket)

@@ -194,7 +194,8 @@ namespace PolyPlane
                         _collisions = new CollisionManager(_objs);
                         _collisions.ImpactEvent += HandleNewImpact;
 
-                        InitPlane(false, config.PlayerName);
+                        InitPlane(config.IsAI, config.PlayerName);
+
                         _playerPlane.PlaneColor = config.PlaneColor;
 
                         InitGfx();

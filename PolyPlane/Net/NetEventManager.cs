@@ -182,9 +182,6 @@ namespace PolyPlane.Net
                     }
 
                     break;
-                case PacketTypes.GetNextID:
-                    // Nuttin...
-                    break;
                 case PacketTypes.ChatMessage:
 
                     var chatPacket = packet as ChatPacket;
