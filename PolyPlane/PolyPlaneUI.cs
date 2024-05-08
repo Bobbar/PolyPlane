@@ -25,6 +25,7 @@ namespace PolyPlane
         private bool _queueNextViewId = false;
         private bool _queuePrevViewId = false;
         private bool _queueResetPlane = false;
+        private bool _queueClearPlanes = false;
         private bool _skipRender = false;
         private long _lastRenderTime = 0;
         private float _renderFPS = 0;
@@ -713,10 +714,18 @@ namespace PolyPlane
             if (_queueResetPlane)
             {
                 ResetPlane();
-
-
-
                 _queueResetPlane = false;
+            }
+
+            if (_queueClearPlanes)
+            {
+                _objs.Planes.ForEach(p =>
+                {
+                    if (!p.ID.Equals(_playerPlane.ID))
+                        p.IsExpired = true;
+                });
+
+                _queueClearPlanes = false;
             }
         }
 
@@ -904,6 +913,8 @@ namespace PolyPlane
                     break;
 
                 case 'c':
+                    if (!World.IsNetGame)
+                        _queueClearPlanes = true;
                     break;
 
                 case 'd':

@@ -1363,6 +1363,7 @@ namespace PolyPlane.Rendering
                 {
                     infoText += $"P: Pause\n";
                     infoText += $"U: Spawn AI Plane\n";
+                    infoText += $"C: Remove AI Planes\n";
                 }
 
                 infoText += $"Y: Start Chat Message\n";
