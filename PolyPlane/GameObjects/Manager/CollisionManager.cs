@@ -198,26 +198,28 @@ namespace PolyPlane.GameObjects.Manager
                 if (missile.IsExpired)
                     continue;
 
-                for (int b = 0; b < _objs.Bullets.Count; b++)
+                var nearObjs = _objs.GetNear(missile);
+
+                foreach (var obj in nearObjs)
                 {
-                    var bullet = _objs.Bullets[b] as Bullet;
-
-                    if (bullet.IsExpired)
-                        continue;
-
-                    if (bullet.Owner == missile.Owner)
-                        continue;
-
-                    if (missile.CollidesWith(bullet, out D2DPoint posb))
+                    if (obj is Bullet bullet)
                     {
-                        if (!missile.IsExpired)
-                            _objs.AddExplosion(posb);
+                        if (bullet.IsExpired)
+                            continue;
 
-                        missile.IsExpired = true;
-                        bullet.IsExpired = true;
+                        if (bullet.Owner == missile.Owner)
+                            continue;
+
+                        if (missile.CollidesWith(bullet, out D2DPoint posb))
+                        {
+                            if (!missile.IsExpired)
+                                _objs.AddExplosion(posb);
+
+                            missile.IsExpired = true;
+                            bullet.IsExpired = true;
+                        }
                     }
                 }
-
             }
 
             HandleGroundImpacts();
@@ -295,8 +297,6 @@ namespace PolyPlane.GameObjects.Manager
             // Test for decoy success.
             const float MIN_DECOY_FOV = 10f;
             var decoys = _objs.Decoys;
-
-            bool groundScatter = false;
 
             for (int i = 0; i < _objs.Missiles.Count; i++)
             {
@@ -376,6 +376,7 @@ namespace PolyPlane.GameObjects.Manager
                     const int CHANCE_INIT = 10;
                     var chance = CHANCE_INIT;
 
+                    // Increase chance for lower altitude.
                     var altFact = 1f - Helpers.Factor(missile.Target.Altitude, GROUND_SCATTER_ALT);
 
                     chance -= (int)(altFact * 5);

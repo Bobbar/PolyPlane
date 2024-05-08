@@ -2,6 +2,9 @@
 
 namespace PolyPlane.GameObjects
 {
+    /// <summary>
+    /// Handles collections for all game objects and provides fast lookups and nearest neighbor searching.
+    /// </summary>
     public class GameObjectManager
     {
         public int TotalObjects => _objLookup.Count;
@@ -15,7 +18,6 @@ namespace PolyPlane.GameObjects
         public List<GameObject> Bullets = new List<GameObject>();
         public List<GameObject> Explosions = new List<GameObject>();
         public List<D2DPoint> GroundImpacts = new List<D2DPoint>();
-
         public List<FighterPlane> Planes = new List<FighterPlane>();
 
         public RingBuffer<GameObject> NewDecoys = new RingBuffer<GameObject>(50);
@@ -104,7 +106,6 @@ namespace PolyPlane.GameObjects
             NewDecoys.Enqueue(decoy);
         }
 
-
         public void AddExplosion(GameObject explosion)
         {
             if (!Contains(explosion))
@@ -185,7 +186,6 @@ namespace PolyPlane.GameObjects
         {
             return _allObjects;
         }
-
 
         public void SyncAll()
         {
@@ -312,19 +312,6 @@ namespace PolyPlane.GameObjects
                     AddPlane(plane);
                 }
             }
-
-            //// Sync object IDs that might have been changed after adding?
-            //foreach (var obj in _objLookup)
-            //{
-            //    var newHash = obj.Value.ID.GetHashCode();
-            //    var curHash = obj.Key;
-
-            //    if (newHash != curHash)
-            //    {
-            //        _objLookup.Remove(curHash);
-            //        _objLookup.Add(newHash, obj.Value);
-            //    }
-            //}
         }
 
         private void UpdateSpatialLookup()
@@ -358,8 +345,6 @@ namespace PolyPlane.GameObjects
         public IEnumerable<GameObject> GetNear(GameObject obj)
         {
             var rndPos = GetGridIdx(obj);
-
-            var nearObjs = new List<GameObject>();
 
             for (int x = -1; x <= 1; x++)
             {
