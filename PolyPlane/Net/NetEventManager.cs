@@ -511,7 +511,7 @@ namespace PolyPlane.Net
                     {
                         if (netMissileTarget != null)
                         {
-                            if (!netMissileTarget.ID.Equals(netMissile.Target.ID))
+                            if (!netMissileTarget.Equals(netMissile.Target))
                                 netMissile.ChangeTarget(netMissileTarget);
                         }
                     }

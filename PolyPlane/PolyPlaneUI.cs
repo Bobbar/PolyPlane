@@ -116,7 +116,7 @@ namespace PolyPlane
                 _render?.AddNewEventMessage($"'{playerPlane.PlayerName}' has been kicked.", EventType.Net);
 
 
-                if (playerPlane.ID.Equals(_playerPlane.ID))
+                if (playerPlane.Equals(_playerPlane))
                     _render?.NewHudMessage("You have been kicked from the server!", D2DColor.Blue);
             }
         }
@@ -277,12 +277,12 @@ namespace PolyPlane
 
                     if (viewPlane != null)
                     {
-                        if (e.Target.ID.Equals(viewPlane.ID))
+                        if (e.Target.Equals(viewPlane))
                         {
                             _render.DoScreenFlash(D2DColor.Red);
                             _render.DoScreenShake();
                         }
-                        else if (e.DoesDamage && e.Impactor.Owner.ID.Equals(viewPlane.ID))
+                        else if (e.DoesDamage && e.Impactor.Owner.Equals(viewPlane))
                         {
                             _render.DoScreenFlash(D2DColor.Green);
                         }
@@ -724,7 +724,7 @@ namespace PolyPlane
             {
                 _objs.Planes.ForEach(p =>
                 {
-                    if (!p.ID.Equals(_playerPlane.ID))
+                    if (!p.Equals(_playerPlane))
                         p.IsExpired = true;
                 });
 
@@ -764,7 +764,7 @@ namespace PolyPlane
             {
                 var plane = firing[i];
 
-                if (!plane.IsAI && plane.ID.Equals(_playerPlane.ID))
+                if (!plane.IsAI && plane.Equals(_playerPlane))
                     continue;
 
                 if (plane.IsNetObject)

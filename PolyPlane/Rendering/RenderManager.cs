@@ -476,7 +476,7 @@ namespace PolyPlane.Rendering
                 o.Render(ctx);
 
                 // Circle enemy missiles.
-                if (!o.Owner.ID.Equals(plane.ID))
+                if (!o.Owner.Equals(plane))
                     ctx.DrawEllipse(new D2DEllipse(o.Position, new D2DSize(50f, 50f)), new D2DColor(0.4f, D2DColor.Red), 8f);
             });
 
@@ -485,7 +485,7 @@ namespace PolyPlane.Rendering
 
             _objs.Planes.ForEach(o =>
             {
-                if (o is FighterPlane tplane && !tplane.ID.Equals(plane.ID))
+                if (o is FighterPlane tplane && !tplane.Equals(plane))
                 {
                     DrawPlaneShadow(ctx, tplane);
                     o.Render(ctx);
@@ -493,7 +493,7 @@ namespace PolyPlane.Rendering
                     DrawMuzzleFlash(ctx, tplane);
 
                     // Draw circle around locked on plane.
-                    if (plane.Radar.LockedObj != null && plane.Radar.LockedObj.ID.Equals(tplane.ID))
+                    if (plane.Radar.LockedObj != null && plane.Radar.LockedObj.Equals(tplane))
                         ctx.DrawEllipse(new D2DEllipse(tplane.Position, new D2DSize(80f, 80f)), World.HudColor, 4f);
                 }
             });
@@ -1089,10 +1089,10 @@ namespace PolyPlane.Rendering
                 if (missile == null)
                     continue;
 
-                if (missile.Owner.ID.Equals(plane.ID))
+                if (missile.Owner.Equals(plane))
                     continue;
 
-                if (missile.Target != null && !missile.Target.ID.Equals(plane.ID))
+                if (missile.Target != null && !missile.Target.Equals(plane))
                     continue;
 
                 var dist = D2DPoint.Distance(plane.Position, missile.Position);
@@ -1140,7 +1140,7 @@ namespace PolyPlane.Rendering
             var navigationTime = Utilities.ImpactTime(plane, missile);
 
             // Is it going to hit soon and is actively targeting us?
-            return (navigationTime < minImpactTime && missile.Target.ID.Equals(plane.ID));
+            return (navigationTime < minImpactTime && missile.Target.Equals(plane));
         }
 
 

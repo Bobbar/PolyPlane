@@ -116,7 +116,7 @@ namespace PolyPlane
             if (obj.IsExpired)
                 return;
 
-            if (obj.ID.Equals(HostPlane.ID)) // Really needed?
+            if (obj.Equals(HostPlane)) // Really needed?
                 return;
 
             if (_hostIsAI)
@@ -179,7 +179,7 @@ namespace PolyPlane
 
                 if (p.Obj is Missile missile)
                 {
-                    if (!p.Obj.Owner.ID.Equals(this.HostPlane.ID))
+                    if (!p.Obj.Owner.Equals(this.HostPlane))
                         gfx.DrawTriangle(p.RadarPos, pColor, D2DColor.Red, 1f);
                     else
                         gfx.DrawTriangle(p.RadarPos, pColor, pColor, 1f);
@@ -283,7 +283,7 @@ namespace PolyPlane
 
                 if (HasLock)
                 {
-                    if (!mostCentered.Obj.ID.Equals(_lockedPingObj.Obj.ID))
+                    if (!mostCentered.Obj.Equals(_lockedPingObj.Obj))
                     {
 
                         if (!_lockTimer.IsRunning)
@@ -409,7 +409,7 @@ namespace PolyPlane
 
             var threats = _pings.Where((Func<PingObj, bool>)(p => p.Obj is GuidedMissile missile
             && !missile.IsDistracted && !missile.MissedTarget
-            && missile.Target.ID.Equals(HostPlane.ID)
+            && missile.Target.Equals(HostPlane)
             && missile.ClosingRate(HostPlane) > 0f
             && Utilities.ImpactTime(HostPlane, missile) <= MIN_IMPACT_TIME));
 
@@ -463,7 +463,7 @@ namespace PolyPlane
             {
                 var p = _pings[i];
 
-                if (p.Obj.ID.Equals(pingObj.Obj.ID))
+                if (p.Obj.Equals(pingObj.Obj))
                     exists = true;
             }
 
@@ -477,7 +477,7 @@ namespace PolyPlane
             {
                 var ping = _pings[i];
 
-                if (ping.Obj.ID.Equals(pingObj.Obj.ID))
+                if (ping.Obj.Equals(pingObj.Obj))
                 {
                     _pings[i].Refresh(pingObj.RadarPos);
                 }

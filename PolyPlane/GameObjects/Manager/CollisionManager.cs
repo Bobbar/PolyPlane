@@ -58,7 +58,7 @@ namespace PolyPlane.GameObjects.Manager
                     {
                         var missileOwner = missile.Owner as FighterPlane;
 
-                        if (missile.Owner.ID.Equals(plane.ID))
+                        if (missile.Owner.Equals(plane))
                             continue;
 
                         if (missile.IsExpired)
@@ -127,7 +127,7 @@ namespace PolyPlane.GameObjects.Manager
                         if (bullet.IsExpired)
                             continue;
 
-                        if (bullet.Owner.ID.Equals(plane.ID))
+                        if (bullet.Owner.Equals(plane))
                             continue;
 
 
