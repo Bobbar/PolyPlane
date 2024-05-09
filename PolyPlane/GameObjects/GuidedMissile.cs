@@ -455,9 +455,9 @@ namespace PolyPlane.GameObjects
                 D2DPoint vec;
 
                 if (thrustVector)
-                    vec = AngleToVector(this.Rotation + (_tailWing.Deflection * THURST_VECTOR_AMT));
+                    vec = Utilities.AngleToVectorDegrees(this.Rotation + (_tailWing.Deflection * THURST_VECTOR_AMT));
                 else
-                    vec = AngleToVector(this.Rotation);
+                    vec = Utilities.AngleToVectorDegrees(this.Rotation);
 
                 vec *= THRUST;
 

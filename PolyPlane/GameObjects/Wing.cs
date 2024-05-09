@@ -180,7 +180,7 @@ namespace PolyPlane.GameObjects
             var veloNormTan = new D2DPoint(veloNorm.Y, -veloNorm.X);
 
             // Compute angle of attack.
-            var aoaRads = AngleToVector(this.Rotation).Cross(veloNorm);
+            var aoaRads = Utilities.AngleToVectorDegrees(this.Rotation).Cross(veloNorm);
             var aoa = Utilities.RadsToDegrees(aoaRads);
 
             // Compute lift force as velocity tangent with angle-of-attack effecting magnitude and direction. Velocity magnitude is factored as well.

@@ -1,4 +1,5 @@
 ﻿using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -13,7 +14,7 @@ namespace PolyPlane.GameObjects
             this.GameObject = gameObject;
             this.ReferencePosition = referencePosition;
             this.Rotation = GameObject.Rotation;
-            this.Position = ApplyTranslation(ReferencePosition, gameObject.Rotation, gameObject.Position, World.RenderScale);
+            this.Position = Utilities.ApplyTranslation(ReferencePosition, gameObject.Rotation, gameObject.Position, World.RenderScale);
         }
 
         public FixturePoint(GameObject gameObject, D2DPoint referencePosition, long skipFrames)
@@ -22,7 +23,7 @@ namespace PolyPlane.GameObjects
             this.GameObject = gameObject;
             this.ReferencePosition = referencePosition;
             this.Rotation = GameObject.Rotation;
-            this.Position = ApplyTranslation(ReferencePosition, gameObject.Rotation, gameObject.Position, World.RenderScale);
+            this.Position = Utilities.ApplyTranslation(ReferencePosition, gameObject.Rotation, gameObject.Position, World.RenderScale);
         }
 
         public void FlipY()
@@ -33,7 +34,7 @@ namespace PolyPlane.GameObjects
         public override void Update(float dt, D2DSize viewport, float renderScale)
         {
             this.Rotation = GameObject.Rotation;
-            this.Position = ApplyTranslation(ReferencePosition, GameObject.Rotation, GameObject.Position, renderScale);
+            this.Position = Utilities.ApplyTranslation(ReferencePosition, GameObject.Rotation, GameObject.Position, renderScale);
         }
 
         public override void Render(RenderContext ctx)

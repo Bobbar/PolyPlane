@@ -1,42 +1,17 @@
 ﻿using PolyPlane.Net;
 using PolyPlane.Rendering;
 using PolyPlane.Helpers;
-using System.Numerics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
     public abstract class GameObject : IEquatable<GameObject>, ISkipFramesUpdate, IDisposable
     {
-        public bool Visible = true;
-        public bool IsNetObject { get; set; } = false;
-        public double ClientCreateTime = 0;
-        public double LagAmount = 0;
-        public float RenderOffset = 1f;
         public GameID ID { get; set; } = new GameID();
-
-        public int PlayerID
-        {
-            get { return ID.PlayerID; }
-            set { ID = new GameID(value, ID.ObjectID); }
-        }
-
-        public GameObject Owner { get; set; }
-
-        public bool IsExpired { get; set; } = false;
 
         public D2DPoint Position { get; set; }
 
         public D2DPoint Velocity { get; set; }
-
-        public long CurrentFrame { get; set; } = 0;
-
-        public double LastNetUpdate { get; set; } = 0;
-
-        /// <summary>
-        /// How many frames must pass between updates.
-        /// </summary>
-        public long SkipFrames { get; set; } = 1;
 
         public float Rotation
         {
@@ -44,16 +19,9 @@ namespace PolyPlane.GameObjects
 
             set
             {
-                _rotation = ClampAngle(value);
+                _rotation = Utilities.ClampAngle(value);
             }
         }
-
-
-        protected float _rotation = 0f;
-
-        protected Random _rnd => Utilities.Rnd;
-
-        public float RotationSpeed { get; set; }
 
         public float Altitude
         {
@@ -88,12 +56,38 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private float _verticalSpeed = 0f;
-        private float _prevAlt = 0f;
-        private SmoothPos _posSmooth = new SmoothPos(5);
-        public InterpolationBuffer<GameObjectPacket> InterpBuffer = null;
-        public HistoricalBuffer<GameObjectPacket> HistoryBuffer = new HistoricalBuffer<GameObjectPacket>();
+        public float RotationSpeed { get; set; } = 0f;
 
+        public float RenderOffset = 1f;
+        public bool Visible = true;
+        public bool IsNetObject = false;
+        public double LagAmount = 0;
+
+        public int PlayerID
+        {
+            get { return ID.PlayerID; }
+            set { ID = new GameID(value, ID.ObjectID); }
+        }
+
+        public GameObject Owner { get; set; }
+
+        public bool IsExpired = false;
+        public long CurrentFrame { get; set; } = 0;
+
+        /// <summary>
+        /// How many frames must pass between updates.
+        /// </summary>
+        public long SkipFrames { get; set; } = 1;
+
+        protected Random _rnd => Utilities.Rnd;
+        protected InterpolationBuffer<GameObjectPacket> InterpBuffer = null;
+        protected HistoricalBuffer<GameObjectPacket> HistoryBuffer = new HistoricalBuffer<GameObjectPacket>();
+        protected SmoothPos _posSmooth = new SmoothPos(5);
+
+        protected float _rotation = 0f;
+        protected float _verticalSpeed = 0f;
+        protected float _prevAlt = 0f;
+       
         public GameObject()
         {
             this.ID = new GameID(-1, World.GetNextObjectId());
@@ -115,12 +109,6 @@ namespace PolyPlane.GameObjects
             Velocity = velo;
         }
 
-        public GameObject(D2DPoint pos, float rotation) : this(pos, D2DPoint.Zero, rotation, 0f)
-        {
-            Position = pos;
-            Rotation = rotation;
-        }
-
         public GameObject(D2DPoint pos, D2DPoint velo, float rotation) : this(pos, velo, rotation, 0f)
         {
             Position = pos;
@@ -134,27 +122,6 @@ namespace PolyPlane.GameObjects
             Velocity = velo;
             Rotation = rotation;
             RotationSpeed = rotationSpeed;
-        }
-
-
-        private GameObjectPacket InterpObject(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
-        {
-            this.Position = _posSmooth.Add((from.Position + (to.Position - from.Position) * (float)pctElapsed));
-            this.Velocity = (from.Velocity + (to.Velocity - from.Velocity) * (float)pctElapsed);
-            this.Rotation = Utilities.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
-
-            return to;
-        }
-
-        private GameObjectPacket GetInterpState(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
-        {
-            var state = new GameObjectPacket();
-
-            state.Position = (from.Position + (to.Position - from.Position) * (float)pctElapsed);
-            state.Velocity = (from.Velocity + (to.Velocity - from.Velocity) * (float)pctElapsed);
-            state.Rotation = Utilities.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
-
-            return state;
         }
 
         public void Update(float dt, D2DSize viewport, float renderScale, bool skipFrames = false)
@@ -173,7 +140,6 @@ namespace PolyPlane.GameObjects
             else
                 this.Update(dt, viewport, renderScale);
         }
-
 
         public virtual void Update(float dt, D2DSize viewport, float renderScale)
         {
@@ -222,14 +188,6 @@ namespace PolyPlane.GameObjects
                 this.Rotation = rotation;
                 this.Velocity = velocity;
             }
-
-            LastNetUpdate = frameTime;
-        }
-
-
-        private bool SkipFrame()
-        {
-            return this.CurrentFrame % this.SkipFrames != 0;
         }
 
         public virtual void Wrap(D2DSize viewport)
@@ -285,30 +243,37 @@ namespace PolyPlane.GameObjects
             return curDist - nextDist;
         }
 
-        protected float AngleDiff(float a, float b) => Utilities.AngleDiff(a, b);
-        protected double AngleDiffD(double a, double b) => Utilities.AngleDiffD(a, b);
-        protected D2DPoint AngleToVector(float angle) => Utilities.AngleToVectorDegrees(angle);
-        protected D2DPoint AngleToVectorD(double angle) => Utilities.AngleToVectorDegreesD(angle);
-        protected float ClampAngle(float angle) => Utilities.ClampAngle(angle);
-        protected double ClampAngleD(double angle) => Utilities.ClampAngleD(angle);
-
-
-
-        protected D2DPoint ApplyTranslation(D2DPoint src, float rotation, D2DPoint translation, float scale = 1f)
-        {
-            var mat = Matrix3x2.CreateScale(scale);
-            mat *= Matrix3x2.CreateRotation(rotation * (float)(Math.PI / 180f), D2DPoint.Zero);
-            mat *= Matrix3x2.CreateTranslation(translation);
-
-            return D2DPoint.Transform(src, mat);
-        }
-
         public bool Equals(GameObject? other)
         {
             return this.ID.Equals(other.ID);
         }
 
         public virtual void Dispose() { }
+
+        private bool SkipFrame()
+        {
+            return this.CurrentFrame % this.SkipFrames != 0;
+        }
+
+        private GameObjectPacket InterpObject(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
+        {
+            this.Position = _posSmooth.Add((from.Position + (to.Position - from.Position) * (float)pctElapsed));
+            this.Velocity = (from.Velocity + (to.Velocity - from.Velocity) * (float)pctElapsed);
+            this.Rotation = Utilities.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
+
+            return to;
+        }
+
+        private GameObjectPacket GetInterpState(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
+        {
+            var state = new GameObjectPacket();
+
+            state.Position = (from.Position + (to.Position - from.Position) * (float)pctElapsed);
+            state.Velocity = (from.Velocity + (to.Velocity - from.Velocity) * (float)pctElapsed);
+            state.Rotation = Utilities.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
+
+            return state;
+        }
     }
 
 
@@ -590,27 +555,6 @@ namespace PolyPlane.GameObjects
             centroid /= this.Polygon.Poly.Length;
             return centroid;
         }
-
-        public float GetInertia(RenderPoly poly, float mass)
-        {
-            var sum1 = 0f;
-            var sum2 = 0f;
-            var n = poly.SourcePoly.Length;
-
-            for (int i = 0; i < n; i++)
-            {
-                var v1 = poly.SourcePoly[i];
-                var v2 = poly.SourcePoly[(i + 1) % n];
-                var a = Utilities.Cross(v2, v1);
-                var b = D2DPoint.Dot(v1, v1) + D2DPoint.Dot(v1, v2) + D2DPoint.Dot(v2, v2);
-
-                sum1 += a * b;
-                sum2 += a;
-            }
-
-            return (mass * sum1) / (6.0f * sum2);
-        }
-
 
         public static D2DPoint[] RandomPoly(int nPoints, int radius)
         {

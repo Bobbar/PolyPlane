@@ -880,9 +880,9 @@ namespace PolyPlane.GameObjects
             D2DPoint vec;
 
             if (thrustVector)
-                vec = AngleToVector(this.Rotation + (_controlWing.Deflection * thrustVectorAmt));
+                vec = Utilities.AngleToVectorDegrees(this.Rotation + (_controlWing.Deflection * thrustVectorAmt));
             else
-                vec = AngleToVector(this.Rotation);
+                vec = Utilities.AngleToVectorDegrees(this.Rotation);
 
             // Add a boost effect as speed increases. Jet engines make more power at higher speeds right?
             var boostFact = Utilities.Factor(this.Velocity.Length(), thrustBoostMaxSpd);

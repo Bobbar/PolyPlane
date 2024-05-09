@@ -212,7 +212,6 @@ namespace PolyPlane.Net
                                 newPlane.PlayerName = player.Name;
                                 newPlane.IsNetObject = true;
                                 newPlane.LagAmount = World.CurrentTime() - listPacket.FrameTime;
-                                newPlane.ClientCreateTime = listPacket.FrameTime;
                                 newPlane.Radar = new Radar(newPlane, World.HudColor, Objs.Missiles, Objs.Planes);
                                 Objs.AddPlane(newPlane);
                             }
@@ -582,7 +581,6 @@ namespace PolyPlane.Net
                 return;
 
             bullet.Owner = owner;
-            bullet.ClientCreateTime = bulletPacket.FrameTime;
             bullet.LagAmount = World.CurrentTime() - bulletPacket.FrameTime;
 
             // Try to spawn the bullet ahead to compensate for latency?
