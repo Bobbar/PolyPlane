@@ -92,10 +92,13 @@ namespace PolyPlane.GameObjects
         {
             this.ID = new GameID(-1, World.GetNextObjectId());
 
-            HistoryBuffer.Interpolate = (from, to, pctElap) => GetInterpState(from, to, pctElap);
+            if (World.IsNetGame && (this is FighterPlane || this is GuidedMissile))
+            {
+                HistoryBuffer.Interpolate = (from, to, pctElap) => GetInterpState(from, to, pctElap);
 
-            if (InterpBuffer == null)
-                InterpBuffer = new InterpolationBuffer<GameObjectPacket>(new GameObjectPacket(this), World.SERVER_TICK_RATE, (from, to, pctElap) => InterpObject(from, to, pctElap));
+                if (InterpBuffer == null)
+                    InterpBuffer = new InterpolationBuffer<GameObjectPacket>(new GameObjectPacket(this), World.SERVER_TICK_RATE, (from, to, pctElap) => InterpObject(from, to, pctElap));
+            }
         }
 
         public GameObject(D2DPoint pos) : this(pos, D2DPoint.Zero, 0f, 0f)
@@ -146,7 +149,7 @@ namespace PolyPlane.GameObjects
             if (SkipFrames == 1)
                 CurrentFrame++;
 
-            if (World.IsNetGame && IsNetObject)
+            if (World.IsNetGame && IsNetObject && InterpBuffer != null)
             {
                 // Interp on clients only.
                 if (!World.IsServer && World.InterpOn)

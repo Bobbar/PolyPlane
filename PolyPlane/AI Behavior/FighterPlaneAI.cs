@@ -267,7 +267,7 @@ namespace PolyPlane.AI_Behavior
                 angle = Utilities.MaintainAltitudeAngle(this.Plane, this.Plane.Altitude - 50f);
 
             // Pitch up if we about to impact with ground.
-            if ((groundImpactTime > 0f && groundImpactTime < MIN_IMPACT_TIME) || this.Plane.Altitude < 300f)
+            if ((groundImpactTime > 0f && groundImpactTime < MIN_IMPACT_TIME) || this.Plane.Altitude < 400f)
             {
                 _avoidingGround = true;
             }
