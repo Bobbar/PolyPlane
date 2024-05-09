@@ -118,7 +118,7 @@ namespace PolyPlane
         private static RandomVariationVector _windVariation = new RandomVariationVector(MAX_WIND_MAG, 10f, 50f);
 
         public static readonly D2DColor HudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
-        public static D2DPoint Gravity = new D2DPoint(0, 9.8f);
+        public static readonly D2DPoint Gravity = new D2DPoint(0, 9.8f);
         public static readonly D2DPoint PlaneSpawnRange = new D2DPoint(-60000, 60000);
         public static readonly D2DPoint FieldXBounds = new D2DPoint(-350000, 350000);
 
