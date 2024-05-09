@@ -440,12 +440,8 @@ namespace PolyPlane.GameObjects
             base.Render(ctx);
 
             _vaporTrails.ForEach(v => v.Render(ctx));
-
             _contrail.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000 && ThrustAmount > 0f);
-
-            ctx.Gfx.AntiAliasingOff();
             _flames.ForEach(f => f.Render(ctx));
-            ctx.Gfx.AntiAliasingOn();
 
             if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
                 ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
@@ -453,13 +449,8 @@ namespace PolyPlane.GameObjects
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, _planeColor);
             Wings.ForEach(w => w.Render(ctx));
             DrawCockpit(ctx.Gfx);
-
-            ctx.Gfx.AntiAliasingOff();
             _debris.ForEach(d => d.Render(ctx));
-            ctx.Gfx.AntiAliasingOn();
-
             DrawBulletHoles(ctx);
-
             _gunSmoke.Render(ctx);
 
             //DrawFOVCone(gfx);

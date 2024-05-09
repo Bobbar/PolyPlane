@@ -57,9 +57,7 @@ namespace PolyPlane.GameObjects
 
         public override void Render(RenderContext ctx)
         {
-            ctx.Gfx.AntiAliasingOff();
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, D2DColor.Yellow);
-            ctx.Gfx.AntiAliasingOn();
         }
     }
 }
