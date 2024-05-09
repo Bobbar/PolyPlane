@@ -1,4 +1,5 @@
 ﻿using PolyPlane.Net;
+using PolyPlane.Helpers;
 
 namespace PolyPlane.GameObjects.Manager
 {
@@ -237,7 +238,7 @@ namespace PolyPlane.GameObjects.Manager
                 {
                     if (!plane.HasCrashed)
                     {
-                        var pointingRight = Helpers.IsPointingRight(plane.Rotation);
+                        var pointingRight = Utilities.IsPointingRight(plane.Rotation);
                         if (pointingRight)
                             plane.Rotation = 0f;
                         else
@@ -377,14 +378,14 @@ namespace PolyPlane.GameObjects.Manager
                     var chance = CHANCE_INIT;
 
                     // Increase chance for lower altitude.
-                    var altFact = 1f - Helpers.Factor(missile.Target.Altitude, GROUND_SCATTER_ALT);
+                    var altFact = 1f - Utilities.Factor(missile.Target.Altitude, GROUND_SCATTER_ALT);
 
                     chance -= (int)(altFact * 5);
 
                     if (!missile.Guidance.GroundScatterInCooldown)
                     {
-                        var rnd1 = Helpers.Rnd.Next(chance);
-                        var rnd2 = Helpers.Rnd.Next(chance);
+                        var rnd1 = Utilities.Rnd.Next(chance);
+                        var rnd2 = Utilities.Rnd.Next(chance);
                         if (rnd1 == rnd2)
                         {
                             missile.Guidance.LostInGround = true;

@@ -1,4 +1,5 @@
 ﻿using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -38,7 +39,7 @@ namespace PolyPlane.GameObjects
             if (_gameObject.IsExpired)
             {
                 _timeOut.Start();
-                _trailColor.a = ALPHA * (1f - Helpers.Factor(_timeOut.Value, TIMEOUT));
+                _trailColor.a = ALPHA * (1f - Utilities.Factor(_timeOut.Value, TIMEOUT));
                 return;
             }
 
@@ -68,7 +69,7 @@ namespace PolyPlane.GameObjects
             if (_gameObject.IsExpired)
             {
                 _timeOut.Start();
-                _trailColor.a = ALPHA * (1f - Helpers.Factor(_timeOut.Value, TIMEOUT));
+                _trailColor.a = ALPHA * (1f - Utilities.Factor(_timeOut.Value, TIMEOUT));
                 return;
             }
 

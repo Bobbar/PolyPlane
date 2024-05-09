@@ -3,9 +3,9 @@ using System.Net;
 using System.Numerics;
 using unvell.D2DLib;
 
-namespace PolyPlane
+namespace PolyPlane.Helpers
 {
-    public static class Helpers
+    public static class Utilities
     {
 
         public static Random Rnd = new Random();
@@ -25,7 +25,7 @@ namespace PolyPlane
 
         public static float LerpAngle(float value1, float value2, float amount)
         {
-            float delta = Repeat((value2 - value1), 360);
+            float delta = Repeat(value2 - value1, 360);
             if (delta > 180)
                 delta -= 360;
 
@@ -124,7 +124,7 @@ namespace PolyPlane
 
         public static float AngleDiff(float a, float b)
         {
-            var normDeg = ModSign((a - b), 360f);
+            var normDeg = ModSign(a - b, 360f);
 
             var absDiffDeg = Math.Min(360f - normDeg, normDeg);
 
@@ -138,7 +138,7 @@ namespace PolyPlane
 
         public static double AngleDiffD(double a, double b)
         {
-            var normDeg = ModSignD((a - b), 360d);
+            var normDeg = ModSignD(a - b, 360d);
 
             var absDiffDeg = Math.Min(360d - normDeg, normDeg);
 
@@ -194,7 +194,7 @@ namespace PolyPlane
 
         public static float Cross(D2DPoint vector1, D2DPoint vector2)
         {
-            return (vector1.X * vector2.Y) - (vector1.Y * vector2.X);
+            return vector1.X * vector2.Y - vector1.Y * vector2.X;
         }
 
         public static T CycleEnum<T>(T e) where T : struct, IConvertible
@@ -266,10 +266,10 @@ namespace PolyPlane
         public static D2DColor LerpColor(D2DColor color1, D2DColor color2, float amount)
         {
             var newColor = new D2DColor(
-                color1.a + ((color2.a - color1.a) * amount),
-                color1.r + ((color2.r - color1.r) * amount),
-                color1.g + ((color2.g - color1.g) * amount),
-                color1.b + ((color2.b - color1.b) * amount));
+                color1.a + (color2.a - color1.a) * amount,
+                color1.r + (color2.r - color1.r) * amount,
+                color1.g + (color2.g - color1.g) * amount,
+                color1.b + (color2.b - color1.b) * amount);
 
             return newColor;
         }
@@ -278,9 +278,9 @@ namespace PolyPlane
         {
             var dir = pos - obj.Position;
             var angle = dir.Angle(true);
-            var diff = Helpers.AngleDiff(obj.Rotation, angle);
+            var diff = AngleDiff(obj.Rotation, angle);
 
-            return diff <= (fov * 0.5f);
+            return diff <= fov * 0.5f;
         }
 
         public static D2DPoint RandOPoint(float minMax)
@@ -321,14 +321,14 @@ namespace PolyPlane
             bool c = false;
             for (i = 0, j = poly.Length - 1; i < poly.Length; j = i++)
             {
-                if (((poly[i].Y > pnt.Y) != (poly[j].Y > pnt.Y)) && (pnt.X < (poly[j].X - poly[i].X) * (pnt.Y - poly[i].Y) / (poly[j].Y - poly[i].Y) + poly[i].X))
+                if (poly[i].Y > pnt.Y != poly[j].Y > pnt.Y && pnt.X < (poly[j].X - poly[i].X) * (pnt.Y - poly[i].Y) / (poly[j].Y - poly[i].Y) + poly[i].X)
                     c = !c;
             }
 
             return c;
         }
 
-        public static float ImpactTime(GameObjects.FighterPlane plane, Missile missile)
+        public static float ImpactTime(FighterPlane plane, Missile missile)
         {
             var dist = plane.Position.DistanceTo(missile.Position);
             var closingRate = ClosingRate(plane, missile);
@@ -337,16 +337,16 @@ namespace PolyPlane
             return navTime;
         }
 
-        public static float ImpactTime(GameObjects.FighterPlane plane, D2DPoint pos)
+        public static float ImpactTime(FighterPlane plane, D2DPoint pos)
         {
             var dist = plane.Position.DistanceTo(pos);
-            var navTime = ImpactTime(dist, (plane.Velocity.Length()), 1f);
+            var navTime = ImpactTime(dist, plane.Velocity.Length(), 1f);
             return navTime;
         }
 
         public static float ImpactTime(float dist, float velo, float accel)
         {
-            var finalVelo = (float)Math.Sqrt((Math.Pow(velo, 2f) + 2f * accel * dist));
+            var finalVelo = (float)Math.Sqrt(Math.Pow(velo, 2f) + 2f * accel * dist);
 
             return (finalVelo - velo) / accel;
         }
@@ -380,7 +380,7 @@ namespace PolyPlane
             var groundPos2 = new D2DPoint(obj.Position.X + 99999f, 0f);
 
             // Find where our current velocity vector intersects the ground.
-            if (CollisionHelpers.IsIntersecting(obj.Position, obj.Position + (obj.Velocity * 1000f), groundPos1, groundPos2, out D2DPoint iPos))
+            if (CollisionHelpers.IsIntersecting(obj.Position, obj.Position + obj.Velocity * 1000f, groundPos1, groundPos2, out D2DPoint iPos))
                 groundPos = iPos;
 
             var groundDist = obj.Position.DistanceTo(groundPos);
@@ -404,10 +404,10 @@ namespace PolyPlane
             var altDiff = alt - targAlt;
             var sign = Math.Sign(altDiff);
 
-            var vsFact = (2000f * Factor(Math.Abs(obj.VerticalSpeed), 1f)) + 200f;
+            var vsFact = 2000f * Factor(Math.Abs(obj.VerticalSpeed), 1f) + 200f;
             var fact = Factor(Math.Abs(altDiff), vsFact);
 
-            var amt = (defAmt * fact) * sign;
+            var amt = defAmt * fact * sign;
             var altDir = 0f;
             if (!toRight)
                 altDir = 180f - amt;
@@ -478,7 +478,7 @@ namespace PolyPlane
             const float MIN_ALT = 4000f;
             const float MAX_ALT = 12000f;
 
-            var point = new D2DPoint(Helpers.Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Helpers.Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
+            var point = new D2DPoint(Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
             if (objs.Planes.Count == 0)
                 return point;
 
@@ -486,7 +486,7 @@ namespace PolyPlane
 
             for (int i = 0; i < 3000; i++)
             {
-                point = new D2DPoint(Helpers.Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Helpers.Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
+                point = new D2DPoint(Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
                 min = objs.Planes.Min(p => p.Position.DistanceTo(point));
 
                 if (min >= MIN_DIST)

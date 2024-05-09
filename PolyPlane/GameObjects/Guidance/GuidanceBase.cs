@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using PolyPlane.Helpers;
+using System.Diagnostics;
 
 namespace PolyPlane.GameObjects.Guidance
 {
@@ -95,8 +96,8 @@ namespace PolyPlane.GameObjects.Guidance
 
             // Lerp from current rotation towards guidance rotation as we 
             // approach the specified arm time.
-            var armFactor = Helpers.Factor(_armTimer.Value, _armTimer.Interval);
-            var finalRot = Helpers.LerpAngle(initialAngle, rotation, rotFactor * armFactor);
+            var armFactor = Utilities.Factor(_armTimer.Value, _armTimer.Interval);
+            var finalRot = Utilities.LerpAngle(initialAngle, rotation, rotFactor * armFactor);
 
             return finalRot;
         }

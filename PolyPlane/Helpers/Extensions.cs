@@ -1,6 +1,6 @@
 ﻿using unvell.D2DLib;
 
-namespace PolyPlane
+namespace PolyPlane.Helpers
 {
     public static class Extensions
     {
@@ -44,7 +44,7 @@ namespace PolyPlane
             var angle = (float)Math.Atan2(vector.Y, vector.X) * (180f / (float)Math.PI);
 
             if (clamp)
-                angle = Helpers.ClampAngle(angle);
+                angle = Utilities.ClampAngle(angle);
 
             return angle;
         }
@@ -54,7 +54,7 @@ namespace PolyPlane
             var angle = (float)Math.Atan2(vector.Y, vector.X);
 
             if (clamp)
-                angle = Helpers.ClampAngle(angle);
+                angle = Utilities.ClampAngle(angle);
 
             return angle;
         }
@@ -64,19 +64,19 @@ namespace PolyPlane
             var angle = Math.Atan2(vector.Y, vector.X) * (180d / Math.PI);
 
             if (clamp)
-                angle = Helpers.ClampAngleD(angle);
+                angle = Utilities.ClampAngleD(angle);
 
             return angle;
         }
 
         public static float Cross(this D2DPoint vector, D2DPoint other)
         {
-            return Helpers.Cross(vector, other);
+            return Utilities.Cross(vector, other);
         }
 
         public static float AngleBetween(this D2DPoint vector, D2DPoint other, bool clamp = false)
         {
-            return Helpers.AngleBetween(vector, other, clamp);
+            return Utilities.AngleBetween(vector, other, clamp);
         }
 
         public static float AngleTo(this D2DPoint vector, D2DPoint other, bool clamp = false)
@@ -106,10 +106,10 @@ namespace PolyPlane
 
         public static bool Contains(this D2DRect rect, D2DRect rect2)
         {
-            return (rect.X <= rect2.X) &&
-            ((rect2.X + rect2.Width) <= (rect.X + rect.Width)) &&
-            (rect.Y <= rect2.Y) &&
-            ((rect2.Y + rect2.Height) <= (rect.Y + rect.Height));
+            return rect.X <= rect2.X &&
+            rect2.X + rect2.Width <= rect.X + rect.Width &&
+            rect.Y <= rect2.Y &&
+            rect2.Y + rect2.Height <= rect.Y + rect.Height;
         }
 
         public static bool Contains(this D2DRect rect, D2DPoint[] poly)
@@ -136,7 +136,7 @@ namespace PolyPlane
         public static T Shift<T>(this List<T> list)
         {
             if (list.Count == 0)
-                return default(T);
+                return default;
 
             T item = list[0];
             list.RemoveAt(0);

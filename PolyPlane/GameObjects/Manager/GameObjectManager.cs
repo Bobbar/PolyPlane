@@ -1,4 +1,5 @@
 ﻿using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 
 namespace PolyPlane.GameObjects
 {
@@ -114,7 +115,7 @@ namespace PolyPlane.GameObjects
                 Explosions.Add(explosion);
 
                 if (explosion.Altitude <= 10f)
-                    GroundImpacts.Add(new D2DPoint(explosion.Position.X, Helpers.Rnd.NextFloat(0f, 5f)));
+                    GroundImpacts.Add(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 5f)));
             }
         }
 

@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using unvell.D2DLib;
 
-namespace PolyPlane
+namespace PolyPlane.Helpers
 {
     /// <summary>
     /// Credit: https://www.habrador.com/tutorials/math/5-line-line-intersection/
@@ -36,8 +36,8 @@ namespace PolyPlane
             float D = l2_normal.Y;
 
             //To get k we just use one point on the line
-            float k1 = (A * l1_start.X) + (B * l1_start.Y);
-            float k2 = (C * l2_start.X) + (D * l2_start.Y);
+            float k1 = A * l1_start.X + B * l1_start.Y;
+            float k2 = C * l2_start.X + D * l2_start.Y;
 
             //Step 2: are the lines parallel? -> no solutions
             if (IsParallel(l1_normal, l2_normal))
@@ -123,7 +123,7 @@ namespace PolyPlane
             var mat = Matrix3x2.CreateRotation(-ellipseRotation * (float)(Math.PI / 180f), ellipse.origin);
             var transPos = D2DPoint.Transform(pos, mat);
 
-            var p = (Math.Pow(transPos.X - ellipse.origin.X, 2f) / Math.Pow(ellipse.radiusX, 2f)) + (Math.Pow(transPos.Y - ellipse.origin.Y, 2f) / Math.Pow(ellipse.radiusY, 2f));
+            var p = Math.Pow(transPos.X - ellipse.origin.X, 2f) / Math.Pow(ellipse.radiusX, 2f) + Math.Pow(transPos.Y - ellipse.origin.Y, 2f) / Math.Pow(ellipse.radiusY, 2f);
 
             return p <= 1f;
         }

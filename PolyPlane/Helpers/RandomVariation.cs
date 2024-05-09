@@ -1,4 +1,4 @@
-﻿namespace PolyPlane
+﻿namespace PolyPlane.Helpers
 {
     public class RandomVariationFloat
     {
@@ -20,23 +20,23 @@
             _minTime = minTime;
             _maxTime = maxTime;
 
-            _target = Helpers.Rnd.NextFloat(_minValue, _maxValue);
+            _target = Utilities.Rnd.NextFloat(_minValue, _maxValue);
             _prevTarget = _target;
             Value = _target;
-            _nextTime = Helpers.Rnd.NextFloat(_minTime, _maxTime);
+            _nextTime = Utilities.Rnd.NextFloat(_minTime, _maxTime);
         }
 
         public void Update(float dt)
         {
             if (_curTime >= _nextTime)
             {
-                _target = Helpers.Rnd.NextFloat(_minValue, _maxValue);
-                _nextTime = Helpers.Rnd.NextFloat(_minTime, _maxTime);
+                _target = Utilities.Rnd.NextFloat(_minValue, _maxValue);
+                _nextTime = Utilities.Rnd.NextFloat(_minTime, _maxTime);
                 _curTime = 0f;
                 _prevTarget = Value;
             }
 
-            Value = Helpers.Lerp(_prevTarget, _target, Helpers.Factor(_curTime, _nextTime));
+            Value = Utilities.Lerp(_prevTarget, _target, Utilities.Factor(_curTime, _nextTime));
 
             _curTime += dt;
         }
@@ -63,10 +63,10 @@
             _minTime = minTime;
             _maxTime = maxTime;
 
-            _target = new D2DPoint(Helpers.Rnd.NextFloat(_minValue, _maxValue), Helpers.Rnd.NextFloat(_minValue, _maxValue));
+            _target = new D2DPoint(Utilities.Rnd.NextFloat(_minValue, _maxValue), Utilities.Rnd.NextFloat(_minValue, _maxValue));
             _prevTarget = _target;
             Value = _target;
-            _nextTime = Helpers.Rnd.NextFloat(_minTime, _maxTime);
+            _nextTime = Utilities.Rnd.NextFloat(_minTime, _maxTime);
         }
 
         public RandomVariationPoint(float minValue, float maxValue, float minTime, float maxTime)
@@ -76,23 +76,23 @@
             _minTime = minTime;
             _maxTime = maxTime;
 
-            _target = new D2DPoint(Helpers.Rnd.NextFloat(_minValue, _maxValue), Helpers.Rnd.NextFloat(_minValue, _maxValue));
+            _target = new D2DPoint(Utilities.Rnd.NextFloat(_minValue, _maxValue), Utilities.Rnd.NextFloat(_minValue, _maxValue));
             _prevTarget = _target;
             Value = _target;
-            _nextTime = Helpers.Rnd.NextFloat(_minTime, _maxTime);
+            _nextTime = Utilities.Rnd.NextFloat(_minTime, _maxTime);
         }
 
         public void Update(float dt)
         {
             if (_curTime >= _nextTime)
             {
-                _target = new D2DPoint(Helpers.Rnd.NextFloat(_minValue, _maxValue), Helpers.Rnd.NextFloat(_minValue, _maxValue));
-                _nextTime = Helpers.Rnd.NextFloat(_minTime, _maxTime);
+                _target = new D2DPoint(Utilities.Rnd.NextFloat(_minValue, _maxValue), Utilities.Rnd.NextFloat(_minValue, _maxValue));
+                _nextTime = Utilities.Rnd.NextFloat(_minTime, _maxTime);
                 _curTime = 0f;
                 _prevTarget = Value;
             }
 
-            Value = Helpers.LerpPoints(_prevTarget, _target, Helpers.Factor(_curTime, _nextTime));
+            Value = Utilities.LerpPoints(_prevTarget, _target, Utilities.Factor(_curTime, _nextTime));
 
             _curTime += dt;
         }
@@ -123,7 +123,7 @@
         {
             get
             {
-                var vec = Helpers.AngleToVectorDegrees(_currentDir) * _currentMag;
+                var vec = Utilities.AngleToVectorDegrees(_currentDir) * _currentMag;
                 return vec;
             }
         }
@@ -135,42 +135,42 @@
             _minTime = minTime;
             _maxTime = maxTime;
 
-            _targetMag = Helpers.Rnd.NextFloat(_minMag, _maxMag);
+            _targetMag = Utilities.Rnd.NextFloat(_minMag, _maxMag);
             _prevTargetMag = _targetMag;
             _currentMag = _targetMag;
 
-            _targetDir = Helpers.Rnd.NextFloat(0f, 360f);
+            _targetDir = Utilities.Rnd.NextFloat(0f, 360f);
             _prevTargetDir = _targetDir;
             _currentDir = _targetDir;
 
-            _nextMagTime = Helpers.Rnd.NextFloat(_minTime, _maxTime);
-            _nextDirTime = Helpers.Rnd.NextFloat(_minTime, _maxTime);
+            _nextMagTime = Utilities.Rnd.NextFloat(_minTime, _maxTime);
+            _nextDirTime = Utilities.Rnd.NextFloat(_minTime, _maxTime);
         }
 
         public void Update(float dt)
         {
             if (_curMagTime >= _nextMagTime)
             {
-                _targetMag = Helpers.Rnd.NextFloat(_minMag, _maxMag);
-                _nextMagTime = Helpers.Rnd.NextFloat(_minTime, _maxTime);
+                _targetMag = Utilities.Rnd.NextFloat(_minMag, _maxMag);
+                _nextMagTime = Utilities.Rnd.NextFloat(_minTime, _maxTime);
                 _curMagTime = 0f;
                 _prevTargetMag = _currentMag;
             }
 
-            _currentMag = Helpers.Lerp(_prevTargetMag, _targetMag, Helpers.Factor(_curMagTime, _nextMagTime));
+            _currentMag = Utilities.Lerp(_prevTargetMag, _targetMag, Utilities.Factor(_curMagTime, _nextMagTime));
             _curMagTime += dt;
 
 
             if (_curDirTime >= _nextDirTime)
             {
-                _targetDir = Helpers.Rnd.NextFloat(0f, 360f);
-                _nextDirTime = Helpers.Rnd.NextFloat(_minTime, _maxTime);
+                _targetDir = Utilities.Rnd.NextFloat(0f, 360f);
+                _nextDirTime = Utilities.Rnd.NextFloat(_minTime, _maxTime);
                 _curDirTime = 0f;
                 _prevTargetDir = _currentDir;
             }
 
-            //_currentDir = Helpers.Lerp(_prevTargetDir, _targetDir, Helpers.Factor(_curDirTime, _nextDirTime));
-            _currentDir = Helpers.LerpAngle(_prevTargetDir, _targetDir, Helpers.Factor(_curDirTime, _nextDirTime));
+            //_currentDir = Utilities.Lerp(_prevTargetDir, _targetDir, Utilities.Factor(_curDirTime, _nextDirTime));
+            _currentDir = Utilities.LerpAngle(_prevTargetDir, _targetDir, Utilities.Factor(_curDirTime, _nextDirTime));
 
             _curDirTime += dt;
         }

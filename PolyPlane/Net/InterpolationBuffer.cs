@@ -1,4 +1,6 @@
-﻿namespace PolyPlane
+﻿using PolyPlane.Helpers;
+
+namespace PolyPlane
 {
     public class InterpolationBuffer<T>
     {

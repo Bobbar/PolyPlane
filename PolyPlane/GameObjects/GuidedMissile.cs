@@ -1,5 +1,6 @@
 ﻿using PolyPlane.GameObjects.Guidance;
 using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -127,7 +128,7 @@ namespace PolyPlane.GameObjects
             {
                 const float EJECT_FORCE = 200f;
                 var toRight = ownerPlane.FlipDirection == Direction.Right;
-                var rotVec = Helpers.AngleToVectorDegrees(ownerPlane.Rotation + (toRight ? 180f : 0f));
+                var rotVec = Utilities.AngleToVectorDegrees(ownerPlane.Rotation + (toRight ? 180f : 0f));
                 var topVec = new D2DPoint(rotVec.Y, -rotVec.X);
                 this.Velocity += topVec * EJECT_FORCE;
             }
@@ -167,7 +168,7 @@ namespace PolyPlane.GameObjects
 
                 // Add a quick impulse/boost when we ignite.
                 const float BOOST_AMT = 90f;
-                this.Velocity += Helpers.AngleToVectorDegrees(_initRotation, BOOST_AMT);
+                this.Velocity += Utilities.AngleToVectorDegrees(_initRotation, BOOST_AMT);
             };
 
             _igniteCooldown.Restart();
@@ -208,7 +209,7 @@ namespace PolyPlane.GameObjects
             else
             {
                 const float DEF_AMT = 0.2f; // How much the flame will be deflected in relation to velocity.
-                flameAngle = this.Rotation - (Helpers.ClampAngle180(this.Rotation - this.Velocity.Angle(true)) * DEF_AMT);
+                flameAngle = this.Rotation - (Utilities.ClampAngle180(this.Rotation - this.Velocity.Angle(true)) * DEF_AMT);
             }
 
             // Make the flame do flamey things...(Wiggle and color)
@@ -265,14 +266,14 @@ namespace PolyPlane.GameObjects
 
                 // Compute deflection.
                 var veloAngle = this.Velocity.Angle(true);
-                var nextDeflect = Helpers.ClampAngle180(guideRotation - veloAngle);
+                var nextDeflect = Utilities.ClampAngle180(guideRotation - veloAngle);
 
                 // Adjust the deflection as speed, rotation speed and AoA increases.
                 // This is to try to prevent over-rotation caused by thrust vectoring.
                 if (_currentFuel > 0f && _useThrustVectoring)
                 {
                     const float MIN_DEF_SPD = 300f;//450f; // Minimum speed required for full deflection.
-                    var spdFact = Helpers.Factor(this.Velocity.Length(), MIN_DEF_SPD);
+                    var spdFact = Utilities.Factor(this.Velocity.Length(), MIN_DEF_SPD);
 
                     const float MAX_DEF_AOA = 20f;// Maximum AoA allowed. Reduce deflection as AoA increases.
                     var aoaFact = 1f - (Math.Abs(_rocketBody.AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 2f))));
@@ -416,9 +417,9 @@ namespace PolyPlane.GameObjects
             const float FOV = 40f;
             var color = D2DColor.Red;
 
-            var centerLine = Helpers.AngleToVectorDegrees(this.Rotation, LEN);
-            var cone1 = Helpers.AngleToVectorDegrees(this.Rotation + (FOV * 0.5f), LEN);
-            var cone2 = Helpers.AngleToVectorDegrees(this.Rotation - (FOV * 0.5f), LEN);
+            var centerLine = Utilities.AngleToVectorDegrees(this.Rotation, LEN);
+            var cone1 = Utilities.AngleToVectorDegrees(this.Rotation + (FOV * 0.5f), LEN);
+            var cone2 = Utilities.AngleToVectorDegrees(this.Rotation - (FOV * 0.5f), LEN);
 
 
             gfx.DrawLine(this.Position, this.Position + cone1, D2DColor.Red);
@@ -435,7 +436,7 @@ namespace PolyPlane.GameObjects
             // How is it so simple?
             var r = pos - GetCenterOfGravity();
 
-            var torque = Helpers.Cross(r, force);
+            var torque = Utilities.Cross(r, force);
             return torque;
         }
 

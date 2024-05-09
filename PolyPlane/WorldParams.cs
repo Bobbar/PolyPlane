@@ -1,4 +1,5 @@
 ﻿using NetStack.Quantization;
+using PolyPlane.Helpers;
 using PolyPlane.GameObjects;
 using unvell.D2DLib;
 
@@ -157,7 +158,7 @@ namespace PolyPlane
                 return AirDensity;
 
             var alt = Math.Abs(position.Y);
-            var fact = 1f - Helpers.Factor(alt, MAX_ALTITUDE);
+            var fact = 1f - Utilities.Factor(alt, MAX_ALTITUDE);
 
             return AirDensity * fact;
         }

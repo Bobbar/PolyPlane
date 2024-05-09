@@ -1,4 +1,5 @@
 ﻿using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -34,7 +35,7 @@ namespace PolyPlane.GameObjects
             this.Polygon = new RenderPoly(_poly);
             this.Polygon.Update(this.Position, this.Rotation, World.RenderScale * this.RenderOffset);
 
-            var velo = (Helpers.AngleToVectorDegrees(plane.Rotation, Bullet.Speed));
+            var velo = (Utilities.AngleToVectorDegrees(plane.Rotation, Bullet.Speed));
             velo += plane.Velocity;
             this.Velocity = velo;
         }

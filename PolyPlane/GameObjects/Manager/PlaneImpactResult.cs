@@ -1,4 +1,4 @@
-﻿namespace PolyPlane.GameObjects
+﻿namespace PolyPlane.GameObjects.Manager
 {
     public class PlaneImpactResult
     {

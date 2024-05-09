@@ -1,4 +1,5 @@
 ﻿using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -24,7 +25,7 @@ namespace PolyPlane.GameObjects
             // Make the decoy shoot out from the top of the plane.
             const float EJECT_FORCE = 100f;
             var toRight = owner.FlipDirection == Direction.Right;
-            var rotVec = Helpers.AngleToVectorDegrees(owner.Rotation + (toRight ? 0f : 180f));
+            var rotVec = Utilities.AngleToVectorDegrees(owner.Rotation + (toRight ? 0f : 180f));
             var topVec = new D2DPoint(rotVec.Y, -rotVec.X);
             this.Velocity += topVec * EJECT_FORCE;
         }

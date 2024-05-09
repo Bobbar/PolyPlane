@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects;
+using PolyPlane.Helpers;
 
 namespace PolyPlane.Rendering
 {
@@ -36,7 +37,7 @@ namespace PolyPlane.Rendering
             var dims = new List<D2DPoint>();
 
             // Try to make clouds at higher altitude more thin and whispy?
-            var altFact = Helpers.Factor(Math.Abs(position.Y), MAX_ALT);
+            var altFact = Utilities.Factor(Math.Abs(position.Y), MAX_ALT);
 
             for (int i = 0; i < nPnts; i++)
             {

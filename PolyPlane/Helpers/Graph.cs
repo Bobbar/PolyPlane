@@ -1,6 +1,6 @@
 ﻿using unvell.D2DLib;
 
-namespace PolyPlane
+namespace PolyPlane.Helpers
 {
     public class Graph
     {
@@ -106,8 +106,8 @@ namespace PolyPlane
             gfx.PushTransform();
             gfx.ScaleTransform(scale, scale);
 
-            var tmax = pos.Y + (_drawSize.Height * 0.5f);
-            var tmin = pos.Y - (_drawSize.Height * 0.5f);
+            var tmax = pos.Y + _drawSize.Height * 0.5f;
+            var tmin = pos.Y - _drawSize.Height * 0.5f;
 
             // Draw labels.
             if (_labels != null && _labels.Length == _numVals)
@@ -118,7 +118,7 @@ namespace PolyPlane
                     var vScaled = ScaleValue(v, pos, _valBounds[j]);
                     vScaled = tmax - vScaled + tmin; // Flip Y direction.
 
-                    var lblpnt = new D2DPoint(pos.X - (_drawSize.Width * 0.5f), vScaled);
+                    var lblpnt = new D2DPoint(pos.X - _drawSize.Width * 0.5f, vScaled);
                     var lblrect = new D2DRect(lblpnt, new D2DSize(100, 20));
                     gfx.DrawText(_labels[j], D2DColor.White, "Consolas", 10f * scale, lblrect);
                 }
@@ -134,7 +134,7 @@ namespace PolyPlane
                     var vScaled = ScaleValue(v, pos, _valBounds[j]);
                     vScaled = tmax - vScaled + tmin; // Flip Y direction.
 
-                    var pnt = new D2DPoint((i * _xPadding) + pos.X - (_drawSize.Width * 0.5f), vScaled);
+                    var pnt = new D2DPoint(i * _xPadding + pos.X - _drawSize.Width * 0.5f, vScaled);
 
                     gfx.FillEllipse(new D2DEllipse(pnt, new D2DSize(_pointSize, _pointSize)), D2DColor.FromGDIColor(_colors[j % _colors.Length]));
                     //gfx.DrawEllipse(new D2DEllipse(pnt, new D2DSize(5f, 5f)), D2DColor.FromGDIColor(_colors[j % _colors.Length]));
@@ -149,10 +149,10 @@ namespace PolyPlane
 
         private float ScaleValue(float value, D2DPoint pos, MinMax range)
         {
-            var tmax = pos.Y + (_drawSize.Height * 0.5f);
-            var tmin = pos.Y - (_drawSize.Height * 0.5f);
+            var tmax = pos.Y + _drawSize.Height * 0.5f;
+            var tmin = pos.Y - _drawSize.Height * 0.5f;
 
-            var scaled = ((value - range.MinY) / (range.MaxY - range.MinY)) * (tmax - tmin) + tmin;
+            var scaled = (value - range.MinY) / (range.MaxY - range.MinY) * (tmax - tmin) + tmin;
             return scaled;
         }
 

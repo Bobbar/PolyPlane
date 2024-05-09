@@ -1,6 +1,6 @@
 ﻿using ENet;
 
-namespace PolyPlane.Net
+namespace PolyPlane.Net.NetHost
 {
     public class ServerNetHost : NetPlayHost
     {
@@ -51,13 +51,13 @@ namespace PolyPlane.Net
 
             switch (netPackett.Type)
             {
-                case PacketTypes.PlaneUpdate 
+                case PacketTypes.PlaneUpdate
                 or PacketTypes.MissileUpdate
-                or PacketTypes.ChatMessage 
-                or PacketTypes.NewBullet 
-                or PacketTypes.NewMissile 
-                or PacketTypes.Impact 
-                or PacketTypes.PlayerDisconnect 
+                or PacketTypes.ChatMessage
+                or PacketTypes.NewBullet
+                or PacketTypes.NewMissile
+                or PacketTypes.Impact
+                or PacketTypes.PlayerDisconnect
                 or PacketTypes.PlayerReset:
 
                     // Queue certain updates to re-broadcast ASAP.

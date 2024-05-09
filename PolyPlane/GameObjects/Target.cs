@@ -1,4 +1,5 @@
 ﻿using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -150,7 +151,7 @@ namespace PolyPlane.GameObjects
                 _prevRotTarg = this.RotationSpeed;
             }
 
-            this.RotationSpeed = Helpers.Lerp(_prevRotTarg, _targRot, Helpers.Factor(_curRotTime, _nextRotTime));
+            this.RotationSpeed = Utilities.Lerp(_prevRotTarg, _targRot, Utilities.Factor(_curRotTime, _nextRotTime));
             _curRotTime += dt;
 
 
@@ -162,7 +163,7 @@ namespace PolyPlane.GameObjects
                 _prevVeloTarg = this.Velocity;
             }
 
-            this.Velocity = Helpers.LerpPoints(_prevVeloTarg, _targVelo, Helpers.Factor(_curVeloTime, _nextVeloTime));
+            this.Velocity = Utilities.LerpPoints(_prevVeloTarg, _targVelo, Utilities.Factor(_curVeloTime, _nextVeloTime));
             _curVeloTime += dt;
 
 

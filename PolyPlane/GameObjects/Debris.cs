@@ -1,4 +1,5 @@
 ﻿using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -13,10 +14,10 @@ namespace PolyPlane.GameObjects
             _color = color;
             this.Polygon = new RenderPoly(RandomPoly(8, 12));
 
-            this.RotationSpeed = Helpers.Rnd.NextFloat(-200f, 200f);
+            this.RotationSpeed = Utilities.Rnd.NextFloat(-200f, 200f);
 
             this.Velocity = velo * 0.7f;
-            this.Velocity += Helpers.RandOPoint(100f);
+            this.Velocity += Utilities.RandOPoint(100f);
 
             _flame = new Flame(this, D2DPoint.Zero, 3f);
         }

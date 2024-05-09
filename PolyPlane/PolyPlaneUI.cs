@@ -3,8 +3,10 @@ using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Manager;
 using PolyPlane.Net;
 using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using System.Diagnostics;
 using unvell.D2DLib;
+using PolyPlane.Net.NetHost;
 
 namespace PolyPlane
 {
@@ -62,7 +64,7 @@ namespace PolyPlane
         private RenderManager _render;
         private FPSLimiter _fpsLimiter = new FPSLimiter();
         private bool _hasFocus = true;
-        private Random _rnd => Helpers.Rnd;
+        private Random _rnd => Utilities.Rnd;
 
         public PolyPlaneUI()
         {
@@ -329,7 +331,7 @@ namespace PolyPlane
             }
             else
             {
-                _playerPlane = new FighterPlane(Helpers.FindSafeSpawnPoint(_objs));
+                _playerPlane = new FighterPlane(Utilities.FindSafeSpawnPoint(_objs));
             }
 
             _playerPlane.PlayerName = playerName;
@@ -369,7 +371,7 @@ namespace PolyPlane
         {
             plane.AutoPilotOn = true;
             plane.ThrustOn = true;
-            plane.Position = Helpers.FindSafeSpawnPoint(_objs);
+            plane.Position = Utilities.FindSafeSpawnPoint(_objs);
             plane.Velocity = new D2DPoint(500f, 0f);
             plane.SyncFixtures();
             plane.RotationSpeed = 0f;
@@ -390,7 +392,7 @@ namespace PolyPlane
 
             _playerPlane.AutoPilotOn = true;
             _playerPlane.ThrustOn = true;
-            _playerPlane.Position = Helpers.FindSafeSpawnPoint(_objs);
+            _playerPlane.Position = Utilities.FindSafeSpawnPoint(_objs);
             _playerPlane.Velocity = new D2DPoint(500f, 0f);
             _playerPlane.RotationSpeed = 0f;
             _playerPlane.Rotation = 0f;
@@ -416,12 +418,12 @@ namespace PolyPlane
 
         private FighterPlane GetAIPlane()
         {
-            var pos = Helpers.FindSafeSpawnPoint(_objs);
+            var pos = Utilities.FindSafeSpawnPoint(_objs);
 
-            var aiPlane = new FighterPlane(pos, Helpers.RandomEnum<AIPersonality>());
+            var aiPlane = new FighterPlane(pos, Utilities.RandomEnum<AIPersonality>());
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, _hudColor, _objs.Missiles, _objs.Planes);
-            aiPlane.PlayerName = "(BOT) " + Helpers.GetRandomName();
+            aiPlane.PlayerName = "(BOT) " + Utilities.GetRandomName();
             aiPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
             aiPlane.FireMissileCallback = (m) =>
             {
@@ -631,7 +633,7 @@ namespace PolyPlane
             // Hold current altitude while player is typeing.
             if (_netMan != null && _netMan.ChatInterface.ChatIsActive)
             {
-                var altHoldAngle = Helpers.MaintainAltitudeAngle(_playerPlane, _playerPlane.Altitude);
+                var altHoldAngle = Utilities.MaintainAltitudeAngle(_playerPlane, _playerPlane.Altitude);
                 _playerPlane.SetAutoPilotAngle(altHoldAngle);
             }
 
@@ -1013,7 +1015,7 @@ namespace PolyPlane
                     break;
 
                 case 'y':
-                    //_targetTypes = Helpers.CycleEnum(_targetTypes);
+                    //_targetTypes = Utilities.CycleEnum(_targetTypes);
                     break;
 
                 case '=' or '+':

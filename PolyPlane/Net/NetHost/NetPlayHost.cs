@@ -2,7 +2,7 @@
 using NetStack.Threading;
 using PolyPlane.GameObjects;
 
-namespace PolyPlane.Net
+namespace PolyPlane.Net.NetHost
 {
     public abstract class NetPlayHost : IDisposable
     {
@@ -35,7 +35,7 @@ namespace PolyPlane.Net
 
         public void Start()
         {
-            ENet.Library.Initialize();
+            Library.Initialize();
 
             DoStart();
 
@@ -254,7 +254,7 @@ namespace PolyPlane.Net
             _runLoop = false;
             Host?.Flush();
             Host?.Dispose();
-            ENet.Library.Deinitialize();
+            Library.Deinitialize();
         }
     }
 }

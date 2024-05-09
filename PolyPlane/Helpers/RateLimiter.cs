@@ -1,4 +1,4 @@
-﻿namespace PolyPlane
+﻿namespace PolyPlane.Helpers
 {
     /// <summary>
     /// Provides basic rate limiting for a single value.
@@ -29,7 +29,7 @@
 
             var diff = _target - _current;
             var sign = Math.Sign(diff);
-            var amt = (_rate * sign) * dt;
+            var amt = _rate * sign * dt;
 
             if (Math.Abs(amt) > Math.Abs(diff))
                 amt = diff;
@@ -72,9 +72,9 @@
             if (_current == _target)
                 return;
 
-            var diff = Helpers.ClampAngle180(_target - _current);
+            var diff = Utilities.ClampAngle180(_target - _current);
             var sign = Math.Sign(diff);
-            var amt = (_rate * sign) * dt;
+            var amt = _rate * sign * dt;
 
             if (Math.Abs(amt) > Math.Abs(diff))
                 amt = diff;

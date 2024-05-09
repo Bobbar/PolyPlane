@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
@@ -50,7 +51,7 @@ namespace PolyPlane.Rendering
                 _plane.PlaneColor = PlaneColor;
                 _plane.Update(World.DT, vpSize, World.RenderScale);
                 _plane.Position = center;
-                _angle = Helpers.ClampAngle(_angle + 1f);
+                _angle = Utilities.ClampAngle(_angle + 1f);
                 _plane.Rotation = _angle;
                 _plane.Render(_ctx);
 

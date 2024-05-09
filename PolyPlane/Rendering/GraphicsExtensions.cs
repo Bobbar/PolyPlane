@@ -1,6 +1,7 @@
-﻿using unvell.D2DLib;
+﻿using PolyPlane.Helpers;
+using unvell.D2DLib;
 
-namespace PolyPlane
+namespace PolyPlane.Rendering
 {
     public static class GraphicsExtensions
     {
@@ -19,7 +20,7 @@ namespace PolyPlane
             var tri = new D2DPoint[TrianglePoly.Length];
             Array.Copy(TrianglePoly, tri, tri.Length);
 
-            Helpers.ApplyTranslation(TrianglePoly, tri, 0f, position, scale);
+            Utilities.ApplyTranslation(TrianglePoly, tri, 0f, position, scale);
 
             gfx.DrawPolygon(tri, color, 1f, D2DDashStyle.Solid, fillColor);
 
@@ -32,12 +33,12 @@ namespace PolyPlane
             const float ARROW_ANGLE = 140f;
 
             var angle = (end - start).Angle(true);
-            var arrow1 = Helpers.AngleToVectorDegrees(angle + ARROW_ANGLE);
-            var arrow2 = Helpers.AngleToVectorDegrees(angle - ARROW_ANGLE);
+            var arrow1 = Utilities.AngleToVectorDegrees(angle + ARROW_ANGLE);
+            var arrow2 = Utilities.AngleToVectorDegrees(angle - ARROW_ANGLE);
 
             gfx.DrawLine(start, end, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
-            gfx.DrawLine(end, end + (arrow1 * ARROW_LEN), color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
-            gfx.DrawLine(end, end + (arrow2 * ARROW_LEN), color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+            gfx.DrawLine(end, end + arrow1 * ARROW_LEN, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+            gfx.DrawLine(end, end + arrow2 * ARROW_LEN, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
         }
 
         public static void DrawArrowClamped(this D2DGraphics gfx, D2DRect viewport, D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f)
@@ -46,20 +47,20 @@ namespace PolyPlane
             const float ARROW_ANGLE = 140f;
 
             var angle = (end - start).Angle(true);
-            var arrow1 = Helpers.AngleToVectorDegrees(angle + ARROW_ANGLE);
-            var arrow2 = Helpers.AngleToVectorDegrees(angle - ARROW_ANGLE);
+            var arrow1 = Utilities.AngleToVectorDegrees(angle + ARROW_ANGLE);
+            var arrow2 = Utilities.AngleToVectorDegrees(angle - ARROW_ANGLE);
 
             gfx.DrawLineClamped(viewport, start, end, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
-            gfx.DrawLineClamped(viewport, end, end + (arrow1 * ARROW_LEN), color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
-            gfx.DrawLineClamped(viewport, end, end + (arrow2 * ARROW_LEN), color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+            gfx.DrawLineClamped(viewport, end, end + arrow1 * ARROW_LEN, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+            gfx.DrawLineClamped(viewport, end, end + arrow2 * ARROW_LEN, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
         }
 
         public static void DrawCrosshair(this D2DGraphics gfx, D2DPoint pos, float weight, D2DColor color, float innerRadius, float outerRadius)
         {
-            gfx.DrawLine(pos + Helpers.AngleToVectorDegrees(270f, innerRadius), pos + Helpers.AngleToVectorDegrees(270f, outerRadius), color, weight);
-            gfx.DrawLine(pos + Helpers.AngleToVectorDegrees(180f, innerRadius), pos + Helpers.AngleToVectorDegrees(180f, outerRadius), color, weight);
-            gfx.DrawLine(pos + Helpers.AngleToVectorDegrees(90f, innerRadius), pos + Helpers.AngleToVectorDegrees(90f, outerRadius), color, weight);
-            gfx.DrawLine(pos + Helpers.AngleToVectorDegrees(0f, innerRadius), pos + Helpers.AngleToVectorDegrees(0f, outerRadius), color, weight);
+            gfx.DrawLine(pos + Utilities.AngleToVectorDegrees(270f, innerRadius), pos + Utilities.AngleToVectorDegrees(270f, outerRadius), color, weight);
+            gfx.DrawLine(pos + Utilities.AngleToVectorDegrees(180f, innerRadius), pos + Utilities.AngleToVectorDegrees(180f, outerRadius), color, weight);
+            gfx.DrawLine(pos + Utilities.AngleToVectorDegrees(90f, innerRadius), pos + Utilities.AngleToVectorDegrees(90f, outerRadius), color, weight);
+            gfx.DrawLine(pos + Utilities.AngleToVectorDegrees(0f, innerRadius), pos + Utilities.AngleToVectorDegrees(0f, outerRadius), color, weight);
         }
 
         public static void DrawArrowStroked(this D2DGraphics gfx, D2DPoint start, D2DPoint end, D2DColor color, float weight, D2DColor strokeColor, float strokeWeight)

@@ -1,4 +1,4 @@
-﻿namespace PolyPlane
+﻿namespace PolyPlane.Helpers
 {
     public class MinMax
     {

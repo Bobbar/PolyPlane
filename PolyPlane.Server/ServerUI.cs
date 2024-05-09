@@ -4,8 +4,10 @@ using PolyPlane.GameObjects.Manager;
 using PolyPlane.Net;
 using PolyPlane.Net.Discovery;
 using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using System.ComponentModel;
 using System.Diagnostics;
+using PolyPlane.Net.NetHost;
 
 
 namespace PolyPlane.Server
@@ -81,7 +83,7 @@ namespace PolyPlane.Server
         {
             InitializeComponent();
 
-            var localIP = Helpers.GetLocalIP();
+            var localIP = Utilities.GetLocalIP();
 
             if (localIP != null)
             {
@@ -411,7 +413,7 @@ namespace PolyPlane.Server
 
             plane.AutoPilotOn = true;
             plane.ThrustOn = true;
-            plane.Position = Helpers.FindSafeSpawnPoint(_objs);
+            plane.Position = Utilities.FindSafeSpawnPoint(_objs);
             plane.Velocity = new D2DPoint(500f, 0f);
             plane.SyncFixtures();
             plane.RotationSpeed = 0f;
@@ -519,18 +521,18 @@ namespace PolyPlane.Server
 
         private FighterPlane GetAIPlane(AIPersonality? personality = null)
         {
-            var pos = Helpers.FindSafeSpawnPoint(_objs);
+            var pos = Utilities.FindSafeSpawnPoint(_objs);
 
             FighterPlane aiPlane;
 
             if (personality.HasValue)
                 aiPlane = new FighterPlane(pos, personality.Value);
             else
-                aiPlane = new FighterPlane(pos, Helpers.RandomEnum<AIPersonality>());
+                aiPlane = new FighterPlane(pos, Utilities.RandomEnum<AIPersonality>());
 
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, World.HudColor, _objs.Missiles, _objs.Planes);
-            aiPlane.PlayerName = "(BOT) " + Helpers.GetRandomName();
+            aiPlane.PlayerName = "(BOT) " + Utilities.GetRandomName();
             aiPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
 
             aiPlane.FireMissileCallback = (m) =>

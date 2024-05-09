@@ -1,4 +1,4 @@
-﻿namespace PolyPlane
+﻿namespace PolyPlane.Helpers
 {
     /// <summary>
     /// Provides a round-robin running average for a float value over time.

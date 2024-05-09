@@ -1,4 +1,4 @@
-﻿namespace PolyPlane
+﻿namespace PolyPlane.Helpers
 {
     public static class ParallelHelpers
     {
@@ -49,7 +49,7 @@
 
         public static void ForEachParallel<T>(this List<T> list, Action<T> action, int parts)
         {
-            ParallelHelpers.ParallelForSlim(list.Count, parts, (start, end) =>
+            ParallelForSlim(list.Count, parts, (start, end) =>
             {
                 for (int i = start; i < end; i++)
                 {

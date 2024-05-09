@@ -1,4 +1,6 @@
-﻿namespace PolyPlane.GameObjects.Guidance
+﻿using PolyPlane.Helpers;
+
+namespace PolyPlane.GameObjects.Guidance
 {
     public class QuadraticPNGuidance : GuidanceBase
     {
@@ -59,7 +61,7 @@
 
             var los = origin - targetPosition;
             var distance = los.Length();
-            var alpha = Helpers.DegreesToRads(los.AngleBetween(targetVelocity));
+            var alpha = Utilities.DegreesToRads(los.AngleBetween(targetVelocity));
             var vt = targetVelocity.Length();
             var vRatio = vt / missileSpeed;
 

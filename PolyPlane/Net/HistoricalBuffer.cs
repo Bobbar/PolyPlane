@@ -1,4 +1,4 @@
-﻿namespace PolyPlane
+﻿namespace PolyPlane.Net
 {
     public class HistoricalBuffer<T>
     {
@@ -41,7 +41,7 @@
                 }
             }
 
-            return default(T);
+            return default;
         }
     }
 }

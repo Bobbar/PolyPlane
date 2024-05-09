@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace PolyPlane
+namespace PolyPlane.Helpers
 {
     public static class Log
     {

@@ -1,6 +1,6 @@
 ﻿using ENet;
 
-namespace PolyPlane.Net
+namespace PolyPlane.Net.NetHost
 {
     public class ClientNetHost : NetPlayHost
     {
@@ -58,7 +58,7 @@ namespace PolyPlane.Net
             {
                 // Disconnect and stop processing packets.
                 FireDisconnectEvent(Peer);
-                this.Stop();
+                Stop();
                 return;
             }
 

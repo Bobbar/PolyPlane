@@ -1,5 +1,6 @@
 ﻿using PolyPlane.Net;
 using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using System.Numerics;
 using unvell.D2DLib;
 
@@ -50,7 +51,7 @@ namespace PolyPlane.GameObjects
 
         protected float _rotation = 0f;
 
-        protected Random _rnd => Helpers.Rnd;
+        protected Random _rnd => Utilities.Rnd;
 
         public float RotationSpeed { get; set; }
 
@@ -140,7 +141,7 @@ namespace PolyPlane.GameObjects
         {
             this.Position = _posSmooth.Add((from.Position + (to.Position - from.Position) * (float)pctElapsed));
             this.Velocity = (from.Velocity + (to.Velocity - from.Velocity) * (float)pctElapsed);
-            this.Rotation = Helpers.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
+            this.Rotation = Utilities.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
 
             return to;
         }
@@ -151,7 +152,7 @@ namespace PolyPlane.GameObjects
 
             state.Position = (from.Position + (to.Position - from.Position) * (float)pctElapsed);
             state.Velocity = (from.Velocity + (to.Velocity - from.Velocity) * (float)pctElapsed);
-            state.Rotation = Helpers.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
+            state.Rotation = Utilities.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
 
             return state;
         }
@@ -251,7 +252,7 @@ namespace PolyPlane.GameObjects
         {
             var dir = obj.Position - this.Position;
             var angle = dir.Angle(true);
-            var diff = Helpers.AngleDiff(this.Rotation, angle);
+            var diff = Utilities.AngleDiff(this.Rotation, angle);
 
             return diff;
         }
@@ -261,7 +262,7 @@ namespace PolyPlane.GameObjects
             var dir = obj.Position - this.Position;
 
             var angle = dir.Angle(true);
-            var diff = Helpers.AngleDiff(this.Rotation, angle);
+            var diff = Utilities.AngleDiff(this.Rotation, angle);
 
             return diff <= (fov * 0.5f);
         }
@@ -284,12 +285,12 @@ namespace PolyPlane.GameObjects
             return curDist - nextDist;
         }
 
-        protected float AngleDiff(float a, float b) => Helpers.AngleDiff(a, b);
-        protected double AngleDiffD(double a, double b) => Helpers.AngleDiffD(a, b);
-        protected D2DPoint AngleToVector(float angle) => Helpers.AngleToVectorDegrees(angle);
-        protected D2DPoint AngleToVectorD(double angle) => Helpers.AngleToVectorDegreesD(angle);
-        protected float ClampAngle(float angle) => Helpers.ClampAngle(angle);
-        protected double ClampAngleD(double angle) => Helpers.ClampAngleD(angle);
+        protected float AngleDiff(float a, float b) => Utilities.AngleDiff(a, b);
+        protected double AngleDiffD(double a, double b) => Utilities.AngleDiffD(a, b);
+        protected D2DPoint AngleToVector(float angle) => Utilities.AngleToVectorDegrees(angle);
+        protected D2DPoint AngleToVectorD(double angle) => Utilities.AngleToVectorDegreesD(angle);
+        protected float ClampAngle(float angle) => Utilities.ClampAngle(angle);
+        protected double ClampAngleD(double angle) => Utilities.ClampAngleD(angle);
 
 
 
@@ -377,7 +378,7 @@ namespace PolyPlane.GameObjects
                 // Flip plane poly to correct orientation.
                 if (this is FighterPlane)
                 {
-                    var pointingRight = Helpers.IsPointingRight(histPos.Rotation);
+                    var pointingRight = Utilities.IsPointingRight(histPos.Rotation);
 
                     if (!pointingRight)
                         histPoly.FlipY();
@@ -600,7 +601,7 @@ namespace PolyPlane.GameObjects
             {
                 var v1 = poly.SourcePoly[i];
                 var v2 = poly.SourcePoly[(i + 1) % n];
-                var a = Helpers.Cross(v2, v1);
+                var a = Utilities.Cross(v2, v1);
                 var b = D2DPoint.Dot(v1, v1) + D2DPoint.Dot(v1, v2) + D2DPoint.Dot(v2, v2);
 
                 sum1 += a * b;
@@ -613,7 +614,7 @@ namespace PolyPlane.GameObjects
 
         public static D2DPoint[] RandomPoly(int nPoints, int radius)
         {
-            var rnd = Helpers.Rnd;
+            var rnd = Utilities.Rnd;
 
             var poly = new D2DPoint[nPoints];
             var dists = new float[nPoints];

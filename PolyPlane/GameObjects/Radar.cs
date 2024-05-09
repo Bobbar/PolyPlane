@@ -1,5 +1,6 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane
@@ -85,7 +86,7 @@ namespace PolyPlane
             if (timeForUpdate)
             {
                 _sweepAngle += SWEEP_RATE * dt;
-                _sweepAngle = Helpers.ClampAngle(_sweepAngle);
+                _sweepAngle = Utilities.ClampAngle(_sweepAngle);
 
                 // Check all sources and add pings if they are within the FOV of the current sweep.
 
@@ -123,10 +124,10 @@ namespace PolyPlane
                 var dist = this.HostPlane.Position.DistanceTo(obj.Position);
                 var angle = (this.HostPlane.Position - obj.Position).Angle(true);
                 var radDist = (_radius / _maxRange) * dist;
-                var radPos = this.Position - Helpers.AngleToVectorDegrees(angle, radDist);
+                var radPos = this.Position - Utilities.AngleToVectorDegrees(angle, radDist);
 
                 if (dist > _maxRange)
-                    radPos = this.Position - Helpers.AngleToVectorDegrees(angle, _radius);
+                    radPos = this.Position - Utilities.AngleToVectorDegrees(angle, _radius);
 
                 var pObj = new PingObj(obj, radPos);
 
@@ -140,10 +141,10 @@ namespace PolyPlane
                     var dist = this.HostPlane.Position.DistanceTo(obj.Position);
                     var angle = (this.HostPlane.Position - obj.Position).Angle(true);
                     var radDist = (_radius / _maxRange) * dist;
-                    var radPos = this.Position - Helpers.AngleToVectorDegrees(angle, radDist);
+                    var radPos = this.Position - Utilities.AngleToVectorDegrees(angle, radDist);
 
                     if (dist > _maxRange)
-                        radPos = this.Position - Helpers.AngleToVectorDegrees(angle, _radius);
+                        radPos = this.Position - Utilities.AngleToVectorDegrees(angle, _radius);
 
                     var pObj = new PingObj(obj, radPos);
 
@@ -165,7 +166,7 @@ namespace PolyPlane
             // Draw icons.
             foreach (var p in _pings)
             {
-                var ageFact = 1f - Helpers.Factor(p.Age, _maxAge);
+                var ageFact = 1f - Utilities.Factor(p.Age, _maxAge);
                 var pColor = new D2DColor(ageFact, _color);
 
                 if (p.Obj is FighterPlane plane)
@@ -187,7 +188,7 @@ namespace PolyPlane
             }
 
             // Sweep line, direction line and FOV cone.
-            var sweepLine = Helpers.AngleToVectorDegrees(_sweepAngle, _radius);
+            var sweepLine = Utilities.AngleToVectorDegrees(_sweepAngle, _radius);
             gfx.DrawLine(this.Position, this.Position + sweepLine, _color, 1f, D2DDashStyle.Dot);
 
             DrawFOVCone(gfx, _color);
@@ -309,9 +310,9 @@ namespace PolyPlane
         {
             var fov = World.SENSOR_FOV * 0.5f;
 
-            var centerLine = Helpers.AngleToVectorDegrees(this.HostPlane.Rotation, _radius);
-            var cone1 = Helpers.AngleToVectorDegrees(this.HostPlane.Rotation + (fov * 0.5f), _radius);
-            var cone2 = Helpers.AngleToVectorDegrees(this.HostPlane.Rotation - (fov * 0.5f), _radius);
+            var centerLine = Utilities.AngleToVectorDegrees(this.HostPlane.Rotation, _radius);
+            var cone1 = Utilities.AngleToVectorDegrees(this.HostPlane.Rotation + (fov * 0.5f), _radius);
+            var cone2 = Utilities.AngleToVectorDegrees(this.HostPlane.Rotation - (fov * 0.5f), _radius);
 
             gfx.DrawLine(this.Position, this.Position + cone1, color);
             gfx.DrawLine(this.Position, this.Position + cone2, color);
@@ -406,16 +407,16 @@ namespace PolyPlane
         {
             GuidedMissile nearest = null;
 
-            var threats = _pings.Where(p => p.Obj is GuidedMissile missile
+            var threats = _pings.Where((Func<PingObj, bool>)(p => p.Obj is GuidedMissile missile
             && !missile.IsDistracted && !missile.MissedTarget
             && missile.Target.ID.Equals(HostPlane.ID)
             && missile.ClosingRate(HostPlane) > 0f
-            && Helpers.ImpactTime(HostPlane, missile) <= MIN_IMPACT_TIME);
+            && Utilities.ImpactTime(HostPlane, missile) <= MIN_IMPACT_TIME));
 
             if (threats.Count() == 0)
                 return nearest;
 
-            threats = threats.OrderBy(p => Helpers.ImpactTime(HostPlane, p.Obj as Missile));
+            threats = threats.OrderBy(p => Utilities.ImpactTime(HostPlane, p.Obj as Missile));
 
             var first = threats.FirstOrDefault();
 
@@ -430,7 +431,7 @@ namespace PolyPlane
             var dir = obj.Position - this.HostPlane.Position;
 
             var angle = dir.Angle(true);
-            var diff = Helpers.AngleDiff(sweepAngle, angle);
+            var diff = Utilities.AngleDiff(sweepAngle, angle);
 
             return diff <= (fov * 0.5f);
         }
@@ -439,7 +440,7 @@ namespace PolyPlane
         {
             var dir = obj.Position - this.Position;
             var angle = dir.Angle(true);
-            var diff = Helpers.AngleDiff(_sweepAngle, angle);
+            var diff = Utilities.AngleDiff(_sweepAngle, angle);
 
             return diff;
         }

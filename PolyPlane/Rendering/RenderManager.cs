@@ -1,6 +1,7 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Animations;
 using PolyPlane.Net;
+using PolyPlane.Helpers;
 using System.Diagnostics;
 using unvell.D2DLib;
 
@@ -219,7 +220,7 @@ namespace PolyPlane.Rendering
                     var leafColor = leafColorNormal;
                     leafColor.g -= rnd.NextFloat(0.0f, 0.2f);
 
-                    var trunkColor = Helpers.LerpColor(trunkColorNormal, trunkColorNormalDark, rnd.NextFloat(0f, 1f));
+                    var trunkColor = Utilities.LerpColor(trunkColorNormal, trunkColorNormalDark, rnd.NextFloat(0f, 1f));
                     var trunkWidth = rnd.NextFloat(2f, 7f);
 
                     newTree = new NormalTree(rndPos, height, radius, trunkWidth, trunkColor, leafColor);
@@ -367,7 +368,7 @@ namespace PolyPlane.Rendering
         private D2DColor AddTimeOfDayColor(D2DColor color)
         {
             var todColor = GetTimeOfDayColor();
-            return Helpers.LerpColor(color, todColor, 0.3f);
+            return Utilities.LerpColor(color, todColor, 0.3f);
         }
 
         private D2DColor GetTimeOfDayColor()
@@ -378,7 +379,7 @@ namespace PolyPlane.Rendering
 
         private D2DColor GetShadowColor()
         {
-            var shadowColor = new D2DColor(0.4f, Helpers.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.7f));
+            var shadowColor = new D2DColor(0.4f, Utilities.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.7f));
             return shadowColor;
         }
 
@@ -421,8 +422,8 @@ namespace PolyPlane.Rendering
         public void DoScreenShake()
         {
             float amt = 10f;
-            _screenShakeX.Start = Helpers.Rnd.NextFloat(-amt, amt);
-            _screenShakeY.Start = Helpers.Rnd.NextFloat(-amt, amt);
+            _screenShakeX.Start = Utilities.Rnd.NextFloat(-amt, amt);
+            _screenShakeY.Start = Utilities.Rnd.NextFloat(-amt, amt);
 
             _screenShakeX.Reset();
             _screenShakeY.Reset();
@@ -430,8 +431,8 @@ namespace PolyPlane.Rendering
 
         public void DoScreenShake(float amt)
         {
-            _screenShakeX.Start = Helpers.Rnd.NextFloat(-amt, amt);
-            _screenShakeY.Start = Helpers.Rnd.NextFloat(-amt, amt);
+            _screenShakeX.Start = Utilities.Rnd.NextFloat(-amt, amt);
+            _screenShakeY.Start = Utilities.Rnd.NextFloat(-amt, amt);
 
             _screenShakeX.Reset();
             _screenShakeY.Reset();
@@ -530,7 +531,7 @@ namespace PolyPlane.Rendering
                 return;
 
             var shadowPos = new D2DPoint(plane.Position.X, Y_POS);
-            var shadowWidth = Helpers.Lerp(0, MAX_WIDTH, Helpers.Factor(MAX_SIZE_ALT, plane.Altitude));
+            var shadowWidth = Utilities.Lerp(0, MAX_WIDTH, Utilities.Factor(MAX_SIZE_ALT, plane.Altitude));
             if (plane.Altitude <= 0f)
                 shadowWidth = MAX_WIDTH;
 
@@ -678,8 +679,8 @@ namespace PolyPlane.Rendering
         //    };
 
         //    const float SCALE = 200f;
-        //    Helpers.ApplyTranslation(housePoly, housePoly, 0f, pos, SCALE);
-        //    Helpers.ApplyTranslation(roofPoly, roofPoly, 0f, pos , SCALE);
+        //    Utilities.ApplyTranslation(housePoly, housePoly, 0f, pos, SCALE);
+        //    Utilities.ApplyTranslation(roofPoly, roofPoly, 0f, pos , SCALE);
 
 
         //    ctx.DrawPolygon(housePoly, D2DColor.Gray, 1, D2DDashStyle.Solid, D2DColor.Gray);
@@ -782,7 +783,7 @@ namespace PolyPlane.Rendering
             {
                 var msg = _messageEvents[i];
                 var rect = new D2DRect(linePos, lineSize);
-                var color = Helpers.LerpColor(World.HudColor, D2DColor.WhiteSmoke, 0.3f);
+                var color = Utilities.LerpColor(World.HudColor, D2DColor.WhiteSmoke, 0.3f);
 
                 switch (msg.Type)
                 {
@@ -822,11 +823,11 @@ namespace PolyPlane.Rendering
             var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
 
             var mouseAngle = viewPlane.PlayerGuideAngle;
-            var mouseVec = Helpers.AngleToVectorDegrees(mouseAngle, DIST);
+            var mouseVec = Utilities.AngleToVectorDegrees(mouseAngle, DIST);
             gfx.DrawEllipse(new D2DEllipse(pos + mouseVec, new D2DSize(5f, 5f)), World.HudColor, 2f);
 
             var planeAngle = viewPlane.Rotation;
-            var planeVec = Helpers.AngleToVectorDegrees(planeAngle, DIST);
+            var planeVec = Utilities.AngleToVectorDegrees(planeAngle, DIST);
             gfx.DrawCrosshair(pos + planeVec, 2f, World.HudColor, 5f, 20f);
         }
 
@@ -1025,7 +1026,7 @@ namespace PolyPlane.Rendering
             const float MIN_DIST = 600f;
             const float MAX_DIST = 10000f;
             var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
-            var color = Helpers.LerpColor(World.HudColor, D2DColor.WhiteSmoke, 0.3f);
+            var color = Utilities.LerpColor(World.HudColor, D2DColor.WhiteSmoke, 0.3f);
 
             for (int i = 0; i < _objs.Planes.Count; i++)
             {
@@ -1044,7 +1045,7 @@ namespace PolyPlane.Rendering
 
                 var dir = target.Position - plane.Position;
                 var angle = dir.Angle(true);
-                var vec = Helpers.AngleToVectorDegrees(angle);
+                var vec = Utilities.AngleToVectorDegrees(angle);
 
                 ctx.Gfx.DrawArrow(pos + (vec * 250f), pos + (vec * 270f), color, 2f);
 
@@ -1099,10 +1100,10 @@ namespace PolyPlane.Rendering
                 var dir = missile.Position - plane.Position;
                 var angle = dir.Angle(true);
                 var color = D2DColor.Red;
-                var vec = Helpers.AngleToVectorDegrees(angle);
+                var vec = Utilities.AngleToVectorDegrees(angle);
                 var pos1 = pos + (vec * 200f);
                 var pos2 = pos1 + (vec * 20f);
-                var distFact = 1f - Helpers.Factor(dist, MIN_DIST * 10f);
+                var distFact = 1f - Utilities.Factor(dist, MIN_DIST * 10f);
 
                 if (missile.IsDistracted)
                     color = D2DColor.Yellow;
@@ -1136,7 +1137,7 @@ namespace PolyPlane.Rendering
 
         private bool MissileIsImpactThreat(FighterPlane plane, Missile missile, float minImpactTime)
         {
-            var navigationTime = Helpers.ImpactTime(plane, missile);
+            var navigationTime = Utilities.ImpactTime(plane, missile);
 
             // Is it going to hit soon and is actively targeting us?
             return (navigationTime < minImpactTime && missile.Target.ID.Equals(plane.ID));
@@ -1164,11 +1165,11 @@ namespace PolyPlane.Rendering
 
             var color1 = new D2DColor(0.5f, D2DColor.SkyBlue);
             var color2 = new D2DColor(0.5f, D2DColor.Black);
-            var color = Helpers.LerpColor(color1, color2, (plrAlt / (World.MAX_ALTITUDE - MAX_ALT_OFFSET)));
+            var color = Utilities.LerpColor(color1, color2, (plrAlt / (World.MAX_ALTITUDE - MAX_ALT_OFFSET)));
 
             // Add time of day color.
-            color = Helpers.LerpColor(color, D2DColor.Black, Helpers.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY - 5f));
-            color = Helpers.LerpColor(color, AddTimeOfDayColor(color), 0.2f);
+            color = Utilities.LerpColor(color, D2DColor.Black, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY - 5f));
+            color = Utilities.LerpColor(color, AddTimeOfDayColor(color), 0.2f);
 
             var rect = new D2DRect(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), new D2DSize(this.Width, this.Height));
 
@@ -1224,7 +1225,7 @@ namespace PolyPlane.Rendering
 
             var points = cloud.Points;
 
-            Helpers.ApplyTranslation(points, points, cloud.Position, 0f, D2DPoint.Zero, cloud.ScaleX, cloud.ScaleY);
+            Utilities.ApplyTranslation(points, points, cloud.Position, 0f, D2DPoint.Zero, cloud.ScaleX, cloud.ScaleY);
 
             // Find min/max height.
             var minY = points.Min(p => p.Y);
@@ -1238,16 +1239,16 @@ namespace PolyPlane.Rendering
                 // Lerp slightly darker colors to give the cloud some depth.
 
                 //// Darken by number of clouds.
-                //var amt = Helpers.Factor(i, (float)points.Length);
-                //var color = Helpers.LerpColor(color1, color2, amt); 
+                //var amt = Utilities.Factor(i, (float)points.Length);
+                //var color = Utilities.LerpColor(color1, color2, amt); 
 
                 ////Darker clouds on top.
-                //var amt = Helpers.Factor(point.Y, minY, maxY);
-                //var color = Helpers.LerpColor(color1, color2, amt); 
+                //var amt = Utilities.Factor(point.Y, minY, maxY);
+                //var color = Utilities.LerpColor(color1, color2, amt); 
 
                 //Darker clouds on bottom.
-                var amt = Helpers.Factor(point.Y, minY, maxY);
-                var color = Helpers.LerpColor(color1, color2, 1f - amt);
+                var amt = Utilities.Factor(point.Y, minY, maxY);
+                var color = Utilities.LerpColor(color1, color2, 1f - amt);
 
                 // Add time of day color.
                 color = AddTimeOfDayColor(color);
@@ -1261,12 +1262,12 @@ namespace PolyPlane.Rendering
             if (cloud.Position.Y < -8000f)
                 return;
 
-            var todOffset = Helpers.Lerp(600f, -600f, Helpers.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
+            var todOffset = Utilities.Lerp(600f, -600f, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
 
             if (!ctx.Viewport.Contains(new D2DPoint(cloud.Position.X + todOffset, 0f)))
                 return;
 
-            var shadowColor = new D2DColor(0.05f, Helpers.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.7f));
+            var shadowColor = new D2DColor(0.05f, Utilities.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.7f));
 
             for (int i = 0; i < cloud.Points.Length; i++)
             {
@@ -1288,7 +1289,7 @@ namespace PolyPlane.Rendering
             {
                 var cloud = _clouds[i];
 
-                var altFact = 30f * Helpers.Factor(Math.Abs(cloud.Position.Y), 30000f); // Higher clouds move slower?
+                var altFact = 30f * Utilities.Factor(Math.Abs(cloud.Position.Y), 30000f); // Higher clouds move slower?
                 var sizeOffset = (cloud.Radius / 2f); // Smaller clouds move slightly faster?
                 cloud.Position.X += ((RATE - altFact) - sizeOffset) * dt;
 
@@ -1298,7 +1299,7 @@ namespace PolyPlane.Rendering
                 if (cloud.Points.Length % 2 == 0)
                     rotDir = -1f;
 
-                cloud.Rotation = Helpers.ClampAngle(cloud.Rotation + (0.8f * rotDir) * dt);
+                cloud.Rotation = Utilities.ClampAngle(cloud.Rotation + (0.8f * rotDir) * dt);
 
                 // Wrap clouds.
                 if (cloud.Position.X > MAX_CLOUD_X)
@@ -1306,7 +1307,7 @@ namespace PolyPlane.Rendering
                     cloud.Position.X = -MAX_CLOUD_X;
                 }
 
-                Helpers.ApplyTranslation(cloud.PointsOrigin, cloud.Points, cloud.Rotation, cloud.Position, CLOUD_SCALE);
+                Utilities.ApplyTranslation(cloud.PointsOrigin, cloud.Points, cloud.Rotation, cloud.Position, CLOUD_SCALE);
             }
         }
 

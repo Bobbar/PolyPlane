@@ -1,6 +1,7 @@
 ﻿using PolyPlane.Net;
 using PolyPlane.Net.Discovery;
 using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using System.ComponentModel;
 using System.Net;
 using unvell.D2DLib;
@@ -74,7 +75,7 @@ namespace PolyPlane
 
         private void SetLocalIP()
         {
-            var addy = Helpers.GetLocalIP();
+            var addy = Utilities.GetLocalIP();
 
             if (addy != null)
             {

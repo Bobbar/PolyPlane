@@ -1,4 +1,5 @@
 ﻿using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -129,20 +130,20 @@ namespace PolyPlane.GameObjects
         public override void Render(RenderContext ctx)
         {
             //// Draw a fixed box behind the moving wing. Helps to visualize deflection.
-            //var fixedVec = Helpers.AngleToVectorDegrees(this.Rotation - this.Deflection);
+            //var fixedVec = Utilities.AngleToVectorDegrees(this.Rotation - this.Deflection);
             //var startB = this.Position - fixedVec * RenderLength;
             //var endB = this.Position + fixedVec * RenderLength;
             //ctx.DrawLine(startB, endB, D2DColor.DarkGray, 2f);
 
             ////// Draw wing without rate limit.
-            //var wingVecRaw = Helpers.AngleToVectorDegrees(_parentObject.Rotation + _defRateLimit.Target);
+            //var wingVecRaw = Utilities.AngleToVectorDegrees(_parentObject.Rotation + _defRateLimit.Target);
             //var startRaw = this.Position - wingVecRaw * RenderLength;
             //var end2Raw = this.Position + wingVecRaw * RenderLength;
             //gfx.DrawLine(startRaw, end2Raw, D2DColor.Red, 1f, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Round);
 
             // Draw wing.
             const float WEIGHT = 2f;//1f;
-            var wingVec = Helpers.AngleToVectorDegrees(this.Rotation);
+            var wingVec = Utilities.AngleToVectorDegrees(this.Rotation);
             var start = this.Position - wingVec * RenderLength;
             var end = this.Position + wingVec * RenderLength;
             ctx.DrawLine(start, end, D2DColor.Black, WEIGHT + 0.5f, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Round);
@@ -172,7 +173,7 @@ namespace PolyPlane.GameObjects
 
             const float minVelo = 350f;
 
-            var veloFact = Helpers.Factor(veloMag, minVelo);
+            var veloFact = Utilities.Factor(veloMag, minVelo);
 
             // Compute velo tangent. For lift/drag and rotation calcs.
             var veloNorm = D2DPoint.Normalize(velo);
@@ -180,7 +181,7 @@ namespace PolyPlane.GameObjects
 
             // Compute angle of attack.
             var aoaRads = AngleToVector(this.Rotation).Cross(veloNorm);
-            var aoa = Helpers.RadsToDegrees(aoaRads);
+            var aoa = Utilities.RadsToDegrees(aoaRads);
 
             // Compute lift force as velocity tangent with angle-of-attack effecting magnitude and direction. Velocity magnitude is factored as well.
             // Greater AoA and greater velocity = more lift force.
@@ -204,7 +205,7 @@ namespace PolyPlane.GameObjects
             dragForce += veloMag * (WING_AREA * PARASITIC_DRAG);
 
             // Lift force.
-            var aoaFact = Helpers.Factor(MAX_AOA, Math.Abs(aoa));
+            var aoaFact = Utilities.Factor(MAX_AOA, Math.Abs(aoa));
             var coeffLift = (float)Math.Sin(2f * aoaRads) * aoaFact;
             var liftForce = AIR_DENSITY * 0.5f * veloMagSq * WING_AREA * coeffLift;
 

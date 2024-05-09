@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.AI_Behavior
@@ -30,7 +31,7 @@ namespace PolyPlane.AI_Behavior
         public FighterPlaneAI(FighterPlane plane)
         {
             _plane = plane;
-            Personality = Helpers.RandomEnum(Personality);
+            Personality = Utilities.RandomEnum(Personality);
             InitStuff();
         }
 
@@ -57,7 +58,7 @@ namespace PolyPlane.AI_Behavior
             _dropDecoysTimer.StartCallback = () => this.Plane.DroppingDecoy = true;
             _dropDecoysTimer.TriggerCallback = () => this.Plane.DroppingDecoy = false;
 
-            _fireMissileCooldown = new GameTimer(Helpers.Rnd.NextFloat(MIN_MISSILE_TIME, MAX_MISSILE_TIME));
+            _fireMissileCooldown = new GameTimer(Utilities.Rnd.NextFloat(MIN_MISSILE_TIME, MAX_MISSILE_TIME));
             _fireMissileCooldown.Start();
         }
 
@@ -153,7 +154,7 @@ namespace PolyPlane.AI_Behavior
 
                 this.Plane.FireMissile(this.Plane.Radar.LockedObj);
 
-                _fireMissileCooldown = new GameTimer(Helpers.Rnd.NextFloat(MIN_MISSILE_TIME, MAX_MISSILE_TIME));
+                _fireMissileCooldown = new GameTimer(Utilities.Rnd.NextFloat(MIN_MISSILE_TIME, MAX_MISSILE_TIME));
                 _fireMissileCooldown.Restart();
 
                 Log.Msg("Firing Missile");
@@ -219,12 +220,12 @@ namespace PolyPlane.AI_Behavior
         public float GetAIGuidance()
         {
             const float MIN_IMPACT_TIME = 6f; // Min ground impact time to consider avoiding ground.
-            var patrolDir = Helpers.ClampAngle(Helpers.RadsToDegrees((float)Math.Sin(_sineWavePos)));
+            var patrolDir = Utilities.ClampAngle(Utilities.RadsToDegrees((float)Math.Sin(_sineWavePos)));
 
             if (_reverseDirection)
-                patrolDir = Helpers.ClampAngle(patrolDir + 180f);
+                patrolDir = Utilities.ClampAngle(patrolDir + 180f);
 
-            var groundImpactTime = Helpers.GroundImpactTime(this.Plane);
+            var groundImpactTime = Utilities.GroundImpactTime(this.Plane);
             var angle = patrolDir;
 
             if (TargetPlane != null)
@@ -246,7 +247,7 @@ namespace PolyPlane.AI_Behavior
             if (this.Plane.IsDefending && DefendingMissile != null)
             {
                 var angleToThreat = (DefendingMissile.Position - this.Plane.Position).Angle(true);
-                angle = Helpers.ClampAngle(angleToThreat + 90f);
+                angle = Utilities.ClampAngle(angleToThreat + 90f);
             }
 
             // Try to lead the target if we are firing a burst.
@@ -263,7 +264,7 @@ namespace PolyPlane.AI_Behavior
                 _gainingVelo = false;
 
             if (_gainingVelo)
-                angle = Helpers.MaintainAltitudeAngle(this.Plane, this.Plane.Altitude - 50f);
+                angle = Utilities.MaintainAltitudeAngle(this.Plane, this.Plane.Altitude - 50f);
 
             // Pitch up if we about to impact with ground.
             if ((groundImpactTime > 0f && groundImpactTime < MIN_IMPACT_TIME) || this.Plane.Altitude < 300f)
@@ -278,7 +279,7 @@ namespace PolyPlane.AI_Behavior
 
             // Climb until no longer in danger of ground collision.
             if (_avoidingGround)
-                angle = Helpers.MaintainAltitudeAngle(this.Plane, 2000f);
+                angle = Utilities.MaintainAltitudeAngle(this.Plane, 2000f);
 
             // Stay within the spawn area when not actively targeting another plane.
             if (this.TargetPlane == null)
@@ -291,7 +292,7 @@ namespace PolyPlane.AI_Behavior
             }
 
             var finalAngle = angle;
-            finalAngle = Helpers.ClampAngle(finalAngle);
+            finalAngle = Utilities.ClampAngle(finalAngle);
             return finalAngle;
         }
 

@@ -1,4 +1,5 @@
 ﻿using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -32,7 +33,7 @@ namespace PolyPlane.GameObjects
             _spawnTimer.TriggerCallback = () => SpawnPart();
             _spawnTimer.Start();
 
-            HoleSize = new D2DSize(Helpers.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ), Helpers.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ));
+            HoleSize = new D2DSize(Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ), Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ));
         }
 
         public Flame(GameObject obj, D2DPoint offset, bool hasFlame = true) : base(obj.Position, obj.Velocity)
@@ -40,7 +41,7 @@ namespace PolyPlane.GameObjects
             _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
 
             this.Owner = obj;
-            Radius = Helpers.Rnd.NextFloat(4f, 15f);
+            Radius = Utilities.Rnd.NextFloat(4f, 15f);
             _refPos = new FixturePoint(obj, offset);
 
             if (hasFlame)
@@ -49,7 +50,7 @@ namespace PolyPlane.GameObjects
                 _spawnTimer.Start();
             }
 
-            HoleSize = new D2DSize(Helpers.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ), Helpers.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ));
+            HoleSize = new D2DSize(Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ), Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ));
         }
 
         public override void Update(float dt, D2DSize viewport, float renderScale)
@@ -97,15 +98,15 @@ namespace PolyPlane.GameObjects
             if (this.Owner != null)
                 newVelo = this.Owner.Velocity;
 
-            newVelo += Helpers.RandOPoint(10f);
+            newVelo += Utilities.RandOPoint(10f);
 
             var endColor = _blackSmoke;
 
             if (_refPos.GameObject is FighterPlane plane && !plane.IsDamaged)
                 endColor = _graySmoke;
 
-            var newRad = this.Radius + Helpers.Rnd.NextFloat(-3f, 3f);
-            var newColor = new D2DColor(_flameColor.a, 1f, Helpers.Rnd.NextFloat(0f, 0.86f), _flameColor.b);
+            var newRad = this.Radius + Utilities.Rnd.NextFloat(-3f, 3f);
+            var newColor = new D2DColor(_flameColor.a, 1f, Utilities.Rnd.NextFloat(0f, 0.86f), _flameColor.b);
             var newEllipse = new D2DEllipse(newPos, new D2DSize(newRad, newRad));
             var newPart = new FlamePart(newEllipse, newColor, endColor, newVelo);
             //newPart.IsNetObject = this.IsNetObject;
@@ -128,11 +129,11 @@ namespace PolyPlane.GameObjects
                 var part = _parts[i];
                 part.Update(dt, viewport, renderScale, skipFrames: false);
 
-                var ageFactFade = 1f - Helpers.Factor(part.Age, MAX_AGE);
-                var ageFactSmoke = Helpers.Factor(part.Age, MAX_AGE * 3f);
+                var ageFactFade = 1f - Utilities.Factor(part.Age, MAX_AGE);
+                var ageFactSmoke = Utilities.Factor(part.Age, MAX_AGE * 3f);
                 var alpha = _flameColor.a * ageFactFade;
 
-                part.Color = new D2DColor(alpha, Helpers.LerpColor(part.Color, part.EndColor, ageFactSmoke));
+                part.Color = new D2DColor(alpha, Utilities.LerpColor(part.Color, part.EndColor, ageFactSmoke));
 
                 if (part.Age > MAX_AGE)
                     _parts.RemoveAt(i);

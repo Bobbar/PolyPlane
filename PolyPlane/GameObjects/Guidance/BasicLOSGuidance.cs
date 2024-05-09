@@ -1,4 +1,6 @@
-﻿namespace PolyPlane.GameObjects.Guidance
+﻿using PolyPlane.Helpers;
+
+namespace PolyPlane.GameObjects.Guidance
 {
     public class BasicLOSGuidance : GuidanceBase
     {

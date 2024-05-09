@@ -1,4 +1,5 @@
 ﻿using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -86,12 +87,12 @@ namespace PolyPlane.GameObjects
 
             if (_veloSizing)
             {
-                var veloFact = Helpers.Factor(newVelo.Length(), 1000f);
-                newRad = _radius + Helpers.Rnd.NextFloat(-2f, 2f) + (veloFact * 14f);
+                var veloFact = Utilities.Factor(newVelo.Length(), 1000f);
+                newRad = _radius + Utilities.Rnd.NextFloat(-2f, 2f) + (veloFact * 14f);
             }
             else
             {
-                newRad = _radius + Helpers.Rnd.NextFloat(-2f, 2f);
+                newRad = _radius + Utilities.Rnd.NextFloat(-2f, 2f);
             }
 
             var newColor = _vaporColor;
@@ -117,7 +118,7 @@ namespace PolyPlane.GameObjects
                 var part = _parts[i];
                 part.Update(dt, viewport, renderScale, skipFrames: false);
 
-                var ageFactFade = 1f - Helpers.Factor(part.Age, MAX_AGE);
+                var ageFactFade = 1f - Utilities.Factor(part.Age, MAX_AGE);
                 var alpha = _vaporColor.a * ageFactFade;
 
                 part.Color = new D2DColor(alpha, _vaporColor);

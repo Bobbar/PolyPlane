@@ -1,5 +1,6 @@
 ﻿using PolyPlane.GameObjects.Guidance;
 using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -56,7 +57,7 @@ namespace PolyPlane.GameObjects
             var accel = D2DPoint.Zero;
 
             var guideAngle = _guidance.GuideTo(dt);
-            var aimDir = Helpers.AngleToVectorDegrees(guideAngle);
+            var aimDir = Utilities.AngleToVectorDegrees(guideAngle);
             var rotAmt = aimDir.Cross(this.Velocity);
             guideAngle -= rotAmt;
 
@@ -70,7 +71,7 @@ namespace PolyPlane.GameObjects
             float ang = 0f;
             foreach (var amt in thrustAmts)
             {
-                accel += Helpers.AngleToVectorDegrees(this.Rotation + ang) * THRUST * amt;
+                accel += Utilities.AngleToVectorDegrees(this.Rotation + ang) * THRUST * amt;
                 ang += (360f / NUM_THRUSTERS);
             }
 
@@ -111,7 +112,7 @@ namespace PolyPlane.GameObjects
             {
                 if (amt > 0f)
                 {
-                    var vec = Helpers.AngleToVectorDegrees(ang) * MAX_LEN * amt;
+                    var vec = Utilities.AngleToVectorDegrees(ang) * MAX_LEN * amt;
                     FlamePoly.SourcePoly[1].X = -(15f + MAX_LEN * amt);
                     FlamePoly.Update(this.Position, this.Rotation + ang, 1f);
                     ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
@@ -144,8 +145,8 @@ namespace PolyPlane.GameObjects
 
             for (int i = 0; i < nThrusters; i++)
             {
-                var diff = Helpers.AngleDiff(direction, this.Rotation + angle);
-                var fact = 1f - Helpers.Factor(diff, max);
+                var diff = Utilities.AngleDiff(direction, this.Rotation + angle);
+                var fact = 1f - Utilities.Factor(diff, max);
                 amts[i] = fact;
                 angle += max;
             }

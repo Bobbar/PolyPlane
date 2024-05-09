@@ -1,6 +1,8 @@
 ﻿using PolyPlane.AI_Behavior;
 using PolyPlane.Rendering;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
+using PolyPlane.GameObjects.Manager;
 
 namespace PolyPlane.GameObjects
 {
@@ -307,7 +309,7 @@ namespace PolyPlane.GameObjects
                     guideRot = GetAPGuidanceDirection(PlayerGuideAngle);
 
                 var veloAngle = this.Velocity.Angle(true);
-                var nextDeflect = Helpers.ClampAngle180(guideRot - veloAngle);
+                var nextDeflect = Utilities.ClampAngle180(guideRot - veloAngle);
                 deflection = nextDeflect;
             }
 
@@ -318,7 +320,7 @@ namespace PolyPlane.GameObjects
             var velo = this.AirSpeedIndicated;
             if (_thrustAmt.Value > 0f && SASOn)
             {
-                var spdFact = Helpers.Factor(velo, MIN_DEF_SPD);
+                var spdFact = Utilities.Factor(velo, MIN_DEF_SPD);
 
                 const float MAX_DEF_AOA = 20f;// Maximum AoA allowed. Reduce deflection as AoA increases.
                 var aoaFact = 1f - (Math.Abs(Wings[0].AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 6f))));
@@ -327,7 +329,7 @@ namespace PolyPlane.GameObjects
                 var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 8f))));
 
                 // Ease out when thrust is decreasing.
-                deflection = Helpers.Lerp(ogDef, ogDef * aoaFact * rotSpdFact, _thrustAmt.Value);
+                deflection = Utilities.Lerp(ogDef, ogDef * aoaFact * rotSpdFact, _thrustAmt.Value);
             }
 
             if (float.IsNaN(deflection))
@@ -370,7 +372,7 @@ namespace PolyPlane.GameObjects
                     _easePhysicsTimer.Start();
 
                 if (!_easePhysicsComplete && _easePhysicsTimer.IsRunning)
-                    easeFact = Helpers.Factor(_easePhysicsTimer.Value, _easePhysicsTimer.Interval);
+                    easeFact = Utilities.Factor(_easePhysicsTimer.Value, _easePhysicsTimer.Interval);
 
                 // Integrate torque, thrust and wing force.
                 this.RotationSpeed += (wingTorque * easeFact) / this.MASS * dt;
@@ -504,9 +506,9 @@ namespace PolyPlane.GameObjects
             const float FOV = 40f;
             var color = D2DColor.Red;
 
-            var centerLine = Helpers.AngleToVectorDegrees(this.Rotation, LEN);
-            var cone1 = Helpers.AngleToVectorDegrees(this.Rotation + (FOV * 0.5f), LEN);
-            var cone2 = Helpers.AngleToVectorDegrees(this.Rotation - (FOV * 0.5f), LEN);
+            var centerLine = Utilities.AngleToVectorDegrees(this.Rotation, LEN);
+            var cone1 = Utilities.AngleToVectorDegrees(this.Rotation + (FOV * 0.5f), LEN);
+            var cone2 = Utilities.AngleToVectorDegrees(this.Rotation - (FOV * 0.5f), LEN);
 
 
             gfx.DrawLine(this.Position, this.Position + cone1, color);
@@ -566,9 +568,9 @@ namespace PolyPlane.GameObjects
 
         private float GetAPGuidanceDirection(float dir)
         {
-            var amt = Helpers.RadsToDegrees(this.Velocity.Normalized().Cross(Helpers.AngleToVectorDegrees(dir, 2f)));
+            var amt = Utilities.RadsToDegrees(this.Velocity.Normalized().Cross(Utilities.AngleToVectorDegrees(dir, 2f)));
             var rot = this.Rotation - amt;
-            rot = Helpers.ClampAngle(rot);
+            rot = Utilities.ClampAngle(rot);
 
             return rot;
         }
@@ -612,13 +614,13 @@ namespace PolyPlane.GameObjects
 
         public void SetOnFire()
         {
-            var offset = Helpers.RandOPointInPoly(_planePoly);
+            var offset = Utilities.RandOPointInPoly(_planePoly);
             SetOnFire(offset);
         }
 
         public void SetOnFire(D2DPoint pos)
         {
-            var flame = new Flame(this, pos, hasFlame: Helpers.Rnd.Next(3) == 2);
+            var flame = new Flame(this, pos, hasFlame: Utilities.Rnd.Next(3) == 2);
 
             flame.IsNetObject = this.IsNetObject;
             flame.SkipFrames = this.IsNetObject ? 1 : World.PHYSICS_SUB_STEPS;
@@ -665,13 +667,13 @@ namespace PolyPlane.GameObjects
                     {
                         this.Hits -= BULLET_DAMAGE;
 
-                        if (Helpers.Rnd.Next(3) == 2)
+                        if (Utilities.Rnd.Next(3) == 2)
                             SpawnDebris(1, result.ImpactPoint, this.PlaneColor);
                     }
                 }
 
                 // Scale the impact position back to the origin of the polygon.
-                var ogPos = Helpers.ScaleToOrigin(this, result.ImpactPoint);
+                var ogPos = Utilities.ScaleToOrigin(this, result.ImpactPoint);
 
                 SetOnFire(ogPos);
 
@@ -743,7 +745,7 @@ namespace PolyPlane.GameObjects
         /// <param name="impactPos"></param>
         public void AddImpact(D2DPoint impactPos)
         {
-            var ogPos = Helpers.ScaleToOrigin(this, impactPos);
+            var ogPos = Utilities.ScaleToOrigin(this, impactPos);
             SetOnFire(ogPos);
         }
 
@@ -824,7 +826,7 @@ namespace PolyPlane.GameObjects
             // How is it so simple?
             var r = pos - this.Position;
 
-            var torque = Helpers.Cross(r, force);
+            var torque = Utilities.Cross(r, force);
             return torque;
         }
 
@@ -860,7 +862,7 @@ namespace PolyPlane.GameObjects
 
         private void CheckForFlip()
         {
-            var pointingRight = Helpers.IsPointingRight(this.Rotation);
+            var pointingRight = Utilities.IsPointingRight(this.Rotation);
             FlipPoly(pointingRight ? Direction.Right : Direction.Left);
         }
 
@@ -883,7 +885,7 @@ namespace PolyPlane.GameObjects
                 vec = AngleToVector(this.Rotation);
 
             // Add a boost effect as speed increases. Jet engines make more power at higher speeds right?
-            var boostFact = Helpers.Factor(this.Velocity.Length(), thrustBoostMaxSpd);
+            var boostFact = Utilities.Factor(this.Velocity.Length(), thrustBoostMaxSpd);
             vec *= _thrustAmt.Value * ((this.Thrust + (thrustBoostAmt * boostFact)) * World.GetDensityAltitude(this.Position));
 
             thrust = vec;
