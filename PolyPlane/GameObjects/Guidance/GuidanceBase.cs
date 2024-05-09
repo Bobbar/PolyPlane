@@ -91,9 +91,6 @@ namespace PolyPlane.GameObjects.Guidance
             if (_missedTarget || _lostInGround)
                 rotation = Missile.Rotation;
 
-            if (float.IsNaN(rotation))
-                Debugger.Break();
-
             // Lerp from current rotation towards guidance rotation as we 
             // approach the specified arm time.
             var armFactor = Utilities.Factor(_armTimer.Value, _armTimer.Interval);

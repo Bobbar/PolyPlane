@@ -26,6 +26,7 @@ namespace PolyPlane.GameObjects
         public float Deflection = 0f;
         public int BulletsFired = 0;
         public int MissilesFired = 0;
+        public int DecoysDropped = 0;
 
         public int BulletsHit = 0;
         public int MissilesHit = 0;
@@ -76,8 +77,6 @@ namespace PolyPlane.GameObjects
         public Action<FighterPlane, GameObject> PlayerKilledCallback { get; set; }
 
         public List<Wing> Wings = new List<Wing>();
-        public FixturePoint _centerOfThrust;
-
 
         private Wing? _controlWing = null;
         private RateLimiter _thrustAmt = new RateLimiter(0.5f);
@@ -106,6 +105,7 @@ namespace PolyPlane.GameObjects
         private FixturePoint _flamePos;
         private FixturePoint _gunPosition;
         private FixturePoint _cockpitPosition;
+        private FixturePoint _centerOfThrust;
         private D2DSize _cockpitSize = new D2DSize(9f, 6f);
         private D2DColor _planeColor;
         private D2DColor _cockpitColor = new D2DColor(0.5f, D2DColor.LightBlue);

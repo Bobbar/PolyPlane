@@ -843,6 +843,7 @@ namespace PolyPlane
                 DoNetDecoy(decoy);
 
             plane.NumDecoys--;
+            plane.DecoysDropped++;
         }
 
         private void AddExplosion(D2DPoint pos)

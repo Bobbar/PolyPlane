@@ -141,7 +141,7 @@ namespace PolyPlane.GameObjects
             this.RenderOffset = 0.9f;
 
             _centerOfThrust = new FixturePoint(this, new D2DPoint(-22, 0));
-            _warheadCenterMass = new FixturePoint(this, new D2DPoint(4f, 0));
+            _warheadCenterMass = new FixturePoint(this, new D2DPoint(6f, 0));
             _motorCenterMass = new FixturePoint(this, new D2DPoint(-11f, 0));
             _flamePos = new FixturePoint(this, new D2DPoint(-22f, 0));
 

@@ -614,7 +614,7 @@ namespace PolyPlane.Net
 
             if (decoyOwner != null)
             {
-                var decoy = new Decoy(decoyOwner);
+                var decoy = new Decoy(decoyOwner, decoyOwner.ExhaustPosition, decoyPacket.Velocity);
                 decoy.ID = decoyPacket.ID;
                 decoyPacket.SyncObj(decoy);
 

@@ -486,6 +486,7 @@ namespace PolyPlane.Server
             _netMan.SendNewDecoy(decoy);
 
             plane.NumDecoys--;
+            plane.DecoysDropped++;
         }
 
         private void DoAIPlaneBurst(float dt)

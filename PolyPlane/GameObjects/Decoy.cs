@@ -19,15 +19,27 @@ namespace PolyPlane.GameObjects
             this.PlayerID = owner.PlayerID;
             this.Owner = owner;
 
-            this.Position = owner.Position;
+            this.Position = owner.ExhaustPosition;
             this.Velocity = owner.Velocity;
 
             // Make the decoy shoot out from the top of the plane.
-            const float EJECT_FORCE = 100f;
+            const float EJECT_FORCE = 200f;
             var toRight = owner.FlipDirection == Direction.Right;
-            var rotVec = Utilities.AngleToVectorDegrees(owner.Rotation + (toRight ? 0f : 180f));
+            var bottomOffset = 0f;
+
+            // Alternate between top and bottom.
+            if (owner.DecoysDropped % 2 == 0)
+                bottomOffset = 180f;
+
+            var rotVec = Utilities.AngleToVectorDegrees(owner.Rotation + bottomOffset + (toRight ? 0f : 180f));
             var topVec = new D2DPoint(rotVec.Y, -rotVec.X);
             this.Velocity += topVec * EJECT_FORCE;
+        }
+
+        public Decoy(FighterPlane owner, D2DPoint pos, D2DPoint velo) : base(pos, velo)
+        {
+            this.PlayerID = owner.PlayerID;
+            this.Owner = owner;
         }
 
         public override void Update(float dt, float renderScale)
