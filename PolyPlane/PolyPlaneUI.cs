@@ -25,6 +25,7 @@ namespace PolyPlane
         private bool _queueNextViewId = false;
         private bool _queuePrevViewId = false;
         private bool _queueResetPlane = false;
+        private bool _queueSpawnPlane = false;
         private bool _queueClearPlanes = false;
         private bool _skipRender = false;
         private long _lastRenderTime = 0;
@@ -262,7 +263,7 @@ namespace PolyPlane
 
         private void HandleNewImpact(object? sender, ImpactEvent e)
         {
-            if (this.Disposing || this.IsDisposed) return;
+            if (this.Disposing || this.IsDisposed || _render == null) return;
 
             try
             {
@@ -727,6 +728,12 @@ namespace PolyPlane
 
                 _queueClearPlanes = false;
             }
+
+            if (_queueSpawnPlane)
+            {
+                SpawnAIPlane();
+                _queueSpawnPlane = false;
+            }
         }
 
         private void DoAIPlaneBurst(float dt)
@@ -1002,7 +1009,7 @@ namespace PolyPlane
 
                 case 'u':
                     if (!World.IsNetGame)
-                        SpawnAIPlane();
+                        _queueSpawnPlane = true;
                     break;
 
                 case 'y':
