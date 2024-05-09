@@ -31,7 +31,7 @@ namespace PolyPlane.GameObjects
             ReferencePosition = new D2DPoint(ReferencePosition.X, ReferencePosition.Y * -1);
         }
 
-        public override void Update(float dt, D2DSize viewport, float renderScale)
+        public override void Update(float dt, float renderScale)
         {
             this.Rotation = GameObject.Rotation;
             this.Position = Utilities.ApplyTranslation(ReferencePosition, GameObject.Rotation, GameObject.Position, renderScale);

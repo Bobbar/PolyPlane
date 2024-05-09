@@ -124,7 +124,7 @@ namespace PolyPlane.GameObjects
             RotationSpeed = rotationSpeed;
         }
 
-        public void Update(float dt, D2DSize viewport, float renderScale, bool skipFrames = false)
+        public void Update(float dt, float renderScale, bool skipFrames = false)
         {
             if (skipFrames)
             {
@@ -135,13 +135,13 @@ namespace PolyPlane.GameObjects
 
                 var multiDT = dt * this.SkipFrames;
 
-                this.Update(multiDT, viewport, renderScale);
+                this.Update(multiDT, renderScale);
             }
             else
-                this.Update(dt, viewport, renderScale);
+                this.Update(dt, renderScale);
         }
 
-        public virtual void Update(float dt, D2DSize viewport, float renderScale)
+        public virtual void Update(float dt, float renderScale)
         {
             if (SkipFrames == 1)
                 CurrentFrame++;
@@ -168,10 +168,10 @@ namespace PolyPlane.GameObjects
             _verticalSpeed = altDiff;
             _prevAlt = this.Altitude;
 
-            Wrap(viewport);
+            Wrap();
         }
 
-        public virtual void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
+        public virtual void NetUpdate(float dt, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
         {
             if (!World.IsServer && World.InterpOn)
             {
@@ -190,7 +190,7 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public virtual void Wrap(D2DSize viewport)
+        public virtual void Wrap()
         {
             // Clamp all objects to ground level.
             if (this.Altitude <= 0f)
@@ -307,9 +307,9 @@ namespace PolyPlane.GameObjects
             Polygon = new RenderPoly(polygon);
         }
 
-        public override void Update(float dt, D2DSize viewport, float renderScale)
+        public override void Update(float dt, float renderScale)
         {
-            base.Update(dt, viewport, renderScale);
+            base.Update(dt, renderScale);
 
             Polygon.Update(this.Position, this.Rotation, renderScale);
 

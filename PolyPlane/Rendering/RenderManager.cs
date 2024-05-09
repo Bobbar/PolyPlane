@@ -317,9 +317,9 @@ namespace PolyPlane.Rendering
         private void UpdateTimersAndAnims()
         {
             _hudMessageTimeout.Update(World.DT);
-            _screenFlash.Update(World.DT, World.ViewPortSize, World.RenderScale);
-            _screenShakeX.Update(World.DT, World.ViewPortSize, World.RenderScale);
-            _screenShakeY.Update(World.DT, World.ViewPortSize, World.RenderScale);
+            _screenFlash.Update(World.DT, World.RenderScale);
+            _screenShakeX.Update(World.DT, World.RenderScale);
+            _screenShakeY.Update(World.DT, World.RenderScale);
             MoveClouds(World.DT);
         }
 

@@ -9,7 +9,7 @@ namespace PolyPlane.GameObjects
         /// </summary>
         public long SkipFrames { get; set; }
         public long CurrentFrame { get; set; }
-        public void Update(float dt, D2DSize viewport, float renderScale, bool skipFrames = false);
+        public void Update(float dt, float renderScale, bool skipFrames = false);
 
     }
 }

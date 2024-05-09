@@ -86,10 +86,10 @@ namespace PolyPlane.GameObjects
             _defRateLimit = new RateLimiter(rate: deflectionRate);
         }
 
-        public override void Update(float dt, D2DSize viewport, float renderScale)
+        public override void Update(float dt, float renderScale)
         {
             _defRateLimit.Update(dt);
-            FixedPosition.Update(dt, viewport, renderScale);
+            FixedPosition.Update(dt, renderScale);
 
             this.Rotation = _parentObject.Rotation + this.Deflection;
             this.Position = FixedPosition.Position;

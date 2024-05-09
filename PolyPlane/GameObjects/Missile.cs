@@ -27,9 +27,9 @@ namespace PolyPlane.GameObjects
             _prevPos = pos;
         }
 
-        public override void Update(float dt, D2DSize viewport, float renderScale)
+        public override void Update(float dt, float renderScale)
         {
-            base.Update(dt, viewport, renderScale);
+            base.Update(dt, renderScale);
 
             var dist = D2DPoint.Distance(this.Position, _prevPos);
             _prevPos = this.Position;

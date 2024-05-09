@@ -68,9 +68,9 @@ namespace PolyPlane
             _lostLockTimer.TriggerCallback = () => ClearLock();
         }
 
-        public override void Update(float dt, D2DSize viewport, float renderScale)
+        public override void Update(float dt, float renderScale)
         {
-            base.Update(dt, viewport, renderScale);
+            base.Update(dt, renderScale);
 
             _lockTimer.Update(dt);
             _lostLockTimer.Update(dt);

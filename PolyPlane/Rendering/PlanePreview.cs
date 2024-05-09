@@ -49,7 +49,7 @@ namespace PolyPlane.Rendering
                 _gfx.TranslateTransform(0f, 90f);
 
                 _plane.PlaneColor = PlaneColor;
-                _plane.Update(World.DT, vpSize, World.RenderScale);
+                _plane.Update(World.DT, World.RenderScale);
                 _plane.Position = center;
                 _angle = Utilities.ClampAngle(_angle + 1f);
                 _plane.Rotation = _angle;

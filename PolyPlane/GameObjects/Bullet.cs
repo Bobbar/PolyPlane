@@ -46,9 +46,9 @@ namespace PolyPlane.GameObjects
             this.Polygon.Update(this.Position, this.Rotation, World.RenderScale * this.RenderOffset);
         }
 
-        public override void Update(float dt, D2DSize viewport, float renderScale)
+        public override void Update(float dt, float renderScale)
         {
-            base.Update(dt, viewport, renderScale);
+            base.Update(dt, renderScale);
 
             _age += dt;
 

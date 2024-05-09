@@ -315,7 +315,7 @@ namespace PolyPlane.Server
 
                     _timer.Restart();
 
-                    objs.ForEachParallel(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale), _multiThreadNum);
+                    objs.ForEachParallel(o => o.Update(partialDT, World.RenderScale), _multiThreadNum);
 
                     _timer.Stop();
                     _updateTime += _timer.Elapsed;

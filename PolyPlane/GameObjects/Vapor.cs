@@ -43,15 +43,15 @@ namespace PolyPlane.GameObjects
         }
 
 
-        public override void Update(float dt, D2DSize viewport, float renderScale)
+        public override void Update(float dt, float renderScale)
         {
-            base.Update(dt, viewport, renderScale);
+            base.Update(dt, renderScale);
             _spawnTimer.Update(dt);
-            UpdateParts(dt, viewport, renderScale);
+            UpdateParts(dt, renderScale);
 
             if (_refPos != null)
             {
-                _refPos.Update(dt, viewport, renderScale);
+                _refPos.Update(dt, renderScale);
                 this.Position = _refPos.Position;
             }
 
@@ -110,13 +110,13 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private void UpdateParts(float dt, D2DSize viewport, float renderScale)
+        private void UpdateParts(float dt, float renderScale)
         {
             int i = 0;
             while (i < _parts.Count)
             {
                 var part = _parts[i];
-                part.Update(dt, viewport, renderScale, skipFrames: false);
+                part.Update(dt, renderScale, skipFrames: false);
 
                 var ageFactFade = 1f - Utilities.Factor(part.Age, MAX_AGE);
                 var alpha = _vaporColor.a * ageFactFade;
@@ -144,9 +144,9 @@ namespace PolyPlane.GameObjects
                 Color = color;
             }
 
-            public override void Update(float dt, D2DSize viewport, float renderScale)
+            public override void Update(float dt, float renderScale)
             {
-                base.Update(dt, viewport, renderScale);
+                base.Update(dt, renderScale);
 
                 this.Velocity += -this.Velocity * (dt * 1.5f);
 

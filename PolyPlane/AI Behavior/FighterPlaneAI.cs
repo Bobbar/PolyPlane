@@ -62,7 +62,7 @@ namespace PolyPlane.AI_Behavior
             _fireMissileCooldown.Start();
         }
 
-        public override void Update(float dt, D2DSize viewport, float renderScale)
+        public override void Update(float dt, float renderScale)
         {
             if (this.Plane.IsDamaged || this.Plane.HasCrashed)
                 return;

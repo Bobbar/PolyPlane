@@ -32,7 +32,7 @@ namespace PolyPlane.GameObjects
             _posSelector = positionSelector;
         }
 
-        public override void Update(float dt, D2DSize viewport, float renderScale)
+        public override void Update(float dt, float renderScale)
         {
             _timeOut.Update(dt);
 

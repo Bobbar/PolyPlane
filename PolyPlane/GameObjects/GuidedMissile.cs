@@ -174,9 +174,9 @@ namespace PolyPlane.GameObjects
             _igniteCooldown.Restart();
         }
 
-        public override void Update(float dt, D2DSize viewport, float renderScale)
+        public override void Update(float dt, float renderScale)
         {
-            base.Update(dt, viewport, renderScale * this.RenderOffset);
+            base.Update(dt, renderScale * this.RenderOffset);
 
             _age += dt;
 
@@ -186,19 +186,19 @@ namespace PolyPlane.GameObjects
 
             if (_useControlSurfaces)
             {
-                _tailWing.Update(dt, viewport, renderScale * this.RenderOffset);
-                _noseWing.Update(dt, viewport, renderScale * this.RenderOffset);
-                _rocketBody.Update(dt, viewport, renderScale * this.RenderOffset);
+                _tailWing.Update(dt, renderScale * this.RenderOffset);
+                _noseWing.Update(dt, renderScale * this.RenderOffset);
+                _rocketBody.Update(dt, renderScale * this.RenderOffset);
             }
             else
             {
-                _rocketBody.Update(dt, viewport, renderScale * this.RenderOffset);
+                _rocketBody.Update(dt, renderScale * this.RenderOffset);
             }
 
-            _centerOfThrust.Update(dt, viewport, renderScale * this.RenderOffset);
-            _warheadCenterMass.Update(dt, viewport, renderScale * this.RenderOffset);
-            _motorCenterMass.Update(dt, viewport, renderScale * this.RenderOffset);
-            _flamePos.Update(dt, viewport, renderScale * this.RenderOffset);
+            _centerOfThrust.Update(dt, renderScale * this.RenderOffset);
+            _warheadCenterMass.Update(dt, renderScale * this.RenderOffset);
+            _motorCenterMass.Update(dt, renderScale * this.RenderOffset);
+            _flamePos.Update(dt, renderScale * this.RenderOffset);
 
             float flameAngle = 0f;
 
@@ -324,9 +324,9 @@ namespace PolyPlane.GameObjects
                 FlameOn = false;
         }
 
-        public override void NetUpdate(float dt, D2DSize viewport, float renderScale, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
+        public override void NetUpdate(float dt, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
         {
-            base.NetUpdate(dt, viewport, renderScale, position, velocity, rotation, frameTime);
+            base.NetUpdate(dt, position, velocity, rotation, frameTime);
 
             _tailWing.Deflection = this.Deflection;
         }

@@ -541,11 +541,11 @@ namespace PolyPlane
 
                     if (_useMultiThread)
                     {
-                        localObjs.ForEachParallel(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale), _multiThreadNum);
+                        localObjs.ForEachParallel(o => o.Update(partialDT, World.RenderScale), _multiThreadNum);
                     }
                     else
                     {
-                        localObjs.ForEach(o => o.Update(partialDT, World.ViewPortSize, World.RenderScale));
+                        localObjs.ForEach(o => o.Update(partialDT, World.RenderScale));
                     }
 
                     _timer.Stop();
@@ -557,11 +557,11 @@ namespace PolyPlane
                 var netObj = _objs.GetAllNetObjects();
                 if (_useMultiThread)
                 {
-                    netObj.ForEachParallel(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale), _multiThreadNum);
+                    netObj.ForEachParallel(o => o.Update(World.DT, World.RenderScale), _multiThreadNum);
                 }
                 else
                 {
-                    netObj.ForEach(o => o.Update(World.DT, World.ViewPortSize, World.RenderScale));
+                    netObj.ForEach(o => o.Update(World.DT, World.RenderScale));
                 }
 
                 World.UpdateAirDensityAndWind(World.DT);

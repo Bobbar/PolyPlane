@@ -21,9 +21,9 @@ namespace PolyPlane.GameObjects
             _color.r = _rnd.NextFloat(0.8f, 1f);
         }
 
-        public override void Update(float dt, D2DSize viewport, float renderScale)
+        public override void Update(float dt, float renderScale)
         {
-            base.Update(dt, viewport, renderScale);
+            base.Update(dt, renderScale);
 
             _currentRadius = MaxRadius * EasingFunctions.EaseOutBack(_age / Duration);
 

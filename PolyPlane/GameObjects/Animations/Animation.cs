@@ -31,7 +31,7 @@ namespace PolyPlane.GameObjects.Animations
             _setVal = setValFunc;
         }
 
-        public override void Update(float dt, D2DSize viewport, float renderScale)
+        public override void Update(float dt, float renderScale)
         {
             if (!IsPlaying)
                 return;
