@@ -696,12 +696,9 @@ namespace PolyPlane.GameObjects
 
             const float IMPACT_MASS = 160f;
 
-            //if (impactor is GuidedMissile missile)
-            //    impactMass = missile.TotalMass * 4f;
-
             var velo = impactor.Velocity - this.Velocity;
             var force = (IMPACT_MASS * velo.Length()) / 4f;
-            var forceVec = (impactPos.Normalized() * force);
+            var forceVec = (velo.Normalized() * force);
             var impactTq = GetTorque(impactPos, forceVec);
 
             this.RotationSpeed += impactTq / this.MASS * World.DT;
