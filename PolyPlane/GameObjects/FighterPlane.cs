@@ -273,7 +273,7 @@ namespace PolyPlane.GameObjects
             else
                 _vaporTrails.ForEach(v => v.Visible = false);
 
-            if (this.FiringBurst && this.NumBullets > 0)
+            if (this.FiringBurst && this.NumBullets > 0 && !this.IsDamaged)
                 _gunSmoke.Visible = true;
             else
                 _gunSmoke.Visible = false;
