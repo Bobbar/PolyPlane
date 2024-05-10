@@ -40,7 +40,7 @@ namespace PolyPlane.GameObjects.Manager
             // Targets/AI Planes vs missiles and bullets.
             for (int r = 0; r < _objs.Planes.Count; r++)
             {
-                var plane = _objs.Planes[r] as FighterPlane;
+                var plane = _objs.Planes[r];
 
                 if (plane == null)
                     continue;
@@ -191,7 +191,7 @@ namespace PolyPlane.GameObjects.Manager
                 }
             }
 
-            // Handle missiles hit by bullets.
+            // Handle missiles hit by bullets and missiles hitting decoys.
             for (int m = 0; m < _objs.Missiles.Count; m++)
             {
                 var missile = _objs.Missiles[m] as Missile;
@@ -213,11 +213,19 @@ namespace PolyPlane.GameObjects.Manager
 
                         if (missile.CollidesWith(bullet, out D2DPoint posb))
                         {
-                            if (!missile.IsExpired)
-                                _objs.AddExplosion(posb);
-
                             missile.IsExpired = true;
                             bullet.IsExpired = true;
+                        }
+                    }
+                    else if (obj is Decoy decoy)
+                    {
+                        if (decoy.IsExpired)
+                            continue;
+
+                        if (missile.CollidesWith(decoy, out D2DPoint posb))
+                        {
+                            missile.IsExpired = true;
+                            decoy.IsExpired = true;
                         }
                     }
                 }

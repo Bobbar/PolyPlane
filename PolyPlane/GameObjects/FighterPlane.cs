@@ -38,7 +38,7 @@ namespace PolyPlane.GameObjects
         public const int MAX_BULLETS = 30;
         public const int MAX_MISSILES = 6;
         public const int MAX_HITS = 32;
-        public const int MISSILE_DAMAGE = 8;
+        public const int MISSILE_DAMAGE = 12;
         public const int BULLET_DAMAGE = 1;
 
         public bool IsAI => _isAIPlane;
@@ -280,7 +280,7 @@ namespace PolyPlane.GameObjects
 
             if (!World.IsNetGame || (World.IsNetGame && !World.IsServer))
             {
-                _flames.ForEach(f => f.Update(dt, renderScale, skipFrames: World.IsNetGame));
+                _flames.ForEach(f => f.Update(dt, renderScale, skipFrames: true));
                 _debris.ForEach(d => d.Update(dt, renderScale, skipFrames: true));
                 _contrail.Update(dt, renderScale, skipFrames: true);
                 _vaporTrails.ForEach(v => v.Update(dt, renderScale * this.RenderOffset));
@@ -754,7 +754,7 @@ namespace PolyPlane.GameObjects
             for (int i = 0; i < num; i++)
             {
                 var debris = new Debris(pos, this.Velocity, color);
-                //debris.SkipFrames = World.PHYSICS_STEPS;
+                debris.SkipFrames = this.IsNetObject ? 1 : World.PHYSICS_SUB_STEPS;
 
                 _debris.Add(debris);
             }

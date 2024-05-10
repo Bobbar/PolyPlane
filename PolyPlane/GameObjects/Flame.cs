@@ -18,7 +18,7 @@ namespace PolyPlane.GameObjects
         private D2DColor _flameColor = new D2DColor(0.6f, D2DColor.Yellow);
         private D2DColor _blackSmoke = new D2DColor(0.6f, D2DColor.Black);
         private D2DColor _graySmoke = new D2DColor(0.6f, D2DColor.Gray);
-
+        private float _rotOffset = 0f;
         private FixturePoint _refPos = null;
         private GameTimer _spawnTimer = new GameTimer(0.1f, true);
 
@@ -34,6 +34,7 @@ namespace PolyPlane.GameObjects
             _spawnTimer.Start();
 
             HoleSize = new D2DSize(Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ), Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ));
+            _rotOffset = Utilities.Rnd.NextFloat(0f, 360f);
         }
 
         public Flame(GameObject obj, D2DPoint offset, bool hasFlame = true) : base(obj.Position, obj.Velocity)
@@ -51,6 +52,7 @@ namespace PolyPlane.GameObjects
             }
 
             HoleSize = new D2DSize(Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ), Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ));
+            _rotOffset = Utilities.Rnd.NextFloat(0f, 360f);
         }
 
         public override void Update(float dt, float renderScale)
@@ -63,7 +65,7 @@ namespace PolyPlane.GameObjects
             {
                 _refPos.Update(dt, renderScale);
                 this.Position = _refPos.Position;
-                this.Rotation = _refPos.Rotation;
+                this.Rotation = _refPos.Rotation + _rotOffset;
             }
 
             if (this.Owner != null && this.Owner.IsExpired)
