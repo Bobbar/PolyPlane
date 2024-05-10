@@ -1,5 +1,5 @@
-﻿using PolyPlane.Net;
-using PolyPlane.Helpers;
+﻿using PolyPlane.Helpers;
+using PolyPlane.Net;
 
 namespace PolyPlane.GameObjects.Manager
 {

@@ -1,8 +1,8 @@
 ﻿using PolyPlane.AI_Behavior;
-using PolyPlane.Rendering;
-using PolyPlane.Helpers;
-using unvell.D2DLib;
 using PolyPlane.GameObjects.Manager;
+using PolyPlane.Helpers;
+using PolyPlane.Rendering;
+using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {

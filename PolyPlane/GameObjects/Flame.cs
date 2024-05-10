@@ -1,5 +1,5 @@
-﻿using PolyPlane.Rendering;
-using PolyPlane.Helpers;
+﻿using PolyPlane.Helpers;
+using PolyPlane.Rendering;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -61,7 +61,7 @@ namespace PolyPlane.GameObjects
 
             if (_refPos != null)
             {
-                _refPos.Update(dt,  renderScale);
+                _refPos.Update(dt, renderScale);
                 this.Position = _refPos.Position;
                 this.Rotation = _refPos.Rotation;
             }

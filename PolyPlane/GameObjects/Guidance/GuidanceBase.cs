@@ -1,5 +1,4 @@
 ﻿using PolyPlane.Helpers;
-using System.Diagnostics;
 
 namespace PolyPlane.GameObjects.Guidance
 {

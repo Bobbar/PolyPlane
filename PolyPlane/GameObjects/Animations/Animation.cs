@@ -1,6 +1,4 @@
-﻿using unvell.D2DLib;
-
-namespace PolyPlane.GameObjects.Animations
+﻿namespace PolyPlane.GameObjects.Animations
 {
     public abstract class Animation<T> : GameObject
     {

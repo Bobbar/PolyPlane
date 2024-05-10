@@ -1,7 +1,7 @@
-﻿using PolyPlane.Net;
+﻿using PolyPlane.Helpers;
+using PolyPlane.Net;
 using PolyPlane.Net.Discovery;
 using PolyPlane.Rendering;
-using PolyPlane.Helpers;
 using System.ComponentModel;
 using System.Net;
 using unvell.D2DLib;

@@ -1,5 +1,5 @@
-﻿using PolyPlane.Rendering;
-using PolyPlane.Helpers;
+﻿using PolyPlane.Helpers;
+using PolyPlane.Rendering;
 
 namespace PolyPlane.GameObjects
 {

@@ -66,14 +66,14 @@ namespace PolyPlane.GameObjects.Guidance
 
             // Only update the stable aim point when the predicted impact point is moving slowly.
             // If it begins to move quickly (when the target changes velo/direction) we keep targeting the previous point until it slows down again.
-            var impactDeltaFact =Utilities.Factor(IMPACT_POINT_DELTA_THRESH, impactPntDelta);
+            var impactDeltaFact = Utilities.Factor(IMPACT_POINT_DELTA_THRESH, impactPntDelta);
             StableAimPoint = D2DPoint.Lerp(StableAimPoint, impactPnt, impactDeltaFact); // Blue
 
             // Compute closing rate and lerp between the target and predicted locations.
             // We gradually incorporate the predicted location as closing rate increases.
             var closingRate = _prevTargetDist - targDist;
             _prevTargetDist = targDist;
-            var closeRateFact =Utilities.Factor(closingRate, MIN_CLOSE_RATE);
+            var closeRateFact = Utilities.Factor(closingRate, MIN_CLOSE_RATE);
             var aimDirection = D2DPoint.Lerp(D2DPoint.Normalize(target - this.Missile.Position), D2DPoint.Normalize(StableAimPoint - this.Missile.Position), closeRateFact);
             CurrentAimPoint = D2DPoint.Lerp(target, StableAimPoint, closeRateFact); // Green
 
@@ -81,23 +81,23 @@ namespace PolyPlane.GameObjects.Guidance
             var veloNorm = D2DPoint.Normalize(this.Missile.Velocity);
             var veloNormTan = new D2DPoint(veloNorm.Y, -veloNorm.X);
 
-            var rotAmtNorm =Utilities.RadsToDegrees(aimDirection.Cross(veloNorm));
-            var rotAmtTan = -1f *Utilities.RadsToDegrees(aimDirection.Cross(veloNormTan));
+            var rotAmtNorm = Utilities.RadsToDegrees(aimDirection.Cross(veloNorm));
+            var rotAmtTan = -1f * Utilities.RadsToDegrees(aimDirection.Cross(veloNormTan));
 
             // Lerp between the two rotations as angle diff changes.
             var targetDirAngle = aimDirection.Angle();
-            var targetAngleDiff =Utilities.AngleDiff(veloAngle, targetDirAngle);
+            var targetAngleDiff = Utilities.AngleDiff(veloAngle, targetDirAngle);
 
             //var angDiffFact =Utilities.Factor(Math.Abs(targetAngleDiff), 180f); // Favors the tangent.
-            var angDiffFact =Utilities.Factor(Math.Abs(targetAngleDiff), 360f); // Favors the normal.
-            var rotLerp =Utilities.Lerp(rotAmtNorm, rotAmtTan, angDiffFact);
+            var angDiffFact = Utilities.Factor(Math.Abs(targetAngleDiff), 360f); // Favors the normal.
+            var rotLerp = Utilities.Lerp(rotAmtNorm, rotAmtTan, angDiffFact);
 
             // Reduce rotation rate as velocity increases. Helps conserve inertia and reduce drag.
-            var veloFact =Utilities.Factor(veloMag, MIN_ROT_SPEED);
+            var veloFact = Utilities.Factor(veloMag, MIN_ROT_SPEED);
             var rotFact = Math.Clamp((MAX_ROT_RATE * (1f - veloFact)) + MIN_ROT_RATE, MIN_ROT_RATE, MAX_ROT_RATE);
 
             // Increase rotation rate modifier as we approach the target.
-            var rotMod = (1f -Utilities.Factor(targDist, ROT_MOD_DIST)) * ROT_MOD_AMT;
+            var rotMod = (1f - Utilities.Factor(targDist, ROT_MOD_DIST)) * ROT_MOD_AMT;
             rotFact += rotMod;
 
             // Offset our current rotation from our current velocity vector to compute the next rotation.
@@ -129,16 +129,16 @@ namespace PolyPlane.GameObjects.Guidance
                 // Advance the target position and velocity angle.
                 for (int i = 0; i <= timeToImpact; i++)
                 {
-                    var avec =Utilities.AngleToVectorDegrees(angle) * targetVelo.Length();
+                    var avec = Utilities.AngleToVectorDegrees(angle) * targetVelo.Length();
                     targLoc += avec;
                     angle += targAngleDelta;
-                    angle =Utilities.ClampAngle(angle);
+                    angle = Utilities.ClampAngle(angle);
                 }
 
                 // Include the remainder after the loop.
                 var rem = timeToImpact % (int)timeToImpact;
                 angle += targAngleDelta * rem;
-                angle =Utilities.ClampAngle(angle);
+                angle = Utilities.ClampAngle(angle);
                 targLoc += (Utilities.AngleToVectorDegrees(angle) * targetVelo.Length()) * rem;
 
                 predicted = targLoc;

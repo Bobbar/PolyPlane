@@ -1,6 +1,4 @@
-﻿using unvell.D2DLib;
-
-namespace PolyPlane.GameObjects
+﻿namespace PolyPlane.GameObjects
 {
     public abstract class Missile : GameObjectPoly
     {

@@ -1,29 +1,29 @@
 ﻿using PolyPlane.AI_Behavior;
 using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Manager;
+using PolyPlane.Helpers;
 using PolyPlane.Net;
 using PolyPlane.Net.Discovery;
+using PolyPlane.Net.NetHost;
 using PolyPlane.Rendering;
-using PolyPlane.Helpers;
 using System.ComponentModel;
 using System.Diagnostics;
-using PolyPlane.Net.NetHost;
 
 
 namespace PolyPlane.Server
 {
     public partial class ServerUI : Form
     {
-        public string InfoText;
-        public bool PauseRequested = false;
+        private bool _pauseRequested = false;
         private bool _spawnAIPlane = false;
         private bool _spawnRandomAIPlane = false;
         private bool _clearAIPlanes = false;
         private bool _stopRender = false;
+        private bool _isPaused = false;
+        private bool _killThread = false;
 
         private AIPersonality _aiPersonality = AIPersonality.Normal;
         private Thread _gameThread;
-        private bool _killThread = false;
         private int _multiThreadNum = 4;
 
         private GameTimer _burstTimer = new GameTimer(0.25f, true);
@@ -32,9 +32,6 @@ namespace PolyPlane.Server
         private GameTimer _syncTimer = new GameTimer(6f, true);
 
         private ManualResetEventSlim _pauseRenderEvent = new ManualResetEventSlim(true);
-        private ManualResetEventSlim _stopRenderEvent = new ManualResetEventSlim(true);
-
-        private bool _isPaused = false;
 
         private Stopwatch _timer = new Stopwatch();
         private TimeSpan _renderTime = new TimeSpan();
@@ -48,17 +45,11 @@ namespace PolyPlane.Server
         private long _lastRenderTime = 0;
         private float _renderFPS = 0;
         private FPSLimiter _fpsLimiter = new FPSLimiter();
-        private long _frame = 0;
-        private double _packetDelay = 0f;
-        private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
         private uint _lastRec = 0;
         private uint _lastSent = 0;
         private Stopwatch _bwTimer = new Stopwatch();
         private SmoothDouble _sentSmooth = new SmoothDouble(50);
         private SmoothDouble _recSmooth = new SmoothDouble(50);
-        private SmoothDouble _netSmooth = new SmoothDouble(50);
-
-        private bool _clearObjs = false;
 
         private string _address;
         private string _serverName;
@@ -344,7 +335,6 @@ namespace PolyPlane.Server
 
             _objs.PruneExpired();
 
-
             _timer.Restart();
             _netMan.DoNetEvents();
             _timer.Stop();
@@ -359,14 +349,14 @@ namespace PolyPlane.Server
             _lastRenderTime = fpsNow;
             _renderFPS = fps;
 
-            if (this.PauseRequested)
+            if (this._pauseRequested)
             {
                 if (!_isPaused)
                     _isPaused = true;
                 else
                     _isPaused = false;
 
-                this.PauseRequested = false;
+                this._pauseRequested = false;
             }
 
             if (this._spawnAIPlane)
@@ -631,16 +621,13 @@ namespace PolyPlane.Server
             if (playerPlane != null)
                 playerPlane.IsExpired = true;
 
-            //player.IsExpired = true;
-
             var kickPacket = new BasicPacket(PacketTypes.KickPlayer, player.ID);
             _server.EnqueuePacket(kickPacket);
         }
 
         private string GetInfo()
         {
-            if (!_bwTimer.IsRunning)
-                _bwTimer.Start();
+            UpdateBandwidthStats();
 
             string infoText = string.Empty;
             infoText += $"Paused: {_isPaused}\n\n";
@@ -662,6 +649,19 @@ namespace PolyPlane.Server
 
             infoText += $"Bytes Rec: {_netMan.Host.Host.BytesReceived}\n";
             infoText += $"Bytes Sent: {_netMan.Host.Host.BytesSent}\n";
+            infoText += $"MB Rec/s: {Math.Round(_recSmooth.Current, 2)}\n";
+            infoText += $"MB Sent/s: {Math.Round(_sentSmooth.Current, 2)}\n";
+            infoText += $"DT: {Math.Round(World.DT, 4)}\n";
+            infoText += $"Interp: {World.InterpOn.ToString()}\n";
+            infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
+
+            return infoText;
+        }
+
+        private void UpdateBandwidthStats()
+        {
+            if (!_bwTimer.IsRunning)
+                _bwTimer.Start();
 
             _bwTimer.Stop();
             var elap = _bwTimer.Elapsed;
@@ -671,20 +671,9 @@ namespace PolyPlane.Server
             _lastRec = _netMan.Host.Host.BytesReceived;
             _lastSent = _netMan.Host.Host.BytesSent;
 
-            var sentPerSec = _sentSmooth.Add((sentDiff / elap.TotalSeconds) / 100000f);
-            var recPerSec = _recSmooth.Add((recDiff / elap.TotalSeconds) / 100000f);
+            _sentSmooth.Add((sentDiff / elap.TotalSeconds) / 100000f);
+            _recSmooth.Add((recDiff / elap.TotalSeconds) / 100000f);
             _bwTimer.Restart();
-
-            infoText += $"MB Rec/s: {Math.Round(recPerSec, 2)}\n";
-            infoText += $"MB Sent/s: {Math.Round(sentPerSec, 2)}\n";
-            //infoText += $"Sent B/s: {(World.IsServer ? _server.BytesSentPerSecond : 0)}\n";
-            //infoText += $"Rec B/s: {(World.IsServer ? _server.BytesReceivedPerSecond : 0)}\n";
-
-            infoText += $"DT: {Math.Round(World.DT, 4)}\n";
-            infoText += $"Interp: {World.InterpOn.ToString()}\n";
-            infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
-
-            return infoText;
         }
 
         private int GetNextAIID()
@@ -788,7 +777,7 @@ namespace PolyPlane.Server
 
         private void PauseButton_Click(object sender, EventArgs e)
         {
-            PauseRequested = true;
+            _pauseRequested = true;
         }
 
         private void SpawnAIPlaneButton_Click(object sender, EventArgs e)

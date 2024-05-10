@@ -1,6 +1,6 @@
-﻿using PolyPlane.Net;
+﻿using PolyPlane.Helpers;
+using PolyPlane.Net;
 using PolyPlane.Rendering;
-using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -87,7 +87,7 @@ namespace PolyPlane.GameObjects
         protected float _rotation = 0f;
         protected float _verticalSpeed = 0f;
         protected float _prevAlt = 0f;
-       
+
         public GameObject()
         {
             this.ID = new GameID(-1, World.GetNextObjectId());

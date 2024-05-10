@@ -1,7 +1,7 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Animations;
-using PolyPlane.Net;
 using PolyPlane.Helpers;
+using PolyPlane.Net;
 using System.Diagnostics;
 using unvell.D2DLib;
 

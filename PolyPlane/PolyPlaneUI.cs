@@ -1,18 +1,17 @@
 using PolyPlane.AI_Behavior;
 using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Manager;
-using PolyPlane.Net;
-using PolyPlane.Rendering;
 using PolyPlane.Helpers;
+using PolyPlane.Net;
+using PolyPlane.Net.NetHost;
+using PolyPlane.Rendering;
 using System.Diagnostics;
 using unvell.D2DLib;
-using PolyPlane.Net.NetHost;
 
 namespace PolyPlane
 {
     public partial class PolyPlaneUI : Form
     {
-
         private Thread _gameThread;
 
         private ManualResetEventSlim _pauseRenderEvent = new ManualResetEventSlim(true);
@@ -22,26 +21,19 @@ namespace PolyPlane
         private bool _oneStep = false;
         private bool _killRender = false;
         private bool _shiftDown = false;
-        private bool _showHelp = false;
-        private bool _godMode = false;
         private bool _queueNextViewId = false;
         private bool _queuePrevViewId = false;
         private bool _queueResetPlane = false;
         private bool _queueSpawnPlane = false;
         private bool _queueClearPlanes = false;
         private bool _skipRender = false;
-        private long _lastRenderTime = 0;
-        private float _renderFPS = 0;
         private bool _useMultiThread = true;
-        private int _multiThreadNum = 4;
         private bool _canRespawn = false;
+        private bool _slewEnable = false;
+        private bool _hasFocus = true;
+        private int _multiThreadNum = 4;
 
         private D2DPoint _playerPlaneSlewPos = D2DPoint.Zero;
-        private bool _slewEnable = false;
-
-        private readonly D2DColor _hudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
-        private D2DLayer _missileOverlayLayer;
-        private readonly string _defaultFontName = "Consolas";
 
         private GameTimer _burstTimer = new GameTimer(0.25f, true);
         private GameTimer _decoyTimer = new GameTimer(0.25f, true);
@@ -50,10 +42,8 @@ namespace PolyPlane
         private int _aiPlaneViewID = -1;
 
         private Stopwatch _timer = new Stopwatch();
-        private TimeSpan _renderTime = new TimeSpan();
         private TimeSpan _updateTime = new TimeSpan();
         private TimeSpan _collisionTime = new TimeSpan();
-        private double _packetDelay = 0f;
 
         private GameObjectManager _objs = new GameObjectManager();
         private FighterPlane _playerPlane;
@@ -63,8 +53,6 @@ namespace PolyPlane
         private CollisionManager _collisions;
         private RenderManager _render;
         private FPSLimiter _fpsLimiter = new FPSLimiter();
-        private bool _hasFocus = true;
-        private Random _rnd => Utilities.Rnd;
 
         public PolyPlaneUI()
         {
@@ -72,7 +60,6 @@ namespace PolyPlane
 
             this.GotFocus += PolyPlaneUI_GotFocus;
             this.LostFocus += PolyPlaneUI_LostFocus;
-            this.MouseWheel += PolyPlaneUI_MouseWheel;
             this.Disposed += PolyPlaneUI_Disposed;
 
             _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
@@ -313,13 +300,9 @@ namespace PolyPlane
 
             StopRender();
             _killRender = true;
-
             _client?.Stop();
             _client?.Dispose();
-
             _render?.Dispose();
-
-            _missileOverlayLayer?.Dispose();
             _fpsLimiter?.Dispose();
         }
 
@@ -342,15 +325,13 @@ namespace PolyPlane
                 _objs.AddBullet(b);
 
                 if (World.IsNetGame)
-                {
                     _client.SendNewBulletPacket(b);
-                }
             };
 
             _playerPlane.AutoPilotOn = true;
             _playerPlane.ThrustOn = true;
             _playerPlane.Velocity = new D2DPoint(500f, 0f);
-            _playerPlane.Radar = new Radar(_playerPlane, _hudColor, _objs.Missiles, _objs.Planes);
+            _playerPlane.Radar = new Radar(_playerPlane, World.HudColor, _objs.Missiles, _objs.Planes);
             _playerPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
 
             _playerPlane.FireMissileCallback = (m) =>
@@ -358,9 +339,7 @@ namespace PolyPlane
                 _objs.EnqueueMissile(m);
 
                 if (World.IsNetGame)
-                {
                     _client.SendNewMissilePacket(m);
-                }
 
             };
 
@@ -401,7 +380,7 @@ namespace PolyPlane
             _playerPlane.Reset();
             _playerPlane.FixPlane();
 
-            _playerPlane.Radar = new Radar(_playerPlane, _hudColor, _objs.Missiles, _objs.Planes);
+            _playerPlane.Radar = new Radar(_playerPlane, World.HudColor, _objs.Missiles, _objs.Planes);
             _playerPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
 
             _playerResetTimer.Stop();
@@ -422,7 +401,7 @@ namespace PolyPlane
 
             var aiPlane = new FighterPlane(pos, Utilities.RandomEnum<AIPersonality>());
             aiPlane.PlayerID = World.GetNextPlayerId();
-            aiPlane.Radar = new Radar(aiPlane, _hudColor, _objs.Missiles, _objs.Planes);
+            aiPlane.Radar = new Radar(aiPlane, World.HudColor, _objs.Missiles, _objs.Planes);
             aiPlane.PlayerName = "(BOT) " + Utilities.GetRandomName();
             aiPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
             aiPlane.FireMissileCallback = (m) =>
@@ -503,7 +482,6 @@ namespace PolyPlane
 
         private void AdvanceAndRender()
         {
-            _renderTime = TimeSpan.Zero;
             _updateTime = TimeSpan.Zero;
             _collisionTime = TimeSpan.Zero;
 
@@ -512,7 +490,7 @@ namespace PolyPlane
 
             ResizeGfx();
             _objs.SyncAll();
-            ProcessObjQueue();
+            ProcessQueuedEvents();
 
             FighterPlane viewPlane = GetViewPlane();
             World.ViewID = viewPlane.ID;
@@ -585,16 +563,11 @@ namespace PolyPlane
             _render.CollisionTime = _collisionTime;
             _render.UpdateTime = _updateTime;
 
-            _timer.Restart();
 
             if (!_skipRender && this.WindowState != FormWindowState.Minimized)
                 _render.RenderFrame(viewPlane);
             else
                 _fpsLimiter.Wait(60);
-
-            _timer.Stop();
-            _renderTime += _timer.Elapsed;
-
 
             if (World.IsNetGame)
                 _netMan.DoNetEvents();
@@ -603,11 +576,6 @@ namespace PolyPlane
 
             DoMouseButtons();
 
-            var now = DateTime.UtcNow.Ticks;
-            var fps = TimeSpan.TicksPerSecond / (float)(now - _lastRenderTime);
-            _lastRenderTime = now;
-            _renderFPS = fps;
-
             if (_slewEnable)
             {
                 _playerPlane.Rotation = _playerPlane.PlayerGuideAngle;
@@ -615,8 +583,6 @@ namespace PolyPlane
                 _playerPlane.Position = _playerPlaneSlewPos;
                 _playerPlane.Reset();
                 _playerPlane.Velocity = D2DPoint.Zero;
-                //_playerPlane.HasCrashed = true;
-                //_godMode = true;
             }
 
             if (_playerPlane.IsDamaged && !_playerResetTimer.IsRunning)
@@ -700,7 +666,7 @@ namespace PolyPlane
                 return _playerPlane;
         }
 
-        private void ProcessObjQueue()
+        private void ProcessQueuedEvents()
         {
             if (_queueNextViewId)
             {
@@ -770,7 +736,7 @@ namespace PolyPlane
                 if (plane.IsNetObject)
                     continue;
 
-                plane.FireBullet(p => AddExplosion(p));
+                plane.FireBullet(_objs.AddBulletExplosion);
             }
         }
 
@@ -788,6 +754,28 @@ namespace PolyPlane
                 DropDecoy(plane);
             }
         }
+
+        private void DropDecoy(FighterPlane plane)
+        {
+            if (plane.NumDecoys <= 0)
+            {
+                plane.NumDecoys = 0;
+                return;
+            }
+
+            if (plane.IsDamaged)
+                return;
+
+            var decoy = new Decoy(plane);
+            _objs.EnqueueDecoy(decoy);
+
+            if (World.IsNetGame)
+                _netMan.SendNewDecoy(decoy);
+
+            plane.NumDecoys--;
+            plane.DecoysDropped++;
+        }
+
 
         private void PauseRender()
         {
@@ -818,38 +806,6 @@ namespace PolyPlane
         private void SendPlayerReset()
         {
             _netMan.SendPlaneReset(_playerPlane);
-        }
-
-        private void DoNetDecoy(Decoy decoy)
-        {
-            _netMan.SendNewDecoy(decoy);
-        }
-
-        private void DropDecoy(FighterPlane plane)
-        {
-            if (plane.NumDecoys <= 0)
-            {
-                plane.NumDecoys = 0;
-                return;
-            }
-
-            if (plane.IsDamaged)
-                return;
-
-            var decoy = new Decoy(plane);
-            _objs.EnqueueDecoy(decoy);
-
-            if (World.IsNetGame)
-                DoNetDecoy(decoy);
-
-            plane.NumDecoys--;
-            plane.DecoysDropped++;
-        }
-
-        private void AddExplosion(D2DPoint pos)
-        {
-            var explosion = new Explosion(pos, 200f, 1.4f);
-            _objs.AddExplosion(explosion);
         }
 
         private int GetNextAIID()
@@ -913,12 +869,9 @@ namespace PolyPlane
             switch (e.KeyChar)
             {
                 case 'a':
-                    //_playerPlane.AutoPilotOn = !_playerPlane.AutoPilotOn;
                     break;
 
                 case 'b':
-                    //_motionBlur = !_motionBlur;
-                    //_trailsOn = false;
                     _skipRender = !_skipRender;
                     break;
 
@@ -935,7 +888,6 @@ namespace PolyPlane
                     break;
 
                 case 'h':
-                    //_showHelp = !_showHelp;
                     _render.ToggleHelp();
                     break;
 
@@ -944,31 +896,18 @@ namespace PolyPlane
                     break;
 
                 case 'k':
-                    //World.EnableTurbulence = !World.EnableTurbulence;
-
-                    //var viewPlane = GetViewPlane();
-                    //if (viewPlane != null)
-                    //    viewPlane.IsDamaged = true;
-
                     break;
 
                 case 'l':
-                    //World.EnableWind = !World.EnableWind;
                     break;
 
                 case 'm':
-                    //InitPlane();
                     break;
 
                 case 'n':
-                    //_isPaused = true;
-                    //_oneStep = true;
                     break;
 
                 case 'o':
-                    //World.ShowMissileCloseup = !World.ShowMissileCloseup;
-                    //_useMultiThread = !_useMultiThread;
-                    //_showInfo = !_showInfo;
                     _render.ToggleInfo();
                     break;
 
@@ -1002,7 +941,6 @@ namespace PolyPlane
                     else
                     {
                         _playerPlane.HasCrashed = false;
-                        _godMode = false;
                     }
 
                     break;
@@ -1016,13 +954,11 @@ namespace PolyPlane
                     break;
 
                 case 'y':
-                    //_targetTypes = Utilities.CycleEnum(_targetTypes);
                     break;
 
                 case '=' or '+':
                     if (_shiftDown)
                     {
-                        //World.DT += DT_ADJ_AMT;
                         _render.HudScale += 0.01f;
                     }
                     else
@@ -1036,9 +972,7 @@ namespace PolyPlane
 
                     if (_shiftDown)
                     {
-                        //World.DT -= DT_ADJ_AMT;
                         _render.HudScale -= 0.01f;
-
                     }
                     else
                     {
@@ -1051,8 +985,8 @@ namespace PolyPlane
 
                     if ((_playerPlane.IsDamaged || _playerPlane.HasCrashed || _playerPlane.IsAI))
                         _queuePrevViewId = true;
-
                     break;
+
                 case ']':
                     if ((_playerPlane.IsDamaged || _playerPlane.HasCrashed || _playerPlane.IsAI))
                         _queueNextViewId = true;
@@ -1061,15 +995,12 @@ namespace PolyPlane
                 case (char)8: //Backspace
                     _aiPlaneViewID = _playerPlane.PlayerID;
                     break;
+
                 case ' ':
                     TargetLockedWithMissile();
                     break;
 
             }
-        }
-
-        private void PolyPlaneUI_MouseUp(object sender, MouseEventArgs e)
-        {
         }
 
         private void PolyPlaneUI_MouseDown(object sender, MouseEventArgs e)
@@ -1081,17 +1012,6 @@ namespace PolyPlane
                     break;
 
             }
-        }
-
-        private void PolyPlaneUI_MouseWheel(object? sender, MouseEventArgs e)
-        {
-            //if (!_shiftDown)
-            //{
-            //    if (e.Delta > 0)
-            //        _playerPlane.MoveThrottle(true);
-            //    else
-            //        _playerPlane.MoveThrottle(false);
-            //}
         }
 
         private void PolyPlaneUI_KeyDown(object sender, KeyEventArgs e)
@@ -1119,7 +1039,6 @@ namespace PolyPlane
             {
                 this.Close();
             }
-
         }
     }
 }

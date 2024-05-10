@@ -185,7 +185,7 @@ namespace PolyPlane.Net
         }
 
         public BasicListPacket(PacketTypes type) : base(type) { }
-       
+
         public override void Serialize(BitBuffer data)
         {
             base.Serialize(data);
