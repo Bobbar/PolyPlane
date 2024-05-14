@@ -55,6 +55,27 @@ namespace PolyPlane.GameObjects
             _rotOffset = Utilities.Rnd.NextFloat(0f, 180f);
         }
 
+
+        public Flame(GameObject obj, D2DPoint offset, float angle, bool hasFlame = true) : base(obj.Position, obj.Velocity)
+        {
+            _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
+
+            this.Owner = obj;
+            Radius = Utilities.Rnd.NextFloat(4f, 15f);
+            _refPos = new FixturePoint(obj, offset);
+
+            if (hasFlame)
+            {
+                _spawnTimer.TriggerCallback = () => SpawnPart();
+                _spawnTimer.Start();
+            }
+
+            // Fudge the hole size to ensure it's elongated in the Y direction.
+            HoleSize = new D2DSize(Utilities.Rnd.NextFloat(MIN_HOLE_SZ + 2, MAX_HOLE_SZ + 2), Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ - 3));
+            _rotOffset = angle;
+        }
+
+
         public override void Update(float dt, float renderScale)
         {
             base.Update(dt, renderScale);

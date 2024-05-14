@@ -617,15 +617,22 @@ namespace PolyPlane.GameObjects
             _gunPosition.Update(0f, World.RenderScale * this.RenderOffset);
         }
 
-        public void SetOnFire()
+        public void AddBulletHole()
         {
             var offset = Utilities.RandOPointInPoly(_planePoly);
-            SetOnFire(offset);
+            AddBulletHole(offset);
         }
 
-        public void SetOnFire(D2DPoint pos)
+        public void AddBulletHole(D2DPoint pos)
         {
             var flame = new Flame(this, pos, hasFlame: Utilities.Rnd.Next(3) == 2);
+            flame.IsNetObject = this.IsNetObject;
+            _flames.Add(flame);
+        }
+
+        public void AddBulletHole(D2DPoint pos, float angle)
+        {
+            var flame = new Flame(this, pos, angle, hasFlame: Utilities.Rnd.Next(3) == 2);
             flame.IsNetObject = this.IsNetObject;
             _flames.Add(flame);
         }
@@ -677,7 +684,9 @@ namespace PolyPlane.GameObjects
 
                 // Scale the impact position back to the origin of the polygon.
                 var ogPos = Utilities.ScaleToOrigin(this, result.ImpactPoint);
-                SetOnFire(ogPos);
+                var angle = Utilities.ClampAngle(result.ImpactPoint.AngleTo(impactor.Position, false) - this.Rotation);
+
+                AddBulletHole(ogPos, angle);
 
                 if (this.Hits <= 0)
                 {
@@ -748,7 +757,7 @@ namespace PolyPlane.GameObjects
         public void AddImpact(D2DPoint impactPos)
         {
             var ogPos = Utilities.ScaleToOrigin(this, impactPos);
-            SetOnFire(ogPos);
+            AddBulletHole(ogPos);
         }
 
         private void SpawnDebris(int num, D2DPoint pos, D2DColor color)
@@ -773,7 +782,7 @@ namespace PolyPlane.GameObjects
             SASOn = false;
             _flipTimer.Stop();
             Hits = 0;
-            SetOnFire();
+            AddBulletHole();
         }
 
         public void FixPlane()
