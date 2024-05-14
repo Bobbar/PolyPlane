@@ -454,9 +454,9 @@ namespace PolyPlane.GameObjects
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, _planeColor);
             Wings.ForEach(w => w.Render(ctx));
             DrawCockpit(ctx.Gfx);
-            _debris.ForEach(d => d.Render(ctx));
             DrawBulletHoles(ctx);
             _gunSmoke.Render(ctx);
+            _debris.ForEach(d => d.Render(ctx));
 
             //DrawFOVCone(gfx);
             //_cockpitPosition.Render(ctx);
