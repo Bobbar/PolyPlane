@@ -199,11 +199,9 @@ namespace PolyPlane.GameObjects
             _controlWing.Deflection = 2f;
             _centerOfThrust = new FixturePoint(this, new D2DPoint(-33f, 0));
 
-            var skipFrames = IsNetObject ? 1 : World.PHYSICS_SUB_STEPS;
-
             this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), this.RenderOffset);
-            _flamePos = new FixturePoint(this, new D2DPoint(-38f, 1f), skipFrames);
-            _gunPosition = new FixturePoint(this, new D2DPoint(35f, 0), skipFrames);
+            _flamePos = new FixturePoint(this, new D2DPoint(-38f, 1f));
+            _gunPosition = new FixturePoint(this, new D2DPoint(35f, 0));
             _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
             _gunSmoke = new Vapor(_gunPosition, D2DPoint.Zero, 8f, new D2DColor(0.7f, D2DColor.BurlyWood));
 
