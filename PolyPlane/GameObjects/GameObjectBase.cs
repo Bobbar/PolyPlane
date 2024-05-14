@@ -152,7 +152,7 @@ namespace PolyPlane.GameObjects
 
         public virtual void NetUpdate(float dt, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
         {
-            if (!World.IsServer && World.InterpOn)
+            if (World.InterpOn)
             {
                 var newState = new GameObjectPacket(this);
                 newState.Position = position;
