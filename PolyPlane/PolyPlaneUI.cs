@@ -18,7 +18,6 @@ namespace PolyPlane
         private ManualResetEventSlim _stopRenderEvent = new ManualResetEventSlim(true);
 
         private bool _isPaused = false;
-        private bool _oneStep = false;
         private bool _killRender = false;
         private bool _shiftDown = false;
         private bool _queueNextViewId = false;
@@ -27,7 +26,6 @@ namespace PolyPlane
         private bool _queueSpawnPlane = false;
         private bool _queueClearPlanes = false;
         private bool _skipRender = false;
-        private bool _useMultiThread = true;
         private bool _canRespawn = false;
         private bool _slewEnable = false;
         private bool _hasFocus = true;
@@ -332,7 +330,6 @@ namespace PolyPlane
             _playerPlane.ThrustOn = true;
             _playerPlane.Velocity = new D2DPoint(500f, 0f);
             _playerPlane.Radar = new Radar(_playerPlane, World.HudColor, _objs.Missiles, _objs.Planes);
-            _playerPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
 
             _playerPlane.FireMissileCallback = (m) =>
             {
@@ -381,7 +378,6 @@ namespace PolyPlane
             _playerPlane.FixPlane();
 
             _playerPlane.Radar = new Radar(_playerPlane, World.HudColor, _objs.Missiles, _objs.Planes);
-            _playerPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
 
             _playerResetTimer.Stop();
             _canRespawn = false;
@@ -403,7 +399,7 @@ namespace PolyPlane
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, World.HudColor, _objs.Missiles, _objs.Planes);
             aiPlane.PlayerName = "(BOT) " + Utilities.GetRandomName();
-            aiPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
+
             aiPlane.FireMissileCallback = (m) =>
             {
                 _objs.EnqueueMissile(m);
@@ -498,66 +494,31 @@ namespace PolyPlane
             _timer.Restart();
 
             // Update/advance objects.
-            if (!_isPaused || _oneStep)
+            if (!_isPaused)
             {
-                var partialDT = World.SUB_DT;
+                _timer.Restart();
+                var allObjs = _objs.GetAllObjects();
+                allObjs.ForEachParallel(o => o.Update(World.DT, World.RenderScale), _multiThreadNum);
+                _timer.Stop();
+                _updateTime += _timer.Elapsed;
 
-                var localObjs = _objs.GetAllLocalObjects();
-                var numObj = localObjs.Count;
-
-                for (int i = 0; i < World.PHYSICS_SUB_STEPS; i++)
-                {
-                    _timer.Restart();
-
-                    _collisions.DoCollisions();
-
-                    _timer.Stop();
-
-                    _collisionTime += _timer.Elapsed;
-
-                    _timer.Restart();
-
-                    if (_useMultiThread)
-                    {
-                        localObjs.ForEachParallel(o => o.Update(partialDT, World.RenderScale), _multiThreadNum);
-                    }
-                    else
-                    {
-                        localObjs.ForEach(o => o.Update(partialDT, World.RenderScale));
-                    }
-
-                    _timer.Stop();
-                    _updateTime += _timer.Elapsed;
-                }
+                _timer.Restart();
+                _collisions.DoCollisions();
+                _timer.Stop();
+                _collisionTime += _timer.Elapsed;
 
                 _timer.Restart();
 
-                var netObj = _objs.GetAllNetObjects();
-                if (_useMultiThread)
-                {
-                    netObj.ForEachParallel(o => o.Update(World.DT, World.RenderScale), _multiThreadNum);
-                }
-                else
-                {
-                    netObj.ForEach(o => o.Update(World.DT, World.RenderScale));
-                }
-
                 World.UpdateAirDensityAndWind(World.DT);
 
-                // TODO: Where to handle decoy success? Client or server?
-                //if (!World.IsNetGame)
                 _collisions.DoDecoySuccess();
-
                 _playerBurstTimer.Update(World.DT);
                 _playerResetTimer.Update(World.DT);
-
                 DoAIPlaneBurst(World.DT);
                 _decoyTimer.Update(World.DT);
 
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
-
-                _oneStep = false;
             }
 
             _render.CollisionTime = _collisionTime;

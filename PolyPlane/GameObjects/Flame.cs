@@ -34,7 +34,7 @@ namespace PolyPlane.GameObjects
             _spawnTimer.Start();
 
             HoleSize = new D2DSize(Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ), Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ));
-            _rotOffset = Utilities.Rnd.NextFloat(0f, 360f);
+            _rotOffset = Utilities.Rnd.NextFloat(0f, 180f);
         }
 
         public Flame(GameObject obj, D2DPoint offset, bool hasFlame = true) : base(obj.Position, obj.Velocity)
@@ -52,7 +52,7 @@ namespace PolyPlane.GameObjects
             }
 
             HoleSize = new D2DSize(Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ), Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ));
-            _rotOffset = Utilities.Rnd.NextFloat(0f, 360f);
+            _rotOffset = Utilities.Rnd.NextFloat(0f, 180f);
         }
 
         public override void Update(float dt, float renderScale)
@@ -78,14 +78,13 @@ namespace PolyPlane.GameObjects
 
         public override void Render(RenderContext ctx)
         {
-            //ctx.Gfx.FillEllipseSimple(this.Position, 3f, D2DColor.Red);
-
             _parts.ForEach(p => p.Render(ctx));
         }
 
         public void FlipY()
         {
             this._refPos.FlipY();
+            _rotOffset = Utilities.ClampAngle(_rotOffset * -1f);
         }
 
         private void SpawnPart()
@@ -111,8 +110,6 @@ namespace PolyPlane.GameObjects
             var newColor = new D2DColor(_flameColor.a, 1f, Utilities.Rnd.NextFloat(0f, 0.86f), _flameColor.b);
             var newEllipse = new D2DEllipse(newPos, new D2DSize(newRad, newRad));
             var newPart = new FlamePart(newEllipse, newColor, endColor, newVelo);
-            //newPart.IsNetObject = this.IsNetObject;
-            newPart.SkipFrames = this.IsNetObject ? 1 : World.PHYSICS_SUB_STEPS;
 
             if (_parts.Count < MAX_PARTS)
                 _parts.Add(newPart);
@@ -129,7 +126,7 @@ namespace PolyPlane.GameObjects
             while (i < _parts.Count)
             {
                 var part = _parts[i];
-                part.Update(dt, renderScale, skipFrames: false);
+                part.Update(dt, renderScale);
 
                 var ageFactFade = 1f - Utilities.Factor(part.Age, MAX_AGE);
                 var ageFactSmoke = Utilities.Factor(part.Age, MAX_AGE * 3f);

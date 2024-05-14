@@ -145,7 +145,6 @@ namespace PolyPlane.GameObjects.Manager
 
                             if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - bulletLagComp))
                             {
-
                                 if (histState != null)
                                 {
                                     var ogState = new GameObjectPacket(plane);
@@ -255,7 +254,7 @@ namespace PolyPlane.GameObjects.Manager
                         plane.DoHitGround();
                     }
 
-                    plane.Velocity *= new D2DPoint(0.998f, 0f);
+                    plane.Velocity *= new D2DPoint(0.98f, 0f);
                     plane.Position = new D2DPoint(plane.Position.X, 0f);
                     plane.RotationSpeed = 0f;
                 }

@@ -19,7 +19,6 @@ namespace PolyPlane.GameObjects
 
         public FixturePoint(GameObject gameObject, D2DPoint referencePosition, long skipFrames)
         {
-            this.SkipFrames = skipFrames;
             this.GameObject = gameObject;
             this.ReferencePosition = referencePosition;
             this.Rotation = GameObject.Rotation;

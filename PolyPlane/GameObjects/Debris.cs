@@ -25,7 +25,7 @@ namespace PolyPlane.GameObjects
         public override void Update(float dt, float renderScale)
         {
             base.Update(dt, renderScale);
-            _flame.Update(dt, renderScale, skipFrames: false);
+            _flame.Update(dt, renderScale);
 
             this.Velocity += (World.Gravity * 3f) * dt;
 

@@ -5,7 +5,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public abstract class GameObject : IEquatable<GameObject>, ISkipFramesUpdate, IDisposable
+    public abstract class GameObject : IEquatable<GameObject>, IDisposable
     {
         public GameID ID { get; set; } = new GameID();
 
@@ -74,11 +74,6 @@ namespace PolyPlane.GameObjects
         public bool IsExpired = false;
         public long CurrentFrame { get; set; } = 0;
 
-        /// <summary>
-        /// How many frames must pass between updates.
-        /// </summary>
-        public long SkipFrames { get; set; } = 1;
-
         protected Random _rnd => Utilities.Rnd;
         protected InterpolationBuffer<GameObjectPacket> InterpBuffer = null;
         protected HistoricalBuffer<GameObjectPacket> HistoryBuffer = new HistoricalBuffer<GameObjectPacket>();
@@ -127,32 +122,13 @@ namespace PolyPlane.GameObjects
             RotationSpeed = rotationSpeed;
         }
 
-        public void Update(float dt, float renderScale, bool skipFrames = false)
-        {
-            if (skipFrames)
-            {
-                CurrentFrame++;
-
-                if (SkipFrame())
-                    return;
-
-                var multiDT = dt * this.SkipFrames;
-
-                this.Update(multiDT, renderScale);
-            }
-            else
-                this.Update(dt, renderScale);
-        }
-
         public virtual void Update(float dt, float renderScale)
         {
-            if (SkipFrames == 1)
-                CurrentFrame++;
+            CurrentFrame++;
 
             if (World.IsNetGame && IsNetObject && InterpBuffer != null)
             {
-                // Interp on clients only.
-                if (!World.IsServer && World.InterpOn)
+                if (World.InterpOn)
                 {
                     var nowMs = World.CurrentTime();
                     InterpBuffer.GetInterpolatedState(nowMs);
@@ -253,11 +229,6 @@ namespace PolyPlane.GameObjects
 
         public virtual void Dispose() { }
 
-        private bool SkipFrame()
-        {
-            return this.CurrentFrame % this.SkipFrames != 0;
-        }
-
         private GameObjectPacket InterpObject(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
         {
             this.Position = _posSmooth.Add((from.Position + (to.Position - from.Position) * (float)pctElapsed));
@@ -339,6 +310,8 @@ namespace PolyPlane.GameObjects
 
             if (histPos != null)
             {
+                var hits = new List<D2DPoint>();
+
                 // Create a copy of the polygon and translate it to the historical position/rotation.
                 var histPoly = new RenderPoly(this.Polygon.SourcePoly, World.RenderScale * this.RenderOffset);
                 histPoly.Update(histPos.Position, histPos.Rotation, World.RenderScale);
@@ -355,7 +328,7 @@ namespace PolyPlane.GameObjects
                 var poly1 = obj.Polygon.Poly;
 
                 if (dt < 0f)
-                    dt = World.SUB_DT;
+                    dt = World.DT;
 
                 var relVelo = histPos.Velocity - obj.Velocity;
                 var relVeloDTHalf = (relVelo * dt) * 0.5f;
@@ -373,9 +346,7 @@ namespace PolyPlane.GameObjects
                     // Check for an intersection and get the exact location of the impact.
                     if (PolyIntersect(pnt1, pnt2, histPoly.Poly, out D2DPoint iPosPoly))
                     {
-                        pos = iPosPoly;
-                        histState = histPos;
-                        return true;
+                        hits.Add(iPosPoly);
                     }
                 }
 
@@ -385,12 +356,17 @@ namespace PolyPlane.GameObjects
 
                 if (PolyIntersect(centerPnt1, centerPnt2, histPoly.Poly, out D2DPoint iPosCenter))
                 {
-                    pos = iPosCenter;
+                    hits.Add(iPosCenter);
+                }
+
+                // If we have multiple hits, find the closest to the impactor.
+                if (hits.Count > 0)
+                {
+                    var closest = hits.OrderBy(p => p.DistanceTo(obj.Position));
+                    pos = closest.First();
                     histState = histPos;
                     return true;
                 }
-
-
             }
             else
             {
@@ -413,10 +389,11 @@ namespace PolyPlane.GameObjects
                 return false;
             }
 
+            var hits = new List<D2DPoint>();
             var poly1 = obj.Polygon.Poly;
 
             if (dt < 0f)
-                dt = World.SUB_DT;
+                dt = World.DT;
 
             var relVelo = this.Velocity - obj.Velocity;
             var relVeloDTHalf = (relVelo * dt) * 0.5f;
@@ -434,8 +411,7 @@ namespace PolyPlane.GameObjects
                 // Check for an intersection and get the exact location of the impact.
                 if (PolyIntersect(pnt1, pnt2, this.Polygon.Poly, out D2DPoint iPosPoly))
                 {
-                    pos = iPosPoly;
-                    return true;
+                    hits.Add(iPosPoly);
                 }
             }
 
@@ -445,9 +421,17 @@ namespace PolyPlane.GameObjects
 
             if (PolyIntersect(centerPnt1, centerPnt2, this.Polygon.Poly, out D2DPoint iPosCenter))
             {
-                pos = iPosCenter;
+                hits.Add(iPosCenter);
+            }
+
+            // If we have multiple hits, find the closest to the impactor.
+            if (hits.Count > 0)
+            {
+                var closest = hits.OrderBy(p => p.DistanceTo(obj.Position));
+                pos = closest.First();
                 return true;
             }
+
 
             // ** Other/old collision strategies **
 
@@ -495,8 +479,7 @@ namespace PolyPlane.GameObjects
 
         public void DrawVeloLines(D2DGraphics gfx)
         {
-            //var dt = World.DT;
-            var dt = World.SUB_DT;
+            var dt = World.DT;
 
             foreach (var pnt in this.Polygon.Poly)
             {

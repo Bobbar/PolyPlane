@@ -170,7 +170,6 @@ namespace PolyPlane.GameObjects
         public FighterPlane(D2DPoint pos, AIPersonality personality) : base(pos)
         {
             _aiBehavior = new FighterPlaneAI(this, personality);
-            _aiBehavior.SkipFrames = World.PHYSICS_SUB_STEPS;
 
             _isAIPlane = true;
 
@@ -217,7 +216,6 @@ namespace PolyPlane.GameObjects
                 var p = o as FighterPlane;
                 return p.ExhaustPosition;
             });
-            _contrail.SkipFrames = skipFrames;
 
             _contrail.IsNetObject = this.IsNetObject;
 
@@ -263,145 +261,136 @@ namespace PolyPlane.GameObjects
 
         public override void Update(float dt, float renderScale)
         {
-            this.Hits = Math.Clamp(this.Hits, 0, MAX_HITS);
+            for (int i = 0; i < World.PHYSICS_SUB_STEPS; i++)
+            {
+                var partialDT = World.SUB_DT;
 
-            base.Update(dt, renderScale * this.RenderOffset);
-            this.Radar?.Update(dt, renderScale, skipFrames: true);
+                var wingForce = D2DPoint.Zero;
+                var wingTorque = 0f;
+                var deflection = this.Deflection;
+                var thrust = GetThrust(true);
 
-            if (GForce > VAPOR_TRAIL_GS)
-                _vaporTrails.ForEach(v => v.Visible = true);
-            else
-                _vaporTrails.ForEach(v => v.Visible = false);
+                if (AutoPilotOn)
+                {
+                    float guideRot = this.Rotation;
 
-            if (this.FiringBurst && this.NumBullets > 0 && !this.IsDamaged)
-                _gunSmoke.Visible = true;
-            else
-                _gunSmoke.Visible = false;
+                    if (_isAIPlane)
+                        guideRot = GetAPGuidanceDirection(_aiBehavior.GetAIGuidance());
+                    else
+                        guideRot = GetAPGuidanceDirection(PlayerGuideAngle);
+
+                    var veloAngle = this.Velocity.Angle(true);
+                    var nextDeflect = Utilities.ClampAngle180(guideRot - veloAngle);
+                    deflection = nextDeflect;
+                }
+
+                float ogDef = deflection;
+
+                // Apply some stability control to try to prevent thrust vectoring from spinning the plane.
+                const float MIN_DEF_SPD = 300f; // Minimum speed required for full deflection.
+                var velo = this.AirSpeedIndicated;
+                if (_thrustAmt.Value > 0f && SASOn)
+                {
+                    var spdFact = Utilities.Factor(velo, MIN_DEF_SPD);
+
+                    const float MAX_DEF_AOA = 20f;// Maximum AoA allowed. Reduce deflection as AoA increases.
+                    var aoaFact = 1f - (Math.Abs(Wings[0].AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 6f))));
+
+                    const float MAX_DEF_ROT_SPD = 55f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
+                    var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 8f))));
+
+                    // Ease out when thrust is decreasing.
+                    deflection = Utilities.Lerp(ogDef, ogDef * aoaFact * rotSpdFact, _thrustAmt.Value);
+                }
+
+                if (float.IsNaN(deflection))
+                    deflection = 0f;
+
+                _controlWing.Deflection = deflection;
+
+                foreach (var wing in Wings)
+                {
+                    var force = wing.GetLiftDragForce();
+                    var torque = GetTorque(wing, force);
+
+                    torque += GetTorque(_centerOfThrust.Position, thrust);
+
+                    wingForce += force;
+                    wingTorque += torque;
+                }
+
+                if (IsDamaged)
+                {
+                    wingForce *= 0.2f;
+                    wingTorque *= 0.2f;
+                    AutoPilotOn = false;
+                    SASOn = false;
+                    ThrustOn = false;
+                    _thrustAmt.Set(0f);
+                    _controlWing.Deflection = _damageDeflection;
+                    FiringBurst = false;
+                }
+
+
+                if (!this.IsNetObject)
+                {
+                    Deflection = _controlWing.Deflection;
+
+                    // Ease in physics.
+                    var easeFact = 1f;
+
+                    if (!_easePhysicsComplete)
+                        _easePhysicsTimer.Start();
+
+                    if (!_easePhysicsComplete && _easePhysicsTimer.IsRunning)
+                        easeFact = Utilities.Factor(_easePhysicsTimer.Value, _easePhysicsTimer.Interval);
+
+                    // Integrate torque, thrust and wing force.
+                    this.RotationSpeed += (wingTorque * easeFact) / this.MASS * partialDT;
+                    this.Velocity += (thrust * easeFact) / this.MASS * partialDT;
+                    this.Velocity += (wingForce * easeFact) / this.MASS * partialDT;
+
+                    var gravFact = 1f;
+
+                    if (IsDamaged)
+                        gravFact = 4f;
+
+                    this.Velocity += (World.Gravity * gravFact * partialDT);
+                }
+
+
+                var totForce = (thrust / this.MASS * partialDT) + (wingForce / this.MASS * partialDT);
+
+                var gforce = totForce.Length() / partialDT / World.Gravity.Y;
+                _gForce = gforce;
+                _gForceDir = totForce.Angle(true);
+
+                // TODO:  This is so messy...
+                Wings.ForEach(w => w.Update(partialDT, renderScale * this.RenderOffset));
+                _centerOfThrust.Update(partialDT, renderScale * this.RenderOffset);
+                _thrustAmt.Update(partialDT);
+
+                base.Update(partialDT, renderScale * this.RenderOffset);
+            }
+
+            _flamePos.Update(dt, renderScale * this.RenderOffset);
+            _gunPosition.Update(dt, renderScale * this.RenderOffset);
+            _cockpitPosition.Update(dt, renderScale * this.RenderOffset);
 
             if (!World.IsNetGame || (World.IsNetGame && !World.IsServer))
             {
-                _flames.ForEach(f => f.Update(dt, renderScale, skipFrames: true));
-                _debris.ForEach(d => d.Update(dt, renderScale, skipFrames: true));
-                _contrail.Update(dt, renderScale, skipFrames: true);
+                _flames.ForEach(f => f.Update(dt, renderScale * this.RenderOffset));
+                _debris.ForEach(d => d.Update(dt, renderScale));
+                _contrail.Update(dt, renderScale);
                 _vaporTrails.ForEach(v => v.Update(dt, renderScale * this.RenderOffset));
                 _gunSmoke.Update(dt, renderScale * this.RenderOffset);
             }
 
-            _flamePos.Update(dt, renderScale * this.RenderOffset, skipFrames: true);
-            _gunPosition.Update(dt, renderScale * this.RenderOffset, skipFrames: true);
-            _cockpitPosition.Update(dt, renderScale * this.RenderOffset);
-
-            if (_aiBehavior != null)
-                _aiBehavior.Update(dt, renderScale, skipFrames: true);
-
-            var wingForce = D2DPoint.Zero;
-            var wingTorque = 0f;
-            var thrust = GetThrust(true);
-            var deflection = this.Deflection;
-
-            if (AutoPilotOn)
-            {
-                float guideRot = this.Rotation;
-
-                if (_isAIPlane)
-                    guideRot = GetAPGuidanceDirection(_aiBehavior.GetAIGuidance());
-                else
-                    guideRot = GetAPGuidanceDirection(PlayerGuideAngle);
-
-                var veloAngle = this.Velocity.Angle(true);
-                var nextDeflect = Utilities.ClampAngle180(guideRot - veloAngle);
-                deflection = nextDeflect;
-            }
-
-            float ogDef = deflection;
-
-            // Apply some stability control to try to prevent thrust vectoring from spinning the plane.
-            const float MIN_DEF_SPD = 300f; // Minimum speed required for full deflection.
-            var velo = this.AirSpeedIndicated;
-            if (_thrustAmt.Value > 0f && SASOn)
-            {
-                var spdFact = Utilities.Factor(velo, MIN_DEF_SPD);
-
-                const float MAX_DEF_AOA = 20f;// Maximum AoA allowed. Reduce deflection as AoA increases.
-                var aoaFact = 1f - (Math.Abs(Wings[0].AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 6f))));
-
-                const float MAX_DEF_ROT_SPD = 55f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
-                var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 8f))));
-
-                // Ease out when thrust is decreasing.
-                deflection = Utilities.Lerp(ogDef, ogDef * aoaFact * rotSpdFact, _thrustAmt.Value);
-            }
-
-            if (float.IsNaN(deflection))
-                deflection = 0f;
-
-            _controlWing.Deflection = deflection;
-
-            foreach (var wing in Wings)
-            {
-                var force = wing.GetLiftDragForce();
-                var torque = GetTorque(wing, force);
-
-                torque += GetTorque(_centerOfThrust.Position, thrust);
-
-                wingForce += force;
-                wingTorque += torque;
-            }
-
-            if (IsDamaged)
-            {
-                wingForce *= 0.2f;
-                wingTorque *= 0.2f;
-                AutoPilotOn = false;
-                SASOn = false;
-                ThrustOn = false;
-                _thrustAmt.Set(0f);
-                _controlWing.Deflection = _damageDeflection;
-                FiringBurst = false;
-            }
-
-
-            if (!this.IsNetObject)
-            {
-                Deflection = _controlWing.Deflection;
-
-                // Ease in physics.
-                var easeFact = 1f;
-
-                if (!_easePhysicsComplete)
-                    _easePhysicsTimer.Start();
-
-                if (!_easePhysicsComplete && _easePhysicsTimer.IsRunning)
-                    easeFact = Utilities.Factor(_easePhysicsTimer.Value, _easePhysicsTimer.Interval);
-
-                // Integrate torque, thrust and wing force.
-                this.RotationSpeed += (wingTorque * easeFact) / this.MASS * dt;
-                this.Velocity += (thrust * easeFact) / this.MASS * dt;
-                this.Velocity += (wingForce * easeFact) / this.MASS * dt;
-
-                var gravFact = 1f;
-
-                if (IsDamaged)
-                    gravFact = 4f;
-
-                this.Velocity += (World.Gravity * gravFact * dt);
-            }
-
-            var totForce = (thrust / this.MASS * dt) + (wingForce / this.MASS * dt);
-
-            var gforce = totForce.Length() / dt / World.Gravity.Y;
-            _gForce = gforce;
-            _gForceDir = totForce.Angle(true);
-
-            // TODO:  This is so messy...
-            Wings.ForEach(w => w.Update(dt, renderScale * this.RenderOffset));
-            _centerOfThrust.Update(dt, renderScale * this.RenderOffset);
-            _thrustAmt.Update(dt);
-
             CheckForFlip();
 
-            var thrustMag = thrust.Length();
-            var flameAngle = thrust.Angle();
+            var thrust2 = GetThrust(true);
+            var thrustMag = thrust2.Length();
+            var flameAngle = thrust2.Angle();
             var len = this.Velocity.Length() * 0.05f;
             len += thrustMag * 0.01f;
             len *= 0.6f;
@@ -414,6 +403,22 @@ namespace PolyPlane.GameObjects
             _flipTimer.Update(dt);
             _isLockOntoTimeout.Update(dt);
             _expireTimeout.Update(dt);
+
+            this.Hits = Math.Clamp(this.Hits, 0, MAX_HITS);
+            this.Radar?.Update(dt, renderScale);
+
+            if (GForce > VAPOR_TRAIL_GS)
+                _vaporTrails.ForEach(v => v.Visible = true);
+            else
+                _vaporTrails.ForEach(v => v.Visible = false);
+
+            if (this.FiringBurst && this.NumBullets > 0 && !this.IsDamaged)
+                _gunSmoke.Visible = true;
+            else
+                _gunSmoke.Visible = false;
+
+            if (_aiBehavior != null)
+                _aiBehavior.Update(dt);
 
             if (!this.FiringBurst)
                 _bulletRegenTimer.Update(dt);
@@ -621,9 +626,7 @@ namespace PolyPlane.GameObjects
         public void SetOnFire(D2DPoint pos)
         {
             var flame = new Flame(this, pos, hasFlame: Utilities.Rnd.Next(3) == 2);
-
             flame.IsNetObject = this.IsNetObject;
-            flame.SkipFrames = this.IsNetObject ? 1 : World.PHYSICS_SUB_STEPS;
             _flames.Add(flame);
         }
 
@@ -674,7 +677,6 @@ namespace PolyPlane.GameObjects
 
                 // Scale the impact position back to the origin of the polygon.
                 var ogPos = Utilities.ScaleToOrigin(this, result.ImpactPoint);
-
                 SetOnFire(ogPos);
 
                 if (this.Hits <= 0)
@@ -754,8 +756,6 @@ namespace PolyPlane.GameObjects
             for (int i = 0; i < num; i++)
             {
                 var debris = new Debris(pos, this.Velocity, color);
-                debris.SkipFrames = this.IsNetObject ? 1 : World.PHYSICS_SUB_STEPS;
-
                 _debris.Add(debris);
             }
         }

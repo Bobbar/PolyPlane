@@ -3,7 +3,7 @@ using PolyPlane.Helpers;
 
 namespace PolyPlane.AI_Behavior
 {
-    public class FighterPlaneAI : GameObject, IAIBehavior
+    public class FighterPlaneAI : IAIBehavior
     {
         public FighterPlane Plane => _plane;
         public FighterPlane TargetPlane => _targetPlane;
@@ -61,7 +61,7 @@ namespace PolyPlane.AI_Behavior
             _fireMissileCooldown.Start();
         }
 
-        public override void Update(float dt, float renderScale)
+        public void Update(float dt)
         {
             if (this.Plane.IsDamaged || this.Plane.HasCrashed)
                 return;

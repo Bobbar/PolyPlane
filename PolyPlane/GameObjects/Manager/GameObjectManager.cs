@@ -10,7 +10,7 @@ namespace PolyPlane.GameObjects
     {
         public int TotalObjects => _objLookup.Count;
 
-        private const int MAX_GROUND_IMPACTS = 1000;
+        private const int MAX_GROUND_IMPACTS = 500;
         private const int SPATIAL_GRID_SIDE_LEN = 7;
 
         public List<GameObject> Missiles = new List<GameObject>();

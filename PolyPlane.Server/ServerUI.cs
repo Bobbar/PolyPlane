@@ -292,25 +292,16 @@ namespace PolyPlane.Server
                 var partialDT = World.SUB_DT;
 
                 var objs = _objs.GetAllObjects();
-                var numObj = objs.Count;
 
-                for (int i = 0; i < World.PHYSICS_SUB_STEPS; i++)
-                {
-                    _timer.Restart();
+                _timer.Restart();
+                objs.ForEachParallel(o => o.Update(World.DT, World.RenderScale), _multiThreadNum);
+                _timer.Stop();
+                _updateTime += _timer.Elapsed;
 
-                    _collisions.DoCollisions();
-
-                    _timer.Stop();
-
-                    _collisionTime += _timer.Elapsed;
-
-                    _timer.Restart();
-
-                    objs.ForEachParallel(o => o.Update(partialDT, World.RenderScale), _multiThreadNum);
-
-                    _timer.Stop();
-                    _updateTime += _timer.Elapsed;
-                }
+                _timer.Restart();
+                _collisions.DoCollisions();
+                _timer.Stop();
+                _collisionTime += _timer.Elapsed;
 
                 _timer.Restart();
 
@@ -524,7 +515,6 @@ namespace PolyPlane.Server
             aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.Radar = new Radar(aiPlane, World.HudColor, _objs.Missiles, _objs.Planes);
             aiPlane.PlayerName = "(BOT) " + Utilities.GetRandomName();
-            aiPlane.Radar.SkipFrames = World.PHYSICS_SUB_STEPS;
 
             aiPlane.FireMissileCallback = (m) =>
             {

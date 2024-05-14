@@ -46,7 +46,7 @@ namespace PolyPlane.GameObjects
         {
             base.Update(dt, renderScale);
 
-            this.Velocity *= 0.998f;
+            this.Velocity *= 0.98f;
 
             this.Velocity += ((World.Gravity * 2f) * dt);
 

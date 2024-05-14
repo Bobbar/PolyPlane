@@ -99,8 +99,6 @@ namespace PolyPlane.GameObjects
             var newEllipse = new D2DEllipse(newPos, new D2DSize(newRad, newRad));
             var newPart = new VaporPart(newEllipse, newColor, newVelo);
 
-            newPart.SkipFrames = this.IsNetObject ? 1 : World.PHYSICS_SUB_STEPS;
-
             if (_parts.Count < MAX_PARTS)
                 _parts.Add(newPart);
             else
@@ -116,7 +114,7 @@ namespace PolyPlane.GameObjects
             while (i < _parts.Count)
             {
                 var part = _parts[i];
-                part.Update(dt, renderScale, skipFrames: false);
+                part.Update(dt, renderScale);
 
                 var ageFactFade = 1f - Utilities.Factor(part.Age, MAX_AGE);
                 var alpha = _vaporColor.a * ageFactFade;
