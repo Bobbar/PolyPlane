@@ -497,7 +497,7 @@ namespace PolyPlane.Server
             for (int i = 0; i < firing.Length; i++)
             {
                 var plane = firing[i];
-                plane.FireBullet(p => _objs.AddBulletExplosion(p));
+                plane.FireBullet();
             }
         }
 

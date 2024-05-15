@@ -106,8 +106,6 @@ namespace PolyPlane.GameObjects.Manager
                             {
                                 if (!missile.IsExpired)
                                 {
-                                    _objs.AddExplosion(pos);
-
                                     var result = plane.GetImpactResult(missile, pos);
 
                                     ImpactEvent?.Invoke(this, new ImpactEvent(plane, missile, result.DoesDamage));

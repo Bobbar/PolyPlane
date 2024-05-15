@@ -69,7 +69,7 @@ namespace PolyPlane
 
             _playerBurstTimer.StartCallback = () =>
             {
-                _playerPlane.FireBullet(p => _objs.AddBulletExplosion(p));
+                _playerPlane.FireBullet();
 
                 if (!_playerPlane.IsDamaged && _playerPlane.NumBullets > 0)
                     _render.DoScreenShake(2f);
@@ -77,7 +77,7 @@ namespace PolyPlane
 
             _playerBurstTimer.TriggerCallback = () =>
             {
-                _playerPlane.FireBullet(p => _objs.AddBulletExplosion(p));
+                _playerPlane.FireBullet();
 
                 if (!_playerPlane.IsDamaged && _playerPlane.NumBullets > 0)
                     _render.DoScreenShake(2f);
@@ -710,7 +710,7 @@ namespace PolyPlane
                 if (plane.IsNetObject)
                     continue;
 
-                plane.FireBullet(_objs.AddBulletExplosion);
+                plane.FireBullet();
             }
         }
 

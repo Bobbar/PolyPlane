@@ -116,7 +116,6 @@ namespace PolyPlane.GameObjects
         private D2DColor _cockpitColor = new D2DColor(0.5f, D2DColor.LightBlue);
         private SmokeTrail _contrail;
         private List<Flame> _bulletHoles = new List<Flame>();
-        private List<Debris> _debris = new List<Debris>();
         private const float VAPOR_TRAIL_GS = 15f; // How many Gs before showing vapor trail.
         private List<Vapor> _vaporTrails = new List<Vapor>();
         private Vapor _gunSmoke;
@@ -383,7 +382,6 @@ namespace PolyPlane.GameObjects
             if (!World.IsNetGame || (World.IsNetGame && !World.IsServer))
             {
                 _bulletHoles.ForEach(f => f.Update(dt, renderScale * this.RenderOffset));
-                _debris.ForEach(d => d.Update(dt, renderScale));
                 _contrail.Update(dt, renderScale);
                 _vaporTrails.ForEach(v => v.Update(dt, renderScale * this.RenderOffset));
                 _gunSmoke.Update(dt, renderScale * this.RenderOffset);
@@ -429,12 +427,6 @@ namespace PolyPlane.GameObjects
 
             if (!this.DroppingDecoy)
                 _decoyRegenTimer.Update(dt);
-
-            //if (this.HasCrashed)
-            //    _debris.Clear();
-
-            if (this.IsExpired)
-                _debris.Clear();
         }
 
         public override void NetUpdate(float dt, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
@@ -460,7 +452,6 @@ namespace PolyPlane.GameObjects
             DrawCockpit(ctx.Gfx);
             DrawBulletHoles(ctx);
             _gunSmoke.Render(ctx);
-            _debris.ForEach(d => d.Render(ctx));
 
             //DrawFOVCone(gfx);
             //_cockpitPosition.Render(ctx);
@@ -554,7 +545,7 @@ namespace PolyPlane.GameObjects
             this.NumMissiles--;
         }
 
-        public void FireBullet(Action<D2DPoint> addExplosion)
+        public void FireBullet()
         {
             if (IsDamaged)
                 return;
@@ -567,7 +558,6 @@ namespace PolyPlane.GameObjects
 
             var bullet = new Bullet(this);
 
-            bullet.AddExplosionCallback = addExplosion;
             FireBulletCallback(bullet);
             this.BulletsFired++;
             this.NumBullets--;
@@ -768,8 +758,8 @@ namespace PolyPlane.GameObjects
         {
             for (int i = 0; i < num; i++)
             {
-                var debris = new Debris(pos, this.Velocity, color);
-                _debris.Add(debris);
+                var debris = new Debris(this, pos, this.Velocity, color);
+                this.Manager.AddDebris(debris);
             }
         }
 
@@ -801,7 +791,7 @@ namespace PolyPlane.GameObjects
             _expireTimeout.Stop();
             _flipTimer.Restart();
             _bulletHoles.Clear();
-            _debris.Clear();
+            Manager.CleanDebris(this.ID);
             _thrustAmt.Target = 1f;
             WasHeadshot = false;
             PlayerGuideAngle = 0f;
@@ -913,7 +903,6 @@ namespace PolyPlane.GameObjects
             _polyClipLayer?.Dispose();
             _contrail.Clear();
             _bulletHoles.Clear();
-            _debris.Clear();
             _vaporTrails.Clear();
         }
     }

@@ -7,6 +7,8 @@ namespace PolyPlane.GameObjects
 {
     public abstract class GameObject : IEquatable<GameObject>, IDisposable
     {
+        public GameObjectManager Manager;
+
         public GameID ID { get; set; } = new GameID();
 
         public D2DPoint Position { get; set; }

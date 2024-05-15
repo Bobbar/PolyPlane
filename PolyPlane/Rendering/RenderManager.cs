@@ -500,7 +500,7 @@ namespace PolyPlane.Rendering
 
             DrawPlaneShadow(ctx, plane);
             plane.Render(ctx);
-
+            _objs.Debris.ForEach(o => o.Render(ctx));
             _objs.Explosions.ForEach(o => o.Render(ctx));
 
             DrawClouds(ctx);

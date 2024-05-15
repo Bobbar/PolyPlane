@@ -8,8 +8,6 @@ namespace PolyPlane.GameObjects
     {
         public const float SPEED = 800f;
         public float Lifetime = 10f;
-        public Action<D2DPoint> AddExplosionCallback { get; set; }
-
         private float _age = 0;
 
         private readonly D2DPoint[] _poly = new D2DPoint[]

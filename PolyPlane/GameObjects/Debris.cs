@@ -8,9 +8,11 @@ namespace PolyPlane.GameObjects
     {
         private D2DColor _color;
         private Flame _flame;
+        private bool _isOnGround = false;
 
-        public Debris(D2DPoint pos, D2DPoint velo, D2DColor color) : base(pos, velo)
+        public Debris(GameObject owner, D2DPoint pos, D2DPoint velo, D2DColor color) : base(pos, velo)
         {
+            this.Owner = owner;
             _color = color;
             this.Polygon = new RenderPoly(RandomPoly(8, 12));
 
@@ -25,21 +27,28 @@ namespace PolyPlane.GameObjects
         public override void Update(float dt, float renderScale)
         {
             base.Update(dt, renderScale);
-            _flame.Update(dt, renderScale);
 
             this.Velocity += (World.Gravity * 3f) * dt;
 
             this.Velocity *= new D2DPoint(0.999f, 1f);
 
-            if (this.Altitude <= 0)
-                this.IsExpired = true;
+            if (this.Altitude <= 2f)
+            {
+                this.RotationSpeed *= 0.99f;
+                _isOnGround = true;
+            }
+
+            if (!_isOnGround)
+                _flame.Update(dt, renderScale);
         }
 
         public override void Render(RenderContext ctx)
         {
             base.Render(ctx);
 
-            _flame.Render(ctx);
+            if (!_isOnGround)
+                _flame.Render(ctx);
+
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, _color);
         }
     }

@@ -18,6 +18,8 @@ namespace PolyPlane.GameObjects
         public List<GameObject> Decoys = new List<GameObject>();
         public List<GameObject> Bullets = new List<GameObject>();
         public List<GameObject> Explosions = new List<GameObject>();
+        public List<GameObject> Debris = new List<GameObject>();
+
         public List<D2DPoint> GroundImpacts = new List<D2DPoint>();
         public List<FighterPlane> Planes = new List<FighterPlane>();
 
@@ -37,11 +39,27 @@ namespace PolyPlane.GameObjects
         public event EventHandler<EventMessage> PlayerKilledEvent;
         public event EventHandler<FighterPlane> NewPlayerEvent;
 
+
+        public void AddDebris(Debris debris)
+        {
+            if (!Contains(debris))
+            {
+                AddObject(debris);
+                Debris.Add(debris);
+            }
+        }
+
+        public void CleanDebris(GameID ownerID)
+        {
+            foreach (var debris in Debris.Where(d => d.Owner.ID.Equals(ownerID)))
+                debris.IsExpired = true;
+        }
+
         public void AddBullet(Bullet bullet)
         {
             if (!Contains(bullet))
             {
-                _objLookup.Add(bullet.ID.GetHashCode(), bullet);
+                AddObject(bullet);
                 Bullets.Add(bullet);
             }
         }
@@ -55,7 +73,9 @@ namespace PolyPlane.GameObjects
         {
             if (!Contains(missile))
             {
-                _objLookup.Add(missile.ID.GetHashCode(), missile);
+                missile.Manager = this;
+
+                AddObject(missile);
                 Missiles.Add(missile);
 
                 var trail = new SmokeTrail(missile, o =>
@@ -65,7 +85,7 @@ namespace PolyPlane.GameObjects
                 });
 
 
-                _objLookup.Add(trail.ID.GetHashCode(), trail);
+                AddObject(trail);
                 MissileTrails.Add(trail);
             }
         }
@@ -79,7 +99,7 @@ namespace PolyPlane.GameObjects
         {
             if (!Contains(plane))
             {
-                _objLookup.Add(plane.ID.GetHashCode(), plane);
+                AddObject(plane);
                 Planes.Add(plane);
 
                 plane.PlayerKilledCallback = HandlePlayerKilled;
@@ -97,7 +117,7 @@ namespace PolyPlane.GameObjects
         {
             if (!Contains(decoy))
             {
-                _objLookup.Add(decoy.ID.GetHashCode(), decoy);
+                AddObject(decoy);
                 Decoys.Add(decoy);
             }
         }
@@ -111,7 +131,7 @@ namespace PolyPlane.GameObjects
         {
             if (!Contains(explosion))
             {
-                _objLookup.Add(explosion.ID.GetHashCode(), explosion);
+                AddObject(explosion);
                 Explosions.Add(explosion);
 
                 if (explosion.Altitude <= 10f)
@@ -226,6 +246,7 @@ namespace PolyPlane.GameObjects
             PruneExpired(Decoys);
             PruneExpired(Bullets);
             PruneExpired(Explosions);
+            PruneExpired(Debris);
 
             for (int i = 0; i < Planes.Count; i++)
             {
@@ -233,6 +254,7 @@ namespace PolyPlane.GameObjects
 
                 if (plane.IsExpired)
                 {
+                    plane.Manager = null;
                     _expiredObjs.Add(plane);
                     Planes.RemoveAt(i);
                     _objLookup.Remove(plane.ID.GetHashCode());
@@ -242,6 +264,12 @@ namespace PolyPlane.GameObjects
 
             if (GroundImpacts.Count > MAX_GROUND_IMPACTS)
                 GroundImpacts.RemoveAt(0);
+        }
+
+        private void AddObject(GameObject obj)
+        {
+            obj.Manager = this;
+            _objLookup.Add(obj.ID.GetHashCode(), obj);
         }
 
         private void HandlePlayerKilled(FighterPlane plane, GameObject impactor)
@@ -266,6 +294,7 @@ namespace PolyPlane.GameObjects
 
                 if (obj.IsExpired)
                 {
+                    obj.Manager = null;
                     objs.RemoveAt(i);
                     _objLookup.Remove(obj.ID.GetHashCode());
                     _expiredObjs.Add(obj);
