@@ -55,6 +55,7 @@
             label6 = new Label();
             TimeOfDaySlider = new TrackBar();
             TimeOfDayLabel = new Label();
+            EnableDiscoveryCheckBox = new CheckBox();
             PlayerListContextMenu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)TimeOfDaySlider).BeginInit();
             SuspendLayout();
@@ -297,11 +298,25 @@
             TimeOfDayLabel.TabIndex = 23;
             TimeOfDayLabel.Text = "Time of day:";
             // 
+            // EnableDiscoveryCheckBox
+            // 
+            EnableDiscoveryCheckBox.AutoSize = true;
+            EnableDiscoveryCheckBox.Checked = true;
+            EnableDiscoveryCheckBox.CheckState = CheckState.Checked;
+            EnableDiscoveryCheckBox.Location = new Point(286, 36);
+            EnableDiscoveryCheckBox.Name = "EnableDiscoveryCheckBox";
+            EnableDiscoveryCheckBox.Size = new Size(115, 19);
+            EnableDiscoveryCheckBox.TabIndex = 24;
+            EnableDiscoveryCheckBox.Text = "Enable Discovery";
+            EnableDiscoveryCheckBox.UseVisualStyleBackColor = true;
+            EnableDiscoveryCheckBox.CheckedChanged += EnableDiscoveryCheckBox_CheckedChanged;
+            // 
             // ServerUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(898, 536);
+            Controls.Add(EnableDiscoveryCheckBox);
             Controls.Add(TimeOfDayLabel);
             Controls.Add(TimeOfDaySlider);
             Controls.Add(label6);
@@ -364,5 +379,6 @@
         private Label label6;
         private TrackBar TimeOfDaySlider;
         private Label TimeOfDayLabel;
+        private CheckBox EnableDiscoveryCheckBox;
     }
 }

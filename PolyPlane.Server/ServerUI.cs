@@ -137,7 +137,9 @@ namespace PolyPlane.Server
 
                 _server.PeerDisconnectedEvent += Server_PeerDisconnectedEvent;
 
-                _discoveryTimer.Start();
+                if (EnableDiscoveryCheckBox.Checked)
+                    _discoveryTimer.Start();
+
                 _syncTimer.Start();
 
                 StartGameThread();
@@ -830,6 +832,14 @@ namespace PolyPlane.Server
         private void TimeOfDaySlider_ValueChanged(object sender, EventArgs e)
         {
 
+        }
+
+        private void EnableDiscoveryCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (EnableDiscoveryCheckBox.Checked)
+                _discoveryTimer.Start();
+            else
+                _discoveryTimer.Stop();
         }
     }
 }
