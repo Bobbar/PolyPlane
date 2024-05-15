@@ -144,10 +144,10 @@ namespace PolyPlane.GameObjects
             Rotation += RotationSpeed * dt;
 
             var altDiff = this.Altitude - _prevAlt;
-            _verticalSpeed = altDiff;
+            _verticalSpeed = altDiff / dt;
             _prevAlt = this.Altitude;
 
-            Wrap();
+            ClampToGround(dt);
         }
 
         public virtual void NetUpdate(float dt, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
@@ -169,13 +169,13 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public virtual void Wrap()
+        public virtual void ClampToGround(float dt)
         {
             // Clamp all objects to ground level.
             if (this.Altitude <= 0f)
             {
                 this.Position = new D2DPoint(this.Position.X, 0f);
-                this.Velocity = new D2DPoint(this.Velocity.X, 0f);
+                this.Velocity = new D2DPoint(this.Velocity.X + -this.Velocity.X * (dt * 1f), 0f);
             }
         }
 

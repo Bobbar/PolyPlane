@@ -404,7 +404,7 @@ namespace PolyPlane.Helpers
             var altDiff = alt - targAlt;
             var sign = Math.Sign(altDiff);
 
-            var vsFact = 2000f * Factor(Math.Abs(obj.VerticalSpeed), 1f) + 200f;
+            var vsFact = 200f * Factor(Math.Abs(obj.VerticalSpeed), 1f) + 200f;
             var fact = Factor(Math.Abs(altDiff), vsFact);
 
             var amt = defAmt * fact * sign;

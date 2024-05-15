@@ -29,6 +29,9 @@ namespace PolyPlane
         private bool _canRespawn = false;
         private bool _slewEnable = false;
         private bool _hasFocus = true;
+        private bool _isHoldingAlt = false;
+        private float _holdAltitude = 0f;
+
         private int _multiThreadNum = 4;
 
         private D2DPoint _playerPlaneSlewPos = D2DPoint.Zero;
@@ -558,10 +561,17 @@ namespace PolyPlane
             }
 
             // Hold current altitude while player is typeing.
-            if (_netMan != null && _netMan.ChatInterface.ChatIsActive)
+            if ((_netMan != null && _netMan.ChatInterface.ChatIsActive) || _isHoldingAlt)
             {
-                var altHoldAngle = Utilities.MaintainAltitudeAngle(_playerPlane, _playerPlane.Altitude);
+                if (_holdAltitude == 0f)
+                    _holdAltitude = _playerPlane.Altitude;
+
+                var altHoldAngle = Utilities.MaintainAltitudeAngle(_playerPlane, _holdAltitude);
                 _playerPlane.SetAutoPilotAngle(altHoldAngle);
+            }
+            else
+            {
+                _holdAltitude = 0f;
             }
 
             HandleAIPlaneRespawn();
@@ -830,6 +840,10 @@ namespace PolyPlane
             switch (e.KeyChar)
             {
                 case 'a':
+                    if (World.IsNetGame)
+                        break;
+
+                    _isHoldingAlt = !_isHoldingAlt;
                     break;
 
                 case 'b':

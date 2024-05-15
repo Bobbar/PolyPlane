@@ -18,10 +18,10 @@ namespace PolyPlane.GameObjects
         public string PlayerName;
         public float PlayerGuideAngle = 0;
 
-        public int NumMissiles = MAX_MISSILES;
-        public int NumBullets = MAX_BULLETS;
-        public int NumDecoys = MAX_DECOYS;
-        public int Hits = MAX_HITS;
+        public int NumMissiles { get { return _numMissiles; }  set { _numMissiles = Math.Clamp(value, 0, MAX_MISSILES); } }
+        public int NumBullets { get { return _numBullets; } set { _numBullets = Math.Clamp(value, 0, MAX_BULLETS); } }
+        public int NumDecoys { get { return _numDecoys; } set { _numDecoys = Math.Clamp(value, 0, MAX_DECOYS); } }
+        public int Hits { get { return _hits; } set { _hits = Math.Clamp(value, 0, MAX_HITS); } }
 
         public float Deflection = 0f;
         public int BulletsFired = 0;
@@ -38,8 +38,8 @@ namespace PolyPlane.GameObjects
         public const int MAX_BULLETS = 30;
         public const int MAX_MISSILES = 6;
         public const int MAX_HITS = 32;
-        public const int MISSILE_DAMAGE = 12;
-        public const int BULLET_DAMAGE = 1;
+        public const int MISSILE_DAMAGE = 13;
+        public const int BULLET_DAMAGE = 3;
 
         public bool IsAI => _isAIPlane;
         public bool IsDefending = false;
@@ -98,6 +98,11 @@ namespace PolyPlane.GameObjects
         private float _gForce = 0f;
         private float _gForceDir = 0f;
         private int _throttlePos = 0;
+        private int _numMissiles = MAX_MISSILES;
+        private int _numBullets = MAX_BULLETS;
+        private int _numDecoys = MAX_DECOYS;
+        private int _hits = MAX_HITS;
+
 
         private RenderPoly FlamePoly;
         private D2DLayer _polyClipLayer = null;
@@ -402,7 +407,6 @@ namespace PolyPlane.GameObjects
             _isLockOntoTimeout.Update(dt);
             _expireTimeout.Update(dt);
 
-            this.Hits = Math.Clamp(this.Hits, 0, MAX_HITS);
             this.Radar?.Update(dt, renderScale);
 
             if (GForce > VAPOR_TRAIL_GS)

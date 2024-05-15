@@ -241,7 +241,7 @@ namespace PolyPlane.GameObjects.Manager
             {
                 var plane = _objs.Planes[a];
 
-                if (plane.Altitude <= 0f && !plane.InResetCooldown)
+                if (plane.Altitude <= 2f && !plane.InResetCooldown)
                 {
                     if (!plane.HasCrashed)
                     {
@@ -254,8 +254,6 @@ namespace PolyPlane.GameObjects.Manager
                         plane.DoHitGround();
                     }
 
-                    plane.Velocity *= new D2DPoint(0.98f, 0f);
-                    plane.Position = new D2DPoint(plane.Position.X, 0f);
                     plane.RotationSpeed = 0f;
                 }
             }
