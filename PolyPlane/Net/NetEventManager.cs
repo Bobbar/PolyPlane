@@ -580,9 +580,8 @@ namespace PolyPlane.Net
 
             bullet.Owner = owner;
             bullet.LagAmount = World.CurrentTime() - bulletPacket.FrameTime;
-
             // Try to spawn the bullet ahead to compensate for latency?
-            bullet.Position += bullet.Velocity * (float)(bullet.LagAmount / 1000f);
+            bullet.Position += bullet.Velocity * (float)(bullet.LagAmount / 500f);
 
             _objs.AddBullet(bullet);
         }

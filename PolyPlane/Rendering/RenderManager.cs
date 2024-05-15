@@ -1047,8 +1047,6 @@ namespace PolyPlane.Rendering
                 var vec = Utilities.AngleToVectorDegrees(angle);
 
                 ctx.Gfx.DrawArrow(pos + (vec * 250f), pos + (vec * 270f), color, 2f);
-
-
             }
 
             if (plane.Radar.HasLock)
