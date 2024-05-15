@@ -242,16 +242,17 @@ namespace PolyPlane.GameObjects.Manager
                 if (plane.Altitude <= 2f && !plane.InResetCooldown)
                 {
                     if (!plane.HasCrashed)
-                    {
-                        var pointingRight = Utilities.IsPointingRight(plane.Rotation);
-                        if (pointingRight)
-                            plane.Rotation = 0f;
-                        else
-                            plane.Rotation = 180f;
-
                         plane.DoHitGround();
-                    }
 
+                    float crashDir = 0f;
+                    var pointingRight = Utilities.IsPointingRight(plane.Rotation);
+                    if (pointingRight)
+                        crashDir = 0f;
+                    else
+                        crashDir = 180f;
+
+                    // Ease the plane rotation until it is flat on the ground.
+                    plane.Rotation = EaseRotation(crashDir, plane.Rotation);
                     plane.RotationSpeed = 0f;
                 }
             }
@@ -271,6 +272,22 @@ namespace PolyPlane.GameObjects.Manager
                 if (missile.Altitude <= 0f && !missile.IsExpired)
                     missile.IsExpired = true;
             }
+        }
+
+        private float EaseRotation(float target, float current)
+        {
+            const float RATE = 120f;
+            if (current == target)
+                return target;
+
+            var diff = Utilities.ClampAngle180(target - current);
+            var sign = Math.Sign(diff);
+            var amt = RATE * sign * World.DT;
+
+            if (Math.Abs(amt) > Math.Abs(diff))
+                amt = diff;
+
+            return current + amt;
         }
 
         // Quietly wrap any planes that try to leave the field.
