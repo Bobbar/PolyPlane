@@ -87,6 +87,13 @@ namespace PolyPlane.GameObjects
             this.Rotation = _refPos.Rotation + _rotOffset;
         }
 
+        /// <summary>
+        /// Stop spawning new flame parts.
+        /// </summary>
+        public void StopSpawning()
+        {
+            _spawnTimer.Stop();
+        }
 
         public override void Update(float dt, float renderScale)
         {
