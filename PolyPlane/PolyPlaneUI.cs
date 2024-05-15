@@ -381,8 +381,6 @@ namespace PolyPlane
             _playerPlane.Reset();
             _playerPlane.FixPlane();
 
-            _playerPlane.Radar = new Radar(_playerPlane, World.HudColor, _objs.Missiles, _objs.Planes);
-
             _playerResetTimer.Stop();
             _canRespawn = false;
             _render.ClearHudMessage();
