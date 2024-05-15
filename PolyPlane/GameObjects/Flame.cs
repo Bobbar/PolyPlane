@@ -29,12 +29,16 @@ namespace PolyPlane.GameObjects
             this.Owner = obj;
             Radius = radius;
             _refPos = new FixturePoint(obj, offset);
+            _refPos.Update(World.DT, World.RenderScale * obj.RenderOffset);
 
             _spawnTimer.TriggerCallback = () => SpawnPart();
             _spawnTimer.Start();
 
             HoleSize = new D2DSize(Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ), Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ));
             _rotOffset = Utilities.Rnd.NextFloat(0f, 180f);
+
+            this.Position = _refPos.Position;
+            this.Rotation = _refPos.Rotation + _rotOffset;
         }
 
         public Flame(GameObject obj, D2DPoint offset, bool hasFlame = true) : base(obj.Position, obj.Velocity)
@@ -44,6 +48,7 @@ namespace PolyPlane.GameObjects
             this.Owner = obj;
             Radius = Utilities.Rnd.NextFloat(4f, 15f);
             _refPos = new FixturePoint(obj, offset);
+            _refPos.Update(World.DT, World.RenderScale * obj.RenderOffset);
 
             if (hasFlame)
             {
@@ -53,6 +58,9 @@ namespace PolyPlane.GameObjects
 
             HoleSize = new D2DSize(Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ), Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ));
             _rotOffset = Utilities.Rnd.NextFloat(0f, 180f);
+
+            this.Position = _refPos.Position;
+            this.Rotation = _refPos.Rotation + _rotOffset;
         }
 
 
@@ -63,6 +71,7 @@ namespace PolyPlane.GameObjects
             this.Owner = obj;
             Radius = Utilities.Rnd.NextFloat(4f, 15f);
             _refPos = new FixturePoint(obj, offset);
+            _refPos.Update(World.DT, World.RenderScale * obj.RenderOffset);
 
             if (hasFlame)
             {
@@ -73,6 +82,9 @@ namespace PolyPlane.GameObjects
             // Fudge the hole size to ensure it's elongated in the Y direction.
             HoleSize = new D2DSize(Utilities.Rnd.NextFloat(MIN_HOLE_SZ + 2, MAX_HOLE_SZ + 2), Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ - 3));
             _rotOffset = angle;
+
+            this.Position = _refPos.Position;
+            this.Rotation = _refPos.Rotation + _rotOffset;
         }
 
 

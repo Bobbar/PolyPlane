@@ -886,6 +886,7 @@ namespace PolyPlane
                     if (World.IsNetGame)
                         break;
 
+                    _isPaused = true;
                     _oneStep = true;
                     break;
 
