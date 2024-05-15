@@ -7,13 +7,13 @@ namespace PolyPlane.Net
 {
     public class NetEventManager : IImpactEvent
     {
-        public GameObjectManager Objs;
         public NetPlayHost Host;
         public ChatInterface ChatInterface;
         public bool IsServer = false;
         public FighterPlane PlayerPlane = null;
         public double PacketDelay = 0;
 
+        private GameObjectManager _objs = World.ObjectManager;
         private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
         private Dictionary<int, List<ImpactPacket>> _impacts = new Dictionary<int, List<ImpactPacket>>();
 
@@ -28,9 +28,8 @@ namespace PolyPlane.Net
         public event EventHandler<int> PlayerJoined;
         public event EventHandler<FighterPlane> PlayerRespawned;
 
-        public NetEventManager(GameObjectManager objectManager, NetPlayHost host, FighterPlane playerPlane)
+        public NetEventManager(NetPlayHost host, FighterPlane playerPlane)
         {
-            Objs = objectManager;
             Host = host;
             PlayerPlane = playerPlane;
             IsServer = false;
@@ -38,9 +37,8 @@ namespace PolyPlane.Net
             AttachEvents();
         }
 
-        public NetEventManager(GameObjectManager objectManager, NetPlayHost host)
+        public NetEventManager(NetPlayHost host)
         {
-            Objs = objectManager;
             Host = host;
             PlayerPlane = null;
             IsServer = true;
@@ -57,7 +55,7 @@ namespace PolyPlane.Net
         {
             if (!IsServer)
             {
-                var otherObjs = Objs.GetAllNetObjects();
+                var otherObjs = _objs.GetAllNetObjects();
                 foreach (var obj in otherObjs)
                     obj.IsExpired = true;
             }
@@ -141,8 +139,8 @@ namespace PolyPlane.Net
                             newPlane.ID = playerPacket.ID;
                             newPlane.PlayerName = playerPacket.Name;
                             newPlane.IsNetObject = true;
-                            newPlane.Radar = new Radar(newPlane, World.HudColor, Objs.Missiles, Objs.Planes);
-                            Objs.AddPlane(newPlane);
+                            newPlane.Radar = new Radar(newPlane, World.HudColor, _objs.Missiles, _objs.Planes);
+                            _objs.AddPlane(newPlane);
                         }
 
                         ServerSendOtherPlanes();
@@ -176,7 +174,7 @@ namespace PolyPlane.Net
                     {
                         _netIDIsSet = true;
 
-                        Objs.ChangeObjID(PlayerPlane, new GameID(packet.ID.PlayerID, PlayerPlane.ID.ObjectID));
+                        _objs.ChangeObjID(PlayerPlane, new GameID(packet.ID.PlayerID, PlayerPlane.ID.ObjectID));
                         var netPacket = new NewPlayerPacket(PlayerPlane);
                         Host.EnqueuePacket(netPacket);
 
@@ -203,7 +201,7 @@ namespace PolyPlane.Net
 
                         foreach (var player in listPacket.Players)
                         {
-                            var existing = Objs.Contains(player.ID);
+                            var existing = _objs.Contains(player.ID);
 
                             if (!existing)
                             {
@@ -212,8 +210,8 @@ namespace PolyPlane.Net
                                 newPlane.PlayerName = player.Name;
                                 newPlane.IsNetObject = true;
                                 newPlane.LagAmount = World.CurrentTime() - listPacket.FrameTime;
-                                newPlane.Radar = new Radar(newPlane, World.HudColor, Objs.Missiles, Objs.Planes);
-                                Objs.AddPlane(newPlane);
+                                newPlane.Radar = new Radar(newPlane, World.HudColor, _objs.Missiles, _objs.Planes);
+                                _objs.AddPlane(newPlane);
                             }
                         }
                     }
@@ -225,7 +223,7 @@ namespace PolyPlane.Net
 
                     foreach (var p in expiredPacket.Packets)
                     {
-                        var obj = Objs.GetObjectByID(p.ID);
+                        var obj = _objs.GetObjectByID(p.ID);
 
                         if (obj != null)
                             obj.IsExpired = true;
@@ -244,7 +242,7 @@ namespace PolyPlane.Net
 
                     var resetPack = packet as BasicPacket;
 
-                    var resetPlane = Objs.GetObjectByID(resetPack.ID) as FighterPlane;
+                    var resetPlane = _objs.GetObjectByID(resetPack.ID) as FighterPlane;
 
                     if (resetPlane != null)
                     {
@@ -324,7 +322,7 @@ namespace PolyPlane.Net
         {
             foreach (var impact in impacts.Impacts)
             {
-                var plane = Objs.GetPlaneByPlayerID(impact.ID.PlayerID);
+                var plane = _objs.GetPlaneByPlayerID(impact.ID.PlayerID);
 
                 if (plane != null)
                 {
@@ -351,7 +349,7 @@ namespace PolyPlane.Net
             {
                 var newPlanesPacket = new PlaneListPacket();
 
-                foreach (var plane in Objs.Planes)
+                foreach (var plane in _objs.Planes)
                 {
                     // Don't send updates for human planes.
                     // Those packets are already re-broadcast by the net host.
@@ -379,7 +377,7 @@ namespace PolyPlane.Net
 
             if (IsServer)
             {
-                Objs.Missiles.ForEach(m =>
+                _objs.Missiles.ForEach(m =>
                 {
                     // Don't send updates for net missiles.
                     // (Already re-broadcast by the net host.)
@@ -389,7 +387,7 @@ namespace PolyPlane.Net
             }
             else
             {
-                var missiles = Objs.Missiles.Where(m => m.PlayerID == PlayerPlane.PlayerID);
+                var missiles = _objs.Missiles.Where(m => m.PlayerID == PlayerPlane.PlayerID);
                 foreach (var m in missiles)
                     newMissilesPacket.Missiles.Add(new MissilePacket(m as GuidedMissile, PacketTypes.MissileUpdate));
             }
@@ -403,7 +401,7 @@ namespace PolyPlane.Net
             var expiredObjPacket = new BasicListPacket(PacketTypes.ExpiredObjects);
 
             // Collect expried objs and remove them as we go.
-            var expiredObjs = Objs.ExpiredObjects();
+            var expiredObjs = _objs.ExpiredObjects();
             while (expiredObjs.Count > 0)
             {
                 expiredObjPacket.Packets.Add(new BasicPacket(PacketTypes.ExpiredObjects, expiredObjs[0].ID));
@@ -418,7 +416,7 @@ namespace PolyPlane.Net
         {
             var otherPlanesPackets = new List<NewPlayerPacket>();
 
-            foreach (var plane in Objs.Planes)
+            foreach (var plane in _objs.Planes)
             {
                 otherPlanesPackets.Add(new NewPlayerPacket(plane));
             }
@@ -501,13 +499,13 @@ namespace PolyPlane.Net
         {
             foreach (var missileUpdate in listPacket.Missiles)
             {
-                var netMissile = Objs.GetObjectByID(missileUpdate.ID) as GuidedMissile;
+                var netMissile = _objs.GetObjectByID(missileUpdate.ID) as GuidedMissile;
 
                 if (netMissile != null)
                 {
-                    var netMissileOwner = Objs.GetObjectByID(netMissile.Owner.ID);
+                    var netMissileOwner = _objs.GetObjectByID(netMissile.Owner.ID);
 
-                    if (Objs.TryGetObjectByID(missileUpdate.TargetID, out GameObject netMissileTarget))
+                    if (_objs.TryGetObjectByID(missileUpdate.TargetID, out GameObject netMissileTarget))
                     {
                         if (netMissileTarget != null)
                         {
@@ -529,7 +527,7 @@ namespace PolyPlane.Net
         {
             if (packet != null)
             {
-                var impactor = Objs.GetObjectByID(packet.ImpactorID);
+                var impactor = _objs.GetObjectByID(packet.ImpactorID);
 
                 if (impactor == null)
                     return;
@@ -539,7 +537,7 @@ namespace PolyPlane.Net
 
                 impactor.IsExpired = true;
 
-                var target = Objs.GetObjectByID(packet.ID) as FighterPlane;
+                var target = _objs.GetObjectByID(packet.ID) as FighterPlane;
 
                 if (target != null)
                 {
@@ -586,7 +584,7 @@ namespace PolyPlane.Net
             // Try to spawn the bullet ahead to compensate for latency?
             bullet.Position += bullet.Velocity * (float)(bullet.LagAmount / 1000f);
 
-            Objs.AddBullet(bullet);
+            _objs.AddBullet(bullet);
         }
 
         private void DoNewMissile(MissilePacket missilePacket)
@@ -603,7 +601,7 @@ namespace PolyPlane.Net
                 missilePacket.SyncObj(missile);
                 missile.Target = missileTarget;
                 missile.LagAmount = World.CurrentTime() - missilePacket.FrameTime;
-                Objs.EnqueueMissile(missile);
+                _objs.EnqueueMissile(missile);
             }
         }
 
@@ -617,11 +615,11 @@ namespace PolyPlane.Net
                 decoy.ID = decoyPacket.ID;
                 decoyPacket.SyncObj(decoy);
 
-                bool containsDecoy = Objs.Contains(decoy.ID);
+                bool containsDecoy = _objs.Contains(decoy.ID);
 
                 if (!containsDecoy)
                 {
-                    Objs.AddDecoy(decoy);
+                    _objs.AddDecoy(decoy);
 
                     if (IsServer)
                         Host.EnqueuePacket(decoyPacket);
@@ -631,11 +629,11 @@ namespace PolyPlane.Net
 
         private void DoPlayerDisconnected(int playerID)
         {
-            var playerPlane = Objs.GetPlaneByPlayerID(playerID);
+            var playerPlane = _objs.GetPlaneByPlayerID(playerID);
             if (playerPlane != null)
                 PlayerDisconnected?.Invoke(this, playerPlane.ID.PlayerID);
 
-            var objs = Objs.GetObjectsByPlayer(playerID);
+            var objs = _objs.GetObjectsByPlayer(playerID);
 
             foreach (var obj in objs)
             {
@@ -646,7 +644,7 @@ namespace PolyPlane.Net
 
         private FighterPlane GetNetPlane(GameID id, bool netOnly = true)
         {
-            if (Objs.TryGetObjectByID(id, out GameObject obj))
+            if (_objs.TryGetObjectByID(id, out GameObject obj))
             {
                 if (obj != null && obj is FighterPlane plane)
                 {

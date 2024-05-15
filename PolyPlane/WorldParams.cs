@@ -7,6 +7,8 @@ namespace PolyPlane
 {
     public static class World
     {
+        public static readonly GameObjectManager ObjectManager;
+
         public static BoundedRange[] WorldBounds = new BoundedRange[2];
         public static BoundedRange[] VeloBounds = new BoundedRange[2];
 
@@ -20,6 +22,8 @@ namespace PolyPlane
 
         static World()
         {
+            ObjectManager = new GameObjectManager();
+
             WorldBounds[0] = new BoundedRange(-350000f, 350000, 0.05f);
             WorldBounds[1] = new BoundedRange(-100000f, 1000f, 0.05f);
 

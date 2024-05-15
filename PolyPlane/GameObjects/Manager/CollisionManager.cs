@@ -5,22 +5,20 @@ namespace PolyPlane.GameObjects.Manager
 {
     public class CollisionManager : IImpactEvent
     {
-        private GameObjectManager _objs;
+        private GameObjectManager _objs = World.ObjectManager;
         private NetEventManager _netMan;
 
         private bool _isNetGame = true;
 
         public event EventHandler<ImpactEvent> ImpactEvent;
 
-        public CollisionManager(GameObjectManager objs, NetEventManager netMan)
+        public CollisionManager(NetEventManager netMan)
         {
-            _objs = objs;
             _netMan = netMan;
         }
 
-        public CollisionManager(GameObjectManager objs)
+        public CollisionManager()
         {
-            _objs = objs;
             _isNetGame = false;
         }
 

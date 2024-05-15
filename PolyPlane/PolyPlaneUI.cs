@@ -47,7 +47,7 @@ namespace PolyPlane
         private TimeSpan _updateTime = new TimeSpan();
         private TimeSpan _collisionTime = new TimeSpan();
 
-        private GameObjectManager _objs = new GameObjectManager();
+        private GameObjectManager _objs = World.ObjectManager;
         private FighterPlane _playerPlane;
 
         private NetPlayHost _client;
@@ -158,8 +158,8 @@ namespace PolyPlane
                         _playerPlane.PlaneColor = config.PlaneColor;
 
                         _client = new ClientNetHost(config.Port, config.ServerIPAddress);
-                        _netMan = new NetEventManager(_objs, _client, _playerPlane);
-                        _collisions = new CollisionManager(_objs, _netMan);
+                        _netMan = new NetEventManager(_client, _playerPlane);
+                        _collisions = new CollisionManager(_netMan);
 
                         _netMan.ImpactEvent += HandleNewImpact;
                         _netMan.PlayerIDReceived += NetMan_PlayerIDReceived;
@@ -184,7 +184,7 @@ namespace PolyPlane
                         World.IsNetGame = false;
                         World.IsServer = false;
 
-                        _collisions = new CollisionManager(_objs);
+                        _collisions = new CollisionManager();
                         _collisions.ImpactEvent += HandleNewImpact;
 
                         InitPlane(config.IsAI, config.PlayerName);
@@ -448,7 +448,7 @@ namespace PolyPlane
         private void InitGfx()
         {
             _render?.Dispose();
-            _render = new RenderManager(this, _objs, _netMan);
+            _render = new RenderManager(this, _netMan);
         }
 
         private void ResizeGfx(bool force = false)

@@ -73,8 +73,6 @@ namespace PolyPlane.GameObjects
         {
             if (!Contains(missile))
             {
-                missile.Manager = this;
-
                 AddObject(missile);
                 Missiles.Add(missile);
 
@@ -254,7 +252,6 @@ namespace PolyPlane.GameObjects
 
                 if (plane.IsExpired)
                 {
-                    plane.Manager = null;
                     _expiredObjs.Add(plane);
                     Planes.RemoveAt(i);
                     _objLookup.Remove(plane.ID.GetHashCode());
@@ -268,7 +265,6 @@ namespace PolyPlane.GameObjects
 
         private void AddObject(GameObject obj)
         {
-            obj.Manager = this;
             _objLookup.Add(obj.ID.GetHashCode(), obj);
         }
 
@@ -294,7 +290,6 @@ namespace PolyPlane.GameObjects
 
                 if (obj.IsExpired)
                 {
-                    obj.Manager = null;
                     objs.RemoveAt(i);
                     _objLookup.Remove(obj.ID.GetHashCode());
                     _expiredObjs.Add(obj);

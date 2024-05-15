@@ -54,7 +54,7 @@ namespace PolyPlane.Server
         private string _address;
         private string _serverName;
         private int _port;
-        private GameObjectManager _objs = new GameObjectManager();
+        private GameObjectManager _objs = World.ObjectManager;
         private NetEventManager _netMan;
         private DiscoveryServer _discovery;
         private CollisionManager _collisions;
@@ -123,9 +123,9 @@ namespace PolyPlane.Server
                 _serverName = ServerNameTextBox.Text.Trim();
 
                 _server = new ServerNetHost(port, addy);
-                _netMan = new NetEventManager(_objs, _server);
+                _netMan = new NetEventManager(_server);
                 _discovery = new DiscoveryServer();
-                _collisions = new CollisionManager(_objs, _netMan);
+                _collisions = new CollisionManager(_netMan);
 
                 _netMan.PlayerDisconnected += NetMan_PlayerDisconnected;
                 _netMan.PlayerJoined += NetMan_PlayerJoined;
@@ -725,7 +725,7 @@ namespace PolyPlane.Server
             _viewPort.Disposed += ViewPort_Disposed;
             _viewPort.Show();
 
-            _render = new RenderManager(_viewPort, _objs, _netMan);
+            _render = new RenderManager(_viewPort, _netMan);
             _stopRender = false;
         }
 

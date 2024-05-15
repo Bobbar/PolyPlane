@@ -759,7 +759,7 @@ namespace PolyPlane.GameObjects
             for (int i = 0; i < num; i++)
             {
                 var debris = new Debris(this, pos, this.Velocity, color);
-                this.Manager.AddDebris(debris);
+                World.ObjectManager.AddDebris(debris);
             }
         }
 
@@ -791,7 +791,7 @@ namespace PolyPlane.GameObjects
             _expireTimeout.Stop();
             _flipTimer.Restart();
             _bulletHoles.Clear();
-            Manager.CleanDebris(this.ID);
+            World.ObjectManager.CleanDebris(this.ID);
             _thrustAmt.Target = 1f;
             WasHeadshot = false;
             PlayerGuideAngle = 0f;

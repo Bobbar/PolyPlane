@@ -50,7 +50,7 @@ namespace PolyPlane.Rendering
 
         private Control _renderTarget;
         private readonly D2DColor _clearColor = D2DColor.Black;
-        private GameObjectManager _objs;
+        private GameObjectManager _objs = World.ObjectManager;
         private NetEventManager _netMan;
 
         private D2DPoint _screenShakeTrans = D2DPoint.Zero;
@@ -100,10 +100,9 @@ namespace PolyPlane.Rendering
         private double _gaussianSigma = Math.Sqrt(2.0 * Math.PI * _gaussianSigma_2);
 
 
-        public RenderManager(Control renderTarget, GameObjectManager objs, NetEventManager netMan)
+        public RenderManager(Control renderTarget, NetEventManager netMan)
         {
             _renderTarget = renderTarget;
-            _objs = objs;
             _netMan = netMan;
 
             if (_netMan != null)
