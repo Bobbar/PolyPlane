@@ -129,6 +129,8 @@ namespace PolyPlane.GameObjects
 
         public override void Render(RenderContext ctx)
         {
+            base.Render(ctx);
+
             //// Draw a fixed box behind the moving wing. Helps to visualize deflection.
             //var fixedVec = Utilities.AngleToVectorDegrees(this.Rotation - this.Deflection);
             //var startB = this.Position - fixedVec * RenderLength;

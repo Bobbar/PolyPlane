@@ -448,7 +448,7 @@ namespace PolyPlane.Net
 
         public void SendNetImpact(GameObject impactor, GameObject target, PlaneImpactResult result, GameObjectPacket histState)
         {
-            var impactPacket = new ImpactPacket(target, impactor.ID, result.ImpactPoint, result.DoesDamage, result.WasHeadshot, result.Type == ImpactType.Missile);
+            var impactPacket = new ImpactPacket(target, impactor.ID, result.ImpactPoint, result.ImpactAngle, result.DoesDamage, result.WasHeadshot, result.Type == ImpactType.Missile);
             SaveImpact(impactPacket);
 
             if (histState != null)
@@ -553,7 +553,7 @@ namespace PolyPlane.Net
                     target.SyncFixtures();
 
                     var impactPoint = packet.ImpactPoint;
-                    var result = new PlaneImpactResult(packet.WasMissile ? ImpactType.Missile : ImpactType.Bullet, impactPoint, packet.DoesDamage, packet.WasHeadshot);
+                    var result = new PlaneImpactResult(packet.WasMissile ? ImpactType.Missile : ImpactType.Bullet, impactPoint, packet.ImpactAngle, packet.DoesDamage, packet.WasHeadshot);
                     target.HandleImpactResult(impactor, result);
 
                     target.Rotation = ogState.Rotation;

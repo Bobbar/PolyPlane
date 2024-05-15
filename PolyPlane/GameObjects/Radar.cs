@@ -157,6 +157,8 @@ namespace PolyPlane
 
         public override void Render(RenderContext ctx)
         {
+            base.Render(ctx);
+
             var gfx = ctx.Gfx;
 
             // Background

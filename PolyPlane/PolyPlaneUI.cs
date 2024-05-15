@@ -18,6 +18,7 @@ namespace PolyPlane
         private ManualResetEventSlim _stopRenderEvent = new ManualResetEventSlim(true);
 
         private bool _isPaused = false;
+        private bool _oneStep = false;
         private bool _killRender = false;
         private bool _shiftDown = false;
         private bool _queueNextViewId = false;
@@ -497,7 +498,7 @@ namespace PolyPlane
             _timer.Restart();
 
             // Update/advance objects.
-            if (!_isPaused)
+            if (!_isPaused || _oneStep)
             {
                 _timer.Restart();
                 var allObjs = _objs.GetAllObjects();
@@ -522,6 +523,8 @@ namespace PolyPlane
 
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
+
+                _oneStep = false;
             }
 
             _render.CollisionTime = _collisionTime;
@@ -880,6 +883,10 @@ namespace PolyPlane
                     break;
 
                 case 'n':
+                    if (World.IsNetGame)
+                        break;
+
+                    _oneStep = true;
                     break;
 
                 case 'o':

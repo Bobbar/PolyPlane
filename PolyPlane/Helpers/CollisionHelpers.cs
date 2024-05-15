@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using PolyPlane.GameObjects;
+using System.Numerics;
 using unvell.D2DLib;
 
 namespace PolyPlane.Helpers
@@ -128,5 +129,67 @@ namespace PolyPlane.Helpers
             return p <= 1f;
         }
 
+        public static bool PolyIntersect(D2DPoint a, D2DPoint b, D2DPoint[] poly, out D2DPoint pos)
+        {
+            // Check the segment against every segment in the polygon.
+            for (int i = 0; i < poly.Length - 1; i++)
+            {
+                var pnt1 = poly[i];
+                var pnt2 = poly[i + 1];
+
+                if (CollisionHelpers.IsIntersecting(a, b, pnt1, pnt2, out D2DPoint iPos))
+                {
+                    pos = iPos;
+                    return true;
+                }
+            }
+
+            pos = D2DPoint.Zero;
+            return false;
+        }
+
+        public static bool PolygonSweepCollision(GameObjectPoly impactorObj, D2DPoint[] polygon, float dt, out D2DPoint impactPoint)
+        {
+            // Sweep-based Continuous Collision technique.
+            // Project lines from each polygon vert of the impactor; one point at the current position, and one point at the next/future position.
+            // Then for each of those lines, check for intersections on each line segment of the target object's polygon.
+            // TODO: How to factor for relative velocity of the target object?
+
+            var hits = new List<D2DPoint>();
+            var velo = impactorObj.Velocity * dt;
+            var poly1 = impactorObj.Polygon.Poly;
+
+            for (int i = 0; i < poly1.Length; i++)
+            {
+                var pnt1 = poly1[i];
+                var pnt2 = poly1[i] + velo;
+
+                // Check for an intersection and get the exact location of the impact.
+                if (PolyIntersect(pnt1, pnt2, polygon, out D2DPoint iPosPoly))
+                {
+                    hits.Add(iPosPoly);
+                }
+            }
+
+            // One last check with the center point.
+            var centerPnt1 = impactorObj.Position;
+            var centerPnt2 = impactorObj.Position + velo;
+
+            if (PolyIntersect(centerPnt1, centerPnt2, polygon, out D2DPoint iPosCenter))
+            {
+                hits.Add(iPosCenter);
+            }
+
+            // If we have multiple hits, find the one closest to the impactor.
+            if (hits.Count > 0)
+            {
+                var closest = hits.OrderBy(p => p.DistanceTo(impactorObj.Position));
+                impactPoint = closest.First();
+                return true;
+            }
+
+            impactPoint = D2DPoint.Zero;
+            return false;
+        }
     }
 }

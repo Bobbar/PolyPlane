@@ -64,6 +64,8 @@ namespace PolyPlane.GameObjects
 
         public override void Render(RenderContext ctx)
         {
+            base.Render(ctx);
+
             _parts.ForEach(p => p.Render(ctx));
         }
 
@@ -155,6 +157,8 @@ namespace PolyPlane.GameObjects
 
             public override void Render(RenderContext ctx)
             {
+                base.Render(ctx);
+
                 ctx.FillEllipse(_ellipse, Color);
             }
         }

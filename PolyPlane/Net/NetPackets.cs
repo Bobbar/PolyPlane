@@ -530,6 +530,7 @@ namespace PolyPlane.Net
     {
         public GameID ImpactorID;
         public D2DPoint ImpactPoint;
+        public float ImpactAngle;
         public bool DoesDamage;
         public bool WasHeadshot;
         public bool WasMissile;
@@ -539,11 +540,12 @@ namespace PolyPlane.Net
             this.Deserialize(data);
         }
 
-        public ImpactPacket(GameObject targetObj, GameID impactorID, D2DPoint point, bool doesDamage, bool wasHeadshot, bool wasMissile) : base(targetObj)
+        public ImpactPacket(GameObject targetObj, GameID impactorID, D2DPoint point, float angle, bool doesDamage, bool wasHeadshot, bool wasMissile) : base(targetObj)
         {
             Type = PacketTypes.Impact;
             ImpactorID = impactorID;
             ImpactPoint = point;
+            ImpactAngle = angle;
             DoesDamage = doesDamage;
             WasHeadshot = wasHeadshot;
             WasMissile = wasMissile;
@@ -555,6 +557,7 @@ namespace PolyPlane.Net
 
             data.AddGameID(ImpactorID);
             data.AddD2DPoint(ImpactPoint);
+            data.AddFloat(ImpactAngle);
             data.AddBool(DoesDamage);
             data.AddBool(WasHeadshot);
             data.AddBool(WasMissile);
@@ -566,6 +569,7 @@ namespace PolyPlane.Net
 
             ImpactorID = data.ReadGameID();
             ImpactPoint = data.ReadD2DPoint();
+            ImpactAngle = data.ReadFloat();
             DoesDamage = data.ReadBool();
             WasHeadshot = data.ReadBool();
             WasMissile = data.ReadBool();

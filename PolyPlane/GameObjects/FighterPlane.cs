@@ -115,7 +115,7 @@ namespace PolyPlane.GameObjects
         private D2DColor _planeColor;
         private D2DColor _cockpitColor = new D2DColor(0.5f, D2DColor.LightBlue);
         private SmokeTrail _contrail;
-        private List<Flame> _flames = new List<Flame>();
+        private List<Flame> _bulletHoles = new List<Flame>();
         private List<Debris> _debris = new List<Debris>();
         private const float VAPOR_TRAIL_GS = 15f; // How many Gs before showing vapor trail.
         private List<Vapor> _vaporTrails = new List<Vapor>();
@@ -144,7 +144,7 @@ namespace PolyPlane.GameObjects
             new D2DPoint(25,2),
         };
 
-        private static readonly D2DPoint[] _flamePoly = new D2DPoint[]
+        private readonly D2DPoint[] _flamePoly = new D2DPoint[]
         {
             new D2DPoint(-8, 1),
             new D2DPoint(-10, 0),
@@ -382,7 +382,7 @@ namespace PolyPlane.GameObjects
 
             if (!World.IsNetGame || (World.IsNetGame && !World.IsServer))
             {
-                _flames.ForEach(f => f.Update(dt, renderScale * this.RenderOffset));
+                _bulletHoles.ForEach(f => f.Update(dt, renderScale * this.RenderOffset));
                 _debris.ForEach(d => d.Update(dt, renderScale));
                 _contrail.Update(dt, renderScale);
                 _vaporTrails.ForEach(v => v.Update(dt, renderScale * this.RenderOffset));
@@ -450,7 +450,7 @@ namespace PolyPlane.GameObjects
 
             _vaporTrails.ForEach(v => v.Render(ctx));
             _contrail.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000 && ThrustAmount > 0f);
-            _flames.ForEach(f => f.Render(ctx));
+            _bulletHoles.ForEach(f => f.Render(ctx));
 
             if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
                 ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
@@ -481,7 +481,7 @@ namespace PolyPlane.GameObjects
 
                 ctx.Gfx.PushLayer(_polyClipLayer, ctx.Viewport, polyClipGeo);
 
-                foreach (var flame in _flames)
+                foreach (var flame in _bulletHoles)
                 {
                     var outsideSz = new D2DSize(flame.HoleSize.width + 2f, flame.HoleSize.height + 2f);
 
@@ -613,7 +613,7 @@ namespace PolyPlane.GameObjects
         public void SyncFixtures()
         {
             _flamePos.Update(0f, World.RenderScale * this.RenderOffset);
-            _flames.ForEach(f => f.Update(0f, World.RenderScale * this.RenderOffset));
+            _bulletHoles.ForEach(f => f.Update(0f, World.RenderScale * this.RenderOffset));
             _centerOfThrust.Update(0f, World.RenderScale * this.RenderOffset);
             _cockpitPosition.Update(0f, World.RenderScale * this.RenderOffset);
             _gunPosition.Update(0f, World.RenderScale * this.RenderOffset);
@@ -629,14 +629,14 @@ namespace PolyPlane.GameObjects
         {
             var flame = new Flame(this, pos, hasFlame: Utilities.Rnd.Next(3) == 2);
             flame.IsNetObject = this.IsNetObject;
-            _flames.Add(flame);
+            _bulletHoles.Add(flame);
         }
 
         public void AddBulletHole(D2DPoint pos, float angle)
         {
             var flame = new Flame(this, pos, angle, hasFlame: Utilities.Rnd.Next(3) == 2);
             flame.IsNetObject = this.IsNetObject;
-            _flames.Add(flame);
+            _bulletHoles.Add(flame);
         }
 
         public void DoImpact(GameObject impactor, D2DPoint impactPos)
@@ -686,7 +686,7 @@ namespace PolyPlane.GameObjects
 
                 // Scale the impact position back to the origin of the polygon.
                 var ogPos = Utilities.ScaleToOrigin(this, result.ImpactPoint);
-                var angle = Utilities.ClampAngle(result.ImpactPoint.AngleTo(impactor.Position, false) - this.Rotation);
+                var angle = result.ImpactAngle;
 
                 AddBulletHole(ogPos, angle);
 
@@ -722,8 +722,10 @@ namespace PolyPlane.GameObjects
 
         public PlaneImpactResult GetImpactResult(GameObject impactor, D2DPoint impactPos)
         {
+            var angle = Utilities.ClampAngle(impactPos.AngleTo(impactor.Position, false) - this.Rotation);
             var result = new PlaneImpactResult();
             result.ImpactPoint = impactPos;
+            result.ImpactAngle = angle;
 
             if (!IsDamaged)
             {
@@ -798,7 +800,7 @@ namespace PolyPlane.GameObjects
             ThrustOn = true;
             _expireTimeout.Stop();
             _flipTimer.Restart();
-            _flames.Clear();
+            _bulletHoles.Clear();
             _debris.Clear();
             _thrustAmt.Target = 1f;
             WasHeadshot = false;
@@ -860,7 +862,7 @@ namespace PolyPlane.GameObjects
             this.Polygon.FlipY();
             Wings.ForEach(w => w.FlipY());
             _flamePos.FlipY();
-            _flames.ForEach(f => f.FlipY());
+            _bulletHoles.ForEach(f => f.FlipY());
             _cockpitPosition.FlipY();
             _gunPosition.FlipY();
             _centerOfThrust.FlipY();
@@ -910,7 +912,7 @@ namespace PolyPlane.GameObjects
 
             _polyClipLayer?.Dispose();
             _contrail.Clear();
-            _flames.Clear();
+            _bulletHoles.Clear();
             _debris.Clear();
             _vaporTrails.Clear();
         }

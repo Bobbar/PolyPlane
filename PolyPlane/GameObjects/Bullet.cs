@@ -6,13 +6,13 @@ namespace PolyPlane.GameObjects
 {
     public class Bullet : GameObjectPoly
     {
-        public static float Speed = 800f;
+        public const float SPEED = 800f;
         public float Lifetime = 10f;
         public Action<D2DPoint> AddExplosionCallback { get; set; }
 
         private float _age = 0;
 
-        private D2DPoint[] _poly = new D2DPoint[]
+        private readonly D2DPoint[] _poly = new D2DPoint[]
         {
             new D2DPoint(7,0),
             new D2DPoint(4,-3),
@@ -35,9 +35,12 @@ namespace PolyPlane.GameObjects
             this.Polygon = new RenderPoly(_poly);
             this.Polygon.Update(this.Position, this.Rotation, World.RenderScale * this.RenderOffset);
 
-            var velo = (Utilities.AngleToVectorDegrees(plane.Rotation, Bullet.Speed));
+            var velo = (Utilities.AngleToVectorDegrees(plane.Rotation, Bullet.SPEED));
             velo += plane.Velocity;
             this.Velocity = velo;
+
+            // Make sure the rotation is aligned with the resulting velocity.
+            this.Rotation = this.Velocity.Angle(true);
         }
 
         public Bullet(D2DPoint pos, D2DPoint velo, float rotation) : base(pos, velo, rotation)
@@ -58,6 +61,8 @@ namespace PolyPlane.GameObjects
 
         public override void Render(RenderContext ctx)
         {
+            base.Render(ctx);
+
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, D2DColor.Yellow);
         }
     }

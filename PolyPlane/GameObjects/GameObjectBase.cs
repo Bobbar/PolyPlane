@@ -124,8 +124,6 @@ namespace PolyPlane.GameObjects
 
         public virtual void Update(float dt, float renderScale)
         {
-            CurrentFrame++;
-
             if (World.IsNetGame && IsNetObject && InterpBuffer != null)
             {
                 if (World.InterpOn)
@@ -181,6 +179,8 @@ namespace PolyPlane.GameObjects
 
         public virtual void Render(RenderContext ctx)
         {
+            CurrentFrame++;
+
             if (this.IsExpired || !this.Visible)
                 return;
         }
@@ -297,7 +297,7 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public bool CollidesWithNet(GameObjectPoly obj, out D2DPoint pos, out GameObjectPacket? histState, double frameTime, float dt = -1f)
+        public bool CollidesWithNet(GameObjectPoly obj, out D2DPoint pos, out GameObjectPacket? histState, double frameTime)
         {
             if (!this.IsObjNear(obj) || obj.Owner == this)
             {
@@ -310,8 +310,6 @@ namespace PolyPlane.GameObjects
 
             if (histPos != null)
             {
-                var hits = new List<D2DPoint>();
-
                 // Create a copy of the polygon and translate it to the historical position/rotation.
                 var histPoly = new RenderPoly(this.Polygon.SourcePoly, World.RenderScale * this.RenderOffset);
                 histPoly.Update(histPos.Position, histPos.Rotation, World.RenderScale);
@@ -325,52 +323,15 @@ namespace PolyPlane.GameObjects
                         histPoly.FlipY();
                 }
 
-                var poly1 = obj.Polygon.Poly;
-
-                if (dt < 0f)
-                    dt = World.DT;
-
-                var relVelo = histPos.Velocity - obj.Velocity;
-                var relVeloDTHalf = (relVelo * dt) * 0.5f;
-
-                // Velocity compensation collisions:
-                // For each point in the polygon compute two points, one for backwards 1/2 timestep and one forwards 1/2 timestep
-                // and connect a line between the two.
-                // Then check if any of these lines intersect any segments of the test polygon.
-                // I guess this is sorta similar to what Continuous Collision Detection does.
-                for (int i = 0; i < poly1.Length; i++)
+                if (CollisionHelpers.PolygonSweepCollision(obj, histPoly.Poly, World.DT, out pos))
                 {
-                    var pnt1 = poly1[i] - relVeloDTHalf;
-                    var pnt2 = poly1[i] + relVeloDTHalf;
-
-                    // Check for an intersection and get the exact location of the impact.
-                    if (PolyIntersect(pnt1, pnt2, histPoly.Poly, out D2DPoint iPosPoly))
-                    {
-                        hits.Add(iPosPoly);
-                    }
-                }
-
-                // One last check with the center point.
-                var centerPnt1 = obj.Position - relVeloDTHalf;
-                var centerPnt2 = obj.Position + relVeloDTHalf;
-
-                if (PolyIntersect(centerPnt1, centerPnt2, histPoly.Poly, out D2DPoint iPosCenter))
-                {
-                    hits.Add(iPosCenter);
-                }
-
-                // If we have multiple hits, find the closest to the impactor.
-                if (hits.Count > 0)
-                {
-                    var closest = hits.OrderBy(p => p.DistanceTo(obj.Position));
-                    pos = closest.First();
                     histState = histPos;
                     return true;
                 }
             }
             else
             {
-                var normalCollide = CollidesWith(obj, out D2DPoint pos2, dt);
+                var normalCollide = CollidesWith(obj, out D2DPoint pos2);
                 pos = pos2;
                 histState = null;
                 return normalCollide;
@@ -381,7 +342,7 @@ namespace PolyPlane.GameObjects
             return false;
         }
 
-        public bool CollidesWith(GameObjectPoly obj, out D2DPoint pos, float dt = -1f)
+        public bool CollidesWith(GameObjectPoly obj, out D2DPoint pos)
         {
             if (!this.IsObjNear(obj) || obj.Owner == this)
             {
@@ -389,92 +350,7 @@ namespace PolyPlane.GameObjects
                 return false;
             }
 
-            var hits = new List<D2DPoint>();
-            var poly1 = obj.Polygon.Poly;
-
-            if (dt < 0f)
-                dt = World.DT;
-
-            var relVelo = this.Velocity - obj.Velocity;
-            var relVeloDTHalf = (relVelo * dt) * 0.5f;
-
-            // Velocity compensation collisions:
-            // For each point in the polygon compute two points, one for backwards 1/2 timestep and one forwards 1/2 timestep
-            // and connect a line between the two.
-            // Then check if any of these lines intersect any segments of the test polygon.
-            // I guess this is sorta similar to what Continuous Collision Detection does.
-            for (int i = 0; i < poly1.Length; i++)
-            {
-                var pnt1 = poly1[i] - relVeloDTHalf;
-                var pnt2 = poly1[i] + relVeloDTHalf;
-
-                // Check for an intersection and get the exact location of the impact.
-                if (PolyIntersect(pnt1, pnt2, this.Polygon.Poly, out D2DPoint iPosPoly))
-                {
-                    hits.Add(iPosPoly);
-                }
-            }
-
-            // One last check with the center point.
-            var centerPnt1 = obj.Position - relVeloDTHalf;
-            var centerPnt2 = obj.Position + relVeloDTHalf;
-
-            if (PolyIntersect(centerPnt1, centerPnt2, this.Polygon.Poly, out D2DPoint iPosCenter))
-            {
-                hits.Add(iPosCenter);
-            }
-
-            // If we have multiple hits, find the closest to the impactor.
-            if (hits.Count > 0)
-            {
-                var closest = hits.OrderBy(p => p.DistanceTo(obj.Position));
-                pos = closest.First();
-                return true;
-            }
-
-
-            // ** Other/old collision strategies **
-
-
-            //// Same as above but for the central point.
-            //if (PolyIntersect2(obj.Position - ((obj.Velocity * dt) * 0.5f), obj.Position + ((obj.Velocity * dt) * 0.5f), this.Polygon.Poly, out D2DPoint iPos2))
-            //{
-            //    pos = iPos2;
-            //    return true;
-            //}
-
-            //// Plain old point-in-poly collisions.
-            //// Check for center point first.
-            //if (Contains(obj.Position))
-            //{
-            //    pos = obj.Position;
-            //    return true;
-
-            //}
-
-            //// Check all other poly points.
-            //foreach (var pnt in obj.Polygon.Poly)
-            //{
-            //    if (PointInPoly(pnt, this.Polygon.Poly))
-            //    {
-            //        pos = pnt;
-            //        return true;
-            //    }
-            //}
-
-            //// Reverse of above. Just in case...
-            //foreach (var pnt in Polygon.Poly)
-            //{
-            //    if (PointInPoly(pnt, obj.Polygon.Poly))
-            //    {
-            //        pos = pnt;
-            //        return true;
-            //    }
-            //}
-
-
-            pos = D2DPoint.Zero;
-            return false;
+            return CollisionHelpers.PolygonSweepCollision(obj, this.Polygon.Poly, World.DT, out pos);
         }
 
         public void DrawVeloLines(D2DGraphics gfx)
@@ -483,31 +359,10 @@ namespace PolyPlane.GameObjects
 
             foreach (var pnt in this.Polygon.Poly)
             {
-
-                var veloPnt1 = pnt - ((this.Velocity * dt) * 0.5f);
-                var veloPnt = pnt + ((this.Velocity * dt) * 0.5f);
+                var veloPnt1 = pnt;
+                var veloPnt = pnt + (this.Velocity * dt);
                 gfx.DrawLine(veloPnt1, veloPnt, D2DColor.Red);
-
             }
-        }
-
-        private bool PolyIntersect(D2DPoint a, D2DPoint b, D2DPoint[] poly, out D2DPoint pos)
-        {
-            // Check the segment against every segment in the polygon.
-            for (int i = 0; i < poly.Length - 1; i++)
-            {
-                var pnt1 = poly[i];
-                var pnt2 = poly[i + 1];
-
-                if (CollisionHelpers.IsIntersecting(a, b, pnt1, pnt2, out D2DPoint iPos))
-                {
-                    pos = iPos;
-                    return true;
-                }
-            }
-
-            pos = D2DPoint.Zero;
-            return false;
         }
 
         public virtual bool Contains(D2DPoint pnt)

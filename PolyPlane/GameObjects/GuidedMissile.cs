@@ -393,6 +393,8 @@ namespace PolyPlane.GameObjects
 
         public override void Render(RenderContext ctx)
         {
+            base.Render(ctx);
+
             if (_useThrustVectoring)
                 _flameFillColor = D2DColor.Orange;
 

@@ -63,6 +63,8 @@ namespace PolyPlane.GameObjects
 
         public override void Render(RenderContext ctx)
         {
+            base.Render(ctx);
+
             ctx.FillEllipse(new D2DEllipse(this.Position, _radius + _currentFlash, _radius + _currentFlash), D2DColor.Yellow);
         }
     }

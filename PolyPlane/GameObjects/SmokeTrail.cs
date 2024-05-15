@@ -91,9 +91,10 @@ namespace PolyPlane.GameObjects
 
         public override void Render(RenderContext ctx)
         {
+            base.Render(ctx);
+
             if (_trailQueue.Count == 0)
                 return;
-
 
             var lastPos = _trailQueue.First();
             foreach (var trail in _trailQueue)
