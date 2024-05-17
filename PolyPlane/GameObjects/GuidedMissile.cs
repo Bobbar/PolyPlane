@@ -180,6 +180,8 @@ namespace PolyPlane.GameObjects
             {
                 var partialDT = World.SUB_DT;
 
+                base.Update(partialDT, renderScale * this.RenderOffset);
+
                 if (_useControlSurfaces)
                 {
                     _tailWing.Update(partialDT, renderScale * this.RenderOffset);
@@ -198,11 +200,8 @@ namespace PolyPlane.GameObjects
 
                 D2DPoint accel = D2DPoint.Zero;
 
-
                 if (!this.IsNetObject)
                 {
-
-
                     // Apply aerodynamics.
                     var liftDrag = D2DPoint.Zero;
 
@@ -280,8 +279,6 @@ namespace PolyPlane.GameObjects
                 var gforce = accel.Length() / partialDT / 9.8f;
                 _gForce = gforce;
                 _gForcePeak = Math.Max(_gForcePeak, _gForce);
-
-                base.Update(partialDT, renderScale * this.RenderOffset);
             }
 
             _age += dt;
