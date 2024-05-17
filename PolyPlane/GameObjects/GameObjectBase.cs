@@ -323,7 +323,7 @@ namespace PolyPlane.GameObjects
                         histPoly.FlipY();
                 }
 
-                if (CollisionHelpers.PolygonSweepCollision(obj, histPoly.Poly, World.DT, out pos))
+                if (CollisionHelpers.PolygonSweepCollision(obj, histPoly.Poly, histPos.Velocity, World.DT, out pos))
                 {
                     histState = histPos;
                     return true;
@@ -350,18 +350,25 @@ namespace PolyPlane.GameObjects
                 return false;
             }
 
-            return CollisionHelpers.PolygonSweepCollision(obj, this.Polygon.Poly, World.DT, out pos);
+            return CollisionHelpers.PolygonSweepCollision(obj, this.Polygon.Poly, this.Velocity, World.DT, out pos);
         }
 
         public void DrawVeloLines(D2DGraphics gfx)
         {
             var dt = World.DT;
+            var plane = World.ObjectManager.GetObjectByID(World.ViewID);
+
+            if (plane == null)
+                return;
+
+            var relVelo = (this.Velocity - plane.Velocity) * dt;
 
             foreach (var pnt in this.Polygon.Poly)
             {
                 var veloPnt1 = pnt;
-                var veloPnt = pnt + (this.Velocity * dt);
-                gfx.DrawLine(veloPnt1, veloPnt, D2DColor.Red);
+                var veloPnt2 = pnt + (relVelo);
+
+                gfx.DrawLine(veloPnt1, veloPnt2, D2DColor.Red);
             }
         }
 

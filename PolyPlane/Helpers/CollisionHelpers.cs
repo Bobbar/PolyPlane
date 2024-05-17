@@ -148,24 +148,23 @@ namespace PolyPlane.Helpers
             return false;
         }
 
-        public static bool PolygonSweepCollision(GameObjectPoly impactorObj, D2DPoint[] polygon, float dt, out D2DPoint impactPoint)
+        public static bool PolygonSweepCollision(GameObjectPoly impactorObj, D2DPoint[] targPoly, D2DPoint targVelo, float dt, out D2DPoint impactPoint)
         {
-            // Sweep-based Continuous Collision technique.
+            // Sweep-based Continuous Collision Detection technique.
             // Project lines from each polygon vert of the impactor; one point at the current position, and one point at the next/future position.
             // Then for each of those lines, check for intersections on each line segment of the target object's polygon.
-            // TODO: How to factor for relative velocity of the target object?
 
             var hits = new List<D2DPoint>();
-            var velo = impactorObj.Velocity * dt;
-            var poly1 = impactorObj.Polygon.Poly;
+            var relVelo = (impactorObj.Velocity - targVelo) * dt; // Get relative
+            var impactorPoly = impactorObj.Polygon.Poly;
 
-            for (int i = 0; i < poly1.Length; i++)
+            for (int i = 0; i < impactorPoly.Length; i++)
             {
-                var pnt1 = poly1[i];
-                var pnt2 = poly1[i] + velo;
+                var pnt1 = impactorPoly[i];
+                var pnt2 = impactorPoly[i] + relVelo;
 
                 // Check for an intersection and get the exact location of the impact.
-                if (PolyIntersect(pnt1, pnt2, polygon, out D2DPoint iPosPoly))
+                if (PolyIntersect(pnt1, pnt2, targPoly, out D2DPoint iPosPoly))
                 {
                     hits.Add(iPosPoly);
                 }
@@ -173,9 +172,9 @@ namespace PolyPlane.Helpers
 
             // One last check with the center point.
             var centerPnt1 = impactorObj.Position;
-            var centerPnt2 = impactorObj.Position + velo;
+            var centerPnt2 = impactorObj.Position + relVelo;
 
-            if (PolyIntersect(centerPnt1, centerPnt2, polygon, out D2DPoint iPosCenter))
+            if (PolyIntersect(centerPnt1, centerPnt2, targPoly, out D2DPoint iPosCenter))
             {
                 hits.Add(iPosCenter);
             }
