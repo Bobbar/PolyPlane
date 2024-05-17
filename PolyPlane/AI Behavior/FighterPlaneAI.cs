@@ -142,7 +142,7 @@ namespace PolyPlane.AI_Behavior
             if (_fireMissileCooldown.IsRunning)
                 return;
 
-            const float MAX_DIST = 40000f;
+            const float MAX_DIST = 50000f;
 
             if (this.Plane.Radar.HasLock && this.Plane.Radar.LockedObj != null && this.Plane.Radar.LockedObj.Equals(TargetPlane))
             {
