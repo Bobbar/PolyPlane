@@ -421,7 +421,7 @@ namespace PolyPlane.Net
         public float Deflection;
         public bool IsDamaged;
         public bool FiringBurst;
-        public int Hits;
+        public int Health;
         public int Kills;
 
         public PlanePacket(BitBuffer data)
@@ -433,7 +433,7 @@ namespace PolyPlane.Net
         {
             Deflection = obj.Deflection;
             IsDamaged = obj.IsDamaged;
-            Hits = obj.Hits;
+            Health = obj.Health;
             FiringBurst = obj.FiringBurst;
             Kills = obj.Kills;
         }
@@ -442,7 +442,7 @@ namespace PolyPlane.Net
         {
             Deflection = obj.Deflection;
             IsDamaged = obj.IsDamaged;
-            Hits = obj.Hits;
+            Health = obj.Health;
             FiringBurst = obj.FiringBurst;
             Kills = obj.Kills;
         }
@@ -453,7 +453,7 @@ namespace PolyPlane.Net
             obj.Deflection = Deflection;
             obj.IsDamaged = IsDamaged;
             obj.FiringBurst = FiringBurst;
-            obj.Hits = Hits;
+            obj.Health = Health;
             obj.Kills = Kills;
         }
 
@@ -464,7 +464,7 @@ namespace PolyPlane.Net
             data.AddFloat(Deflection);
             data.AddBool(IsDamaged);
             data.AddBool(FiringBurst);
-            data.AddInt(Hits);
+            data.AddInt(Health);
             data.AddInt(Kills);
         }
 
@@ -475,7 +475,7 @@ namespace PolyPlane.Net
             Deflection = data.ReadFloat();
             IsDamaged = data.ReadBool();
             FiringBurst = data.ReadBool();
-            Hits = data.ReadInt();
+            Health = data.ReadInt();
             Kills = data.ReadInt();
         }
     }

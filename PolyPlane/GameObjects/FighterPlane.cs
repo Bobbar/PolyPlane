@@ -21,7 +21,7 @@ namespace PolyPlane.GameObjects
         public int NumMissiles { get { return _numMissiles; }  set { _numMissiles = Math.Clamp(value, 0, MAX_MISSILES); } }
         public int NumBullets { get { return _numBullets; } set { _numBullets = Math.Clamp(value, 0, MAX_BULLETS); } }
         public int NumDecoys { get { return _numDecoys; } set { _numDecoys = Math.Clamp(value, 0, MAX_DECOYS); } }
-        public int Hits { get { return _hits; } set { _hits = Math.Clamp(value, 0, MAX_HITS); } }
+        public int Health { get { return _health; } set { _health = Math.Clamp(value, 0, MAX_HEALTH); } }
 
         public float Deflection = 0f;
         public int BulletsFired = 0;
@@ -37,7 +37,7 @@ namespace PolyPlane.GameObjects
         public const int MAX_DECOYS = 15;
         public const int MAX_BULLETS = 30;
         public const int MAX_MISSILES = 6;
-        public const int MAX_HITS = 32;
+        public const int MAX_HEALTH = 32;
         public const int MISSILE_DAMAGE = 13;
         public const int BULLET_DAMAGE = 3;
 
@@ -101,7 +101,7 @@ namespace PolyPlane.GameObjects
         private int _numMissiles = MAX_MISSILES;
         private int _numBullets = MAX_BULLETS;
         private int _numDecoys = MAX_DECOYS;
-        private int _hits = MAX_HITS;
+        private int _health = MAX_HEALTH;
 
 
         private RenderPoly FlamePoly;
@@ -655,19 +655,19 @@ namespace PolyPlane.GameObjects
                     SpawnDebris(8, result.ImpactPoint, D2DColor.Red);
                     WasHeadshot = true;
                     IsDamaged = true;
-                    Hits = 0;
+                    Health = 0;
                     attackPlane.Headshots++;
                 }
                 else
                 {
                     if (result.Type == ImpactType.Missile)
                     {
-                        this.Hits -= MISSILE_DAMAGE;
+                        this.Health -= MISSILE_DAMAGE;
                         SpawnDebris(4, result.ImpactPoint, this.PlaneColor);
                     }
                     else
                     {
-                        this.Hits -= BULLET_DAMAGE;
+                        this.Health -= BULLET_DAMAGE;
 
                         if (Utilities.Rnd.Next(3) == 2)
                             SpawnDebris(1, result.ImpactPoint, this.PlaneColor);
@@ -680,7 +680,7 @@ namespace PolyPlane.GameObjects
 
                 AddBulletHole(ogPos, angle);
 
-                if (this.Hits <= 0)
+                if (this.Health <= 0)
                 {
                     IsDamaged = true;
                     _damageDeflection = _rnd.NextFloat(-180, 180);
@@ -721,7 +721,7 @@ namespace PolyPlane.GameObjects
             {
                 result.DoesDamage = true;
 
-                if (this.Hits > 0)
+                if (this.Health > 0)
                 {
                     var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
                     var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos);
@@ -775,13 +775,13 @@ namespace PolyPlane.GameObjects
             IsDamaged = true;
             SASOn = false;
             _flipTimer.Stop();
-            Hits = 0;
+            Health = 0;
             AddBulletHole();
         }
 
         public void FixPlane()
         {
-            Hits = MAX_HITS;
+            Health = MAX_HEALTH;
             NumBullets = MAX_BULLETS;
             NumMissiles = MAX_MISSILES;
             NumDecoys = MAX_DECOYS;

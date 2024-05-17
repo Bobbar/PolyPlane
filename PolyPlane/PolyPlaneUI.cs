@@ -384,7 +384,9 @@ namespace PolyPlane
             _playerResetTimer.Stop();
             _canRespawn = false;
             _render.ClearHudMessage();
-            _aiPlaneViewID = _playerPlane.PlayerID;
+
+            if (!_playerPlane.IsAI)
+                _aiPlaneViewID = _playerPlane.PlayerID;
         }
 
         private void TargetLockedWithMissile()
