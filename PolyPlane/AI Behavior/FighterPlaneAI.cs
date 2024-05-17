@@ -204,6 +204,13 @@ namespace PolyPlane.AI_Behavior
             }
         }
 
+        public void ClearTarget()
+        {
+            _changeTargetCooldown.Reset();
+            _targetPlane = null;
+            ConsiderNewTarget();
+        }
+
         public void ChangeTarget(FighterPlane plane)
         {
             if (_changeTargetCooldown.IsRunning)

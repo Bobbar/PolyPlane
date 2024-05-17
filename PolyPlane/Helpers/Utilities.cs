@@ -475,7 +475,9 @@ namespace PolyPlane.Helpers
 
         public static D2DPoint FindSafeSpawnPoint(GameObjectManager objs)
         {
-            const float MIN_DIST = 10000f;
+            const float MIN_DIST = 40000f;
+            const float MAX_DIST = 90000f;
+
             const float MIN_ALT = 4000f;
             const float MAX_ALT = 12000f;
 
@@ -490,7 +492,7 @@ namespace PolyPlane.Helpers
                 point = new D2DPoint(Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
                 min = objs.Planes.Min(p => p.Position.DistanceTo(point));
 
-                if (min >= MIN_DIST)
+                if (min >= MIN_DIST && min <= MAX_DIST)
                     break;
             }
 

@@ -124,7 +124,7 @@ namespace PolyPlane
 
         public static readonly D2DColor HudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
         public static readonly D2DPoint Gravity = new D2DPoint(0, 9.8f);
-        public static readonly D2DPoint PlaneSpawnRange = new D2DPoint(-60000, 60000);
+        public static readonly D2DPoint PlaneSpawnRange = new D2DPoint(-200000, 200000);
         public static readonly D2DPoint FieldXBounds = new D2DPoint(-350000, 350000);
 
         public static int CurrentObjId = 0;

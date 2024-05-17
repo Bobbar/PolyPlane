@@ -86,7 +86,7 @@ namespace PolyPlane.GameObjects
         private readonly float MASS = 90f;
 
         private GameTimer _flipTimer = new GameTimer(2f);
-        private GameTimer _expireTimeout = new GameTimer(30f);
+        private GameTimer _expireTimeout = new GameTimer(15f);
         private GameTimer _isLockOntoTimeout = new GameTimer(3f);
         private GameTimer _bulletRegenTimer = new GameTimer(0.2f, true);
         private GameTimer _decoyRegenTimer = new GameTimer(0.4f, true);
@@ -798,6 +798,9 @@ namespace PolyPlane.GameObjects
             _easePhysicsComplete = false;
             _easePhysicsTimer.Restart();
             AIRespawnReady = false;
+
+            if (IsAI)
+                _aiBehavior.ClearTarget();
         }
 
         public void MoveThrottle(bool up)
