@@ -6,7 +6,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class FighterPlane : GameObjectPoly
+    public class FighterPlane : GameObjectPoly, ICollidable
     {
         public bool InResetCooldown
         {

@@ -1317,37 +1317,6 @@ namespace PolyPlane.Rendering
             ctx.DrawLine(pos, pos + (World.Wind * 2f), D2DColor.White, 2f);
         }
 
-        private void DrawNearObj(D2DGraphics gfx, FighterPlane plane)
-        {
-            //_targets.ForEach(t =>
-            //{
-            //    if (t.IsObjNear(plane))
-            //        gfx.FillEllipseSimple(t.Position, 5f, D2DColor.Red);
-
-            //});
-
-            _objs.Bullets.ForEach(b =>
-            {
-                if (b.IsObjNear(plane))
-                    gfx.FillEllipseSimple(b.Position, 5f, D2DColor.Red);
-
-            });
-
-            _objs.Missiles.ForEach(m =>
-            {
-                if (m.IsObjNear(plane))
-                    gfx.FillEllipseSimple(m.Position, 5f, D2DColor.Red);
-
-            });
-
-            _objs.Decoys.ForEach(d =>
-            {
-                if (d.IsObjNear(plane))
-                    gfx.FillEllipseSimple(d.Position, 5f, D2DColor.Red);
-
-            });
-        }
-
 
         public void DrawInfo(D2DGraphics gfx, D2DPoint pos, FighterPlane viewplane)
         {

@@ -4,7 +4,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Decoy : GameObjectPoly
+    public class Decoy : GameObjectPoly, ICollidable
     {
         private float _radius = 5f;
         private float _flashAmt = 5f;

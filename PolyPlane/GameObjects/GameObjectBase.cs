@@ -204,13 +204,6 @@ namespace PolyPlane.GameObjects
             return diff <= (fov * 0.5f);
         }
 
-        public bool IsObjNear(GameObject obj)
-        {
-            var dist = this.Position.DistanceSquaredTo(obj.Position);
-
-            return dist <= World.MIN_COLLISION_DIST;
-        }
-
         public float ClosingRate(GameObject obj)
         {
             var nextPos1 = this.Position + this.Velocity;
@@ -299,7 +292,7 @@ namespace PolyPlane.GameObjects
 
         public bool CollidesWithNet(GameObjectPoly obj, out D2DPoint pos, out GameObjectPacket? histState, double frameTime)
         {
-            if (!this.IsObjNear(obj) || obj.Owner == this)
+            if (obj.Owner == this)
             {
                 pos = D2DPoint.Zero;
                 histState = null;
@@ -344,7 +337,7 @@ namespace PolyPlane.GameObjects
 
         public bool CollidesWith(GameObjectPoly obj, out D2DPoint pos)
         {
-            if (!this.IsObjNear(obj) || obj.Owner == this)
+            if (obj.Owner == this)
             {
                 pos = D2DPoint.Zero;
                 return false;

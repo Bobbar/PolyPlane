@@ -11,7 +11,7 @@ namespace PolyPlane.GameObjects
         public int TotalObjects => _objLookup.Count;
 
         private const int MAX_GROUND_IMPACTS = 500;
-        private const int SPATIAL_GRID_SIDE_LEN = 7;
+        private const int SPATIAL_GRID_SIDE_LEN = 8;
 
         public List<GameObject> Missiles = new List<GameObject>();
         public List<GameObject> MissileTrails = new List<GameObject>();
@@ -344,14 +344,16 @@ namespace PolyPlane.GameObjects
             _objLookupSpatial.Clear();
             foreach (var obj in _allObjects)
             {
-                var rndPos = GetGridIdx(obj);
+                // Only record collidable objects.
+                if (obj is not ICollidable)
+                    continue;
 
-                if (_objLookupSpatial.TryGetValue(rndPos, out List<GameObject> objs))
-                {
+                var posIdx = GetGridIdx(obj);
+
+                if (_objLookupSpatial.TryGetValue(posIdx, out List<GameObject> objs))
                     objs.Add(obj);
-                }
                 else
-                    _objLookupSpatial.Add(rndPos, new List<GameObject> { obj });
+                    _objLookupSpatial.Add(posIdx, new List<GameObject> { obj });
             }
         }
 

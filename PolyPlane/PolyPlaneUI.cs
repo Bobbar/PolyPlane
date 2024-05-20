@@ -137,7 +137,9 @@ namespace PolyPlane
 
         private void EnableRespawn()
         {
-            _render.NewHudMessage("Press 'R' to respawn.", D2DColor.Green);
+            if (World.ViewID.Equals(_playerPlane.ID))
+                _render.NewHudMessage("Press 'R' to respawn.", D2DColor.Green);
+
             _canRespawn = true;
         }
 

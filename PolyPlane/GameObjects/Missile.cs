@@ -1,6 +1,6 @@
 ﻿namespace PolyPlane.GameObjects
 {
-    public abstract class Missile : GameObjectPoly
+    public abstract class Missile : GameObjectPoly, ICollidable
     {
         public float DistTraveled = 0f;
         private D2DPoint _prevPos = D2DPoint.Zero;
