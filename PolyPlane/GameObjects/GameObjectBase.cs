@@ -169,19 +169,22 @@ namespace PolyPlane.GameObjects
 
         public virtual void ClampToGround(float dt)
         {
-            // Clamp all objects to ground level.
-            if (this.Altitude <= 2f)
+            if (this is Debris)
             {
-                if (this is FighterPlane || this is Decoy || this is Bullet)
+                // Let some objects bounce.
+                if (this.Altitude <= 2f)
+                {
+                    this.Position = new D2DPoint(this.Position.X, -1f);
+                    this.Velocity = new D2DPoint(this.Velocity.X + -this.Velocity.X * (dt * 1f), -this.Velocity.Y * 0.2f);
+                }
+            }
+            else
+            {
+                // Clamp all other objects to ground level.
+                if (this.Altitude <= 0f)
                 {
                     this.Position = new D2DPoint(this.Position.X, 0f);
                     this.Velocity = new D2DPoint(this.Velocity.X + -this.Velocity.X * (dt * 1f), 0f);
-                }
-                else
-                {
-                    // Let some objects bounce.
-                    this.Position = new D2DPoint(this.Position.X, -1f);
-                    this.Velocity = new D2DPoint(this.Velocity.X + -this.Velocity.X * (dt * 1f), -this.Velocity.Y * 0.2f);
                 }
             }
         }
