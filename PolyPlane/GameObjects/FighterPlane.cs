@@ -879,6 +879,7 @@ namespace PolyPlane.GameObjects
             const float thrustVectorAmt = 1f;
             const float thrustBoostAmt = 1000f;
             const float thrustBoostMaxSpd = 200f;
+            const float MAX_VELO = 3500f;
 
             if (thrustVector)
                 thrust = Utilities.AngleToVectorDegrees(this.Rotation + (_controlWing.Deflection * thrustVectorAmt));
@@ -888,9 +889,13 @@ namespace PolyPlane.GameObjects
             if (!ThrustOn)
                 return thrust;
 
+
             // Add a boost effect as speed increases. Jet engines make more power at higher speeds right?
-            var boostFact = Utilities.Factor(this.Velocity.Length(), thrustBoostMaxSpd);
+            var velo = this.Velocity.Length();
+            var boostFact = Utilities.Factor(velo, thrustBoostMaxSpd);
+            var maxVeloFact = 1f - Utilities.Factor(velo, MAX_VELO);
             thrust *= _thrustAmt.Value * ((this.Thrust + (thrustBoostAmt * boostFact)) * World.GetDensityAltitude(this.Position));
+            thrust *= maxVeloFact; // Reduce thrust as we approach max velo.
 
             return thrust;
         }
