@@ -107,6 +107,10 @@ namespace PolyPlane.Net
                 case PacketTypes.ImpactList:
                     obj = new ImpactListPacket(data);
                     break;
+
+                case PacketTypes.BulletList or PacketTypes.DecoyList:
+                    obj = new GameObjectListPacket(data);
+                    break;
             }
 
             data.Clear();

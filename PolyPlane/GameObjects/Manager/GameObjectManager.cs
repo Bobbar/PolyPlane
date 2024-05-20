@@ -23,10 +23,10 @@ namespace PolyPlane.GameObjects
         public List<D2DPoint> GroundImpacts = new List<D2DPoint>();
         public List<FighterPlane> Planes = new List<FighterPlane>();
 
-        public RingBuffer<GameObject> NewDecoys = new RingBuffer<GameObject>(50);
-        public RingBuffer<GameObject> NewBullets = new RingBuffer<GameObject>(100);
-        public RingBuffer<GameObject> NewMissiles = new RingBuffer<GameObject>(50);
-        public RingBuffer<FighterPlane> NewPlanes = new RingBuffer<FighterPlane>(100);
+        public RingBuffer<GameObject> NewDecoys = new RingBuffer<GameObject>(500);
+        public RingBuffer<GameObject> NewBullets = new RingBuffer<GameObject>(500);
+        public RingBuffer<GameObject> NewMissiles = new RingBuffer<GameObject>(500);
+        public RingBuffer<FighterPlane> NewPlanes = new RingBuffer<FighterPlane>(500);
 
         private Dictionary<int, GameObject> _objLookup = new Dictionary<int, GameObject>();
         private Dictionary<D2DPoint, List<GameObject>> _objLookupSpatial = new Dictionary<D2DPoint, List<GameObject>>();
@@ -82,7 +82,6 @@ namespace PolyPlane.GameObjects
                     return m.CenterOfThrust;
                 });
 
-
                 AddObject(trail);
                 MissileTrails.Add(trail);
             }
@@ -118,6 +117,16 @@ namespace PolyPlane.GameObjects
                 AddObject(decoy);
                 Decoys.Add(decoy);
             }
+        }
+
+        public DummyObject AddDummyObject()
+        {
+            var obj = new DummyObject();
+
+            if (!Contains(obj))
+                AddObject(obj);
+
+            return obj;
         }
 
         public void EnqueueDecoy(Decoy decoy)
@@ -297,7 +306,16 @@ namespace PolyPlane.GameObjects
 
                     // Add explosions when missiles & bullets are expired.
                     if (obj is GuidedMissile missile)
+                    {
                         AddExplosion(missile.Position);
+
+                        // Remove dummy objects as needed.
+                        if (missile.Target != null && missile.Target is DummyObject)
+                        {
+                            missile.Target.IsExpired = true;
+                            _objLookup.Remove(missile.Target.ID.GetHashCode());
+                        }
+                    }
                     else if (obj is Bullet bullet)
                         AddBulletExplosion(bullet.Position);
                 }

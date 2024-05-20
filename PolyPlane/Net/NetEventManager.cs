@@ -144,6 +144,8 @@ namespace PolyPlane.Net
                         }
 
                         ServerSendOtherPlanes();
+                        ServerSendExistingBullets();
+                        ServerSendExistingDecoys();
                         Host.SendSyncPacket();
                     }
 
@@ -194,26 +196,14 @@ namespace PolyPlane.Net
                     {
                         ServerSendOtherPlanes();
                         ServerSendExistingImpacts();
+                        ServerSendExistingBullets();
+                        ServerSendExistingDecoys();
                     }
                     else
                     {
                         var listPacket = packet as PlayerListPacket;
 
-                        foreach (var player in listPacket.Players)
-                        {
-                            var existing = _objs.Contains(player.ID);
-
-                            if (!existing)
-                            {
-                                var newPlane = new FighterPlane(player.Position, player.PlaneColor);
-                                newPlane.ID = player.ID;
-                                newPlane.PlayerName = player.Name;
-                                newPlane.IsNetObject = true;
-                                newPlane.LagAmount = World.CurrentTime() - listPacket.FrameTime;
-                                newPlane.Radar = new Radar(newPlane, World.HudColor, _objs.Missiles, _objs.Planes);
-                                _objs.AddPlane(newPlane);
-                            }
-                        }
+                        DoNewPlayers(listPacket);
                     }
 
                     break;
@@ -295,6 +285,36 @@ namespace PolyPlane.Net
                         }
                     }
                     break;
+
+                case PacketTypes.BulletList:
+                    var bulletList = packet as GameObjectListPacket;
+
+                    if (!IsServer)
+                    {
+                        bulletList.Packets.ForEach(b => DoNewBullet(b));
+                    }
+
+                    break;
+
+                case PacketTypes.DecoyList:
+                    var decoyList = packet as GameObjectListPacket;
+
+                    if (!IsServer)
+                    {
+                        decoyList.Packets.ForEach(d =>
+                        {
+                            var owner = GetNetPlane(d.OwnerID);
+
+                            if (owner != null)
+                            {
+                                var decoy = new Decoy(owner, d.Position, d.Velocity);
+                                decoy.ID = d.ID;
+                                _objs.AddDecoy(decoy);
+                            }
+                        });
+                    }
+
+                    break;
             }
         }
 
@@ -333,7 +353,7 @@ namespace PolyPlane.Net
                     plane.Position = impact.Position;
                     plane.SyncFixtures();
 
-                    plane.AddImpact(impact.ImpactPoint);
+                    plane.AddImpact(impact.ImpactPoint, impact.ImpactAngle);
 
                     plane.Rotation = ogState.Rotation;
                     plane.Velocity = ogState.Velocity;
@@ -425,6 +445,30 @@ namespace PolyPlane.Net
             Host.EnqueuePacket(listPacket);
         }
 
+        public void ServerSendExistingBullets()
+        {
+            var bulletsPacket = new GameObjectListPacket(PacketTypes.BulletList);
+
+            foreach (var bullet in _objs.Bullets)
+            {
+                bulletsPacket.Packets.Add(new GameObjectPacket(bullet, PacketTypes.NewBullet));
+            }
+
+            Host.EnqueuePacket(bulletsPacket);
+        }
+
+        public void ServerSendExistingDecoys()
+        {
+            var decoysPacket = new GameObjectListPacket(PacketTypes.DecoyList);
+
+            foreach (var decoy in _objs.Decoys)
+            {
+                decoysPacket.Packets.Add(new GameObjectPacket(decoy, PacketTypes.NewDecoy));
+            }
+
+            Host.EnqueuePacket(decoysPacket);
+        }
+
         public void ServerSendExistingImpacts()
         {
             var impactsPacket = new ImpactListPacket();
@@ -468,6 +512,25 @@ namespace PolyPlane.Net
 
         // Net updates.
 
+        private void DoNewPlayers(PlayerListPacket players)
+        {
+            foreach (var player in players.Players)
+            {
+                var existing = _objs.Contains(player.ID);
+
+                if (!existing)
+                {
+                    var newPlane = new FighterPlane(player.Position, player.PlaneColor);
+                    newPlane.ID = player.ID;
+                    newPlane.PlayerName = player.Name;
+                    newPlane.IsNetObject = true;
+                    newPlane.LagAmount = World.CurrentTime() - players.FrameTime;
+                    newPlane.Radar = new Radar(newPlane, World.HudColor, _objs.Missiles, _objs.Planes);
+                    _objs.AddPlane(newPlane);
+                }
+            }
+        }
+
         private void DoNetPlaneUpdates(PlaneListPacket listPacket)
         {
             if (!IsServer && !_netIDIsSet)
@@ -501,6 +564,13 @@ namespace PolyPlane.Net
             {
                 var netMissile = _objs.GetObjectByID(missileUpdate.ID) as GuidedMissile;
 
+                if (netMissile == null)
+                {
+                    // If we receive an update for a non-existent missile, just go ahead and create it.
+                    DoNewMissile(missileUpdate);
+                    continue;
+                }
+
                 if (netMissile != null)
                 {
                     var netMissileOwner = _objs.GetObjectByID(netMissile.Owner.ID);
@@ -531,9 +601,6 @@ namespace PolyPlane.Net
 
                 if (impactor == null)
                     return;
-
-                //if (impactor.IsExpired)
-                //    return;
 
                 impactor.IsExpired = true;
 
@@ -582,7 +649,6 @@ namespace PolyPlane.Net
             bullet.LagAmount = World.CurrentTime() - bulletPacket.FrameTime;
             // Try to spawn the bullet ahead to compensate for latency?
             bullet.Position += bullet.Velocity * (float)(bullet.LagAmount / 500f);
-
             _objs.AddBullet(bullet);
         }
 
@@ -592,7 +658,11 @@ namespace PolyPlane.Net
 
             if (missileOwner != null)
             {
-                var missileTarget = GetNetPlane(missilePacket.TargetID, false);
+                var missileTarget = _objs.GetObjectByID(missilePacket.TargetID);
+
+                // If the missile target doesn't exist (yet?), spawn an invisible dummy object so we can handle net updates for it.
+                if (missileTarget == null)
+                    missileTarget = _objs.AddDummyObject();
 
                 var missile = new GuidedMissile(missileOwner, missilePacket.Position, missilePacket.Velocity, missilePacket.Rotation);
                 missile.IsNetObject = true;
@@ -600,7 +670,7 @@ namespace PolyPlane.Net
                 missilePacket.SyncObj(missile);
                 missile.Target = missileTarget;
                 missile.LagAmount = World.CurrentTime() - missilePacket.FrameTime;
-                _objs.EnqueueMissile(missile);
+                _objs.AddMissile(missile);
             }
         }
 
@@ -614,15 +684,10 @@ namespace PolyPlane.Net
                 decoy.ID = decoyPacket.ID;
                 decoyPacket.SyncObj(decoy);
 
-                bool containsDecoy = _objs.Contains(decoy.ID);
+                _objs.AddDecoy(decoy);
 
-                if (!containsDecoy)
-                {
-                    _objs.AddDecoy(decoy);
-
-                    if (IsServer)
-                        Host.EnqueuePacket(decoyPacket);
-                }
+                if (IsServer)
+                    Host.EnqueuePacket(decoyPacket);
             }
         }
 

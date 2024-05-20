@@ -162,6 +162,10 @@ namespace PolyPlane.Net
 
     public class BasicPacket : NetPacket
     {
+        public BasicPacket(PacketTypes type) : base(type) { }
+
+        public BasicPacket() : base() { }
+
         public BasicPacket(BitBuffer data)
         {
             this.Deserialize(data);
@@ -412,6 +416,43 @@ namespace PolyPlane.Net
             Position = data.ReadD2DPoint();
             Velocity = data.ReadD2DPoint(World.VeloBounds);
             Rotation = data.ReadFloat();
+        }
+    }
+
+    public class GameObjectListPacket : BasicPacket
+    {
+        public List<GameObjectPacket> Packets = new List<GameObjectPacket>();
+
+        public GameObjectListPacket(PacketTypes type) : base(type) { }
+
+        public GameObjectListPacket() : base() { }
+        
+        public GameObjectListPacket(List<GameObjectPacket> packets)
+        {
+           Packets = packets;
+        }
+
+        public GameObjectListPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
+
+        public override void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+
+            data.AddInt(Packets.Count);
+            foreach (var packet in Packets)
+                packet.Serialize(data);
+        }
+
+        public override void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+
+            var len = data.ReadInt();
+            for (int i = 0; i < len; i++)
+                Packets.Add(new GameObjectPacket(data));
         }
     }
 

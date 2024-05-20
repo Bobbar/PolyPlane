@@ -19,7 +19,9 @@
         ServerSync,
         Discovery,
         KickPlayer,
-        ImpactList
+        ImpactList,
+        BulletList,
+        DecoyList
 
     }
 }

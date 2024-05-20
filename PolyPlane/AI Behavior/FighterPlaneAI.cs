@@ -19,7 +19,7 @@ namespace PolyPlane.AI_Behavior
 
         private GameTimer _fireBurstTimer = new GameTimer(2f, 6f);
         private GameTimer _fireMissileCooldown = new GameTimer(6f);
-        private GameTimer _dropDecoysTimer = new GameTimer(4f, 2f);
+        private GameTimer _dropDecoysTimer = new GameTimer(3f, 3f);
         private GameTimer _changeTargetCooldown = new GameTimer(10f);
 
         private float MIN_MISSILE_TIME = 40f;

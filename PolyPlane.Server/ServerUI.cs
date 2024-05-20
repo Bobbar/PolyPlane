@@ -76,6 +76,11 @@ namespace PolyPlane.Server
 
             var localIP = Utilities.GetLocalIP();
 
+#if DEBUG
+            localIP = "127.0.0.1";
+            EnableDiscoveryCheckBox.Checked = false;
+#endif
+
             if (localIP != null)
             {
                 _address = localIP;

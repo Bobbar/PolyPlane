@@ -29,6 +29,10 @@ namespace PolyPlane
             this.Disposed += ClientServerConfigForm_Disposed;
 
             _planePreview = new PlanePreview(PlanePreviewBox, PlaneColor);
+
+#if DEBUG
+            IPAddressTextBox.Text = "127.0.0.1";
+#endif
         }
 
         private void ClientServerConfigForm_Disposed(object? sender, EventArgs e)

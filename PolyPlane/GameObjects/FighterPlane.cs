@@ -748,10 +748,10 @@ namespace PolyPlane.GameObjects
         /// Adds cosmetic impact (bullet holes/flames) without doing damage or impulse.
         /// </summary>
         /// <param name="impactPos"></param>
-        public void AddImpact(D2DPoint impactPos)
+        public void AddImpact(D2DPoint impactPos, float angle)
         {
             var ogPos = Utilities.ScaleToOrigin(this, impactPos);
-            AddBulletHole(ogPos);
+            AddBulletHole(ogPos, angle);
         }
 
         private void SpawnDebris(int num, D2DPoint pos, D2DColor color)
