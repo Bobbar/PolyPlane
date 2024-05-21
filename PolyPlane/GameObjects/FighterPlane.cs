@@ -115,7 +115,7 @@ namespace PolyPlane.GameObjects
         private D2DColor _planeColor;
         private D2DColor _cockpitColor = new D2DColor(0.5f, D2DColor.LightBlue);
         private SmokeTrail _contrail;
-        private List<Flame> _bulletHoles = new List<Flame>();
+        private List<BulletHole> _bulletHoles = new List<BulletHole>();
         private const float VAPOR_TRAIL_GS = 15f; // How many Gs before showing vapor trail.
         private List<Vapor> _vaporTrails = new List<Vapor>();
         private Vapor _gunSmoke;
@@ -617,16 +617,16 @@ namespace PolyPlane.GameObjects
 
         public void AddBulletHole(D2DPoint pos)
         {
-            var flame = new Flame(this, pos, hasFlame: Utilities.Rnd.Next(3) == 2);
-            flame.IsNetObject = this.IsNetObject;
-            _bulletHoles.Add(flame);
+            var bulletHole = new BulletHole(this, pos, hasFlame: Utilities.Rnd.Next(3) == 2);
+            bulletHole.IsNetObject = this.IsNetObject;
+            _bulletHoles.Add(bulletHole);
         }
 
         public void AddBulletHole(D2DPoint pos, float angle)
         {
-            var flame = new Flame(this, pos, angle, hasFlame: Utilities.Rnd.Next(3) == 2);
-            flame.IsNetObject = this.IsNetObject;
-            _bulletHoles.Add(flame);
+            var bulletHole = new BulletHole(this, pos, angle, hasFlame: Utilities.Rnd.Next(3) == 2);
+            bulletHole.IsNetObject = this.IsNetObject;
+            _bulletHoles.Add(bulletHole);
         }
 
         public void DoImpact(GameObject impactor, D2DPoint impactPos)

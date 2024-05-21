@@ -13,7 +13,7 @@ namespace PolyPlane.GameObjects
 
         public D2DPoint Velocity { get; set; }
 
-        public float Rotation
+        public virtual float Rotation
         {
             get { return _rotation; }
 
