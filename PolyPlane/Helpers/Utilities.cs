@@ -476,7 +476,7 @@ namespace PolyPlane.Helpers
         public static D2DPoint FindSafeSpawnPoint(GameObjectManager objs)
         {
             const float MIN_DIST = 40000f;
-            const float MAX_DIST = 90000f;
+            const float MAX_DIST = 60000f;
 
             const float MIN_ALT = 4000f;
             const float MAX_ALT = 12000f;
