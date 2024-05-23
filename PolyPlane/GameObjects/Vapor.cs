@@ -134,7 +134,6 @@ namespace PolyPlane.GameObjects
         private class VaporPart : GameObject
         {
             public D2DColor Color;
-            public float Age;
 
             private D2DEllipse _ellipse;
 
@@ -151,8 +150,6 @@ namespace PolyPlane.GameObjects
                 this.Velocity += -this.Velocity * (dt * 1.5f);
 
                 _ellipse.origin = this.Position;
-
-                Age += dt;
             }
 
             public override void Render(RenderContext ctx)

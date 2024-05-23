@@ -54,7 +54,6 @@ namespace PolyPlane.GameObjects
         public bool FiringBurst { get; set; } = false;
         public bool DroppingDecoy { get; set; } = false;
         public float GForce => _gForce;
-        public float GForceDirection => _gForceDir;
         public bool ThrustOn { get; set; } = false;
         public float ThrustAmount
         {
@@ -96,7 +95,7 @@ namespace PolyPlane.GameObjects
 
         private float _damageDeflection = 0f;
         private float _gForce = 0f;
-        private float _gForceDir = 0f;
+        private SmoothFloat _gforceAvg = new SmoothFloat(8);
         private int _throttlePos = 0;
         private int _numMissiles = MAX_MISSILES;
         private int _numBullets = MAX_BULLETS;
@@ -364,8 +363,7 @@ namespace PolyPlane.GameObjects
                 var totForce = (thrust / this.MASS * partialDT) + (wingForce / this.MASS * partialDT);
 
                 var gforce = totForce.Length() / partialDT / World.Gravity.Y;
-                _gForce = gforce;
-                _gForceDir = totForce.Angle(true);
+                _gforceAvg.Add(gforce);
 
                 // TODO:  This is so messy...
                 Wings.ForEach(w => w.Update(partialDT, renderScale * this.RenderOffset));
@@ -374,6 +372,8 @@ namespace PolyPlane.GameObjects
 
                 base.Update(partialDT, renderScale * this.RenderOffset);
             }
+
+            _gForce = _gforceAvg.Current;
 
             _flamePos.Update(dt, renderScale * this.RenderOffset);
             _gunPosition.Update(dt, renderScale * this.RenderOffset);

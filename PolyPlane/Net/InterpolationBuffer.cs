@@ -10,9 +10,9 @@ namespace PolyPlane
         private double _tickRate;
         private T _resetingState;
         private bool _firstTurn = true;
-        private Func<T, T, double, T> _interpolate;
+        private Action<T, T, double> _interpolate;
 
-        public InterpolationBuffer(T restingState, double tickRate, Func<T, T, double, T> interpolate)
+        public InterpolationBuffer(T restingState, double tickRate, Action<T, T, double> interpolate)
         {
             _tickRate = tickRate;
             _interpolate = interpolate;
@@ -37,12 +37,12 @@ namespace PolyPlane
             _buffer.Add(newState);
         }
 
-        public T GetInterpolatedState(double now)
+        public void InterpolateState(double now)
         {
             if (_buffer.Count == 0)
             {
                 _clientStartTime = -1;
-                return _resetingState;
+                return;
             }
 
             if (_buffer[_buffer.Count - 1].UpdatedAt <= now)
@@ -51,7 +51,7 @@ namespace PolyPlane
                 _clientStartTime = _buffer[_buffer.Count - 1].UpdatedAt;
 
                 _buffer.Clear();
-                return _resetingState;
+                return;
             }
 
             for (int i = _buffer.Count - 1; i >= 0; i--)
@@ -61,17 +61,18 @@ namespace PolyPlane
                     _clientStartTime = -1;
                     _buffer.RemoveRange(0, i);
 
-                    return Interp(_buffer[0], _buffer[1], now);
+                    Interp(_buffer[0], _buffer[1], now);
+                    return;
                 }
             }
 
-            return Interp(new BufferEntry<T>(_resetingState, (_clientStartTime == -1 ? now : _clientStartTime)), _buffer[0], now);
+            Interp(new BufferEntry<T>(_resetingState, (_clientStartTime == -1 ? now : _clientStartTime)), _buffer[0], now);
         }
 
-        private T Interp(BufferEntry<T> from, BufferEntry<T> to, double now)
+        private void Interp(BufferEntry<T> from, BufferEntry<T> to, double now)
         {
             var pctElapsed = (now - from.UpdatedAt) / (to.UpdatedAt - from.UpdatedAt);
-            return _interpolate(from.State, to.State, pctElapsed);
+             _interpolate(from.State, to.State, pctElapsed);
         }
     }
 

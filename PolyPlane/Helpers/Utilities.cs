@@ -487,7 +487,7 @@ namespace PolyPlane.Helpers
 
             var min = objs.Planes.Min(p => p.Position.DistanceTo(point));
 
-            for (int i = 0; i < 3000; i++)
+            for (int i = 0; i < 10000; i++)
             {
                 point = new D2DPoint(Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
                 min = objs.Planes.Min(p => p.Position.DistanceTo(point));

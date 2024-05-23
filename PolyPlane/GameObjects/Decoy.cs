@@ -11,7 +11,6 @@ namespace PolyPlane.GameObjects
         private float _currentFlash = 0f;
         private float _flashRate = 20f;
         private float _lifeSpan = 10f;
-        private float _age = 0f;
         private float _direction = 1f;
 
         public Decoy(FighterPlane owner) : base()
@@ -55,9 +54,7 @@ namespace PolyPlane.GameObjects
             if (_currentFlash >= _flashAmt || _currentFlash <= 0f)
                 _direction *= -1f;
 
-            _age += dt;
-
-            if (_age > _lifeSpan)
+            if (this.Age > _lifeSpan)
                 this.IsExpired = true;
         }
 

@@ -49,7 +49,6 @@ namespace PolyPlane.GameObjects
         private readonly float MASS = 22.5f;
         private readonly float FUEL = 10f;
 
-        private float _age = 0;
         private float _currentFuel = 0f;
         private float _gForce = 0f;
         private float _gForcePeak = 0f;
@@ -281,9 +280,8 @@ namespace PolyPlane.GameObjects
                 _gForcePeak = Math.Max(_gForcePeak, _gForce);
             }
 
-            _age += dt;
 
-            if (_age > LIFESPAN && MissedTarget)
+            if (this.Age > LIFESPAN && MissedTarget)
                 this.IsExpired = true;
 
             float flameAngle = 0f;
@@ -315,7 +313,7 @@ namespace PolyPlane.GameObjects
             if (FUEL <= 0f && this.Velocity.Length() <= 20f)
                 this.IsExpired = true;
 
-            if (Target != null && Target.IsExpired && _age > LIFESPAN)
+            if (Target != null && Target.IsExpired && this.Age > LIFESPAN)
                 this.IsExpired = true;
 
             _decoyDistractCooldown.Update(dt);

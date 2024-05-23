@@ -154,8 +154,6 @@ namespace PolyPlane.GameObjects
             public D2DColor Color { get; set; }
             public D2DColor EndColor { get; set; }
 
-            public float Age { get; set; }
-
             private D2DEllipse _ellipse;
 
             private D2DPoint _riseRate = new D2DPoint(0f, -50f);
@@ -183,8 +181,6 @@ namespace PolyPlane.GameObjects
                 this.Velocity += _riseRate * dt;
 
                 _ellipse.origin = this.Position;
-
-                this.Age += dt;
             }
 
             public override void Render(RenderContext ctx)

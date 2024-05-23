@@ -8,7 +8,6 @@ namespace PolyPlane.GameObjects
     {
         public const float SPEED = 800f;
         public float Lifetime = 10f;
-        private float _age = 0;
 
         private readonly D2DPoint[] _poly = new D2DPoint[]
         {
@@ -51,9 +50,7 @@ namespace PolyPlane.GameObjects
         {
             base.Update(dt, renderScale);
 
-            _age += dt;
-
-            if (_age >= Lifetime)
+            if (this.Age >= Lifetime)
                 this.IsExpired = true;
         }
 

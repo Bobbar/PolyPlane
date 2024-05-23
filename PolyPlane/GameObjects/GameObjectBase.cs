@@ -62,6 +62,16 @@ namespace PolyPlane.GameObjects
         public bool Visible = true;
         public bool IsNetObject = false;
         public double LagAmount = 0;
+        public float Age = 0f;
+
+        /// <summary>
+        /// Age in milliseconds.
+        /// </summary>
+        public float AgeMs
+        {
+            get { return (this.Age / World.DT) * (1000f / 16f); }
+        }
+
 
         public int PlayerID
         {
@@ -124,18 +134,16 @@ namespace PolyPlane.GameObjects
 
         public virtual void Update(float dt, float renderScale)
         {
-            if (World.IsNetGame && IsNetObject && InterpBuffer != null)
-            {
-                if (World.InterpOn)
-                {
-                    var nowMs = World.CurrentTime();
-                    InterpBuffer.GetInterpolatedState(nowMs);
-                    return;
-                }
-            }
+            Age += dt;
 
             if (this.IsExpired)
                 return;
+
+            if (World.InterpOn && World.IsNetGame && IsNetObject && InterpBuffer != null)
+            {
+                var nowMs = World.CurrentTime();
+                InterpBuffer.InterpolateState(nowMs);
+            }
 
             Position += Velocity * dt;
 
@@ -165,6 +173,8 @@ namespace PolyPlane.GameObjects
                 this.Rotation = rotation;
                 this.Velocity = velocity;
             }
+
+            this.LagAmount = World.CurrentTime() - frameTime;
         }
 
         public virtual void ClampToGround(float dt)
@@ -234,13 +244,13 @@ namespace PolyPlane.GameObjects
 
         public virtual void Dispose() { }
 
-        private GameObjectPacket InterpObject(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
+        private void InterpObject(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
         {
-            this.Position = _posSmooth.Add((from.Position + (to.Position - from.Position) * (float)pctElapsed));
-            this.Velocity = (from.Velocity + (to.Velocity - from.Velocity) * (float)pctElapsed);
-            this.Rotation = Utilities.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
+            var state = GetInterpState(from, to, pctElapsed);
 
-            return to;
+            this.Position = _posSmooth.Add(state.Position);
+            this.Velocity = state.Velocity;
+            this.Rotation = state.Rotation;
         }
 
         private GameObjectPacket GetInterpState(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
@@ -375,6 +385,12 @@ namespace PolyPlane.GameObjects
 
                 gfx.DrawLine(veloPnt1, veloPnt2, D2DColor.Red);
             }
+
+            var lagPntStart = this.Position - (this.Velocity * (float)((this.LagAmount / 16.6f) * World.DT));
+            var lagPntEnd = this.Position;
+
+            if (this.AgeMs < (this.LagAmount * 2f))
+                gfx.DrawLine(lagPntStart, lagPntEnd, D2DColor.Red);
         }
 
         public virtual bool Contains(D2DPoint pnt)

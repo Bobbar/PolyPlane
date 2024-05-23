@@ -131,6 +131,8 @@ namespace PolyPlane.Helpers
 
         public static bool PolyIntersect(D2DPoint a, D2DPoint b, D2DPoint[] poly, out D2DPoint pos)
         {
+            var intersections = new List<D2DPoint>();
+
             // Check the segment against every segment in the polygon.
             for (int i = 0; i < poly.Length - 1; i++)
             {
@@ -139,9 +141,16 @@ namespace PolyPlane.Helpers
 
                 if (CollisionHelpers.IsIntersecting(a, b, pnt1, pnt2, out D2DPoint iPos))
                 {
-                    pos = iPos;
-                    return true;
+                    intersections.Add(iPos);
                 }
+            }
+
+            // Return the intersection closest to the first point.
+            if (intersections.Count > 0)
+            {
+                var best = intersections.OrderBy(i => i.DistanceTo(a));
+                pos = best.First();
+                return true;
             }
 
             pos = D2DPoint.Zero;
@@ -155,8 +164,25 @@ namespace PolyPlane.Helpers
             // Then for each of those lines, check for intersections on each line segment of the target object's polygon.
 
             var hits = new List<D2DPoint>();
-            var relVelo = (impactorObj.Velocity - targVelo) * dt; // Get relative
+            var relVelo = (impactorObj.Velocity - targVelo) * dt; // Get relative velo.
             var impactorPoly = impactorObj.Polygon.Poly;
+
+
+            // For new bullets, do a ray cast between the predicted "real" start position and the current position.
+            // This is done because we are extrapolating the bullet position when a new packet is received,
+            // so we need to handle collisions for the "gap" between the real bullet/plane and the net bullet on the client.
+            if (impactorObj is Bullet && impactorObj.AgeMs < (impactorObj.LagAmount * 1f))
+            {
+                var lagPntStart = impactorObj.Position - (impactorObj.Velocity * (float)((((impactorObj.LagAmount) / 16.6f) * World.DT)));
+                var lagPntEnd = impactorObj.Position;
+
+                if (PolyIntersect(lagPntStart, lagPntEnd, targPoly, out D2DPoint iPosLag))
+                {
+                    impactPoint = iPosLag;
+                    return true;
+                }
+            }
+
 
             for (int i = 0; i < impactorPoly.Length; i++)
             {
