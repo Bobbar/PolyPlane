@@ -15,12 +15,12 @@ namespace PolyPlane.GameObjects
         private const int MAX_PARTS = 20;
         private const float MAX_AGE = 1f;
 
-        public Vapor(GameObject obj, D2DPoint offset, float radius, bool veloSizing = true)
+        public Vapor(GameObject obj, GameObject owner, D2DPoint offset, float radius, bool veloSizing = true)
         {
             _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
             _veloSizing = veloSizing;
 
-            this.Owner = obj;
+            this.Owner = owner;
             _refPos = new FixturePoint(obj, offset);
             _radius = radius;
 
@@ -28,11 +28,11 @@ namespace PolyPlane.GameObjects
             _spawnTimer.Start();
         }
 
-        public Vapor(GameObject obj, D2DPoint offset, float radius, D2DColor color, bool veloSizing = true)
+        public Vapor(GameObject obj, D2DPoint offset, float radius, D2DColor color)
         {
             _vaporColor = color;
             _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
-            _veloSizing = veloSizing;
+            _veloSizing = false;
 
             this.Owner = obj;
             _refPos = new FixturePoint(obj, offset);
@@ -41,7 +41,6 @@ namespace PolyPlane.GameObjects
             _spawnTimer.TriggerCallback = () => SpawnPart();
             _spawnTimer.Start();
         }
-
 
         public override void Update(float dt, float renderScale)
         {
@@ -83,7 +82,6 @@ namespace PolyPlane.GameObjects
 
             if (this.Owner != null)
                 newVelo = this.Owner.Velocity;
-
 
             float newRad = 0f;
 

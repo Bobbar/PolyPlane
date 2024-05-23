@@ -144,16 +144,18 @@ namespace PolyPlane.GameObjects
                 var nowMs = World.CurrentTime();
                 InterpBuffer.InterpolateState(nowMs);
             }
+            else
+            {
+                Position += Velocity * dt;
 
-            Position += Velocity * dt;
+                Rotation += RotationSpeed * dt;
 
-            Rotation += RotationSpeed * dt;
+                var altDiff = this.Altitude - _prevAlt;
+                _verticalSpeed = altDiff / dt;
+                _prevAlt = this.Altitude;
 
-            var altDiff = this.Altitude - _prevAlt;
-            _verticalSpeed = altDiff / dt;
-            _prevAlt = this.Altitude;
-
-            ClampToGround(dt);
+                ClampToGround(dt);
+            }
         }
 
         public virtual void NetUpdate(float dt, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)

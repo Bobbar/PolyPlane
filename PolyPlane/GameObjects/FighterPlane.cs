@@ -18,7 +18,7 @@ namespace PolyPlane.GameObjects
         public string PlayerName;
         public float PlayerGuideAngle = 0;
 
-        public int NumMissiles { get { return _numMissiles; }  set { _numMissiles = Math.Clamp(value, 0, MAX_MISSILES); } }
+        public int NumMissiles { get { return _numMissiles; } set { _numMissiles = Math.Clamp(value, 0, MAX_MISSILES); } }
         public int NumBullets { get { return _numBullets; } set { _numBullets = Math.Clamp(value, 0, MAX_BULLETS); } }
         public int NumDecoys { get { return _numDecoys; } set { _numDecoys = Math.Clamp(value, 0, MAX_DECOYS); } }
         public int Health { get { return _health; } set { _health = Math.Clamp(value, 0, MAX_HEALTH); } }
@@ -359,9 +359,7 @@ namespace PolyPlane.GameObjects
                     this.Velocity += (World.Gravity * gravFact * partialDT);
                 }
 
-
                 var totForce = (thrust / this.MASS * partialDT) + (wingForce / this.MASS * partialDT);
-
                 var gforce = totForce.Length() / partialDT / World.Gravity.Y;
                 _gforceAvg.Add(gforce);
 
@@ -587,7 +585,7 @@ namespace PolyPlane.GameObjects
             if (isControl && _controlWing == null)
                 _controlWing = wing;
 
-            _vaporTrails.Add(new Vapor(wing, new D2DPoint(5f, 0f), 2f));
+            _vaporTrails.Add(new Vapor(wing, this, new D2DPoint(5f, 0f), 2f));
 
             Wings.Add(wing);
         }
