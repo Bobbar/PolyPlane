@@ -609,6 +609,22 @@ namespace PolyPlane
                 return;
             }
 
+            // Don't allow inputs if mouse left the window.
+            var rect = new Rectangle(this.Location, this.Size);
+            if (!rect.Contains(Control.MousePosition))
+            {
+                _playerBurstTimer.Stop();
+                _playerBurstTimer.Reset();
+                _playerPlane.FiringBurst = false;
+                _playerPlane.DroppingDecoy = false;
+                _isHoldingAlt = true; // Hold the plane at the current altitude if mouse leaves the window.
+                return;
+            }
+            else
+            {
+                _isHoldingAlt = false;
+            }
+
             var buttons = Control.MouseButtons;
 
             if (buttons.HasFlag(MouseButtons.Left))
@@ -1014,6 +1030,9 @@ namespace PolyPlane
             var center = new D2DPoint(World.ViewPortSize.width * 0.5f, World.ViewPortSize.height * 0.5f);
             var pos = new D2DPoint(e.X, e.Y) * World.ViewPortScaleMulti;
             var angle = center.AngleTo(pos);
+
+            //Debug.WriteLine($"{e.Location}   {this.ClientSize}");
+
 
             _playerPlane.SetAutoPilotAngle(angle);
         }

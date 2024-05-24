@@ -1,6 +1,7 @@
 ﻿using PolyPlane.GameObjects.Guidance;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
+using System.Diagnostics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -280,10 +281,6 @@ namespace PolyPlane.GameObjects
                 _gForcePeak = Math.Max(_gForcePeak, _gForce);
             }
 
-
-            if (this.Age > LIFESPAN && MissedTarget)
-                this.IsExpired = true;
-
             float flameAngle = 0f;
 
             if (_useThrustVectoring)
@@ -309,6 +306,9 @@ namespace PolyPlane.GameObjects
             {
                 _currentFuel -= BURN_RATE * dt;
             }
+
+            if (this.Age > LIFESPAN && MissedTarget)
+                this.IsExpired = true;
 
             if (FUEL <= 0f && this.Velocity.Length() <= 20f)
                 this.IsExpired = true;
