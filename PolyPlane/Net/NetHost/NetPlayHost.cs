@@ -217,7 +217,7 @@ namespace PolyPlane.Net.NetHost
         {
             switch (netpacket.Type)
             {
-                case PacketTypes.PlaneUpdate or PacketTypes.MissileUpdate:
+                case PacketTypes.NewBullet or PacketTypes.NewDecoy or PacketTypes.Impact:
                     return PacketFlags.Instant;
 
                 default:
