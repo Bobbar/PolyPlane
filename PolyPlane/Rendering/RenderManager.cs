@@ -336,7 +336,7 @@ namespace PolyPlane.Rendering
 
         private Size GetViewportScaled()
         {
-            var scaleSize = new Size((int)((float)_renderTarget.Size.Width / ((float)_currentDPI / (float)DEFAULT_DPI)), (int)((float)_renderTarget.Size.Height / ((float)_currentDPI / DEFAULT_DPI)));
+            var scaleSize = new Size((int)((float)_renderTarget.Size.Width / ((float)_currentDPI / World.DEFAULT_DPI)), (int)((float)_renderTarget.Size.Height / ((float)_currentDPI / World.DEFAULT_DPI)));
             return scaleSize;
         }
 

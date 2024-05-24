@@ -610,8 +610,7 @@ namespace PolyPlane
             }
 
             // Don't allow inputs if mouse left the window.
-            var rect = new Rectangle(this.Location, this.Size);
-            if (!rect.Contains(Control.MousePosition))
+            if (!this.DesktopBounds.Contains(Control.MousePosition))
             {
                 _playerBurstTimer.Stop();
                 _playerBurstTimer.Reset();
@@ -1028,12 +1027,10 @@ namespace PolyPlane
         private void PolyPlaneUI_MouseMove(object sender, MouseEventArgs e)
         {
             var center = new D2DPoint(World.ViewPortSize.width * 0.5f, World.ViewPortSize.height * 0.5f);
+            center /= World.DEFAULT_DPI / (float)this.DeviceDpi; // Scale for DPI.
             var pos = new D2DPoint(e.X, e.Y) * World.ViewPortScaleMulti;
             var angle = center.AngleTo(pos);
-
-            //Debug.WriteLine($"{e.Location}   {this.ClientSize}");
-
-
+           
             _playerPlane.SetAutoPilotAngle(angle);
         }
 
