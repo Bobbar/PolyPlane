@@ -64,8 +64,7 @@ namespace PolyPlane.GameObjects.Manager
 
                         if (_isNetGame)
                         {
-                            var missileRTT = _netMan.Host.GetPlayerRTT(missile.PlayerID);
-                            var missileLagComp = (planeRTT + missile.LagAmount + missileRTT + LAG_COMP_OFFSET);
+                            var missileLagComp = missile.LagAmount / 2f;
 
                             // Don't compensate as much for AI planes?
                             if (missileOwner.IsAI)
@@ -129,12 +128,7 @@ namespace PolyPlane.GameObjects.Manager
 
                         if (_isNetGame)
                         {
-                            uint bulletRTT = 0;
-
-                            if (_isNetGame)
-                                bulletRTT = _netMan.Host.GetPlayerRTT(bullet.PlayerID);
-
-                            var bulletLagComp = planeRTT + bullet.LagAmount + bulletRTT + LAG_COMP_OFFSET;
+                            var bulletLagComp = bullet.LagAmount / 2f;
 
                             if (bulletOwner.IsAI)
                                 bulletLagComp = planeRTT;

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using PolyPlane.Helpers;
+﻿using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -11,7 +6,6 @@ namespace PolyPlane.GameObjects
     public class BulletHole : Flame
     {
         public D2DSize HoleSize { get; set; }
-
         public override float Rotation
         {
             get => base.Rotation + _rotOffset;

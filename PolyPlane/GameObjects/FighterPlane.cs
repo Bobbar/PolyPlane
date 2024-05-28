@@ -425,6 +425,8 @@ namespace PolyPlane.GameObjects
 
             if (!this.DroppingDecoy)
                 _decoyRegenTimer.Update(dt);
+
+            this.RecordHistory();
         }
 
         public override void NetUpdate(float dt, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
@@ -477,8 +479,8 @@ namespace PolyPlane.GameObjects
                     ctx.Gfx.PushTransform();
                     ctx.Gfx.RotateTransform(flame.Rotation, flame.Position);
 
-                    ctx.Gfx.FillEllipse(new D2DEllipse(flame.Position, outsideSz), D2DColor.Gray);
-                    ctx.Gfx.FillEllipse(new D2DEllipse(flame.Position, flame.HoleSize), D2DColor.Black);
+                        ctx.Gfx.FillEllipse(new D2DEllipse(flame.Position, outsideSz), D2DColor.Gray);
+                        ctx.Gfx.FillEllipse(new D2DEllipse(flame.Position, flame.HoleSize), D2DColor.Black);
 
                     ctx.Gfx.PopTransform();
                 }
@@ -600,6 +602,7 @@ namespace PolyPlane.GameObjects
         /// </summary>
         public void SyncFixtures()
         {
+            this.Polygon.Update(this.Position, this.Rotation, World.RenderScale * this.RenderOffset);
             _flamePos.Update(0f, World.RenderScale * this.RenderOffset);
             _bulletHoles.ForEach(f => f.Update(0f, World.RenderScale * this.RenderOffset));
             _centerOfThrust.Update(0f, World.RenderScale * this.RenderOffset);

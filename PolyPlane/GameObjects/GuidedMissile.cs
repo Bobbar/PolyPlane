@@ -322,6 +322,8 @@ namespace PolyPlane.GameObjects
 
             if (_currentFuel <= 0f)
                 FlameOn = false;
+
+            this.RecordHistory();
         }
 
         public override void NetUpdate(float dt, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
