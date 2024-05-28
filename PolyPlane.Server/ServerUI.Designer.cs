@@ -56,6 +56,7 @@
             TimeOfDaySlider = new TrackBar();
             TimeOfDayLabel = new Label();
             EnableDiscoveryCheckBox = new CheckBox();
+            GunsOnlyCheckBox = new CheckBox();
             PlayerListContextMenu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)TimeOfDaySlider).BeginInit();
             SuspendLayout();
@@ -94,7 +95,7 @@
             InterpCheckBox.AutoSize = true;
             InterpCheckBox.Checked = true;
             InterpCheckBox.CheckState = CheckState.Checked;
-            InterpCheckBox.Location = new Point(719, 148);
+            InterpCheckBox.Location = new Point(652, 440);
             InterpCheckBox.Name = "InterpCheckBox";
             InterpCheckBox.Size = new Size(76, 19);
             InterpCheckBox.TabIndex = 3;
@@ -311,11 +312,23 @@
             EnableDiscoveryCheckBox.UseVisualStyleBackColor = true;
             EnableDiscoveryCheckBox.CheckedChanged += EnableDiscoveryCheckBox_CheckedChanged;
             // 
+            // GunsOnlyCheckBox
+            // 
+            GunsOnlyCheckBox.AutoSize = true;
+            GunsOnlyCheckBox.Location = new Point(652, 465);
+            GunsOnlyCheckBox.Name = "GunsOnlyCheckBox";
+            GunsOnlyCheckBox.Size = new Size(81, 19);
+            GunsOnlyCheckBox.TabIndex = 25;
+            GunsOnlyCheckBox.Text = "Guns Only";
+            GunsOnlyCheckBox.UseVisualStyleBackColor = true;
+            GunsOnlyCheckBox.CheckedChanged += GunsOnlyCheckBox_CheckedChanged;
+            // 
             // ServerUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(898, 536);
+            Controls.Add(GunsOnlyCheckBox);
             Controls.Add(EnableDiscoveryCheckBox);
             Controls.Add(TimeOfDayLabel);
             Controls.Add(TimeOfDaySlider);
@@ -380,5 +393,6 @@
         private TrackBar TimeOfDaySlider;
         private Label TimeOfDayLabel;
         private CheckBox EnableDiscoveryCheckBox;
+        private CheckBox GunsOnlyCheckBox;
     }
 }

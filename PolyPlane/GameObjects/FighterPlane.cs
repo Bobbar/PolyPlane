@@ -524,6 +524,9 @@ namespace PolyPlane.GameObjects
 
         public void FireMissile(GameObject target)
         {
+            if (World.GunsOnly)
+                return;
+
             if (this.NumMissiles <= 0 || this.IsDamaged)
             {
                 Log.Msg("Click...");

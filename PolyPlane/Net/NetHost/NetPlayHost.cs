@@ -145,7 +145,7 @@ namespace PolyPlane.Net.NetHost
 
         public void SendSyncPacket()
         {
-            var packet = new SyncPacket(World.CurrentTime(), World.TimeOfDay, World.TimeOfDayDir);
+            var packet = new SyncPacket(World.CurrentTime(), World.TimeOfDay, World.TimeOfDayDir, World.GunsOnly);
             EnqueuePacket(packet);
         }
 

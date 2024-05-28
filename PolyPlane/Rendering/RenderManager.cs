@@ -1387,6 +1387,7 @@ namespace PolyPlane.Rendering
                 infoText += $"Missiles (Fired/Hit): ({viewplane.MissilesFired} / {viewplane.MissilesHit}) \n";
                 infoText += $"Headshots: {viewplane.Headshots}\n";
                 infoText += $"Interp: {World.InterpOn.ToString()}\n";
+                infoText += $"GunsOnly: {World.GunsOnly.ToString()}\n";
                 infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
                 infoText += $"VP: {this.Width}, {this.Height}\n";
                 infoText += $"DPI: {this._renderTarget.DeviceDpi}\n";

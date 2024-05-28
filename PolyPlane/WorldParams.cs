@@ -105,6 +105,7 @@ namespace PolyPlane
         public static bool IsNetGame = false;
         public static bool IsServer = false;
         public static bool RespawnAIPlanes = true;
+        public static bool GunsOnly = false;
 
         private static float _zoomScale = 0.11f;
         private static float _dt = 0.0325f;

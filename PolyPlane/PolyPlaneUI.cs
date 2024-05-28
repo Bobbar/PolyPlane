@@ -882,6 +882,14 @@ namespace PolyPlane
                 case 'e':
                     break;
 
+                case 'g':
+
+                    if (World.IsNetGame)
+                        break;
+
+                    World.GunsOnly = !World.GunsOnly;
+                    break;
+
                 case 'h':
                     _render.ToggleHelp();
                     break;

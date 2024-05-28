@@ -21,6 +21,7 @@ namespace PolyPlane.Server
         private bool _stopRender = false;
         private bool _isPaused = false;
         private bool _killThread = false;
+        private bool _toggleGunsOnly = false;
 
         private AIPersonality _aiPersonality = AIPersonality.Normal;
         private Thread _gameThread;
@@ -374,6 +375,13 @@ namespace PolyPlane.Server
             {
                 _clearAIPlanes = false;
                 RemoveAIPlanes();
+            }
+
+            if (_toggleGunsOnly)
+            {
+                World.GunsOnly = GunsOnlyCheckBox.Checked;
+                _server.SendSyncPacket();
+                _toggleGunsOnly = false;
             }
 
             HandleAIPlaneRespawn();
@@ -845,6 +853,11 @@ namespace PolyPlane.Server
                 _discoveryTimer.Start();
             else
                 _discoveryTimer.Stop();
+        }
+
+        private void GunsOnlyCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            _toggleGunsOnly = true;
         }
     }
 }

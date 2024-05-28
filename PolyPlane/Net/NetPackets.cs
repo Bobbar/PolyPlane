@@ -126,18 +126,20 @@ namespace PolyPlane.Net
         public long ServerTime;
         public float TimeOfDay;
         public float TimeOfDayDir;
+        public bool GunsOnly;
 
         public SyncPacket(BitBuffer data)
         {
             this.Deserialize(data);
         }
 
-        public SyncPacket(long serverTime, float timeOfDay, float timeOfDayDir) : base()
+        public SyncPacket(long serverTime, float timeOfDay, float timeOfDayDir, bool gunsOnly) : base()
         {
             Type = PacketTypes.ServerSync;
             ServerTime = serverTime;
             TimeOfDay = timeOfDay;
             TimeOfDayDir = timeOfDayDir;
+            GunsOnly = gunsOnly;
         }
 
         public override void Serialize(BitBuffer data)
@@ -147,6 +149,7 @@ namespace PolyPlane.Net
             data.AddLong(ServerTime);
             data.AddFloat(TimeOfDay);
             data.AddFloat(TimeOfDayDir);
+            data.AddBool(GunsOnly);
         }
 
         public override void Deserialize(BitBuffer data)
@@ -156,6 +159,7 @@ namespace PolyPlane.Net
             ServerTime = data.ReadLong();
             TimeOfDay = data.ReadFloat();
             TimeOfDayDir = data.ReadFloat();
+            GunsOnly = data.ReadBool();
         }
     }
 
