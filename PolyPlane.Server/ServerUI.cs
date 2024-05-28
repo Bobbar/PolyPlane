@@ -409,7 +409,7 @@ namespace PolyPlane.Server
 
             plane.AutoPilotOn = true;
             plane.ThrustOn = true;
-            plane.Position = Utilities.FindSafeSpawnPoint(_objs);
+            plane.Position = Utilities.FindSafeSpawnPoint(_objs, plane);
             plane.Velocity = new D2DPoint(500f, 0f);
             plane.SyncFixtures();
             plane.RotationSpeed = 0f;

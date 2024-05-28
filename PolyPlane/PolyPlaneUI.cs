@@ -353,7 +353,7 @@ namespace PolyPlane
         {
             plane.AutoPilotOn = true;
             plane.ThrustOn = true;
-            plane.Position = Utilities.FindSafeSpawnPoint(_objs);
+            plane.Position = Utilities.FindSafeSpawnPoint(_objs, plane);
             plane.Velocity = new D2DPoint(500f, 0f);
             plane.SyncFixtures();
             plane.RotationSpeed = 0f;
@@ -374,7 +374,7 @@ namespace PolyPlane
 
             _playerPlane.AutoPilotOn = true;
             _playerPlane.ThrustOn = true;
-            _playerPlane.Position = Utilities.FindSafeSpawnPoint(_objs);
+            _playerPlane.Position = Utilities.FindSafeSpawnPoint(_objs, _playerPlane);
             _playerPlane.Velocity = new D2DPoint(500f, 0f);
             _playerPlane.RotationSpeed = 0f;
             _playerPlane.Rotation = 0f;
