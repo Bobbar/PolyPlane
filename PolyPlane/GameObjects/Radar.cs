@@ -173,7 +173,7 @@ namespace PolyPlane
 
                 if (p.Obj is FighterPlane plane)
                 {
-                    if (plane.IsDamaged)
+                    if (plane.IsDisabled)
                         gfx.DrawEllipse(new D2DEllipse(p.RadarPos, new D2DSize(4f, 4f)), pColor);
                     else
                         gfx.FillRectangle(new D2DRect(p.RadarPos, new D2DSize(6f, 6f)), pColor);
@@ -265,7 +265,7 @@ namespace PolyPlane
 
         private void CheckForLock()
         {
-            if (this.HostPlane.IsDamaged)
+            if (this.HostPlane.IsDisabled)
             {
                 ClearLock();
                 return;
@@ -273,7 +273,7 @@ namespace PolyPlane
 
             var mostCentered = FindMostCenteredAndClosest();
 
-            if (LockedObj != null && (LockedObj is FighterPlane plane && (plane.IsExpired || plane.IsDamaged || plane.HasCrashed)))
+            if (LockedObj != null && (LockedObj is FighterPlane plane && (plane.IsExpired || plane.IsDisabled || plane.HasCrashed)))
             {
                 ClearLock();
             }
@@ -326,7 +326,7 @@ namespace PolyPlane
         {
             var planes = _pings.Where(p =>
             p.Obj is FighterPlane plane
-            && !plane.IsDamaged
+            && !plane.IsDisabled
             && !plane.HasCrashed);
 
             planes = planes.OrderBy(p => this.HostPlane.Position.DistanceTo(p.Obj.Position));
@@ -388,7 +388,7 @@ namespace PolyPlane
 
             foreach (var p in _pings)
             {
-                if (p.Obj is FighterPlane plane && !plane.IsDamaged && !plane.HasCrashed)
+                if (p.Obj is FighterPlane plane && !plane.IsDisabled && !plane.HasCrashed)
                 {
                     var fov = this.HostPlane.FOVToObject(plane);
                     var dist = this.HostPlane.Position.DistanceTo(plane.Position);

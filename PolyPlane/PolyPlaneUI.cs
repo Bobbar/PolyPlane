@@ -63,6 +63,7 @@ namespace PolyPlane
             this.GotFocus += PolyPlaneUI_GotFocus;
             this.LostFocus += PolyPlaneUI_LostFocus;
             this.Disposed += PolyPlaneUI_Disposed;
+            this.MouseWheel += PolyPlaneUI_MouseWheel;
 
             _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
@@ -71,7 +72,7 @@ namespace PolyPlane
             {
                 _playerPlane.FireBullet();
 
-                if (!_playerPlane.IsDamaged && _playerPlane.NumBullets > 0)
+                if (!_playerPlane.IsDisabled && _playerPlane.NumBullets > 0)
                     _render.DoScreenShake(2f);
             };
 
@@ -79,7 +80,7 @@ namespace PolyPlane
             {
                 _playerPlane.FireBullet();
 
-                if (!_playerPlane.IsDamaged && _playerPlane.NumBullets > 0)
+                if (!_playerPlane.IsDisabled && _playerPlane.NumBullets > 0)
                     _render.DoScreenShake(2f);
             };
 
@@ -359,7 +360,7 @@ namespace PolyPlane
             plane.RotationSpeed = 0f;
             plane.Rotation = 0f;
             plane.SASOn = true;
-            plane.IsDamaged = false;
+            plane.IsDisabled = false;
             plane.Reset();
             plane.FixPlane();
         }
@@ -379,7 +380,7 @@ namespace PolyPlane
             _playerPlane.RotationSpeed = 0f;
             _playerPlane.Rotation = 0f;
             _playerPlane.SASOn = true;
-            _playerPlane.IsDamaged = false;
+            _playerPlane.IsDisabled = false;
             _playerPlane.Reset();
             _playerPlane.FixPlane();
 
@@ -517,7 +518,6 @@ namespace PolyPlane
 
                 World.UpdateAirDensityAndWind(World.DT);
 
-                _collisions.DoDecoySuccess();
                 _playerBurstTimer.Update(World.DT);
                 _playerResetTimer.Update(World.DT);
                 DoAIPlaneBurst(World.DT);
@@ -554,7 +554,7 @@ namespace PolyPlane
                 _playerPlane.Velocity = D2DPoint.Zero;
             }
 
-            if (_playerPlane.IsDamaged && !_playerResetTimer.IsRunning)
+            if (_playerPlane.IsDisabled && !_playerResetTimer.IsRunning)
                 _playerResetTimer.Restart(ignoreCooldown: true);
 
             if (_playerPlane.HasCrashed)
@@ -642,7 +642,6 @@ namespace PolyPlane
                 _playerPlane.DroppingDecoy = true;
             else
                 _playerPlane.DroppingDecoy = false;
-
         }
 
         private FighterPlane GetViewPlane()
@@ -754,7 +753,7 @@ namespace PolyPlane
                 return;
             }
 
-            if (plane.IsDamaged)
+            if (plane.IsDisabled)
                 return;
 
             var decoy = new Decoy(plane);
@@ -991,12 +990,12 @@ namespace PolyPlane
 
                 case '[':
 
-                    if ((_playerPlane.IsDamaged || _playerPlane.HasCrashed || _playerPlane.IsAI))
+                    if ((_playerPlane.IsDisabled || _playerPlane.HasCrashed || _playerPlane.IsAI))
                         _queuePrevViewId = true;
                     break;
 
                 case ']':
-                    if ((_playerPlane.IsDamaged || _playerPlane.HasCrashed || _playerPlane.IsAI))
+                    if ((_playerPlane.IsDisabled || _playerPlane.HasCrashed || _playerPlane.IsAI))
                         _queueNextViewId = true;
                     break;
 
@@ -1040,6 +1039,20 @@ namespace PolyPlane
             var angle = center.AngleTo(pos);
            
             _playerPlane.SetAutoPilotAngle(angle);
+        }
+
+        private void PolyPlaneUI_MouseWheel(object? sender, MouseEventArgs e)
+        {
+            if (e.Delta > 0)
+            {
+                World.ZoomScale += 0.002f;
+                ResizeGfx(force: true);
+            }
+            else
+            {
+                World.ZoomScale -= 0.002f;
+                ResizeGfx(force: true);
+            }
         }
 
         private void PolyPlaneUI_Shown(object sender, EventArgs e)

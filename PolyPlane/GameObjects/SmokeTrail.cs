@@ -46,7 +46,7 @@ namespace PolyPlane.GameObjects
 
             var dist = this.Position.DistanceTo(_prevPos);
 
-            if (dist >= TRAIL_DIST && ((_gameObject is GuidedMissile missile && missile.FlameOn) || (_gameObject is FighterPlane plane && !plane.IsDamaged)))
+            if (dist >= TRAIL_DIST && ((_gameObject is GuidedMissile missile && missile.FlameOn) || (_gameObject is FighterPlane plane && !plane.IsDisabled)))
             {
                 if (_posSelector != null)
                     _trailQueue.Enqueue(_posSelector.Invoke(_gameObject));

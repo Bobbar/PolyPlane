@@ -315,8 +315,6 @@ namespace PolyPlane.Server
 
                 World.UpdateAirDensityAndWind(World.DT);
 
-                _collisions.DoDecoySuccess();
-
                 DoAIPlaneBurst(World.DT);
                 _decoyTimer.Update(World.DT);
 
@@ -415,7 +413,7 @@ namespace PolyPlane.Server
             plane.RotationSpeed = 0f;
             plane.Rotation = 0f;
             plane.SASOn = true;
-            plane.IsDamaged = false;
+            plane.IsDisabled = false;
             plane.Reset();
             plane.FixPlane();
         }
@@ -474,7 +472,7 @@ namespace PolyPlane.Server
                 return;
             }
 
-            if (plane.IsDamaged)
+            if (plane.IsDisabled)
                 return;
 
             var decoy = new Decoy(plane);
@@ -639,7 +637,7 @@ namespace PolyPlane.Server
 
             var numObj = _objs.TotalObjects;
             infoText += $"Num Objects: {numObj}\n";
-            infoText += $"Planes: {_objs.Planes.Count(p => !p.IsDamaged && !p.HasCrashed)}\n";
+            infoText += $"Planes: {_objs.Planes.Count(p => !p.IsDisabled && !p.HasCrashed)}\n";
             infoText += $"Clients: {_server.Host.PeersCount}\n";
 
             infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";

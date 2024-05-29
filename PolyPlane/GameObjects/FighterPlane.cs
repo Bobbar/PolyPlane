@@ -38,11 +38,10 @@ namespace PolyPlane.GameObjects
         public const int MAX_BULLETS = 30;
         public const int MAX_MISSILES = 6;
         public const int MAX_HEALTH = 32;
-        public const int MISSILE_DAMAGE = 13;
-        public const int BULLET_DAMAGE = 3;
+        public const int MISSILE_DAMAGE = 20;
+        public const int BULLET_DAMAGE = 4;
 
         public bool IsAI => _isAIPlane;
-        public bool IsDefending = false;
 
         public D2DColor PlaneColor
         {
@@ -67,7 +66,7 @@ namespace PolyPlane.GameObjects
         public bool WasHeadshot { get; set; } = false;
         public D2DPoint GunPosition => _gunPosition.Position;
         public D2DPoint ExhaustPosition => _centerOfThrust.Position;
-        public bool IsDamaged { get; set; } = false;
+        public bool IsDisabled { get; set; } = false;
         public Radar Radar { get; set; }
         public bool HasRadarLock = false;
 
@@ -189,15 +188,11 @@ namespace PolyPlane.GameObjects
         {
             this.RenderOffset = 1.5f;
 
-            float defRate = 50f;
-
-            if (_isAIPlane)
-                defRate = 30f;
+           
 
             this.Polygon = new RenderPoly(_planePoly, this.RenderOffset);
 
-            AddWing(new Wing(this, 10f * this.RenderOffset, 0.5f, 40f, 10000f, new D2DPoint(1.5f, 1f), defRate));
-            AddWing(new Wing(this, 5f * this.RenderOffset, 0.2f, 50f, 5000f, new D2DPoint(-35f, 1f), defRate), true);
+            InitWings();
 
             _controlWing.Deflection = 2f;
             _centerOfThrust = new FixturePoint(this, new D2DPoint(-33f, 0));
@@ -260,6 +255,38 @@ namespace PolyPlane.GameObjects
             _easePhysicsTimer.TriggerCallback = () => _easePhysicsComplete = true;
         }
 
+        private void InitWings()
+        {
+            float defRate = 50f;
+
+            if (_isAIPlane)
+                defRate = 30f;
+
+            // Main wing.
+            AddWing(new Wing(this, new WingParameters() 
+            { 
+                RenderLength = 10f * this.RenderOffset,
+                Area = 0.5f, 
+                MaxDeflection = 40f, 
+                MaxLift = 10000f, 
+                DeflectionRate = defRate, 
+                Position = new D2DPoint(1.5f, 1f),
+                MinVelo = 400f
+            }));
+
+            // Tail wing. (Control wing)
+            AddWing(new Wing(this, new WingParameters()
+            {
+                RenderLength = 5f * this.RenderOffset,
+                Area = 0.2f,
+                MaxDeflection = 50f,
+                MaxLift = 5000f,
+                DeflectionRate = defRate,
+                Position = new D2DPoint(-35f, 1f),
+                MinVelo = 400f
+            }), isControl: true);
+
+        }
         public override void Update(float dt, float renderScale)
         {
             for (int i = 0; i < World.PHYSICS_SUB_STEPS; i++)
@@ -320,7 +347,7 @@ namespace PolyPlane.GameObjects
                     wingTorque += torque;
                 }
 
-                if (IsDamaged)
+                if (IsDisabled)
                 {
                     wingForce *= 0.2f;
                     wingTorque *= 0.2f;
@@ -353,7 +380,7 @@ namespace PolyPlane.GameObjects
 
                     var gravFact = 1f;
 
-                    if (IsDamaged)
+                    if (IsDisabled)
                         gravFact = 4f;
 
                     this.Velocity += (World.Gravity * gravFact * partialDT);
@@ -410,7 +437,7 @@ namespace PolyPlane.GameObjects
             else
                 _vaporTrails.ForEach(v => v.Visible = false);
 
-            if (this.FiringBurst && this.NumBullets > 0 && !this.IsDamaged)
+            if (this.FiringBurst && this.NumBullets > 0 && !this.IsDisabled)
                 _gunSmoke.Visible = true;
             else
                 _gunSmoke.Visible = false;
@@ -527,22 +554,14 @@ namespace PolyPlane.GameObjects
             if (World.GunsOnly)
                 return;
 
-            if (this.NumMissiles <= 0 || this.IsDamaged)
+            if (this.NumMissiles <= 0 || this.IsDisabled)
             {
                 Log.Msg("Click...");
                 return;
             }
 
-            if (this.IsAI)
-            {
-                var missile = new GuidedMissile(this, target, GuidanceType.Advanced, useControlSurfaces: true, useThrustVectoring: true);
-                FireMissileCallback(missile);
-            }
-            else
-            {
-                var missile = new GuidedMissile(this, target, GuidanceType.Advanced, useControlSurfaces: true, useThrustVectoring: true);
-                FireMissileCallback(missile);
-            }
+            var missile = new GuidedMissile(this, target, GuidanceType.Advanced, useControlSurfaces: true, useThrustVectoring: true);
+            FireMissileCallback(missile);
 
             this.MissilesFired++;
             this.NumMissiles--;
@@ -550,7 +569,7 @@ namespace PolyPlane.GameObjects
 
         public void FireBullet()
         {
-            if (IsDamaged)
+            if (IsDisabled)
                 return;
 
             if (this.NumBullets <= 0)
@@ -652,13 +671,19 @@ namespace PolyPlane.GameObjects
             if (this.IsAI)
                 _aiBehavior.ChangeTarget(attackPlane);
 
+            // Scale the impact position back to the origin of the polygon.
+            var ogPos = Utilities.ScaleToOrigin(this, result.ImpactPoint);
+            var angle = result.ImpactAngle;
+
+            AddBulletHole(ogPos, angle);
+
             if (result.DoesDamage)
             {
                 if (result.WasHeadshot)
                 {
                     SpawnDebris(8, result.ImpactPoint, D2DColor.Red);
                     WasHeadshot = true;
-                    IsDamaged = true;
+                    IsDisabled = true;
                     Health = 0;
                     attackPlane.Headshots++;
                 }
@@ -678,15 +703,9 @@ namespace PolyPlane.GameObjects
                     }
                 }
 
-                // Scale the impact position back to the origin of the polygon.
-                var ogPos = Utilities.ScaleToOrigin(this, result.ImpactPoint);
-                var angle = result.ImpactAngle;
-
-                AddBulletHole(ogPos, angle);
-
                 if (this.Health <= 0)
                 {
-                    IsDamaged = true;
+                    IsDisabled = true;
                     _damageDeflection = _rnd.NextFloat(-180, 180);
 
                     attackPlane.Kills++;
@@ -721,7 +740,7 @@ namespace PolyPlane.GameObjects
             result.ImpactPoint = impactPos;
             result.ImpactAngle = angle;
 
-            if (!IsDamaged)
+            if (!IsDisabled)
             {
                 result.DoesDamage = true;
 
@@ -776,7 +795,7 @@ namespace PolyPlane.GameObjects
                 _expireTimeout.Restart();
 
             HasCrashed = true;
-            IsDamaged = true;
+            IsDisabled = true;
             SASOn = false;
             _flipTimer.Stop();
             Health = 0;
@@ -789,7 +808,7 @@ namespace PolyPlane.GameObjects
             NumBullets = MAX_BULLETS;
             NumMissiles = MAX_MISSILES;
             NumDecoys = MAX_DECOYS;
-            IsDamaged = false;
+            IsDisabled = false;
             HasCrashed = false;
             ThrustOn = true;
             _expireTimeout.Stop();

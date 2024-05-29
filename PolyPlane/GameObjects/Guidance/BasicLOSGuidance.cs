@@ -4,7 +4,7 @@ namespace PolyPlane.GameObjects.Guidance
 {
     public class BasicLOSGuidance : GuidanceBase
     {
-        public BasicLOSGuidance(Missile missile, GameObject target) : base(missile, target)
+        public BasicLOSGuidance(GuidedMissile missile, GameObject target) : base(missile, target)
         { }
 
         public override float GetGuidanceDirection(float dt)

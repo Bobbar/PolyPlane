@@ -110,7 +110,7 @@ namespace PolyPlane.GameObjects
 
             var endColor = _blackSmoke;
 
-            if (_refPos.GameObject is FighterPlane plane && !plane.IsDamaged)
+            if (_refPos.GameObject is FighterPlane plane && !plane.IsDisabled)
                 endColor = _graySmoke;
 
             var newRad = this.Radius + Utilities.Rnd.NextFloat(-3f, 3f);

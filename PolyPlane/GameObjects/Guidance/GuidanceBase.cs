@@ -8,7 +8,7 @@ namespace PolyPlane.GameObjects.Guidance
         public D2DPoint StableAimPoint { get; set; }
         public D2DPoint CurrentAimPoint { get; set; }
 
-        protected Missile Missile { get; set; }
+        protected GuidedMissile Missile { get; set; }
         public GameObject Target { get; set; }
 
         private const float ARM_TIME = 3f;
@@ -44,7 +44,7 @@ namespace PolyPlane.GameObjects.Guidance
         private bool _missedTarget = false;
         private bool _lostInGround = false;
 
-        protected GuidanceBase(Missile missile, GameObject target)
+        protected GuidanceBase(GuidedMissile missile, GameObject target)
         {
             Missile = missile;
             Target = target;
@@ -55,6 +55,9 @@ namespace PolyPlane.GameObjects.Guidance
 
         public float GuideTo(float dt)
         {
+            DoDecoySuccess();
+            DoGroundScatter();
+
             _lostLockTimer.Update(dt);
             _groundScatterTimer.Update(dt);
             _armTimer.Update(dt);
@@ -114,12 +117,118 @@ namespace PolyPlane.GameObjects.Guidance
         }
 
         /// <summary>
+        /// Consider distracting missiles with decoys.
+        /// </summary>
+        protected void DoDecoySuccess()
+        {
+            // Test for decoy success.
+            const float MIN_DECOY_FOV = 10f;
+            var decoys = World.ObjectManager.Decoys;
+
+            var missile = this.Missile;
+            var target = missile.Target as FighterPlane;
+
+            if (target == null)
+                return;
+
+            if (missile == null)
+                return;
+
+            // No sense in trying to control missiles we don't have control of...
+            if (missile.IsNetObject)
+                return;
+
+            GameObject maxTempObj;
+            var maxTemp = 0f;
+            const float MaxEngineTemp = 1800f;
+            const float MaxDecoyTemp = 3000f;
+
+            const float EngineRadius = 4f;
+            const float DecoyRadius = 2f;
+
+            var targetDist = D2DPoint.Distance(missile.Position, target.Position);
+            var targetTemp = MaxEngineTemp * target.ThrustAmount * EngineRadius;
+            var engineArea = 4f * (float)Math.PI * (float)Math.Pow(targetDist, 2f);
+            targetTemp /= engineArea;
+
+            maxTempObj = target;
+            maxTemp = targetTemp;
+
+            for (int k = 0; k < decoys.Count; k++)
+            {
+                var decoy = decoys[k];
+
+                if (!missile.IsObjInFOV(decoy, MIN_DECOY_FOV))
+                    continue;
+
+                //if (missile.Owner.IsObjInFOV(target, World.SENSOR_FOV * 0.25f) && )
+                //    continue;
+
+                var dist = D2DPoint.Distance(decoy.Position, missile.Position);
+                var decoyTemp = (MaxDecoyTemp * DecoyRadius) / (4f * (float)Math.PI * (float)Math.Pow(dist, 2f));
+
+                if (decoyTemp > maxTemp)
+                {
+                    maxTemp = decoyTemp;
+                    maxTempObj = decoy;
+                }
+
+            }
+
+            if (maxTempObj is Decoy)
+            {
+                missile.DoChangeTargetChance(maxTempObj);
+            }
+        }
+
+        /// <summary>
+        /// Consider losing target in ground scatter.
+        /// </summary>
+        protected void DoGroundScatter()
+        {
+            const float GROUND_SCATTER_ALT = 3000f;
+
+            if (this.Missile.IsNetObject)
+                return;
+
+            if (this.Missile.Guidance == null)
+                return;
+
+            if (this.Missile.Target != null)
+            {
+                if (this.Missile.Target.Altitude <= GROUND_SCATTER_ALT)
+                {
+                    const int CHANCE_INIT = 10;
+                    var chance = CHANCE_INIT;
+
+                    // Increase chance for lower altitude.
+                    var altFact = 1f - Utilities.Factor(this.Missile.Target.Altitude, GROUND_SCATTER_ALT);
+
+                    chance -= (int)(altFact * 5);
+
+                    if (!this.Missile.Guidance.GroundScatterInCooldown)
+                    {
+                        var rnd1 = Utilities.Rnd.Next(chance);
+                        var rnd2 = Utilities.Rnd.Next(chance);
+                        if (rnd1 == rnd2)
+                        {
+                            this.Missile.Guidance.LostInGround = true;
+                            Log.Msg("Lost in ground scatter....");
+                        }
+                    }
+                }
+                else
+                {
+                    this.LostInGround = false;
+                }
+            }
+        }
+
+        /// <summary>
         /// Implement guidance, dummy!
         /// </summary>
         /// <param name="dt"></param>
         /// <returns></returns>
         public abstract float GetGuidanceDirection(float dt);
-
-
     }
 }

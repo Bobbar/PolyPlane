@@ -11,7 +11,7 @@ namespace PolyPlane.GameObjects.Guidance
         private float _prevTargetDist = 0f;
         private float _prevTargVeloAngle = 0f;
 
-        public AdvancedGuidance(Missile missile, GameObject target) : base(missile, target)
+        public AdvancedGuidance(GuidedMissile missile, GameObject target) : base(missile, target)
         { }
 
         public override float GetGuidanceDirection(float dt)
@@ -119,7 +119,7 @@ namespace PolyPlane.GameObjects.Guidance
             // This considers the target velocity as well as the change in angular velocity.
 
             D2DPoint predicted = targetPos;
-            const int MAX_FTI = 3000; // Max iterations allowed.
+            const int MAX_FTI = 4000; // Max iterations allowed.
 
             if (timeToImpact >= 1 && timeToImpact < MAX_FTI)
             {

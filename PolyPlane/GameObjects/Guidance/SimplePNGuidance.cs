@@ -4,7 +4,7 @@ namespace PolyPlane.GameObjects.Guidance
 {
     public class SimplePNGuidance : GuidanceBase
     {
-        public SimplePNGuidance(Missile missile, GameObject target) : base(missile, target)
+        public SimplePNGuidance(GuidedMissile missile, GameObject target) : base(missile, target)
         { }
 
         public override float GetGuidanceDirection(float dt)

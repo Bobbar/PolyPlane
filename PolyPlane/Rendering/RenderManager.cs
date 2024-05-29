@@ -727,7 +727,7 @@ namespace PolyPlane.Rendering
             DrawAltimeter(ctx.Gfx, viewportsize, viewPlane);
             DrawSpeedo(ctx.Gfx, viewportsize, viewPlane);
 
-            if (!viewPlane.IsDamaged)
+            if (!viewPlane.IsDisabled)
             {
                 if (viewPlane.IsAI == false)
                 {
@@ -1034,7 +1034,7 @@ namespace PolyPlane.Rendering
                 if (target == null)
                     continue;
 
-                if (target.IsDamaged)
+                if (target.IsDisabled)
                     continue;
 
                 var dist = D2DPoint.Distance(plane.Position, target.Position);
@@ -1148,7 +1148,7 @@ namespace PolyPlane.Rendering
             if (World.EnableTurbulence || World.EnableWind)
                 DrawWindAndTurbulenceOverlay(ctx);
 
-            if (viewplane.IsDamaged)
+            if (viewplane.IsDisabled)
                 ctx.Gfx.FillRectangle(World.ViewPortRect, new D2DColor(0.2f, D2DColor.Red));
         }
 
@@ -1372,7 +1372,7 @@ namespace PolyPlane.Rendering
                 infoText += $"Num Objects: {numObj}\n";
                 infoText += $"On Screen: {GraphicsExtensions.OnScreen}\n";
                 infoText += $"Off Screen: {GraphicsExtensions.OffScreen}\n";
-                infoText += $"Planes: {_objs.Planes.Count(p => !p.IsDamaged && !p.HasCrashed)}\n";
+                infoText += $"Planes: {_objs.Planes.Count(p => !p.IsDisabled && !p.HasCrashed)}\n";
                 infoText += $"Update ms: {Math.Round(UpdateTime.TotalMilliseconds, 2)}\n";
                 infoText += $"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}\n";
                 infoText += $"Collision ms: {Math.Round(CollisionTime.TotalMilliseconds, 2)}\n";

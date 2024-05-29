@@ -477,7 +477,7 @@ namespace PolyPlane.Net
         public PlanePacket(FighterPlane obj) : base(obj)
         {
             Deflection = obj.Deflection;
-            IsDamaged = obj.IsDamaged;
+            IsDamaged = obj.IsDisabled;
             Health = obj.Health;
             FiringBurst = obj.FiringBurst;
             Kills = obj.Kills;
@@ -486,7 +486,7 @@ namespace PolyPlane.Net
         public PlanePacket(FighterPlane obj, PacketTypes type) : base(obj, type)
         {
             Deflection = obj.Deflection;
-            IsDamaged = obj.IsDamaged;
+            IsDamaged = obj.IsDisabled;
             Health = obj.Health;
             FiringBurst = obj.FiringBurst;
             Kills = obj.Kills;
@@ -496,7 +496,7 @@ namespace PolyPlane.Net
         {
             base.SyncObj(obj);
             obj.Deflection = Deflection;
-            obj.IsDamaged = IsDamaged;
+            obj.IsDisabled = IsDamaged;
             obj.FiringBurst = FiringBurst;
             obj.Health = Health;
             obj.Kills = Kills;

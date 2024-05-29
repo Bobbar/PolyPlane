@@ -6,9 +6,6 @@ namespace PolyPlane.GameObjects
 {
     public class Wing : GameObject
     {
-        public float RenderLength { get; set; }
-        public float Area { get; set; }
-        public float MaxLift { get; set; } = 15000f;
         public float Deflection
         {
             get { return _defRateLimit.Value; }
@@ -33,57 +30,16 @@ namespace PolyPlane.GameObjects
         private float _maxDeflection = 40f;
         private bool _wrapped = false;
 
-        public Wing(GameObject obj, float renderLen, float area, D2DPoint position)
+        private WingParameters _params;
+
+        public Wing(GameObject obj, WingParameters parameters)
         {
-            FixedPosition = new FixturePoint(obj, position);
-
-            RenderLength = renderLen;
-            Area = area;
+            _params = parameters;
+            FixedPosition = new FixturePoint(obj, _params.Position);
+            _defRateLimit = new RateLimiter(rate: _params.DeflectionRate);
+            _maxDeflection = _params.MaxDeflection;
             Rotation = obj.Rotation;
-            this.Velocity = D2DPoint.Zero;
-            _parentObject = obj;
-        }
-
-        public Wing(GameObject obj, float renderLen, float area, float maxDeflection, D2DPoint position)
-        {
-            FixedPosition = new FixturePoint(obj, position);
-
-            RenderLength = renderLen;
-            Area = area;
-            Rotation = obj.Rotation;
-            _maxDeflection = maxDeflection;
-            this.Velocity = D2DPoint.Zero;
-            _parentObject = obj;
-        }
-
-        public Wing(GameObject obj, float renderLen, float area, float maxDeflection, float maxLift, D2DPoint position)
-        {
-            FixedPosition = new FixturePoint(obj, position);
-
-            RenderLength = renderLen;
-            Area = area;
-            Rotation = obj.Rotation;
-            MaxLift = maxLift;
-
-            _maxDeflection = maxDeflection;
-            this.Velocity = D2DPoint.Zero;
-            _parentObject = obj;
-        }
-
-        public Wing(GameObject obj, float renderLen, float area, float maxDeflection, float maxLift, D2DPoint position, float deflectionRate)
-        {
-            FixedPosition = new FixturePoint(obj, position);
-
-            RenderLength = renderLen;
-            Area = area;
-            Rotation = obj.Rotation;
-            MaxLift = maxLift;
-
-            _maxDeflection = maxDeflection;
-            this.Velocity = D2DPoint.Zero;
-            _parentObject = obj;
-
-            _defRateLimit = new RateLimiter(rate: deflectionRate);
+            _parentObject = obj;    
         }
 
         public override void Update(float dt, float renderScale)
@@ -146,8 +102,8 @@ namespace PolyPlane.GameObjects
             // Draw wing.
             const float WEIGHT = 2f;//1f;
             var wingVec = Utilities.AngleToVectorDegrees(this.Rotation);
-            var start = this.Position - wingVec * RenderLength;
-            var end = this.Position + wingVec * RenderLength;
+            var start = this.Position - wingVec * _params.RenderLength;
+            var end = this.Position + wingVec * _params.RenderLength;
             ctx.DrawLine(start, end, D2DColor.Black, WEIGHT + 0.5f, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Round);
             ctx.DrawLine(start, end, D2DColor.Gray, WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Round);
 
@@ -173,9 +129,9 @@ namespace PolyPlane.GameObjects
             var veloMag = velo.Length();
             var veloMagSq = (float)Math.Pow(veloMag, 2f);
 
-            const float minVelo = 350f;
+            float MIN_VELO = _params.MinVelo;
 
-            var veloFact = Utilities.Factor(veloMag, minVelo);
+            var veloFact = Utilities.Factor(veloMag, MIN_VELO);
 
             // Compute velo tangent. For lift/drag and rotation calcs.
             var veloNorm = D2DPoint.Normalize(velo);
@@ -189,13 +145,13 @@ namespace PolyPlane.GameObjects
             // Greater AoA and greater velocity = more lift force.
 
             // Wing & air parameters.
-            const float AOA_FACT = 0.5f; // How much AoA effects drag.
-            const float VELO_FACT = 0.5f;//0.3f; // How much velocity effects drag.
-            float WING_AREA = this.Area; // Area of the wing. Effects lift & drag forces.
-            float MAX_LIFT = this.MaxLift; // Max lift force allowed.
-            const float MAX_AOA = 30f; // Max AoA allowed before lift force reduces. (Stall)
+            float AOA_FACT = _params.AOAFactor; // How much AoA effects drag.
+            float VELO_FACT = _params.VeloFactor; // How much velocity effects drag.
+            float WING_AREA = _params.Area; // Area of the wing. Effects lift & drag forces.
+            float MAX_LIFT = _params.MaxLift; // Max lift force allowed.
+            float MAX_AOA = _params.MaxAOA; // Max AoA allowed before lift force reduces. (Stall)
             float AIR_DENSITY = World.GetDensityAltitude(this.Position);
-            const float PARASITIC_DRAG = 1f;
+            float PARASITIC_DRAG = _params.ParasiticDrag;
 
             // Reduce velo as we approach the minimum. (Increases stall effect)
             veloMag *= veloFact;
@@ -223,5 +179,23 @@ namespace PolyPlane.GameObjects
 
             return (liftVec + dragVec);
         }
+    }
+
+    public class WingParameters
+    {
+        public D2DPoint Position = D2DPoint.Zero;
+        public float RenderLength;
+        public float Area;
+        public float MaxLift = 15000f;
+        public float MaxDeflection = 40f;
+        public float DeflectionRate = 80f;
+        public float MinVelo = 350f;
+        public float MaxAOA = 30f;
+        public float AOAFactor = 0.5f;
+        public float VeloFactor = 0.5f;
+        public float ParasiticDrag = 1f;
+
+        public WingParameters() { }
+            
     }
 }

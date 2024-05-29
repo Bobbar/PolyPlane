@@ -70,8 +70,8 @@ namespace PolyPlane.GameObjects
         private FixturePoint _warheadCenterMass;
         private FixturePoint _motorCenterMass;
         private FixturePoint _flamePos;
-        private GameTimer _decoyDistractCooldown = new GameTimer(1f);
-        private GameTimer _decoyDistractArm = new GameTimer(2f);
+        private GameTimer _decoyDistractCooldown = new GameTimer(2f);
+        private GameTimer _decoyDistractArm = new GameTimer(3f);
         private GameTimer _igniteCooldown = new GameTimer(1f);
 
         private static readonly D2DPoint[] _missilePoly =
@@ -105,7 +105,7 @@ namespace PolyPlane.GameObjects
             this.Rotation = rotation;
             this.Owner = player;
 
-            InitStuff(_useControlSurfaces);
+            InitStuff();
         }
 
         public GuidedMissile(GameObject player, GameObject target, GuidanceType guidance = GuidanceType.Advanced, bool useControlSurfaces = false, bool useThrustVectoring = false) : base(player.Position, player.Velocity, player.Rotation, player, target)
@@ -133,10 +133,10 @@ namespace PolyPlane.GameObjects
                 this.Velocity += topVec * EJECT_FORCE;
             }
 
-            InitStuff(_useControlSurfaces);
+            InitStuff();
         }
 
-        private void InitStuff(bool useControlSurfaces)
+        private void InitStuff()
         {
             this.RenderOffset = 0.9f;
 
@@ -148,18 +148,7 @@ namespace PolyPlane.GameObjects
             this.Polygon = new RenderPoly(_missilePoly, new D2DPoint(-2f, 0f));
             this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(6f, 0));
 
-            if (useControlSurfaces)
-            {
-                var liftScale = 0.6f;
-                _tailWing = new Wing(this, 4f, 0.1f, 50f, 4000f * liftScale, new D2DPoint(-22f, 0));
-                _rocketBody = new Wing(this, 0f, 0.075f, 1250f * liftScale, D2DPoint.Zero);
-                _noseWing = new Wing(this, 4f, 0.025f, 20f, 3500f * liftScale, new D2DPoint(19.5f, 0));
-
-            }
-            else
-            {
-                _rocketBody = new Wing(this, 4f, 0.4f, D2DPoint.Zero);
-            }
+            InitWings();
 
             _igniteCooldown.TriggerCallback = () =>
             {
@@ -167,12 +156,53 @@ namespace PolyPlane.GameObjects
                 FlameOn = true;
 
                 // Add a quick impulse/boost when we ignite.
-                const float BOOST_AMT = 90f;
-                this.Velocity += Utilities.AngleToVectorDegrees(_initRotation, BOOST_AMT);
+                const float BOOST_AMT = 100f;
+                this.Velocity += Utilities.AngleToVectorDegrees(this.Rotation, BOOST_AMT);
             };
 
             _igniteCooldown.Restart();
         }
+
+        private void InitWings()
+        {
+            if (_useControlSurfaces)
+            {
+                var liftScale = 0.6f;
+
+                _tailWing = new Wing(this, new WingParameters()
+                {
+                    RenderLength = 4f,
+                    Area = 0.1f,
+                    MaxDeflection = 50f,
+                    MaxLift = 4000f * liftScale,
+                    Position = new D2DPoint(-22f, 0f),
+                    ParasiticDrag = 0.2f
+                });
+
+                _rocketBody = new Wing(this, new WingParameters()
+                {
+                    RenderLength = 0f,
+                    Area = 0.075f,
+                    MaxLift = 1250f * liftScale,
+                    ParasiticDrag = 0.2f
+                });
+
+                _noseWing = new Wing(this, new WingParameters()
+                {
+                    RenderLength = 4f,
+                    Area = 0.025f,
+                    MaxDeflection = 20f,
+                    MaxLift = 3500f * liftScale,
+                    Position = new D2DPoint(19.5f, 0f),
+                    ParasiticDrag = 0.2f
+                });
+            }
+            else
+            {
+                _rocketBody = new Wing(this, new WingParameters() { RenderLength = 4f, Area = 0.4f });
+            }
+        }
+
 
         public override void Update(float dt, float renderScale)
         {
@@ -310,7 +340,7 @@ namespace PolyPlane.GameObjects
             if (this.Age > LIFESPAN && MissedTarget)
                 this.IsExpired = true;
 
-            if (FUEL <= 0f && this.Velocity.Length() <= 20f)
+            if (FUEL <= 0f && this.Velocity.Length() <= 100f)
                 this.IsExpired = true;
 
             if (Target != null && Target.IsExpired && this.Age > LIFESPAN)

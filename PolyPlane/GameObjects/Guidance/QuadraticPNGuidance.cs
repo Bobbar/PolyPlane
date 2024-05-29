@@ -6,7 +6,7 @@ namespace PolyPlane.GameObjects.Guidance
     {
         private float _prevDir = 0f;
 
-        public QuadraticPNGuidance(Missile missile, GameObject target) : base(missile, target)
+        public QuadraticPNGuidance(GuidedMissile missile, GameObject target) : base(missile, target)
         {
             _prevDir = missile.Rotation;
         }

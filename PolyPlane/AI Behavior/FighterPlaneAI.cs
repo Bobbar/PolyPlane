@@ -16,6 +16,7 @@ namespace PolyPlane.AI_Behavior
         private bool _avoidingGround = false;
         private bool _gainingVelo = false;
         private bool _reverseDirection = false;
+        private bool _isDefending = false;
 
         private GameTimer _fireBurstTimer = new GameTimer(2f, 6f);
         private GameTimer _fireMissileCooldown = new GameTimer(6f);
@@ -63,7 +64,7 @@ namespace PolyPlane.AI_Behavior
 
         public void Update(float dt)
         {
-            if (this.Plane.IsDamaged || this.Plane.HasCrashed)
+            if (this.Plane.IsDisabled || this.Plane.HasCrashed)
                 return;
 
             _sineWavePos += 0.3f * dt;
@@ -126,7 +127,7 @@ namespace PolyPlane.AI_Behavior
 
         private void ConsiderNewTarget()
         {
-            if (this.TargetPlane == null || this.TargetPlane.IsExpired || this.TargetPlane.HasCrashed || this.TargetPlane.IsDamaged)
+            if (this.TargetPlane == null || this.TargetPlane.IsExpired || this.TargetPlane.HasCrashed || this.TargetPlane.IsDisabled)
             {
                 var rndTarg = this.Plane.Radar.FindNearestPlane();
 
@@ -188,12 +189,12 @@ namespace PolyPlane.AI_Behavior
 
             DefendingMissile = threat;
 
-            this.Plane.IsDefending = DefendingMissile != null;
+            _isDefending = DefendingMissile != null;
         }
 
         private void ConsiderDropDecoy()
         {
-            if (!this.Plane.IsDefending)
+            if (!_isDefending)
                 return;
             else
             {
@@ -250,7 +251,7 @@ namespace PolyPlane.AI_Behavior
             }
 
             // Run away from missile?
-            if (this.Plane.IsDefending && DefendingMissile != null)
+            if (_isDefending && DefendingMissile != null)
             {
                 var angleToThreat = (DefendingMissile.Position - this.Plane.Position).Angle(true);
                 angle = Utilities.ClampAngle(angleToThreat + 90f);
