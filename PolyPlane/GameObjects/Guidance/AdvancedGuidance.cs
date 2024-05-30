@@ -6,6 +6,9 @@ namespace PolyPlane.GameObjects.Guidance
     {
         private D2DPoint _prevTargPos = D2DPoint.Zero;
         private D2DPoint _prevImpactPnt = D2DPoint.Zero;
+        private SmoothPos _impactSmooth = new SmoothPos(20);
+        private SmoothPos _aimDirSmooth = new SmoothPos(20);
+        private SmoothFloat _closingRateSmooth = new SmoothFloat(20);
 
         private float _prevVelo = 0f;
         private float _prevTargetDist = 0f;
@@ -23,8 +26,8 @@ namespace PolyPlane.GameObjects.Guidance
             const float MIN_ROT_SPEED = 600f; // Speed at which rotation rate will be the smallest.
             const float ROT_MOD_DIST = 2000f; // Distance to begin increasing rotation rate. (Get more aggro the closer we get)
             const float ROT_MOD_AMT = 2f; // Max amount to increase rot rate per above distance.
-            const float IMPACT_POINT_DELTA_THRESH = 2f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
-            const float MIN_CLOSE_RATE = 0.2f; // Min closing rate required to aim at predicted impact point.
+            const float IMPACT_POINT_DELTA_THRESH = 5f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
+            const float MIN_CLOSE_RATE = 1f; // Min closing rate required to aim at predicted impact point.
 
             var target = GetTargetPosition();
             var targetVelo = this.Target.Velocity * dt;
@@ -55,7 +58,7 @@ namespace PolyPlane.GameObjects.Guidance
                 _prevTargVeloAngle = tarVeloAngle;
 
                 var timeToImpact = ImpactTime(targDist, (veloMag * dt) + targetVelo.Length(), (deltaV * dt));
-                impactPnt = RefineImpact(target, targetVelo, targAngleDelta, timeToImpact);
+                impactPnt = _impactSmooth.Add(RefineImpact(target, targetVelo, targAngleDelta, timeToImpact));
             }
 
             ImpactPoint = impactPnt; // Red
@@ -72,11 +75,11 @@ namespace PolyPlane.GameObjects.Guidance
 
             // Compute closing rate and lerp between the target and predicted locations.
             // We gradually incorporate the predicted location as closing rate increases.
-            var closingRate = _prevTargetDist - targDist;
+            var closingRate = _closingRateSmooth.Add(_prevTargetDist - targDist);
             _prevTargetDist = targDist;
 
             var closeRateFact = Utilities.Factor(closingRate, MIN_CLOSE_RATE);
-            var aimDirection = D2DPoint.Lerp(D2DPoint.Normalize(target - this.Missile.Position), D2DPoint.Normalize(StableAimPoint - this.Missile.Position), closeRateFact);
+            var aimDirection = _aimDirSmooth.Add(D2DPoint.Lerp(D2DPoint.Normalize(target - this.Missile.Position), D2DPoint.Normalize(StableAimPoint - this.Missile.Position), closeRateFact));
             CurrentAimPoint = D2DPoint.Lerp(target, StableAimPoint, closeRateFact); // Green
 
             // Compute velo norm, tangent & rotations.
@@ -110,9 +113,7 @@ namespace PolyPlane.GameObjects.Guidance
 
         private float ImpactTime(float dist, float velo, float accel)
         {
-            var finalVelo = (float)Math.Sqrt(Math.Abs(Math.Pow(velo, 2f) + 2f * accel * dist));
-            finalVelo *= Math.Sign(accel);
-
+            var finalVelo = (float)Math.Sqrt(Math.Pow(velo, 2f) + 2f * accel * dist);
             var impactTime = (finalVelo - velo) / accel;
 
             return impactTime;
@@ -147,7 +148,7 @@ namespace PolyPlane.GameObjects.Guidance
 
                 predicted = targLoc;
             }
-
+          
             return predicted;
         }
     }
