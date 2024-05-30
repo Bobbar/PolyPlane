@@ -139,7 +139,6 @@ namespace PolyPlane.Net
                             newPlane.ID = playerPacket.ID;
                             newPlane.PlayerName = playerPacket.Name;
                             newPlane.IsNetObject = true;
-                            newPlane.Radar = new Radar(newPlane, _objs.Missiles, _objs.Planes);
                             _objs.AddPlane(newPlane);
                         }
 
@@ -526,7 +525,6 @@ namespace PolyPlane.Net
                     newPlane.PlayerName = player.Name;
                     newPlane.IsNetObject = true;
                     newPlane.LagAmount = World.CurrentTime() - players.FrameTime;
-                    newPlane.Radar = new Radar(newPlane, _objs.Missiles, _objs.Planes);
                     _objs.AddPlane(newPlane);
                 }
             }

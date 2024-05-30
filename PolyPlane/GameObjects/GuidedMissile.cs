@@ -420,17 +420,12 @@ namespace PolyPlane.GameObjects
                 _noseWing.Render(ctx);
             }
 
-
-            ctx.FillEllipse(new D2DEllipse(_guidance.CurrentAimPoint, new D2DSize(50f, 50f)), D2DColor.LawnGreen);
-            ctx.FillEllipse(new D2DEllipse(_guidance.StableAimPoint, new D2DSize(40f, 40f)), D2DColor.Blue);
-            ctx.FillEllipse(new D2DEllipse(_guidance.ImpactPoint, new D2DSize(30f, 30f)), D2DColor.Red);
-
-            //if (World.ShowTracking)
-            //{
-            //    //ctx.FillEllipse(new D2DEllipse(_guidance.CurrentAimPoint, new D2DSize(5f, 5f)), D2DColor.LawnGreen);
-            //    //ctx.FillEllipse(new D2DEllipse(_guidance.StableAimPoint, new D2DSize(4f, 4f)), D2DColor.Blue);
-            //    //ctx.FillEllipse(new D2DEllipse(_guidance.ImpactPoint, new D2DSize(3f, 3f)), D2DColor.Red);
-            //}
+            if (World.ShowTracking)
+            {
+                ctx.FillEllipse(new D2DEllipse(_guidance.CurrentAimPoint, new D2DSize(50f, 50f)), D2DColor.LawnGreen);
+                ctx.FillEllipse(new D2DEllipse(_guidance.StableAimPoint, new D2DSize(40f, 40f)), D2DColor.Blue);
+                ctx.FillEllipse(new D2DEllipse(_guidance.ImpactPoint, new D2DSize(30f, 30f)), D2DColor.Red);
+            }
         }
 
         private void UpdateFlame()

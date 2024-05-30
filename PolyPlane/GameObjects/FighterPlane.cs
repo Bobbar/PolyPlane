@@ -186,9 +186,9 @@ namespace PolyPlane.GameObjects
 
         private void InitStuff()
         {
-            this.RenderOffset = 1.5f;
+            this.Radar = new Radar(this);
 
-           
+            this.RenderOffset = 1.5f;
 
             this.Polygon = new RenderPoly(_planePoly, this.RenderOffset);
 

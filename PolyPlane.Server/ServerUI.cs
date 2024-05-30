@@ -526,7 +526,6 @@ namespace PolyPlane.Server
                 aiPlane = new FighterPlane(pos, Utilities.RandomEnum<AIPersonality>());
 
             aiPlane.PlayerID = World.GetNextPlayerId();
-            aiPlane.Radar = new Radar(aiPlane, _objs.Missiles, _objs.Planes);
             aiPlane.PlayerName = "(BOT) " + Utilities.GetRandomName();
 
             aiPlane.FireMissileCallback = (m) =>

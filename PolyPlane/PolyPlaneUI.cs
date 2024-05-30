@@ -336,7 +336,6 @@ namespace PolyPlane
             _playerPlane.AutoPilotOn = true;
             _playerPlane.ThrustOn = true;
             _playerPlane.Velocity = new D2DPoint(500f, 0f);
-            _playerPlane.Radar = new Radar(_playerPlane, _objs.Missiles, _objs.Planes);
 
             _playerPlane.FireMissileCallback = (m) =>
             {
@@ -404,7 +403,6 @@ namespace PolyPlane
 
             var aiPlane = new FighterPlane(pos, Utilities.RandomEnum<AIPersonality>());
             aiPlane.PlayerID = World.GetNextPlayerId();
-            aiPlane.Radar = new Radar(aiPlane, _objs.Missiles, _objs.Planes);
             aiPlane.PlayerName = "(BOT) " + Utilities.GetRandomName();
 
             aiPlane.FireMissileCallback = (m) =>

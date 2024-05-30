@@ -41,10 +41,7 @@ namespace PolyPlane
         private GameTimer _lostLockTimer = new GameTimer(10f);
         private GameTimer _AIUpdateRate = new GameTimer(1f);
 
-        private List<GameObject> _missiles;
-        private List<FighterPlane> _planes;
-
-        public Radar(FighterPlane hostPlane, List<GameObject> missiles, List<FighterPlane> planes)
+        public Radar(FighterPlane hostPlane)
         {
             HostPlane = hostPlane;
 
@@ -53,9 +50,6 @@ namespace PolyPlane
                 _hostIsAI = true;
                 _AIUpdateRate.Restart();
             }
-
-            _missiles = missiles;
-            _planes = planes;
 
             _lockTimer.TriggerCallback = () =>
             {
@@ -87,10 +81,10 @@ namespace PolyPlane
 
                 // Check all sources and add pings if they are within the FOV of the current sweep.
 
-                foreach (var missile in _missiles)
+                foreach (var missile in World.ObjectManager.Missiles)
                     DoSweep(missile);
 
-                foreach (var plane in _planes)
+                foreach (var plane in World.ObjectManager.Planes)
                     DoSweep(plane);
 
                 _AIUpdateRate.Restart();
