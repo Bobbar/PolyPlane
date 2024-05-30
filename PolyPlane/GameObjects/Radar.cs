@@ -35,8 +35,7 @@ namespace PolyPlane
         private readonly float SWEEP_RATE = 300f;
         private float _radius = 150f;
         private bool _hostIsAI = false;
-        private D2DColor _color = D2DColor.Green;
-        private List<List<GameObject>> _sources = new List<List<GameObject>>();
+        private D2DColor _color = World.HudColor;
         private List<PingObj> _pings = new List<PingObj>();
         private GameTimer _lockTimer = new GameTimer(2f);
         private GameTimer _lostLockTimer = new GameTimer(10f);
@@ -45,11 +44,9 @@ namespace PolyPlane
         private List<GameObject> _missiles;
         private List<FighterPlane> _planes;
 
-
-        public Radar(FighterPlane hostPlane, D2DColor renderColor, List<GameObject> missiles, List<FighterPlane> planes)
+        public Radar(FighterPlane hostPlane, List<GameObject> missiles, List<FighterPlane> planes)
         {
             HostPlane = hostPlane;
-            _color = renderColor;
 
             if (HostPlane.IsAI)
             {
