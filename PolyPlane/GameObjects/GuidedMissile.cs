@@ -167,7 +167,7 @@ namespace PolyPlane.GameObjects
         {
             if (_useControlSurfaces)
             {
-                var liftScale = 0.6f;
+                var liftScale = 1f;
 
                 _tailWing = new Wing(this, new WingParameters()
                 {
@@ -183,14 +183,14 @@ namespace PolyPlane.GameObjects
                 {
                     RenderLength = 0f,
                     Area = 0.075f,
-                    MaxLift = 1250f * liftScale,
+                    MaxLift = 5250f * liftScale,
                     ParasiticDrag = 0.2f
                 });
 
                 _noseWing = new Wing(this, new WingParameters()
                 {
                     RenderLength = 4f,
-                    Area = 0.025f,
+                    Area = 0.035f,
                     MaxDeflection = 20f,
                     MaxLift = 3500f * liftScale,
                     Position = new D2DPoint(19.5f, 0f),
@@ -206,6 +206,9 @@ namespace PolyPlane.GameObjects
 
         public override void Update(float dt, float renderScale)
         {
+            // Apply guidance.
+            var guideRotation = _guidance.GuideTo(dt);
+
             for (int i = 0; i < World.PHYSICS_SUB_STEPS; i++)
             {
                 var partialDT = World.SUB_DT;
@@ -257,8 +260,6 @@ namespace PolyPlane.GameObjects
                         liftDrag += bodyForce;
                     }
 
-                    // Apply guidance.
-                    var guideRotation = _guidance.GuideTo(partialDT);
 
                     if (!this.IsActivated)
                         guideRotation = _initRotation;
@@ -310,27 +311,6 @@ namespace PolyPlane.GameObjects
                 _gForce = gforce;
                 _gForcePeak = Math.Max(_gForcePeak, _gForce);
             }
-
-            float flameAngle = 0f;
-
-            if (_useThrustVectoring)
-            {
-                flameAngle = GetThrust(_useThrustVectoring).Angle();
-            }
-            else
-            {
-                const float DEF_AMT = 0.2f; // How much the flame will be deflected in relation to velocity.
-                flameAngle = this.Rotation - (Utilities.ClampAngle180(this.Rotation - this.Velocity.Angle(true)) * DEF_AMT);
-            }
-
-            // Make the flame do flamey things...(Wiggle and color)
-            var thrust = GetThrust().Length();
-            var len = this.Velocity.Length() * 0.05f;
-            len += thrust * 0.01f;
-            len *= 0.8f;
-            FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
-            _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
-            FlamePoly.Update(_flamePos.Position, flameAngle, renderScale * this.RenderOffset);
 
             if (_currentFuel > 0f)
             {
@@ -425,6 +405,8 @@ namespace PolyPlane.GameObjects
             if (_useThrustVectoring)
                 _flameFillColor = D2DColor.Orange;
 
+            UpdateFlame();
+
             if (FlameOn)
                 ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
 
@@ -434,15 +416,45 @@ namespace PolyPlane.GameObjects
             if (_useControlSurfaces)
             {
                 _tailWing.Render(ctx);
+                _rocketBody.Render(ctx);
                 _noseWing.Render(ctx);
             }
 
-            if (World.ShowTracking)
+
+            ctx.FillEllipse(new D2DEllipse(_guidance.CurrentAimPoint, new D2DSize(50f, 50f)), D2DColor.LawnGreen);
+            ctx.FillEllipse(new D2DEllipse(_guidance.StableAimPoint, new D2DSize(40f, 40f)), D2DColor.Blue);
+            ctx.FillEllipse(new D2DEllipse(_guidance.ImpactPoint, new D2DSize(30f, 30f)), D2DColor.Red);
+
+            //if (World.ShowTracking)
+            //{
+            //    //ctx.FillEllipse(new D2DEllipse(_guidance.CurrentAimPoint, new D2DSize(5f, 5f)), D2DColor.LawnGreen);
+            //    //ctx.FillEllipse(new D2DEllipse(_guidance.StableAimPoint, new D2DSize(4f, 4f)), D2DColor.Blue);
+            //    //ctx.FillEllipse(new D2DEllipse(_guidance.ImpactPoint, new D2DSize(3f, 3f)), D2DColor.Red);
+            //}
+        }
+
+        private void UpdateFlame()
+        {
+            float flameAngle = 0f;
+
+            if (_useThrustVectoring)
             {
-                ctx.FillEllipse(new D2DEllipse(_guidance.CurrentAimPoint, new D2DSize(5f, 5f)), D2DColor.LawnGreen);
-                ctx.FillEllipse(new D2DEllipse(_guidance.StableAimPoint, new D2DSize(4f, 4f)), D2DColor.Blue);
-                ctx.FillEllipse(new D2DEllipse(_guidance.ImpactPoint, new D2DSize(3f, 3f)), D2DColor.Red);
+                flameAngle = GetThrust(_useThrustVectoring).Angle();
             }
+            else
+            {
+                const float DEF_AMT = 0.2f; // How much the flame will be deflected in relation to velocity.
+                flameAngle = this.Rotation - (Utilities.ClampAngle180(this.Rotation - this.Velocity.Angle(true)) * DEF_AMT);
+            }
+
+            // Make the flame do flamey things...(Wiggle and color)
+            var thrust = GetThrust().Length();
+            var len = this.Velocity.Length() * 0.05f;
+            len += thrust * 0.01f;
+            len *= 0.8f;
+            FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
+            _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
+            FlamePoly.Update(_flamePos.Position, flameAngle, World.RenderScale * this.RenderOffset);
         }
 
         private void DrawFOVCone(D2DGraphics gfx)

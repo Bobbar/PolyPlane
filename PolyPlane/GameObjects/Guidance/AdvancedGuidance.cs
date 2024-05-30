@@ -10,6 +10,7 @@ namespace PolyPlane.GameObjects.Guidance
         private float _prevVelo = 0f;
         private float _prevTargetDist = 0f;
         private float _prevTargVeloAngle = 0f;
+        private const int MAX_FTI = 3000; // Max iterations allowed.
 
         public AdvancedGuidance(GuidedMissile missile, GameObject target) : base(missile, target)
         { }
@@ -17,11 +18,11 @@ namespace PolyPlane.GameObjects.Guidance
         public override float GetGuidanceDirection(float dt)
         {
             // Tweakables
-            const float MAX_ROT_RATE = 2f;//1.5f; // Max rotation rate.
-            const float MIN_ROT_RATE = 1f; // Min rotation rate.
+            const float MAX_ROT_RATE = 1f;//1.5f; // Max rotation rate.
+            const float MIN_ROT_RATE = 0.5f; // Min rotation rate.
             const float MIN_ROT_SPEED = 600f; // Speed at which rotation rate will be the smallest.
-            const float ROT_MOD_DIST = 800f; // Distance to begin increasing rotation rate. (Get more aggro the closer we get)
-            const float ROT_MOD_AMT = 1f; // Max amount to increase rot rate per above distance.
+            const float ROT_MOD_DIST = 2000f; // Distance to begin increasing rotation rate. (Get more aggro the closer we get)
+            const float ROT_MOD_AMT = 2f; // Max amount to increase rot rate per above distance.
             const float IMPACT_POINT_DELTA_THRESH = 2f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
             const float MIN_CLOSE_RATE = 0.2f; // Min closing rate required to aim at predicted impact point.
 
@@ -73,6 +74,7 @@ namespace PolyPlane.GameObjects.Guidance
             // We gradually incorporate the predicted location as closing rate increases.
             var closingRate = _prevTargetDist - targDist;
             _prevTargetDist = targDist;
+
             var closeRateFact = Utilities.Factor(closingRate, MIN_CLOSE_RATE);
             var aimDirection = D2DPoint.Lerp(D2DPoint.Normalize(target - this.Missile.Position), D2DPoint.Normalize(StableAimPoint - this.Missile.Position), closeRateFact);
             CurrentAimPoint = D2DPoint.Lerp(target, StableAimPoint, closeRateFact); // Green
@@ -108,9 +110,12 @@ namespace PolyPlane.GameObjects.Guidance
 
         private float ImpactTime(float dist, float velo, float accel)
         {
-            var finalVelo = (float)Math.Sqrt((Math.Pow(velo, 2f) + 2f * accel * dist));
+            var finalVelo = (float)Math.Sqrt(Math.Abs(Math.Pow(velo, 2f) + 2f * accel * dist));
+            finalVelo *= Math.Sign(accel);
 
-            return (finalVelo - velo) / accel;
+            var impactTime = (finalVelo - velo) / accel;
+
+            return impactTime;
         }
 
         private D2DPoint RefineImpact(D2DPoint targetPos, D2DPoint targetVelo, float targAngleDelta, float timeToImpact)
@@ -119,7 +124,6 @@ namespace PolyPlane.GameObjects.Guidance
             // This considers the target velocity as well as the change in angular velocity.
 
             D2DPoint predicted = targetPos;
-            const int MAX_FTI = 4000; // Max iterations allowed.
 
             if (timeToImpact >= 1 && timeToImpact < MAX_FTI)
             {

@@ -76,8 +76,6 @@ namespace PolyPlane
             {
                 if (value >= 0.01f && value <= 3f)
                     _zoomScale = value;
-
-                Log.Msg($"Zoom: {_zoomScale}");
             }
         }
 

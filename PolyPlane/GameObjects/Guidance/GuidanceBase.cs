@@ -13,7 +13,7 @@ namespace PolyPlane.GameObjects.Guidance
 
         private const float ARM_TIME = 3f;
 
-        private GameTimer _lostLockTimer = new GameTimer(3f);
+        private GameTimer _lostLockTimer = new GameTimer(5f);
         private GameTimer _groundScatterTimer = new GameTimer(5f);
         private GameTimer _armTimer = new GameTimer(ARM_TIME);
 
@@ -49,7 +49,6 @@ namespace PolyPlane.GameObjects.Guidance
             Missile = missile;
             Target = target;
             _lostLockTimer.TriggerCallback = () => _missedTarget = true;
-
             _armTimer.Start();
         }
 
@@ -113,7 +112,7 @@ namespace PolyPlane.GameObjects.Guidance
             if (this.Target.IsNetObject)
                 pos = this.Target.Position + (this.Target.Velocity * ((float)(this.Target.LagAmount * 2f) / 1000f));
 
-            return this.Target.Position;
+            return pos;
         }
 
         /// <summary>
