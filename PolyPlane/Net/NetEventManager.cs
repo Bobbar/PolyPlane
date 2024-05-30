@@ -252,6 +252,7 @@ namespace PolyPlane.Net
                             World.TimeOfDay = syncPack.TimeOfDay;
                             World.TimeOfDayDir = syncPack.TimeOfDayDir;
                             World.GunsOnly = syncPack.GunsOnly;
+                            World.DT = syncPack.DeltaTime;
                         }
                     }
                     break;

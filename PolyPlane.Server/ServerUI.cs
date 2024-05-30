@@ -115,6 +115,7 @@ namespace PolyPlane.Server
             ChatMessageTextBox.MaxLength = ChatInterface.MAX_CHARS;
 
             TimeOfDaySlider.Maximum = (int)World.MAX_TIMEOFDAY;
+            DeltaTimeNumeric.Value = (decimal)World.DT;
         }
 
         private void StartServerButton_Click(object sender, EventArgs e)
@@ -855,6 +856,21 @@ namespace PolyPlane.Server
         private void GunsOnlyCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             _toggleGunsOnly = true;
+        }
+
+        private void DeltaTimeNumeric_ValueChanged(object sender, EventArgs e)
+        {
+            if (_server == null)
+                return;
+
+            World.DT = (float)DeltaTimeNumeric.Value;
+            _server.SendSyncPacket();
+        }
+
+        private void DefaultDTButton_Click(object sender, EventArgs e)
+        {
+            World.DT = World.DEFAULT_DT;
+            DeltaTimeNumeric.Value = (decimal)World.DT;
         }
     }
 }

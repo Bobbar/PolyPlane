@@ -57,13 +57,17 @@
             TimeOfDayLabel = new Label();
             EnableDiscoveryCheckBox = new CheckBox();
             GunsOnlyCheckBox = new CheckBox();
+            DeltaTimeLabel = new Label();
+            DeltaTimeNumeric = new NumericUpDown();
+            DefaultDTButton = new Button();
             PlayerListContextMenu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)TimeOfDaySlider).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)DeltaTimeNumeric).BeginInit();
             SuspendLayout();
             // 
             // PauseButton
             // 
-            PauseButton.Location = new Point(720, 173);
+            PauseButton.Location = new Point(745, 118);
             PauseButton.Name = "PauseButton";
             PauseButton.Size = new Size(75, 23);
             PauseButton.TabIndex = 0;
@@ -73,7 +77,7 @@
             // 
             // SpawnAIPlaneButton
             // 
-            SpawnAIPlaneButton.Location = new Point(701, 202);
+            SpawnAIPlaneButton.Location = new Point(726, 147);
             SpawnAIPlaneButton.Name = "SpawnAIPlaneButton";
             SpawnAIPlaneButton.Size = new Size(117, 23);
             SpawnAIPlaneButton.TabIndex = 1;
@@ -95,7 +99,7 @@
             InterpCheckBox.AutoSize = true;
             InterpCheckBox.Checked = true;
             InterpCheckBox.CheckState = CheckState.Checked;
-            InterpCheckBox.Location = new Point(652, 440);
+            InterpCheckBox.Location = new Point(629, 462);
             InterpCheckBox.Name = "InterpCheckBox";
             InterpCheckBox.Size = new Size(76, 19);
             InterpCheckBox.TabIndex = 3;
@@ -178,7 +182,7 @@
             // 
             // RemoveAIPlanesButton
             // 
-            RemoveAIPlanesButton.Location = new Point(701, 313);
+            RemoveAIPlanesButton.Location = new Point(726, 258);
             RemoveAIPlanesButton.Name = "RemoveAIPlanesButton";
             RemoveAIPlanesButton.Size = new Size(117, 23);
             RemoveAIPlanesButton.TabIndex = 12;
@@ -189,7 +193,7 @@
             // AITypeComboBox
             // 
             AITypeComboBox.FormattingEnabled = true;
-            AITypeComboBox.Location = new Point(675, 231);
+            AITypeComboBox.Location = new Point(700, 176);
             AITypeComboBox.Name = "AITypeComboBox";
             AITypeComboBox.Size = new Size(174, 23);
             AITypeComboBox.TabIndex = 13;
@@ -197,7 +201,7 @@
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(587, 234);
+            label4.Location = new Point(612, 179);
             label4.Name = "label4";
             label4.Size = new Size(82, 15);
             label4.TabIndex = 14;
@@ -205,7 +209,7 @@
             // 
             // SpawnRandomAIButton
             // 
-            SpawnRandomAIButton.Location = new Point(701, 284);
+            SpawnRandomAIButton.Location = new Point(726, 229);
             SpawnRandomAIButton.Name = "SpawnRandomAIButton";
             SpawnRandomAIButton.Size = new Size(117, 23);
             SpawnRandomAIButton.TabIndex = 15;
@@ -283,7 +287,7 @@
             // 
             // TimeOfDaySlider
             // 
-            TimeOfDaySlider.Location = new Point(652, 349);
+            TimeOfDaySlider.Location = new Point(662, 312);
             TimeOfDaySlider.Name = "TimeOfDaySlider";
             TimeOfDaySlider.Size = new Size(212, 45);
             TimeOfDaySlider.TabIndex = 22;
@@ -293,7 +297,7 @@
             // TimeOfDayLabel
             // 
             TimeOfDayLabel.AutoSize = true;
-            TimeOfDayLabel.Location = new Point(652, 397);
+            TimeOfDayLabel.Location = new Point(663, 294);
             TimeOfDayLabel.Name = "TimeOfDayLabel";
             TimeOfDayLabel.Size = new Size(72, 15);
             TimeOfDayLabel.TabIndex = 23;
@@ -315,7 +319,7 @@
             // GunsOnlyCheckBox
             // 
             GunsOnlyCheckBox.AutoSize = true;
-            GunsOnlyCheckBox.Location = new Point(652, 465);
+            GunsOnlyCheckBox.Location = new Point(629, 487);
             GunsOnlyCheckBox.Name = "GunsOnlyCheckBox";
             GunsOnlyCheckBox.Size = new Size(81, 19);
             GunsOnlyCheckBox.TabIndex = 25;
@@ -323,11 +327,46 @@
             GunsOnlyCheckBox.UseVisualStyleBackColor = true;
             GunsOnlyCheckBox.CheckedChanged += GunsOnlyCheckBox_CheckedChanged;
             // 
+            // DeltaTimeLabel
+            // 
+            DeltaTimeLabel.AutoSize = true;
+            DeltaTimeLabel.Location = new Point(663, 370);
+            DeltaTimeLabel.Name = "DeltaTimeLabel";
+            DeltaTimeLabel.Size = new Size(64, 15);
+            DeltaTimeLabel.TabIndex = 27;
+            DeltaTimeLabel.Text = "Delta time:";
+            // 
+            // DeltaTimeNumeric
+            // 
+            DeltaTimeNumeric.DecimalPlaces = 4;
+            DeltaTimeNumeric.Increment = new decimal(new int[] { 1, 0, 0, 196608 });
+            DeltaTimeNumeric.Location = new Point(733, 368);
+            DeltaTimeNumeric.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+            DeltaTimeNumeric.Minimum = new decimal(new int[] { 1, 0, 0, 196608 });
+            DeltaTimeNumeric.Name = "DeltaTimeNumeric";
+            DeltaTimeNumeric.Size = new Size(68, 23);
+            DeltaTimeNumeric.TabIndex = 28;
+            DeltaTimeNumeric.Value = new decimal(new int[] { 1, 0, 0, 196608 });
+            DeltaTimeNumeric.ValueChanged += DeltaTimeNumeric_ValueChanged;
+            // 
+            // DefaultDTButton
+            // 
+            DefaultDTButton.Location = new Point(733, 397);
+            DefaultDTButton.Name = "DefaultDTButton";
+            DefaultDTButton.Size = new Size(68, 23);
+            DefaultDTButton.TabIndex = 29;
+            DefaultDTButton.Text = "Default";
+            DefaultDTButton.UseVisualStyleBackColor = true;
+            DefaultDTButton.Click += DefaultDTButton_Click;
+            // 
             // ServerUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(898, 536);
+            Controls.Add(DefaultDTButton);
+            Controls.Add(DeltaTimeNumeric);
+            Controls.Add(DeltaTimeLabel);
             Controls.Add(GunsOnlyCheckBox);
             Controls.Add(EnableDiscoveryCheckBox);
             Controls.Add(TimeOfDayLabel);
@@ -360,6 +399,7 @@
             Text = "ServerUI";
             PlayerListContextMenu.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)TimeOfDaySlider).EndInit();
+            ((System.ComponentModel.ISupportInitialize)DeltaTimeNumeric).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -394,5 +434,8 @@
         private Label TimeOfDayLabel;
         private CheckBox EnableDiscoveryCheckBox;
         private CheckBox GunsOnlyCheckBox;
+        private Label DeltaTimeLabel;
+        private NumericUpDown DeltaTimeNumeric;
+        private Button DefaultDTButton;
     }
 }
