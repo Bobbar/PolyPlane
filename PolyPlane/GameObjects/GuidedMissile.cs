@@ -167,7 +167,7 @@ namespace PolyPlane.GameObjects
         {
             if (_useControlSurfaces)
             {
-                var liftScale = 1f;
+                var liftScale = 0.7f;
 
                 _tailWing = new Wing(this, new WingParameters()
                 {
@@ -183,14 +183,14 @@ namespace PolyPlane.GameObjects
                 {
                     RenderLength = 0f,
                     Area = 0.075f,
-                    MaxLift = 5250f * liftScale,
+                    MaxLift = 10000f * liftScale,
                     ParasiticDrag = 0.2f
                 });
 
                 _noseWing = new Wing(this, new WingParameters()
                 {
                     RenderLength = 4f,
-                    Area = 0.035f,
+                    Area = 0.025f,
                     MaxDeflection = 20f,
                     MaxLift = 3500f * liftScale,
                     Position = new D2DPoint(19.5f, 0f),
@@ -207,7 +207,10 @@ namespace PolyPlane.GameObjects
         public override void Update(float dt, float renderScale)
         {
             // Apply guidance.
-            var guideRotation = _guidance.GuideTo(dt);
+            var guideRotation = 0f;
+            
+            if (_guidance != null)
+                guideRotation = _guidance.GuideTo(dt);
 
             for (int i = 0; i < World.PHYSICS_SUB_STEPS; i++)
             {
@@ -419,7 +422,7 @@ namespace PolyPlane.GameObjects
                 _noseWing.Render(ctx);
             }
 
-            if (World.ShowTracking)
+            if (World.ShowTracking && _guidance != null)
             {
                 ctx.FillEllipse(new D2DEllipse(_guidance.CurrentAimPoint, new D2DSize(50f, 50f)), D2DColor.LawnGreen);
                 ctx.FillEllipse(new D2DEllipse(_guidance.StableAimPoint, new D2DSize(40f, 40f)), D2DColor.Blue);
