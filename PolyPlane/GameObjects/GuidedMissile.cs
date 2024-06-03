@@ -167,7 +167,7 @@ namespace PolyPlane.GameObjects
         {
             if (_useControlSurfaces)
             {
-                var liftScale = 0.7f;
+                var liftScale = 0.4f;
 
                 _tailWing = new Wing(this, new WingParameters()
                 {
@@ -176,6 +176,7 @@ namespace PolyPlane.GameObjects
                     MaxDeflection = 50f,
                     MaxLift = 4000f * liftScale,
                     Position = new D2DPoint(-22f, 0f),
+                    MinVelo = 450f,
                     ParasiticDrag = 0.2f
                 });
 
@@ -183,7 +184,8 @@ namespace PolyPlane.GameObjects
                 {
                     RenderLength = 0f,
                     Area = 0.075f,
-                    MaxLift = 10000f * liftScale,
+                    MaxLift = 8000f * liftScale,
+                    MinVelo = 450f,
                     ParasiticDrag = 0.2f
                 });
 
@@ -194,6 +196,7 @@ namespace PolyPlane.GameObjects
                     MaxDeflection = 20f,
                     MaxLift = 3500f * liftScale,
                     Position = new D2DPoint(19.5f, 0f),
+                    MinVelo = 450f,
                     ParasiticDrag = 0.2f
                 });
             }
@@ -208,7 +211,7 @@ namespace PolyPlane.GameObjects
         {
             // Apply guidance.
             var guideRotation = 0f;
-            
+
             if (_guidance != null)
                 guideRotation = _guidance.GuideTo(dt);
 

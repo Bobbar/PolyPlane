@@ -26,13 +26,13 @@ namespace PolyPlane
         private PingObj _aimedAtPingObj = null;
 
         private readonly float MIN_IMPACT_TIME = 20f; // Min time before defending.
-        private readonly float SWEEP_FOV = 10f; // How wide the radar beam is?
+        private float SWEEP_FOV = 10f; // How wide the radar beam is?
         private readonly float AIM_FOV = 10f; // How wide the radar beam is?
+        private readonly float SWEEP_RATE = 300f;
 
         private float _sweepAngle = 0f;
         private float _maxRange = 40000f;
         private float _maxAge = 2f;
-        private readonly float SWEEP_RATE = 300f;
         private float _radius = 150f;
         private bool _hostIsAI = false;
         private D2DColor _color = World.HudColor;
@@ -61,6 +61,10 @@ namespace PolyPlane
 
         public override void Update(float dt, float renderScale)
         {
+            // Increase sweep FOV as needed to ensure we don't skip over any objects?
+            if (SWEEP_RATE * World.DT > SWEEP_FOV)
+                SWEEP_FOV = (SWEEP_RATE * World.DT) * 1.2f;
+
             base.Update(dt, renderScale);
 
             _lockTimer.Update(dt);
@@ -170,13 +174,20 @@ namespace PolyPlane
                         gfx.FillRectangle(new D2DRect(p.RadarPos, new D2DSize(6f, 6f)), pColor);
                 }
 
-                if (p.Obj is Missile missile)
+                if (p.Obj is GuidedMissile missile)
                 {
-                    if (!p.Obj.Owner.Equals(this.HostPlane))
-                        gfx.DrawTriangle(p.RadarPos, pColor, D2DColor.Red, 1f);
+                    if (missile.IsDistracted)
+                        gfx.DrawTriangle(p.RadarPos, pColor, D2DColor.Blue, 1f);
+                    else if (missile.Guidance.MissedTarget)
+                        gfx.DrawTriangle(p.RadarPos, pColor, D2DColor.Transparent, 1f);
                     else
-                        gfx.DrawTriangle(p.RadarPos, pColor, pColor, 1f);
+                    {
+                        if (!p.Obj.Owner.Equals(this.HostPlane))
+                            gfx.DrawTriangle(p.RadarPos, pColor, D2DColor.Red, 1f);
+                        else
+                            gfx.DrawTriangle(p.RadarPos, pColor, pColor, 1f);
 
+                    }
                 }
             }
 

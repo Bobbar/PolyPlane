@@ -254,14 +254,14 @@ namespace PolyPlane.GameObjects.Manager
             {
                 foreach (var bullet in _objs.Bullets)
                 {
-                    if (bullet.Altitude <= 0f && !bullet.IsExpired)
+                    if (bullet.Altitude <= 1f && !bullet.IsExpired)
                         bullet.IsExpired = true;
                 }
             }
 
             foreach (var missile in _objs.Missiles)
             {
-                if (missile.Altitude <= 0f && !missile.IsExpired)
+                if (missile.Altitude <= 1f && !missile.IsExpired)
                     missile.IsExpired = true;
             }
         }

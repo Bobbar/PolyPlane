@@ -21,6 +21,7 @@ namespace PolyPlane
         private bool _oneStep = false;
         private bool _killRender = false;
         private bool _shiftDown = false;
+        private bool _ctrlDown = false;
         private bool _queueNextViewId = false;
         private bool _queuePrevViewId = false;
         private bool _queueResetPlane = false;
@@ -1022,11 +1023,33 @@ namespace PolyPlane
         private void PolyPlaneUI_KeyDown(object sender, KeyEventArgs e)
         {
             _shiftDown = e.Shift;
+            _ctrlDown = e.Control;
+
+            if (_ctrlDown)
+            {
+                switch (e.KeyCode)
+                {
+                    case Keys.Oemplus:
+                        
+                        if (!World.IsNetGame)
+                            World.DT += 0.002f;
+
+                        break;
+
+                    case Keys.OemMinus:
+                        
+                        if (!World.IsNetGame)
+                            World.DT -= 0.002f;
+
+                        break;
+                }
+            }
         }
 
         private void PolyPlaneUI_KeyUp(object sender, KeyEventArgs e)
         {
             _shiftDown = e.Shift;
+            _ctrlDown = e.Control;
         }
 
         private void PolyPlaneUI_MouseMove(object sender, MouseEventArgs e)
@@ -1035,7 +1058,7 @@ namespace PolyPlane
             center /= World.DEFAULT_DPI / (float)this.DeviceDpi; // Scale for DPI.
             var pos = new D2DPoint(e.X, e.Y) * World.ViewPortScaleMulti;
             var angle = center.AngleTo(pos);
-           
+
             _playerPlane.SetAutoPilotAngle(angle);
         }
 

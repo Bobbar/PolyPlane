@@ -11,9 +11,9 @@ namespace PolyPlane.GameObjects.Guidance
         protected GuidedMissile Missile { get; set; }
         public GameObject Target { get; set; }
 
-        private const float ARM_TIME = 3f;
+        private const float ARM_TIME = 6f;
 
-        private GameTimer _lostLockTimer = new GameTimer(5f);
+        private GameTimer _lostLockTimer = new GameTimer(6f);
         private GameTimer _groundScatterTimer = new GameTimer(5f);
         private GameTimer _armTimer = new GameTimer(ARM_TIME);
 
@@ -43,12 +43,18 @@ namespace PolyPlane.GameObjects.Guidance
         public bool MissedTarget => _missedTarget || _lostInGround;
         private bool _missedTarget = false;
         private bool _lostInGround = false;
+        private D2DPoint _lastKnownTargetPos = D2DPoint.Zero;
 
         protected GuidanceBase(GuidedMissile missile, GameObject target)
         {
             Missile = missile;
             Target = target;
-            _lostLockTimer.TriggerCallback = () => _missedTarget = true;
+            _lostLockTimer.TriggerCallback = () =>
+            {
+                _missedTarget = true;
+                _lastKnownTargetPos = GetTargetPosition();
+            };
+
             _armTimer.Start();
         }
 
@@ -57,8 +63,12 @@ namespace PolyPlane.GameObjects.Guidance
             DoDecoySuccess();
             DoGroundScatter();
 
-            _lostLockTimer.Update(dt);
-            _groundScatterTimer.Update(dt);
+            if (!_armTimer.IsRunning)
+            {
+                _lostLockTimer.Update(dt);
+                _groundScatterTimer.Update(dt);
+            }
+
             _armTimer.Update(dt);
 
             // The guidance logic doesn't work when velo is zero (or very close).
@@ -89,8 +99,9 @@ namespace PolyPlane.GameObjects.Guidance
                 }
             }
 
+            // If we lost lock, aim at the last know target position and hope we can find it again.
             if (_missedTarget || _lostInGround)
-                rotation = Missile.Rotation;
+                rotation = (_lastKnownTargetPos - this.Missile.Position).Angle(true);
 
             // Lerp from current rotation towards guidance rotation as we 
             // approach the specified arm time.

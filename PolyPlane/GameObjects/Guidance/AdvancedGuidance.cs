@@ -6,9 +6,9 @@ namespace PolyPlane.GameObjects.Guidance
     {
         private D2DPoint _prevTargPos = D2DPoint.Zero;
         private D2DPoint _prevImpactPnt = D2DPoint.Zero;
-        private SmoothPos _impactSmooth = new SmoothPos(10);
-        private SmoothPos _aimDirSmooth = new SmoothPos(10);
-        private SmoothFloat _closingRateSmooth = new SmoothFloat(10);
+        private SmoothPos _impactSmooth = new SmoothPos(3);
+        private SmoothPos _aimDirSmooth = new SmoothPos(3);
+        private SmoothFloat _closingRateSmooth = new SmoothFloat(3);
 
         private float _prevVelo = 0f;
         private float _prevTargetDist = 0f;
@@ -24,8 +24,8 @@ namespace PolyPlane.GameObjects.Guidance
             const float MAX_ROT_RATE = 2f; // Max rotation rate.
             const float MIN_ROT_RATE = 1f; // Min rotation rate.
             const float MIN_ROT_SPEED = 800f; // Speed at which rotation rate will be the smallest.
-            const float ROT_MOD_DIST = 10000f; // Distance to begin increasing rotation rate. (Get more aggro the closer we get)
-            const float ROT_MOD_AMT = 1f; // Max amount to increase rot rate per above distance.
+            const float ROT_MOD_DIST = 20000f; // Distance to begin increasing rotation rate. (Get more aggro the closer we get)
+            const float ROT_MOD_AMT = 2f; // Max amount to increase rot rate per above distance.
             const float IMPACT_POINT_DELTA_THRESH = 2f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
             const float MIN_CLOSE_RATE = 0.2f; // Min closing rate required to aim at predicted impact point.
 
@@ -113,7 +113,7 @@ namespace PolyPlane.GameObjects.Guidance
 
         private float ImpactTime(float dist, float velo, float accel)
         {
-            var finalVelo = (float)Math.Sqrt(Math.Pow(velo, 2f) + 2f * accel * dist);
+            var finalVelo = (float)Math.Sqrt(Math.Abs(Math.Pow(velo, 2f) + 2f * accel * dist));
             var impactTime = (finalVelo - velo) / accel;
 
             return impactTime;
@@ -148,7 +148,7 @@ namespace PolyPlane.GameObjects.Guidance
 
                 predicted = targLoc;
             }
-          
+
             return predicted;
         }
     }
