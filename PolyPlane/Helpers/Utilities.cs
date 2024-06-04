@@ -73,6 +73,11 @@ namespace PolyPlane.Helpers
             return Math.Clamp(value1 / value2, 0f, 1f);
         }
 
+        public static float FactorWithEasing(float value1, float value2, Func<float,float> easeFunc)
+        {
+            return easeFunc(Math.Clamp(value1 / value2, 0f, 1f));
+        }
+
 
         public static float Factor(float value, float min, float max)
         {
@@ -482,7 +487,7 @@ namespace PolyPlane.Helpers
             const float MAX_ALT = 12000f;
 
             var point = new D2DPoint(Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
-            if (objs.Planes.Count == 0)
+            if (objs.Planes.Count == 0 || objs.Planes.Count == 1)
                 return point;
 
             var min = objs.Planes.Min(p => p.Position.DistanceTo(point));

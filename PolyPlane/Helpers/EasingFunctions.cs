@@ -2,14 +2,29 @@
 {
     public static class EasingFunctions
     {
-        public static float EaseQuinticOut(float k)
+        public static float EaseOutQuintic(float k)
         {
             return 1f + ((k -= 1f) * (float)Math.Pow(k, 4));
         }
 
-        public static float EaseQuinticIn(float k)
+        public static float EaseInQuintic(float k)
         {
             return k * k * k * k * k;
+        }
+
+        public static float EaseInCubic(float k)
+        {
+            return k * k * k;
+        }
+
+        public static float EaseOutCubic(float k)
+        {
+            return 1f - (float)Math.Pow(1f - k, 3f);
+        }
+
+        public static float EaseInSine(float k)
+        {
+            return 1f - (float)Math.Cos((k * Math.PI) / 2f);
         }
 
         public static float EaseOutElastic(float k)

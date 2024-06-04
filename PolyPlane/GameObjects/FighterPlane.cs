@@ -272,7 +272,7 @@ namespace PolyPlane.GameObjects
                 MaxDragForce = 15000f,
                 DeflectionRate = defRate,
                 Position = new D2DPoint(1.5f, 1f),
-                MinVelo = 500f
+                MinVelo = 250f
             }));
 
             // Tail wing. (Control wing)
@@ -285,7 +285,7 @@ namespace PolyPlane.GameObjects
                 MaxDragForce = 7500f,
                 DeflectionRate = defRate,
                 Position = new D2DPoint(-35f, 1f),
-                MinVelo = 500f
+                MinVelo = 250f
             }), isControl: true);
 
         }

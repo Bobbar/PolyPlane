@@ -144,7 +144,7 @@ namespace PolyPlane.Rendering
             var scaleSize = GetViewportScaled();
             World.UpdateViewport(scaleSize);
 
-            _screenFlash = new FloatAnimation(0.4f, 0f, 4f, EasingFunctions.EaseQuinticOut, v => _screenFlashOpacity = v);
+            _screenFlash = new FloatAnimation(0.4f, 0f, 4f, EasingFunctions.EaseOutQuintic, v => _screenFlashOpacity = v);
             _screenShakeX = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.X = v);
             _screenShakeY = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.Y = v);
         }

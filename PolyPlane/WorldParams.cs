@@ -161,11 +161,10 @@ namespace PolyPlane
                 return AirDensity;
 
             var alt = Math.Abs(position.Y);
-            var fact = 1f - Utilities.Factor(alt, MAX_ALTITUDE);
+            var fact = 1f - Utilities.FactorWithEasing(alt, MAX_ALTITUDE, EasingFunctions.EaseInSine);
 
             return AirDensity * fact;
         }
-
 
         public static void UpdateViewport(Size viewPortSize)
         {

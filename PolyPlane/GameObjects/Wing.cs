@@ -133,8 +133,7 @@ namespace PolyPlane.GameObjects
             var veloMagSq = (float)Math.Pow(veloMag, 2f);
 
             float MIN_VELO = _params.MinVelo;
-
-            var veloFact = Utilities.Factor(veloMag, MIN_VELO);
+            var veloFact = Utilities.FactorWithEasing(veloMag, MIN_VELO, EasingFunctions.EaseInSine);
 
             // Compute velo tangent. For lift/drag and rotation calcs.
             var veloNorm = D2DPoint.Normalize(velo);
@@ -167,7 +166,8 @@ namespace PolyPlane.GameObjects
             dragForce += veloMag * (WING_AREA * PARASITIC_DRAG);
 
             // Lift force.
-            var aoaFact = Utilities.Factor(MAX_AOA, Math.Abs(aoa));
+            var aoaFact = Utilities.FactorWithEasing(MAX_AOA, Math.Abs(aoa), EasingFunctions.EaseInSine);
+
             var coeffLift = (float)Math.Sin(2f * aoaRads) * aoaFact;
             var liftForce = AIR_DENSITY * 0.5f * veloMagSq * WING_AREA * coeffLift;
 
