@@ -6,9 +6,9 @@ namespace PolyPlane.GameObjects.Guidance
     {
         private D2DPoint _prevTargPos = D2DPoint.Zero;
         private D2DPoint _prevImpactPnt = D2DPoint.Zero;
-        private SmoothPos _impactSmooth = new SmoothPos(3);
-        private SmoothPos _aimDirSmooth = new SmoothPos(3);
-        private SmoothFloat _closingRateSmooth = new SmoothFloat(3);
+        private SmoothPos _impactSmooth = new SmoothPos(5);
+        private SmoothPos _aimDirSmooth = new SmoothPos(5);
+        private SmoothFloat _closingRateSmooth = new SmoothFloat(5);
 
         private float _prevVelo = 0f;
         private float _prevTargetDist = 0f;
@@ -16,18 +16,20 @@ namespace PolyPlane.GameObjects.Guidance
         private const int MAX_FTI = 3000; // Max iterations allowed.
 
         public AdvancedGuidance(GuidedMissile missile, GameObject target) : base(missile, target)
-        { }
+        {
+            StableAimPoint = GetTargetPosition();
+        }
 
         public override float GetGuidanceDirection(float dt)
         {
             // Tweakables
-            const float MAX_ROT_RATE = 2f; // Max rotation rate.
-            const float MIN_ROT_RATE = 1f; // Min rotation rate.
+            const float MAX_ROT_RATE = 1f; // Max rotation rate.
+            const float MIN_ROT_RATE = 0.5f; // Min rotation rate.
             const float MIN_ROT_SPEED = 800f; // Speed at which rotation rate will be the smallest.
             const float ROT_MOD_DIST = 20000f; // Distance to begin increasing rotation rate. (Get more aggro the closer we get)
-            const float ROT_MOD_AMT = 2f; // Max amount to increase rot rate per above distance.
-            const float IMPACT_POINT_DELTA_THRESH = 2f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
-            const float MIN_CLOSE_RATE = 0.2f; // Min closing rate required to aim at predicted impact point.
+            const float ROT_MOD_AMT = 3f; // Max amount to increase rot rate per above distance.
+            const float IMPACT_POINT_DELTA_THRESH = 1f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
+            const float MIN_CLOSE_RATE = 0.1f; // Min closing rate required to aim at predicted impact point.
 
             var target = GetTargetPosition();
             var targetVelo = this.Target.Velocity * dt;

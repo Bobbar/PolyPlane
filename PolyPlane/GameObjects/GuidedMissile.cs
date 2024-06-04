@@ -167,26 +167,28 @@ namespace PolyPlane.GameObjects
         {
             if (_useControlSurfaces)
             {
-                var liftScale = 0.4f;
+                var liftScale = 0.7f;
 
                 _tailWing = new Wing(this, new WingParameters()
                 {
                     RenderLength = 4f,
                     Area = 0.1f,
                     MaxDeflection = 50f,
-                    MaxLift = 4000f * liftScale,
+                    MaxLiftForce = 4000f * liftScale,
                     Position = new D2DPoint(-22f, 0f),
                     MinVelo = 450f,
-                    ParasiticDrag = 0.2f
+                    ParasiticDrag = 0.2f,
+                    AOAFactor = 0.4f
                 });
 
                 _rocketBody = new Wing(this, new WingParameters()
                 {
                     RenderLength = 0f,
                     Area = 0.075f,
-                    MaxLift = 8000f * liftScale,
+                    MaxLiftForce = 4000f * liftScale,
                     MinVelo = 450f,
-                    ParasiticDrag = 0.2f
+                    ParasiticDrag = 0.2f,
+                    AOAFactor = 0.4f
                 });
 
                 _noseWing = new Wing(this, new WingParameters()
@@ -194,10 +196,11 @@ namespace PolyPlane.GameObjects
                     RenderLength = 4f,
                     Area = 0.025f,
                     MaxDeflection = 20f,
-                    MaxLift = 3500f * liftScale,
+                    MaxLiftForce = 4000f * liftScale,
                     Position = new D2DPoint(19.5f, 0f),
                     MinVelo = 450f,
-                    ParasiticDrag = 0.2f
+                    ParasiticDrag = 0.2f,
+                    AOAFactor = 0.4f
                 });
             }
             else
@@ -430,6 +433,10 @@ namespace PolyPlane.GameObjects
                 ctx.FillEllipse(new D2DEllipse(_guidance.CurrentAimPoint, new D2DSize(50f, 50f)), D2DColor.LawnGreen);
                 ctx.FillEllipse(new D2DEllipse(_guidance.StableAimPoint, new D2DSize(40f, 40f)), D2DColor.Blue);
                 ctx.FillEllipse(new D2DEllipse(_guidance.ImpactPoint, new D2DSize(30f, 30f)), D2DColor.Red);
+
+                ctx.DrawLine(this.Position, _guidance.CurrentAimPoint, D2DColor.LawnGreen, 5f);
+                ctx.DrawLine(this.Position, _guidance.StableAimPoint, D2DColor.Blue, 5f);
+                ctx.DrawLine(this.Position, _guidance.ImpactPoint, D2DColor.Red, 5f);
             }
         }
 

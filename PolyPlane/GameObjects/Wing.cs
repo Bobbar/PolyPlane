@@ -39,7 +39,10 @@ namespace PolyPlane.GameObjects
             _defRateLimit = new RateLimiter(rate: _params.DeflectionRate);
             _maxDeflection = _params.MaxDeflection;
             Rotation = obj.Rotation;
-            _parentObject = obj;    
+           _parentObject = obj;
+
+            if (_params.MaxDragForce == 0f)
+                _params.MaxDragForce = _params.MaxLiftForce;
         }
 
         public override void Update(float dt, float renderScale)
@@ -148,7 +151,8 @@ namespace PolyPlane.GameObjects
             float AOA_FACT = _params.AOAFactor; // How much AoA effects drag.
             float VELO_FACT = _params.VeloFactor; // How much velocity effects drag.
             float WING_AREA = _params.Area; // Area of the wing. Effects lift & drag forces.
-            float MAX_LIFT = _params.MaxLift; // Max lift force allowed.
+            float MAX_LIFT = _params.MaxLiftForce; // Max lift force allowed.
+            float MAX_DRAG = _params.MaxDragForce; // Max drag force allowed.
             float MAX_AOA = _params.MaxAOA; // Max AoA allowed before lift force reduces. (Stall)
             float AIR_DENSITY = World.GetDensityAltitude(this.Position);
             float PARASITIC_DRAG = _params.ParasiticDrag;
@@ -168,7 +172,7 @@ namespace PolyPlane.GameObjects
             var liftForce = AIR_DENSITY * 0.5f * veloMagSq * WING_AREA * coeffLift;
 
             liftForce = Math.Clamp(liftForce, -MAX_LIFT, MAX_LIFT);
-            dragForce = Math.Clamp(dragForce, -MAX_LIFT * 2f, MAX_LIFT * 2f);
+            dragForce = Math.Clamp(dragForce, -MAX_DRAG, MAX_DRAG);
 
             var dragVec = -veloNorm * dragForce;
             var liftVec = veloNormTan * liftForce;
@@ -186,7 +190,8 @@ namespace PolyPlane.GameObjects
         public D2DPoint Position = D2DPoint.Zero;
         public float RenderLength;
         public float Area;
-        public float MaxLift = 15000f;
+        public float MaxLiftForce = 15000f;
+        public float MaxDragForce;
         public float MaxDeflection = 40f;
         public float DeflectionRate = 80f;
         public float MinVelo = 350f;

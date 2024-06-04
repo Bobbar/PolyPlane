@@ -263,15 +263,16 @@ namespace PolyPlane.GameObjects
                 defRate = 30f;
 
             // Main wing.
-            AddWing(new Wing(this, new WingParameters() 
-            { 
+            AddWing(new Wing(this, new WingParameters()
+            {
                 RenderLength = 10f * this.RenderOffset,
-                Area = 0.5f, 
-                MaxDeflection = 40f, 
-                MaxLift = 10000f, 
-                DeflectionRate = defRate, 
+                Area = 0.5f,
+                MaxDeflection = 40f,
+                MaxLiftForce = 10000f,
+                MaxDragForce = 15000f,
+                DeflectionRate = defRate,
                 Position = new D2DPoint(1.5f, 1f),
-                MinVelo = 400f
+                MinVelo = 500f
             }));
 
             // Tail wing. (Control wing)
@@ -280,10 +281,11 @@ namespace PolyPlane.GameObjects
                 RenderLength = 5f * this.RenderOffset,
                 Area = 0.2f,
                 MaxDeflection = 50f,
-                MaxLift = 5000f,
+                MaxLiftForce = 5000f,
+                MaxDragForce = 7500f,
                 DeflectionRate = defRate,
                 Position = new D2DPoint(-35f, 1f),
-                MinVelo = 400f
+                MinVelo = 500f
             }), isControl: true);
 
         }
@@ -902,7 +904,7 @@ namespace PolyPlane.GameObjects
             const float thrustVectorAmt = 1f;
             const float thrustBoostAmt = 1000f;
             const float thrustBoostMaxSpd = 200f;
-            const float MAX_VELO = 3500f;
+            const float MAX_VELO = 2500f;
 
             if (thrustVector)
                 thrust = Utilities.AngleToVectorDegrees(this.Rotation + (_controlWing.Deflection * thrustVectorAmt));
