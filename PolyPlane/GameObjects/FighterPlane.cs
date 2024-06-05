@@ -295,6 +295,8 @@ namespace PolyPlane.GameObjects
             {
                 var partialDT = World.SUB_DT;
 
+                base.Update(partialDT, renderScale * this.RenderOffset);
+
                 var wingForce = D2DPoint.Zero;
                 var wingTorque = 0f;
                 var deflection = this.Deflection;
@@ -396,8 +398,6 @@ namespace PolyPlane.GameObjects
                 Wings.ForEach(w => w.Update(partialDT, renderScale * this.RenderOffset));
                 _centerOfThrust.Update(partialDT, renderScale * this.RenderOffset);
                 _thrustAmt.Update(partialDT);
-
-                base.Update(partialDT, renderScale * this.RenderOffset);
             }
 
             _gForce = _gforceAvg.Current;

@@ -1,4 +1,6 @@
 ﻿using ENet;
+using System.Net.Sockets;
+using System.Threading.Channels;
 
 namespace PolyPlane.Net.NetHost
 {
@@ -84,6 +86,10 @@ namespace PolyPlane.Net.NetHost
             return 0;
         }
 
+        /// <summary>
+        /// Broadcast to all peers.
+        /// </summary>
+        /// <param name="netPacket"></param>
         private void BroadcastPacket(NetPacket netPacket)
         {
             var packet = CreatePacket(netPacket);
@@ -92,11 +98,36 @@ namespace PolyPlane.Net.NetHost
             Host.Broadcast((byte)channel, ref packet);
         }
 
+        /// <summary>
+        /// Send to all other peers except for the peer the packet originated from.
+        /// </summary>
+        /// <param name="netPacket"></param>
+        private void BroadcastToOtherPeersOnly(NetPacket netPacket)
+        {
+            var packet = CreatePacket(netPacket);
+            var channel = GetChannel(netPacket);
+
+            foreach (var peer in _peers.Values)
+            {
+                if (peer.ID != netPacket.ID.PlayerID)
+                    peer.Send((byte)channel, ref packet);
+            }
+        }
+
         public override void SendPacket(NetPacket packet)
         {
             base.SendPacket(packet);
 
-            BroadcastPacket(packet);
+            switch (packet.Type)
+            {
+                case PacketTypes.PlaneUpdate or PacketTypes.MissileUpdate:
+                    BroadcastToOtherPeersOnly(packet);
+                    break;
+
+                default:
+                    BroadcastPacket(packet);
+                    break;
+            }
         }
 
         private void SendIDPacket(Peer peer, NetPacket packet)

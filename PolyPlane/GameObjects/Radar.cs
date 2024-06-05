@@ -176,18 +176,10 @@ namespace PolyPlane
 
                 if (p.Obj is GuidedMissile missile)
                 {
-                    if (missile.IsDistracted)
-                        gfx.DrawTriangle(p.RadarPos, pColor, D2DColor.Blue, 1f);
-                    else if (missile.Guidance.MissedTarget)
-                        gfx.DrawTriangle(p.RadarPos, pColor, D2DColor.Transparent, 1f);
+                    if (!p.Obj.Owner.Equals(this.HostPlane))
+                        gfx.DrawTriangle(p.RadarPos, pColor, D2DColor.Red, 1f);
                     else
-                    {
-                        if (!p.Obj.Owner.Equals(this.HostPlane))
-                            gfx.DrawTriangle(p.RadarPos, pColor, D2DColor.Red, 1f);
-                        else
-                            gfx.DrawTriangle(p.RadarPos, pColor, pColor, 1f);
-
-                    }
+                        gfx.DrawTriangle(p.RadarPos, pColor, pColor, 1f);
                 }
             }
 
@@ -208,11 +200,11 @@ namespace PolyPlane
                 if (aimedAtPlane != null)
                 {
                     var dist = this.HostPlane.Position.DistanceTo(aimedAtPlane.Position);
-                    var distPos = this.Position + new D2DPoint(-220f, 100f);
-                    var dRect = new D2DRect(distPos, new D2DSize(140, 60));
+                    var distPos = this.Position + new D2DPoint(-240f, 100f);
+                    var dRect = new D2DRect(distPos, new D2DSize(180, 80));
                     gfx.FillRectangle(dRect, new D2DColor(0.5f, D2DColor.Black));
-                    var info = $"D:{Math.Round(dist, 0)}\nA:{Math.Round(aimedAtPlane.Altitude, 0)}\n{aimedAtPlane.PlayerName}";
-                    gfx.DrawTextCenter(info, _color, "Consolas", 15f, dRect);
+                    var info = $"D:{Math.Round(dist / 1000f, 0)}\nA:{Math.Round(aimedAtPlane.Altitude / 1000f, 0)}\n{aimedAtPlane.PlayerName}";
+                    gfx.DrawTextCenter(info, _color, "Consolas", 20f, dRect);
                 }
 
             }
