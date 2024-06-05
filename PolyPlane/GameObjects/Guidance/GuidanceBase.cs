@@ -16,6 +16,8 @@ namespace PolyPlane.GameObjects.Guidance
         private GameTimer _lostLockTimer = new GameTimer(6f);
         private GameTimer _groundScatterTimer = new GameTimer(5f);
         private GameTimer _armTimer = new GameTimer(ARM_TIME);
+        private GameTimer _decoyDistractCooldown = new GameTimer(5f);
+        private GameTimer _decoyDistractArm = new GameTimer(4f);
 
         public bool GroundScatterInCooldown
         {
@@ -40,7 +42,7 @@ namespace PolyPlane.GameObjects.Guidance
             set { _lostInGround = value; }
         }
 
-        public bool MissedTarget => _missedTarget || _lostInGround;
+        public bool MissedTarget => _missedTarget || _lostInGround || this.Missile.IsDistracted;
         private bool _missedTarget = false;
         private bool _lostInGround = false;
         private D2DPoint _lastKnownTargetPos = D2DPoint.Zero;
@@ -56,6 +58,8 @@ namespace PolyPlane.GameObjects.Guidance
             };
 
             _armTimer.Start();
+            _decoyDistractCooldown.Start();
+            _decoyDistractArm.Start();
         }
 
         public float GuideTo(float dt)
@@ -67,6 +71,8 @@ namespace PolyPlane.GameObjects.Guidance
             {
                 _lostLockTimer.Update(dt);
                 _groundScatterTimer.Update(dt);
+                _decoyDistractCooldown.Update(dt);
+                _decoyDistractArm.Update(dt);
             }
 
             _armTimer.Update(dt);
@@ -133,6 +139,8 @@ namespace PolyPlane.GameObjects.Guidance
         {
             // Test for decoy success.
             const float MIN_DECOY_FOV = 10f;
+            const float MAX_DISTANCE = 20000f; // Max distance for decoys to be considered.
+
             var decoys = World.ObjectManager.Decoys;
 
             var missile = this.Missile;
@@ -175,6 +183,10 @@ namespace PolyPlane.GameObjects.Guidance
                 //    continue;
 
                 var dist = D2DPoint.Distance(decoy.Position, missile.Position);
+
+                if (dist > MAX_DISTANCE)
+                    continue;
+
                 var decoyTemp = (MaxDecoyTemp * DecoyRadius) / (4f * (float)Math.PI * (float)Math.Pow(dist, 2f));
 
                 if (decoyTemp > maxTemp)
@@ -182,12 +194,11 @@ namespace PolyPlane.GameObjects.Guidance
                     maxTemp = decoyTemp;
                     maxTempObj = decoy;
                 }
-
             }
 
             if (maxTempObj is Decoy)
             {
-                missile.DoChangeTargetChance(maxTempObj);
+                DoChangeTargetChance(maxTempObj);
             }
         }
 
@@ -196,6 +207,7 @@ namespace PolyPlane.GameObjects.Guidance
         /// </summary>
         protected void DoGroundScatter()
         {
+            const float MIN_DISTANCE = 10000f; // Min distance for ground scatter to be considered.
             const float GROUND_SCATTER_ALT = 3000f;
 
             if (this.Missile.IsNetObject)
@@ -206,6 +218,11 @@ namespace PolyPlane.GameObjects.Guidance
 
             if (this.Missile.Target != null)
             {
+                var dist = this.Missile.Position.DistanceTo(this.Missile.Target.Position);
+
+                if (dist < MIN_DISTANCE)
+                    return;
+
                 if (this.Missile.Target.Altitude <= GROUND_SCATTER_ALT)
                 {
                     const int CHANCE_INIT = 10;
@@ -216,13 +233,12 @@ namespace PolyPlane.GameObjects.Guidance
 
                     chance -= (int)(altFact * 5);
 
-                    if (!this.Missile.Guidance.GroundScatterInCooldown)
+                    if (!this.GroundScatterInCooldown)
                     {
-                        var rnd1 = Utilities.Rnd.Next(chance);
-                        var rnd2 = Utilities.Rnd.Next(chance);
-                        if (rnd1 == rnd2)
+                        var rnd = Utilities.Rnd.Next(chance);
+                        if (rnd == 0)
                         {
-                            this.Missile.Guidance.LostInGround = true;
+                            this.LostInGround = true;
                             Log.Msg("Lost in ground scatter....");
                         }
                     }
@@ -231,6 +247,32 @@ namespace PolyPlane.GameObjects.Guidance
                 {
                     this.LostInGround = false;
                 }
+            }
+        }
+
+        public void DoChangeTargetChance(GameObject target)
+        {
+            if (_decoyDistractCooldown.IsRunning || _decoyDistractArm.IsRunning)
+                return;
+
+            const int RANDO_AMT = 6;
+            var randOChanceO = Utilities.Rnd.Next(RANDO_AMT);
+            var lucky = randOChanceO == 0;
+
+            if (lucky)
+            {
+                this.Missile.ChangeTarget(target);
+                _decoyDistractCooldown.Reset();
+                _decoyDistractCooldown.Start();
+                this.Missile.IsDistracted = true;
+                Log.Msg("Missile distracted!");
+
+            }
+            else
+            {
+                _decoyDistractCooldown.Reset();
+                _decoyDistractCooldown.Start();
+                Log.Msg("Nice try!");
             }
         }
 

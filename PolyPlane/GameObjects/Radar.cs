@@ -253,8 +253,6 @@ namespace PolyPlane
             HasLock = false;
             _lockTimer.Stop();
             _lockedPingObj = null;
-
-            Log.Msg("Lost radar lock...");
         }
 
         private void CheckForLock()

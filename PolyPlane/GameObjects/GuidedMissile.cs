@@ -70,8 +70,6 @@ namespace PolyPlane.GameObjects
         private FixturePoint _warheadCenterMass;
         private FixturePoint _motorCenterMass;
         private FixturePoint _flamePos;
-        private GameTimer _decoyDistractCooldown = new GameTimer(2f);
-        private GameTimer _decoyDistractArm = new GameTimer(3f);
         private GameTimer _igniteCooldown = new GameTimer(1f);
 
         private static readonly D2DPoint[] _missilePoly =
@@ -121,7 +119,6 @@ namespace PolyPlane.GameObjects
             _useThrustVectoring = useThrustVectoring;
 
             _guidance = GetGuidance(target);
-            _decoyDistractArm.Start();
 
             var ownerPlane = this.Owner as FighterPlane;
             if (ownerPlane != null)
@@ -335,8 +332,6 @@ namespace PolyPlane.GameObjects
             if (Target != null && Target.IsExpired && this.Age > LIFESPAN)
                 this.IsExpired = true;
 
-            _decoyDistractCooldown.Update(dt);
-            _decoyDistractArm.Update(dt);
             _igniteCooldown.Update(dt);
 
             if (_currentFuel <= 0f)
@@ -358,33 +353,6 @@ namespace PolyPlane.GameObjects
 
             if (_guidance != null)
                 _guidance.Target = target;
-        }
-
-        public void DoChangeTargetChance(GameObject target)
-        {
-            if (_decoyDistractCooldown.IsRunning || _decoyDistractArm.IsRunning)
-                return;
-
-            const int RANDO_AMT = 3;//5;
-            var randOChanceO = _rnd.Next(RANDO_AMT);
-            var randOChanceO2 = _rnd.Next(RANDO_AMT);
-            var lucky = randOChanceO == randOChanceO2; // :-}
-
-            if (lucky)
-            {
-                ChangeTarget(target);
-                _decoyDistractCooldown.Reset();
-                _decoyDistractCooldown.Start();
-                IsDistracted = true;
-                Log.Msg("Missile distracted!");
-
-            }
-            else
-            {
-                _decoyDistractCooldown.Reset();
-                _decoyDistractCooldown.Start();
-                Log.Msg("Nice try!");
-            }
         }
 
         private GuidanceBase GetGuidance(GameObject target)
