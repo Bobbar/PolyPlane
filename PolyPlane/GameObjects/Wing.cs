@@ -113,8 +113,14 @@ namespace PolyPlane.GameObjects
             if (World.ShowAero)
             {
                 const float SCALE = 0.1f;//0.04f;
-                ctx.DrawLine(this.Position, this.Position + (LiftVector * SCALE), D2DColor.SkyBlue, 2f, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
-                ctx.DrawLine(this.Position, this.Position + (DragVector * (SCALE + 0.03f)), D2DColor.Red, 2f, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
+                const float AERO_WEIGHT = 3f;
+                ctx.DrawLine(this.Position, this.Position + (LiftVector * SCALE), D2DColor.SkyBlue, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
+                ctx.DrawLine(this.Position, this.Position + (DragVector * (SCALE + 0.03f)), D2DColor.Red, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
+
+                var aggForce = (LiftVector + DragVector) * 0.5f;
+                ctx.DrawLine(this.Position, this.Position + (aggForce * (SCALE + 0.03f)), D2DColor.Yellow, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
+
+                ctx.DrawLine(this.Position, this.Position + (this.Velocity * (SCALE + 0.5f)), D2DColor.Green, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
             }
 
             //gfx.DrawLine(this.Position, this.Position + (this.Velocity * 0.1f), D2DColor.GreenYellow, 0.5f);

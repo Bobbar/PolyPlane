@@ -175,7 +175,7 @@
     }
 
 
-    public class SmoothPos
+    public class SmoothPoint
     {
         private List<D2DPoint> _values = new List<D2DPoint>();
         private int _max;
@@ -197,7 +197,7 @@
         /// Creates a new instance with the specified max number of values.
         /// </summary>
         /// <param name="max">The max number of values to maintain an average of.</param>
-        public SmoothPos(int max)
+        public SmoothPoint(int max)
         {
             _max = max;
         }

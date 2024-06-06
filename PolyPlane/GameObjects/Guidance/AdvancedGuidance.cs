@@ -6,8 +6,8 @@ namespace PolyPlane.GameObjects.Guidance
     {
         private D2DPoint _prevTargPos = D2DPoint.Zero;
         private D2DPoint _prevImpactPnt = D2DPoint.Zero;
-        private SmoothPos _impactSmooth = new SmoothPos(5);
-        private SmoothPos _aimDirSmooth = new SmoothPos(5);
+        private SmoothPoint _impactSmooth = new SmoothPoint(5);
+        private SmoothPoint _aimDirSmooth = new SmoothPoint(5);
         private SmoothFloat _closingRateSmooth = new SmoothFloat(5);
 
         private float _prevVelo = 0f;

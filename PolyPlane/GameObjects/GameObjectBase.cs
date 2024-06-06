@@ -87,7 +87,7 @@ namespace PolyPlane.GameObjects
         protected Random _rnd => Utilities.Rnd;
         protected InterpolationBuffer<GameObjectPacket> InterpBuffer = null;
         protected HistoricalBuffer<GameObjectPacket> HistoryBuffer = new HistoricalBuffer<GameObjectPacket>();
-        protected SmoothPos _posSmooth = new SmoothPos(5);
+        protected SmoothPoint _posSmooth = new SmoothPoint(5);
 
         protected float _rotation = 0f;
         protected float _verticalSpeed = 0f;
