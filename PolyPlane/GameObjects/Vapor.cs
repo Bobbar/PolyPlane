@@ -65,7 +65,17 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
-            _parts.ForEach(p => p.Render(ctx));
+            foreach (var part in _parts)
+            {
+                if (_veloSizing)
+                {
+                    // Let the parts move away from the source slightly before rendering.
+                    if (part.Age > 0.2f)
+                        part.Render(ctx);
+                }
+                else
+                    part.Render(ctx);
+            }
         }
 
         private void SpawnPart()
@@ -79,15 +89,23 @@ namespace PolyPlane.GameObjects
                 newPos = _refPos.Position;
 
             D2DPoint newVelo = this.Velocity;
+            float gforce = 0f;
 
             if (this.Owner != null)
+            {
                 newVelo = this.Owner.Velocity;
+
+                if (this.Owner is FighterPlane plane)
+                    gforce = plane.GForce;
+            }
 
             float newRad = 0f;
 
             if (_veloSizing)
             {
-                var veloFact = Utilities.Factor(newVelo.Length(), 1000f);
+                //var veloFact = Utilities.Factor(newVelo.Length(), 1000f);
+                var veloFact = Utilities.Factor(gforce, 20f);
+
                 newRad = _radius + Utilities.Rnd.NextFloat(-2f, 2f) + (veloFact * 14f);
             }
             else
@@ -116,9 +134,11 @@ namespace PolyPlane.GameObjects
                 var part = _parts[i];
                 part.Update(dt, renderScale);
 
-                var ageFactFade = 1f - Utilities.Factor(part.Age, MAX_AGE);
-                var alpha = _vaporColor.a * ageFactFade;
+                var ageFact = 1f - Utilities.Factor(part.Age, MAX_AGE);
+                var alpha = _vaporColor.a * ageFact;
+                var rad = (part.InitRadius * ageFact) + 1f;
 
+                part.Radius = rad;
                 part.Color = new D2DColor(alpha, _vaporColor);
 
                 if (part.Age > MAX_AGE)
@@ -133,11 +153,27 @@ namespace PolyPlane.GameObjects
         {
             public D2DColor Color;
 
+            public float InitRadius = 0f;
+            public float Radius
+            {
+                get
+                {
+                    return _ellipse.radiusX;
+                }
+
+                set
+                {
+                    _ellipse.radiusX = value;
+                    _ellipse.radiusY = value;
+                }
+            }
+
             private D2DEllipse _ellipse;
 
             public VaporPart(D2DEllipse ellipse, D2DColor color, D2DPoint velo) : base(ellipse.origin, velo)
             {
                 _ellipse = ellipse;
+                InitRadius = this.Radius;
                 Color = color;
             }
 
@@ -145,7 +181,7 @@ namespace PolyPlane.GameObjects
             {
                 base.Update(dt, renderScale);
 
-                this.Velocity += -this.Velocity * (dt * 1.5f);
+                this.Velocity += -this.Velocity * (dt * 3f);
 
                 _ellipse.origin = this.Position;
             }

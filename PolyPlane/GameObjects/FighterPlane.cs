@@ -611,7 +611,7 @@ namespace PolyPlane.GameObjects
             if (isControl && _controlWing == null)
                 _controlWing = wing;
 
-            _vaporTrails.Add(new Vapor(wing, this, new D2DPoint(5f, 0f), 2f));
+            _vaporTrails.Add(new Vapor(wing, this, new D2DPoint(10f, 0f), 5f));
 
             Wings.Add(wing);
         }
