@@ -118,16 +118,7 @@ namespace PolyPlane.Net.NetHost
         {
             base.SendPacket(packet);
 
-            switch (packet.Type)
-            {
-                case PacketTypes.PlaneUpdate or PacketTypes.MissileUpdate:
-                    BroadcastToOtherPeersOnly(packet);
-                    break;
-
-                default:
-                    BroadcastPacket(packet);
-                    break;
-            }
+            BroadcastPacket(packet);
         }
 
         private void SendIDPacket(Peer peer, NetPacket packet)
