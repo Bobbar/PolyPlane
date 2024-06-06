@@ -36,6 +36,7 @@ namespace PolyPlane.Rendering
 
         private bool _showInfo = false;
         private bool _showHelp = false;
+        private bool _showScore = false;
 
         private SmoothDouble _renderTimeSmooth = new SmoothDouble(10);
         private Stopwatch _timer = new Stopwatch();
@@ -266,6 +267,11 @@ namespace PolyPlane.Rendering
             _showHelp = !_showHelp;
         }
 
+        public void ToggleScore()
+        {
+            _showScore = !_showScore;
+        }
+
         public void RenderFrame(FighterPlane viewplane)
         {
             ResizeGfx();
@@ -324,7 +330,7 @@ namespace PolyPlane.Rendering
 
         private void DrawPopMessages(RenderContext ctx, D2DSize vpSize, FighterPlane viewPlane)
         {
-           
+
             for (int i = 0; i < _popMessages.Count; i++)
             {
                 var msg = _popMessages[i];
@@ -780,6 +786,9 @@ namespace PolyPlane.Rendering
 
             DrawPopMessages(ctx, viewportsize, viewPlane);
 
+            if (_showScore)
+                DrawScoreCard(ctx, viewportsize, viewPlane);
+
             ctx.Gfx.PopTransform();
         }
 
@@ -847,6 +856,43 @@ namespace PolyPlane.Rendering
             }
 
             ctx.Gfx.PopTransform();
+        }
+
+        private void DrawScoreCard(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)
+        {
+            var size = new D2DSize(viewportsize.width * 0.7f, viewportsize.height * 0.6f);
+            var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
+            var rect = new D2DRect(pos, size);
+            var leftPad = 130f;
+            var topPad = 60f;
+            var topLeft = new D2DPoint(rect.left + leftPad, rect.top + topPad);
+
+            // Draw background.
+            ctx.Gfx.FillRectangle(rect, new D2DColor(0.3f, World.HudColor));
+            ctx.Gfx.DrawRectangle(rect, World.HudColor, 4f);
+
+            // Title
+            var titleRect = new D2DRect(rect.left, rect.top + 10f, size.width, 30f);
+            ctx.Gfx.DrawRectangle(titleRect, World.HudColor);
+            ctx.Gfx.DrawTextCenter("SCORE", D2DColor.White, _defaultFontName, 30f, titleRect);
+
+            // Lines
+            var lineHeight = 20f;
+            var linePosY = topLeft.Y;
+
+            var sortedPlanes = _objs.Planes.OrderByDescending(p => p.Kills);
+
+            foreach (var playerPlane in sortedPlanes)
+            {
+                var lineRect = new D2DRect(topLeft.X, linePosY, 800f, lineHeight);
+                var lineRectColumn1 = new D2DRect(topLeft.X + 200f, linePosY, 800f, lineHeight);
+                var lineRectColumn2 = new D2DRect(topLeft.X + 300f, linePosY, 800f, lineHeight);
+
+                ctx.Gfx.DrawText($"[ {playerPlane.PlayerName} ]", D2DColor.White, _defaultFontName, 15f, lineRect);
+                ctx.Gfx.DrawText($"Kills: {playerPlane.Kills}", D2DColor.White, _defaultFontName, 15f, lineRectColumn1);
+                ctx.Gfx.DrawText($"Deaths: {playerPlane.Deaths}", D2DColor.White, _defaultFontName, 15f, lineRectColumn2);
+                linePosY += lineHeight;
+            }
         }
 
         private void DrawGuideIcon(D2DGraphics gfx, D2DSize viewportsize, FighterPlane viewPlane)

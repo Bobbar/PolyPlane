@@ -937,6 +937,10 @@ namespace PolyPlane
                     World.ViewPlaneID = _playerPlane.ID;
                     break;
 
+                case (char)9: //Tab
+                    _render?.ToggleScore();
+                    break;
+
                 case ' ':
                     TargetLockedWithMissile();
                     break;

@@ -101,6 +101,7 @@ namespace PolyPlane.GameObjects
                 Planes.Add(plane);
 
                 plane.PlayerKilledCallback = HandlePlayerKilled;
+                plane.PlayerCrashedCallback = HandlePlayerCrashed;
 
                 NewPlayerEvent?.Invoke(this, plane);
 
@@ -296,6 +297,11 @@ namespace PolyPlane.GameObjects
             else
                 PlayerKilledEvent?.Invoke(this, new EventMessage($"'{impactorPlayer.PlayerName}' destroyed '{plane.PlayerName}' with {(impactor is Bullet ? "bullets." : "a missile.")}", EventType.Kill));
 
+        }
+
+        private void HandlePlayerCrashed(FighterPlane plane)
+        {
+            PlayerKilledEvent?.Invoke(this, new EventMessage($"'{plane.PlayerName}' crashed into the ground...", EventType.Kill));
         }
 
         private void PruneExpired(List<GameObject> objs)

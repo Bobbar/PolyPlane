@@ -450,11 +450,11 @@ namespace PolyPlane.Helpers
 
         public static string GetRandomName()
         {
-            var rnd = new Random();
+            var rnd = Utilities.Rnd;
             var len = rnd.Next(5, 8);
 
-            string[] consonants = { "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "l", "n", "p", "q", "r", "s", "sh", "zh", "t", "v", "w", "x" };
-            string[] vowels = { "a", "e", "i", "o", "u", "ae", "y" };
+            string[] consonants = { "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "l", "n", "p", "q", "r", "s", "t", "v", "w", "x" };
+            string[] vowels = { "a", "e", "i", "o", "u", "y" };
             string Name = "";
             Name += consonants[rnd.Next(consonants.Length)].ToUpper();
             Name += vowels[rnd.Next(vowels.Length)];

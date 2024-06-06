@@ -33,6 +33,7 @@ namespace PolyPlane.GameObjects
 
         public int Kills = 0;
         public int Headshots = 0;
+        public int Deaths = 0;
 
         public const int MAX_DECOYS = 15;
         public const int MAX_BULLETS = 30;
@@ -73,7 +74,9 @@ namespace PolyPlane.GameObjects
         public Action<Bullet> FireBulletCallback { get; set; }
         public Action<GuidedMissile> FireMissileCallback { get; set; }
         public Action<FighterPlane, GameObject> PlayerKilledCallback { get; set; }
+        public Action<FighterPlane> PlayerCrashedCallback { get; set; }
 
+       
         public List<Wing> Wings = new List<Wing>();
 
         private Wing? _controlWing = null;
@@ -711,6 +714,7 @@ namespace PolyPlane.GameObjects
                     _damageDeflection = _rnd.NextFloat(-180, 180);
 
                     attackPlane.Kills++;
+                    Deaths++;
 
                     PlayerKilledCallback?.Invoke(this, impactor);
                 }
@@ -795,6 +799,12 @@ namespace PolyPlane.GameObjects
 
             if (_isAIPlane && !_expireTimeout.IsRunning)
                 _expireTimeout.Restart();
+
+            if (Health > 0)
+            {
+                PlayerCrashedCallback?.Invoke(this);
+                Deaths++;
+            }
 
             HasCrashed = true;
             IsDisabled = true;

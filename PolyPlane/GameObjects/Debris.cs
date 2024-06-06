@@ -33,7 +33,8 @@ namespace PolyPlane.GameObjects
 
             if (this.Altitude <= 2f)
             {
-                this.RotationSpeed *= 0.99f;
+                this.RotationSpeed += -this.RotationSpeed * (dt * 1f);
+
                 _flame.StopSpawning();
             }
         }

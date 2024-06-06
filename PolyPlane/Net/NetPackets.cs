@@ -470,8 +470,9 @@ namespace PolyPlane.Net
         public float Deflection;
         public bool IsDamaged;
         public bool FiringBurst;
-        public int Health;
-        public int Kills;
+        public int Health; // TODO: Maybe send these stats periodically instead of on every frame.
+        public int Score;
+        public int Deaths;
 
         public PlanePacket(BitBuffer data)
         {
@@ -484,7 +485,8 @@ namespace PolyPlane.Net
             IsDamaged = obj.IsDisabled;
             Health = obj.Health;
             FiringBurst = obj.FiringBurst;
-            Kills = obj.Kills;
+            Score = obj.Kills;
+            Deaths = obj.Deaths;
         }
 
         public PlanePacket(FighterPlane obj, PacketTypes type) : base(obj, type)
@@ -493,7 +495,8 @@ namespace PolyPlane.Net
             IsDamaged = obj.IsDisabled;
             Health = obj.Health;
             FiringBurst = obj.FiringBurst;
-            Kills = obj.Kills;
+            Score = obj.Kills;
+            Deaths = obj.Deaths;
         }
 
         public virtual void SyncObj(FighterPlane obj)
@@ -503,7 +506,8 @@ namespace PolyPlane.Net
             obj.IsDisabled = IsDamaged;
             obj.FiringBurst = FiringBurst;
             obj.Health = Health;
-            obj.Kills = Kills;
+            obj.Kills = Score;
+            obj.Deaths = Deaths;
         }
 
         public override void Serialize(BitBuffer data)
@@ -514,7 +518,8 @@ namespace PolyPlane.Net
             data.AddBool(IsDamaged);
             data.AddBool(FiringBurst);
             data.AddInt(Health);
-            data.AddInt(Kills);
+            data.AddInt(Score);
+            data.AddInt(Deaths);
         }
 
         public override void Deserialize(BitBuffer data)
@@ -525,7 +530,8 @@ namespace PolyPlane.Net
             IsDamaged = data.ReadBool();
             FiringBurst = data.ReadBool();
             Health = data.ReadInt();
-            Kills = data.ReadInt();
+            Score = data.ReadInt();
+            Deaths = data.ReadInt();
         }
     }
 
