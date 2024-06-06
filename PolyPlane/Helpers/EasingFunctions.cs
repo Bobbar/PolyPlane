@@ -2,6 +2,17 @@
 {
     public static class EasingFunctions
     {
+        public static float EaseInOutBack(float k)
+        {
+            const float c1 = 1.70158f;
+            const float c2 = c1 * 1.525f;
+
+            return k < 0.5
+              ? (float)(Math.Pow(2f * k, 2f) * ((c2 + 1f) * 2f * k - c2)) / 2f
+              : (float)(Math.Pow(2f * k - 2f, 2f) * ((c2 + 1f) * (k * 2f - 2f) + c2) + 2f) / 2f;
+        }
+
+
         public static float EaseOutQuintic(float k)
         {
             return 1f + ((k -= 1f) * (float)Math.Pow(k, 4));

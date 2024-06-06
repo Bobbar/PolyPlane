@@ -42,7 +42,6 @@ namespace PolyPlane
         private GameTimer _decoyTimer = new GameTimer(0.25f, true);
         private GameTimer _playerBurstTimer = new GameTimer(0.25f, true);
         private GameTimer _playerResetTimer = new GameTimer(15f);
-        private int _aiPlaneViewID = -1;
 
         private Stopwatch _timer = new Stopwatch();
         private TimeSpan _updateTime = new TimeSpan();
@@ -139,7 +138,7 @@ namespace PolyPlane
 
         private void EnableRespawn()
         {
-            if (World.ViewID.Equals(_playerPlane.ID))
+            if (World.ViewPlaneID.Equals(_playerPlane.ID))
                 _render.NewHudMessage("Press 'R' to respawn.", D2DColor.Green);
 
             _canRespawn = true;
@@ -266,7 +265,7 @@ namespace PolyPlane
                     this.Invoke(() => HandleNewImpact(sender, e));
                 else
                 {
-                    var viewPlane = GetViewPlane();
+                    var viewPlane = World.GetViewPlane();
 
                     if (viewPlane != null)
                     {
@@ -387,9 +386,6 @@ namespace PolyPlane
             _playerResetTimer.Stop();
             _canRespawn = false;
             _render.ClearHudMessage();
-
-            if (!_playerPlane.IsAI)
-                _aiPlaneViewID = _playerPlane.PlayerID;
         }
 
         private void TargetLockedWithMissile()
@@ -494,8 +490,7 @@ namespace PolyPlane
             _objs.SyncAll();
             ProcessQueuedEvents();
 
-            FighterPlane viewPlane = GetViewPlane();
-            World.ViewID = viewPlane.ID;
+            var viewPlane = World.GetViewPlane();
 
             _timer.Restart();
 
@@ -643,29 +638,17 @@ namespace PolyPlane
                 _playerPlane.DroppingDecoy = false;
         }
 
-        private FighterPlane GetViewPlane()
-        {
-            var idPlane = _objs.GetPlaneByPlayerID(_aiPlaneViewID);
-
-            if (idPlane != null)
-            {
-                return idPlane;
-            }
-            else
-                return _playerPlane;
-        }
-
         private void ProcessQueuedEvents()
         {
             if (_queueNextViewId)
             {
-                _aiPlaneViewID = GetNextAIID();
+                World.NextViewPlane();
                 _queueNextViewId = false;
             }
 
             if (_queuePrevViewId)
             {
-                _aiPlaneViewID = GetPrevAIID();
+                World.PrevViewPlane();
                 _queuePrevViewId = false;
             }
 
@@ -795,54 +778,6 @@ namespace PolyPlane
         private void SendPlayerReset()
         {
             _netMan.SendPlaneReset(_playerPlane);
-        }
-
-        private int GetNextAIID()
-        {
-            if (_aiPlaneViewID == -1 && _objs.Planes.Count > 0)
-                return _objs.Planes.First().ID.PlayerID;
-
-
-            int nextId = -1;
-            for (int i = 0; i < _objs.Planes.Count; i++)
-            {
-                var plane = _objs.Planes[i];
-
-                if (plane.ID.PlayerID == _aiPlaneViewID && i + 1 < _objs.Planes.Count)
-                {
-                    nextId = _objs.Planes[i + 1].ID.PlayerID;
-                }
-                else if (plane.ID.PlayerID == _aiPlaneViewID && i + 1 >= _objs.Planes.Count)
-                {
-                    nextId = 0;
-                }
-            }
-
-            return nextId;
-        }
-
-        private int GetPrevAIID()
-        {
-            if (_aiPlaneViewID == -1 && _objs.Planes.Count > 0)
-                return _objs.Planes.Last().ID.PlayerID;
-
-            int nextId = -1;
-
-            for (int i = 0; i < _objs.Planes.Count; i++)
-            {
-                var plane = _objs.Planes[i];
-
-                if (plane.ID.PlayerID == _aiPlaneViewID && i - 1 >= 0)
-                {
-                    nextId = _objs.Planes[i - 1].ID.PlayerID;
-                }
-                else if (plane.ID.PlayerID == _aiPlaneViewID && i - 1 <= 0)
-                {
-                    nextId = _objs.Planes.Last().ID.PlayerID;
-                }
-            }
-
-            return nextId;
         }
 
         private void PolyPlaneUI_KeyPress(object sender, KeyPressEventArgs e)
@@ -999,7 +934,7 @@ namespace PolyPlane
                     break;
 
                 case (char)8: //Backspace
-                    _aiPlaneViewID = _playerPlane.PlayerID;
+                    World.ViewPlaneID = _playerPlane.ID;
                     break;
 
                 case ' ':

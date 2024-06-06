@@ -64,7 +64,6 @@ namespace PolyPlane.Server
 
         private bool _queueNextViewId = false;
         private bool _queuePrevViewId = false;
-        private int _aiPlaneViewID = -1;
         private BindingList<NetPlayer> _currentPlayers = new BindingList<NetPlayer>();
 
         private Form _viewPort = null;
@@ -293,7 +292,7 @@ namespace PolyPlane.Server
 
             ProcessObjQueue();
 
-            FighterPlane viewPlane = GetViewPlane();
+            FighterPlane viewPlane = World.GetViewPlane();
 
             // Update/advance objects.
             if (!_isPaused)
@@ -419,32 +418,19 @@ namespace PolyPlane.Server
             plane.FixPlane();
         }
 
-        private FighterPlane GetViewPlane()
-        {
-            var idPlane = _objs.GetPlaneByPlayerID(_aiPlaneViewID);
-
-            if (idPlane != null)
-            {
-                World.ViewID = idPlane.ID;
-                return idPlane;
-            }
-            else
-                return null;
-        }
-
         private void ProcessObjQueue()
         {
             _objs.SyncAll();
 
             if (_queueNextViewId)
             {
-                _aiPlaneViewID = GetNextAIID();
+                World.NextViewPlane();
                 _queueNextViewId = false;
             }
 
             if (_queuePrevViewId)
             {
-                _aiPlaneViewID = GetPrevAIID();
+                World.PrevViewPlane();
                 _queuePrevViewId = false;
             }
 
@@ -546,7 +532,6 @@ namespace PolyPlane.Server
 
             return aiPlane;
         }
-
 
         private void SpawnAIPlane()
         {
@@ -677,54 +662,6 @@ namespace PolyPlane.Server
             _sentSmooth.Add((sentDiff / elap.TotalSeconds) / 100000f);
             _recSmooth.Add((recDiff / elap.TotalSeconds) / 100000f);
             _bwTimer.Restart();
-        }
-
-        private int GetNextAIID()
-        {
-            if (_aiPlaneViewID == -1 && _objs.Planes.Count > 0)
-                return _objs.Planes.First().ID.PlayerID;
-
-
-            int nextId = -1;
-            for (int i = 0; i < _objs.Planes.Count; i++)
-            {
-                var plane = _objs.Planes[i];
-
-                if (plane.ID.PlayerID == _aiPlaneViewID && i + 1 < _objs.Planes.Count)
-                {
-                    nextId = _objs.Planes[i + 1].ID.PlayerID;
-                }
-                else if (plane.ID.PlayerID == _aiPlaneViewID && i + 1 >= _objs.Planes.Count)
-                {
-                    nextId = 0;
-                }
-            }
-
-            return nextId;
-        }
-
-        private int GetPrevAIID()
-        {
-            if (_aiPlaneViewID == -1 && _objs.Planes.Count > 0)
-                return _objs.Planes.Last().ID.PlayerID;
-
-            int nextId = -1;
-
-            for (int i = 0; i < _objs.Planes.Count; i++)
-            {
-                var plane = _objs.Planes[i];
-
-                if (plane.ID.PlayerID == _aiPlaneViewID && i - 1 >= 0)
-                {
-                    nextId = _objs.Planes[i - 1].ID.PlayerID;
-                }
-                else if (plane.ID.PlayerID == _aiPlaneViewID && i - 1 <= 0)
-                {
-                    nextId = _objs.Planes.Last().ID.PlayerID;
-                }
-            }
-
-            return nextId;
         }
 
         private void InitViewPort()

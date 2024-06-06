@@ -45,6 +45,7 @@ namespace PolyPlane.Rendering
         private D2DColor _hudMessageColor = D2DColor.Red;
         private GameTimer _hudMessageTimeout = new GameTimer(10f);
         private List<EventMessage> _messageEvents = new List<EventMessage>();
+        private List<PopMessage> _popMessages = new List<PopMessage>();
 
         private readonly string _defaultFontName = "Consolas";
 
@@ -109,10 +110,18 @@ namespace PolyPlane.Rendering
                 _netMan.NewChatMessage += NetMan_NewChatMessage;
 
             _objs.PlayerKilledEvent += PlayerKilledEvent;
+            _objs.PlayerScoredEvent += PlayerScoredEvent;
             _objs.NewPlayerEvent += NewPlayerEvent;
 
             InitProceduralGenStuff();
             InitGfx();
+        }
+
+        private void PlayerScoredEvent(object? sender, PlayerScoredEventArgs e)
+        {
+            var msg = "+1 Kill!";
+            var popMsg = new PopMessage() { Message = msg, Position = new D2DPoint(this.Width / 2f, this.Height * 0.40f), TargetPlayerID = e.Player.ID };
+            _popMessages.Add(popMsg);
         }
 
         private void PlayerKilledEvent(object? sender, EventMessage e)
@@ -311,6 +320,28 @@ namespace PolyPlane.Rendering
             var fps = TimeSpan.TicksPerSecond / (float)(now - _lastRenderTime);
             _lastRenderTime = now;
             _renderFPS = fps;
+        }
+
+        private void DrawPopMessages(RenderContext ctx, D2DSize vpSize, FighterPlane viewPlane)
+        {
+           
+            for (int i = 0; i < _popMessages.Count; i++)
+            {
+                var msg = _popMessages[i];
+
+                if (msg.Displayed && msg.TargetPlayerID.Equals(viewPlane.ID))
+                {
+                    var rect = new D2DRect(msg.RenderPos, new D2DSize(200, 50));
+                    var color = Utilities.LerpColor(D2DColor.Red, D2DColor.Transparent, msg.Age / msg.LIFESPAN);
+                    ctx.Gfx.DrawTextCenter(msg.Message, color, _defaultFontName, 30f, rect);
+                }
+                else
+                {
+                    _popMessages.RemoveAt(i);
+                }
+
+                msg.UpdatePos(World.DT);
+            }
         }
 
         private void UpdateTimersAndAnims()
@@ -746,6 +777,8 @@ namespace PolyPlane.Rendering
             DrawHealthBar(ctx.Gfx, viewPlane, pos, healthBarSize);
 
             DrawMessageBox(ctx, viewportsize, viewPlane);
+
+            DrawPopMessages(ctx, viewportsize, viewPlane);
 
             ctx.Gfx.PopTransform();
         }

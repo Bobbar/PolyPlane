@@ -1,4 +1,6 @@
-﻿namespace PolyPlane.Rendering
+﻿using PolyPlane.GameObjects;
+
+namespace PolyPlane.Rendering
 {
     public class EventMessage
     {
@@ -11,6 +13,18 @@
         {
             Message = message;
             Type = type;
+        }
+    }
+
+    public class PlayerScoredEventArgs
+    {
+        public FighterPlane Player;
+        public FighterPlane Target;
+
+        public PlayerScoredEventArgs(FighterPlane player, FighterPlane target)
+        {
+            Player = player;
+            Target = target;
         }
     }
 

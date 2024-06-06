@@ -36,6 +36,7 @@ namespace PolyPlane.GameObjects
         private List<GameObject> _allObjects = new List<GameObject>();
         private List<GameObject> _expiredObjs = new List<GameObject>();
 
+        public event EventHandler<PlayerScoredEventArgs> PlayerScoredEvent;
         public event EventHandler<EventMessage> PlayerKilledEvent;
         public event EventHandler<FighterPlane> NewPlayerEvent;
 
@@ -102,6 +103,10 @@ namespace PolyPlane.GameObjects
                 plane.PlayerKilledCallback = HandlePlayerKilled;
 
                 NewPlayerEvent?.Invoke(this, plane);
+
+                // Add first plane as the initial view plane.
+                if (Planes.Count == 1)
+                    World.ViewPlaneID = Planes.First().ID;
             }
         }
 
@@ -283,6 +288,8 @@ namespace PolyPlane.GameObjects
 
             if (impactorPlayer == null)
                 return;
+
+            PlayerScoredEvent?.Invoke(this, new PlayerScoredEventArgs(impactorPlayer, plane));
 
             if (plane.WasHeadshot)
                 PlayerKilledEvent?.Invoke(this, new EventMessage($"'{impactorPlayer.PlayerName}' headshot '{plane.PlayerName}' with {(impactor is Bullet ? "bullets." : "a missile.")}", EventType.Kill));

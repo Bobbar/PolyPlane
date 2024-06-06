@@ -129,7 +129,7 @@ namespace PolyPlane
         public static int CurrentObjId = 0;
         public static int CurrentPlayerId = 1000;
 
-        public static GameID ViewID;
+        public static GameID ViewPlaneID;
 
         public static double ServerTimeOffset
         {
@@ -223,8 +223,82 @@ namespace PolyPlane
         {
             var now = DateTimeOffset.Now.ToUnixTimeMilliseconds() + ServerTimeOffset;
             return (long)Math.Floor(now);
+        }
 
+        public static FighterPlane GetViewPlane()
+        {
+            var plane = ObjectManager.GetPlaneByPlayerID(ViewPlaneID.PlayerID);
+            return plane;
+        }
 
+        public static void NextViewPlane()
+        {
+            lock (ObjectManager)
+            {
+                var nextId = GetNextViewID();
+                var plane = ObjectManager.GetPlaneByPlayerID(nextId);
+
+                if (plane != null)
+                    ViewPlaneID = plane.ID;
+            }
+        }
+
+        public static void PrevViewPlane()
+        {
+            lock (ObjectManager)
+            {
+                var prevId = GetPrevViewID();
+                var plane = ObjectManager.GetPlaneByPlayerID(prevId);
+
+                if (plane != null)
+                    ViewPlaneID = plane.ID;
+            }
+        }
+
+        private static int GetNextViewID()
+        {
+            if (ViewPlaneID.PlayerID == -1 && ObjectManager.Planes.Count > 0)
+                return ObjectManager.Planes.First().ID.PlayerID;
+
+            int nextId = -1;
+            for (int i = 0; i < ObjectManager.Planes.Count; i++)
+            {
+                var plane = ObjectManager.Planes[i];
+
+                if (plane.ID.PlayerID == ViewPlaneID.PlayerID && i + 1 < ObjectManager.Planes.Count)
+                {
+                    nextId = ObjectManager.Planes[i + 1].ID.PlayerID;
+                }
+                else if (plane.ID.PlayerID == ViewPlaneID.PlayerID && i + 1 >= ObjectManager.Planes.Count)
+                {
+                    nextId = ObjectManager.Planes.First().PlayerID;
+                }
+            }
+
+            return nextId;
+        }
+
+        private static int GetPrevViewID()
+        {
+            if (ViewPlaneID.PlayerID == -1 && ObjectManager.Planes.Count > 0)
+                return ObjectManager.Planes.Last().ID.PlayerID;
+
+            int nextId = -1;
+            for (int i = 0; i < ObjectManager.Planes.Count; i++)
+            {
+                var plane = ObjectManager.Planes[i];
+
+                if (plane.ID.PlayerID == ViewPlaneID.PlayerID && i - 1 >= 0)
+                {
+                    nextId = ObjectManager.Planes[i - 1].ID.PlayerID;
+                }
+                else if (plane.ID.PlayerID == ViewPlaneID.PlayerID && i - 1 <= 0)
+                {
+                    nextId = ObjectManager.Planes.Last().ID.PlayerID;
+                }
+            }
+
+            return nextId;
         }
     }
 }

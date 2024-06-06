@@ -379,7 +379,7 @@ namespace PolyPlane.GameObjects
         public void DrawVeloLines(D2DGraphics gfx)
         {
             var dt = World.DT;
-            var plane = World.ObjectManager.GetObjectByID(World.ViewID);
+            var plane = World.GetViewPlane();
 
             if (plane == null)
                 return;
