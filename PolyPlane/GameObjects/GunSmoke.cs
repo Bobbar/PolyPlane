@@ -1,30 +1,32 @@
-﻿using PolyPlane.Helpers;
-using PolyPlane.Rendering;
+﻿using PolyPlane.Rendering;
+using PolyPlane.Helpers;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Vapor : GameObject
+    public class GunSmoke : GameObject
     {
         private FixturePoint _refPos;
-        private List<VaporPart> _parts = new List<VaporPart>();
+        private List<SmokePart> _parts = new List<SmokePart>();
         private GameTimer _spawnTimer = new GameTimer(0.05f, true);
         private float _radius = 5f;
-        private D2DColor _vaporColor = new D2DColor(0.3f, D2DColor.White);
-        private const int MAX_PARTS = 30;
+        private D2DColor _smokeColor = new D2DColor(0.3f, D2DColor.White);
+        private const int MAX_PARTS = 20;
         private const float MAX_AGE = 1f;
-        private float _visibleGs = 0f;
-        private float _maxGs = 0f;
 
-        public Vapor(GameObject obj, GameObject owner, D2DPoint offset, float radius, float visibleGs, float maxGs)
+        public GunSmoke(GameObject obj, D2DPoint offset, float radius, D2DColor color)
         {
+            _smokeColor = color;
             _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
 
-            this.Owner = owner;
+            this.Owner = obj;
             _refPos = new FixturePoint(obj, offset);
             _radius = radius;
-            _visibleGs = visibleGs;
-            _maxGs = maxGs;
 
             _spawnTimer.TriggerCallback = () => SpawnPart();
             _spawnTimer.Start();
@@ -40,7 +42,6 @@ namespace PolyPlane.GameObjects
             {
                 _refPos.Update(dt, renderScale);
                 this.Position = _refPos.Position;
-                this.Velocity = _refPos.Velocity;
             }
 
             if (this.Owner != null && this.Owner.IsExpired)
@@ -55,41 +56,28 @@ namespace PolyPlane.GameObjects
             base.Render(ctx);
 
             foreach (var part in _parts)
-            {
-                // Let the parts move away from the source slightly before rendering.
-                if (part.Age > 0.2f)
-                    part.Render(ctx);
-            }
+                part.Render(ctx);
         }
 
         private void SpawnPart()
         {
+            if (!this.Visible)
+                return;
+
             D2DPoint newPos = this.Position;
 
             if (_refPos != null)
                 newPos = _refPos.Position;
 
             D2DPoint newVelo = this.Velocity;
-            float gforce = 0f;
 
             if (this.Owner != null)
-            {
-                if (this.Owner is FighterPlane plane)
-                    gforce = plane.GForce;
-            }
-
-            var gVisFact = Utilities.Factor(gforce - _visibleGs, _visibleGs);
-
-            if (gVisFact < 0.001f)
-                return;
-
-            var gFact = Utilities.Factor(gforce, _maxGs);
-            var newRad = _radius + Utilities.Rnd.NextFloat(-2f, 2f) + (gFact * 14f);
-            var newColor = _vaporColor;
-            newColor.a = newColor.a * gVisFact;
-
+                newVelo = this.Owner.Velocity;
+            
+            var newRad = _radius + Utilities.Rnd.NextFloat(-2f, 2f);
+            var newColor = _smokeColor;
             var newEllipse = new D2DEllipse(newPos, new D2DSize(newRad, newRad));
-            var newPart = new VaporPart(newEllipse, newColor, newVelo);
+            var newPart = new SmokePart(newEllipse, newColor, newVelo);
 
             if (_parts.Count < MAX_PARTS)
                 _parts.Add(newPart);
@@ -109,8 +97,9 @@ namespace PolyPlane.GameObjects
                 part.Update(dt, renderScale);
 
                 var ageFact = 1f - Utilities.Factor(part.Age, MAX_AGE);
-                var rad = (part.InitRadius * ageFact) + 2f;
-                part.Radius = rad;
+                var alpha = _smokeColor.a * ageFact;
+
+                part.Color = new D2DColor(alpha, _smokeColor);
 
                 if (part.Age > MAX_AGE)
                     _parts.RemoveAt(i);
@@ -120,12 +109,11 @@ namespace PolyPlane.GameObjects
         }
 
 
-        private class VaporPart : GameObject
+        private class SmokePart : GameObject
         {
             public D2DColor Color;
 
             public float InitRadius = 0f;
-
             public float Radius
             {
                 get
@@ -142,7 +130,7 @@ namespace PolyPlane.GameObjects
 
             private D2DEllipse _ellipse;
 
-            public VaporPart(D2DEllipse ellipse, D2DColor color, D2DPoint velo) : base(ellipse.origin, velo)
+            public SmokePart(D2DEllipse ellipse, D2DColor color, D2DPoint velo) : base(ellipse.origin, velo)
             {
                 _ellipse = ellipse;
                 InitRadius = this.Radius;
@@ -153,7 +141,7 @@ namespace PolyPlane.GameObjects
             {
                 base.Update(dt, renderScale);
 
-                this.Velocity += -this.Velocity * (dt * 2f);
+                this.Velocity += -this.Velocity * (dt * 3f);
 
                 _ellipse.origin = this.Position;
             }
@@ -165,5 +153,6 @@ namespace PolyPlane.GameObjects
                 ctx.FillEllipse(_ellipse, Color);
             }
         }
+
     }
 }

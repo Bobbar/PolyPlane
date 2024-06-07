@@ -76,7 +76,7 @@ namespace PolyPlane.GameObjects
         public Action<FighterPlane, GameObject> PlayerKilledCallback { get; set; }
         public Action<FighterPlane> PlayerCrashedCallback { get; set; }
 
-       
+
         public List<Wing> Wings = new List<Wing>();
 
         private Wing? _controlWing = null;
@@ -117,9 +117,8 @@ namespace PolyPlane.GameObjects
         private D2DColor _cockpitColor = new D2DColor(0.5f, D2DColor.LightBlue);
         private SmokeTrail _contrail;
         private List<BulletHole> _bulletHoles = new List<BulletHole>();
-        private const float VAPOR_TRAIL_GS = 15f; // How many Gs before showing vapor trail.
         private List<Vapor> _vaporTrails = new List<Vapor>();
-        private Vapor _gunSmoke;
+        private GunSmoke _gunSmoke;
 
         private IAIBehavior _aiBehavior;
 
@@ -204,7 +203,7 @@ namespace PolyPlane.GameObjects
             _flamePos = new FixturePoint(this, new D2DPoint(-38f, 1f));
             _gunPosition = new FixturePoint(this, new D2DPoint(35f, 0));
             _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
-            _gunSmoke = new Vapor(_gunPosition, D2DPoint.Zero, 8f, new D2DColor(0.7f, D2DColor.BurlyWood));
+            _gunSmoke = new GunSmoke(_gunPosition, D2DPoint.Zero, 8f, new D2DColor(0.7f, D2DColor.BurlyWood));
 
             _flamePos.IsNetObject = this.IsNetObject;
             _gunPosition.IsNetObject = this.IsNetObject;
@@ -437,10 +436,6 @@ namespace PolyPlane.GameObjects
 
             this.Radar?.Update(dt, renderScale);
 
-            if (GForce > VAPOR_TRAIL_GS)
-                _vaporTrails.ForEach(v => v.Visible = true);
-            else
-                _vaporTrails.ForEach(v => v.Visible = false);
 
             if (this.FiringBurst && this.NumBullets > 0 && !this.IsDisabled)
                 _gunSmoke.Visible = true;
@@ -511,8 +506,8 @@ namespace PolyPlane.GameObjects
                     ctx.Gfx.PushTransform();
                     ctx.Gfx.RotateTransform(flame.Rotation, flame.Position);
 
-                        ctx.Gfx.FillEllipse(new D2DEllipse(flame.Position, outsideSz), D2DColor.Gray);
-                        ctx.Gfx.FillEllipse(new D2DEllipse(flame.Position, flame.HoleSize), D2DColor.Black);
+                    ctx.Gfx.FillEllipse(new D2DEllipse(flame.Position, outsideSz), D2DColor.Gray);
+                    ctx.Gfx.FillEllipse(new D2DEllipse(flame.Position, flame.HoleSize), D2DColor.Black);
 
                     ctx.Gfx.PopTransform();
                 }
@@ -614,7 +609,10 @@ namespace PolyPlane.GameObjects
             if (isControl && _controlWing == null)
                 _controlWing = wing;
 
-            _vaporTrails.Add(new Vapor(wing, this, new D2DPoint(10f, 0f), 5f));
+            const float VAPOR_TRAIL_GS = 15f; // How many Gs before vapor trail is visible.
+            const float MAX_GS = 30f; // Gs for max vapor trail intensity.
+
+            _vaporTrails.Add(new Vapor(wing, this, new D2DPoint(10f, 0f), 8f, VAPOR_TRAIL_GS, MAX_GS));
 
             Wings.Add(wing);
         }

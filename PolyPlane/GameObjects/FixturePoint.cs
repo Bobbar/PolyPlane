@@ -26,6 +26,7 @@ namespace PolyPlane.GameObjects
         {
             this.Rotation = GameObject.Rotation;
             this.Position = Utilities.ApplyTranslation(ReferencePosition, GameObject.Rotation, GameObject.Position, renderScale);
+            this.Velocity = GameObject.Velocity;
         }
 
         public override void Render(RenderContext ctx)
