@@ -167,21 +167,21 @@ namespace PolyPlane.GameObjects
             veloMagSq *= veloFact;
 
             // Drag force.
-            var coeffDrag = 1f - (float)Math.Cos(2f * aoaRads);
+            var coeffDrag = 1f - Math.Cos(2f * aoaRads);
             var dragForce = coeffDrag * AOA_FACT * WING_AREA * 0.5f * AIR_DENSITY * veloMagSq * VELO_FACT;
             dragForce += veloMag * (WING_AREA * PARASITIC_DRAG);
 
             // Lift force.
             var aoaFact = Utilities.FactorWithEasing(MAX_AOA, Math.Abs(aoa), EasingFunctions.EaseInSine);
 
-            var coeffLift = (float)Math.Sin(2f * aoaRads) * aoaFact;
+            var coeffLift = Math.Sin(2f * aoaRads) * aoaFact;
             var liftForce = AIR_DENSITY * 0.5f * veloMagSq * WING_AREA * coeffLift;
 
             liftForce = Math.Clamp(liftForce, -MAX_LIFT, MAX_LIFT);
             dragForce = Math.Clamp(dragForce, -MAX_DRAG, MAX_DRAG);
 
-            var dragVec = -veloNorm * dragForce;
-            var liftVec = veloNormTan * liftForce;
+            var dragVec = -veloNorm * (float)dragForce;
+            var liftVec = veloNormTan * (float)liftForce;
 
             this.LiftVector = liftVec;
             this.DragVector = dragVec;
