@@ -90,7 +90,7 @@ namespace PolyPlane.GameObjects
         private GameTimer _expireTimeout = new GameTimer(15f);
         private GameTimer _isLockOntoTimeout = new GameTimer(3f);
         private GameTimer _bulletRegenTimer = new GameTimer(0.2f, true);
-        private GameTimer _decoyRegenTimer = new GameTimer(0.4f, true);
+        private GameTimer _decoyRegenTimer = new GameTimer(0.6f, true);
         private GameTimer _missileRegenTimer = new GameTimer(60f, true);
         private GameTimer _easePhysicsTimer = new GameTimer(5f, true);
         private bool _easePhysicsComplete = false;

@@ -288,6 +288,19 @@ namespace PolyPlane.Helpers
             return diff <= fov * 0.5f;
         }
 
+        public static D2DPoint RandomPointInCircle(D2DPoint pos, float radius)
+        {
+            var rndDir = Rnd.NextFloat(0f, 360f);
+            var rndLen = Rnd.NextFloat(1f, radius);
+            var pnt = AngleToVectorDegrees(rndDir, rndLen);
+            return pnt;
+        }
+
+        public static float RandomDirection()
+        {
+            return Rnd.NextFloat(0f, 360f);
+        }
+
         public static D2DPoint RandOPoint(float minMax)
         {
             return new D2DPoint(Rnd.NextFloat(-minMax, minMax), Rnd.NextFloat(-minMax, minMax));

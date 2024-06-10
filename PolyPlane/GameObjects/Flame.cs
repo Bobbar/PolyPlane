@@ -8,8 +8,8 @@ namespace PolyPlane.GameObjects
     {
         public float Radius { get; set; }
 
-        private const int MAX_PARTS = 50;
-        private const float MAX_AGE = 20f;
+        public const int MAX_PARTS = 50;
+        public const float MAX_AGE = 20f;
 
         private List<FlamePart> _parts = new List<FlamePart>();
         private D2DColor _flameColor = new D2DColor(0.6f, D2DColor.Yellow);
@@ -32,6 +32,25 @@ namespace PolyPlane.GameObjects
 
             this.Position = _refPos.Position;
             this.Rotation = _refPos.Rotation;
+
+            SpawnPart();
+        }
+
+        public Flame(GameObject obj, D2DPoint offset, D2DPoint velo, float radius = 10f) : base(obj.Position, velo)
+        {
+            _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
+
+            Radius = radius;
+            _refPos = new FixturePoint(obj, offset);
+            _refPos.Update(World.DT, World.RenderScale * obj.RenderOffset);
+
+            _spawnTimer.TriggerCallback = () => SpawnPart();
+            _spawnTimer.Start();
+
+            this.Position = _refPos.Position;
+            this.Rotation = _refPos.Rotation;
+
+            SpawnPart();
         }
 
         public Flame(GameObject obj, D2DPoint offset, bool hasFlame = true) : base(obj.Position, obj.Velocity)
@@ -51,6 +70,8 @@ namespace PolyPlane.GameObjects
 
             this.Position = _refPos.Position;
             this.Rotation = _refPos.Rotation;
+
+            SpawnPart();
         }
 
         /// <summary>
@@ -156,6 +177,10 @@ namespace PolyPlane.GameObjects
 
             private D2DEllipse _ellipse;
 
+            private const float MIN_RISE_RATE = -50f;
+            private const float MAX_RISE_RATE = -70f;
+
+
             private D2DPoint _riseRate = new D2DPoint(0f, -50f);
 
 
@@ -163,6 +188,8 @@ namespace PolyPlane.GameObjects
             {
                 _ellipse = ellipse;
                 Color = color;
+
+                _riseRate = new D2DPoint(0f, Utilities.Rnd.NextFloat(MAX_RISE_RATE, MIN_RISE_RATE));
             }
 
             public FlamePart(D2DEllipse ellipse, D2DColor color, D2DColor endColor, D2DPoint velo) : base(ellipse.origin, velo)
@@ -170,6 +197,8 @@ namespace PolyPlane.GameObjects
                 _ellipse = ellipse;
                 Color = color;
                 EndColor = endColor;
+
+                _riseRate = new D2DPoint(0f, Utilities.Rnd.NextFloat(MAX_RISE_RATE, MIN_RISE_RATE));
             }
 
             public override void Update(float dt, float renderScale)

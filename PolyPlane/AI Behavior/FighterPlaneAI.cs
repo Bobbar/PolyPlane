@@ -26,7 +26,8 @@ namespace PolyPlane.AI_Behavior
         private float MIN_MISSILE_TIME = 40f;
         private float MAX_MISSILE_TIME = 80f;
         private float MAX_SPEED = 1000f;
-        private float RUN_DISTANCE = 30000f; // How close before cowardly AI runs away.
+        private readonly float RUN_DISTANCE = 30000f; // How close before cowardly AI runs away.
+        private readonly float MAX_DECOY_DIST = 10000f; // Max distance between missile and plane before dropping decoys.
 
         public FighterPlaneAI(FighterPlane plane)
         {
@@ -198,9 +199,12 @@ namespace PolyPlane.AI_Behavior
                 return;
             else
             {
-                if (!_dropDecoysTimer.IsRunning)
+                if (DefendingMissile.Position.DistanceTo(this.Plane.Position) < MAX_DECOY_DIST)
                 {
-                    _dropDecoysTimer.Restart();
+                    if (!_dropDecoysTimer.IsRunning)
+                    {
+                        _dropDecoysTimer.Restart();
+                    }
                 }
             }
         }

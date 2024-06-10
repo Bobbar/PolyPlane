@@ -196,7 +196,7 @@ namespace PolyPlane
 
                         _client.PeerTimeoutEvent += Client_PeerTimeoutEvent;
                         _client.PeerDisconnectedEvent += Client_PeerDisconnectedEvent;
-                       
+
 
                         _client.Start();
 
@@ -240,7 +240,7 @@ namespace PolyPlane
             return result;
         }
 
-    
+
 
 
         /// <summary>
@@ -415,6 +415,9 @@ namespace PolyPlane
             _playerResetTimer.Stop();
             _canRespawn = false;
             _render.ClearHudMessage();
+
+            if (!_playerPlane.IsAI)
+                World.ViewPlaneID = _playerPlane.ID;
         }
 
         private void TargetLockedWithMissile()
@@ -998,14 +1001,14 @@ namespace PolyPlane
                 switch (e.KeyCode)
                 {
                     case Keys.Oemplus:
-                        
+
                         if (!World.IsNetGame)
                             World.DT += 0.002f;
 
                         break;
 
                     case Keys.OemMinus:
-                        
+
                         if (!World.IsNetGame)
                             World.DT -= 0.002f;
 
