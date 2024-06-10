@@ -110,9 +110,13 @@ namespace PolyPlane.Rendering
             if (_netMan != null)
                 _netMan.NewChatMessage += NetMan_NewChatMessage;
 
-            _objs.PlayerKilledEvent += PlayerKilledEvent;
+            if (!World.IsNetGame)
+            {
+                _objs.PlayerKilledEvent += PlayerKilledEvent;
+                _objs.NewPlayerEvent += NewPlayerEvent;
+            }
+
             _objs.PlayerScoredEvent += PlayerScoredEvent;
-            _objs.NewPlayerEvent += NewPlayerEvent;
 
             InitProceduralGenStuff();
             InitGfx();
@@ -280,12 +284,12 @@ namespace PolyPlane.Rendering
 
             UpdateTimersAndAnims();
 
+            _gfx.BeginRender(_clearColor);
+
             if (viewplane != null)
             {
                 var viewPortRect = new D2DRect(viewplane.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
                 _ctx.Viewport = viewPortRect;
-
-                _gfx.BeginRender(_clearColor);
 
                 _gfx.PushTransform(); // Push screen shake transform.
                 _gfx.TranslateTransform(_screenShakeTrans.X, _screenShakeTrans.Y);

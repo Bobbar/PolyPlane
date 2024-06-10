@@ -121,6 +121,26 @@ namespace PolyPlane
             }
         }
 
+        private void NetMan_PlayerEventMessage(object? sender, string e)
+        {
+            _render?.AddNewEventMessage(e, EventType.Net);
+        }
+
+        private void NetMan_PlayerJoined(object? sender, int e)
+        {
+            var playerPlane = _objs.GetPlaneByPlayerID(e);
+            if (playerPlane != null)
+            {
+                var joinMsg = $"'{playerPlane.PlayerName}' has joined.";
+                _render?.AddNewEventMessage(joinMsg, EventType.Net);
+            }
+        }
+
+        private void Objs_PlayerKilledEvent(object? sender, EventMessage e)
+        {
+            _client?.EnqueuePacket(new PlayerEventPacket(e.Message));
+        }
+
         private void Client_PeerTimeoutEvent(object? sender, ENet.Peer e)
         {
             _render.NewHudMessage("Timed out!?", D2DColor.Yellow);
@@ -169,15 +189,23 @@ namespace PolyPlane
                         _netMan.PlayerDisconnected += NetMan_PlayerDisconnected;
                         _netMan.PlayerKicked += NetMan_PlayerKicked;
                         _netMan.PlayerRespawned += NetMan_PlayerRespawned;
+                        _netMan.PlayerEventMessage += NetMan_PlayerEventMessage;
+                        _netMan.PlayerJoined += NetMan_PlayerJoined;
+
+                        _objs.PlayerKilledEvent += Objs_PlayerKilledEvent;
+
                         _client.PeerTimeoutEvent += Client_PeerTimeoutEvent;
                         _client.PeerDisconnectedEvent += Client_PeerDisconnectedEvent;
-
+                       
 
                         _client.Start();
 
                         InitGfx();
                         StartGameThread();
                         ResumeRender();
+
+                        World.ViewPlaneID = _playerPlane.ID;
+
 
                         result = true;
                         break;
@@ -212,6 +240,7 @@ namespace PolyPlane
             return result;
         }
 
+    
 
 
         /// <summary>

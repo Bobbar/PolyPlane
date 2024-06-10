@@ -798,7 +798,7 @@ namespace PolyPlane.GameObjects
             if (_isAIPlane && !_expireTimeout.IsRunning)
                 _expireTimeout.Restart();
 
-            if (Health > 0)
+            if (!IsDisabled)
             {
                 PlayerCrashedCallback?.Invoke(this);
                 Deaths++;

@@ -102,6 +102,11 @@ namespace PolyPlane
         public static bool ExpireMissilesOnMiss = false;
         public static bool IsNetGame = false;
         public static bool IsServer = false;
+        public static bool IsClient
+        {
+            get { return World.IsNetGame && !World.IsServer; }
+        }
+
         public static bool RespawnAIPlanes = true;
         public static bool GunsOnly = false;
 

@@ -60,7 +60,8 @@ namespace PolyPlane.Net.NetHost
                 or PacketTypes.NewMissile
                 or PacketTypes.Impact
                 or PacketTypes.PlayerDisconnect
-                or PacketTypes.PlayerReset:
+                or PacketTypes.PlayerReset
+                or PacketTypes.PlayerEvent:
 
                     // Queue certain updates to re-broadcast ASAP.
                     PacketSendQueue.Enqueue(netPackett);

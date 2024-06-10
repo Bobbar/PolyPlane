@@ -111,6 +111,11 @@ namespace PolyPlane.Net
                 case PacketTypes.BulletList or PacketTypes.DecoyList:
                     obj = new GameObjectListPacket(data);
                     break;
+
+                case PacketTypes.PlayerEvent:
+                    obj = new PlayerEventPacket(data);
+                    break;
+
             }
 
             data.Clear();

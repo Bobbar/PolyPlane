@@ -137,6 +137,7 @@ namespace PolyPlane.Server
                 _netMan.PlayerJoined += NetMan_PlayerJoined;
                 _netMan.PlayerRespawned += NetMan_PlayerRespawned;
                 _netMan.NewChatMessage += NetMan_NewChatMessage;
+                _netMan.PlayerEventMessage += NetMan_PlayerEventMessage;
 
                 _objs.PlayerKilledEvent += PlayerKilledEvent;
                 _objs.NewPlayerEvent += NewPlayerEvent;
@@ -158,6 +159,11 @@ namespace PolyPlane.Server
             }
         }
 
+        private void NetMan_PlayerEventMessage(object? sender, string e)
+        {
+            AddNewEventMessage(e);
+        }
+
         private void NetMan_PlayerRespawned(object? sender, FighterPlane e)
         {
             AddNewEventMessage($"'{e.PlayerName}' has respawned.");
@@ -165,12 +171,17 @@ namespace PolyPlane.Server
 
         private void NewPlayerEvent(object? sender, FighterPlane e)
         {
-            AddNewEventMessage($"'{e.PlayerName}' has joined.");
+            var joinMsg = $"'{e.PlayerName}' has joined.";
+            AddNewEventMessage(joinMsg);
+
+            _server.EnqueuePacket(new PlayerEventPacket(joinMsg));
         }
 
         private void PlayerKilledEvent(object? sender, EventMessage e)
         {
             AddNewEventMessage(e.Message);
+
+            _server.EnqueuePacket(new PlayerEventPacket(e.Message));
         }
 
         private void NetMan_NewChatMessage(object? sender, ChatPacket e)
@@ -198,7 +209,12 @@ namespace PolyPlane.Server
                     }
 
                     _currentPlayers.Add(netPlayer);
+
+                    var joinMsg = $"'{playerPlane.PlayerName}' has joined.";
+                    AddNewEventMessage(joinMsg);
+                    _server.EnqueuePacket(new PlayerEventPacket(joinMsg));
                 }
+
             }
         }
 

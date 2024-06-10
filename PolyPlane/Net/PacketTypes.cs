@@ -21,7 +21,8 @@
         KickPlayer,
         ImpactList,
         BulletList,
-        DecoyList
+        DecoyList,
+        PlayerEvent
 
     }
 }

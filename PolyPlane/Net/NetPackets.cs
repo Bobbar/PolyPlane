@@ -81,6 +81,35 @@ namespace PolyPlane.Net
         }
     }
 
+    public class PlayerEventPacket : NetPacket
+    {
+        public string Message;
+
+        public PlayerEventPacket(string message)
+        {
+            Message = message;
+            Type = PacketTypes.PlayerEvent;
+        }
+
+        public PlayerEventPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
+
+        public override void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+
+            data.AddString(Message);
+        }
+
+        public override void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+
+            Message = data.ReadString();
+        }
+    }
 
     public class DiscoveryPacket : NetPacket
     {
@@ -434,10 +463,10 @@ namespace PolyPlane.Net
         public GameObjectListPacket(PacketTypes type) : base(type) { }
 
         public GameObjectListPacket() : base() { }
-        
+
         public GameObjectListPacket(List<GameObjectPacket> packets)
         {
-           Packets = packets;
+            Packets = packets;
         }
 
         public GameObjectListPacket(BitBuffer data)
@@ -468,7 +497,7 @@ namespace PolyPlane.Net
     public class PlanePacket : GameObjectPacket
     {
         public float Deflection;
-        public bool IsDamaged;
+        public bool IsDisabled;
         public bool FiringBurst;
         public int Health; // TODO: Maybe send these stats periodically instead of on every frame.
         public int Score;
@@ -482,7 +511,7 @@ namespace PolyPlane.Net
         public PlanePacket(FighterPlane obj) : base(obj)
         {
             Deflection = obj.Deflection;
-            IsDamaged = obj.IsDisabled;
+            IsDisabled = obj.IsDisabled;
             Health = obj.Health;
             FiringBurst = obj.FiringBurst;
             Score = obj.Kills;
@@ -492,7 +521,7 @@ namespace PolyPlane.Net
         public PlanePacket(FighterPlane obj, PacketTypes type) : base(obj, type)
         {
             Deflection = obj.Deflection;
-            IsDamaged = obj.IsDisabled;
+            IsDisabled = obj.IsDisabled;
             Health = obj.Health;
             FiringBurst = obj.FiringBurst;
             Score = obj.Kills;
@@ -503,7 +532,7 @@ namespace PolyPlane.Net
         {
             base.SyncObj(obj);
             obj.Deflection = Deflection;
-            obj.IsDisabled = IsDamaged;
+            obj.IsDisabled = IsDisabled;
             obj.FiringBurst = FiringBurst;
             obj.Health = Health;
             obj.Kills = Score;
@@ -515,7 +544,7 @@ namespace PolyPlane.Net
             base.Serialize(data);
 
             data.AddFloat(Deflection);
-            data.AddBool(IsDamaged);
+            data.AddBool(IsDisabled);
             data.AddBool(FiringBurst);
             data.AddInt(Health);
             data.AddInt(Score);
@@ -527,7 +556,7 @@ namespace PolyPlane.Net
             base.Deserialize(data);
 
             Deflection = data.ReadFloat();
-            IsDamaged = data.ReadBool();
+            IsDisabled = data.ReadBool();
             FiringBurst = data.ReadBool();
             Health = data.ReadInt();
             Score = data.ReadInt();

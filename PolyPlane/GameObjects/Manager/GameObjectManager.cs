@@ -103,7 +103,8 @@ namespace PolyPlane.GameObjects
                 plane.PlayerKilledCallback = HandlePlayerKilled;
                 plane.PlayerCrashedCallback = HandlePlayerCrashed;
 
-                NewPlayerEvent?.Invoke(this, plane);
+                if (plane.IsAI)
+                    NewPlayerEvent?.Invoke(this, plane);
 
                 // Add first plane as the initial view plane.
                 if (Planes.Count == 1)
@@ -249,6 +250,8 @@ namespace PolyPlane.GameObjects
                 _objLookup.Remove(obj.ID.GetHashCode());
                 obj.ID = id;
                 _objLookup.Add(id.GetHashCode(), obj);
+
+                World.ViewPlaneID = obj.ID;
             }
         }
 
@@ -292,11 +295,14 @@ namespace PolyPlane.GameObjects
 
             PlayerScoredEvent?.Invoke(this, new PlayerScoredEventArgs(impactorPlayer, plane));
 
-            if (plane.WasHeadshot)
-                PlayerKilledEvent?.Invoke(this, new EventMessage($"'{impactorPlayer.PlayerName}' headshot '{plane.PlayerName}' with {(impactor is Bullet ? "bullets." : "a missile.")}", EventType.Kill));
-            else
-                PlayerKilledEvent?.Invoke(this, new EventMessage($"'{impactorPlayer.PlayerName}' destroyed '{plane.PlayerName}' with {(impactor is Bullet ? "bullets." : "a missile.")}", EventType.Kill));
-
+           
+            if (!World.IsClient)
+            {
+                if (plane.WasHeadshot)
+                    PlayerKilledEvent?.Invoke(this, new EventMessage($"'{impactorPlayer.PlayerName}' headshot '{plane.PlayerName}' with {(impactor is Bullet ? "bullets." : "a missile.")}", EventType.Kill));
+                else
+                    PlayerKilledEvent?.Invoke(this, new EventMessage($"'{impactorPlayer.PlayerName}' destroyed '{plane.PlayerName}' with {(impactor is Bullet ? "bullets." : "a missile.")}", EventType.Kill));
+            }
         }
 
         private void HandlePlayerCrashed(FighterPlane plane)

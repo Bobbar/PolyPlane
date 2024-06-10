@@ -27,6 +27,7 @@ namespace PolyPlane.Net
         public event EventHandler<int> PlayerDisconnected;
         public event EventHandler<int> PlayerJoined;
         public event EventHandler<FighterPlane> PlayerRespawned;
+        public event EventHandler<string> PlayerEventMessage;
 
         public NetEventManager(NetPlayHost host, FighterPlane playerPlane)
         {
@@ -313,6 +314,16 @@ namespace PolyPlane.Net
                                 _objs.AddDecoy(decoy);
                             }
                         });
+                    }
+
+                    break;
+
+                case PacketTypes.PlayerEvent:
+                    var eventPacket = packet as PlayerEventPacket;
+
+                    if (eventPacket != null)
+                    {
+                        PlayerEventMessage?.Invoke(this, eventPacket.Message);
                     }
 
                     break;
