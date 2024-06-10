@@ -18,6 +18,11 @@
             return 1f + ((k -= 1f) * (float)Math.Pow(k, 4));
         }
 
+        public static float EaseOutCirc(float k)
+        {
+            return (float)Math.Sqrt(1f - Math.Pow(k - 1f, 2f));
+        }
+
         public static float EaseInQuintic(float k)
         {
             return k * k * k * k * k;
@@ -36,6 +41,11 @@
         public static float EaseInSine(float k)
         {
             return 1f - (float)Math.Cos((k * Math.PI) / 2f);
+        }
+
+        public static float EaseOutSine(float k)
+        {
+            return (float)Math.Sin((k * Math.PI) / 2f);
         }
 
         public static float EaseOutElastic(float k)

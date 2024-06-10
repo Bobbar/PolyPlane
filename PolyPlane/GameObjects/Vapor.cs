@@ -109,7 +109,9 @@ namespace PolyPlane.GameObjects
                 part.Update(dt, renderScale);
 
                 var ageFact = 1f - Utilities.Factor(part.Age, MAX_AGE);
-                var rad = (part.InitRadius * ageFact) + 2f;
+                var radAmt = EasingFunctions.EaseOutSine(ageFact);
+                var rad = (part.InitRadius * radAmt) + 0f;
+
                 part.Radius = rad;
 
                 if (part.Age > MAX_AGE)

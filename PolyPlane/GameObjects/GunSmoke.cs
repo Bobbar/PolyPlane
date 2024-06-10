@@ -49,6 +49,10 @@ namespace PolyPlane.GameObjects
 
             if (_parts.Count == 0 && !_spawnTimer.IsRunning)
                 this.IsExpired = true;
+
+            // Add regular "puffs" to the smoke trail while firing.
+            if (this.CurrentFrame % 10 == 0)
+                AddPuff();
         }
 
         public override void Render(RenderContext ctx)
@@ -57,6 +61,14 @@ namespace PolyPlane.GameObjects
 
             foreach (var part in _parts)
                 part.Render(ctx);
+        }
+
+        private void AddPuff()
+        {
+            if (_parts.Count == 0)
+                return;
+
+            _parts.Last().Radius = _radius + 7f;
         }
 
         private void SpawnPart()
@@ -75,6 +87,10 @@ namespace PolyPlane.GameObjects
                 newVelo = this.Owner.Velocity;
             
             var newRad = _radius + Utilities.Rnd.NextFloat(-2f, 2f);
+
+            //if (this.CurrentFrame % 10 == 0)
+            //    newRad += 10f;
+
             var newColor = _smokeColor;
             var newEllipse = new D2DEllipse(newPos, new D2DSize(newRad, newRad));
             var newPart = new SmokePart(newEllipse, newColor, newVelo);

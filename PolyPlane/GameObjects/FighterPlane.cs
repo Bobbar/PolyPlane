@@ -408,7 +408,7 @@ namespace PolyPlane.GameObjects
             _gunPosition.Update(dt, renderScale * this.RenderOffset);
             _cockpitPosition.Update(dt, renderScale * this.RenderOffset);
 
-            if (!World.IsNetGame || (World.IsNetGame && !World.IsServer))
+            if (!World.IsNetGame || World.IsClient)
             {
                 _bulletHoles.ForEach(f => f.Update(dt, renderScale * this.RenderOffset));
                 _contrail.Update(dt, renderScale);

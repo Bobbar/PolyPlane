@@ -250,7 +250,7 @@ namespace PolyPlane.GameObjects.Manager
             }
 
             // Bullets & missiles.
-            if (!World.IsNetGame || (World.IsNetGame && !World.IsServer))
+            if (!World.IsNetGame || World.IsClient)
             {
                 foreach (var bullet in _objs.Bullets)
                 {
