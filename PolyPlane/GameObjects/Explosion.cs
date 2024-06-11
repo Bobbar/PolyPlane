@@ -25,8 +25,8 @@ namespace PolyPlane.GameObjects
             for (int i = 0; i < NUM_FLAME; i++)
             {
                 var pnt = Utilities.RandomPointInCircle(this.Position, 5f);
-                var velo = Utilities.AngleToVectorDegrees(Utilities.RandomDirection(), Utilities.Rnd.NextFloat(200f, 300f));
-                var radius = NUM_FLAME + Utilities.Rnd.NextFloat(-5f, 5f);
+                var velo = Utilities.AngleToVectorDegrees(Utilities.RandomDirection(), Utilities.Rnd.NextFloat(maxRadius, maxRadius * 2f));
+                var radius = NUM_FLAME + Utilities.Rnd.NextFloat(-10f, 10f);
                 _flames.Add(new Flame(this, pnt, velo, radius));
             }
 
