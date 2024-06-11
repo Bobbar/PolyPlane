@@ -13,6 +13,7 @@ namespace PolyPlane.AI_Behavior
         private FighterPlane _plane;
         private FighterPlane _targetPlane;
         private float _sineWavePos = 0f;
+        private float _avoidingGroundAlt = 0f;
         private bool _avoidingGround = false;
         private bool _gainingVelo = false;
         private bool _reverseDirection = false;
@@ -231,6 +232,8 @@ namespace PolyPlane.AI_Behavior
         public float GetAIGuidance()
         {
             const float MIN_IMPACT_TIME = 6f; // Min ground impact time to consider avoiding ground.
+            const float BLOCK_PITCH_DOWN_ALT = 800f; // Do not allow pitch down angles below this altitude.
+
             var patrolDir = Utilities.ClampAngle(Utilities.RadsToDegrees((float)Math.Sin(_sineWavePos)));
 
             if (_reverseDirection)
@@ -268,6 +271,7 @@ namespace PolyPlane.AI_Behavior
                 angle = aimAmt;
             }
 
+            // Level out if we get too slow.
             var velo = this.Plane.AirSpeedIndicated;
             if (velo < 150f)
                 _gainingVelo = true;
@@ -278,9 +282,13 @@ namespace PolyPlane.AI_Behavior
                 angle = Utilities.MaintainAltitudeAngle(this.Plane, this.Plane.Altitude - 50f);
 
             // Pitch up if we about to impact with ground.
-            if ((groundImpactTime > 0f && groundImpactTime < MIN_IMPACT_TIME) || this.Plane.Altitude < 400f)
+            if (groundImpactTime > 0f && groundImpactTime < MIN_IMPACT_TIME && !_avoidingGround)
             {
                 _avoidingGround = true;
+                _avoidingGroundAlt = this.Plane.Altitude;
+
+                if (_avoidingGroundAlt < 500f)
+                    _avoidingGroundAlt = 500f;
             }
 
             if (groundImpactTime < 0f)
@@ -290,7 +298,7 @@ namespace PolyPlane.AI_Behavior
 
             // Climb until no longer in danger of ground collision.
             if (_avoidingGround)
-                angle = Utilities.MaintainAltitudeAngle(this.Plane, 2000f);
+                angle = Utilities.MaintainAltitudeAngle(this.Plane, _avoidingGroundAlt);
 
             // Stay within the spawn area when not actively targeting another plane.
             if (this.TargetPlane == null)
@@ -300,6 +308,14 @@ namespace PolyPlane.AI_Behavior
 
                 if (this.Plane.Position.X < World.PlaneSpawnRange.X - 10000f && _reverseDirection)
                     _reverseDirection = false;
+            }
+
+            // Start reversing the angle at very low altitude.
+            // Pitch down becomes a pitch up.
+            if (this.Plane.Altitude < BLOCK_PITCH_DOWN_ALT)
+            {
+                if (angle > 0f && angle < 180f)
+                    angle = 360f - angle;
             }
 
             var finalAngle = angle;
