@@ -434,6 +434,7 @@ namespace PolyPlane.Rendering
             _muzzleFlashBrush?.Dispose();
             _decoyLightBrush?.Dispose();
             _device?.Dispose();
+            _fpsLimiter?.Dispose();
         }
 
         public void NewHudMessage(string message, D2DColor color)
@@ -930,7 +931,7 @@ namespace PolyPlane.Rendering
             var linePosY = topLeft.Y;
 
             var sortedPlanes = _objs.Planes.OrderByDescending(p => p.Kills).ToArray();
-     
+
             if (_scoreScrollPos >= sortedPlanes.Length)
                 _scoreScrollPos = sortedPlanes.Length - 1;
 

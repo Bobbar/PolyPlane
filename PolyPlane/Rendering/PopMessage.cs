@@ -1,10 +1,5 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PolyPlane.Rendering
 {
@@ -48,7 +43,7 @@ namespace PolyPlane.Rendering
             Age += dt;
 
             if (Age > LIFESPAN)
-                Displayed = false;  
+                Displayed = false;
         }
     }
 }

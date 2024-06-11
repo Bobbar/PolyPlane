@@ -295,7 +295,7 @@ namespace PolyPlane.GameObjects
 
             PlayerScoredEvent?.Invoke(this, new PlayerScoredEventArgs(impactorPlayer, plane));
 
-           
+
             if (!World.IsClient)
             {
                 if (plane.WasHeadshot)

@@ -73,7 +73,7 @@ namespace PolyPlane.Helpers
             return Math.Clamp(value1 / value2, 0f, 1f);
         }
 
-        public static float FactorWithEasing(float value1, float value2, Func<float,float> easeFunc)
+        public static float FactorWithEasing(float value1, float value2, Func<float, float> easeFunc)
         {
             return easeFunc(Math.Clamp(value1 / value2, 0f, 1f));
         }

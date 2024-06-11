@@ -1,10 +1,5 @@
-﻿using PolyPlane.Rendering;
-using PolyPlane.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using PolyPlane.Helpers;
+using PolyPlane.Rendering;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -85,7 +80,7 @@ namespace PolyPlane.GameObjects
 
             if (this.Owner != null)
                 newVelo = this.Owner.Velocity;
-            
+
             var newRad = _radius + Utilities.Rnd.NextFloat(-2f, 2f);
 
             //if (this.CurrentFrame % 10 == 0)

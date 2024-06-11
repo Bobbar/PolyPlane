@@ -240,9 +240,6 @@ namespace PolyPlane
             return result;
         }
 
-
-
-
         /// <summary>
         /// Return to server/game config screen.
         /// </summary>

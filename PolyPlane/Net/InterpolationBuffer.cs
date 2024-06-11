@@ -72,7 +72,7 @@ namespace PolyPlane
         private void Interp(BufferEntry<T> from, BufferEntry<T> to, double now)
         {
             var pctElapsed = (now - from.UpdatedAt) / (to.UpdatedAt - from.UpdatedAt);
-             _interpolate(from.State, to.State, pctElapsed);
+            _interpolate(from.State, to.State, pctElapsed);
         }
     }
 

@@ -39,7 +39,7 @@ namespace PolyPlane.GameObjects
             _defRateLimit = new RateLimiter(rate: _params.DeflectionRate);
             _maxDeflection = _params.MaxDeflection;
             Rotation = obj.Rotation;
-           _parentObject = obj;
+            _parentObject = obj;
 
             if (_params.MaxDragForce == 0f)
                 _params.MaxDragForce = _params.MaxLiftForce;
@@ -207,6 +207,6 @@ namespace PolyPlane.GameObjects
         public float ParasiticDrag = 1f;
 
         public WingParameters() { }
-            
+
     }
 }
