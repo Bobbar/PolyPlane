@@ -79,6 +79,7 @@ namespace PolyPlane.Rendering
         private const float MAX_CLOUD_X = 400000f;
         private const float CLOUD_SCALE = 5f;
         private const float GROUND_OBJ_SCALE = 4f;
+        private const float SCREEN_SHAKE_G = 17f; // Amount of g-force before screen shake.
 
         private List<Cloud> _clouds = new List<Cloud>();
         private List<Tree> _trees = new List<Tree>();
@@ -357,7 +358,7 @@ namespace PolyPlane.Rendering
                 // Add overlays.
                 DrawOverlays(_ctx, viewplane);
 
-                if (viewplane.GForce > 17f)
+                if (viewplane.GForce > SCREEN_SHAKE_G)
                     DoScreenShake(viewplane.GForce / 10f);
 
                 DrawScreenFlash(_gfx);
@@ -1290,7 +1291,7 @@ namespace PolyPlane.Rendering
                 DrawWindAndTurbulenceOverlay(ctx);
 
             if (viewplane.IsDisabled)
-                ctx.Gfx.FillRectangle(World.ViewPortRect, new D2DColor(0.2f, D2DColor.Red));
+                ctx.Gfx.FillRectangle(World.ViewPortRectUnscaled, new D2DColor(0.2f, D2DColor.Red));
         }
 
         private void DrawSky(RenderContext ctx, FighterPlane viewPlane)

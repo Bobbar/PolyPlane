@@ -83,6 +83,8 @@ namespace PolyPlane
         public static D2DSize ViewPortSize { get; set; }
         public static D2DSize ViewPortBaseSize { get; set; }
         public static D2DRect ViewPortRect { get; set; }
+        public static D2DRect ViewPortRectUnscaled { get; set; }
+
 
         public static float ViewPortScaleMulti
         {
@@ -176,6 +178,7 @@ namespace PolyPlane
             ViewPortBaseSize = new D2DSize(viewPortSize.Width, viewPortSize.Height);
             ViewPortSize = new D2DSize(viewPortSize.Width * ViewPortScaleMulti, viewPortSize.Height * ViewPortScaleMulti);
             ViewPortRect = new D2DRect(0, 0, viewPortSize.Width * ViewPortScaleMulti, viewPortSize.Height * ViewPortScaleMulti);
+            ViewPortRectUnscaled = new D2DRect(0, 0, viewPortSize.Width, viewPortSize.Height);
         }
 
         public static void UpdateAirDensityAndWind(float dt)
