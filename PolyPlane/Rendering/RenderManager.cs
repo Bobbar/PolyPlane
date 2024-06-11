@@ -37,6 +37,7 @@ namespace PolyPlane.Rendering
         private bool _showInfo = false;
         private bool _showHelp = false;
         private bool _showScore = false;
+        private int _scoreScrollPos = 0;
 
         private SmoothDouble _renderTimeSmooth = new SmoothDouble(10);
         private Stopwatch _timer = new Stopwatch();
@@ -101,6 +102,7 @@ namespace PolyPlane.Rendering
         private const double _gaussianSigma_2 = 0.035;
         private double _gaussianSigma = Math.Sqrt(2.0 * Math.PI * _gaussianSigma_2);
 
+        private FPSLimiter _fpsLimiter = new FPSLimiter();
 
         public RenderManager(Control renderTarget, NetEventManager netMan)
         {
@@ -274,6 +276,46 @@ namespace PolyPlane.Rendering
         public void ToggleScore()
         {
             _showScore = !_showScore;
+            _scoreScrollPos = 0;
+        }
+
+        public void ZoomIn()
+        {
+            World.ZoomScale += 0.002f;
+            ResizeGfx(force: true);
+        }
+
+        public void ZoomOut()
+        {
+            World.ZoomScale -= 0.002f;
+            ResizeGfx(force: true);
+        }
+
+        public void DoMouseWheelUp()
+        {
+            if (!_showScore)
+            {
+                ZoomIn();
+            }
+            else
+            {
+                _scoreScrollPos -= 1;
+
+                if (_scoreScrollPos < 0)
+                    _scoreScrollPos = 0;
+            }
+        }
+
+        public void DoMouseWheelDown()
+        {
+            if (!_showScore)
+            {
+                ZoomOut();
+            }
+            else
+            {
+                _scoreScrollPos += 1;
+            }
         }
 
         public void RenderFrame(FighterPlane viewplane)
@@ -373,6 +415,9 @@ namespace PolyPlane.Rendering
 
             var scaleSize = GetViewportScaled();
             World.UpdateViewport(scaleSize);
+
+            // Resizing graphics causes spikes in FPS. Try to limit them here.
+            _fpsLimiter.Wait(60);
         }
 
         private Size GetViewportScaled()
@@ -884,19 +929,31 @@ namespace PolyPlane.Rendering
             var lineHeight = 20f;
             var linePosY = topLeft.Y;
 
-            var sortedPlanes = _objs.Planes.OrderByDescending(p => p.Kills);
+            var sortedPlanes = _objs.Planes.OrderByDescending(p => p.Kills).ToArray();
+     
+            if (_scoreScrollPos >= sortedPlanes.Length)
+                _scoreScrollPos = sortedPlanes.Length - 1;
 
-            foreach (var playerPlane in sortedPlanes)
+            for (int i = _scoreScrollPos; i < sortedPlanes.Length; i++)
             {
+                var playerPlane = sortedPlanes[i];
                 var lineRect = new D2DRect(topLeft.X, linePosY, 800f, lineHeight);
                 var lineRectColumn1 = new D2DRect(topLeft.X + 200f, linePosY, 800f, lineHeight);
                 var lineRectColumn2 = new D2DRect(topLeft.X + 300f, linePosY, 800f, lineHeight);
 
-                ctx.Gfx.DrawText($"[ {playerPlane.PlayerName} ]", D2DColor.White, _defaultFontName, 15f, lineRect);
-                ctx.Gfx.DrawText($"Kills: {playerPlane.Kills}", D2DColor.White, _defaultFontName, 15f, lineRectColumn1);
-                ctx.Gfx.DrawText($"Deaths: {playerPlane.Deaths}", D2DColor.White, _defaultFontName, 15f, lineRectColumn2);
-                linePosY += lineHeight;
+                if (linePosY < rect.bottom - lineHeight)
+                {
+                    ctx.Gfx.DrawText($"[ {playerPlane.PlayerName} ]", D2DColor.White, _defaultFontName, 15f, lineRect);
+                    ctx.Gfx.DrawText($"Kills: {playerPlane.Kills}", D2DColor.White, _defaultFontName, 15f, lineRectColumn1);
+                    ctx.Gfx.DrawText($"Deaths: {playerPlane.Deaths}", D2DColor.White, _defaultFontName, 15f, lineRectColumn2);
+                    linePosY += lineHeight;
+                }
             }
+
+            // Draw scroll bar.
+            var scrollBarPos = new D2DPoint(rect.right - 10f, Utilities.Lerp(rect.top + lineHeight + titleRect.Height, rect.bottom, ((float)_scoreScrollPos / sortedPlanes.Length)));
+            var scrollBarRect = new D2DRect(scrollBarPos, new D2DSize(10f, 20f));
+            ctx.Gfx.FillRectangle(scrollBarRect, D2DColor.White);
         }
 
         private void DrawGuideIcon(D2DGraphics gfx, D2DSize viewportsize, FighterPlane viewPlane)
@@ -1417,6 +1474,7 @@ namespace PolyPlane.Rendering
                 }
 
                 infoText += $"Y: Start Chat Message\n";
+                infoText += $"Tab: Show Scores\n";
                 infoText += $"(+/-): Zoom\n";
                 infoText += $"Shift + (+/-): HUD Scale\n";
                 infoText += $"Left-Click: Fire Bullets\n";

@@ -481,19 +481,6 @@ namespace PolyPlane
             _render = new RenderManager(this, _netMan);
         }
 
-        private void ResizeGfx(bool force = false)
-        {
-            if (!force)
-                if (World.ViewPortBaseSize.height == this.Size.Height && World.ViewPortBaseSize.width == this.Size.Width)
-                    return;
-
-            StopRender();
-
-            _render.ResizeGfx(force);
-
-            ResumeRender();
-        }
-
         private void GameLoop()
         {
             while (!this.Disposing && !_killRender)
@@ -518,7 +505,7 @@ namespace PolyPlane
             GraphicsExtensions.OnScreen = 0;
             GraphicsExtensions.OffScreen = 0;
 
-            ResizeGfx();
+            _render?.ResizeGfx();
             _objs.SyncAll();
             ProcessQueuedEvents();
 
@@ -936,8 +923,7 @@ namespace PolyPlane
                     }
                     else
                     {
-                        World.ZoomScale += 0.01f;
-                        ResizeGfx(force: true);
+                        _render?.ZoomIn();
                     }
                     break;
 
@@ -949,8 +935,7 @@ namespace PolyPlane
                     }
                     else
                     {
-                        World.ZoomScale -= 0.01f;
-                        ResizeGfx(force: true);
+                        _render?.ZoomOut();
                     }
                     break;
 
@@ -1037,13 +1022,11 @@ namespace PolyPlane
         {
             if (e.Delta > 0)
             {
-                World.ZoomScale += 0.002f;
-                ResizeGfx(force: true);
+                _render?.DoMouseWheelUp();
             }
             else
             {
-                World.ZoomScale -= 0.002f;
-                ResizeGfx(force: true);
+                _render?.DoMouseWheelDown();
             }
         }
 
