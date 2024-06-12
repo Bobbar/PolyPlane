@@ -374,6 +374,8 @@ namespace PolyPlane
 
         private PingObj? FindMostCenteredAndClosest()
         {
+            const float MAX_DIST = 90000f;
+
             PingObj? mostCentered = null;
             var minFov = float.MaxValue;
             var minDist = float.MaxValue;
@@ -385,7 +387,7 @@ namespace PolyPlane
                     var fov = this.HostPlane.FOVToObject(plane);
                     var dist = this.HostPlane.Position.DistanceTo(plane.Position);
 
-                    if (fov <= (World.SENSOR_FOV * 0.5f) && fov < minFov && dist < minDist)
+                    if (fov <= (World.SENSOR_FOV * 0.25f) && fov < minFov && dist < minDist && dist <= MAX_DIST)
                     {
                         minFov = fov;
                         minDist = dist;

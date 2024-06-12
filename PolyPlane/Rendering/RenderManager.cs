@@ -282,13 +282,17 @@ namespace PolyPlane.Rendering
 
         public void ZoomIn()
         {
-            World.ZoomScale += 0.002f;
+            var amt = 0.03f * World.ZoomScale;
+            World.ZoomScale += amt;
+
             ResizeGfx(force: true);
         }
 
         public void ZoomOut()
         {
-            World.ZoomScale -= 0.002f;
+            var amt = 0.03f * World.ZoomScale;
+            World.ZoomScale -= amt;
+
             ResizeGfx(force: true);
         }
 
@@ -970,6 +974,8 @@ namespace PolyPlane.Rendering
             var planeAngle = viewPlane.Rotation;
             var planeVec = Utilities.AngleToVectorDegrees(planeAngle, DIST);
             gfx.DrawCrosshair(pos + planeVec, 2f, World.HudColor, 5f, 20f);
+
+            //gfx.DrawLine(pos, pos + planeVec, World.HudColor, 1f, D2DDashStyle.Dot);
         }
 
         private void DrawHudMessage(D2DGraphics gfx, D2DSize viewportsize)
@@ -1324,13 +1330,15 @@ namespace PolyPlane.Rendering
 
             var plrPos = viewPlane.Position;
             plrPos /= World.ViewPortScaleMulti;
+
             var roundPos = new D2DPoint((plrPos.X) % spacing, (plrPos.Y) % spacing);
             roundPos *= 3f;
+
             var rect = new D2DRect(0, 0, this.Width, this.Height);
 
-            for (float x = 0 - (spacing * 3f); x < this.Width + roundPos.X; x += spacing)
+            for (float x = -spacing * 2f; x < this.Width + roundPos.X; x += spacing)
             {
-                for (float y = 0 - (spacing * 3f); y < this.Height + roundPos.Y; y += spacing)
+                for (float y = -spacing * 2f; y < this.Height + roundPos.Y; y += spacing)
                 {
                     var pos = new D2DPoint(x, y);
                     pos -= roundPos;
