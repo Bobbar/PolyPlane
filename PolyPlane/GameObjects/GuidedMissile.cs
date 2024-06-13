@@ -45,7 +45,7 @@ namespace PolyPlane.GameObjects
         private readonly float THURST_VECTOR_AMT = 1f;
         private readonly float LIFESPAN = 40f;
         private readonly float BURN_RATE = 1f;
-        private readonly float THRUST = 2200f;
+        private readonly float THRUST = 2500f;
         private readonly float MASS = 22.5f;
         private readonly float FUEL = 10f;
 
@@ -172,7 +172,7 @@ namespace PolyPlane.GameObjects
                     MaxDeflection = 50f,
                     MaxLiftForce = 4000f * liftScale,
                     Position = new D2DPoint(-22f, 0f),
-                    MinVelo = 250f,
+                    MinVelo = 850f,
                     ParasiticDrag = 0.2f,
                     AOAFactor = 0.4f
                 });
@@ -182,7 +182,7 @@ namespace PolyPlane.GameObjects
                     RenderLength = 0f,
                     Area = 0.075f,
                     MaxLiftForce = 4000f * liftScale,
-                    MinVelo = 250f,
+                    MinVelo = 850f,
                     ParasiticDrag = 0.2f,
                     AOAFactor = 0.4f
                 });
@@ -194,7 +194,7 @@ namespace PolyPlane.GameObjects
                     MaxDeflection = 20f,
                     MaxLiftForce = 4000f * liftScale,
                     Position = new D2DPoint(19.5f, 0f),
-                    MinVelo = 250f,
+                    MinVelo = 850f,
                     ParasiticDrag = 0.2f,
                     AOAFactor = 0.4f
                 });
@@ -282,7 +282,7 @@ namespace PolyPlane.GameObjects
                         // This is to try to prevent over-rotation caused by thrust vectoring.
                         if (_currentFuel > 0f && _useThrustVectoring)
                         {
-                            const float MIN_DEF_SPD = 300f;//450f; // Minimum speed required for full deflection.
+                            const float MIN_DEF_SPD = 400f;//450f; // Minimum speed required for full deflection.
                             var spdFact = Utilities.Factor(this.Velocity.Length(), MIN_DEF_SPD);
 
                             const float MAX_DEF_AOA = 20f;// Maximum AoA allowed. Reduce deflection as AoA increases.
