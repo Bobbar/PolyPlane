@@ -347,8 +347,6 @@ namespace PolyPlane.GameObjects
                     var force = wing.GetLiftDragForce();
                     var torque = GetTorque(wing, force);
 
-                    torque += GetTorque(_centerOfThrust.Position, thrust);
-
                     wingForce += force;
                     wingTorque += torque;
                 }
@@ -380,7 +378,8 @@ namespace PolyPlane.GameObjects
                         easeFact = Utilities.Factor(_easePhysicsTimer.Value, _easePhysicsTimer.Interval);
 
                     // Integrate torque, thrust and wing force.
-                    this.RotationSpeed += (wingTorque * easeFact) / this.MASS * partialDT;
+                    var thrustTorque = GetTorque(_centerOfThrust.Position, thrust);
+                    this.RotationSpeed += ((wingTorque + thrustTorque) * easeFact) / this.MASS * partialDT;
                     this.Velocity += (thrust * easeFact) / this.MASS * partialDT;
                     this.Velocity += (wingForce * easeFact) / this.MASS * partialDT;
 
