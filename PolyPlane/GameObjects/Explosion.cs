@@ -4,7 +4,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Explosion : GameObjectPoly
+    public class Explosion : GameObject
     {
         public float MaxRadius { get; set; } = 100f;
         public float Duration { get; set; } = 1f;
@@ -55,11 +55,14 @@ namespace PolyPlane.GameObjects
             _flames.ForEach(f => f.Render(ctx));
         }
 
-        public override bool Contains(D2DPoint pnt)
+        public override void Dispose()
         {
-            var dist = D2DPoint.Distance(pnt, this.Position);
+            base.Dispose();
 
-            return dist < _currentRadius;
+            _flames.ForEach(f => f.Dispose());
+
+            _flames.Clear();
+            _flames = null;
         }
     }
 }

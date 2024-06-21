@@ -24,12 +24,12 @@ namespace PolyPlane.GameObjects.Guidance
         {
             // Tweakables
             const float MAX_ROT_RATE = 1f; // Max rotation rate.
-            const float MIN_ROT_RATE = 0.5f; // Min rotation rate.
+            const float MIN_ROT_RATE = 0.2f; // Min rotation rate.
             const float MIN_ROT_SPEED = 800f; // Speed at which rotation rate will be the smallest.
-            const float ROT_MOD_DIST = 20000f; // Distance to begin increasing rotation rate. (Get more aggro the closer we get)
+            const float ROT_MOD_DIST = 6000f; // Distance to begin increasing rotation rate. (Get more aggro the closer we get)
             const float ROT_MOD_AMT = 3f; // Max amount to increase rot rate per above distance.
-            const float IMPACT_POINT_DELTA_THRESH = 1f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
-            const float MIN_CLOSE_RATE = 0.1f; // Min closing rate required to aim at predicted impact point.
+            const float IMPACT_POINT_DELTA_THRESH = 3f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
+            const float MIN_CLOSE_RATE = 0.05f; // Min closing rate required to aim at predicted impact point.
 
             var target = GetTargetPosition();
             var targetVelo = this.Target.Velocity * dt;

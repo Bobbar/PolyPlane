@@ -71,15 +71,31 @@ namespace PolyPlane.GameObjects
         private FixturePoint _flamePos;
         private GameTimer _igniteCooldown = new GameTimer(1f);
 
+        private const float LEN = 7f;
+
         private static readonly D2DPoint[] _missilePoly =
         [
-            new D2DPoint(28, 0),
-            new D2DPoint(25, 2),
-            new D2DPoint(-20, 2),
-            new D2DPoint(-22, 4),
-            new D2DPoint(-22, -4),
-            new D2DPoint(-20, -2),
-            new D2DPoint(25, -2)
+            new D2DPoint(28 + LEN, 0),
+            new D2DPoint(25 + LEN, -2),
+            new D2DPoint(19 + LEN, -2),
+            new D2DPoint(14 + LEN, -5),
+            new D2DPoint(14 + LEN, -2),
+            new D2DPoint(-17, -2),
+            new D2DPoint(-19, -4),
+            new D2DPoint(-21, -6),
+            new D2DPoint(-23, -6),
+            new D2DPoint(-23, -2),
+            new D2DPoint(-25, -2),
+            new D2DPoint(-25, 2),
+            new D2DPoint(-23, 2),
+            new D2DPoint(-23, 6),
+            new D2DPoint(-21, 6),
+            new D2DPoint(-19, 4),
+            new D2DPoint(-17, 2),
+            new D2DPoint(14 + LEN, 2),
+            new D2DPoint(14 + LEN, 5),
+            new D2DPoint(19 + LEN, 2),
+            new D2DPoint(25 + LEN, 2)
         ];
 
         private static readonly D2DPoint[] _flamePoly =
@@ -163,25 +179,28 @@ namespace PolyPlane.GameObjects
         {
             if (_useControlSurfaces)
             {
-                var liftScale = 0.7f;
+                var liftScale = 0.8f;
 
                 _tailWing = new Wing(this, new WingParameters()
                 {
-                    RenderLength = 4f,
+                    RenderLength = 2.5f,
+                    RenderWidth = 1f,
                     Area = 0.1f,
-                    MaxDeflection = 50f,
-                    MaxLiftForce = 4000f * liftScale,
+                    MaxDeflection = 55f,
+                    MaxLiftForce = 6000f * liftScale,
                     Position = new D2DPoint(-22f, 0f),
-                    MinVelo = 850f,
+                    MinVelo = 750f,
                     ParasiticDrag = 0.2f,
-                    AOAFactor = 0.4f
+                    AOAFactor = 0.4f,
+                    DeflectionRate = 50f
+
                 });
 
                 _rocketBody = new Wing(this, new WingParameters()
                 {
                     RenderLength = 0f,
                     Area = 0.075f,
-                    MaxLiftForce = 4000f * liftScale,
+                    MaxLiftForce = 1000f * liftScale,
                     MinVelo = 850f,
                     ParasiticDrag = 0.2f,
                     AOAFactor = 0.4f
@@ -189,12 +208,13 @@ namespace PolyPlane.GameObjects
 
                 _noseWing = new Wing(this, new WingParameters()
                 {
-                    RenderLength = 4f,
+                    RenderLength = 2.5f,
+                    RenderWidth = 1f,
                     Area = 0.025f,
                     MaxDeflection = 20f,
-                    MaxLiftForce = 4000f * liftScale,
-                    Position = new D2DPoint(19.5f, 0f),
-                    MinVelo = 850f,
+                    MaxLiftForce = 5000f * liftScale,
+                    Position = new D2DPoint(21.5f, 0f),
+                    MinVelo = 750f,
                     ParasiticDrag = 0.2f,
                     AOAFactor = 0.4f
                 });
@@ -288,7 +308,7 @@ namespace PolyPlane.GameObjects
                             const float MAX_DEF_AOA = 20f;// Maximum AoA allowed. Reduce deflection as AoA increases.
                             var aoaFact = 1f - (Math.Abs(_rocketBody.AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 2f))));
 
-                            const float MAX_DEF_ROT_SPD = 200f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
+                            const float MAX_DEF_ROT_SPD = 150f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
                             var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 3f))));
 
                             nextDeflect *= aoaFact * rotSpdFact * spdFact;
@@ -387,7 +407,7 @@ namespace PolyPlane.GameObjects
                 ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
 
             var fillColor = D2DColor.White;
-            ctx.DrawPolygon(this.Polygon.Poly, D2DColor.White, 0.5f, D2DDashStyle.Solid, fillColor);
+            ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 0.5f, D2DDashStyle.Solid, fillColor);
 
             if (_useControlSurfaces)
             {
@@ -438,8 +458,8 @@ namespace PolyPlane.GameObjects
             var color = D2DColor.Red;
 
             var centerLine = Utilities.AngleToVectorDegrees(this.Rotation, LEN);
-            var cone1 = Utilities.AngleToVectorDegrees(this.Rotation + (FOV * 0.5f), LEN);
-            var cone2 = Utilities.AngleToVectorDegrees(this.Rotation - (FOV * 0.5f), LEN);
+            var cone1 = Utilities.AngleToVectorDegrees(this.Rotation + (FOV * 0.25f), LEN);
+            var cone2 = Utilities.AngleToVectorDegrees(this.Rotation - (FOV * 0.25f), LEN);
 
 
             gfx.DrawLine(this.Position, this.Position + cone1, D2DColor.Red);

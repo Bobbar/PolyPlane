@@ -103,12 +103,11 @@ namespace PolyPlane.GameObjects
             //gfx.DrawLine(startRaw, end2Raw, D2DColor.Red, 1f, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Round);
 
             // Draw wing.
-            const float WEIGHT = 2f;//1f;
             var wingVec = Utilities.AngleToVectorDegrees(this.Rotation);
             var start = this.Position - wingVec * _params.RenderLength;
             var end = this.Position + wingVec * _params.RenderLength;
-            ctx.DrawLine(start, end, D2DColor.Black, WEIGHT + 0.5f, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Round);
-            ctx.DrawLine(start, end, D2DColor.Gray, WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Round);
+            ctx.DrawLine(start, end, D2DColor.Black, _params.RenderWidth + 0.5f, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+            ctx.DrawLine(start, end, D2DColor.Gray, _params.RenderWidth, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
 
             if (World.ShowAero)
             {
@@ -195,6 +194,7 @@ namespace PolyPlane.GameObjects
     {
         public D2DPoint Position = D2DPoint.Zero;
         public float RenderLength;
+        public float RenderWidth = 2f;
         public float Area;
         public float MaxLiftForce = 15000f;
         public float MaxDragForce;

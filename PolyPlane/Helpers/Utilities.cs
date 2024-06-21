@@ -497,10 +497,10 @@ namespace PolyPlane.Helpers
             const float MAX_DIST = 60000f;
 
             const float MIN_ALT = 4000f;
-            const float MAX_ALT = 12000f;
+            const float MAX_ALT = 15000f;
 
             var point = new D2DPoint(Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
-            if (objs.Planes.Count == 0 || objs.Planes.Count == 1)
+            if (objs.Planes.Count == 0)
                 return point;
 
             var min = objs.Planes.Min(p => p.Position.DistanceTo(point));
@@ -508,7 +508,10 @@ namespace PolyPlane.Helpers
             if (plane != null)
                 min = objs.Planes.Where(p => !p.ID.Equals(plane.ID)).Min(p => p.Position.DistanceTo(point));
 
-            for (int i = 0; i < 20000; i++)
+            var bestPoint = D2DPoint.Zero;
+            var bestDist = float.MinValue;
+
+            for (int i = 0; i < 5000; i++)
             {
                 point = new D2DPoint(Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
 
@@ -517,11 +520,18 @@ namespace PolyPlane.Helpers
                 else
                     min = objs.Planes.Min(p => p.Position.DistanceTo(point));
 
+                if (min > bestDist)
+                {
+                    bestDist = min;
+                    bestPoint = point;
+                }
+
                 if (min >= MIN_DIST && min <= MAX_DIST)
-                    break;
+                    return point;
+
             }
 
-            return point;
+            return bestPoint;
         }
 
     }

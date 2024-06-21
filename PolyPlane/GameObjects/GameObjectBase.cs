@@ -86,8 +86,8 @@ namespace PolyPlane.GameObjects
 
         protected Random _rnd => Utilities.Rnd;
         protected InterpolationBuffer<GameObjectPacket> InterpBuffer = null;
-        protected HistoricalBuffer<GameObjectPacket> HistoryBuffer = new HistoricalBuffer<GameObjectPacket>();
-        protected SmoothPoint _posSmooth = new SmoothPoint(5);
+        protected HistoricalBuffer<GameObjectPacket> HistoryBuffer = null;
+        protected SmoothPoint _posSmooth = null;
 
         protected float _rotation = 0f;
         protected float _verticalSpeed = 0f;
@@ -99,7 +99,13 @@ namespace PolyPlane.GameObjects
 
             if (World.IsNetGame && (this is FighterPlane || this is GuidedMissile))
             {
-                HistoryBuffer.Interpolate = (from, to, pctElap) => GetInterpState(from, to, pctElap);
+                _posSmooth = new SmoothPoint(5);
+
+                if (HistoryBuffer == null)
+                {
+                    HistoryBuffer = new HistoricalBuffer<GameObjectPacket>();
+                    HistoryBuffer.Interpolate = (from, to, pctElap) => GetInterpState(from, to, pctElap);
+                }
 
                 if (InterpBuffer == null)
                     InterpBuffer = new InterpolationBuffer<GameObjectPacket>(new GameObjectPacket(this), World.SERVER_TICK_RATE, (from, to, pctElap) => InterpObject(from, to, pctElap));
@@ -270,7 +276,7 @@ namespace PolyPlane.GameObjects
 
     public class GameObjectPoly : GameObject
     {
-        public RenderPoly Polygon = new RenderPoly();
+        public RenderPoly Polygon;
 
         public GameObjectPoly() : base()
         {
@@ -288,21 +294,13 @@ namespace PolyPlane.GameObjects
         {
         }
 
-        public GameObjectPoly(D2DPoint pos, D2DPoint velo, D2DPoint[] polygon) : base(pos, velo)
-        {
-            Polygon = new RenderPoly(polygon);
-        }
-
-        public GameObjectPoly(D2DPoint[] polygon)
-        {
-            Polygon = new RenderPoly(polygon);
-        }
 
         public override void Update(float dt, float renderScale)
         {
             base.Update(dt, renderScale);
 
-            Polygon.Update(this.Position, this.Rotation, renderScale);
+            if (Polygon != null)
+                Polygon.Update(this.Position, this.Rotation, renderScale);
         }
 
         /// <summary>
@@ -310,7 +308,10 @@ namespace PolyPlane.GameObjects
         /// </summary>
         public void RecordHistory()
         {
-            if ((this is FighterPlane || this is GuidedMissile))
+            if (!World.IsNetGame)
+                return;
+
+            if (HistoryBuffer != null && (this is FighterPlane || this is GuidedMissile))
             {
                 var histState = new GameObjectPacket(this);
                 histState.Position = this.Position;
@@ -366,6 +367,17 @@ namespace PolyPlane.GameObjects
         }
 
         public bool CollidesWith(GameObjectPoly obj, out D2DPoint pos)
+        {
+            if (obj.Owner == this)
+            {
+                pos = D2DPoint.Zero;
+                return false;
+            }
+
+            return CollisionHelpers.PolygonSweepCollision(obj, this.Polygon.Poly, this.Velocity, World.DT, out pos);
+        }
+
+        public bool CollidesWith(GameObject obj, out D2DPoint pos)
         {
             if (obj.Owner == this)
             {

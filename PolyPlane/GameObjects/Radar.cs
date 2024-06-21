@@ -257,6 +257,8 @@ namespace PolyPlane
 
         private void CheckForLock()
         {
+            const float MAX_LOCK_DIST = 90000f;
+
             if (this.HostPlane.IsDisabled)
             {
                 ClearLock();
@@ -274,6 +276,10 @@ namespace PolyPlane
             {
                 _lostLockTimer.Stop();
                 _aimedAtPingObj = mostCentered;
+
+                var dist = _aimedAtPingObj.Obj.Position.DistanceTo(this.HostPlane.Position);
+                if (dist > MAX_LOCK_DIST)
+                    return;
 
                 if (HasLock)
                 {
@@ -387,7 +393,7 @@ namespace PolyPlane
                     var fov = this.HostPlane.FOVToObject(plane);
                     var dist = this.HostPlane.Position.DistanceTo(plane.Position);
 
-                    if (fov <= (World.SENSOR_FOV * 0.25f) && fov < minFov && dist < minDist && dist <= MAX_DIST)
+                    if (fov <= (World.SENSOR_FOV * 0.25f) && fov < minFov && dist < minDist)
                     {
                         minFov = fov;
                         minDist = dist;

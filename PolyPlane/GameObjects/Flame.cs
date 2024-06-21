@@ -169,56 +169,64 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private class FlamePart : GameObject
+        public override void Dispose()
         {
-            public D2DEllipse Ellipse => _ellipse;
-            public D2DColor Color { get; set; }
-            public D2DColor EndColor { get; set; }
+            base.Dispose();
 
-            private D2DEllipse _ellipse;
+            _parts.Clear();
+            _parts = null;
+        }
+    }
 
-            private const float MIN_RISE_RATE = -50f;
-            private const float MAX_RISE_RATE = -70f;
+    public class FlamePart : GameObject
+    {
+        public D2DEllipse Ellipse => _ellipse;
+        public D2DColor Color { get; set; }
+        public D2DColor EndColor { get; set; }
+
+        private D2DEllipse _ellipse;
+
+        private const float MIN_RISE_RATE = -50f;
+        private const float MAX_RISE_RATE = -70f;
 
 
-            private D2DPoint _riseRate = new D2DPoint(0f, -50f);
+        private D2DPoint _riseRate = new D2DPoint(0f, -50f);
 
 
-            public FlamePart(D2DEllipse ellipse, D2DColor color, D2DPoint velo) : base(ellipse.origin, velo)
-            {
-                _ellipse = ellipse;
-                Color = color;
+        public FlamePart(D2DEllipse ellipse, D2DColor color, D2DPoint velo) : base(ellipse.origin, velo)
+        {
+            _ellipse = ellipse;
+            Color = color;
 
-                _riseRate = new D2DPoint(0f, Utilities.Rnd.NextFloat(MAX_RISE_RATE, MIN_RISE_RATE));
-            }
+            _riseRate = new D2DPoint(0f, Utilities.Rnd.NextFloat(MAX_RISE_RATE, MIN_RISE_RATE));
+        }
 
-            public FlamePart(D2DEllipse ellipse, D2DColor color, D2DColor endColor, D2DPoint velo) : base(ellipse.origin, velo)
-            {
-                _ellipse = ellipse;
-                Color = color;
-                EndColor = endColor;
+        public FlamePart(D2DEllipse ellipse, D2DColor color, D2DColor endColor, D2DPoint velo) : base(ellipse.origin, velo)
+        {
+            _ellipse = ellipse;
+            Color = color;
+            EndColor = endColor;
 
-                _riseRate = new D2DPoint(0f, Utilities.Rnd.NextFloat(MAX_RISE_RATE, MIN_RISE_RATE));
-            }
+            _riseRate = new D2DPoint(0f, Utilities.Rnd.NextFloat(MAX_RISE_RATE, MIN_RISE_RATE));
+        }
 
-            public override void Update(float dt, float renderScale)
-            {
-                base.Update(dt, renderScale);
+        public override void Update(float dt, float renderScale)
+        {
+            base.Update(dt, renderScale);
 
-                this.Velocity += -this.Velocity * 0.9f * dt;
+            this.Velocity += -this.Velocity * 0.9f * dt;
 
-                this.Velocity += _riseRate * dt;
+            this.Velocity += _riseRate * dt;
 
-                _ellipse.origin = this.Position;
-            }
+            _ellipse.origin = this.Position;
+        }
 
-            public override void Render(RenderContext ctx)
-            {
-                base.Render(ctx);
+        public override void Render(RenderContext ctx)
+        {
+            base.Render(ctx);
 
-                ctx.FillEllipse(Ellipse, Color);
-                //ctx.FillRectangle(new D2DRect(_ellipse.origin, new D2DSize(_ellipse.radiusX, _ellipse.radiusY)), Color);
-            }
+            ctx.FillEllipse(Ellipse, Color);
+            //ctx.FillRectangle(new D2DRect(_ellipse.origin, new D2DSize(_ellipse.radiusX, _ellipse.radiusY)), Color);
         }
     }
 }

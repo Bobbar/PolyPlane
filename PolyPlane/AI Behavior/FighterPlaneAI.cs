@@ -146,12 +146,18 @@ namespace PolyPlane.AI_Behavior
                 return;
 
             const float MAX_DIST = 50000f;
+            const float MIN_DIST = 1500f;
 
             if (this.Plane.Radar.HasLock && this.Plane.Radar.LockedObj != null && this.Plane.Radar.LockedObj.Equals(TargetPlane))
             {
                 var dist = this.Plane.Position.DistanceTo(this.Plane.Radar.LockedObj.Position);
 
-                if (dist > MAX_DIST)
+                if (dist > MAX_DIST || dist < MIN_DIST)
+                    return;
+
+                var fov = this.Plane.FOVToObject(TargetPlane);
+
+                if (fov > World.SENSOR_FOV * 0.5f)
                     return;
 
                 this.Plane.FireMissile(this.Plane.Radar.LockedObj);
@@ -231,7 +237,7 @@ namespace PolyPlane.AI_Behavior
 
         public float GetAIGuidance()
         {
-            const float MIN_IMPACT_TIME = 6f; // Min ground impact time to consider avoiding ground.
+            const float MIN_IMPACT_TIME = 5f; // Min ground impact time to consider avoiding ground.
             const float BLOCK_PITCH_DOWN_ALT = 800f; // Do not allow pitch down angles below this altitude.
 
             var patrolDir = Utilities.ClampAngle(Utilities.RadsToDegrees((float)Math.Sin(_sineWavePos)));

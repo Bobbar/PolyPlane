@@ -1285,7 +1285,7 @@ namespace PolyPlane.Rendering
             var navigationTime = Utilities.ImpactTime(plane, missile);
 
             // Is it going to hit soon and is actively targeting us?
-            return (navigationTime < minImpactTime && missile.Target.Equals(plane));
+            return (navigationTime < minImpactTime && missile.Target.Equals(plane) && missile.ClosingRate(plane) > 0f);
         }
 
 

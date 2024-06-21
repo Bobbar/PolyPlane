@@ -216,5 +216,34 @@ namespace PolyPlane.Helpers
             impactPoint = D2DPoint.Zero;
             return false;
         }
+
+        public static bool PolygonSweepCollision(GameObject impactorObj, D2DPoint[] targPoly, D2DPoint targVelo, float dt, out D2DPoint impactPoint)
+        {
+            // Sweep-based Continuous Collision Detection technique.
+            // Project lines from each polygon vert of the impactor; one point at the current position, and one point at the next/future position.
+            // Then for each of those lines, check for intersections on each line segment of the target object's polygon.
+
+            var hits = new List<D2DPoint>();
+            var relVelo = (impactorObj.Velocity - targVelo) * dt; // Get relative velo.
+
+            var centerPnt1 = impactorObj.Position;
+            var centerPnt2 = impactorObj.Position + relVelo;
+
+            if (PolyIntersect(centerPnt1, centerPnt2, targPoly, out D2DPoint iPosCenter))
+            {
+                hits.Add(iPosCenter);
+            }
+
+            // If we have multiple hits, find the one closest to the impactor.
+            if (hits.Count > 0)
+            {
+                var closest = hits.OrderBy(p => p.DistanceTo(impactorObj.Position));
+                impactPoint = closest.First();
+                return true;
+            }
+
+            impactPoint = D2DPoint.Zero;
+            return false;
+        }
     }
 }

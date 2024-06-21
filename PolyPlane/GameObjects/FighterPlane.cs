@@ -39,7 +39,7 @@ namespace PolyPlane.GameObjects
         public const int MAX_BULLETS = 30;
         public const int MAX_MISSILES = 6;
         public const int MAX_HEALTH = 32;
-        public const int MISSILE_DAMAGE = 20;
+        public const int MISSILE_DAMAGE = 32;
         public const int BULLET_DAMAGE = 4;
 
         public bool IsAI => _isAIPlane;
@@ -87,7 +87,7 @@ namespace PolyPlane.GameObjects
         private readonly float MASS = 90f;
 
         private GameTimer _flipTimer = new GameTimer(2f);
-        private GameTimer _expireTimeout = new GameTimer(15f);
+        private GameTimer _expireTimeout = new GameTimer(30f);
         private GameTimer _isLockOntoTimeout = new GameTimer(3f);
         private GameTimer _bulletRegenTimer = new GameTimer(0.2f, true);
         private GameTimer _decoyRegenTimer = new GameTimer(0.6f, true);
@@ -268,6 +268,7 @@ namespace PolyPlane.GameObjects
             AddWing(new Wing(this, new WingParameters()
             {
                 RenderLength = 10f * this.RenderOffset,
+                RenderWidth = 3f,
                 Area = 0.5f,
                 MaxDeflection = 40f,
                 MaxLiftForce = 12000f,
@@ -281,6 +282,7 @@ namespace PolyPlane.GameObjects
             AddWing(new Wing(this, new WingParameters()
             {
                 RenderLength = 5f * this.RenderOffset,
+                RenderWidth = 3f,
                 Area = 0.2f,
                 MaxDeflection = 50f,
                 MaxLiftForce = 5500f,

@@ -11,9 +11,9 @@ namespace PolyPlane.GameObjects.Guidance
         protected GuidedMissile Missile { get; set; }
         public GameObject Target { get; set; }
 
-        private const float ARM_TIME = 6f;
+        private const float ARM_TIME = 3f;
 
-        private GameTimer _lostLockTimer = new GameTimer(6f);
+        private GameTimer _lostLockTimer = new GameTimer(8f);
         private GameTimer _groundScatterTimer = new GameTimer(5f);
         private GameTimer _armTimer = new GameTimer(ARM_TIME);
         private GameTimer _decoyDistractCooldown = new GameTimer(5f);
@@ -45,16 +45,17 @@ namespace PolyPlane.GameObjects.Guidance
         public bool MissedTarget => _missedTarget || _lostInGround || this.Missile.IsDistracted;
         private bool _missedTarget = false;
         private bool _lostInGround = false;
-        private D2DPoint _lastKnownTargetPos = D2DPoint.Zero;
+        private float _missedTargetRot = 0f;
 
         protected GuidanceBase(GuidedMissile missile, GameObject target)
         {
             Missile = missile;
             Target = target;
+
             _lostLockTimer.TriggerCallback = () =>
             {
                 _missedTarget = true;
-                _lastKnownTargetPos = GetTargetPosition();
+                _missedTargetRot = this.Missile.Rotation;
             };
 
             _armTimer.Start();
@@ -64,15 +65,15 @@ namespace PolyPlane.GameObjects.Guidance
 
         public float GuideTo(float dt)
         {
-            DoDecoySuccess();
-            DoGroundScatter();
-
             if (!_armTimer.IsRunning)
             {
                 _lostLockTimer.Update(dt);
                 _groundScatterTimer.Update(dt);
                 _decoyDistractCooldown.Update(dt);
                 _decoyDistractArm.Update(dt);
+
+                DoDecoySuccess();
+                DoGroundScatter();
             }
 
             _armTimer.Update(dt);
@@ -89,7 +90,7 @@ namespace PolyPlane.GameObjects.Guidance
             // Get rotation from implementation.
             var rotation = GetGuidanceDirection(dt);
 
-            var isInFOV = Missile.IsObjInFOV(Target, World.SENSOR_FOV);
+            var isInFOV = Missile.IsObjInFOV(Target, World.SENSOR_FOV * 0.5f);
 
             if (!isInFOV)
             {
@@ -107,7 +108,7 @@ namespace PolyPlane.GameObjects.Guidance
 
             // If we lost lock, aim at the last know target position and hope we can find it again.
             if (_missedTarget || _lostInGround)
-                rotation = (_lastKnownTargetPos - this.Missile.Position).Angle(true);
+                rotation = _missedTargetRot;
 
             // Lerp from current rotation towards guidance rotation as we 
             // approach the specified arm time.
@@ -119,11 +120,11 @@ namespace PolyPlane.GameObjects.Guidance
 
         protected D2DPoint GetTargetPosition()
         {
-            //if (this.Target is Plane plane)
-            //    return plane.ExhaustPosition;
-            //else
-
             var pos = this.Target.Position;
+
+            if (this.Target is FighterPlane plane)
+                pos = plane.ExhaustPosition;
+
 
             // Try to compensate for lag?
             if (this.Target.IsNetObject)
@@ -239,6 +240,8 @@ namespace PolyPlane.GameObjects.Guidance
                         if (rnd == 0)
                         {
                             this.LostInGround = true;
+                            _missedTargetRot = 90f; // Send missile into ground.
+
                             Log.Msg("Lost in ground scatter....");
                         }
                     }
