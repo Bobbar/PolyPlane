@@ -1,5 +1,6 @@
 ﻿using PolyPlane.Helpers;
 using PolyPlane.Rendering;
+using System.Diagnostics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -23,6 +24,8 @@ namespace PolyPlane.GameObjects
             _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
 
             this.Owner = obj;
+            this.PlayerID = obj.PlayerID;
+
             Radius = radius;
             _refPos = new FixturePoint(obj, offset);
             _refPos.Update(World.DT, World.RenderScale * obj.RenderOffset);
@@ -39,6 +42,8 @@ namespace PolyPlane.GameObjects
         public Flame(GameObject obj, D2DPoint offset, D2DPoint velo, float radius = 10f) : base(obj.Position, velo)
         {
             _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
+
+            this.PlayerID = obj.PlayerID;
 
             Radius = radius;
             _refPos = new FixturePoint(obj, offset);
@@ -58,6 +63,8 @@ namespace PolyPlane.GameObjects
             _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
 
             this.Owner = obj;
+            this.PlayerID = obj.PlayerID;
+
             Radius = Utilities.Rnd.NextFloat(4f, 15f);
             _refPos = new FixturePoint(obj, offset);
             _refPos.Update(World.DT, World.RenderScale * obj.RenderOffset);
@@ -138,13 +145,23 @@ namespace PolyPlane.GameObjects
             var newColor = new D2DColor(_flameColor.a, 1f, Utilities.Rnd.NextFloat(0f, 0.86f), _flameColor.b);
             var newEllipse = new D2DEllipse(newPos, new D2DSize(newRad, newRad));
             var newPart = new FlamePart(newEllipse, newColor, endColor, newVelo);
+            newPart.PlayerID = this.PlayerID;
+
+            if (this.PlayerID == -1)
+                Debugger.Break();
 
             if (_parts.Count < MAX_PARTS)
+            {
                 _parts.Add(newPart);
+                World.ObjectManager.AddFlame(newPart);
+            }
             else
             {
+                _parts[0].IsExpired = true;
                 _parts.RemoveAt(0);
+
                 _parts.Add(newPart);
+                World.ObjectManager.AddFlame(newPart);
             }
         }
 
@@ -154,7 +171,7 @@ namespace PolyPlane.GameObjects
             while (i < _parts.Count)
             {
                 var part = _parts[i];
-                part.Update(dt, renderScale);
+                //part.Update(dt, renderScale);
 
                 var ageFactFade = 1f - Utilities.Factor(part.Age, MAX_AGE);
                 var ageFactSmoke = Utilities.Factor(part.Age, MAX_AGE * 3f);
@@ -163,7 +180,10 @@ namespace PolyPlane.GameObjects
                 part.Color = new D2DColor(alpha, Utilities.LerpColor(part.Color, part.EndColor, ageFactSmoke));
 
                 if (part.Age > MAX_AGE)
+                {
+                    _parts[i].IsExpired = true;
                     _parts.RemoveAt(i);
+                }
 
                 i++;
             }
@@ -173,12 +193,13 @@ namespace PolyPlane.GameObjects
         {
             base.Dispose();
 
+            _parts.ForEach(p => p.IsExpired = true);
             _parts.Clear();
             _parts = null;
         }
     }
 
-    public class FlamePart : GameObject
+    public class FlamePart : GameObject, ICollidable
     {
         public D2DEllipse Ellipse => _ellipse;
         public D2DColor Color { get; set; }

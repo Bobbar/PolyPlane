@@ -500,7 +500,7 @@ namespace PolyPlane.Helpers
             const float MAX_ALT = 15000f;
 
             var point = new D2DPoint(Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
-            if (objs.Planes.Count == 0)
+            if (objs.Planes.Count == 0 || objs.Planes.Count == 1)
                 return point;
 
             var min = objs.Planes.Min(p => p.Position.DistanceTo(point));

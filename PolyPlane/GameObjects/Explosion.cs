@@ -9,6 +9,8 @@ namespace PolyPlane.GameObjects
         public float MaxRadius { get; set; } = 100f;
         public float Duration { get; set; } = 1f;
 
+        public float Radius => _currentRadius;
+
         private float _currentRadius = 0f;
         private D2DColor _color = new D2DColor(0.4f, D2DColor.Orange);
         private List<Flame> _flames = new List<Flame>();
@@ -17,6 +19,7 @@ namespace PolyPlane.GameObjects
         {
             this.MaxRadius = maxRadius;
             this.Duration = duration;
+            this.PlayerID = 0;
 
             _color.r = _rnd.NextFloat(0.8f, 1f);
 
@@ -37,7 +40,8 @@ namespace PolyPlane.GameObjects
         {
             base.Update(dt, renderScale);
 
-            _currentRadius = MaxRadius * EasingFunctions.EaseOutBack(this.Age / Duration);
+            if (_currentRadius < MaxRadius)
+                _currentRadius = MaxRadius * EasingFunctions.EaseOutBack(this.Age / Duration);
 
             if (this.Age >= Flame.MAX_AGE)
                 this.IsExpired = true;

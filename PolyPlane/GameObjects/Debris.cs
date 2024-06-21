@@ -4,13 +4,14 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Debris : GameObjectPoly
+    public class Debris : GameObjectPoly, ICollidable
     {
         private D2DColor _color;
         private Flame _flame;
 
         public Debris(GameObject owner, D2DPoint pos, D2DPoint velo, D2DColor color) : base(pos, velo)
         {
+            this.PlayerID = owner.PlayerID;
             this.Owner = owner;
             _color = color;
             this.Polygon = new RenderPoly(RandomPoly(8, 12));

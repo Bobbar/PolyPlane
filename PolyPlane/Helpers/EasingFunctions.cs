@@ -18,6 +18,11 @@
             return 1f + ((k -= 1f) * (float)Math.Pow(k, 4));
         }
 
+        public static float EaseInCirc(float k)
+        {
+            return 1f - (float)Math.Sqrt(1f - Math.Pow(k, 2f));
+        }
+
         public static float EaseOutCirc(float k)
         {
             return (float)Math.Sqrt(1f - Math.Pow(k - 1f, 2f));

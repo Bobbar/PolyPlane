@@ -19,6 +19,7 @@ namespace PolyPlane.GameObjects
         public List<GameObject> Bullets = new List<GameObject>();
         public List<GameObject> Explosions = new List<GameObject>();
         public List<GameObject> Debris = new List<GameObject>();
+        public List<GameObject> Flames = new List<GameObject>();
 
         public List<D2DPoint> GroundImpacts = new List<D2DPoint>();
         public List<FighterPlane> Planes = new List<FighterPlane>();
@@ -40,6 +41,16 @@ namespace PolyPlane.GameObjects
         public event EventHandler<EventMessage> PlayerKilledEvent;
         public event EventHandler<FighterPlane> NewPlayerEvent;
 
+
+        public void AddFlame(FlamePart flame)
+        {
+            if (!Contains(flame.ID))
+            {
+                AddObject(flame);
+                Flames.Add(flame);
+            }
+
+        }
 
         public void AddDebris(Debris debris)
         {
@@ -175,6 +186,8 @@ namespace PolyPlane.GameObjects
             Bullets.Clear();
             Explosions.Clear();
             Planes.Clear();
+            Debris.Clear();
+            Flames.Clear();
             _objLookup.Clear();
             _objLookupSpatial.Clear();
             _expiredObjs.Clear();
@@ -263,6 +276,7 @@ namespace PolyPlane.GameObjects
             PruneExpired(Bullets);
             PruneExpired(Explosions);
             PruneExpired(Debris);
+            PruneExpired(Flames);
 
             for (int i = 0; i < Planes.Count; i++)
             {
@@ -283,7 +297,8 @@ namespace PolyPlane.GameObjects
 
         private void AddObject(GameObject obj)
         {
-            _objLookup.Add(obj.ID.GetHashCode(), obj);
+            var hash = obj.ID.GetHashCode();
+            _objLookup.Add(hash, obj);
         }
 
         private void HandlePlayerKilled(FighterPlane plane, GameObject impactor)

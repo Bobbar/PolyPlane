@@ -220,8 +220,39 @@ namespace PolyPlane.GameObjects.Manager
                 }
             }
 
+            HandleExplosionImpulse();
+
             HandleGroundImpacts();
             HandleFieldWrap();
+        }
+
+        private void HandleExplosionImpulse()
+        {
+            const float FORCE = 500f;
+
+            foreach (Explosion explosion in _objs.Explosions)
+            {
+                if (explosion.IsExpired || explosion.Age > explosion.Duration) 
+                    continue;
+
+                var nearObjs = _objs.GetNear(explosion);
+
+                foreach (var obj in nearObjs)
+                {
+                    var dist = explosion.Position.DistanceTo(obj.Position);
+
+                    if (dist <= explosion.Radius)
+                    {
+                        var forceFact = Utilities.Factor(dist, explosion.Radius);
+                        var dir = (obj.Position - explosion.Position).Normalized();
+                        var forceVec = dir *  (FORCE * forceFact);
+                        obj.Velocity += forceVec * World.DT;
+                    }
+
+                }
+
+
+            }
         }
 
         private void HandleGroundImpacts()

@@ -104,7 +104,8 @@ namespace PolyPlane.GameObjects.Guidance
             var rotFact = Math.Clamp((MAX_ROT_RATE * (1f - veloFact)) + MIN_ROT_RATE, MIN_ROT_RATE, MAX_ROT_RATE);
 
             // Increase rotation rate modifier as we approach the target.
-            var rotMod = (1f - Utilities.Factor(targDist, ROT_MOD_DIST)) * ROT_MOD_AMT;
+            //var rotMod = (1f - Utilities.Factor(targDist, ROT_MOD_DIST)) * ROT_MOD_AMT;
+            var rotMod = (1f - Utilities.FactorWithEasing(targDist, ROT_MOD_DIST, EasingFunctions.EaseInCirc)) * ROT_MOD_AMT;
             rotFact += rotMod;
 
             // Offset our current rotation from our current velocity vector to compute the next rotation.
