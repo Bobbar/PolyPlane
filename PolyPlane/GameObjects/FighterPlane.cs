@@ -213,7 +213,7 @@ namespace PolyPlane.GameObjects
             {
                 var p = o as FighterPlane;
                 return p.ExhaustPosition;
-            });
+            }, lineWeight: 8f);
 
             _contrail.IsNetObject = this.IsNetObject;
 
@@ -823,6 +823,7 @@ namespace PolyPlane.GameObjects
             ThrustOn = true;
             _expireTimeout.Stop();
             _flipTimer.Restart();
+            _bulletHoles.ForEach(b => b.Dispose());
             _bulletHoles.Clear();
             World.ObjectManager.CleanDebris(this.ID);
             _thrustAmt.Target = 1f;

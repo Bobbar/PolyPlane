@@ -48,5 +48,12 @@ namespace PolyPlane.GameObjects
 
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, _color);
         }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+
+            _flame.Dispose();
+        }
     }
 }

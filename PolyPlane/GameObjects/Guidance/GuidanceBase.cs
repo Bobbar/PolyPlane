@@ -14,7 +14,7 @@ namespace PolyPlane.GameObjects.Guidance
         private const float ARM_TIME = 3f;
 
         private GameTimer _lostLockTimer = new GameTimer(8f);
-        private GameTimer _groundScatterTimer = new GameTimer(5f);
+        private GameTimer _groundScatterTimer = new GameTimer(4f);
         private GameTimer _armTimer = new GameTimer(ARM_TIME);
         private GameTimer _decoyDistractCooldown = new GameTimer(5f);
         private GameTimer _decoyDistractArm = new GameTimer(4f);

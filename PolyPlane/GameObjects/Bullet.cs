@@ -9,7 +9,7 @@ namespace PolyPlane.GameObjects
         public const float SPEED = 800f;
         public float Lifetime = 10f;
 
-        private readonly D2DPoint[] _poly = new D2DPoint[]
+        private static readonly D2DPoint[] _poly = new D2DPoint[]
         {
             new D2DPoint(7,0),
             new D2DPoint(4,-3),

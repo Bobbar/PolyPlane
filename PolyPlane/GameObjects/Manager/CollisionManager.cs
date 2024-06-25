@@ -221,14 +221,15 @@ namespace PolyPlane.GameObjects.Manager
             }
 
             HandleExplosionImpulse();
-
             HandleGroundImpacts();
             HandleFieldWrap();
         }
 
         private void HandleExplosionImpulse()
         {
+            // Impart an impulse on other nearby objects.
             const float FORCE = 500f;
+            const float EPSILON = 0.001f;
 
             foreach (Explosion explosion in _objs.Explosions)
             {
@@ -239,7 +240,7 @@ namespace PolyPlane.GameObjects.Manager
 
                 foreach (var obj in nearObjs)
                 {
-                    var dist = explosion.Position.DistanceTo(obj.Position);
+                    var dist = explosion.Position.DistanceTo(obj.Position) + EPSILON;
 
                     if (dist <= explosion.Radius)
                     {
@@ -250,8 +251,6 @@ namespace PolyPlane.GameObjects.Manager
                     }
 
                 }
-
-
             }
         }
 

@@ -18,18 +18,14 @@ namespace PolyPlane.GameObjects
         private GameTimer _timeOut = new GameTimer(TIMEOUT);
         private Func<GameObject, D2DPoint> _posSelector;
         private D2DPoint _prevPos = D2DPoint.Zero;
+        private float _lineWeight = 2f;
 
-        public SmokeTrail(GameObject obj)
-        {
-            _gameObject = obj;
-            _timeOut.TriggerCallback = () => this.IsExpired = true;
-        }
-
-        public SmokeTrail(GameObject obj, Func<GameObject, D2DPoint> positionSelector)
+        public SmokeTrail(GameObject obj, Func<GameObject, D2DPoint> positionSelector, float lineWeight)
         {
             _gameObject = obj;
             _timeOut.TriggerCallback = () => this.IsExpired = true;
             _posSelector = positionSelector;
+            _lineWeight = lineWeight;
         }
 
         public override void Update(float dt, float renderScale)
@@ -103,7 +99,7 @@ namespace PolyPlane.GameObjects
 
                 var color = _trailColor;
 
-                ctx.DrawLine(lastPos, nextPos, color, 2f);
+                ctx.DrawLine(lastPos, nextPos, color, _lineWeight);
 
                 lastPos = nextPos;
             }
@@ -128,7 +124,7 @@ namespace PolyPlane.GameObjects
                 var color = _trailColor;
 
                 if (visiblePredicate.Invoke(nextPos))
-                    ctx.DrawLine(lastPos, nextPos, color, 2f);
+                    ctx.DrawLine(lastPos, nextPos, color, _lineWeight);
 
                 lastPos = nextPos;
             }

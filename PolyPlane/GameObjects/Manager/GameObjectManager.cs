@@ -37,19 +37,28 @@ namespace PolyPlane.GameObjects
         private List<GameObject> _allObjects = new List<GameObject>();
         private List<GameObject> _expiredObjs = new List<GameObject>();
 
+        private GameObjectPool<GameObject> _flamePool = new GameObjectPool<GameObject>(() => new FlamePart());
+
         public event EventHandler<PlayerScoredEventArgs> PlayerScoredEvent;
         public event EventHandler<EventMessage> PlayerKilledEvent;
         public event EventHandler<FighterPlane> NewPlayerEvent;
 
 
+        public FlamePart RentFlamePart()
+        {
+            var part = _flamePool.RentObject() as FlamePart;
+            return part;
+        }
+
+        public void ReturnFlamePart(FlamePart part)
+        {
+            part.IsExpired = true;
+            _flamePool.ReturnObject(part);
+        }
+
         public void AddFlame(FlamePart flame)
         {
-            if (!Contains(flame.ID))
-            {
-                AddObject(flame);
-                Flames.Add(flame);
-            }
-
+            Flames.Add(flame);
         }
 
         public void AddDebris(Debris debris)
@@ -92,7 +101,7 @@ namespace PolyPlane.GameObjects
                 {
                     var m = o as GuidedMissile;
                     return m.CenterOfThrust;
-                });
+                }, lineWeight: 2f);
 
                 AddObject(trail);
                 MissileTrails.Add(trail);
@@ -187,6 +196,7 @@ namespace PolyPlane.GameObjects
             Explosions.Clear();
             Planes.Clear();
             Debris.Clear();
+            Flames.ForEach(f => f.Dispose());
             Flames.Clear();
             _objLookup.Clear();
             _objLookupSpatial.Clear();
@@ -335,8 +345,10 @@ namespace PolyPlane.GameObjects
                 {
                     objs.RemoveAt(i);
                     _objLookup.Remove(obj.ID.GetHashCode());
-                    _expiredObjs.Add(obj);
                     obj.Dispose();
+
+                    if (World.IsNetGame)
+                        _expiredObjs.Add(obj);
 
                     // Add explosions when missiles & bullets are expired.
                     if (obj is GuidedMissile missile)
@@ -393,20 +405,35 @@ namespace PolyPlane.GameObjects
 
         private void UpdateSpatialLookup()
         {
+            // We need to rebuild this on every frame.
+            // Sorry GC...
             _objLookupSpatial.Clear();
+
             foreach (var obj in _allObjects)
             {
                 // Only record collidable objects.
                 if (obj is not ICollidable)
                     continue;
 
-                var posIdx = GetGridIdx(obj);
-
-                if (_objLookupSpatial.TryGetValue(posIdx, out List<GameObject> objs))
-                    objs.Add(obj);
-                else
-                    _objLookupSpatial.Add(posIdx, new List<GameObject> { obj });
+                AddToSpatialLookup(obj);
             }
+
+            // Add flames and debris to spatial lookup.
+            foreach (var flame in Flames)
+                AddToSpatialLookup(flame);
+
+            foreach (var debris in Debris)
+                AddToSpatialLookup(debris);
+        }
+
+        private void AddToSpatialLookup(GameObject obj)
+        {
+            var posIdx = GetGridIdx(obj);
+
+            if (_objLookupSpatial.TryGetValue(posIdx, out List<GameObject> objs))
+                objs.Add(obj);
+            else
+                _objLookupSpatial.Add(posIdx, new List<GameObject> { obj });
         }
 
         private D2DPoint GetGridIdx(GameObject obj)
