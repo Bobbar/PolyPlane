@@ -20,7 +20,10 @@ namespace PolyPlane.GameObjects
             new D2DPoint(4,3),
         };
 
-        public Bullet() : base() { }
+        public Bullet() : base() 
+        { 
+            this.Polygon = new RenderPoly(_poly);
+        }
 
         public Bullet(D2DPoint pos) : base(pos) { }
 
@@ -43,6 +46,38 @@ namespace PolyPlane.GameObjects
         public Bullet(D2DPoint pos, D2DPoint velo, float rotation) : base(pos, velo, rotation)
         {
             this.Polygon = new RenderPoly(_poly);
+            this.Polygon.Update(this.Position, this.Rotation, World.RenderScale * this.RenderOffset);
+        }
+
+        public void ReInit(FighterPlane plane)
+        {
+            this.IsExpired = false;
+            this.Age = 0f;
+
+            this.Position = plane.GunPosition;
+            this.Rotation = plane.Rotation;
+            this.Owner = plane;
+            this.PlayerID = plane.PlayerID;
+
+            this.Polygon.Update(this.Position, this.Rotation, World.RenderScale * this.RenderOffset);
+
+            var velo = (Utilities.AngleToVectorDegrees(plane.Rotation, Bullet.SPEED));
+            velo += plane.Velocity;
+            this.Velocity = velo;
+
+            // Make sure the rotation is aligned with the resulting velocity.
+            this.Rotation = this.Velocity.Angle(true);
+        }
+
+        public void ReInit(D2DPoint pos, D2DPoint velo, float rotation)
+        {
+            this.IsExpired = false;
+            this.Age = 0f;
+
+            this.Position = pos;
+            this.Velocity = velo;
+            this.Rotation = rotation;
+
             this.Polygon.Update(this.Position, this.Rotation, World.RenderScale * this.RenderOffset);
         }
 

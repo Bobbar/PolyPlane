@@ -38,11 +38,23 @@ namespace PolyPlane.GameObjects
         private List<GameObject> _expiredObjs = new List<GameObject>();
 
         private GameObjectPool<GameObject> _flamePool = new GameObjectPool<GameObject>(() => new FlamePart());
+        private GameObjectPool<GameObject> _bulletPool = new GameObjectPool<GameObject>(() => new Bullet());
 
         public event EventHandler<PlayerScoredEventArgs> PlayerScoredEvent;
         public event EventHandler<EventMessage> PlayerKilledEvent;
         public event EventHandler<FighterPlane> NewPlayerEvent;
 
+
+        public Bullet RentBullet()
+        {
+            var bullet = _bulletPool.RentObject() as Bullet;
+            return bullet;
+        }
+
+        public void ReturnBullet(Bullet bullet)
+        {
+            _bulletPool.ReturnObject(bullet);
+        }
 
         public FlamePart RentFlamePart()
         {
@@ -175,7 +187,7 @@ namespace PolyPlane.GameObjects
 
         public void AddExplosion(D2DPoint pos)
         {
-            var explosion = new Explosion(pos, 200f, 1.4f);
+            var explosion = new Explosion(pos, 300f, 1.4f);
             AddExplosion(explosion);
         }
 
@@ -339,7 +351,10 @@ namespace PolyPlane.GameObjects
                         }
                     }
                     else if (obj is Bullet bullet)
+                    {
+                        _bulletPool.ReturnObject(bullet);
                         AddBulletExplosion(bullet.Position);
+                    }
                 }
             }
         }

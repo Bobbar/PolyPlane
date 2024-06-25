@@ -579,7 +579,8 @@ namespace PolyPlane.GameObjects
             if (this.IsNetObject)
                 return;
 
-            var bullet = new Bullet(this);
+            var bullet = World.ObjectManager.RentBullet();
+            bullet.ReInit(this);
 
             FireBulletCallback(bullet);
             this.BulletsFired++;
