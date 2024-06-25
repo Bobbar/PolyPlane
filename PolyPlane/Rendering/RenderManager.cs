@@ -1523,7 +1523,7 @@ namespace PolyPlane.Rendering
                 infoText += $"Num Objects: {numObj}\n";
                 infoText += $"On Screen: {GraphicsExtensions.OnScreen}\n";
                 infoText += $"Off Screen: {GraphicsExtensions.OffScreen}\n";
-                infoText += $"Planes: {_objs.Planes.Count(p => !p.IsDisabled && !p.HasCrashed)}\n";
+                infoText += $"Planes: {_objs.Planes.Count}\n";
                 infoText += $"Update ms: {Math.Round(UpdateTime.TotalMilliseconds, 2)}\n";
                 infoText += $"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}\n";
                 infoText += $"Collision ms: {Math.Round(CollisionTime.TotalMilliseconds, 2)}\n";

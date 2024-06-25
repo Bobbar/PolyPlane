@@ -306,7 +306,10 @@ namespace PolyPlane.Server
             _renderTime = TimeSpan.Zero;
             _netTime = TimeSpan.Zero;
 
+            _timer.Restart();
             ProcessObjQueue();
+            _timer.Stop();
+            _updateTime += _timer.Elapsed;
 
             FighterPlane viewPlane = World.GetViewPlane();
 
@@ -638,7 +641,7 @@ namespace PolyPlane.Server
 
             var numObj = _objs.TotalObjects;
             infoText += $"Num Objects: {numObj}\n";
-            infoText += $"Planes: {_objs.Planes.Count(p => !p.IsDisabled && !p.HasCrashed)}\n";
+            infoText += $"Planes: {_objs.Planes.Count}\n";
             infoText += $"Clients: {_server.Host.PeersCount}\n";
 
             infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";

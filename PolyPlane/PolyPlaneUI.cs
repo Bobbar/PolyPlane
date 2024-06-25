@@ -328,6 +328,7 @@ namespace PolyPlane
 
         private void PolyPlaneUI_Disposed(object? sender, EventArgs e)
         {
+            _collisions.ImpactEvent -= HandleNewImpact;
             _client?.SendPlayerDisconnectPacket((uint)_playerPlane.PlayerID);
 
             StopRender();
@@ -504,8 +505,12 @@ namespace PolyPlane
             GraphicsExtensions.OffScreen = 0;
 
             _render?.ResizeGfx();
+
+            _timer.Restart();
             _objs.SyncAll();
             ProcessQueuedEvents();
+            _timer.Stop();
+            _updateTime += _timer.Elapsed;
 
             var viewPlane = World.GetViewPlane();
 

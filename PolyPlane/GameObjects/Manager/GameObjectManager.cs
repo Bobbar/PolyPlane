@@ -8,7 +8,7 @@ namespace PolyPlane.GameObjects
     /// </summary>
     public class GameObjectManager
     {
-        public int TotalObjects => _objLookup.Count;
+        public int TotalObjects = 0;
 
         private const int MAX_GROUND_IMPACTS = 500;
         private const int SPATIAL_GRID_SIDE_LEN = 8;
@@ -280,6 +280,8 @@ namespace PolyPlane.GameObjects
 
         public void PruneExpired()
         {
+            TotalObjects = 0;
+
             PruneExpired(Missiles);
             PruneExpired(MissileTrails);
             PruneExpired(Decoys);
@@ -287,6 +289,8 @@ namespace PolyPlane.GameObjects
             PruneExpired(Explosions);
             PruneExpired(Debris);
             PruneExpired(Flames);
+
+            TotalObjects += Planes.Count;
 
             for (int i = 0; i < Planes.Count; i++)
             {
@@ -303,6 +307,41 @@ namespace PolyPlane.GameObjects
 
             if (GroundImpacts.Count > MAX_GROUND_IMPACTS)
                 GroundImpacts.RemoveAt(0);
+        }
+
+        private void PruneExpired(List<GameObject> objs)
+        {
+            TotalObjects += objs.Count;
+
+            for (int i = 0; i < objs.Count; i++)
+            {
+                var obj = objs[i];
+
+                if (obj.IsExpired)
+                {
+                    objs.RemoveAt(i);
+                    _objLookup.Remove(obj.ID.GetHashCode());
+                    obj.Dispose();
+
+                    if (World.IsNetGame)
+                        _expiredObjs.Add(obj);
+
+                    // Add explosions when missiles & bullets are expired.
+                    if (obj is GuidedMissile missile)
+                    {
+                        AddExplosion(missile.Position);
+
+                        // Remove dummy objects as needed.
+                        if (missile.Target != null && missile.Target is DummyObject)
+                        {
+                            missile.Target.IsExpired = true;
+                            _objLookup.Remove(missile.Target.ID.GetHashCode());
+                        }
+                    }
+                    else if (obj is Bullet bullet)
+                        AddBulletExplosion(bullet.Position);
+                }
+            }
         }
 
         private void AddObject(GameObject obj)
@@ -333,39 +372,6 @@ namespace PolyPlane.GameObjects
         private void HandlePlayerCrashed(FighterPlane plane)
         {
             PlayerKilledEvent?.Invoke(this, new EventMessage($"'{plane.PlayerName}' crashed into the ground...", EventType.Kill));
-        }
-
-        private void PruneExpired(List<GameObject> objs)
-        {
-            for (int i = 0; i < objs.Count; i++)
-            {
-                var obj = objs[i];
-
-                if (obj.IsExpired)
-                {
-                    objs.RemoveAt(i);
-                    _objLookup.Remove(obj.ID.GetHashCode());
-                    obj.Dispose();
-
-                    if (World.IsNetGame)
-                        _expiredObjs.Add(obj);
-
-                    // Add explosions when missiles & bullets are expired.
-                    if (obj is GuidedMissile missile)
-                    {
-                        AddExplosion(missile.Position);
-
-                        // Remove dummy objects as needed.
-                        if (missile.Target != null && missile.Target is DummyObject)
-                        {
-                            missile.Target.IsExpired = true;
-                            _objLookup.Remove(missile.Target.ID.GetHashCode());
-                        }
-                    }
-                    else if (obj is Bullet bullet)
-                        AddBulletExplosion(bullet.Position);
-                }
-            }
         }
 
         private void SyncObjQueues()
