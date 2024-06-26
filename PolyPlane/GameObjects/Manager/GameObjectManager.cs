@@ -187,7 +187,7 @@ namespace PolyPlane.GameObjects
 
         public void AddExplosion(D2DPoint pos)
         {
-            var explosion = new Explosion(pos, 300f, 1.4f);
+            var explosion = new Explosion(pos, 300f, 2.4f);
             AddExplosion(explosion);
         }
 

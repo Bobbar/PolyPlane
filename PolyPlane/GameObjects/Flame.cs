@@ -13,9 +13,9 @@ namespace PolyPlane.GameObjects
         public const float MAX_AGE = 20f;
 
         private List<FlamePart> _parts = new List<FlamePart>();
-        private D2DColor _flameColor = new D2DColor(0.6f, D2DColor.Yellow);
-        private D2DColor _blackSmoke = new D2DColor(0.6f, D2DColor.Black);
-        private D2DColor _graySmoke = new D2DColor(0.6f, D2DColor.Gray);
+        private readonly D2DColor _flameColor = new D2DColor(0.6f, D2DColor.Yellow);
+        private readonly D2DColor _blackSmoke = new D2DColor(0.6f, D2DColor.Black);
+        private readonly D2DColor _graySmoke = new D2DColor(0.6f, D2DColor.Gray);
         private FixturePoint _refPos = null;
         private GameTimer _spawnTimer = new GameTimer(0.1f, true);
 
@@ -143,9 +143,9 @@ namespace PolyPlane.GameObjects
 
             var newRad = this.Radius + Utilities.Rnd.NextFloat(-3f, 3f);
             var newColor = new D2DColor(_flameColor.a, 1f, Utilities.Rnd.NextFloat(0f, 0.86f), _flameColor.b);
-            var newEllipse = new D2DEllipse(newPos, new D2DSize(newRad, newRad));
+          
             var newPart = World.ObjectManager.RentFlamePart();
-            newPart.ReInit(newEllipse, newColor, endColor, newVelo);
+            newPart.ReInit(newPos, newRad, newColor, endColor, newVelo);
 
             newPart.PlayerID = this.PlayerID;
 
@@ -217,10 +217,12 @@ namespace PolyPlane.GameObjects
         private const float MAX_RISE_RATE = -70f;
         private const float WIND_SPEED = 20f; // Fake wind effect amount.
 
-        private D2DPoint _riseRate = new D2DPoint(0f, -50f);
+        private D2DPoint _riseRate;
 
         public FlamePart() 
-        { }
+        {
+            _ellipse = new D2DEllipse();
+        }
 
         public FlamePart(D2DEllipse ellipse, D2DColor color, D2DPoint velo) : base(ellipse.origin, velo)
         {
@@ -239,18 +241,21 @@ namespace PolyPlane.GameObjects
             _riseRate = new D2DPoint(0f, Utilities.Rnd.NextFloat(MAX_RISE_RATE, MIN_RISE_RATE));
         }
 
-        public void ReInit(D2DEllipse ellipse, D2DColor color, D2DColor endColor, D2DPoint velo)
+        public void ReInit(D2DPoint pos, float radius, D2DColor color, D2DColor endColor, D2DPoint velo)
         {
             this.Age = 0f;
             this.IsExpired = false;
 
-            _ellipse = ellipse;
+            _ellipse.origin = pos;
+            _ellipse.radiusX = radius;
+            _ellipse.radiusY = radius;  
+
             Color = color;
             EndColor = endColor;
 
             _riseRate = new D2DPoint(0f, Utilities.Rnd.NextFloat(MAX_RISE_RATE, MIN_RISE_RATE));
 
-            this.Position = ellipse.origin;
+            this.Position = _ellipse.origin;
             this.Velocity = velo;
         }
 

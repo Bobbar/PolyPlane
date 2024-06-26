@@ -40,9 +40,10 @@ namespace PolyPlane.GameObjects
         {
             base.Update(dt, renderScale);
 
-            if (_currentRadius < MaxRadius)
-                _currentRadius = MaxRadius * EasingFunctions.EaseOutBack(this.Age / Duration);
+            _currentRadius = MaxRadius * Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.EaseOutElastic);
 
+            _color.a = 1f - Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.EaseOutQuintic);
+          
             if (this.Age >= Flame.MAX_AGE)
                 this.IsExpired = true;
 

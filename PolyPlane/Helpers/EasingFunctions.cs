@@ -67,5 +67,33 @@
 
             return (float)(1f + c3 * Math.Pow(k - 1f, 3f) + c1 * Math.Pow(k - 1f, 2f));
         }
+
+        public static float EaseOutExpo(float k)
+        {
+            return k == 1f ? 1f : 1f - (float)Math.Pow(2f, -10f * k);
+        }
+
+        public static float EaseOutBounce(float k)
+        {
+            const float n1 = 7.5625f;
+            const float d1 = 2.75f;
+
+            if (k < 1f / d1)
+            {
+                return n1 * k * k;
+            }
+            else if (k < 2f / d1)
+            {
+                return n1 * (k -= 1.5f / d1) * k + 0.75f;
+            }
+            else if (k < 2.5 / d1)
+            {
+                return n1 * (k -= 2.25f / d1) * k + 0.9375f;
+            }
+            else
+            {
+                return n1 * (k -= 2.625f / d1) * k + 0.984375f;
+            }
+        }
     }
 }

@@ -228,7 +228,7 @@ namespace PolyPlane.GameObjects.Manager
         private void HandleExplosionImpulse()
         {
             // Impart an impulse on other nearby objects.
-            const float FORCE = 500f;
+            const float FORCE = 250f;
             const float EPSILON = 0.001f;
 
             foreach (Explosion explosion in _objs.Explosions)
@@ -244,12 +244,11 @@ namespace PolyPlane.GameObjects.Manager
 
                     if (dist <= explosion.Radius)
                     {
-                        var forceFact = Utilities.Factor(dist, explosion.Radius);
+                        var forceFact = Utilities.FactorWithEasing(dist, explosion.Radius, EasingFunctions.EaseOutExpo);
                         var dir = (obj.Position - explosion.Position).Normalized();
-                        var forceVec = dir *  (FORCE * forceFact);
+                        var forceVec = dir * (FORCE * forceFact);
                         obj.Velocity += forceVec * World.DT;
                     }
-
                 }
             }
         }

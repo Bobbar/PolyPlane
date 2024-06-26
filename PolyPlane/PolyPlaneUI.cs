@@ -909,7 +909,6 @@ namespace PolyPlane
                     break;
 
                 case 't':
-                    _objs.AddExplosion(_playerPlane.Position);
                     break;
 
                 case 'u':
@@ -918,8 +917,6 @@ namespace PolyPlane
                     break;
 
                 case 'y':
-                    var debris = new Debris(_playerPlane, _playerPlane.Position, _playerPlane.Velocity, _playerPlane.PlaneColor);
-                    World.ObjectManager.AddDebris(debris);
                     break;
 
                 case '=' or '+':
