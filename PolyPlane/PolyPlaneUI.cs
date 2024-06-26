@@ -85,10 +85,10 @@ namespace PolyPlane
                     _render.DoScreenShake(2f);
             };
 
-            _playerResetTimer.TriggerCallback = () =>
-            {
-                EnableRespawn();
-            };
+            //_playerResetTimer.TriggerCallback = () =>
+            //{
+            //    EnableRespawn();
+            //};
 
             _multiThreadNum = Environment.ProcessorCount - 2;
         }

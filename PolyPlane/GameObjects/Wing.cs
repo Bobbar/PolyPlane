@@ -6,6 +6,8 @@ namespace PolyPlane.GameObjects
 {
     public class Wing : GameObject
     {
+        public WingParameters Parameters => _params;
+
         public float Deflection
         {
             get { return _defRateLimit.Value; }

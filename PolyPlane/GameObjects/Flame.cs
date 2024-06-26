@@ -215,6 +215,7 @@ namespace PolyPlane.GameObjects
 
         private const float MIN_RISE_RATE = -50f;
         private const float MAX_RISE_RATE = -70f;
+        private const float WIND_SPEED = 20f; // Fake wind effect amount.
 
         private D2DPoint _riseRate = new D2DPoint(0f, -50f);
 
@@ -260,6 +261,9 @@ namespace PolyPlane.GameObjects
             this.Velocity += -this.Velocity * 0.9f * dt;
 
             this.Velocity += _riseRate * dt;
+
+            // Simulate the particles being blown by the wind.
+            _riseRate.X = WIND_SPEED * Utilities.FactorWithEasing(this.Age, Flame.MAX_AGE, EasingFunctions.EaseOutSine);
 
             _ellipse.origin = this.Position;
         }

@@ -574,18 +574,18 @@ namespace PolyPlane.Rendering
             _objs.MissileTrails.ForEach(o => o.Render(ctx));
             _objs.Bullets.ForEach(o => o.Render(ctx));
 
-            _objs.Planes.ForEach(o =>
+            _objs.Planes.ForEach(p =>
             {
-                if (o is FighterPlane tplane && !tplane.Equals(plane))
+                if (!p.Equals(plane))
                 {
-                    DrawPlaneShadow(ctx, tplane);
-                    o.Render(ctx);
-                    DrawHealthBarClamped(ctx, tplane, new D2DPoint(tplane.Position.X, tplane.Position.Y - 110f), healthBarSize);
-                    DrawMuzzleFlash(ctx, tplane);
+                    DrawPlaneShadow(ctx, p);
+                    p.Render(ctx);
+                    DrawHealthBarClamped(ctx, p, new D2DPoint(p.Position.X, p.Position.Y - 110f), healthBarSize);
+                    DrawMuzzleFlash(ctx, p);
 
                     // Draw circle around locked on plane.
-                    if (plane.Radar.LockedObj != null && plane.Radar.LockedObj.Equals(tplane))
-                        ctx.DrawEllipse(new D2DEllipse(tplane.Position, new D2DSize(80f, 80f)), World.HudColor, 4f);
+                    if (plane.Radar.LockedObj != null && plane.Radar.LockedObj.Equals(p))
+                        ctx.DrawEllipse(new D2DEllipse(p.Position, new D2DSize(80f, 80f)), World.HudColor, 4f);
                 }
             });
 
@@ -988,7 +988,7 @@ namespace PolyPlane.Rendering
                 var size = gfx.MeasureText(_hudMessage, _defaultFontName, FONT_SIZE, initSize);
                 var rect = new D2DRect(pos, size);
 
-                gfx.FillRectangle(rect, D2DColor.Gray);
+                gfx.FillRectangle(rect, new D2DColor(0.5f, D2DColor.Gray));
                 gfx.DrawTextCenter(_hudMessage, _hudMessageColor, _defaultFontName, FONT_SIZE, rect);
             }
 

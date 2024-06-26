@@ -87,7 +87,7 @@ namespace PolyPlane.GameObjects
         private readonly float MASS = 90f;
 
         private GameTimer _flipTimer = new GameTimer(2f);
-        private GameTimer _expireTimeout = new GameTimer(30f);
+        private GameTimer _expireTimeout = new GameTimer(40f);
         private GameTimer _isLockOntoTimeout = new GameTimer(3f);
         private GameTimer _bulletRegenTimer = new GameTimer(0.2f, true);
         private GameTimer _decoyRegenTimer = new GameTimer(0.6f, true);
@@ -645,14 +645,16 @@ namespace PolyPlane.GameObjects
 
         public void AddBulletHole(D2DPoint pos)
         {
-            var bulletHole = new BulletHole(this, pos, hasFlame: Utilities.Rnd.Next(3) == 2);
+            var bulletHole = new BulletHole(this, pos);
+
             bulletHole.IsNetObject = this.IsNetObject;
             _bulletHoles.Add(bulletHole);
         }
 
         public void AddBulletHole(D2DPoint pos, float angle)
         {
-            var bulletHole = new BulletHole(this, pos, angle, hasFlame: Utilities.Rnd.Next(3) == 2);
+            var bulletHole = new BulletHole(this, pos, angle);
+
             bulletHole.IsNetObject = this.IsNetObject;
             _bulletHoles.Add(bulletHole);
         }
@@ -702,16 +704,14 @@ namespace PolyPlane.GameObjects
                     else
                     {
                         this.Health -= BULLET_DAMAGE;
-
-                        if (Utilities.Rnd.Next(3) == 2)
-                            SpawnDebris(1, result.ImpactPoint, this.PlaneColor);
+                        SpawnDebris(1, result.ImpactPoint, this.PlaneColor);
                     }
                 }
 
                 if (this.Health <= 0)
                 {
                     IsDisabled = true;
-                    _damageDeflection = _rnd.NextFloat(-180, 180);
+                    _damageDeflection = _rnd.NextFloat(-_controlWing.Parameters.MaxDeflection, _controlWing.Parameters.MaxDeflection);
 
                     attackPlane.Kills++;
                     Deaths++;
