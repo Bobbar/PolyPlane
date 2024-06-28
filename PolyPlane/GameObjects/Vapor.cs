@@ -14,9 +14,11 @@ namespace PolyPlane.GameObjects
         private const int MAX_PARTS = 30;
         private const float MAX_AGE = 1f;
         private float _visibleGs = 0f;
+        private float _visibleVelo = 0f;
         private float _maxGs = 0f;
+        private SmoothPoint _veloSmooth = new SmoothPoint(10);
 
-        public Vapor(GameObject obj, GameObject owner, D2DPoint offset, float radius, float visibleGs, float maxGs)
+        public Vapor(GameObject obj, GameObject owner, D2DPoint offset, float radius, float visibleGs, float visibleVelo, float maxGs)
         {
             _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
 
@@ -24,6 +26,7 @@ namespace PolyPlane.GameObjects
             _refPos = new FixturePoint(obj, offset);
             _radius = radius;
             _visibleGs = visibleGs;
+            _visibleVelo = visibleVelo;
             _maxGs = maxGs;
 
             _spawnTimer.TriggerCallback = () => SpawnPart();
@@ -36,12 +39,10 @@ namespace PolyPlane.GameObjects
             _spawnTimer.Update(dt);
             UpdateParts(dt, renderScale);
 
-            if (_refPos != null)
-            {
-                _refPos.Update(dt, renderScale);
-                this.Position = _refPos.Position;
-                this.Velocity = _refPos.Velocity;
-            }
+            _refPos.Update(dt, renderScale);
+            this.Position = _refPos.Position;
+            this.Velocity = _refPos.Velocity;
+
 
             if (this.Owner != null && this.Owner.IsExpired)
                 _spawnTimer.Stop();
@@ -64,13 +65,11 @@ namespace PolyPlane.GameObjects
 
         private void SpawnPart()
         {
-            D2DPoint newPos = this.Position;
+            D2DPoint newPos = _refPos.GameObject.Position;
+            D2DPoint newVelo = _veloSmooth.Add(this.Velocity);
 
-            if (_refPos != null)
-                newPos = _refPos.Position;
-
-            D2DPoint newVelo = this.Velocity;
             float gforce = 0f;
+            var veloMag = newVelo.Length();
 
             if (this.Owner != null)
             {
@@ -78,15 +77,22 @@ namespace PolyPlane.GameObjects
                     gforce = plane.GForce;
             }
 
+            // Start the vapor parts one frame backwards.
+            newPos -= Utilities.AngleToVectorDegrees(newVelo.Angle(), newVelo.Length() * World.DT);
+
+            var sVisFact = Utilities.Factor(veloMag - _visibleVelo, _visibleVelo);
+            var sRadFact = Utilities.Factor(veloMag, _visibleVelo);
+
             var gVisFact = Utilities.Factor(gforce - _visibleGs, _visibleGs);
+            var gRadFact = Utilities.Factor(gforce, _maxGs);
 
-            if (gVisFact < 0.001f)
-                return;
+            var radFact = sRadFact + gRadFact;
+            var visFact = sVisFact + gVisFact;
 
-            var gFact = Utilities.Factor(gforce, _maxGs);
-            var newRad = _radius + Utilities.Rnd.NextFloat(-2f, 2f) + (gFact * 14f);
+            var newRad = _radius + Utilities.Rnd.NextFloat(-2f, 2f) + (radFact * 20f);
+
             var newColor = _vaporColor;
-            newColor.a = newColor.a * gVisFact;
+            newColor.a = newColor.a * visFact;
 
             var newEllipse = new D2DEllipse(newPos, new D2DSize(newRad, newRad));
             var newPart = new VaporPart(newEllipse, newColor, newVelo);

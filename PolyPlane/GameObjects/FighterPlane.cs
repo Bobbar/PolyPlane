@@ -400,7 +400,6 @@ namespace PolyPlane.GameObjects
                 // TODO:  This is so messy...
                 Wings.ForEach(w => w.Update(partialDT, renderScale * this.RenderOffset));
                 _centerOfThrust.Update(partialDT, renderScale * this.RenderOffset);
-                _thrustAmt.Update(partialDT);
             }
 
             _gForce = _gforceAvg.Current;
@@ -408,6 +407,7 @@ namespace PolyPlane.GameObjects
             _flamePos.Update(dt, renderScale * this.RenderOffset);
             _gunPosition.Update(dt, renderScale * this.RenderOffset);
             _cockpitPosition.Update(dt, renderScale * this.RenderOffset);
+            _thrustAmt.Update(dt);
 
             if (!World.IsNetGame || World.IsClient)
             {
@@ -614,7 +614,7 @@ namespace PolyPlane.GameObjects
             const float VAPOR_TRAIL_GS = 15f; // How many Gs before vapor trail is visible.
             const float MAX_GS = 30f; // Gs for max vapor trail intensity.
 
-            _vaporTrails.Add(new Vapor(wing, this, new D2DPoint(10f, 0f), 8f, VAPOR_TRAIL_GS, MAX_GS));
+            _vaporTrails.Add(new Vapor(wing, this, new D2DPoint(20f, 0f), 8f, 800f, VAPOR_TRAIL_GS, MAX_GS));
 
             Wings.Add(wing);
         }

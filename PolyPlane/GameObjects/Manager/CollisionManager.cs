@@ -262,6 +262,11 @@ namespace PolyPlane.GameObjects.Manager
                                 {
                                     var impactor = explosion.Owner;
                                     plane.DoPlayerKilled(impactor);
+                                    ImpactEvent?.Invoke(this, new ImpactEvent(plane, missile, true));
+                                }
+                                else
+                                {
+                                    ImpactEvent?.Invoke(this, new ImpactEvent(plane, missile, true));
                                 }
                             }
                         }

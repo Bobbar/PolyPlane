@@ -303,7 +303,8 @@ namespace PolyPlane
                         }
                         else if (e.DoesDamage && e.Impactor.Owner.Equals(viewPlane))
                         {
-                            _render.DoScreenFlash(D2DColor.Green);
+                            if (e.Target is FighterPlane targetPlane && !targetPlane.IsDisabled)
+                                _render.DoScreenFlash(D2DColor.Green);
                         }
                     }
                 }
