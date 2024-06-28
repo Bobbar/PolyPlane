@@ -47,6 +47,14 @@ namespace PolyPlane.GameObjects
             if (this.Owner != null && this.Owner.IsExpired)
                 _spawnTimer.Stop();
 
+            if (this.Owner is FighterPlane plane)
+            {
+                if (plane.IsDisabled)
+                    _spawnTimer.Stop();
+                else
+                    _spawnTimer.Start();
+            }
+
             if (_parts.Count == 0 && !_spawnTimer.IsRunning)
                 this.IsExpired = true;
         }
