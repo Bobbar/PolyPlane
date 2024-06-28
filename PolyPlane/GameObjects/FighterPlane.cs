@@ -710,17 +710,27 @@ namespace PolyPlane.GameObjects
 
                 if (this.Health <= 0)
                 {
-                    IsDisabled = true;
-                    _damageDeflection = _rnd.NextFloat(-_controlWing.Parameters.MaxDeflection, _controlWing.Parameters.MaxDeflection);
-
-                    attackPlane.Kills++;
-                    Deaths++;
-
-                    PlayerKilledCallback?.Invoke(this, impactor);
+                    DoPlayerKilled(impactor);
                 }
             }
 
             DoImpactImpulse(impactor, result.ImpactPoint);
+        }
+
+        public void DoPlayerKilled(GameObject impactor)
+        {
+            if (IsDisabled)
+                return;
+
+            IsDisabled = true;
+            _damageDeflection = _rnd.NextFloat(-_controlWing.Parameters.MaxDeflection, _controlWing.Parameters.MaxDeflection);
+
+            if (impactor.Owner is FighterPlane attackPlane)
+                attackPlane.Kills++;
+
+            Deaths++;
+
+            PlayerKilledCallback?.Invoke(this, impactor);
         }
 
         private void DoImpactImpulse(GameObject impactor, D2DPoint impactPos)

@@ -1527,6 +1527,7 @@ namespace PolyPlane.Rendering
                 infoText += $"Update ms: {Math.Round(UpdateTime.TotalMilliseconds, 2)}\n";
                 infoText += $"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}\n";
                 infoText += $"Collision ms: {Math.Round(CollisionTime.TotalMilliseconds, 2)}\n";
+                infoText += $"Total ms: {Math.Round(UpdateTime.TotalMilliseconds + CollisionTime.TotalMilliseconds + _renderTimeSmooth.Current, 2)}\n";
 
                 infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
                 infoText += $"HUD Scale: {_hudScale}\n";

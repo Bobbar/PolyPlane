@@ -30,7 +30,7 @@ namespace PolyPlane.GameObjects
         public RingBuffer<FighterPlane> NewPlanes = new RingBuffer<FighterPlane>(500);
 
         private Dictionary<int, GameObject> _objLookup = new Dictionary<int, GameObject>();
-        private Dictionary<D2DPoint, List<GameObject>> _objLookupSpatial = new Dictionary<D2DPoint, List<GameObject>>();
+        private Dictionary<int, List<GameObject>> _objLookupSpatial = new Dictionary<int, List<GameObject>>();
 
         private List<GameObject> _allNetObjects = new List<GameObject>();
         private List<GameObject> _allLocalObjects = new List<GameObject>();
@@ -185,15 +185,19 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public void AddExplosion(D2DPoint pos)
+        public void AddMissileExplosion(GuidedMissile missile)
         {
-            var explosion = new Explosion(pos, 300f, 2.4f);
+            var explosion = new Explosion(missile.Position, 300f, 2.4f);
+            explosion.Owner = missile;
+
             AddExplosion(explosion);
         }
 
-        public void AddBulletExplosion(D2DPoint pos)
+        public void AddBulletExplosion(Bullet bullet)
         {
-            var explosion = new Explosion(pos, 50f, 0.5f);
+            var explosion = new Explosion(bullet.Position, 50f, 0.5f);
+            explosion.Owner = bullet;
+
             AddExplosion(explosion);
         }
 
@@ -341,7 +345,7 @@ namespace PolyPlane.GameObjects
                     // Add explosions when missiles & bullets are expired.
                     if (obj is GuidedMissile missile)
                     {
-                        AddExplosion(missile.Position);
+                        AddMissileExplosion(missile);
 
                         // Remove dummy objects as needed.
                         if (missile.Target != null && missile.Target is DummyObject)
@@ -353,7 +357,7 @@ namespace PolyPlane.GameObjects
                     else if (obj is Bullet bullet)
                     {
                         _bulletPool.ReturnObject(bullet);
-                        AddBulletExplosion(bullet.Position);
+                        AddBulletExplosion(bullet);
                     }
                 }
             }
@@ -424,19 +428,25 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private void UpdateSpatialLookup()
+        private void SyncObjCollections()
         {
-            // We need to rebuild this on every frame.
-            // Sorry GC...
+            _allLocalObjects.Clear();
+            _allNetObjects.Clear();
+            _allObjects.Clear();
             _objLookupSpatial.Clear();
 
-            foreach (var obj in _allObjects)
+            foreach (var obj in _objLookup.Values)
             {
-                // Only record collidable objects.
-                if (obj is not ICollidable)
-                    continue;
+                if (obj.IsNetObject)
+                    _allNetObjects.Add(obj);
+                else
+                    _allLocalObjects.Add(obj);
 
-                AddToSpatialLookup(obj);
+                _allObjects.Add(obj);
+
+                // Only record collidable objects.
+                if (obj is ICollidable)
+                    AddToSpatialLookup(obj);
             }
 
             // Add flames and debris to spatial lookup.
@@ -449,62 +459,58 @@ namespace PolyPlane.GameObjects
 
         private void AddToSpatialLookup(GameObject obj)
         {
-            var posIdx = GetGridIdx(obj);
+            var hash = GetGridHash(obj);
 
-            if (_objLookupSpatial.TryGetValue(posIdx, out List<GameObject> objs))
+            if (_objLookupSpatial.TryGetValue(hash, out List<GameObject> objs))
                 objs.Add(obj);
             else
-                _objLookupSpatial.Add(posIdx, new List<GameObject> { obj });
+                _objLookupSpatial.Add(hash, new List<GameObject> { obj });
         }
 
-        private D2DPoint GetGridIdx(GameObject obj)
+        private void GetGridIdx(GameObject obj, out int idxX, out int idxY)
         {
-            return GetGridIdx(obj.Position);
+            GetGridIdx(obj.Position, out idxX, out idxY);
         }
 
-        private D2DPoint GetGridIdx(D2DPoint pos)
+        private void GetGridIdx(D2DPoint pos, out int idxX, out int idxY)
         {
-            var roundedPos = new D2DPoint(((int)Math.Floor(pos.X)) >> SPATIAL_GRID_SIDE_LEN, ((int)Math.Floor(pos.Y) >> SPATIAL_GRID_SIDE_LEN));
+            idxX = (int)Math.Floor(pos.X) >> SPATIAL_GRID_SIDE_LEN;
+            idxY = (int)Math.Floor(pos.Y) >> SPATIAL_GRID_SIDE_LEN;
+        }
 
-            return roundedPos;
+        private int GetGridHash(GameObject obj)
+        {
+            return GetGridHash(obj.Position);
+        }
+
+        private int GetGridHash(D2DPoint pos)
+        {
+            GetGridIdx(pos, out int idxX, out int idxY);
+            return GetGridHash(idxX, idxY);
+        }
+
+        private int GetGridHash(int idxX, int idxY)
+        {
+            return HashCode.Combine(idxX, idxY);
         }
 
         public IEnumerable<GameObject> GetNear(GameObject obj)
         {
-            var rndPos = GetGridIdx(obj);
+            GetGridIdx(obj, out int idxX, out int idxY);
 
             for (int x = -1; x <= 1; x++)
             {
                 for (int y = -1; y <= 1; y++)
                 {
-                    var xo = rndPos.X + x;
-                    var yo = rndPos.Y + y;
-                    var nPos = new D2DPoint(xo, yo);
+                    var xo = idxX + x;
+                    var yo = idxY + y;
+                    var nHash = GetGridHash(xo, yo);
 
-                    if (_objLookupSpatial.TryGetValue(nPos, out var ns))
+                    if (_objLookupSpatial.TryGetValue(nHash, out var ns))
                         foreach (var o in ns)
                             yield return o;
                 }
             }
-        }
-
-        private void SyncObjCollections()
-        {
-            _allLocalObjects.Clear();
-            _allNetObjects.Clear();
-            _allObjects.Clear();
-
-            foreach (var obj in _objLookup.Values)
-            {
-                if (obj.IsNetObject)
-                    _allNetObjects.Add(obj);
-                else
-                    _allLocalObjects.Add(obj);
-
-                _allObjects.Add(obj);
-            }
-
-            UpdateSpatialLookup();
         }
     }
 }

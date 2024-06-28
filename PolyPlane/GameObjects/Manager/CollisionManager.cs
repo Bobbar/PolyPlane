@@ -227,13 +227,13 @@ namespace PolyPlane.GameObjects.Manager
 
         private void HandleExplosionImpulse()
         {
-            // Impart an impulse on other nearby objects.
             const float FORCE = 250f;
             const float EPSILON = 0.001f;
+            const float DAMAGE_AMT = 2f;
 
             foreach (Explosion explosion in _objs.Explosions)
             {
-                if (explosion.IsExpired || explosion.Age > explosion.Duration) 
+                if (explosion.IsExpired || explosion.Age > explosion.Duration)
                     continue;
 
                 var nearObjs = _objs.GetNear(explosion);
@@ -244,10 +244,30 @@ namespace PolyPlane.GameObjects.Manager
 
                     if (dist <= explosion.Radius)
                     {
+                        // Impart an impulse on other nearby objects.
                         var forceFact = Utilities.FactorWithEasing(dist, explosion.Radius, EasingFunctions.EaseOutExpo);
                         var dir = (obj.Position - explosion.Position).Normalized();
                         var forceVec = dir * (FORCE * forceFact);
                         obj.Velocity += forceVec * World.DT;
+
+                        if (obj is FighterPlane plane && explosion.Owner is GuidedMissile missile)
+                        {
+                            if (!missile.Owner.Equals(plane))
+                            {
+                                // Apply a small amount of damage to planes within the blast radius of the explosion.
+                                plane.Health -= (int)(forceFact * DAMAGE_AMT);
+
+                                // Handle planes killed by blast.
+                                if (plane.Health <= 0)
+                                {
+                                    var impactor = explosion.Owner;
+                                    plane.DoPlayerKilled(impactor);
+                                }
+                            }
+                        }
+                        else if (obj is GuidedMissile detMissile) // Detonate any other missiles within the blast radius.
+                            if (!detMissile.IsExpired)
+                                detMissile.IsExpired = true;
                     }
                 }
             }

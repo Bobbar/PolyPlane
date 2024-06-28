@@ -174,6 +174,9 @@ namespace PolyPlane.AI_Behavior
             if (_fireBurstTimer.IsRunning)
                 return;
 
+            // Give the burst cooldown a little bit of variation.
+            _fireBurstTimer.Cooldown = Utilities.Rnd.NextFloat(4f, 6f);
+
             const float MIN_DIST = 2000f;
             const float MIN_OFFBORE = 10f;
 
@@ -186,7 +189,6 @@ namespace PolyPlane.AI_Behavior
 
             if (plrFOV <= MIN_OFFBORE)
             {
-                //_fireBurstTimer.Stop();
                 _fireBurstTimer.Restart();
             }
         }

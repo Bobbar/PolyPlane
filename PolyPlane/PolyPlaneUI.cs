@@ -506,22 +506,20 @@ namespace PolyPlane
 
             _render?.ResizeGfx();
 
-            _timer.Restart();
-            _objs.SyncAll();
             ProcessQueuedEvents();
-            _timer.Stop();
-            _updateTime += _timer.Elapsed;
 
             var viewPlane = World.GetViewPlane();
-
-            _timer.Restart();
 
             // Update/advance objects.
             if (!_isPaused || _oneStep)
             {
                 _timer.Restart();
+
+                _objs.SyncAll();
+
                 var allObjs = _objs.GetAllObjects();
                 allObjs.ForEachParallel(o => o.Update(World.DT, World.RenderScale), _multiThreadNum);
+
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
 
@@ -542,12 +540,13 @@ namespace PolyPlane
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
 
+                _objs.PruneExpired();
+
                 _oneStep = false;
             }
 
             _render.CollisionTime = _collisionTime;
             _render.UpdateTime = _updateTime;
-
 
             if (!_skipRender && this.WindowState != FormWindowState.Minimized)
                 _render.RenderFrame(viewPlane);
@@ -556,8 +555,6 @@ namespace PolyPlane
 
             if (World.IsNetGame)
                 _netMan.DoNetEvents();
-
-            _objs.PruneExpired();
 
             DoMouseButtons();
 
