@@ -437,13 +437,9 @@ namespace PolyPlane.Helpers
 
         public static bool IsPointingRight(float angle)
         {
-            var rot180 = ClampAngle180(angle);
-            if (rot180 > -90f && rot180 < 0f || rot180 < 90f && rot180 > 0f || rot180 == 0f)
-                return true;
-            else if (rot180 > 90f && rot180 < 180f || rot180 > -180f && rot180 < -90f)
-                return false;
+            var rot180 = ClampAngle180(angle + 90f);
 
-            return false;
+            return rot180 > 0f;
         }
 
         public static string GetLocalIP()

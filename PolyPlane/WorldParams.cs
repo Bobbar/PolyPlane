@@ -115,7 +115,7 @@ namespace PolyPlane
         private static float _zoomScale = 0.11f;
         private static float _dt = DEFAULT_DT;
 
-        public const float DEFAULT_DT = 0.0325f;
+        public const float DEFAULT_DT = 0.0425f;
         public const float DEFAULT_DPI = 96f;
         public const float SENSOR_FOV = 60f; // TODO: Not sure this belongs here. Maybe make this unique based on missile/plane types and move it there.
         public const float MAX_ALTITUDE = 60000f; // Max density altitude.  (Air density drops to zero at this altitude)
