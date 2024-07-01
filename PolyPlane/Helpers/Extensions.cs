@@ -148,5 +148,10 @@ namespace PolyPlane.Helpers
             return D2DColor.FromGDIColor(color);
         }
 
+        public static D2DColor WithAlpha(this D2DColor color, float alpha)
+        {
+            return new D2DColor(alpha, color);
+        }
+
     }
 }

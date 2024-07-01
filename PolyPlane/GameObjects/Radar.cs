@@ -36,7 +36,8 @@ namespace PolyPlane
         private float _radius = 150f;
         private bool _hostIsAI = false;
         private D2DColor _color = World.HudColor;
-        private List<PingObj> _pings = new List<PingObj>();
+        private Dictionary<GameID, PingObj> _pings = new Dictionary<GameID, PingObj>();
+
         private GameTimer _lockTimer = new GameTimer(2f);
         private GameTimer _lostLockTimer = new GameTimer(10f);
         private GameTimer _AIUpdateRate = new GameTimer(1f);
@@ -97,7 +98,10 @@ namespace PolyPlane
 
             PrunePings();
 
-            _pings.ForEach(p => p.Update(dt));
+            foreach (var ping in _pings.Values)
+            {
+                ping.Update(dt);
+            }
 
             CheckForLock();
             NotifyLocks();
@@ -126,8 +130,7 @@ namespace PolyPlane
 
                 var pObj = new PingObj(obj, radPos);
 
-                AddIfNotExists(pObj);
-                RefreshPing(pObj);
+                AddOrRefresh(pObj);
             }
             else
             {
@@ -143,8 +146,7 @@ namespace PolyPlane
 
                     var pObj = new PingObj(obj, radPos);
 
-                    AddIfNotExists(pObj);
-                    RefreshPing(pObj);
+                    AddOrRefresh(pObj);
                 }
             }
 
@@ -161,7 +163,7 @@ namespace PolyPlane
             gfx.FillEllipse(new D2DEllipse(this.Position, new D2DSize(_radius, _radius)), bgColor);
 
             // Draw icons.
-            foreach (var p in _pings)
+            foreach (var p in _pings.Values)
             {
                 var ageFact = 1f - Utilities.Factor(p.Age, _maxAge);
                 var pColor = new D2DColor(ageFact, _color);
@@ -224,6 +226,16 @@ namespace PolyPlane
 
             // Border
             gfx.DrawEllipse(new D2DEllipse(this.Position, new D2DSize(_radius, _radius)), _color);
+
+            // Lock icon.
+            if (this.HasLock)
+            {
+                var color = Utilities.LerpColor(World.HudColor, D2DColor.WhiteSmoke, 0.3f);
+                var lockPos = this.Position + new D2DPoint(0f, -130f);
+                var lRect = new D2DRect(lockPos, new D2DSize(80, 20));
+                ctx.Gfx.DrawTextCenter("LOCKED", color, "Consolas", 15f, lRect);
+                ctx.Gfx.FillRectangle(lRect, color.WithAlpha(0.1f));
+            }
         }
 
         private void NotifyLocks()
@@ -322,7 +334,7 @@ namespace PolyPlane
 
         public FighterPlane FindNearestPlane()
         {
-            var planes = _pings.Where(p =>
+            var planes = _pings.Values.Where(p =>
             p.Obj is FighterPlane plane
             && !plane.IsDisabled
             && !plane.HasCrashed);
@@ -335,49 +347,6 @@ namespace PolyPlane
             return planes.FirstOrDefault().Obj as FighterPlane;
         }
 
-        //private PingObj? FindMostCentered()
-        //{
-        //    //var distSort = _pings.Where(p =>
-        //    //p.Obj is Plane plane
-        //    //&& !plane.IsDamaged && !plane.HasCrashed
-        //    //&& this.HostPlane.FOVToObject(p.Obj) <= (World.SENSOR_FOV * 0.5f))
-        //    //.OrderBy(p => p.Obj.Position.DistanceTo(HostPlane.Position)).ToList();
-
-        //    var distSort = _pings.Where(p =>
-        //   p.Obj is Plane plane
-        //   && !plane.IsDamaged && !plane.HasCrashed
-        //   && this.HostPlane.FOVToObject(p.Obj) <= AIM_FOV)
-        //   .OrderBy(p => p.Obj.Position.DistanceTo(HostPlane.Position)).ToList();
-
-        //    var fovSort = distSort.OrderBy(p => this.HostPlane.FOVToObject(p.Obj));
-
-        //    var mostCentered = fovSort.FirstOrDefault();
-
-        //    return mostCentered;
-        //}
-
-        //private PingObj? FindMostCentered()
-        //{
-        //    PingObj? mostCentered = null;
-        //    var minFov = float.MaxValue;
-
-        //    foreach (var p in _pings)
-        //    {
-        //        if (p.Obj is FighterPlane plane && !plane.IsDamaged && !plane.HasCrashed)
-        //        {
-        //            var fov = this.HostPlane.FOVToObject(plane);
-        //            if (fov <= (World.SENSOR_FOV * 0.5f) && fov < minFov)
-        //            {
-        //                minFov = fov;
-        //                mostCentered = p;
-        //            }
-        //        }
-        //    }
-
-        //    return mostCentered;
-        //}
-
-
         private PingObj? FindMostCenteredAndClosest()
         {
             const float MAX_DIST = 90000f;
@@ -386,7 +355,7 @@ namespace PolyPlane
             var minFov = float.MaxValue;
             var minDist = float.MaxValue;
 
-            foreach (var p in _pings)
+            foreach (var p in _pings.Values)
             {
                 if (p.Obj is FighterPlane plane && !plane.IsDisabled && !plane.HasCrashed)
                 {
@@ -409,7 +378,7 @@ namespace PolyPlane
         {
             GuidedMissile nearest = null;
 
-            var threats = _pings.Where((Func<PingObj, bool>)(p => p.Obj is GuidedMissile missile
+            var threats = _pings.Values.Where((Func<PingObj, bool>)(p => p.Obj is GuidedMissile missile
             && !missile.IsDistracted && !missile.MissedTarget
             && missile.Target.Equals(HostPlane)
             && missile.ClosingRate(HostPlane) > 0f
@@ -449,42 +418,21 @@ namespace PolyPlane
 
         private void PrunePings()
         {
-            for (int i = 0; i < _pings.Count; i++)
+            foreach (var ping in _pings.Values)
             {
-                var p = _pings[i];
-
-                if (p.Age >= _maxAge)
-                    _pings.RemoveAt(i);
+                if (ping.Age > _maxAge)
+                    _pings.Remove(ping.Obj.ID);
             }
         }
 
-        private void AddIfNotExists(PingObj pingObj)
+        private void AddOrRefresh(PingObj pingObj)
         {
-            bool exists = false;
-            for (int i = 0; i < _pings.Count; i++)
-            {
-                var p = _pings[i];
-
-                if (p.Obj.Equals(pingObj.Obj))
-                    exists = true;
-            }
-
-            if (!exists)
-                _pings.Add(pingObj);
+            if (_pings.TryGetValue(pingObj.Obj.ID, out var ping))
+                ping.Refresh(pingObj.RadarPos);
+            else
+                _pings.Add(pingObj.Obj.ID, pingObj);
         }
 
-        private void RefreshPing(PingObj pingObj)
-        {
-            for (int i = 0; i < _pings.Count; i++)
-            {
-                var ping = _pings[i];
-
-                if (ping.Obj.Equals(pingObj.Obj))
-                {
-                    _pings[i].Refresh(pingObj.RadarPos);
-                }
-            }
-        }
 
         private class PingObj
         {

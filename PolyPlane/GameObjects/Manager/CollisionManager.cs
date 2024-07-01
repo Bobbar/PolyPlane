@@ -241,11 +241,12 @@ namespace PolyPlane.GameObjects.Manager
                 foreach (var obj in nearObjs)
                 {
                     var dist = explosion.Position.DistanceTo(obj.Position) + EPSILON;
+                    var effectRadius = explosion.Radius * 1.2f;
 
-                    if (dist <= explosion.Radius)
+                    if (dist <= effectRadius)
                     {
                         // Impart an impulse on other nearby objects.
-                        var forceFact = Utilities.FactorWithEasing(dist, explosion.Radius, EasingFunctions.EaseOutExpo);
+                        var forceFact = Utilities.FactorWithEasing(dist, effectRadius, EasingFunctions.EaseOutExpo);
                         var dir = (obj.Position - explosion.Position).Normalized();
                         var forceVec = dir * (FORCE * forceFact);
                         obj.Velocity += forceVec * World.DT;

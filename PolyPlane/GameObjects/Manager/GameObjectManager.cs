@@ -187,17 +187,13 @@ namespace PolyPlane.GameObjects
 
         public void AddMissileExplosion(GuidedMissile missile)
         {
-            var explosion = new Explosion(missile.Position, 300f, 2.4f);
-            explosion.Owner = missile;
-
+            var explosion = new Explosion(missile, 300f, 2.4f);
             AddExplosion(explosion);
         }
 
         public void AddBulletExplosion(Bullet bullet)
         {
-            var explosion = new Explosion(bullet.Position, 50f, 0.5f);
-            explosion.Owner = bullet;
-
+            var explosion = new Explosion(bullet, 50f, 0.5f);
             AddExplosion(explosion);
         }
 

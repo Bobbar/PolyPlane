@@ -612,8 +612,7 @@ namespace PolyPlane.GameObjects
                 _controlWing = wing;
 
             const float VAPOR_TRAIL_GS = 15f; // How many Gs before vapor trail is visible.
-            const float VAPOR_TRAIL_VELO = 800f; // Velocity before vapor trail is visible.
-
+            const float VAPOR_TRAIL_VELO = 1000f; // Velocity before vapor trail is visible.
             const float MAX_GS = 30f; // Gs for max vapor trail intensity.
 
             _vaporTrails.Add(new Vapor(wing, this, new D2DPoint(20f, 0f), 8f, VAPOR_TRAIL_GS, VAPOR_TRAIL_VELO, MAX_GS));

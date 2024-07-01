@@ -12,14 +12,23 @@ namespace PolyPlane.GameObjects
         public float Radius => _currentRadius;
 
         private float _currentRadius = 0f;
+        private float _currentShockWaveRadius = 0f;
+        private bool _hasShockWave = false;
+
         private D2DColor _color = new D2DColor(0.4f, D2DColor.Orange);
+        private D2DColor _showckWaveColor = new D2DColor(1f, D2DColor.White);
+
         private List<Flame> _flames = new List<Flame>();
 
-        public Explosion(D2DPoint pos, float maxRadius, float duration) : base(pos)
+        public Explosion(GameObject owner, float maxRadius, float duration) : base(owner.Position)
         {
+            this.Owner = owner;
             this.MaxRadius = maxRadius;
             this.Duration = duration;
             this.PlayerID = 0;
+
+            if (this.Owner == null || this.Owner is not Bullet)
+                _hasShockWave = true;
 
             _color.r = _rnd.NextFloat(0.8f, 1f);
 
@@ -36,14 +45,21 @@ namespace PolyPlane.GameObjects
             _flames.ForEach(f => f.StopSpawning());
         }
 
+
         public override void Update(float dt, float renderScale)
         {
             base.Update(dt, renderScale);
 
             _currentRadius = MaxRadius * Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.EaseOutElastic);
-
             _color.a = 1f - Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.EaseOutQuintic);
-          
+
+
+            if (_hasShockWave)
+            {
+                _currentShockWaveRadius = (MaxRadius * 6f) * Utilities.FactorWithEasing(this.Age * 2f, Duration, EasingFunctions.EaseOutCirc);
+                _showckWaveColor.a = 1f - Utilities.FactorWithEasing(this.Age * 1.5f, Duration, EasingFunctions.EaseOutExpo);
+            }
+
             if (this.Age >= Flame.MAX_AGE)
                 this.IsExpired = true;
 
@@ -55,7 +71,12 @@ namespace PolyPlane.GameObjects
             base.Render(ctx);
 
             if (this.Age < Duration)
+            {
                 ctx.FillEllipse(new D2DEllipse(this.Position, new D2DSize(_currentRadius, _currentRadius)), _color);
+
+                if (_hasShockWave)
+                    ctx.DrawEllipse(new D2DEllipse(this.Position, new D2DSize(_currentShockWaveRadius, _currentShockWaveRadius)), _showckWaveColor, 7f);
+            }
 
             _flames.ForEach(f => f.Render(ctx));
         }
