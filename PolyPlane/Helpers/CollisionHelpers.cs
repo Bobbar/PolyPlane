@@ -13,11 +13,11 @@ namespace PolyPlane.Helpers
 
         public static bool IsIntersecting(D2DPoint a1, D2DPoint b1, D2DPoint a2, D2DPoint b2, out D2DPoint pos)
         {
-            D2DPoint l1_start = new D2DPoint(a1.X, a1.Y);
-            D2DPoint l1_end = new D2DPoint(b1.X, b1.Y);
+            D2DPoint l1_start = a1;
+            D2DPoint l1_end = b1;
 
-            D2DPoint l2_start = new D2DPoint(a2.X, a2.Y);
-            D2DPoint l2_end = new D2DPoint(b2.X, b2.Y);
+            D2DPoint l2_start = a2;
+            D2DPoint l2_end = b2;
 
             //Direction of the lines
             D2DPoint l1_dir = (l1_end - l1_start).Normalized();

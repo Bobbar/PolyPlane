@@ -192,7 +192,7 @@ namespace PolyPlane.GameObjects
                     MinVelo = 750f,
                     ParasiticDrag = 0.2f,
                     AOAFactor = 0.4f,
-                    DeflectionRate = 50f
+                    DeflectionRate = 70f
 
                 });
 

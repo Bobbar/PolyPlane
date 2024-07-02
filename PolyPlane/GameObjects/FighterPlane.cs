@@ -837,6 +837,7 @@ namespace PolyPlane.GameObjects
             _flipTimer.Restart();
             _bulletHoles.ForEach(b => b.Dispose());
             _bulletHoles.Clear();
+            _contrail.Clear();
             World.ObjectManager.CleanDebris(this.ID);
             _thrustAmt.Target = 1f;
             WasHeadshot = false;

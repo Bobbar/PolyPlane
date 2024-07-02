@@ -41,7 +41,7 @@ namespace PolyPlane.Helpers
 
         public static float Angle(this D2DPoint vector, bool clamp = false)
         {
-            var angle = (float)Math.Atan2(vector.Y, vector.X) * (180f / (float)Math.PI);
+            var angle = (float)Math.Atan2(vector.Y, vector.X) * Utilities.RADS_TO_DEGREES;
 
             if (clamp)
                 angle = Utilities.ClampAngle(angle);
@@ -52,19 +52,6 @@ namespace PolyPlane.Helpers
         public static float AngleRads(this D2DPoint vector, bool clamp = false)
         {
             var angle = (float)Math.Atan2(vector.Y, vector.X);
-
-            if (clamp)
-                angle = Utilities.ClampAngle(angle);
-
-            return angle;
-        }
-
-        public static double AngleD(this D2DPoint vector, bool clamp = false)
-        {
-            var angle = Math.Atan2(vector.Y, vector.X) * (180d / Math.PI);
-
-            if (clamp)
-                angle = Utilities.ClampAngleD(angle);
 
             return angle;
         }
@@ -133,16 +120,6 @@ namespace PolyPlane.Helpers
             return new D2DRect(rect.left - width, rect.top - height, rect.Width + 2f * width, rect.Height + 2f * height);
         }
 
-        public static T Shift<T>(this List<T> list)
-        {
-            if (list.Count == 0)
-                return default;
-
-            T item = list[0];
-            list.RemoveAt(0);
-            return item;
-        }
-
         public static D2DColor ToD2DColor(this Color color)
         {
             return D2DColor.FromGDIColor(color);
@@ -152,6 +129,5 @@ namespace PolyPlane.Helpers
         {
             return new D2DColor(alpha, color);
         }
-
     }
 }
