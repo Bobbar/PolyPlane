@@ -355,19 +355,19 @@ namespace PolyPlane.Helpers
             return navTime;
         }
 
-        public static float ImpactTime(FighterPlane plane, D2DPoint pos)
-        {
-            var dist = plane.Position.DistanceTo(pos);
-            var navTime = ImpactTime(dist, plane.Velocity.Length(), 1f);
-            return navTime;
-        }
+        //public static float ImpactTime(FighterPlane plane, D2DPoint pos)
+        //{
+        //    var dist = plane.Position.DistanceTo(pos);
+        //    var navTime = ImpactTime(dist, plane.Velocity.Length(), 1f);
+        //    return navTime;
+        //}
 
-        public static float ImpactTime(float dist, float velo, float accel)
-        {
-            var finalVelo = (float)Math.Sqrt(Math.Pow(velo, 2f) + 2f * accel * dist);
+        //public static float ImpactTime(float dist, float velo, float accel)
+        //{
+        //    var finalVelo = (float)Math.Sqrt(Math.Pow(velo, 2f) + 2f * accel * dist);
 
-            return (finalVelo - velo) / accel;
-        }
+        //    return (finalVelo - velo) / accel;
+        //}
 
         public static float ClosingRate(GameObject obj, D2DPoint pos, D2DPoint velo)
         {
@@ -490,46 +490,61 @@ namespace PolyPlane.Helpers
         public static D2DPoint FindSafeSpawnPoint(GameObjectManager objs, FighterPlane plane = null)
         {
             const float MIN_DIST = 40000f;
-            const float MAX_DIST = 60000f;
+            const float MAX_DIST = 100000f;
 
-            const float MIN_ALT = 4000f;
-            const float MAX_ALT = 15000f;
+            const float MIN_ALT = 3000f;
+            const float MAX_ALT = 25000f;
 
             var point = new D2DPoint(Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
-        
-            if (objs.Planes.Count == 0 || objs.Planes.Count == 1)
+
+            if (objs.Planes.Count == 0)
                 return point;
 
-            var min = objs.Planes.Min(p => p.Position.DistanceTo(point));
+            var sortedPoints = new List<Tuple<float, D2DPoint>>();
 
-            if (plane != null)
-                min = objs.Planes.Where(p => !p.IsDisabled && !p.ID.Equals(plane.ID)).Min(p => p.Position.DistanceTo(point));
-
-            var bestPoint = D2DPoint.Zero;
-            var bestDist = float.MinValue;
-
-            for (int i = 0; i < 5000; i++)
+            for (int x = (int)World.PlaneSpawnRange.X; x < World.PlaneSpawnRange.Y; x += (int)(MIN_DIST / 4f))
             {
-                point = new D2DPoint(Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
-
-                if (plane != null)
-                    min = objs.Planes.Where(p => !p.IsDisabled && !p.ID.Equals(plane.ID)).Min(p => p.Position.DistanceTo(point));
-                else
-                    min = objs.Planes.Min(p => p.Position.DistanceTo(point));
-
-                if (min > bestDist)
+                for (int y = (int)MIN_ALT; y < MAX_ALT; y += 1000)
                 {
-                    bestDist = min;
-                    bestPoint = point;
+                    var testPoint = new D2DPoint(x, -y);
+                    float bestDist = float.MaxValue;
+                    D2DPoint bestPoint = testPoint;
+
+                    foreach (var testPlane in objs.Planes.Where(p => p.IsDisabled == false))
+                    {
+                        var dist = testPoint.DistanceTo(testPlane.Position);
+
+                        if (dist < bestDist)
+                        {
+                            bestDist = dist;
+                            bestPoint = testPoint;
+                        }
+                    }
+
+                    sortedPoints.Add(new Tuple<float, D2DPoint>(bestDist, bestPoint));
                 }
-
-                if (min >= MIN_DIST && min <= MAX_DIST)
-                    return point;
-
             }
 
-            return bestPoint;
-        }
+            D2DPoint ret = point;
 
+            if (sortedPoints.Count > 0)
+            {
+                sortedPoints = sortedPoints.OrderBy(p => p.Item1).ToList();
+
+                if (sortedPoints.Last().Item1 < MIN_DIST)
+                    ret = sortedPoints.Last().Item2;
+                else
+                {
+                    var validPoints = sortedPoints.Where(p => p.Item1 >= MIN_DIST && p.Item1 <= MAX_DIST).ToList();
+
+                    if (validPoints.Count > 0)
+                        ret = validPoints[Rnd.Next(0, validPoints.Count)].Item2;
+                    else
+                        ret = sortedPoints.Last().Item2;
+                }
+            }
+
+            return ret;
+        }
     }
 }

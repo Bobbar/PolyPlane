@@ -282,7 +282,7 @@ namespace PolyPlane.Rendering
 
         public void ZoomIn()
         {
-            var amt = 0.03f * World.ZoomScale;
+            var amt = 0.06f * World.ZoomScale;
             World.ZoomScale += amt;
 
             ResizeGfx(force: true);
@@ -290,7 +290,7 @@ namespace PolyPlane.Rendering
 
         public void ZoomOut()
         {
-            var amt = 0.03f * World.ZoomScale;
+            var amt = 0.06f * World.ZoomScale;
             World.ZoomScale -= amt;
 
             ResizeGfx(force: true);
@@ -1258,11 +1258,15 @@ namespace PolyPlane.Rendering
                 if (MissileIsImpactThreat(plane, missile, MIN_IMPACT_TIME))
                     warningMessage = true;
 
-                if (dist < MIN_DIST / 2f || dist > MAX_DIST)
+                var impactTime = Utilities.ImpactTime(plane, missile);
+
+                if (impactTime > MIN_IMPACT_TIME * 1.5f)
                     continue;
 
+                var impactFact = 1f - Utilities.FactorWithEasing(impactTime, MIN_IMPACT_TIME, EasingFunctions.EaseOutQuad);
+
                 if (!missile.MissedTarget && warningMessage)
-                    gfx.DrawArrow(pos1, pos2, color, (distFact * 30f) + 1f);
+                    gfx.DrawArrow(pos1, pos2, color, (impactFact * 30f) + 1f);
             }
 
             if (warningMessage)
