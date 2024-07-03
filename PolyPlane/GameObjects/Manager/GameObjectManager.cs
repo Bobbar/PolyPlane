@@ -11,7 +11,7 @@ namespace PolyPlane.GameObjects
         public int TotalObjects = 0;
 
         private const int MAX_GROUND_IMPACTS = 500;
-        private const int SPATIAL_GRID_SIDE_LEN = 8;
+        private const int SPATIAL_GRID_SIDE_LEN = 10;
 
         public List<GameObject> Missiles = new List<GameObject>();
         public List<GameObject> MissileTrails = new List<GameObject>();
@@ -31,9 +31,9 @@ namespace PolyPlane.GameObjects
 
         private Dictionary<int, GameObject> _objLookup = new Dictionary<int, GameObject>();
         private Dictionary<int, List<GameObject>> _objLookupSpatial = new Dictionary<int, List<GameObject>>();
+        private List<GameObject> _movedSpatialObjects = new List<GameObject>();
 
         private List<GameObject> _allNetObjects = new List<GameObject>();
-        private List<GameObject> _allLocalObjects = new List<GameObject>();
         private List<GameObject> _allObjects = new List<GameObject>();
         private List<GameObject> _expiredObjs = new List<GameObject>();
 
@@ -201,7 +201,6 @@ namespace PolyPlane.GameObjects
 
         public void Clear()
         {
-            _allLocalObjects.Clear();
             _allNetObjects.Clear();
             Missiles.Clear();
             MissileTrails.Clear();
@@ -247,11 +246,6 @@ namespace PolyPlane.GameObjects
         public List<GameObject> GetAllNetObjects()
         {
             return _allNetObjects;
-        }
-
-        public List<GameObject> GetAllLocalObjects()
-        {
-            return _allLocalObjects;
         }
 
         public List<GameObject> GetAllObjects()
@@ -432,7 +426,6 @@ namespace PolyPlane.GameObjects
 
         private void SyncObjCollections()
         {
-            _allLocalObjects.Clear();
             _allNetObjects.Clear();
             _allObjects.Clear();
 
@@ -440,8 +433,6 @@ namespace PolyPlane.GameObjects
             {
                 if (obj.IsNetObject)
                     _allNetObjects.Add(obj);
-                else
-                    _allLocalObjects.Add(obj);
 
                 _allObjects.Add(obj);
             }
@@ -452,7 +443,8 @@ namespace PolyPlane.GameObjects
         private void UpdateSpatialLookup()
         {
             // Remove expired objects and move live objects to their new grid positions as needed.
-            var movedObjs = new List<GameObject>();
+
+            _movedSpatialObjects.Clear(); // Clear the temp storage.
 
             foreach (var kvp in _objLookupSpatial)
             {
@@ -467,7 +459,7 @@ namespace PolyPlane.GameObjects
                     if (!obj.IsExpired && newHash != curHash)
                     {
                         RemoveFromSpatialLookup(curHash, obj);
-                        movedObjs.Add(obj);
+                        _movedSpatialObjects.Add(obj);
                     }
                     else if (obj.IsExpired)
                     {
@@ -476,9 +468,10 @@ namespace PolyPlane.GameObjects
                 }
             }
 
-            foreach (var obj in movedObjs)
+            // Add moved objects.
+            for (int i = 0; i < _movedSpatialObjects.Count; i++)
             {
-                AddToSpatialLookup(obj);
+                AddToSpatialLookup(_movedSpatialObjects[i]);
             }
         }
 
@@ -536,7 +529,7 @@ namespace PolyPlane.GameObjects
         {
             return HashCode.Combine(idxX, idxY);
         }
-      
+
         public IEnumerable<GameObject> GetNear(GameObject obj)
         {
             GetGridIdx(obj, out int idxX, out int idxY);
