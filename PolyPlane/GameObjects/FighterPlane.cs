@@ -896,7 +896,7 @@ namespace PolyPlane.GameObjects
 
         private void FlipPoly()
         {
-            if (_currentDir == _queuedDir || this.HasCrashed)
+            if (_currentDir == _queuedDir || this.HasCrashed || this.IsDisabled)
                 return;
 
             this.Polygon.FlipY();
