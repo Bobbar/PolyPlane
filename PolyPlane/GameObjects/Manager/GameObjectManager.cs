@@ -71,6 +71,8 @@ namespace PolyPlane.GameObjects
         public void AddFlame(FlamePart flame)
         {
             Flames.Add(flame);
+
+            AddToSpatialLookup(flame);
         }
 
         public void AddDebris(Debris debris)
@@ -363,6 +365,10 @@ namespace PolyPlane.GameObjects
         {
             var hash = obj.ID.GetHashCode();
             _objLookup.Add(hash, obj);
+
+            // Add collidable objects to spatial lookup.
+            if (obj is ICollidable)
+                AddToSpatialLookup(obj);
         }
 
         private void HandlePlayerKilled(FighterPlane plane, GameObject impactor)
@@ -429,7 +435,6 @@ namespace PolyPlane.GameObjects
             _allLocalObjects.Clear();
             _allNetObjects.Clear();
             _allObjects.Clear();
-            _objLookupSpatial.Clear();
 
             foreach (var obj in _objLookup.Values)
             {
@@ -439,18 +444,60 @@ namespace PolyPlane.GameObjects
                     _allLocalObjects.Add(obj);
 
                 _allObjects.Add(obj);
-
-                // Only record collidable objects.
-                if (obj is ICollidable)
-                    AddToSpatialLookup(obj);
             }
 
-            // Add flames and debris to spatial lookup.
-            foreach (var flame in Flames)
-                AddToSpatialLookup(flame);
+            UpdateSpatialLookup();
+        }
 
-            foreach (var debris in Debris)
-                AddToSpatialLookup(debris);
+        private void UpdateSpatialLookup()
+        {
+            // Remove expired objects and move live objects to their new grid positions as needed.
+            var movedObjs = new List<GameObject>();
+
+            foreach (var kvp in _objLookupSpatial)
+            {
+                var curHash = kvp.Key;
+                var objs = kvp.Value;
+
+                for (int i = 0; i < objs.Count; i++)
+                {
+                    var obj = objs[i];
+                    var newHash = GetGridHash(obj);
+
+                    if (!obj.IsExpired && newHash != curHash)
+                    {
+                        RemoveFromSpatialLookup(curHash, obj);
+                        movedObjs.Add(obj);
+                    }
+                    else if (obj.IsExpired)
+                    {
+                        RemoveFromSpatialLookup(curHash, obj);
+                    }
+                }
+            }
+
+            foreach (var obj in movedObjs)
+            {
+                AddToSpatialLookup(obj);
+            }
+        }
+
+        private void RemoveFromSpatialLookup(int hash, GameObject obj)
+        {
+            if (_objLookupSpatial.TryGetValue(hash, out List<GameObject> objs))
+            {
+                for (int i = 0; i < objs.Count; i++)
+                {
+                    var o = objs[i];
+                    if (o.ID.Equals(obj.ID))
+                    {
+                        objs.RemoveAt(i);
+                    }
+                }
+
+                if (objs.Count == 0)
+                    _objLookupSpatial.Remove(hash);
+            }
         }
 
         private void AddToSpatialLookup(GameObject obj)
@@ -489,7 +536,7 @@ namespace PolyPlane.GameObjects
         {
             return HashCode.Combine(idxX, idxY);
         }
-
+      
         public IEnumerable<GameObject> GetNear(GameObject obj)
         {
             GetGridIdx(obj, out int idxX, out int idxY);
@@ -503,8 +550,13 @@ namespace PolyPlane.GameObjects
                     var nHash = GetGridHash(xo, yo);
 
                     if (_objLookupSpatial.TryGetValue(nHash, out var ns))
-                        foreach (var o in ns)
-                            yield return o;
+                    {
+                        for (int i = 0; i < ns.Count; i++)
+                        {
+                            yield return ns[i];
+                        }
+                    }
+
                 }
             }
         }

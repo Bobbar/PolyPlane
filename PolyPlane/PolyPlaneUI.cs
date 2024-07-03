@@ -6,7 +6,6 @@ using PolyPlane.Net;
 using PolyPlane.Net.NetHost;
 using PolyPlane.Rendering;
 using System.Diagnostics;
-using System.Drawing;
 using unvell.D2DLib;
 
 namespace PolyPlane
@@ -356,7 +355,7 @@ namespace PolyPlane
 
             _playerPlane.FireBulletCallback = b =>
             {
-                _objs.AddBullet(b);
+                _objs.EnqueueBullet(b);
 
                 if (World.IsNetGame)
                     _client.SendNewBulletPacket(b);
@@ -447,7 +446,7 @@ namespace PolyPlane
 
             aiPlane.FireBulletCallback = b =>
             {
-                _objs.AddBullet(b);
+                _objs.EnqueueBullet(b);
 
                 if (World.IsNetGame)
                 {
