@@ -7,6 +7,8 @@ namespace PolyPlane.GameObjects
 {
     public abstract class GameObject : IEquatable<GameObject>, IDisposable
     {
+        private const float MAX_ROT_SPD = 3000f;
+
         public GameID ID { get; set; } = new GameID();
 
         public D2DPoint Position { get; set; }
@@ -56,7 +58,18 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public float RotationSpeed { get; set; } = 0f;
+        public float RotationSpeed
+        {
+            get { return _rotationSpeed; }
+
+            set
+            {
+                if (Math.Abs(value) > MAX_ROT_SPD)
+                    _rotationSpeed = MAX_ROT_SPD * Math.Sign(value);
+                else
+                    _rotationSpeed = value;
+            }
+        }
 
         public float RenderOffset = 1f;
         public bool Visible = true;
@@ -89,6 +102,7 @@ namespace PolyPlane.GameObjects
         protected HistoricalBuffer<GameObjectPacket> HistoryBuffer = null;
         protected SmoothPoint _posSmooth = null;
 
+        protected float _rotationSpeed = 0f;
         protected float _rotation = 0f;
         protected float _verticalSpeed = 0f;
         protected float _prevAlt = 0f;
@@ -162,6 +176,8 @@ namespace PolyPlane.GameObjects
 
                 ClampToGround(dt);
             }
+
+            //PEAK_ROT_SPD = Math.Max(Math.Abs(this.RotationSpeed), PEAK_ROT_SPD);
         }
 
         public virtual void NetUpdate(float dt, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)

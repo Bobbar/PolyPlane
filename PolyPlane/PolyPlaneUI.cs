@@ -782,6 +782,19 @@ namespace PolyPlane
             _netMan.SendPlaneReset(_playerPlane);
         }
 
+        private void NextViewPlane()
+        {
+            if ((_playerPlane.IsDisabled || _playerPlane.HasCrashed || _playerPlane.IsAI))
+                _queueNextViewId = true;
+        }
+
+        private void PrevViewPlane()
+        {
+            if ((_playerPlane.IsDisabled || _playerPlane.HasCrashed || _playerPlane.IsAI))
+                _queuePrevViewId = true;
+        }
+
+
         private void PolyPlaneUI_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (_netMan != null)
@@ -923,14 +936,11 @@ namespace PolyPlane
                     break;
 
                 case '[':
-
-                    if ((_playerPlane.IsDisabled || _playerPlane.HasCrashed || _playerPlane.IsAI))
-                        _queuePrevViewId = true;
+                    PrevViewPlane();
                     break;
 
                 case ']':
-                    if ((_playerPlane.IsDisabled || _playerPlane.HasCrashed || _playerPlane.IsAI))
-                        _queueNextViewId = true;
+                    NextViewPlane();
                     break;
 
                 case (char)8: //Backspace
@@ -1005,11 +1015,17 @@ namespace PolyPlane
         {
             if (e.Delta > 0)
             {
-                _render?.DoMouseWheelUp();
+                if (!_ctrlDown)
+                    _render?.DoMouseWheelUp();
+                else
+                    PrevViewPlane();
             }
             else
             {
-                _render?.DoMouseWheelDown();
+                if (!_ctrlDown)
+                    _render?.DoMouseWheelDown();
+                else
+                    NextViewPlane();
             }
         }
 

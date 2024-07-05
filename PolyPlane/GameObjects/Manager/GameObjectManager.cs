@@ -466,6 +466,9 @@ namespace PolyPlane.GameObjects
                         RemoveFromSpatialLookup(curHash, obj);
                     }
                 }
+
+                if (objs.Count == 0)
+                    _objLookupSpatial.Remove(curHash);
             }
 
             // Add moved objects.
@@ -487,9 +490,6 @@ namespace PolyPlane.GameObjects
                         objs.RemoveAt(i);
                     }
                 }
-
-                if (objs.Count == 0)
-                    _objLookupSpatial.Remove(hash);
             }
         }
 
