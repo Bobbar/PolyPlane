@@ -14,9 +14,6 @@ namespace PolyPlane
     {
         private Thread _gameThread;
 
-        private ManualResetEventSlim _pauseRenderEvent = new ManualResetEventSlim(true);
-        private ManualResetEventSlim _stopRenderEvent = new ManualResetEventSlim(true);
-
         private bool _isPaused = false;
         private bool _oneStep = false;
         private bool _killRender = false;
@@ -202,7 +199,7 @@ namespace PolyPlane
 
                         InitGfx();
                         StartGameThread();
-                        ResumeRender();
+                        ResumeGame();
 
                         World.ViewPlaneID = _playerPlane.ID;
 
@@ -224,7 +221,7 @@ namespace PolyPlane
 
                         InitGfx();
                         StartGameThread();
-                        ResumeRender();
+                        ResumeGame();
 
                         result = true;
 
@@ -283,7 +280,7 @@ namespace PolyPlane
 
         private void HandleNewImpact(object? sender, ImpactEvent e)
         {
-            if (this.Disposing || this.IsDisposed || _render == null) return;
+            if (this.Disposing || this.IsDisposed || _render == null || _killRender == true) return;
 
             try
             {
@@ -326,13 +323,16 @@ namespace PolyPlane
             }
         }
 
-        private void PolyPlaneUI_Disposed(object? sender, EventArgs e)
+        private void PolyPlaneUI_FormClosing(object sender, FormClosingEventArgs e)
         {
             _collisions.ImpactEvent -= HandleNewImpact;
             _client?.SendPlayerDisconnectPacket((uint)_playerPlane.PlayerID);
 
             StopRender();
-            _killRender = true;
+        }
+
+        private void PolyPlaneUI_Disposed(object? sender, EventArgs e)
+        {
             _client?.Stop();
             _client?.Dispose();
             _render?.Dispose();
@@ -484,20 +484,15 @@ namespace PolyPlane
         {
             while (!this.Disposing && !_killRender)
             {
-                _stopRenderEvent.Wait();
-
                 AdvanceAndRender();
-
-                if (!_pauseRenderEvent.Wait(0))
-                {
-                    _isPaused = true;
-                    _pauseRenderEvent.Set();
-                }
             }
         }
 
         private void AdvanceAndRender()
         {
+            if (_killRender)
+                return;
+
             _updateTime = TimeSpan.Zero;
             _collisionTime = TimeSpan.Zero;
 
@@ -767,31 +762,19 @@ namespace PolyPlane
             plane.DecoysDropped++;
         }
 
-
-        private void PauseRender()
+        private void PauseGame()
         {
-            if (!_isPaused)
-            {
-                _pauseRenderEvent.Reset();
-                _pauseRenderEvent.Wait();
-            }
+            _isPaused = true;
         }
 
-        private void ResumeRender()
+        private void ResumeGame()
         {
-            if (_isPaused && _stopRenderEvent.Wait(0))
-            {
-                _pauseRenderEvent.Set();
-                _isPaused = false;
-            }
-
-            if (!_stopRenderEvent.Wait(0))
-                _stopRenderEvent.Set();
+            _isPaused = false;
         }
 
         private void StopRender()
         {
-            _stopRenderEvent.Reset();
+            _killRender = true;
         }
 
         private void SendPlayerReset()
@@ -877,9 +860,9 @@ namespace PolyPlane
                         break;
 
                     if (!_isPaused)
-                        PauseRender();
+                        PauseGame();
                     else
-                        ResumeRender();
+                        ResumeGame();
 
                     break;
 

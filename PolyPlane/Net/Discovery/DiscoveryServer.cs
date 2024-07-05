@@ -9,6 +9,8 @@ namespace PolyPlane.Net.Discovery
         private UdpClient _udpListener = new UdpClient();
         private Thread _listenThread;
         private bool _running = false;
+        private CancellationTokenSource _tokenSource = new CancellationTokenSource();
+        private CancellationToken _stopListenToken;
 
         public event EventHandler<DiscoveryPacket> NewDiscoveryReceived;
 
@@ -19,8 +21,9 @@ namespace PolyPlane.Net.Discovery
         /// <summary>
         /// Begin listening for broadcast packets.
         /// </summary>
-        public void StartListen()
+        public async void StartListen()
         {
+            _stopListenToken = _tokenSource.Token;
             _listenThread = new Thread(ListenLoop);
 
             _udpListener.Client.Bind(new IPEndPoint(IPAddress.Any, PORT));
@@ -32,25 +35,25 @@ namespace PolyPlane.Net.Discovery
 
         public void StopListen()
         {
+            _tokenSource?.Cancel();
             _running = false;
-            _udpListener?.Close();
         }
 
         public void Dispose()
         {
+            _tokenSource?.Cancel();
             _running = false;
-            _udpListener?.Close();
-            _udpListener?.Dispose();
         }
 
-        private void ListenLoop()
+        private async void ListenLoop()
         {
-            var from = new IPEndPoint(0, 0);
             try
             {
                 while (_running)
                 {
-                    var recBuff = _udpListener.Receive(ref from);
+                    var res = await _udpListener.ReceiveAsync(_stopListenToken);
+                    var recBuff = res.Buffer;
+
                     var packet = Serialization.ByteArrayToObject(recBuff) as NetPacket;
 
                     if (packet != null)
@@ -62,6 +65,11 @@ namespace PolyPlane.Net.Discovery
             catch
             {
                 // Catch socket exceptions when the listener is closed.
+            }
+            finally
+            {
+                _udpListener?.Close();
+                _udpListener?.Dispose();
             }
 
         }
