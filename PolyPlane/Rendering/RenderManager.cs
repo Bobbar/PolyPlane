@@ -780,7 +780,11 @@ namespace PolyPlane.Rendering
 
         private void DrawHealthBarClamped(RenderContext ctx, FighterPlane plane, D2DPoint position, D2DSize size)
         {
-            var healthPct = plane.Health / (float)FighterPlane.MAX_HEALTH;
+            var healthPct = plane.Health / FighterPlane.MAX_HEALTH;
+
+            if (healthPct > 0f && healthPct < 0.05f)
+                healthPct = 0.05f;
+
             ctx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), World.HudColor);
             ctx.DrawRectangle(new D2DRect(position, size), World.HudColor);
 
@@ -794,7 +798,11 @@ namespace PolyPlane.Rendering
 
         private void DrawHealthBar(D2DGraphics gfx, FighterPlane plane, D2DPoint position, D2DSize size)
         {
-            var healthPct = plane.Health / (float)FighterPlane.MAX_HEALTH;
+            var healthPct = plane.Health / FighterPlane.MAX_HEALTH;
+
+            if (healthPct > 0f && healthPct < 0.05f)
+                healthPct = 0.05f;
+
             gfx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), World.HudColor);
             gfx.DrawRectangle(new D2DRect(position, size), World.HudColor);
 

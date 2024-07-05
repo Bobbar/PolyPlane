@@ -499,7 +499,7 @@ namespace PolyPlane.Net
         public float Deflection;
         public bool IsDisabled;
         public bool FiringBurst;
-        public int Health; // TODO: Maybe send these stats periodically instead of on every frame.
+        public float Health; // TODO: Maybe send these stats periodically instead of on every frame.
         public int Score;
         public int Deaths;
 
@@ -546,7 +546,7 @@ namespace PolyPlane.Net
             data.AddFloat(Deflection);
             data.AddBool(IsDisabled);
             data.AddBool(FiringBurst);
-            data.AddInt(Health);
+            data.AddFloat(Health);
             data.AddInt(Score);
             data.AddInt(Deaths);
         }
@@ -558,7 +558,7 @@ namespace PolyPlane.Net
             Deflection = data.ReadFloat();
             IsDisabled = data.ReadBool();
             FiringBurst = data.ReadBool();
-            Health = data.ReadInt();
+            Health = data.ReadFloat();
             Score = data.ReadInt();
             Deaths = data.ReadInt();
         }

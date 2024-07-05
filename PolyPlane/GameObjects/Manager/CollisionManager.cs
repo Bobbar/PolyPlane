@@ -233,8 +233,8 @@ namespace PolyPlane.GameObjects.Manager
         private void HandleExplosionImpulse()
         {
             const float FORCE = 250f;
-            const float EPSILON = 0.001f;
-            const float DAMAGE_AMT = 2f;
+            const float EPSILON = 0.0001f;
+            const float DAMAGE_AMT = 25f;
 
             foreach (Explosion explosion in _objs.Explosions)
             {
@@ -261,10 +261,10 @@ namespace PolyPlane.GameObjects.Manager
                             if (!missile.Owner.Equals(plane))
                             {
                                 // Apply a small amount of damage to planes within the blast radius of the explosion.
-                                plane.Health -= (int)(forceFact * DAMAGE_AMT);
+                                plane.Health -= (forceFact * DAMAGE_AMT) * World.DT;
 
                                 // Handle planes killed by blast.
-                                if (plane.Health <= 0)
+                                if (plane.Health <= 0 && !plane.IsDisabled)
                                 {
                                     var impactor = explosion.Owner;
                                     plane.DoPlayerKilled(impactor);

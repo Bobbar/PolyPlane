@@ -477,7 +477,7 @@ namespace PolyPlane.GameObjects
 
         private void RemoveFromSpatialLookup(int hash, GameObject obj)
         {
-            if (_objLookupSpatial.TryGetValue(hash, out List<GameObject> objs))
+            if (_objLookupSpatial.TryGetValue(hash, out var objs))
             {
                 for (int i = 0; i < objs.Count; i++)
                 {
@@ -497,7 +497,7 @@ namespace PolyPlane.GameObjects
         {
             var hash = GetGridHash(obj);
 
-            if (_objLookupSpatial.TryGetValue(hash, out List<GameObject> objs))
+            if (_objLookupSpatial.TryGetValue(hash, out var objs))
                 objs.Add(obj);
             else
                 _objLookupSpatial.Add(hash, new List<GameObject> { obj });

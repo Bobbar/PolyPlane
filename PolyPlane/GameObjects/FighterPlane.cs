@@ -21,7 +21,7 @@ namespace PolyPlane.GameObjects
         public int NumMissiles { get { return _numMissiles; } set { _numMissiles = Math.Clamp(value, 0, MAX_MISSILES); } }
         public int NumBullets { get { return _numBullets; } set { _numBullets = Math.Clamp(value, 0, MAX_BULLETS); } }
         public int NumDecoys { get { return _numDecoys; } set { _numDecoys = Math.Clamp(value, 0, MAX_DECOYS); } }
-        public int Health { get { return _health; } set { _health = Math.Clamp(value, 0, MAX_HEALTH); } }
+        public float Health { get { return _health; } set { _health = Math.Clamp(value, 0, MAX_HEALTH); } }
 
         public float Deflection = 0f;
         public int BulletsFired = 0;
@@ -38,9 +38,9 @@ namespace PolyPlane.GameObjects
         public const int MAX_DECOYS = 15;
         public const int MAX_BULLETS = 30;
         public const int MAX_MISSILES = 6;
-        public const int MAX_HEALTH = 32;
-        public const int MISSILE_DAMAGE = 32;
-        public const int BULLET_DAMAGE = 4;
+        public const float MAX_HEALTH = 32f;
+        public const float MISSILE_DAMAGE = 32;
+        public const float BULLET_DAMAGE = 4;
 
         public bool IsAI => _isAIPlane;
 
@@ -102,7 +102,7 @@ namespace PolyPlane.GameObjects
         private int _numMissiles = MAX_MISSILES;
         private int _numBullets = MAX_BULLETS;
         private int _numDecoys = MAX_DECOYS;
-        private int _health = MAX_HEALTH;
+        private float _health = MAX_HEALTH;
 
 
         private RenderPoly FlamePoly;
