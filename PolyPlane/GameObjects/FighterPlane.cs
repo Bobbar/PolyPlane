@@ -660,12 +660,6 @@ namespace PolyPlane.GameObjects
             _bulletHoles.Add(bulletHole);
         }
 
-        public void DoImpact(GameObject impactor, D2DPoint impactPos)
-        {
-            var result = GetImpactResult(impactor, impactPos);
-            HandleImpactResult(impactor, result);
-        }
-
         public void HandleImpactResult(GameObject impactor, PlaneImpactResult result)
         {
             var attackPlane = impactor.Owner as FighterPlane;
@@ -691,7 +685,6 @@ namespace PolyPlane.GameObjects
                 {
                     SpawnDebris(8, result.ImpactPoint, D2DColor.Red);
                     WasHeadshot = true;
-                    IsDisabled = true;
                     Health = 0;
                     attackPlane.Headshots++;
                 }

@@ -107,13 +107,11 @@ namespace PolyPlane.GameObjects.Manager
 
                                     ImpactEvent?.Invoke(this, new ImpactEvent(plane, missile, result.DoesDamage));
 
-                                    plane.DoImpact(missile, pos);
+                                    plane.HandleImpactResult(missile, result);
 
                                     missile.Position = pos;
-
                                     missile.IsExpired = true;
                                 }
-                                
                             }
                         }
                     }
@@ -173,12 +171,11 @@ namespace PolyPlane.GameObjects.Manager
 
                                     ImpactEvent?.Invoke(this, new ImpactEvent(plane, bullet, result.DoesDamage));
 
-                                    plane.DoImpact(bullet, pos);
+                                    plane.HandleImpactResult(bullet, result);
 
                                     bullet.Position = pos;
+                                    bullet.IsExpired = true;
                                 }
-
-                                bullet.IsExpired = true;
                             }
                         }
                     }
