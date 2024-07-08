@@ -22,6 +22,7 @@ namespace PolyPlane.GameObjects
 
         public SmokeTrail(GameObject obj, Func<GameObject, D2DPoint> positionSelector, float lineWeight)
         {
+            this.PlayerID = obj.PlayerID;
             _gameObject = obj;
             _timeOut.TriggerCallback = () => this.IsExpired = true;
             _posSelector = positionSelector;

@@ -849,10 +849,26 @@ namespace PolyPlane.Rendering
 
             DrawPopMessages(ctx, viewportsize, viewPlane);
 
+            DrawGroundWarning(ctx, viewportsize, viewPlane);
+
             if (_showScore)
                 DrawScoreCard(ctx, viewportsize, viewPlane);
 
             ctx.Gfx.PopTransform();
+        }
+
+        private void DrawGroundWarning(RenderContext ctx, D2DSize viewportsize, FighterPlane viewPlane)
+        {
+            var pos = new D2DPoint(viewportsize.width / 2f, viewportsize.height / 2f - 100f);
+
+            var rect = new D2DRect(pos, new D2DSize(150,100));
+
+            var impactTime = Utilities.GroundImpactTime(viewPlane);
+
+            if (impactTime > 0f && impactTime < 5f)
+            {
+                ctx.Gfx.DrawTextCenter("PULL UP!", D2DColor.Red, _defaultFontName, 30f, rect);
+            }
         }
 
         private void DrawMessageBox(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)
@@ -1202,7 +1218,20 @@ namespace PolyPlane.Rendering
                 var angle = dir.Angle(true);
                 var vec = Utilities.AngleToVectorDegrees(angle);
 
-                ctx.Gfx.DrawArrow(pos + (vec * 250f), pos + (vec * 270f), color, 2f);
+                ctx.Gfx.DrawArrow(pos + (vec * 280f), pos + (vec * 300f), color, 2f);
+
+                var lead = LeadTarget(target, plane);
+
+                var angleDiff = Utilities.AngleDiff(angle, lead);
+
+                if (Math.Abs(angleDiff) < 90f)
+                {
+                    var leadVec = Utilities.AngleToVectorDegrees(lead);
+
+                    ctx.Gfx.DrawLine(pos + (vec * 300f), pos + (leadVec * 300f), color, 1f, D2DDashStyle.Dash);
+                    ctx.Gfx.DrawCrosshair(pos + (leadVec * 300f), 1f, color, 1f, 3f);
+                }
+               
             }
 
             if (plane.Radar.HasLock)
@@ -1211,6 +1240,22 @@ namespace PolyPlane.Rendering
                 var lRect = new D2DRect(lockPos, new D2DSize(120, 30));
                 ctx.Gfx.DrawTextCenter("LOCKED", color, _defaultFontName, 25f, lRect);
             }
+        }
+
+        private float LeadTarget(GameObject target, FighterPlane plane)
+        {
+            const float pValue = 1f;
+
+            var los = target.Position - plane.Position;
+            var navigationTime = los.Length() / (plane.AirSpeedTrue * World.DT);
+            var targRelInterceptPos = los + ((target.Velocity * World.DT) * navigationTime);
+
+            targRelInterceptPos *= pValue;
+
+            var leadRotation = ((target.Position + targRelInterceptPos) - plane.Position).Angle(true);
+            var targetRot = leadRotation;
+
+            return targetRot;
         }
 
         private void DrawRadar(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)

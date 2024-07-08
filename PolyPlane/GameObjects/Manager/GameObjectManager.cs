@@ -1,5 +1,6 @@
 ﻿using PolyPlane.Helpers;
 using PolyPlane.Rendering;
+using System.Diagnostics;
 namespace PolyPlane.GameObjects
 {
     /// <summary>
@@ -36,8 +37,8 @@ namespace PolyPlane.GameObjects
         private List<GameObject> _allObjects = new List<GameObject>();
         private List<GameObject> _expiredObjs = new List<GameObject>();
 
-        private GameObjectPool<GameObject> _flamePool = new GameObjectPool<GameObject>(() => new FlamePart());
-        private GameObjectPool<GameObject> _bulletPool = new GameObjectPool<GameObject>(() => new Bullet());
+        private GameObjectPool<FlamePart> _flamePool = new GameObjectPool<FlamePart>(() => new FlamePart());
+        private GameObjectPool<Bullet> _bulletPool = new GameObjectPool<Bullet>(() => new Bullet());
 
         public event EventHandler<PlayerScoredEventArgs> PlayerScoredEvent;
         public event EventHandler<EventMessage> PlayerKilledEvent;
@@ -46,7 +47,7 @@ namespace PolyPlane.GameObjects
 
         public Bullet RentBullet()
         {
-            var bullet = _bulletPool.RentObject() as Bullet;
+            var bullet = _bulletPool.RentObject();
             return bullet;
         }
 
@@ -57,7 +58,7 @@ namespace PolyPlane.GameObjects
 
         public FlamePart RentFlamePart()
         {
-            var part = _flamePool.RentObject() as FlamePart;
+            var part = _flamePool.RentObject();
             return part;
         }
 
@@ -422,12 +423,14 @@ namespace PolyPlane.GameObjects
 
         private void SyncObjCollections()
         {
-            _allNetObjects.Clear();
+            if (World.IsNetGame)
+                _allNetObjects.Clear();
+
             _allObjects.Clear();
 
             foreach (var obj in _objLookup.Values)
             {
-                if (obj.IsNetObject)
+                if (World.IsNetGame && obj.IsNetObject)
                     _allNetObjects.Add(obj);
 
                 _allObjects.Add(obj);

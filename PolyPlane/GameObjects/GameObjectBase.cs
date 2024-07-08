@@ -1,6 +1,7 @@
 ﻿using PolyPlane.Helpers;
 using PolyPlane.Net;
 using PolyPlane.Rendering;
+using System.Diagnostics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -158,6 +159,9 @@ namespace PolyPlane.GameObjects
 
             if (this.IsExpired)
                 return;
+
+            if (this is GuidedMissile && this.IsExpired)
+                Debugger.Break();
 
             if (World.InterpOn && World.IsNetGame && IsNetObject && InterpBuffer != null)
             {
