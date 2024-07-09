@@ -465,6 +465,16 @@ namespace PolyPlane.Helpers
             const float MIN_ALT = 3000f;
             const float MAX_ALT = 25000f;
 
+            var minDist = MIN_DIST;
+            var maxDist = MAX_DIST;
+
+            // Half the spawn range when in guns only mode.
+            if (World.GunsOnly)
+            {
+                minDist = minDist / 2f;
+                maxDist = maxDist / 2f;
+            }
+
             var point = new D2DPoint(Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
 
             if (objs.Planes.Count == 0)
@@ -472,7 +482,7 @@ namespace PolyPlane.Helpers
 
             var sortedPoints = new List<Tuple<float, D2DPoint>>();
 
-            for (int x = (int)World.PlaneSpawnRange.X; x < World.PlaneSpawnRange.Y; x += (int)(MIN_DIST / 4f))
+            for (int x = (int)World.PlaneSpawnRange.X; x < World.PlaneSpawnRange.Y; x += (int)(minDist / 4f))
             {
                 for (int y = (int)MIN_ALT; y < MAX_ALT; y += 1000)
                 {
@@ -501,11 +511,11 @@ namespace PolyPlane.Helpers
             {
                 sortedPoints = sortedPoints.OrderBy(p => p.Item1).ToList();
 
-                if (sortedPoints.Last().Item1 < MIN_DIST)
+                if (sortedPoints.Last().Item1 < minDist)
                     ret = sortedPoints.Last().Item2;
                 else
                 {
-                    var validPoints = sortedPoints.Where(p => p.Item1 >= MIN_DIST && p.Item1 <= MAX_DIST).ToList();
+                    var validPoints = sortedPoints.Where(p => p.Item1 >= minDist && p.Item1 <= maxDist).ToList();
 
                     if (validPoints.Count > 0)
                         ret = validPoints[Rnd.Next(0, validPoints.Count)].Item2;

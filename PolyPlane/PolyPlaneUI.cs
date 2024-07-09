@@ -13,6 +13,7 @@ namespace PolyPlane
     public partial class PolyPlaneUI : Form
     {
         private Thread _gameThread;
+        private ManualResetEventSlim _renderExitEvent = new ManualResetEventSlim(false);
 
         private bool _isPaused = false;
         private bool _oneStep = false;
@@ -468,6 +469,7 @@ namespace PolyPlane
         private void StartGameThread()
         {
             _killRender = false;
+            _renderExitEvent.Reset();
             _gameThread = new Thread(GameLoop);
             _gameThread.Priority = ThreadPriority.AboveNormal;
             _gameThread.Start();
@@ -486,6 +488,8 @@ namespace PolyPlane
             {
                 AdvanceAndRender();
             }
+
+            _renderExitEvent.Set();
         }
 
         private void AdvanceAndRender()
@@ -775,6 +779,8 @@ namespace PolyPlane
         private void StopRender()
         {
             _killRender = true;
+
+            _renderExitEvent.Wait(1000);
         }
 
         private void SendPlayerReset()
@@ -850,6 +856,7 @@ namespace PolyPlane
                     break;
 
                 case 'l':
+                    World.ShowLeadIndicators = !World.ShowLeadIndicators;
                     break;
 
                 case 'm':

@@ -836,6 +836,7 @@ namespace PolyPlane.Rendering
 
                 DrawPlanePointers(ctx, viewportsize, viewPlane);
                 DrawMissilePointers(ctx.Gfx, viewportsize, viewPlane);
+                DrawGroundWarning(ctx, viewportsize, viewPlane);
             }
 
             DrawHudMessage(ctx.Gfx, viewportsize);
@@ -849,7 +850,6 @@ namespace PolyPlane.Rendering
 
             DrawPopMessages(ctx, viewportsize, viewPlane);
 
-            DrawGroundWarning(ctx, viewportsize, viewPlane);
 
             if (_showScore)
                 DrawScoreCard(ctx, viewportsize, viewPlane);
@@ -859,16 +859,13 @@ namespace PolyPlane.Rendering
 
         private void DrawGroundWarning(RenderContext ctx, D2DSize viewportsize, FighterPlane viewPlane)
         {
+            const float WARN_TIME = 5f;
             var pos = new D2DPoint(viewportsize.width / 2f, viewportsize.height / 2f - 100f);
-
-            var rect = new D2DRect(pos, new D2DSize(150,100));
-
+            var rect = new D2DRect(pos, new D2DSize(150, 100));
             var impactTime = Utilities.GroundImpactTime(viewPlane);
 
-            if (impactTime > 0f && impactTime < 5f)
-            {
+            if (impactTime > 0f && impactTime < WARN_TIME)
                 ctx.Gfx.DrawTextCenter("PULL UP!", D2DColor.Red, _defaultFontName, 30f, rect);
-            }
         }
 
         private void DrawMessageBox(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)
@@ -1045,22 +1042,7 @@ namespace PolyPlane.Rendering
             gfx.PopTransform();
         }
 
-        private void DrawStats(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
-        {
-            const float W = 20f;
-            const float H = 50f;
-            const float xPos = 110f;
-            const float yPos = 110f;
-            var pos = new D2DPoint(xPos, (viewportsize.height * 0.5f) + yPos);
-
-            var rect = new D2DRect(pos, new D2DSize(W, H));
-
-
-            //gfx.DrawTextCenter($"{plane.Hits}/{Plane.MAX_HITS}", World.HudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 40f), new D2DSize(50f, 20f)));
-            gfx.DrawTextCenter($"MSL: {plane.NumMissiles}", World.HudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 70f), new D2DSize(50f, 20f)));
-            gfx.DrawTextCenter($"AMMO: {plane.NumBullets}", World.HudColor, _defaultFontName, 15f, new D2DRect(pos + new D2DPoint(0, 100f), new D2DSize(70f, 20f)));
-        }
-
+     
         private void DrawGMeter(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
         {
             const float xPos = 80f;
@@ -1196,6 +1178,8 @@ namespace PolyPlane.Rendering
         {
             const float MIN_DIST = 600f;
             const float MAX_DIST = 10000f;
+            const float POINTER_DIST = 300f;
+
             var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
             var color = Utilities.LerpColor(World.HudColor, D2DColor.WhiteSmoke, 0.3f);
 
@@ -1218,20 +1202,22 @@ namespace PolyPlane.Rendering
                 var angle = dir.Angle(true);
                 var vec = Utilities.AngleToVectorDegrees(angle);
 
-                ctx.Gfx.DrawArrow(pos + (vec * 280f), pos + (vec * 300f), color, 2f);
+                ctx.Gfx.DrawArrow(pos + (vec * (POINTER_DIST - 20f)), pos + (vec * POINTER_DIST), color, 2f);
 
-                var lead = LeadTarget(target, plane);
-
-                var angleDiff = Utilities.AngleDiff(angle, lead);
-
-                if (Math.Abs(angleDiff) < 90f)
+                // Draw lead indicator.
+                if (World.ShowLeadIndicators)
                 {
-                    var leadVec = Utilities.AngleToVectorDegrees(lead);
+                    var lead = LeadTarget(target, plane);
+                    var angleDiff = Utilities.AngleDiff(angle, lead);
 
-                    ctx.Gfx.DrawLine(pos + (vec * 300f), pos + (leadVec * 300f), color, 1f, D2DDashStyle.Dash);
-                    ctx.Gfx.DrawCrosshair(pos + (leadVec * 300f), 1f, color, 1f, 3f);
+                    if (Math.Abs(angleDiff) < 70f && plane.IsObjInFOV(target, 70f))
+                    {
+                        var leadVec = Utilities.AngleToVectorDegrees(lead);
+
+                        ctx.Gfx.DrawLine(pos + (vec * POINTER_DIST), pos + (leadVec * POINTER_DIST), color, 1f, D2DDashStyle.Dash);
+                        ctx.Gfx.DrawCrosshair(pos + (leadVec * POINTER_DIST), 1f, color, 1f, 4f);
+                    }
                 }
-               
             }
 
             if (plane.Radar.HasLock)
@@ -1547,6 +1533,7 @@ namespace PolyPlane.Rendering
                 infoText += $"Left-Click: Fire Bullets\n";
                 infoText += $"Right-Click: Drop Decoys\n";
                 infoText += $"Middle-Click/Space Bar: Fire Missile\n";
+                infoText += $"L: Toggle Lead Indicators\n";
 
                 infoText += $"\nSpectate (While crashed)\n";
                 infoText += $"([/]): Prev/Next Spectate Plane\n";
