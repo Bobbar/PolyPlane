@@ -1230,10 +1230,10 @@ namespace PolyPlane.Rendering
 
         private float LeadTarget(GameObject target, FighterPlane plane)
         {
-            const float pValue = 1f;
+            const float pValue = 5f;
 
             var los = target.Position - plane.Position;
-            var navigationTime = los.Length() / (plane.AirSpeedTrue * World.DT);
+            var navigationTime = los.Length() / ((plane.AirSpeedTrue + Bullet.SPEED) * World.DT);
             var targRelInterceptPos = los + ((target.Velocity * World.DT) * navigationTime);
 
             targRelInterceptPos *= pValue;
