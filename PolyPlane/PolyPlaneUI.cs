@@ -36,9 +36,7 @@ namespace PolyPlane
 
         private D2DPoint _playerPlaneSlewPos = D2DPoint.Zero;
 
-        private GameTimer _burstTimer = new GameTimer(0.25f, true);
         private GameTimer _decoyTimer = new GameTimer(0.25f, true);
-        private GameTimer _playerBurstTimer = new GameTimer(0.25f, true);
         private GameTimer _playerResetTimer = new GameTimer(15f);
 
         private Stopwatch _timer = new Stopwatch();
@@ -63,29 +61,12 @@ namespace PolyPlane
             this.Disposed += PolyPlaneUI_Disposed;
             this.MouseWheel += PolyPlaneUI_MouseWheel;
 
-            _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
 
-            _playerBurstTimer.StartCallback = () =>
+            _playerResetTimer.TriggerCallback = () =>
             {
-                _playerPlane.FireBullet();
-
-                if (!_playerPlane.IsDisabled && _playerPlane.NumBullets > 0)
-                    _render.DoScreenShake(2f);
+                EnableRespawn();
             };
-
-            _playerBurstTimer.TriggerCallback = () =>
-            {
-                _playerPlane.FireBullet();
-
-                if (!_playerPlane.IsDisabled && _playerPlane.NumBullets > 0)
-                    _render.DoScreenShake(2f);
-            };
-
-            //_playerResetTimer.TriggerCallback = () =>
-            //{
-            //    EnableRespawn();
-            //};
 
             _multiThreadNum = Environment.ProcessorCount - 2;
         }
@@ -358,6 +339,9 @@ namespace PolyPlane
             {
                 _objs.EnqueueBullet(b);
 
+                if (b.Owner.ID.Equals(World.ViewPlaneID))
+                    _render.DoScreenShake(2f);
+
                 if (World.IsNetGame)
                     _client.SendNewBulletPacket(b);
             };
@@ -449,6 +433,9 @@ namespace PolyPlane
             {
                 _objs.EnqueueBullet(b);
 
+                if (b.Owner.ID.Equals(World.ViewPlaneID))
+                    _render.DoScreenShake(2f);
+
                 if (World.IsNetGame)
                 {
                     _client.SendNewBulletPacket(b);
@@ -531,9 +518,7 @@ namespace PolyPlane
 
                 World.UpdateAirDensityAndWind(World.DT);
 
-                _playerBurstTimer.Update(World.DT);
                 _playerResetTimer.Update(World.DT);
-                DoAIPlaneBurst(World.DT);
                 _decoyTimer.Update(World.DT);
 
                 _timer.Stop();
@@ -547,7 +532,7 @@ namespace PolyPlane
             _render.CollisionTime = _collisionTime;
             _render.UpdateTime = _updateTime;
 
-            if (!_skipRender && this.WindowState != FormWindowState.Minimized)
+            if (!_skipRender && !_killRender && this.WindowState != FormWindowState.Minimized)
                 _render.RenderFrame(viewPlane);
             else
                 _fpsLimiter.Wait(60);
@@ -615,7 +600,6 @@ namespace PolyPlane
 
             if (!_hasFocus)
             {
-                _playerBurstTimer.Stop();
                 _playerPlane.FiringBurst = false;
                 _playerPlane.DroppingDecoy = false;
                 return;
@@ -624,8 +608,6 @@ namespace PolyPlane
             // Don't allow inputs if mouse left the window.
             if (!this.DesktopBounds.Contains(Control.MousePosition))
             {
-                _playerBurstTimer.Stop();
-                _playerBurstTimer.Reset();
                 _playerPlane.FiringBurst = false;
                 _playerPlane.DroppingDecoy = false;
                 _isHoldingAlt = true; // Hold the plane at the current altitude if mouse leaves the window.
@@ -640,13 +622,10 @@ namespace PolyPlane
 
             if (buttons.HasFlag(MouseButtons.Left))
             {
-                _playerBurstTimer.Start();
                 _playerPlane.FiringBurst = true;
             }
             else
             {
-                _playerBurstTimer.Stop();
-                _playerBurstTimer.Reset();
                 _playerPlane.FiringBurst = false;
             }
 
@@ -691,42 +670,6 @@ namespace PolyPlane
             {
                 SpawnAIPlane();
                 _queueSpawnPlane = false;
-            }
-        }
-
-        private void DoAIPlaneBurst(float dt)
-        {
-            if (_objs.Planes.Any(p => p.FiringBurst && p.IsAI))
-            {
-                _burstTimer.Start();
-            }
-            else
-            {
-                _burstTimer.Stop();
-                _burstTimer.Reset();
-            }
-
-            _burstTimer.Update(dt);
-        }
-
-        private void DoAIPlaneBursts()
-        {
-            var firing = _objs.Planes.Where(p => p.FiringBurst).ToArray();
-
-            if (firing.Length == 0)
-                return;
-
-            for (int i = 0; i < firing.Length; i++)
-            {
-                var plane = firing[i];
-
-                if (!plane.IsAI && plane.Equals(_playerPlane))
-                    continue;
-
-                if (plane.IsNetObject)
-                    continue;
-
-                plane.FireBullet();
             }
         }
 

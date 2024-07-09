@@ -832,11 +832,11 @@ namespace PolyPlane.Rendering
                 if (viewPlane.IsAI == false)
                 {
                     DrawGuideIcon(ctx.Gfx, viewportsize, viewPlane);
+                    DrawGroundWarning(ctx, viewportsize, viewPlane);
                 }
 
                 DrawPlanePointers(ctx, viewportsize, viewPlane);
                 DrawMissilePointers(ctx.Gfx, viewportsize, viewPlane);
-                DrawGroundWarning(ctx, viewportsize, viewPlane);
             }
 
             DrawHudMessage(ctx.Gfx, viewportsize);

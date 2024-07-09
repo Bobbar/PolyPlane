@@ -65,13 +65,23 @@ namespace PolyPlane.GameObjects
         public bool SASOn { get; set; } = true;
         public bool HasCrashed { get; set; } = false;
         public bool WasHeadshot { get; set; } = false;
-        public D2DPoint GunPosition => _gunPosition.Position;
+        public D2DPoint GunPosition => _gun.Position;
         public D2DPoint ExhaustPosition => _centerOfThrust.Position;
         public bool IsDisabled { get; set; } = false;
         public Radar Radar { get; set; }
         public bool HasRadarLock = false;
 
-        public Action<Bullet> FireBulletCallback { get; set; }
+        public Action<Bullet> FireBulletCallback 
+        { 
+            get { return _fireBulletCallback; }
+            set
+            {
+                _fireBulletCallback = value;
+                _gun.FireBulletCallback = value;
+            }
+        }
+
+        private Action<Bullet> _fireBulletCallback;
         public Action<GuidedMissile> FireMissileCallback { get; set; }
         public Action<FighterPlane, GameObject> PlayerKilledCallback { get; set; }
         public Action<FighterPlane> PlayerCrashedCallback { get; set; }
@@ -108,8 +118,9 @@ namespace PolyPlane.GameObjects
         private RenderPoly FlamePoly;
         private D2DLayer _polyClipLayer = null;
         private D2DColor _flameFillColor = new D2DColor(0.6f, D2DColor.Yellow);
+        
+        private Gun _gun;
         private FixturePoint _flamePos;
-        private FixturePoint _gunPosition;
         private FixturePoint _cockpitPosition;
         private FixturePoint _centerOfThrust;
         private D2DSize _cockpitSize = new D2DSize(9f, 6f);
@@ -118,7 +129,6 @@ namespace PolyPlane.GameObjects
         private SmokeTrail _contrail;
         private List<BulletHole> _bulletHoles = new List<BulletHole>();
         private List<Vapor> _vaporTrails = new List<Vapor>();
-        private GunSmoke _gunSmoke;
 
         private IAIBehavior _aiBehavior;
 
@@ -201,12 +211,10 @@ namespace PolyPlane.GameObjects
 
             this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), this.RenderOffset);
             _flamePos = new FixturePoint(this, new D2DPoint(-38f, 1f));
-            _gunPosition = new FixturePoint(this, new D2DPoint(35f, 0));
             _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
-            _gunSmoke = new GunSmoke(_gunPosition, D2DPoint.Zero, 8f, new D2DColor(0.7f, D2DColor.BurlyWood));
+            _gun = new Gun(this, new D2DPoint(35f, 0), FireBulletCallback);
 
             _flamePos.IsNetObject = this.IsNetObject;
-            _gunPosition.IsNetObject = this.IsNetObject;
             _cockpitPosition.IsNetObject = this.IsNetObject;
 
             _contrail = new SmokeTrail(this, o =>
@@ -216,7 +224,6 @@ namespace PolyPlane.GameObjects
             }, lineWeight: 8f);
 
             _contrail.IsNetObject = this.IsNetObject;
-
 
             _expireTimeout.TriggerCallback = () =>
             {
@@ -232,7 +239,6 @@ namespace PolyPlane.GameObjects
                     NumBullets++;
             };
 
-            _bulletRegenTimer.Start();
 
             _missileRegenTimer.TriggerCallback = () =>
             {
@@ -242,18 +248,17 @@ namespace PolyPlane.GameObjects
 
             _missileRegenTimer.Start();
 
-
             _decoyRegenTimer.TriggerCallback = () =>
             {
                 if (NumDecoys < MAX_DECOYS)
                     NumDecoys++;
             };
 
+            _bulletRegenTimer.Start();
             _decoyRegenTimer.Start();
+            _easePhysicsTimer.Start();
 
             _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
-
-            _easePhysicsTimer.Start();
             _easePhysicsTimer.TriggerCallback = () => _easePhysicsComplete = true;
         }
 
@@ -405,16 +410,15 @@ namespace PolyPlane.GameObjects
             _gForce = _gforceAvg.Current;
 
             _flamePos.Update(dt, renderScale * this.RenderOffset);
-            _gunPosition.Update(dt, renderScale * this.RenderOffset);
             _cockpitPosition.Update(dt, renderScale * this.RenderOffset);
             _thrustAmt.Update(dt);
+            _gun.Update(dt, renderScale * this.RenderOffset);
 
             if (!World.IsNetGame || World.IsClient)
             {
                 _bulletHoles.ForEach(f => f.Update(dt, renderScale * this.RenderOffset));
                 _contrail.Update(dt, renderScale);
                 _vaporTrails.ForEach(v => v.Update(dt, renderScale * this.RenderOffset));
-                _gunSmoke.Update(dt, renderScale * this.RenderOffset);
             }
 
             CheckForFlip();
@@ -436,12 +440,6 @@ namespace PolyPlane.GameObjects
             _expireTimeout.Update(dt);
 
             this.Radar?.Update(dt, renderScale);
-
-
-            if (this.FiringBurst && this.NumBullets > 0 && !this.IsDisabled)
-                _gunSmoke.Visible = true;
-            else
-                _gunSmoke.Visible = false;
 
             if (_aiBehavior != null)
                 _aiBehavior.Update(dt);
@@ -479,7 +477,7 @@ namespace PolyPlane.GameObjects
             DrawCockpit(ctx.Gfx);
             DrawBulletHoles(ctx);
             Wings.ForEach(w => w.Render(ctx));
-            _gunSmoke.Render(ctx);
+            _gun.Render(ctx);
 
             //DrawFOVCone(gfx);
             //_cockpitPosition.Render(ctx);
@@ -635,7 +633,7 @@ namespace PolyPlane.GameObjects
             _bulletHoles.ForEach(f => f.Update(0f, World.RenderScale * this.RenderOffset));
             _centerOfThrust.Update(0f, World.RenderScale * this.RenderOffset);
             _cockpitPosition.Update(0f, World.RenderScale * this.RenderOffset);
-            _gunPosition.Update(0f, World.RenderScale * this.RenderOffset);
+            _gun.Update(0f, World.RenderScale * this.RenderOffset);
         }
 
         public void AddBulletHole()
@@ -897,7 +895,7 @@ namespace PolyPlane.GameObjects
             _flamePos.FlipY();
             _bulletHoles.ForEach(f => f.FlipY());
             _cockpitPosition.FlipY();
-            _gunPosition.FlipY();
+            _gun.FlipY();
             _centerOfThrust.FlipY();
 
             if (_currentDir == Direction.Right)

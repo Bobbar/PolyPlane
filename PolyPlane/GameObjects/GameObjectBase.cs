@@ -127,6 +127,11 @@ namespace PolyPlane.GameObjects
             }
         }
 
+        public GameObject(GameObject owner) : this()
+        {
+            Owner = owner;
+        }
+
         public GameObject(D2DPoint pos) : this(pos, D2DPoint.Zero, 0f, 0f)
         {
             Position = pos;
