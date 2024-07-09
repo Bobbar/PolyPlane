@@ -37,7 +37,6 @@ namespace PolyPlane
         private D2DPoint _playerPlaneSlewPos = D2DPoint.Zero;
 
         private GameTimer _decoyTimer = new GameTimer(0.25f, true);
-        private GameTimer _playerResetTimer = new GameTimer(15f);
 
         private Stopwatch _timer = new Stopwatch();
         private TimeSpan _updateTime = new TimeSpan();
@@ -62,11 +61,6 @@ namespace PolyPlane
             this.MouseWheel += PolyPlaneUI_MouseWheel;
 
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
-
-            _playerResetTimer.TriggerCallback = () =>
-            {
-                EnableRespawn();
-            };
 
             _multiThreadNum = Environment.ProcessorCount - 2;
         }
@@ -396,7 +390,6 @@ namespace PolyPlane
             _playerPlane.Reset();
             _playerPlane.FixPlane();
 
-            _playerResetTimer.Stop();
             _canRespawn = false;
             _render.ClearHudMessage();
 
@@ -518,7 +511,6 @@ namespace PolyPlane
 
                 World.UpdateAirDensityAndWind(World.DT);
 
-                _playerResetTimer.Update(World.DT);
                 _decoyTimer.Update(World.DT);
 
                 _timer.Stop();
@@ -550,9 +542,6 @@ namespace PolyPlane
                 _playerPlane.Reset();
                 _playerPlane.Velocity = D2DPoint.Zero;
             }
-
-            if (_playerPlane.IsDisabled && !_playerResetTimer.IsRunning)
-                _playerResetTimer.Restart(ignoreCooldown: true);
 
             if (_playerPlane.HasCrashed)
             {

@@ -56,7 +56,7 @@ namespace PolyPlane.GameObjects
 
             if (_hasShockWave)
             {
-                _currentShockWaveRadius = (MaxRadius * 6f) * Utilities.FactorWithEasing(this.Age * 2f, Duration, EasingFunctions.EaseOutCirc);
+                _currentShockWaveRadius = (MaxRadius * 6f) * Utilities.FactorWithEasing(this.Age * 1f, Duration, EasingFunctions.EaseOutCirc);
                 _showckWaveColor.a = 1f - Utilities.FactorWithEasing(this.Age * 1.5f, Duration, EasingFunctions.EaseOutExpo);
             }
 
@@ -75,7 +75,7 @@ namespace PolyPlane.GameObjects
                 ctx.FillEllipse(new D2DEllipse(this.Position, new D2DSize(_currentRadius, _currentRadius)), _color);
 
                 if (_hasShockWave)
-                    ctx.DrawEllipse(new D2DEllipse(this.Position, new D2DSize(_currentShockWaveRadius, _currentShockWaveRadius)), _showckWaveColor, 7f);
+                    ctx.DrawEllipse(new D2DEllipse(this.Position, new D2DSize(_currentShockWaveRadius, _currentShockWaveRadius)), _showckWaveColor, 20f);
             }
 
             _flames.ForEach(f => f.Render(ctx));
