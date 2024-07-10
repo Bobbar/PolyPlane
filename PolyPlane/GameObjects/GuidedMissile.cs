@@ -348,8 +348,6 @@ namespace PolyPlane.GameObjects
             if (FUEL <= 0f && this.Velocity.Length() <= 100f)
                 this.IsExpired = true;
 
-            if (Target != null && Target.IsExpired && this.Age > LIFESPAN)
-                this.IsExpired = true;
 
             _igniteCooldown.Update(dt);
 

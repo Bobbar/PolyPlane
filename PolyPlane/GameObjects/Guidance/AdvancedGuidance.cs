@@ -30,8 +30,9 @@ namespace PolyPlane.GameObjects.Guidance
             const float ROT_MOD_AMT = 3f; // Max amount to increase rot rate per above distance.
             const float IMPACT_POINT_DELTA_THRESH = 3f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
             const float MIN_CLOSE_RATE = 0.05f; // Min closing rate required to aim at predicted impact point.
+            const float MIN_GUIDE_DIST = 200f; // Distance in which guidance is ignored and we aim directly at the target.
 
-            var target = GetTargetPosition();
+            var targetPosition = GetTargetPosition();
             var targetVelo = this.Target.Velocity * dt;
             var veloMag = this.Missile.Velocity.Length();
             var veloAngle = this.Missile.Velocity.Angle();
@@ -41,15 +42,15 @@ namespace PolyPlane.GameObjects.Guidance
 
             if (_prevTargPos == D2DPoint.Zero)
             {
-                _prevTargPos = target;
+                _prevTargPos = targetPosition;
                 return veloAngle;
             }
-            _prevTargPos = target;
+            _prevTargPos = targetPosition;
 
-            var targDist = D2DPoint.Distance(this.Missile.Position, target);
+            var targDist = D2DPoint.Distance(this.Missile.Position, targetPosition);
 
             // Set initial impact point directly on the target.
-            var impactPnt = target;
+            var impactPnt = targetPosition;
 
             // Refine the impact point when able.
             // Where will the target be when we arrive?
@@ -60,7 +61,7 @@ namespace PolyPlane.GameObjects.Guidance
                 _prevTargVeloAngle = tarVeloAngle;
 
                 var timeToImpact = ImpactTime(targDist, (veloMag * dt) + targetVelo.Length(), (deltaV * dt));
-                impactPnt = _impactSmooth.Add(RefineImpact(target, targetVelo, targAngleDelta, timeToImpact));
+                impactPnt = _impactSmooth.Add(RefineImpact(targetPosition, targetVelo, targAngleDelta, timeToImpact));
             }
 
             ImpactPoint = impactPnt; // Red
@@ -81,8 +82,8 @@ namespace PolyPlane.GameObjects.Guidance
             _prevTargetDist = targDist;
 
             var closeRateFact = Utilities.Factor(closingRate, MIN_CLOSE_RATE);
-            var aimDirection = _aimDirSmooth.Add(D2DPoint.Lerp(D2DPoint.Normalize(target - this.Missile.Position), D2DPoint.Normalize(StableAimPoint - this.Missile.Position), closeRateFact));
-            CurrentAimPoint = D2DPoint.Lerp(target, StableAimPoint, closeRateFact); // Green
+            var aimDirection = _aimDirSmooth.Add(D2DPoint.Lerp(D2DPoint.Normalize(targetPosition - this.Missile.Position), D2DPoint.Normalize(StableAimPoint - this.Missile.Position), closeRateFact));
+            CurrentAimPoint = D2DPoint.Lerp(targetPosition, StableAimPoint, closeRateFact); // Green
 
             // Compute velo norm, tangent & rotations.
             var veloNorm = D2DPoint.Normalize(this.Missile.Velocity);
@@ -104,12 +105,14 @@ namespace PolyPlane.GameObjects.Guidance
             var rotFact = Math.Clamp((MAX_ROT_RATE * (1f - veloFact)) + MIN_ROT_RATE, MIN_ROT_RATE, MAX_ROT_RATE);
 
             // Increase rotation rate modifier as we approach the target.
-            //var rotMod = (1f - Utilities.Factor(targDist, ROT_MOD_DIST)) * ROT_MOD_AMT;
-            var rotMod = (1f - Utilities.FactorWithEasing(targDist, ROT_MOD_DIST, EasingFunctions.EaseInCirc)) * ROT_MOD_AMT;
+            var rotMod = (1f - Utilities.FactorWithEasing(targDist, ROT_MOD_DIST, EasingFunctions.EaseInSine)) * ROT_MOD_AMT;
             rotFact += rotMod;
 
             // Offset our current rotation from our current velocity vector to compute the next rotation.
             var nextRot = veloAngle + -(rotLerp * rotFact);
+
+            if (targDist < MIN_GUIDE_DIST)
+                nextRot = (targetPosition - this.Missile.Position).Angle(true);
 
             return nextRot;
         }
