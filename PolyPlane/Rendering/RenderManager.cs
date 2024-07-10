@@ -1220,7 +1220,7 @@ namespace PolyPlane.Rendering
                         var leadVec = Utilities.AngleToVectorDegrees(lead);
 
                         ctx.Gfx.DrawLine(pos + (vec * POINTER_DIST), pos + (leadVec * POINTER_DIST), color, 1f, D2DDashStyle.Dash);
-                        ctx.Gfx.DrawCrosshair(pos + (leadVec * POINTER_DIST), 1f, color, 1f, 4f);
+                        ctx.Gfx.FillEllipseSimple(pos + (leadVec * POINTER_DIST), 3f, color);
                     }
                 }
             }

@@ -36,6 +36,7 @@
             AutoScaleDimensions = new SizeF(96F, 96F);
             AutoScaleMode = AutoScaleMode.Dpi;
             ClientSize = new Size(1008, 729);
+            Cursor = Cursors.Cross;
             Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "PolyPlaneUI";
             StartPosition = FormStartPosition.CenterScreen;
