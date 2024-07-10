@@ -507,7 +507,9 @@ namespace PolyPlane.Rendering
         private void DrawScreenFlash(D2DGraphics gfx)
         {
             _screenFlashColor.a = _screenFlashOpacity;
-            gfx.FillRectangle(World.ViewPortRect, _screenFlashColor);
+
+            if (_screenFlashOpacity > 0.01f)
+                gfx.FillRectangle(World.ViewPortRectUnscaled, _screenFlashColor);
         }
 
         public void DoScreenShake()
@@ -1045,7 +1047,7 @@ namespace PolyPlane.Rendering
             gfx.PopTransform();
         }
 
-     
+
         private void DrawGMeter(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
         {
             const float xPos = 80f;
