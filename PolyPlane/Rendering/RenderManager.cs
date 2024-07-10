@@ -733,8 +733,11 @@ namespace PolyPlane.Rendering
 
                 foreach (var impact in _objs.GroundImpacts)
                 {
-                    ctx.FillEllipseSimple(impact, 15f, color1);
-                    ctx.FillEllipseSimple(impact, 11f, color2);
+                    if (ctx.Viewport.Contains(impact))
+                    {
+                        ctx.FillEllipseSimple(impact, 15f, color1);
+                        ctx.FillEllipseSimple(impact, 11f, color2);
+                    }
                 }
 
                 ctx.Gfx.PopLayer();

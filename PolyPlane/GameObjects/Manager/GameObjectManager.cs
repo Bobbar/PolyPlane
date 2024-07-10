@@ -11,7 +11,6 @@ namespace PolyPlane.GameObjects
         public int TotalObjects = 0;
 
         private const int MAX_GROUND_IMPACTS = 500;
-        private const int SPATIAL_GRID_SIDE_LEN = 10;
 
         public List<GameObject> Missiles = new List<GameObject>();
         public List<GameObject> MissileTrails = new List<GameObject>();
@@ -30,8 +29,7 @@ namespace PolyPlane.GameObjects
         public RingBuffer<FighterPlane> NewPlanes = new RingBuffer<FighterPlane>(500);
 
         private Dictionary<int, GameObject> _objLookup = new Dictionary<int, GameObject>();
-        private Dictionary<int, List<GameObject>> _objLookupSpatial = new Dictionary<int, List<GameObject>>();
-        private List<GameObject> _movedSpatialObjects = new List<GameObject>();
+        private SpatialGrid _spatialGrid = new SpatialGrid();
 
         private List<GameObject> _allNetObjects = new List<GameObject>();
         private List<GameObject> _allObjects = new List<GameObject>();
@@ -71,8 +69,8 @@ namespace PolyPlane.GameObjects
         public void AddFlame(FlamePart flame)
         {
             Flames.Add(flame);
-
-            AddToSpatialLookup(flame);
+          
+            _spatialGrid.Add(flame);
         }
 
         public void AddDebris(Debris debris)
@@ -212,7 +210,7 @@ namespace PolyPlane.GameObjects
             Flames.ForEach(f => f.Dispose());
             Flames.Clear();
             _objLookup.Clear();
-            _objLookupSpatial.Clear();
+            _spatialGrid.Clear();
             _expiredObjs.Clear();
         }
 
@@ -362,7 +360,7 @@ namespace PolyPlane.GameObjects
 
             // Add collidable objects to spatial lookup.
             if (obj is ICollidable)
-                AddToSpatialLookup(obj);
+                _spatialGrid.Add(obj);
         }
 
         private void HandlePlayerKilled(FighterPlane plane, GameObject impactor)
@@ -436,121 +434,10 @@ namespace PolyPlane.GameObjects
                 _allObjects.Add(obj);
             }
 
-            UpdateSpatialLookup();
+            _spatialGrid.Update();
         }
 
-        private void UpdateSpatialLookup()
-        {
-            // Remove expired objects and move live objects to their new grid positions as needed.
-
-            _movedSpatialObjects.Clear(); // Clear the temp storage.
-
-            foreach (var kvp in _objLookupSpatial)
-            {
-                var curHash = kvp.Key;
-                var objs = kvp.Value;
-
-                for (int i = 0; i < objs.Count; i++)
-                {
-                    var obj = objs[i];
-                    var newHash = GetGridHash(obj);
-
-                    if (!obj.IsExpired && newHash != curHash)
-                    {
-                        RemoveFromSpatialLookup(curHash, obj);
-                        _movedSpatialObjects.Add(obj);
-                    }
-                    else if (obj.IsExpired)
-                    {
-                        RemoveFromSpatialLookup(curHash, obj);
-                    }
-                }
-
-                if (objs.Count == 0)
-                    _objLookupSpatial.Remove(curHash);
-            }
-
-            // Add moved objects.
-            for (int i = 0; i < _movedSpatialObjects.Count; i++)
-            {
-                AddToSpatialLookup(_movedSpatialObjects[i]);
-            }
-        }
-
-        private void RemoveFromSpatialLookup(int hash, GameObject obj)
-        {
-            if (_objLookupSpatial.TryGetValue(hash, out var objs))
-            {
-                for (int i = 0; i < objs.Count; i++)
-                {
-                    var o = objs[i];
-                    if (o.ID.Equals(obj.ID))
-                    {
-                        objs.RemoveAt(i);
-                    }
-                }
-            }
-        }
-
-        private void AddToSpatialLookup(GameObject obj)
-        {
-            var hash = GetGridHash(obj);
-
-            if (_objLookupSpatial.TryGetValue(hash, out var objs))
-                objs.Add(obj);
-            else
-                _objLookupSpatial.Add(hash, new List<GameObject> { obj });
-        }
-
-        private void GetGridIdx(GameObject obj, out int idxX, out int idxY)
-        {
-            GetGridIdx(obj.Position, out idxX, out idxY);
-        }
-
-        private void GetGridIdx(D2DPoint pos, out int idxX, out int idxY)
-        {
-            idxX = (int)Math.Floor(pos.X) >> SPATIAL_GRID_SIDE_LEN;
-            idxY = (int)Math.Floor(pos.Y) >> SPATIAL_GRID_SIDE_LEN;
-        }
-
-        private int GetGridHash(GameObject obj)
-        {
-            return GetGridHash(obj.Position);
-        }
-
-        private int GetGridHash(D2DPoint pos)
-        {
-            GetGridIdx(pos, out int idxX, out int idxY);
-            return GetGridHash(idxX, idxY);
-        }
-
-        private int GetGridHash(int idxX, int idxY)
-        {
-            return HashCode.Combine(idxX, idxY);
-        }
-
-        public IEnumerable<GameObject> GetNear(GameObject obj)
-        {
-            GetGridIdx(obj, out int idxX, out int idxY);
-
-            for (int x = -1; x <= 1; x++)
-            {
-                for (int y = -1; y <= 1; y++)
-                {
-                    var xo = idxX + x;
-                    var yo = idxY + y;
-                    var nHash = GetGridHash(xo, yo);
-
-                    if (_objLookupSpatial.TryGetValue(nHash, out var ns))
-                    {
-                        for (int i = 0; i < ns.Count; i++)
-                        {
-                            yield return ns[i];
-                        }
-                    }
-
-                }
-            }
-        }
+        public IEnumerable<GameObject> GetNear(GameObject obj) => _spatialGrid.GetNear(obj);
+        
     }
 }
