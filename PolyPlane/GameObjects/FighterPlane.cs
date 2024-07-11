@@ -203,14 +203,14 @@ namespace PolyPlane.GameObjects
             this.RenderOffset = 1.5f;
 
             this.Polygon = new RenderPoly(_planePoly, this.RenderOffset);
+            this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), this.RenderOffset);
 
             InitWings();
 
             _controlWing.Deflection = 2f;
-            _centerOfThrust = new FixturePoint(this, new D2DPoint(-33f, 0));
 
-            this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), this.RenderOffset);
-            _flamePos = new FixturePoint(this, new D2DPoint(-38f, 1f));
+            _centerOfThrust = new FixturePoint(this, new D2DPoint(-40f, 0.7f));
+            _flamePos = new FixturePoint(this, new D2DPoint(-41f, 0.7f));
             _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
             _gun = new Gun(this, new D2DPoint(35f, 0), FireBulletCallback);
 

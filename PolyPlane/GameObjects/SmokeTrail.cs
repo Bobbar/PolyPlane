@@ -19,6 +19,7 @@ namespace PolyPlane.GameObjects
         private Func<GameObject, D2DPoint> _posSelector;
         private D2DPoint _prevPos = D2DPoint.Zero;
         private float _lineWeight = 2f;
+        private bool _trailEnabled = true;
 
         public SmokeTrail(GameObject obj, Func<GameObject, D2DPoint> positionSelector, float lineWeight)
         {
@@ -40,10 +41,22 @@ namespace PolyPlane.GameObjects
                 return;
             }
 
+            if (_gameObject is GuidedMissile missile)
+            {
+                _trailEnabled = missile.FlameOn;
+            }
+            else if (_gameObject is FighterPlane plane)
+            {
+                _trailEnabled = !plane.IsDisabled;
+            }
+            else
+            {
+                _trailEnabled = true;
+            }
 
             var dist = this.Position.DistanceTo(_prevPos);
 
-            if (dist >= TRAIL_DIST && ((_gameObject is GuidedMissile missile && missile.FlameOn) || (_gameObject is FighterPlane plane && !plane.IsDisabled)))
+            if (dist >= TRAIL_DIST && _trailEnabled)
             {
                 if (_posSelector != null)
                     _trailQueue.Enqueue(_posSelector.Invoke(_gameObject));
@@ -105,10 +118,21 @@ namespace PolyPlane.GameObjects
                 lastPos = nextPos;
             }
 
+            // Draw connecting line between last trail segment and the source position.
+            if (_trailQueue.Count > 1 && _trailEnabled)
+            {
+                var endPosition = _gameObject.Position;
+
+                if (_posSelector != null)
+                    endPosition = _posSelector.Invoke(_gameObject);
+
+                ctx.DrawLine(lastPos, endPosition, _trailColor, _lineWeight);
+            }
+
             if (_trailQueue.Count > 0 && _trailQueue.Count < TRAIL_LEN - 1)
                 ctx.FillEllipse(new D2DEllipse(_trailQueue.First(), new D2DSize(50f, 50f)), _trailColor);
 
-            if (_gameObject.IsExpired && _gameObject is GuidedMissile missile && missile.FlameOn)
+            if (_gameObject.IsExpired && _trailEnabled)
                 ctx.FillEllipse(new D2DEllipse(_trailQueue.Last(), new D2DSize(50f, 50f)), _trailColor);
         }
 
@@ -130,8 +154,17 @@ namespace PolyPlane.GameObjects
                 lastPos = nextPos;
             }
 
-            if (_gameObject.IsExpired && _gameObject is GuidedMissile missile && missile.FlameOn)
-                ctx.FillEllipse(new D2DEllipse(_trailQueue.Last(), new D2DSize(50f, 50f)), _trailColor);
+            // Draw connecting line between last trail segment and the source position.
+            if (_trailQueue.Count > 1 && _trailEnabled)
+            {
+                var endPosition = _gameObject.Position;
+
+                if (_posSelector != null)
+                    endPosition = _posSelector.Invoke(_gameObject);
+
+                if (visiblePredicate.Invoke(endPosition))
+                    ctx.DrawLine(lastPos, endPosition, _trailColor, _lineWeight);
+            }
         }
     }
 }
