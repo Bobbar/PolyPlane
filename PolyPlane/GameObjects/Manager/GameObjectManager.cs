@@ -1,6 +1,5 @@
 ﻿using PolyPlane.Helpers;
 using PolyPlane.Rendering;
-using System.Diagnostics;
 namespace PolyPlane.GameObjects
 {
     /// <summary>
@@ -69,7 +68,7 @@ namespace PolyPlane.GameObjects
         public void AddFlame(FlamePart flame)
         {
             Flames.Add(flame);
-          
+
             _spatialGrid.Add(flame);
         }
 
@@ -438,6 +437,6 @@ namespace PolyPlane.GameObjects
         }
 
         public IEnumerable<GameObject> GetNear(GameObject obj) => _spatialGrid.GetNear(obj);
-        
+
     }
 }

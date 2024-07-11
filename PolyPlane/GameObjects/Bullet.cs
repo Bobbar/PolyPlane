@@ -20,8 +20,8 @@ namespace PolyPlane.GameObjects
             new D2DPoint(4,3),
         };
 
-        public Bullet() : base() 
-        { 
+        public Bullet() : base()
+        {
             this.Polygon = new RenderPoly(_poly);
         }
 

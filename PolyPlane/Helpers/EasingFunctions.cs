@@ -89,7 +89,7 @@
         {
             return 1f - (float)Math.Sqrt(1f - Math.Pow(k, 2f));
         }
-       
+
         public static float EaseInQuintic(float k)
         {
             return k * k * k * k * k;

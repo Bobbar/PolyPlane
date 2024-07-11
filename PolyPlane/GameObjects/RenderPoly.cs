@@ -30,7 +30,7 @@ namespace PolyPlane.GameObjects
             Array.Copy(polygon, Poly, polygon.Length);
             Array.Copy(polygon, SourcePoly, polygon.Length);
 
-            
+
             Utilities.ApplyTranslation(Poly, Poly, 0f, offset);
             Utilities.ApplyTranslation(SourcePoly, SourcePoly, 0f, offset);
         }

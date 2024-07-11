@@ -1,6 +1,5 @@
 ﻿using PolyPlane.Helpers;
 using PolyPlane.Rendering;
-using System.Diagnostics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -143,7 +142,7 @@ namespace PolyPlane.GameObjects
 
             var newRad = this.Radius + Utilities.Rnd.NextFloat(-3f, 3f);
             var newColor = new D2DColor(_flameColor.a, 1f, Utilities.Rnd.NextFloat(0f, 0.86f), _flameColor.b);
-          
+
             var newPart = World.ObjectManager.RentFlamePart();
             newPart.ReInit(newPos, newRad, newColor, endColor, newVelo);
 
@@ -219,7 +218,7 @@ namespace PolyPlane.GameObjects
 
         private D2DPoint _riseRate;
 
-        public FlamePart() 
+        public FlamePart()
         {
             _ellipse = new D2DEllipse();
         }
@@ -248,7 +247,7 @@ namespace PolyPlane.GameObjects
 
             _ellipse.origin = pos;
             _ellipse.radiusX = radius;
-            _ellipse.radiusY = radius;  
+            _ellipse.radiusY = radius;
 
             Color = color;
             EndColor = endColor;
