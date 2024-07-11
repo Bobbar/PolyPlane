@@ -25,12 +25,10 @@ namespace PolyPlane.GameObjects
         public float AoA { get; set; }
 
         private FixturePoint FixedPosition;
-        private D2DPoint _prevPosition;
         private GameObject _parentObject;
         private RateLimiter _defRateLimit = new RateLimiter(rate: 80f);
 
         private float _maxDeflection = 40f;
-        private bool _wrapped = false;
 
         private WingParameters _params;
 
@@ -55,30 +53,13 @@ namespace PolyPlane.GameObjects
             this.Rotation = _parentObject.Rotation + this.Deflection;
             this.Position = FixedPosition.Position;
 
-            if (_wrapped)
-            {
-                _prevPosition = this.Position;
-                _wrapped = false;
-            }
-
-            var nextVelo = D2DPoint.Zero;
-
-            if (_prevPosition != D2DPoint.Zero)
-                nextVelo = (this.Position - _prevPosition) / dt;
-            else
-                _prevPosition = this.Position;
-
-
-            _prevPosition = this.Position;
-
+            var nextVelo = Utilities.AngularVelocity(_parentObject, this.Position, dt);
             this.Velocity = nextVelo;
         }
 
         public void Reset(D2DPoint pos)
         {
-            _wrapped = true;
             this.Position = pos;
-            _prevPosition = this.Position;
             this.Velocity = D2DPoint.Zero;
         }
 

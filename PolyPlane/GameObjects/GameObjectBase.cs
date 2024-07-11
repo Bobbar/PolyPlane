@@ -416,17 +416,14 @@ namespace PolyPlane.GameObjects
         public void DrawVeloLines(D2DGraphics gfx)
         {
             var dt = World.DT;
-            var plane = World.GetViewPlane();
 
-            if (plane == null)
-                return;
-
-            var relVelo = (this.Velocity - plane.Velocity) * dt;
+            var relVelo = this.Velocity * dt;
 
             foreach (var pnt in this.Polygon.Poly)
             {
+                var aVelo = Utilities.AngularVelocity(this, pnt, dt) * dt;
                 var veloPnt1 = pnt;
-                var veloPnt2 = pnt + (relVelo);
+                var veloPnt2 = pnt + (relVelo + aVelo);
 
                 gfx.DrawLine(veloPnt1, veloPnt2, D2DColor.Red);
             }

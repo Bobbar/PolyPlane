@@ -405,6 +405,33 @@ namespace PolyPlane.Helpers
             return altDir;
         }
 
+        /// <summary>
+        /// Computes the angular velocity for the specified point in relation to the rotation speed of the parent object.
+        /// </summary>
+        /// <param name="parentObject">Parent object from which position and rotation speed are taken.</param>
+        /// <param name="point">A point along the axis of rotation.</param>
+        /// <param name="dt">Time delta.</param>
+        /// <returns>A velocity vector which sums the parent object velocity with the computed angular velocity.</returns>
+        /// <remarks>See: http://hyperphysics.phy-astr.gsu.edu/hbase/rotq.html</remarks>
+        public static D2DPoint AngularVelocity(GameObject parentObject, D2DPoint point, float dt)
+        {
+            // V = WR
+            var baseVelo = parentObject.Velocity;
+            var R = parentObject.Position.DistanceTo(point);
+
+            // There can be no angular velocity if we are at the center of the axis of rotation.
+            if (R > 0f)
+            {
+                var dir = parentObject.Position - point;
+                var dirNorm = D2DPoint.Normalize(dir);
+                var dirNormTan = new D2DPoint(dirNorm.Y, -dirNorm.X);
+                var W = 2f * (float)Math.PI * (parentObject.RotationSpeed * dt);
+                return baseVelo + (dirNormTan * (R * W));
+            }
+
+            return baseVelo;
+        }
+
         public static bool IsPointingRight(float angle)
         {
             var rot180 = ClampAngle180(angle + 90f);
