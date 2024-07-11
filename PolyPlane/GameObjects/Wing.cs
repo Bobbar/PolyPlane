@@ -123,9 +123,22 @@ namespace PolyPlane.GameObjects
             float MIN_VELO = _params.MinVelo;
             var veloFact = Utilities.FactorWithEasing(veloMag, MIN_VELO, EasingFunctions.EaseInSine);
 
-            // Compute velo tangent. For lift/drag and rotation calcs.
+            // Compute CW and CCW velo tangents. For lift/drag and rotation calcs.
             var veloNorm = D2DPoint.Normalize(velo);
             var veloNormTan = new D2DPoint(veloNorm.Y, -veloNorm.X);
+            var veloNormTanCCW = new D2DPoint(-veloNorm.Y, veloNorm.X);
+
+            // Lerp towards the CCW tangent as the difference between
+            // rotation and velocity angle approaches 90 degrees.
+            // This is the point at which the wing is beginning to move backwards through
+            // the air, so we need to switch to the CCW tangent for correct physics.
+            var veloAngle = this.Velocity.Angle(true);
+            var angleDiff = Utilities.AngleDiffSmallest(this.Rotation, veloAngle);
+
+            // Lerp using a spiky ease function.
+            // We don't want to start using the CCW until we are very close to 90.
+            // Otherwise the wing will suck at high AoA and handling will suffer.
+            veloNormTan = D2DPoint.Lerp(veloNormTan, veloNormTanCCW, Utilities.FactorWithEasing(angleDiff, 90f, EasingFunctions.EaseInQuintic));
 
             // Compute angle of attack.
             var aoaRads = Utilities.AngleToVectorDegrees(this.Rotation).Cross(veloNorm);
