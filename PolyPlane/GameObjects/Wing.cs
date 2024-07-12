@@ -113,15 +113,22 @@ namespace PolyPlane.GameObjects
             if (this.Velocity.Length() == 0f)
                 return D2DPoint.Zero;
 
-            var velo = -World.Wind;
+            // Wing & air parameters.
+            float AOA_FACT = _params.AOAFactor; // How much AoA effects drag.
+            float VELO_FACT = _params.VeloFactor; // How much velocity effects drag.
+            float WING_AREA = _params.Area; // Area of the wing. Effects lift & drag forces.
+            float MAX_LIFT = _params.MaxLiftForce; // Max lift force allowed.
+            float MAX_DRAG = _params.MaxDragForce; // Max drag force allowed.
+            float MAX_AOA = _params.MaxAOA; // Max AoA allowed before lift force reduces. (Stall)
+            float AIR_DENSITY = World.GetDensityAltitude(this.Position);
+            float PARASITIC_DRAG = _params.ParasiticDrag;
+            float MIN_VELO = _params.MinVelo;
 
-            velo += this.Velocity;
+            var velo = this.Velocity;
+            velo += -World.Wind;
 
             var veloMag = velo.Length();
             var veloMagSq = (float)Math.Pow(veloMag, 2f);
-
-            float MIN_VELO = _params.MinVelo;
-            var veloFact = Utilities.FactorWithEasing(veloMag, MIN_VELO, EasingFunctions.EaseInSine);
 
             // Compute CW and CCW velo tangents. For lift/drag and rotation calcs.
             var veloNorm = D2DPoint.Normalize(velo);
@@ -134,49 +141,38 @@ namespace PolyPlane.GameObjects
             // the air, so we need to switch to the CCW tangent for correct physics.
             var veloAngle = this.Velocity.Angle(true);
             var angleDiff = Utilities.AngleDiffSmallest(this.Rotation, veloAngle);
+            var angleDiffFact = Utilities.FactorWithEasing(angleDiff, 90f, EasingFunctions.EaseInQuintic);
 
             // Lerp using a spiky ease function.
             // We don't want to start using the CCW until we are very close to 90.
             // Otherwise the wing will suck at high AoA and handling will suffer.
-            veloNormTan = D2DPoint.Lerp(veloNormTan, veloNormTanCCW, Utilities.FactorWithEasing(angleDiff, 90f, EasingFunctions.EaseInQuintic));
+            var veloTan = D2DPoint.Lerp(veloNormTan, veloNormTanCCW, angleDiffFact);
+
+            // Reduce velo as we approach the minimum. (Increases stall effect)
+            var veloFact = Utilities.FactorWithEasing(veloMag, MIN_VELO, EasingFunctions.EaseInSine);
+            veloMag *= veloFact;
+            veloMagSq *= veloFact;
 
             // Compute angle of attack.
             var aoaRads = Utilities.AngleToVectorDegrees(this.Rotation).Cross(veloNorm);
             var aoa = Utilities.RadsToDegrees(aoaRads);
 
-            // Compute lift force as velocity tangent with angle-of-attack effecting magnitude and direction. Velocity magnitude is factored as well.
-            // Greater AoA and greater velocity = more lift force.
-
-            // Wing & air parameters.
-            float AOA_FACT = _params.AOAFactor; // How much AoA effects drag.
-            float VELO_FACT = _params.VeloFactor; // How much velocity effects drag.
-            float WING_AREA = _params.Area; // Area of the wing. Effects lift & drag forces.
-            float MAX_LIFT = _params.MaxLiftForce; // Max lift force allowed.
-            float MAX_DRAG = _params.MaxDragForce; // Max drag force allowed.
-            float MAX_AOA = _params.MaxAOA; // Max AoA allowed before lift force reduces. (Stall)
-            float AIR_DENSITY = World.GetDensityAltitude(this.Position);
-            float PARASITIC_DRAG = _params.ParasiticDrag;
-
-            // Reduce velo as we approach the minimum. (Increases stall effect)
-            veloMag *= veloFact;
-            veloMagSq *= veloFact;
-
             // Drag force.
             var coeffDrag = 1f - Math.Cos(2f * aoaRads);
-            var dragForce = coeffDrag * AOA_FACT * WING_AREA * 0.5f * AIR_DENSITY * veloMagSq * VELO_FACT;
+            var dragForce = (coeffDrag * AOA_FACT) * WING_AREA * 0.5f * AIR_DENSITY * veloMagSq * VELO_FACT;
             dragForce += veloMag * (WING_AREA * PARASITIC_DRAG);
 
             // Lift force.
-            var aoaFact = Utilities.FactorWithEasing(MAX_AOA, Math.Abs(aoa), EasingFunctions.EaseInSine);
-
+            var aoaFact = Utilities.FactorWithEasing(MAX_AOA, Math.Abs(aoa), EasingFunctions.EaseInCubic);
             var coeffLift = Math.Sin(2f * aoaRads) * aoaFact;
             var liftForce = AIR_DENSITY * 0.5f * veloMagSq * WING_AREA * coeffLift;
 
+            // Clamp to max lift & drag force.
             liftForce = Math.Clamp(liftForce, -MAX_LIFT, MAX_LIFT);
             dragForce = Math.Clamp(dragForce, -MAX_DRAG, MAX_DRAG);
 
             var dragVec = -veloNorm * (float)dragForce;
-            var liftVec = veloNormTan * (float)liftForce;
+            var liftVec = veloTan * (float)liftForce;
 
             this.LiftVector = liftVec;
             this.DragVector = dragVec;

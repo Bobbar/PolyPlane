@@ -264,7 +264,7 @@ namespace PolyPlane.GameObjects
 
         private void InitWings()
         {
-            float defRate = 50f;
+            float defRate = 55f;
 
             if (_isAIPlane)
                 defRate = 30f;
@@ -275,9 +275,9 @@ namespace PolyPlane.GameObjects
                 RenderLength = 10f * this.RenderOffset,
                 RenderWidth = 3f,
                 Area = 0.5f,
-                MaxDeflection = 40f,
-                MaxLiftForce = 12000f,
+                MaxLiftForce = 13000f,
                 MaxDragForce = 20000f,
+                AOAFactor = 0.45f,
                 DeflectionRate = defRate,
                 Position = new D2DPoint(1.5f, 1f),
                 MinVelo = 250f
@@ -289,9 +289,10 @@ namespace PolyPlane.GameObjects
                 RenderLength = 5f * this.RenderOffset,
                 RenderWidth = 3f,
                 Area = 0.2f,
-                MaxDeflection = 50f,
-                MaxLiftForce = 5500f,
+                MaxDeflection = 40f,
+                MaxLiftForce = 5600f,
                 MaxDragForce = 7500f,
+                AOAFactor = 0.3f,
                 DeflectionRate = defRate,
                 Position = new D2DPoint(-35f, 1f),
                 MinVelo = 250f
