@@ -79,7 +79,7 @@ namespace PolyPlane.Rendering
         private const float MAX_CLOUD_X = 400000f;
         private const float CLOUD_SCALE = 5f;
         private const float GROUND_OBJ_SCALE = 4f;
-        private const float SCREEN_SHAKE_G = 17f; // Amount of g-force before screen shake.
+        private const float SCREEN_SHAKE_G = 9f; // Amount of g-force before screen shake.
 
         private List<Cloud> _clouds = new List<Cloud>();
         private List<Tree> _trees = new List<Tree>();
@@ -363,7 +363,7 @@ namespace PolyPlane.Rendering
                 DrawOverlays(_ctx, viewplane);
 
                 if (viewplane.GForce > SCREEN_SHAKE_G)
-                    DoScreenShake(viewplane.GForce / 10f);
+                    DoScreenShake(viewplane.GForce / 5f);
 
                 DrawScreenFlash(_gfx);
             }

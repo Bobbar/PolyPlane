@@ -91,7 +91,7 @@ namespace PolyPlane.GameObjects
             var sVisFact = Utilities.Factor(veloMag - _visibleVelo, _visibleVelo);
             var sRadFact = Utilities.Factor(veloMag, _visibleVelo);
 
-            var gVisFact = Utilities.Factor(gforce - _visibleGs, _visibleGs);
+            var gVisFact = Utilities.FactorWithEasing(gforce - (_visibleGs * 0.5f), _visibleGs, EasingFunctions.EaseInCirc);
             var gRadFact = Utilities.Factor(gforce, _maxGs);
 
             var radFact = sRadFact + gRadFact;

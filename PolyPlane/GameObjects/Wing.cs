@@ -129,41 +129,35 @@ namespace PolyPlane.GameObjects
 
             var veloMag = velo.Length();
             var veloMagSq = (float)Math.Pow(veloMag, 2f);
+            var veloAngle = this.Velocity.Angle(true);
 
-            // Compute CW and CCW velo tangents. For lift/drag and rotation calcs.
+            // Compute velo tangent. For lift/drag and rotation calcs.
             var veloNorm = D2DPoint.Normalize(velo);
             var veloNormTan = new D2DPoint(veloNorm.Y, -veloNorm.X);
-            var veloNormTanCCW = new D2DPoint(-veloNorm.Y, veloNorm.X);
-
-            // Lerp towards the CCW tangent as the difference between
-            // rotation and velocity angle approaches 90 degrees.
-            // This is the point at which the wing is beginning to move backwards through
-            // the air, so we need to switch to the CCW tangent for correct physics.
-            var veloAngle = this.Velocity.Angle(true);
-            var angleDiff = Utilities.AngleDiffSmallest(this.Rotation, veloAngle);
-            var angleDiffFact = Utilities.FactorWithEasing(angleDiff, 90f, EasingFunctions.EaseInQuintic);
-
-            // Lerp using a spiky ease function.
-            // We don't want to start using the CCW until we are very close to 90.
-            // Otherwise the wing will suck at high AoA and handling will suffer.
-            var veloTan = D2DPoint.Lerp(veloNormTan, veloNormTanCCW, angleDiffFact);
 
             // Reduce velo as we approach the minimum. (Increases stall effect)
-            var veloFact = Utilities.FactorWithEasing(veloMag, MIN_VELO, EasingFunctions.EaseInSine);
+            var veloFact = Utilities.FactorWithEasing(veloMag, MIN_VELO, EasingFunctions.EaseInCirc);
             veloMag *= veloFact;
             veloMagSq *= veloFact;
 
-            // Compute angle of attack.
-            var aoaRads = Utilities.AngleToVectorDegrees(this.Rotation).Cross(veloNorm);
-            var aoa = Utilities.RadsToDegrees(aoaRads);
+            // Compute angles of attack.
+            // Cross product gives a scaler with a valid sign. (Positive or negative AoA)
+            var trueAngleDiff = Utilities.AngleDiffSmallest(this.Rotation, veloAngle);
+            var crossAngleDiff = Utilities.AngleToVectorDegrees(this.Rotation).Cross(veloNorm);
+            var aoaRads = Utilities.DegreesToRads(trueAngleDiff) * Math.Sign(crossAngleDiff);
+            var aoaDegrees = Utilities.RadsToDegrees(aoaRads);
 
             // Drag force.
             var coeffDrag = 1f - Math.Cos(2f * aoaRads);
             var dragForce = (coeffDrag * AOA_FACT) * WING_AREA * 0.5f * AIR_DENSITY * veloMagSq * VELO_FACT;
             dragForce += veloMag * (WING_AREA * PARASITIC_DRAG);
 
+            // Factor for max AoA.
+            // Clamp AoA to always allow a little bit a of lift.
+            var aoaFact = Utilities.FactorWithEasing(MAX_AOA, Math.Abs(aoaDegrees), EasingFunctions.EaseInSine);
+            aoaFact = Math.Clamp(aoaFact, 0.1f, 1f);
+
             // Lift force.
-            var aoaFact = Utilities.FactorWithEasing(MAX_AOA, Math.Abs(aoa), EasingFunctions.EaseInCubic);
             var coeffLift = Math.Sin(2f * aoaRads) * aoaFact;
             var liftForce = AIR_DENSITY * 0.5f * veloMagSq * WING_AREA * coeffLift;
 
@@ -172,11 +166,11 @@ namespace PolyPlane.GameObjects
             dragForce = Math.Clamp(dragForce, -MAX_DRAG, MAX_DRAG);
 
             var dragVec = -veloNorm * (float)dragForce;
-            var liftVec = veloTan * (float)liftForce;
+            var liftVec = veloNormTan * (float)liftForce;
 
             this.LiftVector = liftVec;
             this.DragVector = dragVec;
-            this.AoA = aoa;
+            this.AoA = aoaDegrees;
 
             return (liftVec + dragVec);
         }

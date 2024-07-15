@@ -189,7 +189,7 @@ namespace PolyPlane.GameObjects
                     MaxDeflection = 55f,
                     MaxLiftForce = 6000f * liftScale,
                     Position = new D2DPoint(-22f, 0f),
-                    MinVelo = 750f,
+                    MinVelo = 650f,
                     ParasiticDrag = 0.2f,
                     AOAFactor = 0.4f,
                     DeflectionRate = 70f
@@ -201,7 +201,7 @@ namespace PolyPlane.GameObjects
                     RenderLength = 0f,
                     Area = 0.075f,
                     MaxLiftForce = 1000f * liftScale,
-                    MinVelo = 850f,
+                    MinVelo = 750f,
                     ParasiticDrag = 0.2f,
                     AOAFactor = 0.4f
                 });
@@ -214,7 +214,7 @@ namespace PolyPlane.GameObjects
                     MaxDeflection = 20f,
                     MaxLiftForce = 5000f * liftScale,
                     Position = new D2DPoint(21.5f, 0f),
-                    MinVelo = 750f,
+                    MinVelo = 650f,
                     ParasiticDrag = 0.2f,
                     AOAFactor = 0.4f
                 });
@@ -302,13 +302,13 @@ namespace PolyPlane.GameObjects
                         // This is to try to prevent over-rotation caused by thrust vectoring.
                         if (_currentFuel > 0f && _useThrustVectoring)
                         {
-                            const float MIN_DEF_SPD = 400f;//450f; // Minimum speed required for full deflection.
+                            const float MIN_DEF_SPD = 550f;//450f; // Minimum speed required for full deflection.
                             var spdFact = Utilities.Factor(this.Velocity.Length(), MIN_DEF_SPD);
 
                             const float MAX_DEF_AOA = 20f;// Maximum AoA allowed. Reduce deflection as AoA increases.
                             var aoaFact = 1f - (Math.Abs(_rocketBody.AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 2f))));
 
-                            const float MAX_DEF_ROT_SPD = 150f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
+                            const float MAX_DEF_ROT_SPD = 100f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
                             var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 3f))));
 
                             nextDeflect *= aoaFact * rotSpdFact * spdFact;
@@ -329,7 +329,7 @@ namespace PolyPlane.GameObjects
                     accel += (liftDrag / TotalMass) * partialDT;
 
                     this.Velocity += accel;
-                    this.Velocity += (World.Gravity * 2f) * partialDT;
+                    this.Velocity += World.Gravity * partialDT;
                 }
 
                 var gforce = accel.Length() / partialDT / 9.8f;

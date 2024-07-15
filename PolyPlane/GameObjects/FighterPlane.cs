@@ -275,9 +275,10 @@ namespace PolyPlane.GameObjects
                 RenderLength = 10f * this.RenderOffset,
                 RenderWidth = 3f,
                 Area = 0.5f,
-                MaxLiftForce = 13000f,
+                MaxLiftForce = 14000f,
                 MaxDragForce = 20000f,
                 AOAFactor = 0.45f,
+                MaxAOA = 25f,
                 DeflectionRate = defRate,
                 Position = new D2DPoint(1.5f, 1f),
                 MinVelo = 250f
@@ -610,9 +611,9 @@ namespace PolyPlane.GameObjects
             if (isControl && _controlWing == null)
                 _controlWing = wing;
 
-            const float VAPOR_TRAIL_GS = 15f; // How many Gs before vapor trail is visible.
+            const float VAPOR_TRAIL_GS = 9f; // How many Gs before vapor trail is visible.
             const float VAPOR_TRAIL_VELO = 1000f; // Velocity before vapor trail is visible.
-            const float MAX_GS = 30f; // Gs for max vapor trail intensity.
+            const float MAX_GS = 15f; // Gs for max vapor trail intensity.
 
             _vaporTrails.Add(new Vapor(wing, this, new D2DPoint(20f, 0f), 8f, VAPOR_TRAIL_GS, VAPOR_TRAIL_VELO, MAX_GS));
 

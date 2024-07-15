@@ -104,5 +104,10 @@
         {
             return 1f - (float)Math.Cos((k * Math.PI) / 2f);
         }
+
+        public static float EaseInExpo(float k)
+        {
+            return k == 0f ? 0f : (float)Math.Pow(2f, 10f * k - 10f);
+        }
     }
 }
