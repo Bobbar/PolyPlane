@@ -131,21 +131,18 @@ namespace PolyPlane.GameObjects
             var veloMagSq = (float)Math.Pow(veloMag, 2f);
             var veloAngle = this.Velocity.Angle(true);
 
-            // Compute velo tangent. For lift/drag and rotation calcs.
+            // Compute velo tangent.
             var veloNorm = D2DPoint.Normalize(velo);
             var veloNormTan = new D2DPoint(veloNorm.Y, -veloNorm.X);
 
+            // Compute angle of attack.
+            var aoaDegrees = Utilities.ClampAngle180(veloAngle - this.Rotation);
+            var aoaRads = Utilities.DegreesToRads(aoaDegrees);
+
             // Reduce velo as we approach the minimum. (Increases stall effect)
-            var veloFact = Utilities.FactorWithEasing(veloMag, MIN_VELO, EasingFunctions.EaseInCirc);
+            var veloFact = Utilities.FactorWithEasing(veloMag, MIN_VELO, EasingFunctions.EaseOutSine);
             veloMag *= veloFact;
             veloMagSq *= veloFact;
-
-            // Compute angles of attack.
-            // Cross product gives a scaler with a valid sign. (Positive or negative AoA)
-            var trueAngleDiff = Utilities.AngleDiffSmallest(this.Rotation, veloAngle);
-            var crossAngleDiff = Utilities.AngleToVectorDegrees(this.Rotation).Cross(veloNorm);
-            var aoaRads = Utilities.DegreesToRads(trueAngleDiff) * Math.Sign(crossAngleDiff);
-            var aoaDegrees = Utilities.RadsToDegrees(aoaRads);
 
             // Drag force.
             var coeffDrag = 1f - Math.Cos(2f * aoaRads);
@@ -154,7 +151,7 @@ namespace PolyPlane.GameObjects
 
             // Factor for max AoA.
             // Clamp AoA to always allow a little bit a of lift.
-            var aoaFact = Utilities.FactorWithEasing(MAX_AOA, Math.Abs(aoaDegrees), EasingFunctions.EaseInSine);
+            var aoaFact = Utilities.FactorWithEasing(MAX_AOA, Math.Abs(aoaDegrees), EasingFunctions.EaseOutSine);
             aoaFact = Math.Clamp(aoaFact, 0.1f, 1f);
 
             // Lift force.
@@ -165,6 +162,7 @@ namespace PolyPlane.GameObjects
             liftForce = Math.Clamp(liftForce, -MAX_LIFT, MAX_LIFT);
             dragForce = Math.Clamp(dragForce, -MAX_DRAG, MAX_DRAG);
 
+            // Compute the final force vectors.
             var dragVec = -veloNorm * (float)dragForce;
             var liftVec = veloNormTan * (float)liftForce;
 
@@ -178,18 +176,57 @@ namespace PolyPlane.GameObjects
 
     public class WingParameters
     {
+        /// <summary>
+        /// Attachment point.
+        /// </summary>
         public D2DPoint Position = D2DPoint.Zero;
+        /// <summary>
+        /// Render length.
+        /// </summary>
         public float RenderLength;
+        /// <summary>
+        /// Render stroke width.
+        /// </summary>
         public float RenderWidth = 2f;
+        /// <summary>
+        /// Wing area.
+        /// </summary>
         public float Area;
+        /// <summary>
+        /// Max lift force allowed.
+        /// </summary>
         public float MaxLiftForce = 15000f;
+        /// <summary>
+        /// Max drag force allowed.
+        /// </summary>
         public float MaxDragForce;
+        /// <summary>
+        /// Max deflection allowed.
+        /// </summary>
         public float MaxDeflection = 40f;
+        /// <summary>
+        /// Deflection rate. (How fast does it rotate to the target deflection)
+        /// </summary>
         public float DeflectionRate = 80f;
+        /// <summary>
+        /// Minimum velocity before stall.
+        /// </summary>
         public float MinVelo = 350f;
+        /// <summary>
+        /// Maximum AoA before stall.
+        /// </summary>
         public float MaxAOA = 30f;
+        /// <summary>
+        /// How much AoA effects drag.
+        /// </summary>
         public float AOAFactor = 0.5f;
+        /// <summary>
+        /// How much velocity effects drag.
+        /// </summary>
         public float VeloFactor = 0.5f;
+        /// <summary>
+        /// Additional drag applied regardless of AoA.
+        /// </summary>
         public float ParasiticDrag = 1f;
 
         public WingParameters() { }

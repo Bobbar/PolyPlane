@@ -294,13 +294,13 @@ namespace PolyPlane.AI_Behavior
 
             // Level out if we get too slow.
             var velo = this.Plane.AirSpeedIndicated;
-            if (velo < 150f)
+            if (velo < 180f)
                 _gainingVelo = true;
-            else if (velo > 220f)
+            else if (velo > 250f)
                 _gainingVelo = false;
 
             if (_gainingVelo)
-                angle = Utilities.MaintainAltitudeAngle(this.Plane, this.Plane.Altitude - 100f);
+                angle = Utilities.MaintainAltitudeAngle(this.Plane, this.Plane.Altitude - 200f);
 
             // Pitch up if we about to impact with ground.
             if (groundImpactTime > 0f && groundImpactTime < MIN_IMPACT_TIME && !_avoidingGround)

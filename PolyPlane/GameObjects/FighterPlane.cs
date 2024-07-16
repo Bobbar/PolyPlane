@@ -50,7 +50,7 @@ namespace PolyPlane.GameObjects
             set { _planeColor = value; }
         }
 
-        public float Thrust { get; set; } = 10f;
+        public float Thrust { get; set; } = 2000f;
         public bool FiringBurst { get; set; } = false;
         public bool DroppingDecoy { get; set; } = false;
         public float GForce => _gForce;
@@ -162,7 +162,6 @@ namespace PolyPlane.GameObjects
 
         public FighterPlane(D2DPoint pos) : base(pos)
         {
-            Thrust = 2000f;
             _thrustAmt.Target = 1f;
             _planeColor = D2DColor.Randomly();
 
@@ -184,13 +183,8 @@ namespace PolyPlane.GameObjects
         public FighterPlane(D2DPoint pos, AIPersonality personality) : base(pos)
         {
             _aiBehavior = new FighterPlaneAI(this, personality);
-
             _isAIPlane = true;
-
-            Thrust = 1000f;
-
             _thrustAmt.Target = 1f;
-
             _planeColor = D2DColor.Randomly();
 
             InitStuff();
@@ -277,9 +271,8 @@ namespace PolyPlane.GameObjects
                 Area = 0.5f,
                 MaxLiftForce = 14000f,
                 MaxDragForce = 20000f,
-                AOAFactor = 0.45f,
-                MaxAOA = 25f,
-                DeflectionRate = defRate,
+                AOAFactor = 0.6f,
+                MaxAOA = 20f,
                 Position = new D2DPoint(1.5f, 1f),
                 MinVelo = 250f
             }));
@@ -292,11 +285,12 @@ namespace PolyPlane.GameObjects
                 Area = 0.2f,
                 MaxDeflection = 40f,
                 MaxLiftForce = 5600f,
-                MaxDragForce = 7500f,
-                AOAFactor = 0.3f,
+                MaxDragForce = 10000f,
+                AOAFactor = 0.4f,
+                MaxAOA = 20f,
                 DeflectionRate = defRate,
                 Position = new D2DPoint(-35f, 1f),
-                MinVelo = 250f
+                MinVelo = 350f
             }), isControl: true);
 
         }
@@ -330,13 +324,13 @@ namespace PolyPlane.GameObjects
                 float ogDef = deflection;
 
                 // Apply some stability control to try to prevent thrust vectoring from spinning the plane.
-                const float MIN_DEF_SPD = 300f; // Minimum speed required for full deflection.
                 var velo = this.AirSpeedIndicated;
                 if (_thrustAmt.Value > 0f && SASOn)
                 {
+                    const float MIN_DEF_SPD = 300f; // Minimum speed required for full deflection.
                     var spdFact = Utilities.Factor(velo, MIN_DEF_SPD);
 
-                    const float MAX_DEF_AOA = 20f;// Maximum AoA allowed. Reduce deflection as AoA increases.
+                    const float MAX_DEF_AOA = 30f;// Maximum AoA allowed. Reduce deflection as AoA increases.
                     var aoaFact = 1f - (Math.Abs(Wings[0].AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 6f))));
 
                     const float MAX_DEF_ROT_SPD = 55f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
@@ -395,7 +389,7 @@ namespace PolyPlane.GameObjects
                     var gravFact = 1f;
 
                     if (IsDisabled)
-                        gravFact = 4f;
+                        gravFact = 3f;
 
                     this.Velocity += (World.Gravity * gravFact * partialDT);
                 }
