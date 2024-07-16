@@ -15,6 +15,7 @@ namespace PolyPlane
         private Thread _gameThread;
         private ManualResetEventSlim _renderExitEvent = new ManualResetEventSlim(false);
 
+        private bool _isFullScreen = false;
         private bool _isPaused = false;
         private bool _oneStep = false;
         private bool _killRender = false;
@@ -63,6 +64,27 @@ namespace PolyPlane
             _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
 
             _multiThreadNum = Environment.ProcessorCount - 2;
+        }
+
+        /// <summary>
+        /// Toggle phony (but effective) fullscreen mode.
+        /// </summary>
+        private void ToggleFullscreen()
+        {
+            if (!_isFullScreen)
+            {
+                this.WindowState = FormWindowState.Normal;
+                this.FormBorderStyle = FormBorderStyle.None;
+                this.WindowState = FormWindowState.Maximized;
+
+                _isFullScreen = true;
+            }
+            else
+            {
+                this.FormBorderStyle = FormBorderStyle.Sizable;
+                this.WindowState = FormWindowState.Maximized;
+                _isFullScreen = false;
+            }
         }
 
         private void NetMan_PlayerRespawned(object? sender, FighterPlane e)
@@ -932,6 +954,12 @@ namespace PolyPlane
                         break;
                 }
             }
+
+            if (e.KeyData.HasFlag(Keys.Enter) && e.KeyData.HasFlag(Keys.Alt))
+                ToggleFullscreen();
+
+            if (e.KeyData.HasFlag(Keys.Escape) && _isFullScreen)
+                ToggleFullscreen();
         }
 
         private void PolyPlaneUI_KeyUp(object sender, KeyEventArgs e)

@@ -24,7 +24,7 @@ namespace PolyPlane.GameObjects.Guidance
         {
             // Tweakables
             const float MAX_ROT_RATE = 1f; // Max rotation rate.
-            const float MIN_ROT_RATE = 0.2f; // Min rotation rate.
+            const float MIN_ROT_RATE = 0.5f; // Min rotation rate.
             const float MIN_ROT_SPEED = 800f; // Speed at which rotation rate will be the smallest.
             const float ROT_MOD_DIST = 6000f; // Distance to begin increasing rotation rate. (Get more aggro the closer we get)
             const float ROT_MOD_AMT = 3f; // Max amount to increase rot rate per above distance.
@@ -94,10 +94,10 @@ namespace PolyPlane.GameObjects.Guidance
 
             // Lerp between the two rotations as angle diff changes.
             var targetDirAngle = aimDirection.Angle();
-            var targetAngleDiff = Utilities.AngleDiff(veloAngle, targetDirAngle);
+            var targetAngleDiff = Utilities.AngleDiffSmallest(veloAngle, targetDirAngle);
 
-            //var angDiffFact =Utilities.Factor(Math.Abs(targetAngleDiff), 180f); // Favors the tangent.
-            var angDiffFact = Utilities.Factor(Math.Abs(targetAngleDiff), 360f); // Favors the normal.
+            //var angDiffFact =Utilities.Factor(targetAngleDiff, 180f); // Favors the tangent.
+            var angDiffFact = Utilities.Factor(targetAngleDiff, 360f); // Favors the normal.
             var rotLerp = Utilities.Lerp(rotAmtNorm, rotAmtTan, angDiffFact);
 
             // Reduce rotation rate as velocity increases. Helps conserve inertia and reduce drag.

@@ -1522,10 +1522,11 @@ namespace PolyPlane.Rendering
 
             if (_showHelp)
             {
-                infoText += "\nH: Hide help\n";
+                infoText += "\nH: Hide help\n\n";
 
                 if (!World.IsNetGame)
                 {
+                    infoText += $"Alt + Enter: Toggle Fullscreen\n";
                     infoText += $"P: Pause\n";
                     infoText += $"U: Spawn AI Plane\n";
                     infoText += $"C: Remove AI Planes\n";

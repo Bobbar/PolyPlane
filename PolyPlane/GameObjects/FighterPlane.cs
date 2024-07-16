@@ -586,7 +586,9 @@ namespace PolyPlane.GameObjects
 
         private float GetAPGuidanceDirection(float dir)
         {
-            var amt = Utilities.RadsToDegrees(this.Velocity.Normalized().Cross(Utilities.AngleToVectorDegrees(dir, 2f)));
+            const float SENSITIVITY = 2f; // How aggressively we try to point in the specified direction.
+
+            var amt = Utilities.RadsToDegrees(this.Velocity.Normalized().Cross(Utilities.AngleToVectorDegrees(dir, SENSITIVITY)));
             var rot = this.Rotation - amt;
             rot = Utilities.ClampAngle(rot);
 
