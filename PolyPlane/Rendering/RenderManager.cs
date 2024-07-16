@@ -689,9 +689,9 @@ namespace PolyPlane.Rendering
         {
             const float MUZZ_FLASH_RADIUS = 60f;
             if (_muzzleFlashBrush == null)
-                _muzzleFlashBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, MUZZ_FLASH_RADIUS, MUZZ_FLASH_RADIUS, new D2DGradientStop[] { new D2DGradientStop(1.4f, D2DColor.Transparent), new D2DGradientStop(0.2f, new D2DColor(0.3f, D2DColor.Orange)) });
+                _muzzleFlashBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, MUZZ_FLASH_RADIUS, MUZZ_FLASH_RADIUS, new D2DGradientStop[] { new D2DGradientStop(1f, D2DColor.Transparent), new D2DGradientStop(0f, new D2DColor(0.2f, D2DColor.Orange)) });
 
-            if (plane.FiringBurst && plane.NumBullets > 0 && plane.CurrentFrame % 10 == 0)
+            if (plane.Gun.MuzzleFlashOn)
             {
                 ctx.Gfx.PushTransform();
                 ctx.Gfx.TranslateTransform(plane.GunPosition.X * ctx.CurrentScale, plane.GunPosition.Y * ctx.CurrentScale);

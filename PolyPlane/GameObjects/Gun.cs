@@ -6,11 +6,13 @@ namespace PolyPlane.GameObjects
     public sealed class Gun : GameObject
     {
         public Action<Bullet> FireBulletCallback;
+        public bool MuzzleFlashOn = false;
 
         private FixturePoint _attachPoint { get; set; }
         private GunSmoke _smoke;
         private FighterPlane _ownerPlane;
         private GameTimer _burstTimer = new GameTimer(0.25f, true);
+        private GameTimer _muzzleFlashTimer = new GameTimer(0.16f);
 
         public Gun(FighterPlane plane, D2DPoint position, Action<Bullet> fireBulletCallback) : base(plane)
         {
@@ -23,6 +25,9 @@ namespace PolyPlane.GameObjects
 
             _burstTimer.StartCallback = FireBullet;
             _burstTimer.TriggerCallback = FireBullet;
+
+            _muzzleFlashTimer.StartCallback = () => { MuzzleFlashOn = true; };
+            _muzzleFlashTimer.TriggerCallback = () => { MuzzleFlashOn = false; };
         }
 
         public override void Update(float dt, float renderScale)
@@ -30,6 +35,7 @@ namespace PolyPlane.GameObjects
             base.Update(dt, renderScale);
 
             _burstTimer.Update(dt);
+            _muzzleFlashTimer.Update(dt);
             _attachPoint.Update(dt, renderScale);
             _smoke.Update(dt, renderScale);
 
@@ -83,6 +89,8 @@ namespace PolyPlane.GameObjects
             FireBulletCallback(bullet);
             _ownerPlane.BulletsFired++;
             _ownerPlane.NumBullets--;
+            _smoke.AddPuff();
+            _muzzleFlashTimer.Restart();
         }
     }
 }

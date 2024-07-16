@@ -8,6 +8,9 @@ namespace PolyPlane.GameObjects
 {
     public class FighterPlane : GameObjectPoly, ICollidable
     {
+
+        public Gun Gun => _gun;
+
         public bool InResetCooldown
         {
             get { return !_easePhysicsComplete; }

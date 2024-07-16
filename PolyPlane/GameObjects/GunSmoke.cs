@@ -44,10 +44,6 @@ namespace PolyPlane.GameObjects
 
             if (_parts.Count == 0 && !_spawnTimer.IsRunning)
                 this.IsExpired = true;
-
-            // Add regular "puffs" to the smoke trail while firing.
-            if (this.CurrentFrame % 10 == 0)
-                AddPuff();
         }
 
         public override void Render(RenderContext ctx)
@@ -58,7 +54,7 @@ namespace PolyPlane.GameObjects
                 part.Render(ctx);
         }
 
-        private void AddPuff()
+        public void AddPuff()
         {
             if (_parts.Count == 0)
                 return;
