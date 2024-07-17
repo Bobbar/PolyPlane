@@ -30,12 +30,6 @@ namespace PolyPlane.AI_Behavior
         private readonly float RUN_DISTANCE = 30000f; // How close before cowardly AI runs away.
         private readonly float MAX_DECOY_DIST = 10000f; // Max distance between missile and plane before dropping decoys.
 
-        public FighterPlaneAI(FighterPlane plane)
-        {
-            _plane = plane;
-            Personality = Utilities.RandomEnum(Personality);
-            InitStuff();
-        }
 
         public FighterPlaneAI(FighterPlane plane, AIPersonality personality)
         {

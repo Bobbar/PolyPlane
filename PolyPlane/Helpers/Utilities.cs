@@ -50,10 +50,10 @@ namespace PolyPlane.Helpers
 
         public static float Clamp01(float value)
         {
-            if (value < 0F)
-                return 0F;
-            else if (value > 1F)
-                return 1F;
+            if (value < 0f)
+                return 0f;
+            else if (value > 1f)
+                return 1f;
             else
                 return value;
         }
@@ -185,15 +185,6 @@ namespace PolyPlane.Helpers
             return vals[next];
         }
 
-        public static T RandomEnum<T>(T e) where T : struct, IConvertible
-        {
-            var t = e.GetType();
-            var len = Enum.GetNames(t).Length;
-            var vals = Enum.GetValues(t) as T[];
-
-            return vals[Rnd.Next(len)];
-        }
-
         public static T RandomEnum<T>() where T : struct, IConvertible
         {
             var t = typeof(T);
@@ -206,7 +197,7 @@ namespace PolyPlane.Helpers
         public static D2DPoint ApplyTranslation(D2DPoint src, float rotation, D2DPoint translation, float scale = 1f)
         {
             var mat = Matrix3x2.CreateScale(scale);
-            mat *= Matrix3x2.CreateRotation(rotation * (float)(Math.PI / 180f), D2DPoint.Zero);
+            mat *= Matrix3x2.CreateRotation(rotation * DEGREES_TO_RADS, D2DPoint.Zero);
             mat *= Matrix3x2.CreateTranslation(translation);
 
             return D2DPoint.Transform(src, mat);
@@ -215,7 +206,7 @@ namespace PolyPlane.Helpers
         public static void ApplyTranslation(D2DPoint[] src, D2DPoint[] dst, float rotation, D2DPoint translation, float scale = 1f)
         {
             var mat = Matrix3x2.CreateScale(scale);
-            mat *= Matrix3x2.CreateRotation(rotation * (float)(Math.PI / 180f), D2DPoint.Zero);
+            mat *= Matrix3x2.CreateRotation(rotation * DEGREES_TO_RADS, D2DPoint.Zero);
             mat *= Matrix3x2.CreateTranslation(translation);
 
             for (int i = 0; i < dst.Length; i++)
@@ -228,7 +219,7 @@ namespace PolyPlane.Helpers
         public static void ApplyTranslation(D2DPoint[] src, D2DPoint[] dst, D2DPoint center, float rotation, D2DPoint translation, float scaleX = 1f, float scaleY = 1f)
         {
             var mat = Matrix3x2.CreateScale(scaleX, scaleY, center);
-            mat *= Matrix3x2.CreateRotation(rotation * (float)(Math.PI / 180f), center);
+            mat *= Matrix3x2.CreateRotation(rotation * DEGREES_TO_RADS, center);
             mat *= Matrix3x2.CreateTranslation(translation);
 
             for (int i = 0; i < dst.Length; i++)
@@ -258,7 +249,7 @@ namespace PolyPlane.Helpers
             return diff <= fov * 0.5f;
         }
 
-        public static D2DPoint RandomPointInCircle(D2DPoint pos, float radius)
+        public static D2DPoint RandomPointInCircle(float radius)
         {
             var rndDir = Rnd.NextFloat(0f, 360f);
             var rndLen = Rnd.NextFloat(1f, radius);
@@ -479,7 +470,7 @@ namespace PolyPlane.Helpers
         public static D2DPoint ScaleToOrigin(GameObject obj, D2DPoint point)
         {
             var mat = Matrix3x2.CreateScale(1f * (1f / obj.RenderOffset), obj.Position);
-            mat *= Matrix3x2.CreateRotation(-obj.Rotation * (float)(Math.PI / 180f), obj.Position);
+            mat *= Matrix3x2.CreateRotation(-obj.Rotation * DEGREES_TO_RADS, obj.Position);
             mat *= Matrix3x2.CreateTranslation(new D2DPoint(-obj.Position.X, -obj.Position.Y));
             return D2DPoint.Transform(point, mat);
         }

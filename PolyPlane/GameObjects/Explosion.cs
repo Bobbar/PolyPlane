@@ -8,7 +8,6 @@ namespace PolyPlane.GameObjects
     {
         public float MaxRadius { get; set; } = 100f;
         public float Duration { get; set; } = 1f;
-
         public float Radius => _currentRadius;
 
         private float _currentRadius = 0f;
@@ -36,15 +35,14 @@ namespace PolyPlane.GameObjects
 
             for (int i = 0; i < NUM_FLAME; i++)
             {
-                var pnt = Utilities.RandomPointInCircle(this.Position, 5f);
+                var pnt = Utilities.RandomPointInCircle(5f);
                 var velo = Utilities.AngleToVectorDegrees(Utilities.RandomDirection(), Utilities.Rnd.NextFloat(maxRadius, maxRadius * 2f));
                 var radius = NUM_FLAME + Utilities.Rnd.NextFloat(-10f, 10f);
-                _flames.Add(new Flame(this, pnt, velo, radius));
+                var flame = new Flame(this, pnt, velo, radius);
+                flame.StopSpawning();
+                _flames.Add(flame);
             }
-
-            _flames.ForEach(f => f.StopSpawning());
         }
-
 
         public override void Update(float dt, float renderScale)
         {
@@ -52,7 +50,6 @@ namespace PolyPlane.GameObjects
 
             _currentRadius = MaxRadius * Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.EaseOutElastic);
             _color.a = 1f - Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.EaseOutQuintic);
-
 
             if (_hasShockWave)
             {
