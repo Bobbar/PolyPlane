@@ -30,17 +30,21 @@ namespace PolyPlane.Helpers
                 for (int i = 0; i < objs.Count; i++)
                 {
                     var obj = objs[i];
-                    var newHash = GetGridHash(obj);
 
-                    // This object needs moved to a different cell.
-                    if (!obj.IsExpired && newHash != curHash)
+                    if (obj.IsExpired)
                     {
+                        // Just remove expired objects.
                         objs.RemoveAt(i);
-                        _tempStorage.Add(new KeyValuePair<int, GameObject>(newHash, obj));
                     }
-                    else if (obj.IsExpired) // Just removed expired objects.
+                    else
                     {
-                        objs.RemoveAt(i);
+                        // Check hash and record moved objects as needed.
+                        var newHash = GetGridHash(obj);
+                        if (newHash != curHash)
+                        {
+                            objs.RemoveAt(i);
+                            _tempStorage.Add(new KeyValuePair<int, GameObject>(newHash, obj));
+                        }
                     }
                 }
 
