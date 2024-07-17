@@ -165,9 +165,6 @@ namespace PolyPlane.GameObjects
             if (this.IsExpired)
                 return;
 
-            if (this is GuidedMissile && this.IsExpired)
-                Debugger.Break();
-
             if (World.InterpOn && World.IsNetGame && IsNetObject && InterpBuffer != null)
             {
                 var nowMs = World.CurrentTime();
@@ -185,8 +182,6 @@ namespace PolyPlane.GameObjects
 
                 ClampToGround(dt);
             }
-
-            //PEAK_ROT_SPD = Math.Max(Math.Abs(this.RotationSpeed), PEAK_ROT_SPD);
         }
 
         public virtual void NetUpdate(float dt, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
