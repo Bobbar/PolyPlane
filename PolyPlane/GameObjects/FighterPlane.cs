@@ -135,8 +135,8 @@ namespace PolyPlane.GameObjects
 
         private IAIBehavior _aiBehavior;
 
-        private readonly D2DPoint[] _planePoly = new D2DPoint[]
-        {
+        private readonly D2DPoint[] _planePoly =
+        [
             new D2DPoint(28,0),
             new D2DPoint(25,-2),
             new D2DPoint(20,-3),
@@ -154,14 +154,14 @@ namespace PolyPlane.GameObjects
             new D2DPoint(-19,3),
             new D2DPoint(21,3),
             new D2DPoint(25,2),
-        };
+        ];
 
-        private readonly D2DPoint[] _flamePoly = new D2DPoint[]
-        {
+        private readonly D2DPoint[] _flamePoly =
+        [
             new D2DPoint(-8, 1),
             new D2DPoint(-10, 0),
             new D2DPoint(-8, -1),
-        };
+        ];
 
         public FighterPlane(D2DPoint pos) : base(pos)
         {
