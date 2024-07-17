@@ -44,7 +44,7 @@ namespace PolyPlane.GameObjects
         private bool IsActivated = false;
         private readonly float THURST_VECTOR_AMT = 1f;
         private readonly float LIFESPAN = 40f;
-        private readonly float BURN_RATE = 1f;
+        private readonly float BURN_RATE = 0.85f;
         private readonly float THRUST = 2500f;
         private readonly float MASS = 22.5f;
         private readonly float FUEL = 10f;
@@ -192,7 +192,7 @@ namespace PolyPlane.GameObjects
                     MinVelo = 650f,
                     ParasiticDrag = 0.2f,
                     AOAFactor = 0.4f,
-                    DeflectionRate = 70f
+                    DeflectionRate = 100f
 
                 });
 
@@ -203,6 +203,7 @@ namespace PolyPlane.GameObjects
                     MaxLiftForce = 1000f * liftScale,
                     MinVelo = 750f,
                     ParasiticDrag = 0.2f,
+                    MaxAOA = 40f,
                     AOAFactor = 0.4f
                 });
 
@@ -308,7 +309,7 @@ namespace PolyPlane.GameObjects
                             const float MAX_DEF_AOA = 20f;// Maximum AoA allowed. Reduce deflection as AoA increases.
                             var aoaFact = 1f - (Math.Abs(_rocketBody.AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 2f))));
 
-                            const float MAX_DEF_ROT_SPD = 100f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
+                            const float MAX_DEF_ROT_SPD = 80f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
                             var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 3f))));
 
                             nextDeflect *= aoaFact * rotSpdFact * spdFact;
