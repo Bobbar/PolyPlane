@@ -1,5 +1,6 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.Helpers;
+using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
 {
@@ -8,13 +9,14 @@ namespace PolyPlane.Rendering
         public D2DPoint Position;
         public readonly D2DPoint[] PointsOrigin = Array.Empty<D2DPoint>();
         public D2DPoint[] Points = Array.Empty<D2DPoint>();
-        public List<D2DPoint> Dims = new List<D2DPoint>();
+        public List<D2DSize> Dims = new List<D2DSize>();
+
         public float Rotation = 0f;
         public float Radius = 0f;
         public float ScaleX = 1f;
         public float ScaleY = 1f;
 
-        public Cloud(D2DPoint position, List<D2DPoint> points, List<D2DPoint> dims, float rotation)
+        public Cloud(D2DPoint position, List<D2DPoint> points, List<D2DSize> dims, float rotation)
         {
             Position = position;
             PointsOrigin = points.ToArray();
@@ -34,7 +36,7 @@ namespace PolyPlane.Rendering
             const float ALT_FACT_AMT = 30f;
             var nPnts = rnd.Next(minPoints, maxPoints);
             var radius = rnd.Next(minRadius, maxRadius);
-            var dims = new List<D2DPoint>();
+            var dims = new List<D2DSize>();
 
             // Try to make clouds at higher altitude more thin and whispy?
             var altFact = Utilities.Factor(Math.Abs(position.Y), MAX_ALT);
@@ -43,7 +45,7 @@ namespace PolyPlane.Rendering
             {
                 var dimsX = rnd.NextFloat(MIN_DIMS_X + (altFact * ALT_FACT_AMT), MAX_DIMS_X + (altFact * ALT_FACT_AMT));
                 var dimsY = rnd.NextFloat(MIN_DIMS_Y - (altFact * ALT_FACT_AMT), MAX_DIMS_Y - (altFact * ALT_FACT_AMT));
-                dims.Add(new D2DPoint(dimsX, dimsY));
+                dims.Add(new D2DSize(dimsX, dimsY));
             }
 
             var rotation = 0f;

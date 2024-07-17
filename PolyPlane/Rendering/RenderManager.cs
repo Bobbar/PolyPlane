@@ -1417,10 +1417,7 @@ namespace PolyPlane.Rendering
             const float DARKER_COLOR = 0.6f;
             var color1 = new D2DColor(1f, DARKER_COLOR, DARKER_COLOR, DARKER_COLOR);
             var color2 = D2DColor.WhiteSmoke;
-
             var points = cloud.Points;
-
-            Utilities.ApplyTranslation(points, points, cloud.Position, 0f, D2DPoint.Zero, cloud.ScaleX, cloud.ScaleY);
 
             // Find min/max height.
             var minY = points.Min(p => p.Y);
@@ -1448,7 +1445,7 @@ namespace PolyPlane.Rendering
                 // Add time of day color.
                 color = AddTimeOfDayColor(color);
 
-                ctx.FillEllipse(new D2DEllipse(point, new D2DSize(dims.X, dims.Y)), color);
+                ctx.FillEllipse(new D2DEllipse(point, dims), color);
             }
         }
 
@@ -1473,7 +1470,7 @@ namespace PolyPlane.Rendering
                 groundPos.X += todOffset;
 
                 if (ctx.Viewport.Contains(groundPos))
-                    ctx.FillEllipse(new D2DEllipse(groundPos, new D2DSize(dims.X * 4f, dims.Y * 0.5f)), shadowColor);
+                    ctx.FillEllipse(new D2DEllipse(groundPos, new D2DSize(dims.width * 4f, dims.height * 0.5f)), shadowColor);
             }
         }
 
@@ -1502,7 +1499,9 @@ namespace PolyPlane.Rendering
                     cloud.Position.X = -MAX_CLOUD_X;
                 }
 
+                // Rotate then scale.
                 Utilities.ApplyTranslation(cloud.PointsOrigin, cloud.Points, cloud.Rotation, cloud.Position, CLOUD_SCALE);
+                Utilities.ApplyTranslation(cloud.Points, cloud.Points, cloud.Position, 0f, D2DPoint.Zero, cloud.ScaleX, cloud.ScaleY);
             }
         }
 
