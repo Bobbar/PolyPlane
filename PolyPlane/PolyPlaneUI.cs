@@ -958,7 +958,7 @@ namespace PolyPlane
             if (e.KeyData.HasFlag(Keys.Enter) && e.KeyData.HasFlag(Keys.Alt))
                 ToggleFullscreen();
 
-            if (e.KeyData.HasFlag(Keys.Escape) && _isFullScreen)
+            if (e.KeyData == Keys.Escape && _isFullScreen)
                 ToggleFullscreen();
         }
 
