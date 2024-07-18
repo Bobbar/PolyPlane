@@ -9,14 +9,27 @@ namespace PolyPlane.GameObjects
         public GameObject GameObject { get; private set; }
         public D2DPoint ReferencePosition { get; private set; }
 
-        public FixturePoint(GameObject gameObject, D2DPoint referencePosition)
+        private bool _copyRotation = true;
+
+        /// <summary>
+        /// Creates a new instance of <see cref="FixturePoint"/> and attaches it to the specified <see cref="GameObjects.GameObject"/>.
+        /// </summary>
+        /// <param name="gameObject">Parent object.</param>
+        /// <param name="referencePosition">Position within the parent object to attach to.</param>
+        /// <param name="copyRotation">Copy current rotation from parent object on every update.  Otherwise set manually.</param>
+        public FixturePoint(GameObject gameObject, D2DPoint referencePosition, bool copyRotation = true)
         {
+            _copyRotation = copyRotation;
+
             this.GameObject = gameObject;
             this.ReferencePosition = referencePosition;
-            this.Rotation = GameObject.Rotation;
+
+            if (_copyRotation)
+                this.Rotation = GameObject.Rotation;
+
             this.Position = Utilities.ApplyTranslation(ReferencePosition, gameObject.Rotation, gameObject.Position, World.RenderScale);
         }
-
+  
         public void FlipY()
         {
             ReferencePosition = new D2DPoint(ReferencePosition.X, ReferencePosition.Y * -1);
@@ -24,7 +37,9 @@ namespace PolyPlane.GameObjects
 
         public override void Update(float dt, float renderScale)
         {
-            this.Rotation = GameObject.Rotation;
+            if (_copyRotation)
+                this.Rotation = GameObject.Rotation;
+
             this.Position = Utilities.ApplyTranslation(ReferencePosition, GameObject.Rotation, GameObject.Position, renderScale);
             this.Velocity = GameObject.Velocity;
         }

@@ -34,6 +34,11 @@ namespace PolyPlane.Helpers
             return D2DPoint.Normalize(point);
         }
 
+        public static D2DPoint Tangent(this D2DPoint point)
+        {
+            return new D2DPoint(point.Y, -point.X);
+        }
+
         public static D2DPoint AbsDiff(this D2DPoint point, D2DPoint other)
         {
             return new D2DPoint(Math.Abs(point.X - other.X), Math.Abs(point.Y - other.Y));

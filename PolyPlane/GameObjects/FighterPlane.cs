@@ -8,7 +8,6 @@ namespace PolyPlane.GameObjects
 {
     public class FighterPlane : GameObjectPoly, ICollidable
     {
-
         public Gun Gun => _gun;
 
         public bool InResetCooldown
@@ -206,7 +205,7 @@ namespace PolyPlane.GameObjects
 
             _controlWing.Deflection = 2f;
 
-            _centerOfThrust = new FixturePoint(this, new D2DPoint(-40f, 0.7f));
+            _centerOfThrust = new FixturePoint(this, new D2DPoint(-26.6f * this.RenderOffset, 0.7f));
             _flamePos = new FixturePoint(this, new D2DPoint(-41f, 0.7f));
             _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
             _gun = new Gun(this, new D2DPoint(35f, 0), FireBulletCallback);
@@ -276,8 +275,8 @@ namespace PolyPlane.GameObjects
                 MaxDragForce = 20000f,
                 AOAFactor = 0.6f,
                 MaxAOA = 20f,
-                Position = new D2DPoint(1.5f, 1f),
-                MinVelo = 250f
+                Position = new D2DPoint(-2f * this.RenderOffset, 0.6f * this.RenderOffset),
+                MinVelo = 300f
             }));
 
             // Tail wing. (Control wing)
@@ -290,9 +289,10 @@ namespace PolyPlane.GameObjects
                 MaxLiftForce = 5600f,
                 MaxDragForce = 10000f,
                 AOAFactor = 0.4f,
-                MaxAOA = 20f,
+                MaxAOA = 30f,
                 DeflectionRate = defRate,
-                Position = new D2DPoint(-35f, 1f),
+                PivotPoint = new D2DPoint(-25f * this.RenderOffset, 0.6f * this.RenderOffset),
+                Position = new D2DPoint(-27.5f * this.RenderOffset, 0.6f * this.RenderOffset),
                 MinVelo = 350f
             }), isControl: true);
 
@@ -333,10 +333,10 @@ namespace PolyPlane.GameObjects
                     const float MIN_DEF_SPD = 300f; // Minimum speed required for full deflection.
                     var spdFact = Utilities.Factor(velo, MIN_DEF_SPD);
 
-                    const float MAX_DEF_AOA = 30f;// Maximum AoA allowed. Reduce deflection as AoA increases.
+                    const float MAX_DEF_AOA = 40f;// Maximum AoA allowed. Reduce deflection as AoA increases.
                     var aoaFact = 1f - (Math.Abs(Wings[0].AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 6f))));
 
-                    const float MAX_DEF_ROT_SPD = 55f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
+                    const float MAX_DEF_ROT_SPD = 200f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
                     var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 8f))));
 
                     // Ease out when thrust is decreasing.
@@ -385,7 +385,7 @@ namespace PolyPlane.GameObjects
 
                     // Integrate torque, thrust and wing force.
                     var thrustTorque = GetTorque(_centerOfThrust.Position, thrust);
-                    this.RotationSpeed += ((wingTorque + thrustTorque) * easeFact) / this.MASS * partialDT;
+                    this.RotationSpeed += (float)(((wingTorque + thrustTorque) * easeFact) / this.MASS * partialDT); ;
                     this.Velocity += (thrust * easeFact) / this.MASS * partialDT;
                     this.Velocity += (wingForce * easeFact) / this.MASS * partialDT;
 
@@ -738,7 +738,7 @@ namespace PolyPlane.GameObjects
             var forceVec = (velo.Normalized() * force);
             var impactTq = GetTorque(impactPos, forceVec);
 
-            this.RotationSpeed += impactTq / this.MASS * World.DT;
+            this.RotationSpeed += (float)(impactTq / this.MASS * World.DT);
             this.Velocity += forceVec / this.MASS * World.DT;
         }
 

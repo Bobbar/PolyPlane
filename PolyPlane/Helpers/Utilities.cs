@@ -415,7 +415,7 @@ namespace PolyPlane.Helpers
             {
                 var dir = parentObject.Position - point;
                 var dirNorm = D2DPoint.Normalize(dir);
-                var dirNormTan = new D2DPoint(dirNorm.Y, -dirNorm.X);
+                var dirNormTan = dirNorm.Tangent();
                 var W = 2f * (float)Math.PI * (parentObject.RotationSpeed * dt);
                 return baseVelo + (dirNormTan * (R * W));
             }

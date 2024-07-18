@@ -25,6 +25,7 @@ namespace PolyPlane.GameObjects
         public float AoA { get; set; }
 
         private FixturePoint FixedPosition;
+        private FixturePoint PivotPoint;
         private GameObject _parentObject;
         private RateLimiter _defRateLimit = new RateLimiter(rate: 80f);
 
@@ -35,7 +36,10 @@ namespace PolyPlane.GameObjects
         public Wing(GameObject obj, WingParameters parameters)
         {
             _params = parameters;
-            FixedPosition = new FixturePoint(obj, _params.Position);
+
+            PivotPoint = new FixturePoint(obj, _params.PivotPoint, copyRotation: false);
+            FixedPosition = new FixturePoint(PivotPoint, _params.Position - _params.PivotPoint);
+
             _defRateLimit = new RateLimiter(rate: _params.DeflectionRate);
             _maxDeflection = _params.MaxDeflection;
             Rotation = obj.Rotation;
@@ -47,10 +51,13 @@ namespace PolyPlane.GameObjects
 
         public override void Update(float dt, float renderScale)
         {
+            PivotPoint.Rotation = _parentObject.Rotation + this.Deflection;
+
             _defRateLimit.Update(dt);
+            PivotPoint.Update(dt, renderScale);
             FixedPosition.Update(dt, renderScale);
 
-            this.Rotation = _parentObject.Rotation + this.Deflection;
+            this.Rotation = PivotPoint.Rotation;
             this.Position = FixedPosition.Position;
 
             var nextVelo = Utilities.AngularVelocity(_parentObject, this.Position, dt);
@@ -65,6 +72,7 @@ namespace PolyPlane.GameObjects
 
         public void FlipY()
         {
+            PivotPoint.FlipY();
             FixedPosition.FlipY();
             Reset(this.Position);
         }
@@ -104,8 +112,6 @@ namespace PolyPlane.GameObjects
 
                 ctx.DrawLine(this.Position, this.Position + (this.Velocity * (SCALE + 0.5f)), D2DColor.Green, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
             }
-
-            //gfx.DrawLine(this.Position, this.Position + (this.Velocity * 0.1f), D2DColor.GreenYellow, 0.5f);
         }
 
         public D2DPoint GetLiftDragForce()
@@ -128,12 +134,12 @@ namespace PolyPlane.GameObjects
             velo += -World.Wind;
 
             var veloMag = velo.Length();
-            var veloMagSq = (float)Math.Pow(veloMag, 2f);
+            var veloMagSq = Math.Pow(veloMag, 2f);
             var veloAngle = this.Velocity.Angle(true);
 
             // Compute velo tangent.
             var veloNorm = D2DPoint.Normalize(velo);
-            var veloNormTan = new D2DPoint(veloNorm.Y, -veloNorm.X);
+            var veloNormTan = veloNorm.Tangent();
 
             // Compute angle of attack.
             var aoaDegrees = Utilities.ClampAngle180(veloAngle - this.Rotation);
@@ -180,50 +186,67 @@ namespace PolyPlane.GameObjects
         /// Attachment point.
         /// </summary>
         public D2DPoint Position = D2DPoint.Zero;
+
+        /// <summary>
+        /// Position around which the wing will rotate.
+        /// </summary>
+        public D2DPoint PivotPoint = D2DPoint.Zero;
+
         /// <summary>
         /// Render length.
         /// </summary>
         public float RenderLength;
+
         /// <summary>
         /// Render stroke width.
         /// </summary>
         public float RenderWidth = 2f;
+
         /// <summary>
         /// Wing area.
         /// </summary>
         public float Area;
+
         /// <summary>
         /// Max lift force allowed.
         /// </summary>
         public float MaxLiftForce = 15000f;
+
         /// <summary>
         /// Max drag force allowed.
         /// </summary>
         public float MaxDragForce;
+
         /// <summary>
         /// Max deflection allowed.
         /// </summary>
         public float MaxDeflection = 40f;
+
         /// <summary>
         /// Deflection rate. (How fast does it rotate to the target deflection)
         /// </summary>
         public float DeflectionRate = 80f;
+
         /// <summary>
         /// Minimum velocity before stall.
         /// </summary>
         public float MinVelo = 350f;
+
         /// <summary>
         /// Maximum AoA before stall.
         /// </summary>
         public float MaxAOA = 30f;
+
         /// <summary>
         /// How much AoA effects drag.
         /// </summary>
         public float AOAFactor = 0.5f;
+
         /// <summary>
         /// How much velocity effects drag.
         /// </summary>
         public float VeloFactor = 0.5f;
+
         /// <summary>
         /// Additional drag applied regardless of AoA.
         /// </summary>
