@@ -49,6 +49,11 @@ namespace PolyPlane.GameObjects
         private readonly float MASS = 22.5f;
         private readonly float FUEL = 10f;
 
+        private float Inertia
+        {
+            get { return TotalMass * 20f; }
+        }
+
         private float _currentFuel = 0f;
         private float _gForce = 0f;
         private float _gForcePeak = 0f;
@@ -190,10 +195,10 @@ namespace PolyPlane.GameObjects
                     MaxLiftForce = 6000f * liftScale,
                     Position = new D2DPoint(-22f, 0f),
                     MinVelo = 650f,
-                    ParasiticDrag = 0.2f,
+                    ParasiticDrag = 0.4f,
                     AOAFactor = 0.4f,
-                    DeflectionRate = 100f
-
+                    DeflectionRate = 30f,
+                    MaxAOA = 60f
                 });
 
                 _rocketBody = new Wing(this, new WingParameters()
@@ -202,9 +207,9 @@ namespace PolyPlane.GameObjects
                     Area = 0.075f,
                     MaxLiftForce = 1000f * liftScale,
                     MinVelo = 750f,
-                    ParasiticDrag = 0.2f,
+                    ParasiticDrag = 0.4f,
                     MaxAOA = 40f,
-                    AOAFactor = 0.4f
+                    AOAFactor = 0.2f
                 });
 
                 _noseWing = new Wing(this, new WingParameters()
@@ -216,7 +221,7 @@ namespace PolyPlane.GameObjects
                     MaxLiftForce = 5000f * liftScale,
                     Position = new D2DPoint(21.5f, 0f),
                     MinVelo = 650f,
-                    ParasiticDrag = 0.2f,
+                    ParasiticDrag = 0.4f,
                     AOAFactor = 0.4f
                 });
             }
@@ -276,9 +281,9 @@ namespace PolyPlane.GameObjects
                         var bodyTorque = GetTorque(_rocketBody, bodyForce);
                         var noseTorque = GetTorque(_noseWing, noseForce);
                         var thrustTorque = GetTorque(_centerOfThrust.Position, GetThrust(thrustVector: _useThrustVectoring));
-                        var torqueRot = (tailTorque + bodyTorque + noseTorque + thrustTorque) * partialDT;
 
-                        this.RotationSpeed += torqueRot / this.TotalMass;
+                        var torqueRot = (tailTorque + bodyTorque + noseTorque + thrustTorque) / this.Inertia;
+                        this.RotationSpeed += torqueRot * partialDT;
                     }
                     else
                     {
@@ -312,7 +317,9 @@ namespace PolyPlane.GameObjects
                             const float MAX_DEF_ROT_SPD = 80f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
                             var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 3f))));
 
-                            nextDeflect *= aoaFact * rotSpdFact * spdFact;
+                            // Ease out of SAS as fuel runs out.
+                            var fuelFact = Utilities.FactorWithEasing(_currentFuel, FUEL, EasingFunctions.EaseOutCubic);
+                            nextDeflect = Utilities.Lerp(nextDeflect, nextDeflect * (aoaFact * rotSpdFact * spdFact), fuelFact);
                         }
 
                         _tailWing.Deflection = TAIL_AUTH * -nextDeflect;
@@ -346,7 +353,7 @@ namespace PolyPlane.GameObjects
             if (this.Age > LIFESPAN && MissedTarget)
                 this.IsExpired = true;
 
-            if (FUEL <= 0f && this.Velocity.Length() <= 100f)
+            if (FUEL <= 0f && this.Velocity.Length() <= 50f)
                 this.IsExpired = true;
 
 

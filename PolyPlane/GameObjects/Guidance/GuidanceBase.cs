@@ -90,7 +90,7 @@ namespace PolyPlane.GameObjects.Guidance
             // Get rotation from implementation.
             var rotation = GetGuidanceDirection(dt);
 
-            var isInFOV = Missile.IsObjInFOV(Target, World.SENSOR_FOV * 0.5f);
+            var isInFOV = Missile.IsObjInFOV(Target, World.SENSOR_FOV * 0.8f);
 
             if (!isInFOV)
             {

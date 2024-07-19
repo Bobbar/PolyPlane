@@ -118,15 +118,6 @@ namespace PolyPlane.Helpers
 
         public static float AngleDiff(float a, float b)
         {
-            var normDeg = ModSign(a - b, 360f);
-
-            var absDiffDeg = Math.Min(360f - normDeg, normDeg);
-
-            return absDiffDeg;
-        }
-
-        public static float AngleDiffSmallest(float a, float b)
-        {
             return 180f - Math.Abs(Math.Abs(a - b) % (2f * 180f) - 180f);
         }
 

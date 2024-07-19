@@ -94,7 +94,7 @@ namespace PolyPlane.GameObjects.Guidance
 
             // Lerp between the two rotations as angle diff changes.
             var targetDirAngle = aimDirection.Angle();
-            var targetAngleDiff = Utilities.AngleDiffSmallest(veloAngle, targetDirAngle);
+            var targetAngleDiff = Utilities.AngleDiff(veloAngle, targetDirAngle);
 
             //var angDiffFact =Utilities.Factor(targetAngleDiff, 180f); // Favors the tangent.
             var angDiffFact = Utilities.Factor(targetAngleDiff, 360f); // Favors the normal.

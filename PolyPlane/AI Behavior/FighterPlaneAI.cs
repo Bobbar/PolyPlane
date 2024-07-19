@@ -269,8 +269,8 @@ namespace PolyPlane.AI_Behavior
                 var defendAngleOne = Utilities.ClampAngle(angleToThreat + 90f);
                 var defendAngleTwo = Utilities.ClampAngle(angleToThreat - 90f);
 
-                var diffOne = Utilities.AngleDiffSmallest(defendAngleOne, this.Plane.Rotation);
-                var diffTwo = Utilities.AngleDiffSmallest(defendAngleTwo, this.Plane.Rotation);
+                var diffOne = Utilities.AngleDiff(defendAngleOne, this.Plane.Rotation);
+                var diffTwo = Utilities.AngleDiff(defendAngleTwo, this.Plane.Rotation);
 
                 if (diffOne < diffTwo)
                     angle = defendAngleOne;

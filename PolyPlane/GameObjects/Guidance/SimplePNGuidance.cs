@@ -9,13 +9,13 @@ namespace PolyPlane.GameObjects.Guidance
 
         public override float GetGuidanceDirection(float dt)
         {
-            const float pValue = 5f;
+            const float pValue = 9f;
 
             var target = GetTargetPosition();
             var los = target - this.Missile.Position;
             var navigationTime = los.Length() / (this.Missile.Velocity.Length() * dt);
             var targRelInterceptPos = los + ((Target.Velocity * dt) * navigationTime);
-
+            
             ImpactPoint = targRelInterceptPos;
             targRelInterceptPos *= pValue;
 

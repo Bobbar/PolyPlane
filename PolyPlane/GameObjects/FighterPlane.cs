@@ -97,6 +97,11 @@ namespace PolyPlane.GameObjects
         private Direction _queuedDir = Direction.Right;
         private bool _isAIPlane = false;
         private readonly float MASS = 90f;
+       
+        private float Inertia
+        {
+            get { return MASS * 20f; }
+        }
 
         private GameTimer _flipTimer = new GameTimer(2f);
         private GameTimer _expireTimeout = new GameTimer(40f);
@@ -385,7 +390,8 @@ namespace PolyPlane.GameObjects
 
                     // Integrate torque, thrust and wing force.
                     var thrustTorque = GetTorque(_centerOfThrust.Position, thrust);
-                    this.RotationSpeed += (float)(((wingTorque + thrustTorque) * easeFact) / this.MASS * partialDT); ;
+                    var rotAmt = ((wingTorque + thrustTorque) * easeFact) / this.Inertia;
+                    this.RotationSpeed += rotAmt * partialDT;
                     this.Velocity += (thrust * easeFact) / this.MASS * partialDT;
                     this.Velocity += (wingForce * easeFact) / this.MASS * partialDT;
 
@@ -558,7 +564,7 @@ namespace PolyPlane.GameObjects
                 return;
             }
 
-            var missile = new GuidedMissile(this, target, GuidanceType.Advanced, useControlSurfaces: true, useThrustVectoring: true);
+            var missile = new GuidedMissile(this, target, GuidanceType.SimplePN, useControlSurfaces: true, useThrustVectoring: true);
             FireMissileCallback(missile);
 
             this.MissilesFired++;
@@ -738,7 +744,7 @@ namespace PolyPlane.GameObjects
             var forceVec = (velo.Normalized() * force);
             var impactTq = GetTorque(impactPos, forceVec);
 
-            this.RotationSpeed += (float)(impactTq / this.MASS * World.DT);
+            this.RotationSpeed += (float)(impactTq / this.Inertia * World.DT);
             this.Velocity += forceVec / this.MASS * World.DT;
         }
 
