@@ -27,8 +27,6 @@ namespace PolyPlane.Server
         private Thread _gameThread;
         private int _multiThreadNum = 4;
 
-        private GameTimer _burstTimer = new GameTimer(0.25f, true);
-        private GameTimer _decoyTimer = new GameTimer(0.25f, true);
         private GameTimer _discoveryTimer = new GameTimer(2f, true);
         private GameTimer _syncTimer = new GameTimer(6f, true);
 
@@ -91,10 +89,6 @@ namespace PolyPlane.Server
 
             _updateTimer.Tick += UpdateTimer_Tick;
             _updateTimer.Interval = 32;
-
-
-            _burstTimer.TriggerCallback = () => DoAIPlaneBursts();
-            _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
 
             // Periodically broadcast discovery & time sync packets.
             _discoveryTimer.TriggerCallback = () => _discovery?.BroadcastServerInfo(new DiscoveryPacket(_address, _serverName, _port));
@@ -282,7 +276,6 @@ namespace PolyPlane.Server
             _gameThread = new Thread(GameLoop);
             _gameThread.Priority = ThreadPriority.AboveNormal;
             _gameThread.Start();
-            _decoyTimer.Start();
         }
 
         private void GameLoop()
@@ -333,9 +326,6 @@ namespace PolyPlane.Server
                 _timer.Restart();
 
                 World.UpdateAirDensityAndWind(World.DT);
-
-                DoAIPlaneBurst(World.DT);
-                _decoyTimer.Update(World.DT);
 
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
@@ -455,69 +445,10 @@ namespace PolyPlane.Server
 
         }
 
-        private void DoAIPlaneDecoys()
+        private void DropDecoy(Decoy decoy)
         {
-            var dropping = _objs.Planes.Where(p => p.DroppingDecoy).ToArray();
-
-            if (dropping.Length == 0)
-                return;
-
-            for (int i = 0; i < dropping.Length; i++)
-            {
-                var plane = dropping[i];
-
-                DropDecoy(plane);
-            }
-        }
-
-        private void DropDecoy(FighterPlane plane)
-        {
-            if (plane.NumDecoys <= 0)
-            {
-                plane.NumDecoys = 0;
-                return;
-            }
-
-            if (plane.IsDisabled)
-                return;
-
-            var decoy = new Decoy(plane);
             _objs.EnqueueDecoy(decoy);
             _netMan.SendNewDecoy(decoy);
-
-            plane.NumDecoys--;
-            plane.DecoysDropped++;
-        }
-
-        private void DoAIPlaneBurst(float dt)
-        {
-            if (_objs.Planes.Any(p => p.FiringBurst))
-            {
-                if (!_burstTimer.IsRunning)
-                {
-                    _burstTimer.Restart();
-                }
-            }
-            else
-            {
-                _burstTimer.Stop();
-            }
-
-            _burstTimer.Update(dt);
-        }
-
-        private void DoAIPlaneBursts()
-        {
-            var firing = _objs.Planes.Where(p => p.FiringBurst).ToArray();
-
-            if (firing.Length == 0)
-                return;
-
-            for (int i = 0; i < firing.Length; i++)
-            {
-                var plane = firing[i];
-                plane.FireBullet();
-            }
         }
 
         private FighterPlane GetAIPlane(AIPersonality? personality = null)
@@ -546,6 +477,8 @@ namespace PolyPlane.Server
                 _objs.AddBullet(b);
                 _server.SendNewBulletPacket(b);
             };
+
+            aiPlane.DropDecoyCallback = DropDecoy;
 
             aiPlane.Velocity = new D2DPoint(400f, 0f);
 

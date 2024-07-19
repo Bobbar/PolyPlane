@@ -13,12 +13,10 @@ namespace PolyPlane.GameObjects
         private float _lifeSpan = 10f;
         private float _direction = 1f;
 
-        public Decoy(FighterPlane owner) : base()
+        public Decoy(FighterPlane owner, D2DPoint pos) : base(pos)
         {
             this.PlayerID = owner.PlayerID;
             this.Owner = owner;
-
-            this.Position = owner.ExhaustPosition;
             this.Velocity = owner.Velocity;
 
             // Make the decoy shoot out from the top of the plane.

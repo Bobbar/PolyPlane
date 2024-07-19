@@ -37,8 +37,6 @@ namespace PolyPlane
 
         private D2DPoint _playerPlaneSlewPos = D2DPoint.Zero;
 
-        private GameTimer _decoyTimer = new GameTimer(0.25f, true);
-
         private Stopwatch _timer = new Stopwatch();
         private TimeSpan _updateTime = new TimeSpan();
         private TimeSpan _collisionTime = new TimeSpan();
@@ -60,8 +58,6 @@ namespace PolyPlane
             this.LostFocus += PolyPlaneUI_LostFocus;
             this.Disposed += PolyPlaneUI_Disposed;
             this.MouseWheel += PolyPlaneUI_MouseWheel;
-
-            _decoyTimer.TriggerCallback = () => DoAIPlaneDecoys();
 
             _multiThreadNum = Environment.ProcessorCount - 2;
         }
@@ -362,6 +358,8 @@ namespace PolyPlane
                     _client.SendNewBulletPacket(b);
             };
 
+            _playerPlane.DropDecoyCallback = DropDecoy;
+
             _playerPlane.AutoPilotOn = true;
             _playerPlane.ThrustOn = true;
             _playerPlane.Velocity = new D2DPoint(500f, 0f);
@@ -457,7 +455,9 @@ namespace PolyPlane
                 }
             };
 
-            aiPlane.Velocity = new D2DPoint(400f, 0f);
+            aiPlane.DropDecoyCallback = DropDecoy;
+
+            aiPlane.Velocity = new D2DPoint(500f, 0f);
 
             return aiPlane;
         }
@@ -475,7 +475,6 @@ namespace PolyPlane
             _gameThread = new Thread(GameLoop);
             _gameThread.Priority = ThreadPriority.AboveNormal;
             _gameThread.Start();
-            _decoyTimer.Start();
         }
 
         private void InitGfx()
@@ -532,8 +531,6 @@ namespace PolyPlane
                 _timer.Restart();
 
                 World.UpdateAirDensityAndWind(World.DT);
-
-                _decoyTimer.Update(World.DT);
 
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
@@ -684,40 +681,12 @@ namespace PolyPlane
             }
         }
 
-        private void DoAIPlaneDecoys()
+        private void DropDecoy(Decoy decoy)
         {
-            var dropping = _objs.Planes.Where(p => p.DroppingDecoy).ToArray();
-
-            if (dropping.Length == 0)
-                return;
-
-            for (int i = 0; i < dropping.Length; i++)
-            {
-                var plane = dropping[i];
-
-                DropDecoy(plane);
-            }
-        }
-
-        private void DropDecoy(FighterPlane plane)
-        {
-            if (plane.NumDecoys <= 0)
-            {
-                plane.NumDecoys = 0;
-                return;
-            }
-
-            if (plane.IsDisabled)
-                return;
-
-            var decoy = new Decoy(plane);
             _objs.EnqueueDecoy(decoy);
 
             if (World.IsNetGame)
                 _netMan.SendNewDecoy(decoy);
-
-            plane.NumDecoys--;
-            plane.DecoysDropped++;
         }
 
         private void PauseGame()

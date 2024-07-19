@@ -8,7 +8,7 @@ namespace PolyPlane.GameObjects
         public Action<Bullet> FireBulletCallback;
         public bool MuzzleFlashOn = false;
 
-        private FixturePoint _attachPoint { get; set; }
+        private FixturePoint _attachPoint;
         private GunSmoke _smoke;
         private FighterPlane _ownerPlane;
         private GameTimer _burstTimer = new GameTimer(0.25f, true);

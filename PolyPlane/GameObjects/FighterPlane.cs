@@ -83,6 +83,19 @@ namespace PolyPlane.GameObjects
             }
         }
 
+        public Action<Decoy> DropDecoyCallback
+        {
+            get { return _dropDecoyCallback; }
+
+            set
+            {
+                _dropDecoyCallback = value;
+                _decoyDispenser.DropDecoyCallback = value;
+            }
+        }
+
+        private Action<Decoy> _dropDecoyCallback;
+
         private Action<Bullet> _fireBulletCallback;
         public Action<GuidedMissile> FireMissileCallback { get; set; }
         public Action<FighterPlane, GameObject> PlayerKilledCallback { get; set; }
@@ -127,6 +140,8 @@ namespace PolyPlane.GameObjects
         private D2DColor _flameFillColor = new D2DColor(0.6f, D2DColor.Yellow);
 
         private Gun _gun;
+        private DecoyDispenser _decoyDispenser;
+
         private FixturePoint _flamePos;
         private FixturePoint _cockpitPosition;
         private FixturePoint _centerOfThrust;
@@ -214,6 +229,7 @@ namespace PolyPlane.GameObjects
             _flamePos = new FixturePoint(this, new D2DPoint(-41f, 0.7f));
             _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
             _gun = new Gun(this, new D2DPoint(35f, 0), FireBulletCallback);
+            _decoyDispenser = new DecoyDispenser(this, new D2DPoint(-24f, 0f));
 
             _flamePos.IsNetObject = this.IsNetObject;
             _cockpitPosition.IsNetObject = this.IsNetObject;
@@ -418,6 +434,7 @@ namespace PolyPlane.GameObjects
             _cockpitPosition.Update(dt, renderScale * this.RenderOffset);
             _thrustAmt.Update(dt);
             _gun.Update(dt, renderScale * this.RenderOffset);
+            _decoyDispenser.Update(dt, renderScale * this.RenderOffset);
 
             if (!World.IsNetGame || World.IsClient)
             {
