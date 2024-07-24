@@ -14,7 +14,7 @@ namespace PolyPlane
 
         public static bool InterpOn = true;
 
-        public const int PHYSICS_SUB_STEPS = 10;
+        public const int PHYSICS_SUB_STEPS = 6;
 
         public const bool NET_UPDATE_SKIP_FRAMES = true;
         public const int NET_SERVER_FPS = 60;

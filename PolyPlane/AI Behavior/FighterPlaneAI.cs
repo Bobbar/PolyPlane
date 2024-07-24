@@ -21,14 +21,14 @@ namespace PolyPlane.AI_Behavior
 
         private GameTimer _fireBurstTimer = new GameTimer(2f, 6f);
         private GameTimer _fireMissileCooldown = new GameTimer(6f);
-        private GameTimer _dropDecoysTimer = new GameTimer(3f, 3f);
+        private GameTimer _dropDecoysTimer = new GameTimer(2f, 3f);
         private GameTimer _changeTargetCooldown = new GameTimer(10f);
 
         private float MIN_MISSILE_TIME = 40f;
         private float MAX_MISSILE_TIME = 80f;
         private float MAX_SPEED = 1000f;
         private readonly float RUN_DISTANCE = 30000f; // How close before cowardly AI runs away.
-        private readonly float MAX_DECOY_DIST = 10000f; // Max distance between missile and plane before dropping decoys.
+        private readonly float MAX_DECOY_DIST = 20000f; // Max distance between missile and plane before dropping decoys.
 
 
         public FighterPlaneAI(FighterPlane plane, AIPersonality personality)
@@ -233,7 +233,7 @@ namespace PolyPlane.AI_Behavior
 
         public float GetAIGuidance()
         {
-            const float MIN_IMPACT_TIME = 5f; // Min ground impact time to consider avoiding ground.
+            const float MIN_IMPACT_TIME = 7f; // Min ground impact time to consider avoiding ground.
             const float BLOCK_PITCH_DOWN_ALT = 800f; // Do not allow pitch down angles below this altitude.
 
             var patrolDir = Utilities.ClampAngle(Utilities.RadsToDegrees((float)Math.Sin(_sineWavePos)));

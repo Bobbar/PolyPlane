@@ -9,25 +9,21 @@ namespace PolyPlane.GameObjects.Guidance
 
         public override float GetGuidanceDirection(float dt)
         {
-            const float pValue = 20f;
+            const float pValue = 10f;
 
-            var target = GetTargetPosition();
-            var targDist = D2DPoint.Distance(target, this.Missile.Position);
-            var veloAngle = this.Missile.Velocity.Angle(true);
+            var targetPos = GetTargetPosition();
+            var targDist = D2DPoint.Distance(targetPos, this.Missile.Position);
 
-            var navigationTime = targDist / this.Missile.Velocity.Length();
-            var los = (target + Target.Velocity * navigationTime) - this.Missile.Position;
+            var navigationTime = targDist / (this.Missile.Velocity.Length() * dt);
+            var los = (targetPos + ((Target.Velocity * dt) * navigationTime)) - this.Missile.Position;
 
             var angle = this.Missile.Velocity.AngleBetween(los, true);
-            var adjustment = pValue * angle * D2DPoint.Normalize(los);
+            var adjustment = pValue * angle * los;
 
             var leadRotation = adjustment.Angle(true);
             var targetRot = leadRotation;
 
-            ImpactPoint = (target + Target.Velocity * navigationTime);
-
-            if (angle == 0f)
-                return veloAngle;
+            ImpactPoint = (targetPos + Target.Velocity * navigationTime);
 
             return targetRot;
         }

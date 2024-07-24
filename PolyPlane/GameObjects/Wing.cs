@@ -37,6 +37,9 @@ namespace PolyPlane.GameObjects
         {
             _params = parameters;
 
+            if (_params.PivotPoint == D2DPoint.Zero)
+                _params.PivotPoint = _params.Position;
+
             PivotPoint = new FixturePoint(obj, _params.PivotPoint, copyRotation: false);
             FixedPosition = new FixturePoint(PivotPoint, _params.Position - _params.PivotPoint);
 

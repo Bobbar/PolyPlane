@@ -564,6 +564,8 @@ namespace PolyPlane.Rendering
             DrawGroundImpacts(ctx, plane);
 
             _objs.Decoys.ForEach(o => o.Render(ctx));
+            _objs.MissileTrails.ForEach(o => o.Render(ctx));
+
             _objs.Missiles.ForEach(o =>
             {
                 o.Render(ctx);
@@ -573,7 +575,6 @@ namespace PolyPlane.Rendering
                     ctx.DrawEllipse(new D2DEllipse(o.Position, new D2DSize(50f, 50f)), new D2DColor(0.4f, D2DColor.Red), 8f);
             });
 
-            _objs.MissileTrails.ForEach(o => o.Render(ctx));
             _objs.Bullets.ForEach(o => o.Render(ctx));
 
             _objs.Planes.ForEach(p =>
@@ -1235,7 +1236,7 @@ namespace PolyPlane.Rendering
 
         private float LeadTarget(GameObject target, FighterPlane plane)
         {
-            const float pValue = 5f;
+            const float pValue = 10f;
 
             var los = target.Position - plane.Position;
             var navigationTime = los.Length() / ((plane.AirSpeedTrue + Bullet.SPEED) * World.DT);

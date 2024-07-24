@@ -348,9 +348,10 @@ namespace PolyPlane.GameObjects
                 float ogDef = deflection;
 
                 // Apply some stability control to try to prevent thrust vectoring from spinning the plane.
-                var velo = this.AirSpeedIndicated;
                 if (_thrustAmt.Value > 0f && SASOn)
                 {
+                    var velo = this.AirSpeedIndicated;
+
                     const float MIN_DEF_SPD = 300f; // Minimum speed required for full deflection.
                     var spdFact = Utilities.Factor(velo, MIN_DEF_SPD);
 
@@ -581,7 +582,8 @@ namespace PolyPlane.GameObjects
                 return;
             }
 
-            var missile = new GuidedMissile(this, target, GuidanceType.SimplePN, useControlSurfaces: true, useThrustVectoring: true);
+            var missile = new GuidedMissile(this, target, GuidanceType.Advanced, useControlSurfaces: true, useThrustVectoring: true);
+
             FireMissileCallback(missile);
 
             this.MissilesFired++;
@@ -614,7 +616,7 @@ namespace PolyPlane.GameObjects
             var amt = Utilities.RadsToDegrees(this.Velocity.Normalized().Cross(Utilities.AngleToVectorDegrees(dir, SENSITIVITY)));
             var rot = this.Rotation - amt;
             rot = Utilities.ClampAngle(rot);
-
+           
             return rot;
         }
 

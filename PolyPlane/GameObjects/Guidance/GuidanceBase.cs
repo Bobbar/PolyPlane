@@ -12,11 +12,12 @@ namespace PolyPlane.GameObjects.Guidance
         public GameObject Target { get; set; }
 
         private const float ARM_TIME = 3f;
-
+        private const float SENSOR_FOV = World.SENSOR_FOV * 0.8f;
+        
         private GameTimer _lostLockTimer = new GameTimer(8f);
         private GameTimer _groundScatterTimer = new GameTimer(4f);
         private GameTimer _armTimer = new GameTimer(ARM_TIME);
-        private GameTimer _decoyDistractCooldown = new GameTimer(3f);
+        private GameTimer _decoyDistractCooldown = new GameTimer(4f);
         private GameTimer _decoyDistractArm = new GameTimer(2f);
 
         public bool GroundScatterInCooldown
@@ -90,7 +91,7 @@ namespace PolyPlane.GameObjects.Guidance
             // Get rotation from implementation.
             var rotation = GetGuidanceDirection(dt);
 
-            var isInFOV = Missile.IsObjInFOV(Target, World.SENSOR_FOV * 0.8f);
+            var isInFOV = Missile.IsObjInFOV(Target, SENSOR_FOV);
 
             if (!isInFOV)
             {
@@ -139,7 +140,7 @@ namespace PolyPlane.GameObjects.Guidance
         protected void DoDecoySuccess()
         {
             // Test for decoy success.
-            const float MIN_DECOY_FOV = 10f;
+            const float MIN_DECOY_FOV = SENSOR_FOV;
             const float MAX_DISTANCE = 20000f; // Max distance for decoys to be considered.
 
             var decoys = World.ObjectManager.Decoys;
@@ -179,9 +180,6 @@ namespace PolyPlane.GameObjects.Guidance
 
                 if (!missile.IsObjInFOV(decoy, MIN_DECOY_FOV))
                     continue;
-
-                //if (missile.Owner.IsObjInFOV(target, World.SENSOR_FOV * 0.25f) && )
-                //    continue;
 
                 var dist = D2DPoint.Distance(decoy.Position, missile.Position);
 
@@ -261,6 +259,8 @@ namespace PolyPlane.GameObjects.Guidance
             const int RANDO_AMT = 6;
             var randOChanceO = Utilities.Rnd.Next(RANDO_AMT);
             var lucky = randOChanceO == 0;
+
+            lucky = true; //TODO: Bypass the dice roll for now.
 
             if (lucky)
             {
