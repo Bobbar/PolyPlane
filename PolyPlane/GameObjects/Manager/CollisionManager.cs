@@ -263,8 +263,7 @@ namespace PolyPlane.GameObjects.Manager
                                 // Handle planes killed by blast.
                                 if (plane.Health <= 0 && !plane.IsDisabled)
                                 {
-                                    var impactor = explosion.Owner;
-                                    plane.DoPlayerKilled(impactor);
+                                    plane.DoPlayerKilled(missile);
                                     ImpactEvent?.Invoke(this, new ImpactEvent(plane, missile, true));
                                 }
                                 else

@@ -92,10 +92,6 @@ namespace PolyPlane.GameObjects.Guidance
             if (Missile.Velocity.Length() == 0f)
                 return Missile.Rotation;
 
-            var rotFactor = 1f;
-            var veloAngle = Missile.Velocity.Angle(true);
-            var initialAngle = veloAngle;
-
             // Get rotation from implementation.
             var rotation = GetGuidanceDirection(dt);
 
@@ -119,12 +115,7 @@ namespace PolyPlane.GameObjects.Guidance
             if (_missedTarget || _lostInGround)
                 rotation = _missedTargetRot;
 
-            // Lerp from current rotation towards guidance rotation as we 
-            // approach the specified arm time.
-            var armFactor = Utilities.Factor(_armTimer.Value, _armTimer.Interval);
-            var finalRot = Utilities.LerpAngle(initialAngle, rotation, rotFactor * armFactor);
-
-            return finalRot;
+            return rotation;
         }
 
         protected D2DPoint GetTargetPosition()
