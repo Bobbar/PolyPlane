@@ -262,12 +262,14 @@ namespace PolyPlane.AI_Behavior
             // Run away from missile?
             if (_isDefending && DefendingMissile != null)
             {
-                var angleToThreat = (DefendingMissile.Position - this.Plane.Position).Angle(true);
-
                 // Compute two tangential angles and choose the one closest to the current rotation.
-                // We basically try to fly perpendicular to the direction of the incoming missile.
-                var defendAngleOne = Utilities.ClampAngle(angleToThreat + 90f);
-                var defendAngleTwo = Utilities.ClampAngle(angleToThreat - 90f);
+                // We basically try to fly away and slightly perpendicular to the direction of the incoming missile.
+
+                var angleAwayFromThreat = (this.Plane.Position - DefendingMissile.Position).Angle(true);
+
+                const float DEFEND_ANGLE = 45f;
+                var defendAngleOne = Utilities.ClampAngle(angleAwayFromThreat + DEFEND_ANGLE);
+                var defendAngleTwo = Utilities.ClampAngle(angleAwayFromThreat - DEFEND_ANGLE);
 
                 var diffOne = Utilities.AngleDiff(defendAngleOne, this.Plane.Rotation);
                 var diffTwo = Utilities.AngleDiff(defendAngleTwo, this.Plane.Rotation);
@@ -276,7 +278,6 @@ namespace PolyPlane.AI_Behavior
                     angle = defendAngleOne;
                 else if (diffTwo < diffOne)
                     angle = defendAngleTwo;
-
             }
 
             // Try to lead the target if we are firing a burst.

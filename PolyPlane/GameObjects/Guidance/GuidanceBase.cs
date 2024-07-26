@@ -13,12 +13,13 @@ namespace PolyPlane.GameObjects.Guidance
 
         private const float ARM_TIME = 3f;
         private const float SENSOR_FOV = World.SENSOR_FOV * 0.8f;
-        
+
         private GameTimer _lostLockTimer = new GameTimer(8f);
         private GameTimer _groundScatterTimer = new GameTimer(4f);
         private GameTimer _armTimer = new GameTimer(ARM_TIME);
-        private GameTimer _decoyDistractCooldown = new GameTimer(4f);
+        private GameTimer _decoyDistractCooldown = new GameTimer(6f);
         private GameTimer _decoyDistractArm = new GameTimer(2f);
+        private GameTimer _pitbullTimer = new GameTimer(2f);
 
         public bool GroundScatterInCooldown
         {
@@ -43,7 +44,7 @@ namespace PolyPlane.GameObjects.Guidance
             set { _lostInGround = value; }
         }
 
-        public bool MissedTarget => _missedTarget || _lostInGround || this.Missile.IsDistracted;
+        public bool MissedTarget => _missedTarget || _lostInGround;
         private bool _missedTarget = false;
         private bool _lostInGround = false;
         private float _missedTargetRot = 0f;
@@ -55,10 +56,16 @@ namespace PolyPlane.GameObjects.Guidance
 
             _lostLockTimer.TriggerCallback = () =>
             {
-                _missedTarget = true;
-                _missedTargetRot = this.Missile.Rotation;
+                DoPitBull();
             };
 
+            _pitbullTimer.TriggerCallback = () =>
+            {
+                if (this.Target.IsExpired || (this.Target is FighterPlane plane && plane.IsDisabled))
+                    DoPitBull();
+            };
+
+            _pitbullTimer.Start();
             _armTimer.Start();
             _decoyDistractCooldown.Start();
             _decoyDistractArm.Start();
@@ -72,6 +79,7 @@ namespace PolyPlane.GameObjects.Guidance
                 _groundScatterTimer.Update(dt);
                 _decoyDistractCooldown.Update(dt);
                 _decoyDistractArm.Update(dt);
+                _pitbullTimer.Update(dt);
 
                 DoDecoySuccess();
                 DoGroundScatter();
@@ -161,9 +169,9 @@ namespace PolyPlane.GameObjects.Guidance
             GameObject maxTempObj;
             var maxTemp = 0f;
             const float MaxEngineTemp = 1800f;
-            const float MaxDecoyTemp = 3000f;
+            const float MaxDecoyTemp = 2000f;
 
-            const float EngineRadius = 4f;
+            const float EngineRadius = 6f;
             const float DecoyRadius = 2f;
 
             var targetDist = D2DPoint.Distance(missile.Position, target.Position);
@@ -251,7 +259,38 @@ namespace PolyPlane.GameObjects.Guidance
             }
         }
 
-        public void DoChangeTargetChance(GameObject target)
+        // Look for and target other nearby planes within the current FOV.
+        private void DoPitBull()
+        {
+            const float MAX_DIST = 30000f;
+
+            var planes = World.ObjectManager.Planes.Where(p => 
+            !p.ID.Equals(this.Missile.Owner.ID) && 
+            this.Missile.IsObjInFOV(p, SENSOR_FOV) && 
+            !p.IsDisabled && 
+            p.Position.DistanceTo(this.Missile.Position) < MAX_DIST);
+
+            var nearest = planes.OrderBy(p => p.Position.DistanceTo(this.Missile.Position)).ToList();
+
+            if (nearest.Count > 0)
+            {
+                var newTarget = nearest.First();
+                if (!newTarget.ID.Equals(this.Target.ID))
+                {
+                    this.Target = newTarget;
+                    _lostLockTimer.Stop();
+                    _missedTarget = false;
+                    this.Missile.ChangeTarget(newTarget);
+
+                    return;
+                }
+            }
+
+            _missedTarget = true;
+            _missedTargetRot = this.Missile.Rotation;
+        }
+
+        private void DoChangeTargetChance(GameObject target)
         {
             if (_decoyDistractCooldown.IsRunning || _decoyDistractArm.IsRunning)
                 return;
@@ -267,9 +306,7 @@ namespace PolyPlane.GameObjects.Guidance
                 this.Missile.ChangeTarget(target);
                 _decoyDistractCooldown.Reset();
                 _decoyDistractCooldown.Start();
-                this.Missile.IsDistracted = true;
                 Log.Msg("Missile distracted!");
-
             }
             else
             {

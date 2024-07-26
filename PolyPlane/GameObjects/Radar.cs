@@ -378,11 +378,10 @@ namespace PolyPlane
         {
             GuidedMissile nearest = null;
 
-            var threats = _pings.Values.Where((Func<PingObj, bool>)(p => p.Obj is GuidedMissile missile
-            && !missile.IsDistracted && !missile.MissedTarget
+            var threats = _pings.Values.Where(p => p.Obj is GuidedMissile missile
+            && !missile.MissedTarget
             && missile.Target.Equals(HostPlane)
-            && missile.ClosingRate(HostPlane) > 0f
-            && Utilities.ImpactTime(HostPlane, missile) <= MIN_IMPACT_TIME));
+            && Utilities.ImpactTime(HostPlane, missile) <= MIN_IMPACT_TIME);
 
             if (threats.Count() == 0)
                 return nearest;

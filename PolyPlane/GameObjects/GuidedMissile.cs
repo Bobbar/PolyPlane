@@ -27,7 +27,6 @@ namespace PolyPlane.GameObjects
 
         }
 
-        public bool IsDistracted = false;
         public float TargetDistance { get; set; } = 0f;
 
         public bool MissedTarget

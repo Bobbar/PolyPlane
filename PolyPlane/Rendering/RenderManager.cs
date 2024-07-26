@@ -1295,9 +1295,6 @@ namespace PolyPlane.Rendering
                 var pos2 = pos1 + (vec * 20f);
                 var distFact = 1f - Utilities.Factor(dist, MIN_DIST * 10f);
 
-                if (missile.IsDistracted)
-                    color = D2DColor.Yellow;
-
                 // Display warning if impact time is less than 10 seconds?
                 const float MIN_IMPACT_TIME = 20f;
                 if (MissileIsImpactThreat(plane, missile, MIN_IMPACT_TIME))
