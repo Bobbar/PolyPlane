@@ -43,7 +43,7 @@ namespace PolyPlane.GameObjects
 
         private bool IsActivated = false;
         private readonly float THURST_VECTOR_AMT = 1f;
-        private readonly float LIFESPAN = 40f;
+        private readonly float LIFESPAN = 70f;
         private readonly float BURN_RATE = 0.85f;
         private readonly float THRUST = 2500f;
         private readonly float MASS = 22.5f;
@@ -351,7 +351,7 @@ namespace PolyPlane.GameObjects
                 _currentFuel -= BURN_RATE * dt;
             }
 
-            if (FUEL <= 0f && this.Age > LIFESPAN && this.Velocity.Length() <= 50f)
+            if (_currentFuel <= 0f && this.Age > LIFESPAN && this.MissedTarget)
                 this.IsExpired = true;
 
             _igniteCooldown.Update(dt);
