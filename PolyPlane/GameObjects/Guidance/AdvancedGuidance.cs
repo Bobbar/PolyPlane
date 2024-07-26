@@ -27,7 +27,7 @@ namespace PolyPlane.GameObjects.Guidance
             const float MIN_ROT_RATE = 0.5f; // Min rotation rate.
             const float MIN_ROT_SPEED = 1000f; // Speed at which rotation rate will be the smallest.
             const float ROT_MOD_DIST = 4000f; // Distance to begin increasing rotation rate. (Get more aggro the closer we get)
-            const float ROT_MOD_AMT = 0.4f; // Max amount to increase rot rate per above distance.
+            const float ROT_MOD_AMT = 0.8f; // Max amount to increase rot rate per above distance.
             const float IMPACT_POINT_DELTA_THRESH = 30f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
             const float MIN_CLOSE_RATE = 0.05f; // Min closing rate required to aim at predicted impact point.
             const float MIN_GUIDE_DIST = 200f; // Distance in which guidance is ignored and we aim directly at the target.
