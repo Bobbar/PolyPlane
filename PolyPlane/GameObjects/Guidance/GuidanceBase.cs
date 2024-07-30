@@ -177,6 +177,9 @@ namespace PolyPlane.GameObjects.Guidance
             {
                 var decoy = decoys[k];
 
+                if (decoy.Owner == this.Missile.Owner)
+                    continue;
+
                 if (!missile.IsObjInFOV(decoy, MIN_DECOY_FOV))
                     continue;
 

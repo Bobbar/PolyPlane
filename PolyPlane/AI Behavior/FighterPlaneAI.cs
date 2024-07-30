@@ -267,7 +267,7 @@ namespace PolyPlane.AI_Behavior
 
                 var angleAwayFromThreat = (this.Plane.Position - DefendingMissile.Position).Angle(true);
 
-                const float DEFEND_ANGLE = 45f;
+                const float DEFEND_ANGLE = 25f;
                 var defendAngleOne = Utilities.ClampAngle(angleAwayFromThreat + DEFEND_ANGLE);
                 var defendAngleTwo = Utilities.ClampAngle(angleAwayFromThreat - DEFEND_ANGLE);
 
