@@ -13,7 +13,7 @@ namespace PolyPlane.GameObjects.Guidance
         private float _prevVelo = 0f;
         private float _prevTargetDist = 0f;
         private float _prevTargVeloAngle = 0f;
-        private const int MAX_FTI = 3000; // Max iterations allowed.
+        private const int MAX_FTI = 4000; // Max iterations allowed.
 
         public AdvancedGuidance(GuidedMissile missile, GameObject target) : base(missile, target)
         {
@@ -64,10 +64,8 @@ namespace PolyPlane.GameObjects.Guidance
 
                 var relVelo = (missileVelo - targetVelo).Length();
                 var timeToImpact = ImpactTime(targDist, (relVelo * dt), (deltaV * dt));
-                impactPnt = _impactSmooth.Add(RefineImpact(targetPosition, targetVelo * dt, targAngleDelta, timeToImpact));
+                impactPnt = _impactSmooth.Add(RefineImpact(targetPosition, targetVelo, targAngleDelta, timeToImpact, dt));
             }
-
-            ImpactPoint = impactPnt; // Red
 
             // Compute the speed (delta) of the impact point as it is refined.
             // Slower sleep = higher confidence.
@@ -77,16 +75,17 @@ namespace PolyPlane.GameObjects.Guidance
             // Only update the stable aim point when the predicted impact point is moving slowly.
             // If it begins to move quickly (when the target changes velo/direction) we keep targeting the previous point until it slows down again.
             var impactDeltaFact = Utilities.Factor(IMPACT_POINT_DELTA_THRESH, impactPntDelta);
-            StableAimPoint = D2DPoint.Lerp(StableAimPoint, impactPnt, impactDeltaFact); // Blue
+            var stableAimPoint = D2DPoint.Lerp(StableAimPoint, impactPnt, impactDeltaFact);
 
             // Compute closing rate and lerp between the target and predicted locations.
-            // We gradually incorporate the predicted location as closing rate increases.
             var closingRate = _closingRateSmooth.Add(_prevTargetDist - targDist);
             _prevTargetDist = targDist;
 
+            // We gradually incorporate the predicted location as closing rate increases.
             var closeRateFact = Utilities.Factor(closingRate, MIN_CLOSE_RATE);
-            var aimDirection = _aimDirSmooth.Add(D2DPoint.Lerp(D2DPoint.Normalize(targetPosition - this.Missile.Position), D2DPoint.Normalize(StableAimPoint - this.Missile.Position), closeRateFact));
-            CurrentAimPoint = D2DPoint.Lerp(targetPosition, StableAimPoint, closeRateFact); // Green
+            var targetDir = (targetPosition - this.Missile.Position).Normalized();
+            var predictedDir = (stableAimPoint - this.Missile.Position).Normalized();
+            var aimDirection = _aimDirSmooth.Add(D2DPoint.Lerp(targetDir, predictedDir, closeRateFact));
 
             // Compute rotation amount.
             var veloNorm = D2DPoint.Normalize(this.Missile.Velocity);
@@ -106,6 +105,11 @@ namespace PolyPlane.GameObjects.Guidance
             if (targDist < MIN_GUIDE_DIST)
                 nextRot = (targetPosition - this.Missile.Position).Angle(true);
 
+            // Tracking info.
+            ImpactPoint = impactPnt; // Red
+            StableAimPoint = stableAimPoint; // Blue
+            CurrentAimPoint = D2DPoint.Lerp(targetPosition, stableAimPoint, closeRateFact); // Green
+
             return nextRot;
         }
 
@@ -117,7 +121,7 @@ namespace PolyPlane.GameObjects.Guidance
             return impactTime;
         }
 
-        private D2DPoint RefineImpact(D2DPoint targetPos, D2DPoint targetVelo, float targAngleDelta, float timeToImpact)
+        private D2DPoint RefineImpact(D2DPoint targetPos, D2DPoint targetVelo, float targAngleDelta, float timeToImpact, float dt)
         {
             // To obtain a high order target position we basically run a small simulation here.
             // This considers the target velocity as well as the change in angular velocity.
@@ -133,16 +137,16 @@ namespace PolyPlane.GameObjects.Guidance
                 for (int i = 0; i <= timeToImpact; i++)
                 {
                     var avec = Utilities.AngleToVectorDegrees(angle) * targetVelo.Length();
-                    targLoc += avec;
-                    angle += targAngleDelta;
+                    targLoc += avec * dt;
+                    angle += targAngleDelta * dt;
                     angle = Utilities.ClampAngle(angle);
                 }
 
                 // Include the remainder after the loop.
                 var rem = timeToImpact % (int)timeToImpact;
-                angle += targAngleDelta * rem;
+                angle += targAngleDelta * rem * dt;
                 angle = Utilities.ClampAngle(angle);
-                targLoc += (Utilities.AngleToVectorDegrees(angle) * targetVelo.Length()) * rem;
+                targLoc += (Utilities.AngleToVectorDegrees(angle) * targetVelo.Length()) * rem * dt;
 
                 predicted = targLoc;
             }

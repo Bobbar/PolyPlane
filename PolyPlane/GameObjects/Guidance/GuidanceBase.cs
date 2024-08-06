@@ -256,7 +256,7 @@ namespace PolyPlane.GameObjects.Guidance
         // Look for and target other nearby planes within the current FOV.
         private void DoPitBull()
         {
-            const float MAX_DIST = 30000f;
+            const float MAX_DIST = 40000f;
 
             var planes = World.ObjectManager.Planes.Where(p => 
             !p.ID.Equals(this.Missile.Owner.ID) && 

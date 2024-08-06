@@ -414,6 +414,25 @@ namespace PolyPlane.Helpers
             return baseVelo;
         }
 
+
+        public static D2DPoint CenterOfLift(params Wing[] wings)
+        {
+            float totLift = 0f;
+            D2DPoint cl = D2DPoint.Zero;
+
+            foreach (var wing in wings)
+            {
+                totLift += wing.Parameters.MaxLiftForce;
+            }
+
+            foreach (var wing in wings)
+            {
+                cl += wing.Position * (wing.Parameters.MaxLiftForce / totLift);
+            }
+
+            return cl;
+        }
+
         public static bool IsPointingRight(float angle)
         {
             var rot180 = ClampAngle180(angle + 90f);

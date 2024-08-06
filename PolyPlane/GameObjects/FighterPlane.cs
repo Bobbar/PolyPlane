@@ -590,25 +590,6 @@ namespace PolyPlane.GameObjects
             this.NumMissiles--;
         }
 
-        public void FireBullet()
-        {
-            if (IsDisabled)
-                return;
-
-            if (this.NumBullets <= 0)
-                return;
-
-            if (this.IsNetObject)
-                return;
-
-            var bullet = World.ObjectManager.RentBullet();
-            bullet.ReInit(this);
-
-            FireBulletCallback(bullet);
-            this.BulletsFired++;
-            this.NumBullets--;
-        }
-
         private float GetAPGuidanceDirection(float dir)
         {
             const float SENSITIVITY = 2f; // How aggressively we try to point in the specified direction.
