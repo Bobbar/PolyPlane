@@ -42,6 +42,8 @@ namespace PolyPlane
         private GameTimer _lostLockTimer = new GameTimer(10f);
         private GameTimer _AIUpdateRate = new GameTimer(1f);
 
+        private D2DLayer _groundClipLayer = null;
+
         public Radar(FighterPlane hostPlane)
         {
             HostPlane = hostPlane;
@@ -221,8 +223,10 @@ namespace PolyPlane
             for (int i = 0; i < N_RANGES; i++)
             {
                 gfx.DrawEllipse(new D2DEllipse(this.Position, new D2DSize(step * i, step * i)), _color, 1f, D2DDashStyle.Dot);
-
             }
+
+            // Draw ground indicator.
+            DrawGround(ctx);
 
             // Border
             gfx.DrawEllipse(new D2DEllipse(this.Position, new D2DSize(_radius, _radius)), _color);
@@ -235,6 +239,42 @@ namespace PolyPlane
                 var lRect = new D2DRect(lockPos, new D2DSize(80, 20));
                 ctx.Gfx.DrawTextCenter("LOCKED", color, "Consolas", 15f, lRect);
                 ctx.Gfx.FillRectangle(lRect, color.WithAlpha(0.1f));
+            }
+        }
+
+        private void DrawGround(RenderContext ctx)
+        {
+            if (_groundClipLayer == null)
+                _groundClipLayer = ctx.Device.CreateLayer();
+
+            // Calculate ground position relative to the plane.
+            var groundDist = this.HostPlane.Position.DistanceTo(new D2DPoint(this.HostPlane.Position.X, 0f));
+            var radDist = (_radius / _maxRange) * groundDist;
+            var radPos = this.Position + Utilities.AngleToVectorDegrees(90f, radDist);
+
+            if (groundDist > _maxRange)
+                radPos = this.Position + Utilities.AngleToVectorDegrees(90f, _radius);
+
+            radPos += new D2DPoint(0f, _radius);
+
+            // Draw a clipped rectangle to represent the ground.
+            using (var clipGeo = ctx.Device.CreatePathGeometry())
+            {
+                var start = new D2DPoint(this.Position.X - _radius, this.Position.Y);
+                var end = new D2DPoint(this.Position.X + _radius, this.Position.Y);
+                var groundRectSize = new D2DSize(_radius * 2f, _radius * 2f);
+                var groundRect = new D2DRect(radPos, groundRectSize);
+
+                // Build an inverted semi-circular path.
+                clipGeo.SetStartPoint(start);
+                clipGeo.AddArc(end, new D2DSize(_radius, _radius), 0f, D2DArcSize.Small, D2DSweepDirection.CounterClockwise);
+                clipGeo.ClosePath();
+
+                ctx.Gfx.PushLayer(_groundClipLayer, new D2DRect(this.Position, groundRectSize), clipGeo);
+
+                ctx.Gfx.FillRectangle(groundRect, _color.WithAlpha(0.05f));
+
+                ctx.Gfx.PopLayer();
             }
         }
 
