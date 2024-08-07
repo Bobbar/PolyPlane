@@ -1339,9 +1339,6 @@ namespace PolyPlane.Rendering
         {
             DrawInfo(ctx.Gfx, _infoPosition, viewplane);
 
-            if (World.EnableTurbulence || World.EnableWind)
-                DrawWindAndTurbulenceOverlay(ctx);
-
             if (viewplane.IsDisabled)
                 ctx.Gfx.FillRectangle(World.ViewPortRectUnscaled, new D2DColor(0.2f, D2DColor.Red));
         }
@@ -1502,16 +1499,6 @@ namespace PolyPlane.Rendering
                 Utilities.ApplyTranslation(cloud.Points, cloud.Points, cloud.Position, 0f, D2DPoint.Zero, cloud.ScaleX, cloud.ScaleY);
             }
         }
-
-        private void DrawWindAndTurbulenceOverlay(RenderContext ctx)
-        {
-            var pos = new D2DPoint(this.Width - 100f, 100f);
-
-            ctx.FillEllipse(new D2DEllipse(pos, new D2DSize(World.AirDensity * 10f, World.AirDensity * 10f)), D2DColor.SkyBlue);
-
-            ctx.DrawLine(pos, pos + (World.Wind * 2f), D2DColor.White, 2f);
-        }
-
 
         public void DrawInfo(D2DGraphics gfx, D2DPoint pos, FighterPlane viewplane)
         {

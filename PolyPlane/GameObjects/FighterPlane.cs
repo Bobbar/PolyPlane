@@ -145,6 +145,8 @@ namespace PolyPlane.GameObjects
         private FixturePoint _flamePos;
         private FixturePoint _cockpitPosition;
         private FixturePoint _centerOfThrust;
+        private FixturePoint _centerOfMass;
+
         private D2DSize _cockpitSize = new D2DSize(9f, 6f);
         private D2DColor _planeColor;
         private D2DColor _cockpitColor = new D2DColor(0.5f, D2DColor.LightBlue);
@@ -292,12 +294,12 @@ namespace PolyPlane.GameObjects
                 RenderLength = 10f * this.RenderOffset,
                 RenderWidth = 3f,
                 Area = 0.5f,
-                MaxLiftForce = 14000f,
-                MaxDragForce = 20000f,
+                MaxLiftForce = 10000f,
+                MaxDragForce = 17000f,
                 AOAFactor = 0.6f,
                 MaxAOA = 20f,
                 Position = new D2DPoint(-2f * this.RenderOffset, 0.6f * this.RenderOffset),
-                MinVelo = 300f
+                MinVelo = 450f
             }));
 
             // Tail wing. (Control wing)
@@ -307,16 +309,18 @@ namespace PolyPlane.GameObjects
                 RenderWidth = 3f,
                 Area = 0.2f,
                 MaxDeflection = 40f,
-                MaxLiftForce = 5600f,
-                MaxDragForce = 10000f,
+                MaxLiftForce = 5000f,
+                MaxDragForce = 9000f,
                 AOAFactor = 0.4f,
                 MaxAOA = 30f,
                 DeflectionRate = defRate,
                 PivotPoint = new D2DPoint(-25f * this.RenderOffset, 0.6f * this.RenderOffset),
                 Position = new D2DPoint(-27.5f * this.RenderOffset, 0.6f * this.RenderOffset),
-                MinVelo = 350f
+                MinVelo = 450f
             }), isControl: true);
 
+            // Center of mass location.
+            _centerOfMass = new FixturePoint(this, new D2DPoint(-5f, 0f));
         }
         public override void Update(float dt, float renderScale)
         {
@@ -381,8 +385,8 @@ namespace PolyPlane.GameObjects
 
                 if (IsDisabled)
                 {
-                    wingForce *= 0.2f;
-                    wingTorque *= 0.2f;
+                    wingForce *= 0.1f;
+                    wingTorque *= 0.1f;
                     AutoPilotOn = false;
                     SASOn = false;
                     ThrustOn = false;
@@ -411,13 +415,7 @@ namespace PolyPlane.GameObjects
                     this.RotationSpeed += rotAmt * partialDT;
                     this.Velocity += (thrust * easeFact) / this.MASS * partialDT;
                     this.Velocity += (wingForce * easeFact) / this.MASS * partialDT;
-
-                    var gravFact = 1f;
-
-                    if (IsDisabled)
-                        gravFact = 3f;
-
-                    this.Velocity += (World.Gravity * gravFact * partialDT);
+                    this.Velocity += (World.Gravity * partialDT);
                 }
 
                 var totForce = (thrust / this.MASS * partialDT) + (wingForce / this.MASS * partialDT);
@@ -427,6 +425,7 @@ namespace PolyPlane.GameObjects
                 // TODO:  This is so messy...
                 Wings.ForEach(w => w.Update(partialDT, renderScale * this.RenderOffset));
                 _centerOfThrust.Update(partialDT, renderScale * this.RenderOffset);
+                _centerOfMass.Update(partialDT, renderScale * this.RenderOffset);
             }
 
             _gForce = _gforceAvg.Current;
@@ -639,6 +638,7 @@ namespace PolyPlane.GameObjects
             _flamePos.Update(0f, World.RenderScale * this.RenderOffset);
             _bulletHoles.ForEach(f => f.Update(0f, World.RenderScale * this.RenderOffset));
             _centerOfThrust.Update(0f, World.RenderScale * this.RenderOffset);
+            _centerOfMass.Update(0f, World.RenderScale * this.RenderOffset);
             _cockpitPosition.Update(0f, World.RenderScale * this.RenderOffset);
             _gun.Update(0f, World.RenderScale * this.RenderOffset);
         }
@@ -722,7 +722,7 @@ namespace PolyPlane.GameObjects
                 return;
 
             IsDisabled = true;
-            _damageDeflection = _rnd.NextFloat(-_controlWing.Parameters.MaxDeflection, _controlWing.Parameters.MaxDeflection);
+            _damageDeflection = _controlWing.Deflection;
 
             if (impactor.Owner is FighterPlane attackPlane)
                 attackPlane.Kills++;
@@ -875,7 +875,7 @@ namespace PolyPlane.GameObjects
         private float GetTorque(D2DPoint pos, D2DPoint force)
         {
             // How is it so simple?
-            var r = pos - this.Position;
+            var r = pos - _centerOfMass.Position;
 
             var torque = Utilities.Cross(r, force);
             return torque;

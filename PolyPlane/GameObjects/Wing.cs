@@ -135,6 +135,7 @@ namespace PolyPlane.GameObjects
 
             var velo = this.Velocity;
             velo += -World.Wind;
+            velo *= World.Turbulence;
 
             var veloMag = velo.Length();
             var veloMagSq = Math.Pow(veloMag, 2f);

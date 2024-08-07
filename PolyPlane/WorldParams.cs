@@ -99,7 +99,7 @@ namespace PolyPlane
         public static bool ShowAero = false;
         public static bool ShowTracking = false;
         public static bool EnableWind = false;
-        public static bool EnableTurbulence = false;
+        public static bool EnableTurbulence = true;
         public static bool ExpireMissilesOnMiss = false;
         public static bool IsNetGame = false;
         public static bool IsServer = false;
@@ -118,13 +118,14 @@ namespace PolyPlane
         public const float DEFAULT_DPI = 96f;
         public const float SENSOR_FOV = 60f; // TODO: Not sure this belongs here. Maybe make this unique based on missile/plane types and move it there.
         public const float MAX_ALTITUDE = 60000f; // Max density altitude.  (Air density drops to zero at this altitude)
-        private const float MIN_TURB_DENS = 0.6f;
-        private const float MAX_TURB_DENS = 1.225f;
+        private const float MIN_TURB = 0.7f;
+        private const float MAX_TURB = 1f;
         private const float MAX_WIND_MAG = 100f;
-        public static float AirDensity = 1.225f;
+        public const float AirDensity = 1.225f;
+        public static float Turbulence = 1f;
         public static D2DPoint Wind = D2DPoint.Zero;
         private static SmoothDouble _serverTimeOffsetSmooth = new SmoothDouble(10);
-        private static RandomVariationFloat _airDensVariation = new RandomVariationFloat(MIN_TURB_DENS, MAX_TURB_DENS, 0.2f, 5f);
+        private static RandomVariationFloat _turbulenceVariation = new RandomVariationFloat(MIN_TURB, MAX_TURB, 0.05f, 0.3f);
         private static RandomVariationVector _windVariation = new RandomVariationVector(MAX_WIND_MAG, 10f, 50f);
 
         public static readonly D2DColor HudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
@@ -182,14 +183,15 @@ namespace PolyPlane
 
         public static void UpdateAirDensityAndWind(float dt)
         {
+
             if (EnableTurbulence)
             {
-                _airDensVariation.Update(dt);
-                AirDensity = _airDensVariation.Value;
+                _turbulenceVariation.Update(dt);
+                Turbulence = _turbulenceVariation.Value;
             }
             else
             {
-                AirDensity = MAX_TURB_DENS;
+                Turbulence = 1f;
             }
 
             if (EnableWind)
