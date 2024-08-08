@@ -91,7 +91,7 @@ namespace PolyPlane.Rendering
             Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, 180f, this.Position, scale);
 
             var leafPos = this.Position + new D2DPoint(0, (-this.Height * scale) - this.Radius);
-            ctx.DrawPolygon(_trunkTransPoly, trunkColor, 1f, D2DDashStyle.Solid, trunkColor);
+            ctx.DrawPolygon(_trunkTransPoly, trunkColor, 0f, D2DDashStyle.Solid, trunkColor);
 
             ctx.Gfx.PushTransform();
             ctx.Gfx.TranslateTransform(leafPos.X * ctx.CurrentScale, leafPos.Y * ctx.CurrentScale);
@@ -164,7 +164,7 @@ namespace PolyPlane.Rendering
             _trunkTransPoly[0] = Utilities.ApplyTranslation(TrunkPoly[0], -shadowAngle, this.Position, 1f);
             _trunkTransPoly[1] = Utilities.ApplyTranslation(TrunkPoly[1], -shadowAngle, this.Position, 1f);
 
-            ctx.DrawPolygon(_trunkTransPoly, shadowColor, 1f, D2DDashStyle.Solid, shadowColor);
+            ctx.DrawPolygon(_trunkTransPoly, shadowColor, 0f, D2DDashStyle.Solid, shadowColor);
 
             ctx.Gfx.ScaleTransform(1f, 2f, this.Position);
             Utilities.ApplyTranslation(TopPoly, _topTrans, 0f, shadowTopPos, scale);
