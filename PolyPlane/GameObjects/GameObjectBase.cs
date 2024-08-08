@@ -267,6 +267,9 @@ namespace PolyPlane.GameObjects
 
         public bool Equals(GameObject? other)
         {
+            if (other == null) 
+                return false;
+
             return this.ID.Equals(other.ID);
         }
 

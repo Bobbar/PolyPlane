@@ -145,6 +145,8 @@ namespace PolyPlane.GameObjects.Guidance
             var decoys = World.ObjectManager.Decoys;
 
             var missile = this.Missile;
+            var owner = this.Missile.Owner as FighterPlane;
+            var ownerRadar = owner.Radar;
             var target = missile.Target as FighterPlane;
 
             if (target == null)
@@ -199,7 +201,13 @@ namespace PolyPlane.GameObjects.Guidance
 
             if (maxTempObj is Decoy)
             {
-                DoChangeTargetChance(maxTempObj);
+                // Decrease likelihood of decoy distractions when owner plane is locked onto the target.
+                const int IN_FOV_CHANCE = 3;
+
+                if (ownerRadar.LockedObj != null && ownerRadar.LockedObj.Equals(this.Target))
+                    DoChangeTargetChance(maxTempObj, IN_FOV_CHANCE);
+                else
+                    DoChangeTargetChance(maxTempObj, 0);
             }
         }
 
@@ -215,6 +223,10 @@ namespace PolyPlane.GameObjects.Guidance
                 return;
 
             if (this.Missile.Guidance == null)
+                return;
+
+            // Don't do ground scatter if the missile is lower than the target.
+            if (this.Missile.Altitude <= this.Target.Altitude)
                 return;
 
             if (this.Missile.Target != null)
@@ -258,10 +270,10 @@ namespace PolyPlane.GameObjects.Guidance
         {
             const float MAX_DIST = 40000f;
 
-            var planes = World.ObjectManager.Planes.Where(p => 
-            !p.ID.Equals(this.Missile.Owner.ID) && 
-            this.Missile.IsObjInFOV(p, SENSOR_FOV) && 
-            !p.IsDisabled && 
+            var planes = World.ObjectManager.Planes.Where(p =>
+            !p.ID.Equals(this.Missile.Owner.ID) &&
+            this.Missile.IsObjInFOV(p, SENSOR_FOV) &&
+            !p.IsDisabled &&
             p.Position.DistanceTo(this.Missile.Position) < MAX_DIST);
 
             var nearest = planes.OrderBy(p => p.Position.DistanceTo(this.Missile.Position)).ToList();
@@ -284,16 +296,13 @@ namespace PolyPlane.GameObjects.Guidance
             _missedTargetRot = this.Missile.Rotation;
         }
 
-        private void DoChangeTargetChance(GameObject target)
+        private void DoChangeTargetChance(GameObject target, int chances)
         {
             if (_decoyDistractCooldown.IsRunning || _decoyDistractArm.IsRunning)
                 return;
 
-            const int RANDO_AMT = 6;
-            var randOChanceO = Utilities.Rnd.Next(RANDO_AMT);
+            var randOChanceO = Utilities.Rnd.Next(chances);
             var lucky = randOChanceO == 0;
-
-            lucky = true; //TODO: Bypass the dice roll for now.
 
             if (lucky)
             {
