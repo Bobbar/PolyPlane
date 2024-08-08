@@ -46,6 +46,7 @@ namespace PolyPlane.Rendering
         private string _hudMessage = string.Empty;
         private D2DColor _hudMessageColor = D2DColor.Red;
         private GameTimer _hudMessageTimeout = new GameTimer(10f);
+        private GameTimer _missileFlashTimer = new GameTimer(0.5f, 0.5f, false);
         private List<EventMessage> _messageEvents = new List<EventMessage>();
         private List<PopMessage> _popMessages = new List<PopMessage>();
 
@@ -120,6 +121,8 @@ namespace PolyPlane.Rendering
             }
 
             _objs.PlayerScoredEvent += PlayerScoredEvent;
+
+            _missileFlashTimer.Start();
 
             InitProceduralGenStuff();
             InitGfx();
@@ -404,6 +407,11 @@ namespace PolyPlane.Rendering
         private void UpdateTimersAndAnims()
         {
             _hudMessageTimeout.Update(World.DT);
+            _missileFlashTimer.Update(World.DT);
+
+            if (!_missileFlashTimer.IsInCooldown && !_missileFlashTimer.IsRunning)
+                _missileFlashTimer.Restart();
+
             _screenFlash.Update(World.DT, World.RenderScale);
             _screenShakeX.Update(World.DT, World.RenderScale);
             _screenShakeY.Update(World.DT, World.RenderScale);
@@ -1314,15 +1322,16 @@ namespace PolyPlane.Rendering
             if (warningMessage)
             {
                 var rect = new D2DRect(pos - new D2DPoint(0, -200), new D2DSize(120, 30));
-                gfx.DrawRectangle(rect, D2DColor.Red);
-                gfx.DrawTextCenter("MISSILE", D2DColor.Red, _defaultFontName, 30f, rect);
+                var warnColor = D2DColor.Red.WithAlpha(_missileFlashTimer.Value / _missileFlashTimer.Interval);
+                gfx.DrawRectangle(rect, warnColor);
+                gfx.DrawTextCenter("MISSILE", warnColor, _defaultFontName, 30f, rect);
             }
 
             if (plane.HasRadarLock)
             {
                 var lockRect = new D2DRect(pos - new D2DPoint(0, -160), new D2DSize(120, 30));
-                gfx.DrawRectangle(lockRect, D2DColor.Red);
-                gfx.DrawTextCenter("LOCK", D2DColor.Red, _defaultFontName, 30f, lockRect);
+                gfx.DrawRectangle(lockRect, D2DColor.Yellow);
+                gfx.DrawTextCenter("LOCK", D2DColor.Yellow, _defaultFontName, 30f, lockRect);
             }
         }
 
