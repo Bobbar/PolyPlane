@@ -88,6 +88,14 @@ namespace PolyPlane.GameObjects
             _spawnTimer.Stop();
         }
 
+        /// <summary>
+        /// Start spawning new flame parts.
+        /// </summary>
+        public void StartSpawning()
+        {
+            _spawnTimer.Start();
+        }
+
         public override void Update(float dt, float renderScale)
         {
             base.Update(dt, renderScale);

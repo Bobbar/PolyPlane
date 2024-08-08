@@ -110,7 +110,7 @@ namespace PolyPlane.GameObjects
         private Direction _queuedDir = Direction.Right;
         private bool _isAIPlane = false;
         private readonly float MASS = 90f;
-       
+
         private float Inertia
         {
             get { return MASS * 20f; }
@@ -153,6 +153,7 @@ namespace PolyPlane.GameObjects
         private SmokeTrail _contrail;
         private List<BulletHole> _bulletHoles = new List<BulletHole>();
         private List<Vapor> _vaporTrails = new List<Vapor>();
+        private Flame _engineFireFlame;
 
         private IAIBehavior _aiBehavior;
 
@@ -232,6 +233,8 @@ namespace PolyPlane.GameObjects
             _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
             _gun = new Gun(this, new D2DPoint(35f, 0), FireBulletCallback);
             _decoyDispenser = new DecoyDispenser(this, new D2DPoint(-24f, 0f));
+            _engineFireFlame = new Flame(_centerOfThrust, D2DPoint.Zero, true);
+            _engineFireFlame.StopSpawning();
 
             _flamePos.IsNetObject = this.IsNetObject;
             _cockpitPosition.IsNetObject = this.IsNetObject;
@@ -324,11 +327,13 @@ namespace PolyPlane.GameObjects
         }
         public override void Update(float dt, float renderScale)
         {
+            renderScale *= this.RenderOffset;
+
             for (int i = 0; i < World.PHYSICS_SUB_STEPS; i++)
             {
                 var partialDT = World.SUB_DT;
 
-                base.Update(partialDT, renderScale * this.RenderOffset);
+                base.Update(partialDT, renderScale);
 
                 var wingForce = D2DPoint.Zero;
                 var wingTorque = 0f;
@@ -393,8 +398,8 @@ namespace PolyPlane.GameObjects
                     _thrustAmt.Set(0f);
                     _controlWing.Deflection = _damageDeflection;
                     FiringBurst = false;
+                    _engineFireFlame.StartSpawning();
                 }
-
 
                 if (!this.IsNetObject)
                 {
@@ -422,39 +427,29 @@ namespace PolyPlane.GameObjects
                 var gforce = totForce.Length() / partialDT / World.Gravity.Y;
                 _gforceAvg.Add(gforce);
 
-                // TODO:  This is so messy...
-                Wings.ForEach(w => w.Update(partialDT, renderScale * this.RenderOffset));
-                _centerOfThrust.Update(partialDT, renderScale * this.RenderOffset);
-                _centerOfMass.Update(partialDT, renderScale * this.RenderOffset);
+                Wings.ForEach(w => w.Update(partialDT, renderScale));
+                _centerOfThrust.Update(partialDT, renderScale);
+                _centerOfMass.Update(partialDT, renderScale);
             }
 
             _gForce = _gforceAvg.Current;
 
-            _flamePos.Update(dt, renderScale * this.RenderOffset);
-            _cockpitPosition.Update(dt, renderScale * this.RenderOffset);
+            _flamePos.Update(dt, renderScale);
+            _cockpitPosition.Update(dt, renderScale);
             _thrustAmt.Update(dt);
-            _gun.Update(dt, renderScale * this.RenderOffset);
-            _decoyDispenser.Update(dt, renderScale * this.RenderOffset);
+            _gun.Update(dt, renderScale);
+            _decoyDispenser.Update(dt, renderScale);
+            _engineFireFlame.Update(dt, renderScale);
 
             if (!World.IsNetGame || World.IsClient)
             {
-                _bulletHoles.ForEach(f => f.Update(dt, renderScale * this.RenderOffset));
+                _bulletHoles.ForEach(f => f.Update(dt, renderScale));
                 _contrail.Update(dt, renderScale);
-                _vaporTrails.ForEach(v => v.Update(dt, renderScale * this.RenderOffset));
+                _vaporTrails.ForEach(v => v.Update(dt, renderScale));
             }
 
             CheckForFlip();
-
-            var thrust2 = GetThrust(true);
-            var thrustMag = thrust2.Length();
-            var flameAngle = thrust2.Angle();
-            var len = this.Velocity.Length() * 0.05f;
-            len += thrustMag * 0.01f;
-            len *= 0.6f;
-            FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
-            _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
-
-            FlamePoly.Update(_flamePos.Position, flameAngle, renderScale * this.RenderOffset);
+            UpdateFlame(renderScale);
 
             _easePhysicsTimer.Update(dt);
             _flipTimer.Update(dt);
@@ -484,6 +479,21 @@ namespace PolyPlane.GameObjects
             _controlWing.Deflection = this.Deflection;
         }
 
+        private void UpdateFlame(float renderScale)
+        {
+            // Fiddle with flame angle, length and color.
+            var thrust = GetThrust(true);
+            var thrustMag = thrust.Length();
+            var flameAngle = thrust.Angle();
+            var len = this.Velocity.Length() * 0.05f;
+            len += thrustMag * 0.01f;
+            len *= 0.6f;
+            FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
+            _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
+
+            FlamePoly.Update(_flamePos.Position, flameAngle, renderScale);
+        }
+
         public override void Render(RenderContext ctx)
         {
             base.Render(ctx);
@@ -494,6 +504,9 @@ namespace PolyPlane.GameObjects
 
             if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
                 ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
+
+            if (this.IsDisabled)
+                _engineFireFlame.Render(ctx);
 
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 0.5f, D2DDashStyle.Solid, _planeColor);
             DrawCockpit(ctx.Gfx);
@@ -596,7 +609,7 @@ namespace PolyPlane.GameObjects
             var amt = Utilities.RadsToDegrees(this.Velocity.Normalized().Cross(Utilities.AngleToVectorDegrees(dir, SENSITIVITY)));
             var rot = this.Rotation - amt;
             rot = Utilities.ClampAngle(rot);
-           
+
             return rot;
         }
 
@@ -843,6 +856,7 @@ namespace PolyPlane.GameObjects
             _easePhysicsComplete = false;
             _easePhysicsTimer.Restart();
             AIRespawnReady = false;
+            _engineFireFlame.StopSpawning();
 
             if (IsAI)
                 _aiBehavior.ClearTarget();
