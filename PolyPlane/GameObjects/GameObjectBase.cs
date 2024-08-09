@@ -420,8 +420,8 @@ namespace PolyPlane.GameObjects
             foreach (var pnt in this.Polygon.Poly)
             {
                 var aVelo = Utilities.AngularVelocity(this, pnt, dt) * dt;
-                var veloPnt1 = pnt;
-                var veloPnt2 = pnt + (relVelo + aVelo);
+                var veloPnt1 = pnt - relVelo;
+                var veloPnt2 = pnt + relVelo;
 
                 gfx.DrawLine(veloPnt1, veloPnt2, D2DColor.Red);
             }

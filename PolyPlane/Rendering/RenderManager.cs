@@ -1330,8 +1330,9 @@ namespace PolyPlane.Rendering
             if (plane.HasRadarLock)
             {
                 var lockRect = new D2DRect(pos - new D2DPoint(0, -160), new D2DSize(120, 30));
-                gfx.DrawRectangle(lockRect, D2DColor.Yellow);
-                gfx.DrawTextCenter("LOCK", D2DColor.Yellow, _defaultFontName, 30f, lockRect);
+                var lockColor = D2DColor.Red.WithAlpha(0.7f);
+                gfx.DrawRectangle(lockRect, lockColor);
+                gfx.DrawTextCenter("LOCK", lockColor, _defaultFontName, 30f, lockRect);
             }
         }
 

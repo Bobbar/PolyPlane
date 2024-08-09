@@ -5,118 +5,57 @@ using unvell.D2DLib;
 namespace PolyPlane.Helpers
 {
     /// <summary>
-    /// Credit: https://www.habrador.com/tutorials/math/5-line-line-intersection/
+    /// Credit: https://www.codeproject.com/Tips/862988/Find-the-Intersection-Point-of-Two-Line-Segments
     /// </summary>
     public static class CollisionHelpers
     {
-        //Check if the lines are interesecting in 2d space
-
-        public static bool IsIntersecting(D2DPoint a1, D2DPoint b1, D2DPoint a2, D2DPoint b2, out D2DPoint pos)
+        public static bool IsIntersecting(D2DPoint p, D2DPoint p2, D2DPoint q, D2DPoint q2, out D2DPoint pos)
         {
-            D2DPoint l1_start = a1;
-            D2DPoint l1_end = b1;
-
-            D2DPoint l2_start = a2;
-            D2DPoint l2_end = b2;
-
-            //Direction of the lines
-            D2DPoint l1_dir = (l1_end - l1_start).Normalized();
-            D2DPoint l2_dir = (l2_end - l2_start).Normalized();
-
-            //If we know the direction we can get the normal vector to each line
-            D2DPoint l1_normal = new D2DPoint(-l1_dir.Y, l1_dir.X);
-            D2DPoint l2_normal = new D2DPoint(-l2_dir.Y, l2_dir.X);
-
-
-            //Step 1: Rewrite the lines to a general form: Ax + By = k1 and Cx + Dy = k2
-            //The normal vector is the A, B
-            float A = l1_normal.X;
-            float B = l1_normal.Y;
-
-            float C = l2_normal.X;
-            float D = l2_normal.Y;
-
-            //To get k we just use one point on the line
-            float k1 = A * l1_start.X + B * l1_start.Y;
-            float k2 = C * l2_start.X + D * l2_start.Y;
-
-            //Step 2: are the lines parallel? -> no solutions
-            if (IsParallel(l1_normal, l2_normal))
-            {
-                pos = D2DPoint.Zero;
-                return false;
-            }
-
-            //Step 3: are the lines the same line? -> infinite amount of solutions
-            //Pick one point on each line and test if the vector between the points is orthogonal to one of the normals
-            if (IsOrthogonal(l1_start - l2_start, l1_normal))
-            {
-                //Return false anyway
-                pos = D2DPoint.Zero;
-                return false;
-            }
-
-            //Step 4: calculate the intersection point -> one solution
-            float x_intersect = (D * k1 - B * k2) / (A * D - B * C);
-            float y_intersect = (-C * k1 + A * k2) / (A * D - B * C);
-
-            D2DPoint intersectPoint = new D2DPoint(x_intersect, y_intersect);
-
-            //Step 5: but we have line segments so we have to check if the intersection point is within the segment
-            if (IsBetween(l1_start, l1_end, intersectPoint) && IsBetween(l2_start, l2_end, intersectPoint))
-            {
-                pos = intersectPoint;
-                return true;
-            }
-
             pos = D2DPoint.Zero;
-            return false;
-        }
 
-        //Are 2 vectors parallel?
-        public static bool IsParallel(D2DPoint v1, D2DPoint v2)
-        {
-            //2 vectors are parallel if the angle between the vectors are 0 or 180 degrees
-            if (v1.AngleTo(v2) == 0f || v1.AngleTo(v2) == 180f)
+            var r = p2 - p;
+            var s = q2 - q;
+            var rxs = r.Cross(s);
+            var qpxr = (q - p).Cross(r);
+
+            // If r x s = 0 and (q - p) x r = 0, then the two lines are collinear.
+            if (rxs == 0f && qpxr == 0f)
             {
+                //// 1. If either  0 <= (q - p) * r <= r * r or 0 <= (p - q) * s <= * s
+                //// then the two lines are overlapping,
+                //if (considerCollinearOverlapAsIntersect)
+                //    if ((0 <= (q - p) * r && (q - p) * r <= r * r) || (0 <= (p - q) * s && (p - q) * s <= s * s))
+                //        return true;
+
+                // 2. If neither 0 <= (q - p) * r = r * r nor 0 <= (p - q) * s <= s * s
+                // then the two lines are collinear but disjoint.
+                // No need to implement this expression, as it follows from the expression above.
+                return false;
+            }
+
+            // 3. If r x s = 0 and (q - p) x r != 0, then the two lines are parallel and non-intersecting.
+            if (rxs == 0f && qpxr != 0f)
+                return false;
+
+            // t = (q - p) x s / (r x s)
+            var t = (q - p).Cross(s) / rxs;
+
+            // u = (q - p) x r / (r x s)
+            var u = (q - p).Cross(r) / rxs;
+
+            // 4. If r x s != 0 and 0 <= t <= 1 and 0 <= u <= 1
+            // the two line segments meet at the point p + t r = q + u s.
+            if (rxs != 0f && (0f <= t && t <= 1f) && (0f <= u && u <= 1f))
+            {
+                // We can calculate the intersection point using either t or u.
+                pos = p + t * r;
+
+                // An intersection was found.
                 return true;
             }
 
+            // 5. Otherwise, the two line segments are not parallel but do not intersect.
             return false;
-        }
-
-        //Are 2 vectors orthogonal?
-        public static bool IsOrthogonal(D2DPoint v1, D2DPoint v2)
-        {
-            //2 vectors are orthogonal is the dot product is 0
-            //We have to check if close to 0 because of floating numbers
-            if (Math.Abs(D2DPoint.Dot(v1, v2)) < 0.000001f)
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        //Is a point c between 2 other points a and b?
-        public static bool IsBetween(D2DPoint a, D2DPoint b, D2DPoint c)
-        {
-            bool isBetween = false;
-
-            //Entire line segment
-            D2DPoint ab = b - a;
-            //The intersection and the first point
-            D2DPoint ac = c - a;
-
-            //Need to check 2 things: 
-            //1. If the vectors are pointing in the same direction = if the dot product is positive
-            //2. If the length of the vector between the intersection and the first point is smaller than the entire line
-            if (D2DPoint.Dot(ab, ac) > 0f && ab.LengthSquared() >= ac.LengthSquared())
-            {
-                isBetween = true;
-            }
-
-            return isBetween;
         }
 
         public static bool EllipseContains(D2DEllipse ellipse, float ellipseRotation, D2DPoint pos)
@@ -139,7 +78,7 @@ namespace PolyPlane.Helpers
                 var pnt1 = poly[i];
                 var pnt2 = poly[i + 1];
 
-                if (CollisionHelpers.IsIntersecting(a, b, pnt1, pnt2, out D2DPoint iPos))
+                if (IsIntersecting(a, b, pnt1, pnt2, out D2DPoint iPos))
                 {
                     intersections.Add(iPos);
                 }
@@ -186,7 +125,7 @@ namespace PolyPlane.Helpers
 
             for (int i = 0; i < impactorPoly.Length; i++)
             {
-                var pnt1 = impactorPoly[i];
+                var pnt1 = impactorPoly[i] - relVelo;
                 var pnt2 = impactorPoly[i] + relVelo;
 
                 // Check for an intersection and get the exact location of the impact.
@@ -197,7 +136,7 @@ namespace PolyPlane.Helpers
             }
 
             // One last check with the center point.
-            var centerPnt1 = impactorObj.Position;
+            var centerPnt1 = impactorObj.Position - relVelo;
             var centerPnt2 = impactorObj.Position + relVelo;
 
             if (PolyIntersect(centerPnt1, centerPnt2, targPoly, out D2DPoint iPosCenter))
@@ -205,10 +144,14 @@ namespace PolyPlane.Helpers
                 hits.Add(iPosCenter);
             }
 
-            // If we have multiple hits, find the one closest to the impactor.
-            if (hits.Count > 0)
+            if (hits.Count == 1)
             {
-                var closest = hits.OrderBy(p => p.DistanceTo(impactorObj.Position));
+                impactPoint = hits.First();
+                return true;
+            }
+            else if (hits.Count > 1)  // If we have multiple hits, find the one closest to the impactor's previous position.
+            {
+                var closest = hits.OrderBy(p => p.DistanceTo(impactorObj.Position - relVelo));
                 impactPoint = closest.First();
                 return true;
             }
@@ -226,7 +169,7 @@ namespace PolyPlane.Helpers
             var hits = new List<D2DPoint>();
             var relVelo = (impactorObj.Velocity - targVelo) * dt; // Get relative velo.
 
-            var centerPnt1 = impactorObj.Position;
+            var centerPnt1 = impactorObj.Position - relVelo;
             var centerPnt2 = impactorObj.Position + relVelo;
 
             if (PolyIntersect(centerPnt1, centerPnt2, targPoly, out D2DPoint iPosCenter))
@@ -234,10 +177,14 @@ namespace PolyPlane.Helpers
                 hits.Add(iPosCenter);
             }
 
-            // If we have multiple hits, find the one closest to the impactor.
-            if (hits.Count > 0)
+            if (hits.Count == 1)
             {
-                var closest = hits.OrderBy(p => p.DistanceTo(impactorObj.Position));
+                impactPoint = hits.First();
+                return true;
+            }
+            else if (hits.Count > 1)  // If we have multiple hits, find the one closest to the impactor's previous position.
+            {
+                var closest = hits.OrderBy(p => p.DistanceTo(impactorObj.Position - relVelo));
                 impactPoint = closest.First();
                 return true;
             }

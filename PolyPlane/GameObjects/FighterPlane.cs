@@ -508,7 +508,7 @@ namespace PolyPlane.GameObjects
             if (this.IsDisabled)
                 _engineFireFlame.Render(ctx);
 
-            ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 0.5f, D2DDashStyle.Solid, _planeColor);
+            ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black.WithAlpha(0.3f), 0.5f, D2DDashStyle.Solid, _planeColor);
             DrawCockpit(ctx.Gfx);
             DrawBulletHoles(ctx);
             Wings.ForEach(w => w.Render(ctx));
@@ -533,15 +533,13 @@ namespace PolyPlane.GameObjects
 
                 ctx.Gfx.PushLayer(_polyClipLayer, ctx.Viewport, polyClipGeo);
 
-                foreach (var flame in _bulletHoles)
+                foreach (var hole in _bulletHoles)
                 {
-                    var outsideSz = new D2DSize(flame.HoleSize.width + 2f, flame.HoleSize.height + 2f);
-
                     ctx.Gfx.PushTransform();
-                    ctx.Gfx.RotateTransform(flame.Rotation, flame.Position);
+                    ctx.Gfx.RotateTransform(hole.Rotation, hole.Position);
 
-                    ctx.Gfx.FillEllipse(new D2DEllipse(flame.Position, outsideSz), D2DColor.Gray);
-                    ctx.Gfx.FillEllipse(new D2DEllipse(flame.Position, flame.HoleSize), D2DColor.Black);
+                    ctx.Gfx.FillEllipse(new D2DEllipse(hole.Position, hole.OuterHoleSize), hole.Color);
+                    ctx.Gfx.FillEllipse(new D2DEllipse(hole.Position, hole.HoleSize), D2DColor.Black);
 
                     ctx.Gfx.PopTransform();
                 }
@@ -554,8 +552,11 @@ namespace PolyPlane.GameObjects
         {
             gfx.PushTransform();
             gfx.RotateTransform(_cockpitPosition.Rotation, _cockpitPosition.Position);
-            gfx.FillEllipse(new D2DEllipse(_cockpitPosition.Position, _cockpitSize), WasHeadshot ? D2DColor.DarkRed : _cockpitColor);
-            gfx.DrawEllipse(new D2DEllipse(_cockpitPosition.Position, _cockpitSize), D2DColor.Black);
+
+            var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
+            gfx.FillEllipse(cockpitEllipse, WasHeadshot ? D2DColor.DarkRed : _cockpitColor);
+            gfx.DrawEllipse(cockpitEllipse, D2DColor.Black, 0.5f);
+
             gfx.PopTransform();
         }
 
@@ -656,20 +657,6 @@ namespace PolyPlane.GameObjects
             _gun.Update(0f, World.RenderScale * this.RenderOffset);
         }
 
-        public void AddBulletHole()
-        {
-            var offset = Utilities.RandOPointInPoly(_planePoly);
-            AddBulletHole(offset);
-        }
-
-        public void AddBulletHole(D2DPoint pos)
-        {
-            var bulletHole = new BulletHole(this, pos);
-
-            bulletHole.IsNetObject = this.IsNetObject;
-            _bulletHoles.Add(bulletHole);
-        }
-
         public void AddBulletHole(D2DPoint pos, float angle)
         {
             var bulletHole = new BulletHole(this, pos, angle);
@@ -763,7 +750,10 @@ namespace PolyPlane.GameObjects
 
         public PlaneImpactResult GetImpactResult(GameObject impactor, D2DPoint impactPos)
         {
-            var angle = Utilities.ClampAngle(impactPos.AngleTo(impactor.Position, false) - this.Rotation);
+            // Make sure cockpit position is up-to-date.
+            _cockpitPosition.Update(0f, World.RenderScale * this.RenderOffset);
+
+            var angle = impactor.Velocity.Angle() - this.Rotation;
             var result = new PlaneImpactResult();
             result.ImpactPoint = impactPos;
             result.ImpactAngle = angle;
@@ -918,6 +908,7 @@ namespace PolyPlane.GameObjects
             _cockpitPosition.FlipY();
             _gun.FlipY();
             _centerOfThrust.FlipY();
+            _centerOfMass.FlipY();
 
             if (_currentDir == Direction.Right)
                 _currentDir = Direction.Left;
