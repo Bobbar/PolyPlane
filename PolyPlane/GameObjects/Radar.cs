@@ -418,10 +418,21 @@ namespace PolyPlane
         {
             GuidedMissile nearest = null;
 
-            var threats = _pings.Values.Where(p => p.Obj is GuidedMissile missile
-            && !missile.MissedTarget
-            && missile.Target.Equals(HostPlane)
-            && Utilities.ImpactTime(HostPlane, missile) <= MIN_IMPACT_TIME);
+            var threats = _pings.Values.Where(p =>
+            {
+                if (p.Obj is GuidedMissile missile)
+                {
+                    if (!missile.MissedTarget && missile.Target.Equals(HostPlane))
+                    {
+                        var impactTime = Utilities.ImpactTime(HostPlane, missile);
+
+                        if (impactTime > 0f && impactTime <= MIN_IMPACT_TIME)
+                            return true;
+                    }
+                }
+
+                return false;
+            });
 
             if (threats.Count() == 0)
                 return nearest;
