@@ -633,7 +633,7 @@ namespace PolyPlane.GameObjects
             const float VAPOR_TRAIL_VELO = 1000f; // Velocity before vapor trail is visible.
             const float MAX_GS = 15f; // Gs for max vapor trail intensity.
 
-            _vaporTrails.Add(new Vapor(wing, this, new D2DPoint(20f, 0f), 8f, VAPOR_TRAIL_GS, VAPOR_TRAIL_VELO, MAX_GS));
+            _vaporTrails.Add(new Vapor(wing, this, D2DPoint.Zero, 8f, VAPOR_TRAIL_GS, VAPOR_TRAIL_VELO, MAX_GS));
 
             Wings.Add(wing);
         }
@@ -903,6 +903,7 @@ namespace PolyPlane.GameObjects
 
             this.Polygon.FlipY();
             Wings.ForEach(w => w.FlipY());
+            _vaporTrails.ForEach(v => v.FlipY());
             _flamePos.FlipY();
             _bulletHoles.ForEach(f => f.FlipY());
             _cockpitPosition.FlipY();

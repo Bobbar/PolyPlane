@@ -66,15 +66,24 @@ namespace PolyPlane.GameObjects
             foreach (var part in _parts)
             {
                 // Let the parts move away from the source slightly before rendering.
-                if (part.Age > 0.2f)
+                if (part.Age > 0.1f)
                     part.Render(ctx);
             }
         }
 
+        public void FlipY()
+        {
+            _refPos.FlipY();
+        }
+
         private void SpawnPart()
         {
+            _refPos.Update(0f, World.RenderScale);
             D2DPoint newPos = _refPos.GameObject.Position;
             D2DPoint newVelo = _veloSmooth.Add(this.Velocity);
+
+            // Start the vapor parts one frame backwards.
+            newPos -= Utilities.AngleToVectorDegrees(newVelo.Angle(), newVelo.Length() * World.DT);
 
             float gforce = 0f;
             var veloMag = newVelo.Length();
@@ -84,9 +93,6 @@ namespace PolyPlane.GameObjects
                 if (this.Owner is FighterPlane plane)
                     gforce = plane.GForce;
             }
-
-            // Start the vapor parts one frame backwards.
-            newPos -= Utilities.AngleToVectorDegrees(newVelo.Angle(), newVelo.Length() * World.DT);
 
             var sVisFact = Utilities.Factor(veloMag - _visibleVelo, _visibleVelo);
             var sRadFact = Utilities.Factor(veloMag, _visibleVelo);
