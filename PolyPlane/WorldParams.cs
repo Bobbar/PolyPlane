@@ -118,6 +118,7 @@ namespace PolyPlane
         public const float DEFAULT_DPI = 96f;
         public const float SENSOR_FOV = 60f; // TODO: Not sure this belongs here. Maybe make this unique based on missile/plane types and move it there.
         public const float MAX_ALTITUDE = 60000f; // Max density altitude.  (Air density drops to zero at this altitude)
+        public const float MAX_TURB_ALT = 20000f; // Max altitude at which turbulence decreases to zero.
         private const float MIN_TURB = 0.7f;
         private const float MAX_TURB = 1f;
         private const float MAX_WIND_MAG = 100f;

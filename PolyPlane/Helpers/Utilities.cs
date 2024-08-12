@@ -60,10 +60,7 @@ namespace PolyPlane.Helpers
 
         public static D2DPoint LerpPoints(D2DPoint a, D2DPoint b, float amount)
         {
-            var lerpX = Lerp(a.X, b.X, amount);
-            var lerpY = Lerp(a.Y, b.Y, amount);
-
-            return new D2DPoint(lerpX, lerpY);
+            return D2DPoint.Lerp(a, b, amount);
         }
 
         public static float Factor(float value1, float value2)
