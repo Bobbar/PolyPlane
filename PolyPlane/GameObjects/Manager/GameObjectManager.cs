@@ -1,5 +1,7 @@
 ﻿using PolyPlane.Helpers;
 using PolyPlane.Rendering;
+using unvell.D2DLib;
+
 namespace PolyPlane.GameObjects
 {
     /// <summary>
@@ -19,7 +21,7 @@ namespace PolyPlane.GameObjects
         public List<GameObject> Debris = new List<GameObject>();
         public List<GameObject> Flames = new List<GameObject>();
 
-        public List<D2DPoint> GroundImpacts = new List<D2DPoint>();
+        public List<GroundImpact> GroundImpacts = new List<GroundImpact>();
         public List<FighterPlane> Planes = new List<FighterPlane>();
 
         public RingBuffer<GameObject> NewDecoys = new RingBuffer<GameObject>(500);
@@ -180,7 +182,18 @@ namespace PolyPlane.GameObjects
                 Explosions.Add(explosion);
 
                 if (explosion.Altitude <= 10f)
-                    GroundImpacts.Add(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 5f)));
+                {
+                    if (explosion.Owner is Missile)
+                    {
+                        var missileRadius = Utilities.Rnd.NextFloat(23f, 27f);
+                        GroundImpacts.Add(new GroundImpact(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 8f)), new D2DSize(missileRadius, missileRadius)));
+                    }
+                    else if (explosion.Owner is Bullet)
+                    {
+                        var bulletRadius = Utilities.Rnd.NextFloat(9f, 12f);
+                        GroundImpacts.Add(new GroundImpact(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 5f)), new D2DSize(bulletRadius, bulletRadius)));
+                    }
+                }
             }
         }
 
@@ -438,5 +451,17 @@ namespace PolyPlane.GameObjects
 
         public IEnumerable<GameObject> GetNear(GameObject obj) => _spatialGrid.GetNear(obj);
 
+    }
+
+    public struct GroundImpact
+    {
+        public D2DPoint Position;
+        public D2DSize Size;
+
+        public GroundImpact(D2DPoint pos, D2DSize size)
+        {
+            Position = pos;
+            Size = size;
+        }
     }
 }

@@ -15,6 +15,7 @@ namespace PolyPlane.GameObjects
             this.Owner = owner;
             _color = color;
             this.Polygon = new RenderPoly(RandomPoly(8, 12));
+            this.Polygon.Update(pos, 0f, World.RenderScale);
 
             this.RotationSpeed = Utilities.Rnd.NextFloat(-200f, 200f);
 
@@ -29,8 +30,8 @@ namespace PolyPlane.GameObjects
             base.Update(dt, renderScale);
             _flame.Update(dt, renderScale);
 
-            this.Velocity += (World.Gravity * 3f) * dt;
-            this.Velocity *= new D2DPoint(0.999f, 1f);
+            this.Velocity += (World.Gravity * 1f) * dt;
+            this.Velocity += -this.Velocity * (dt * 0.01f);
 
             if (this.Altitude <= 2f)
             {

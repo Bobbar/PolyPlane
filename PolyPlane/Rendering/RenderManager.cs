@@ -744,10 +744,10 @@ namespace PolyPlane.Rendering
 
                 foreach (var impact in _objs.GroundImpacts)
                 {
-                    if (ctx.Viewport.Contains(impact))
+                    if (ctx.Viewport.Contains(impact.Position))
                     {
-                        ctx.FillEllipseSimple(impact, 15f, color1);
-                        ctx.FillEllipseSimple(impact, 11f, color2);
+                        ctx.FillEllipse(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), color1);
+                        ctx.FillEllipse(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), color2);
                     }
                 }
 
