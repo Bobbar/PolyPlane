@@ -45,8 +45,10 @@ namespace PolyPlane.GameObjects.Guidance
         }
 
         public bool MissedTarget => _missedTarget || _lostInGround;
+
         private bool _missedTarget = false;
         private bool _lostInGround = false;
+        private bool _isArmed = false;
         private float _missedTargetRot = 0f;
 
         protected GuidanceBase(GuidedMissile missile, GameObject target)
@@ -65,6 +67,8 @@ namespace PolyPlane.GameObjects.Guidance
                     DoPitBull();
             };
 
+            _armTimer.TriggerCallback = () => { _isArmed = true; };
+
             _pitbullTimer.Start();
             _decoyDistractCooldown.Start();
             _decoyDistractArm.Start();
@@ -72,10 +76,10 @@ namespace PolyPlane.GameObjects.Guidance
 
         public float GuideTo(float dt)
         {
-            if (this.Missile.FlameOn && !_armTimer.IsRunning)
-                _armTimer.Start();                
+            if (this.Missile.FlameOn && !_armTimer.IsRunning && _isArmed == false)
+                _armTimer.Start();
 
-            if (!_armTimer.IsRunning)
+            if (_isArmed)
             {
                 _lostLockTimer.Update(dt);
                 _groundScatterTimer.Update(dt);
@@ -101,7 +105,7 @@ namespace PolyPlane.GameObjects.Guidance
 
             if (!isInFOV)
             {
-                if (!_missedTarget && !_lostLockTimer.IsRunning && !_armTimer.IsRunning)
+                if (!_missedTarget && !_lostLockTimer.IsRunning && _isArmed)
                     _lostLockTimer.Restart();
             }
             else

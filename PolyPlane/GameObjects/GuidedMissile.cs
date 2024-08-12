@@ -192,6 +192,7 @@ namespace PolyPlane.GameObjects
                     Area = 0.1f,
                     MaxDeflection = 50f,
                     MaxLiftForce = 6500f * liftScale,
+                    PivotPoint = new D2DPoint(-20f, 0f),
                     Position = new D2DPoint(-22f, 0f),
                     MinVelo = 650f,
                     ParasiticDrag = 0.4f,

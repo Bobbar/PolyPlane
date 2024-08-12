@@ -47,7 +47,7 @@ namespace PolyPlane.GameObjects
 
             _flame.Render(ctx);
 
-            ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, _color);
+            ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 0.5f, D2DDashStyle.Solid, _color);
         }
 
         public override void Dispose()

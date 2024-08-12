@@ -106,7 +106,7 @@ namespace PolyPlane.GameObjects
             if (World.ShowAero)
             {
                 const float SCALE = 0.1f;//0.04f;
-                const float AERO_WEIGHT = 3f;
+                const float AERO_WEIGHT = 2f;
                 ctx.DrawLine(this.Position, this.Position + (LiftVector * SCALE), D2DColor.SkyBlue, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
                 ctx.DrawLine(this.Position, this.Position + (DragVector * (SCALE + 0.03f)), D2DColor.Red, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
 
