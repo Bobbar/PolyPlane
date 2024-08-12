@@ -104,6 +104,7 @@ namespace PolyPlane.Helpers
 
             var hits = new List<D2DPoint>();
             var relVelo = (impactorObj.Velocity - targVelo) * dt; // Get relative velo.
+            var relVeloHalf = relVelo * 0.5f; 
             var impactorPoly = impactorObj.Polygon.Poly;
 
 
@@ -125,8 +126,8 @@ namespace PolyPlane.Helpers
 
             for (int i = 0; i < impactorPoly.Length; i++)
             {
-                var pnt1 = impactorPoly[i] - relVelo;
-                var pnt2 = impactorPoly[i] + relVelo;
+                var pnt1 = impactorPoly[i] - relVeloHalf;
+                var pnt2 = impactorPoly[i] + relVeloHalf;
 
                 // Check for an intersection and get the exact location of the impact.
                 if (PolyIntersect(pnt1, pnt2, targPoly, out D2DPoint iPosPoly))
@@ -136,8 +137,8 @@ namespace PolyPlane.Helpers
             }
 
             // One last check with the center point.
-            var centerPnt1 = impactorObj.Position - relVelo;
-            var centerPnt2 = impactorObj.Position + relVelo;
+            var centerPnt1 = impactorObj.Position - relVeloHalf;
+            var centerPnt2 = impactorObj.Position + relVeloHalf;
 
             if (PolyIntersect(centerPnt1, centerPnt2, targPoly, out D2DPoint iPosCenter))
             {
@@ -168,9 +169,10 @@ namespace PolyPlane.Helpers
 
             var hits = new List<D2DPoint>();
             var relVelo = (impactorObj.Velocity - targVelo) * dt; // Get relative velo.
+            var relVeloHalf = relVelo * 0.5f;
 
-            var centerPnt1 = impactorObj.Position - relVelo;
-            var centerPnt2 = impactorObj.Position + relVelo;
+            var centerPnt1 = impactorObj.Position - relVeloHalf;
+            var centerPnt2 = impactorObj.Position + relVeloHalf;
 
             if (PolyIntersect(centerPnt1, centerPnt2, targPoly, out D2DPoint iPosCenter))
             {
