@@ -152,7 +152,7 @@ namespace PolyPlane.Helpers
             }
             else if (hits.Count > 1)  // If we have multiple hits, find the one closest to the impactor's previous position.
             {
-                var closest = hits.OrderBy(p => p.DistanceTo(impactorObj.Position - relVelo));
+                var closest = hits.OrderBy(p => p.DistanceTo(impactorObj.Position - relVeloHalf));
                 impactPoint = closest.First();
                 return true;
             }
@@ -186,7 +186,7 @@ namespace PolyPlane.Helpers
             }
             else if (hits.Count > 1)  // If we have multiple hits, find the one closest to the impactor's previous position.
             {
-                var closest = hits.OrderBy(p => p.DistanceTo(impactorObj.Position - relVelo));
+                var closest = hits.OrderBy(p => p.DistanceTo(impactorObj.Position - relVeloHalf));
                 impactPoint = closest.First();
                 return true;
             }
