@@ -156,7 +156,7 @@ namespace PolyPlane.AI_Behavior
 
                 this.Plane.FireMissile(this.Plane.Radar.LockedObj);
 
-                _fireMissileCooldown = new GameTimer(Utilities.Rnd.NextFloat(MIN_MISSILE_TIME, MAX_MISSILE_TIME));
+                _fireMissileCooldown.Interval = Utilities.Rnd.NextFloat(MIN_MISSILE_TIME, MAX_MISSILE_TIME);
                 _fireMissileCooldown.Restart();
 
                 Log.Msg("Firing Missile");
