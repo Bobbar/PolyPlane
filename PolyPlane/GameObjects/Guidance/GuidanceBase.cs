@@ -66,13 +66,15 @@ namespace PolyPlane.GameObjects.Guidance
             };
 
             _pitbullTimer.Start();
-            _armTimer.Start();
             _decoyDistractCooldown.Start();
             _decoyDistractArm.Start();
         }
 
         public float GuideTo(float dt)
         {
+            if (this.Missile.FlameOn && !_armTimer.IsRunning)
+                _armTimer.Start();                
+
             if (!_armTimer.IsRunning)
             {
                 _lostLockTimer.Update(dt);
