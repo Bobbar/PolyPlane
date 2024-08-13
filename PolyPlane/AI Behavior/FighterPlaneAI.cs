@@ -12,6 +12,7 @@ namespace PolyPlane.AI_Behavior
 
         private FighterPlane _plane;
         private FighterPlane _targetPlane;
+        private D2DPoint _threatPosition = D2DPoint.Zero;
         private float _sineWavePos = 0f;
         private float _avoidingGroundAlt = 0f;
         private bool _avoidingGround = false;
@@ -23,6 +24,7 @@ namespace PolyPlane.AI_Behavior
         private GameTimer _fireMissileCooldown = new GameTimer(6f);
         private GameTimer _dropDecoysTimer = new GameTimer(2f, 3f);
         private GameTimer _changeTargetCooldown = new GameTimer(10f);
+        private GameTimer _defendMissileCooldown = new GameTimer(4f);
 
         private float MIN_MISSILE_TIME = 40f;
         private float MAX_MISSILE_TIME = 80f;
@@ -56,6 +58,9 @@ namespace PolyPlane.AI_Behavior
 
             _fireMissileCooldown = new GameTimer(Utilities.Rnd.NextFloat(MIN_MISSILE_TIME, MAX_MISSILE_TIME));
             _fireMissileCooldown.Start();
+
+            _defendMissileCooldown.StartCallback = () => _isDefending = true;
+            _defendMissileCooldown.TriggerCallback = () => _isDefending = false;
         }
 
         public void Update(float dt)
@@ -72,6 +77,7 @@ namespace PolyPlane.AI_Behavior
             _fireMissileCooldown.Update(dt);
             _dropDecoysTimer.Update(dt);
             _changeTargetCooldown.Update(dt);
+            _defendMissileCooldown.Update(dt);
 
             if (TargetPlane != null)
             {
@@ -193,7 +199,11 @@ namespace PolyPlane.AI_Behavior
 
             DefendingMissile = threat;
 
-            _isDefending = DefendingMissile != null;
+            if (DefendingMissile != null)
+            {
+                _defendMissileCooldown.Restart();
+                _threatPosition = DefendingMissile.Position;
+            }
         }
 
         private void ConsiderDropDecoy()
@@ -202,7 +212,7 @@ namespace PolyPlane.AI_Behavior
                 return;
             else
             {
-                if (DefendingMissile.Position.DistanceTo(this.Plane.Position) < MAX_DECOY_DIST)
+                if (_threatPosition.DistanceTo(this.Plane.Position) < MAX_DECOY_DIST)
                 {
                     if (!_dropDecoysTimer.IsRunning)
                     {
@@ -260,12 +270,12 @@ namespace PolyPlane.AI_Behavior
             }
 
             // Run away from missile?
-            if (_isDefending && DefendingMissile != null)
+            if (_isDefending)
             {
                 // Compute two tangential angles and choose the one closest to the current rotation.
                 // We basically try to fly away and slightly perpendicular to the direction of the incoming missile.
 
-                var angleAwayFromThreat = (this.Plane.Position - DefendingMissile.Position).Angle(true);
+                var angleAwayFromThreat = (this.Plane.Position - _threatPosition).Angle(true);
 
                 const float DEFEND_ANGLE = 25f;
                 var defendAngleOne = Utilities.ClampAngle(angleAwayFromThreat + DEFEND_ANGLE);

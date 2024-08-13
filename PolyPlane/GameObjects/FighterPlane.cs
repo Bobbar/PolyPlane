@@ -289,7 +289,7 @@ namespace PolyPlane.GameObjects
             float defRate = 55f;
 
             if (_isAIPlane)
-                defRate = 30f;
+                defRate = 40f;
 
             // Main wing.
             AddWing(new Wing(this, new WingParameters()
