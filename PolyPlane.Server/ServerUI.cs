@@ -421,7 +421,7 @@ namespace PolyPlane.Server
             plane.SyncFixtures();
             plane.RotationSpeed = 0f;
             plane.Rotation = 0f;
-            plane.SASOn = true;
+            //plane.SASOn = true;
             plane.IsDisabled = false;
             plane.Reset();
             plane.FixPlane();

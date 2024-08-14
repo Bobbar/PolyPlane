@@ -385,7 +385,7 @@ namespace PolyPlane
             plane.SyncFixtures();
             plane.RotationSpeed = 0f;
             plane.Rotation = 0f;
-            plane.SASOn = true;
+            //plane.SASOn = true;
             plane.IsDisabled = false;
             plane.Reset();
             plane.FixPlane();
@@ -405,7 +405,7 @@ namespace PolyPlane
             _playerPlane.Velocity = new D2DPoint(500f, 0f);
             _playerPlane.RotationSpeed = 0f;
             _playerPlane.Rotation = 0f;
-            _playerPlane.SASOn = true;
+            //_playerPlane.SASOn = true;
             _playerPlane.IsDisabled = false;
             _playerPlane.Reset();
             _playerPlane.FixPlane();

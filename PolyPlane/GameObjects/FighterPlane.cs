@@ -64,7 +64,7 @@ namespace PolyPlane.GameObjects
             set { _thrustAmt.Set(value); }
         }
         public bool AutoPilotOn { get; set; } = false;
-        public bool SASOn { get; set; } = true;
+        public bool SASOn { get; set; } = false;
         public bool HasCrashed { get; set; } = false;
         public bool WasHeadshot { get; set; } = false;
         public D2DPoint GunPosition => _gun.Position;
@@ -349,8 +349,7 @@ namespace PolyPlane.GameObjects
                     else
                         guideRot = GetAPGuidanceDirection(PlayerGuideAngle);
 
-                    var veloAngle = this.Velocity.Angle(true);
-                    var nextDeflect = Utilities.ClampAngle180(guideRot - veloAngle);
+                    var nextDeflect = Utilities.ClampAngle180(guideRot - this.Rotation);
                     deflection = nextDeflect;
                 }
 
@@ -605,9 +604,18 @@ namespace PolyPlane.GameObjects
 
         private float GetAPGuidanceDirection(float dir)
         {
-            const float SENSITIVITY = 2f; // How aggressively we try to point in the specified direction.
+            const float SENSITIVITY = 1.7f; // How aggressively we try to point in the specified direction.
+            const float MIN_VELO = 400f; // Minimum velo before using rotation based calculation.
 
-            var amt = Utilities.RadsToDegrees(this.Velocity.Normalized().Cross(Utilities.AngleToVectorDegrees(dir, SENSITIVITY)));
+            // Compute two rotation amounts, and lerp between them as velocity changes.
+            // One amount is based on velocity angle, the other is based on the current rotation.
+            // The velocity angle is much better at rotating quickly and accurately to the specified direction.
+            // The rotation angle works better when velocities are very low and the velocity angle becomes unreliable.
+            var dirVec = Utilities.AngleToVectorDegrees(dir, SENSITIVITY);
+            var amtVelo = Utilities.RadsToDegrees(this.Velocity.Normalized().Cross(dirVec));
+            var amtRot = Utilities.RadsToDegrees(Utilities.AngleToVectorDegrees(this.Rotation).Cross(dirVec));
+            var amt = Utilities.Lerp(amtVelo, amtRot, Utilities.Factor(MIN_VELO, this.Velocity.Length()));
+
             var rot = this.Rotation - amt;
             rot = Utilities.ClampAngle(rot);
 
