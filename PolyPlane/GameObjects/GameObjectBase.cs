@@ -238,7 +238,7 @@ namespace PolyPlane.GameObjects
         public float FOVToObject(GameObject obj)
         {
             var dir = obj.Position - this.Position;
-            var angle = dir.Angle(true);
+            var angle = dir.Angle();
             var diff = Utilities.AngleDiff(this.Rotation, angle);
 
             return diff;
@@ -248,7 +248,7 @@ namespace PolyPlane.GameObjects
         {
             var dir = obj.Position - this.Position;
 
-            var angle = dir.Angle(true);
+            var angle = dir.Angle();
             var diff = Utilities.AngleDiff(this.Rotation, angle);
 
             return diff <= (fov * 0.5f);

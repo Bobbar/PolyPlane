@@ -19,7 +19,7 @@ namespace PolyPlane.GameObjects.Guidance
 
             if (GetInterceptDirection(this.Missile.Position, target, this.Missile.Velocity.Length() * dt, this.Target.Velocity * dt, out direction))
             {
-                targetRot = direction.Angle(true);
+                targetRot = direction.Angle();
                 _prevDir = targetRot;
             }
             else
@@ -61,7 +61,7 @@ namespace PolyPlane.GameObjects.Guidance
 
             var los = origin - targetPosition;
             var distance = los.Length();
-            var alpha = Utilities.DegreesToRads(los.AngleBetween(targetVelocity));
+            var alpha = Utilities.DegreesToRads(los.AngleBetween(targetVelocity, false));
             var vt = targetVelocity.Length();
             var vRatio = vt / missileSpeed;
 

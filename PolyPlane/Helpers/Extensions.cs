@@ -49,7 +49,7 @@ namespace PolyPlane.Helpers
             return new D2DPoint(pnt.X, pnt.Y);
         }
 
-        public static float Angle(this D2DPoint vector, bool clamp = false)
+        public static float Angle(this D2DPoint vector, bool clamp = true)
         {
             var angle = (float)Math.Atan2(vector.Y, vector.X) * Utilities.RADS_TO_DEGREES;
 
@@ -71,7 +71,7 @@ namespace PolyPlane.Helpers
             return Utilities.Cross(vector, other);
         }
 
-        public static float AngleBetween(this D2DPoint vector, D2DPoint other, bool clamp = false)
+        public static float AngleBetween(this D2DPoint vector, D2DPoint other, bool clamp = true)
         {
             return Utilities.AngleBetween(vector, other, clamp);
         }
@@ -79,7 +79,7 @@ namespace PolyPlane.Helpers
         public static float AngleTo(this D2DPoint vector, D2DPoint other, bool clamp = false)
         {
             var dir = other - vector;
-            var angle = dir.Angle(true);
+            var angle = dir.Angle();
             return angle;
         }
 

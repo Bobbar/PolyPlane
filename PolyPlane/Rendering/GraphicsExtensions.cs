@@ -32,7 +32,7 @@ namespace PolyPlane.Rendering
             const float ARROW_LEN = 10f;
             const float ARROW_ANGLE = 140f;
 
-            var angle = (end - start).Angle(true);
+            var angle = (end - start).Angle();
             var arrow1 = Utilities.AngleToVectorDegrees(angle + ARROW_ANGLE);
             var arrow2 = Utilities.AngleToVectorDegrees(angle - ARROW_ANGLE);
 
@@ -46,7 +46,7 @@ namespace PolyPlane.Rendering
             const float ARROW_LEN = 10f;
             const float ARROW_ANGLE = 140f;
 
-            var angle = (end - start).Angle(true);
+            var angle = (end - start).Angle();
             var arrow1 = Utilities.AngleToVectorDegrees(angle + ARROW_ANGLE);
             var arrow2 = Utilities.AngleToVectorDegrees(angle - ARROW_ANGLE);
 

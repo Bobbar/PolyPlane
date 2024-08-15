@@ -1213,7 +1213,7 @@ namespace PolyPlane.Rendering
                     continue;
 
                 var dir = target.Position - plane.Position;
-                var angle = dir.Angle(true);
+                var angle = dir.Angle();
                 var vec = Utilities.AngleToVectorDegrees(angle);
 
                 ctx.Gfx.DrawArrow(pos + (vec * (POINTER_DIST - 20f)), pos + (vec * POINTER_DIST), color, 2f);
@@ -1252,7 +1252,7 @@ namespace PolyPlane.Rendering
 
             targRelInterceptPos *= pValue;
 
-            var leadRotation = ((target.Position + targRelInterceptPos) - plane.Position).Angle(true);
+            var leadRotation = ((target.Position + targRelInterceptPos) - plane.Position).Angle();
             var targetRot = leadRotation;
 
             return targetRot;
@@ -1296,7 +1296,7 @@ namespace PolyPlane.Rendering
                 var dist = D2DPoint.Distance(plane.Position, missile.Position);
 
                 var dir = missile.Position - plane.Position;
-                var angle = dir.Angle(true);
+                var angle = dir.Angle();
                 var color = D2DColor.Red;
                 var vec = Utilities.AngleToVectorDegrees(angle);
                 var pos1 = pos + (vec * 200f);

@@ -302,7 +302,7 @@ namespace PolyPlane.GameObjects
                         const float NOSE_AUTH = 0f;
 
                         // Compute deflection.
-                        var veloAngle = this.Velocity.Angle(true);
+                        var veloAngle = this.Velocity.Angle();
                         var nextDeflect = Utilities.ClampAngle180(guideRotation - veloAngle);
 
                         // Adjust the deflection as speed, rotation speed and AoA increases.
@@ -441,7 +441,7 @@ namespace PolyPlane.GameObjects
             else
             {
                 const float DEF_AMT = 0.2f; // How much the flame will be deflected in relation to velocity.
-                flameAngle = this.Rotation - (Utilities.ClampAngle180(this.Rotation - this.Velocity.Angle(true)) * DEF_AMT);
+                flameAngle = this.Rotation - (Utilities.ClampAngle180(this.Rotation - this.Velocity.Angle()) * DEF_AMT);
             }
 
             // Make the flame do flamey things...(Wiggle and color)

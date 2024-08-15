@@ -34,11 +34,11 @@ namespace PolyPlane.GameObjects.Guidance
 
             var targetPosition = GetTargetPosition();
             var targetVelo = this.Target.Velocity;
-            var targetVeloAngle = this.Target.Velocity.Angle(true);
+            var targetVeloAngle = this.Target.Velocity.Angle();
 
             var missileVelo = this.Missile.Velocity;
             var missileVeloMag = this.Missile.Velocity.Length();
-            var missileVeloAngle = this.Missile.Velocity.Angle(true);
+            var missileVeloAngle = this.Missile.Velocity.Angle();
 
             var deltaV = missileVeloMag - _prevVelo;
             _prevVelo = missileVeloMag;
@@ -103,7 +103,7 @@ namespace PolyPlane.GameObjects.Guidance
             var nextRot = missileVeloAngle + -(rotAmt * rotFact);
 
             if (targDist < MIN_GUIDE_DIST)
-                nextRot = (targetPosition - this.Missile.Position).Angle(true);
+                nextRot = (targetPosition - this.Missile.Position).Angle();
 
             // Tracking info.
             ImpactPoint = impactPnt; // Red

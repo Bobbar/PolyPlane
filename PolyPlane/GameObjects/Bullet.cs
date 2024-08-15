@@ -40,7 +40,7 @@ namespace PolyPlane.GameObjects
             this.Velocity = velo;
 
             // Make sure the rotation is aligned with the resulting velocity.
-            this.Rotation = this.Velocity.Angle(true);
+            this.Rotation = this.Velocity.Angle();
         }
 
         public Bullet(D2DPoint pos, D2DPoint velo, float rotation) : base(pos, velo, rotation)
@@ -66,7 +66,7 @@ namespace PolyPlane.GameObjects
             this.Velocity = velo;
 
             // Make sure the rotation is aligned with the resulting velocity.
-            this.Rotation = this.Velocity.Angle(true);
+            this.Rotation = this.Velocity.Angle();
         }
 
         public void ReInit(D2DPoint pos, D2DPoint velo, float rotation)

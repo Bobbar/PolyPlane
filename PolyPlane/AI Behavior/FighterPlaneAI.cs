@@ -262,11 +262,11 @@ namespace PolyPlane.AI_Behavior
                 if (this.Personality == AIPersonality.Cowardly && this.Plane.Position.DistanceTo(TargetPlane.Position) < RUN_DISTANCE)
                 {
                     dirToPlayer *= -1f;
-                    angle = dirToPlayer.Angle(true);
+                    angle = dirToPlayer.Angle();
                     angle += patrolDir * 0.2f; // Incorporate a small amount of the sine wave so we 'bob & weave' a little bit.
                 }
                 else
-                    angle = dirToPlayer.Angle(true);
+                    angle = dirToPlayer.Angle();
             }
 
             // Run away from missile?
@@ -275,7 +275,7 @@ namespace PolyPlane.AI_Behavior
                 // Compute two tangential angles and choose the one closest to the current rotation.
                 // We basically try to fly away and slightly perpendicular to the direction of the incoming missile.
 
-                var angleAwayFromThreat = (this.Plane.Position - _threatPosition).Angle(true);
+                var angleAwayFromThreat = (this.Plane.Position - _threatPosition).Angle();
 
                 const float DEFEND_ANGLE = 25f;
                 var defendAngleOne = Utilities.ClampAngle(angleAwayFromThreat + DEFEND_ANGLE);
@@ -359,7 +359,7 @@ namespace PolyPlane.AI_Behavior
 
             targRelInterceptPos *= pValue;
 
-            var leadRotation = ((target.Position + targRelInterceptPos) - this.Plane.Position).Angle(true);
+            var leadRotation = ((target.Position + targRelInterceptPos) - this.Plane.Position).Angle();
             var targetRot = leadRotation;
 
             return targetRot;

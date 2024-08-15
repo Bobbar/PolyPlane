@@ -19,7 +19,7 @@ namespace PolyPlane.GameObjects.Guidance
             ImpactPoint = targRelInterceptPos;
             targRelInterceptPos *= pValue;
 
-            var leadRotation = ((target + targRelInterceptPos) - this.Missile.Position).Angle(true);
+            var leadRotation = ((target + targRelInterceptPos) - this.Missile.Position).Angle();
             var targetRot = leadRotation;
 
             return targetRot;

@@ -144,7 +144,7 @@ namespace PolyPlane.GameObjects
 
             var veloMag = velo.Length();
             var veloMagSq = Math.Pow(veloMag, 2f);
-            var veloAngle = this.Velocity.Angle(true);
+            var veloAngle = this.Velocity.Angle();
 
             // Compute velo tangent.
             var veloNorm = D2DPoint.Normalize(velo);

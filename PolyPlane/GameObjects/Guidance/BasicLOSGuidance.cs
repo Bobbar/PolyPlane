@@ -20,7 +20,7 @@ namespace PolyPlane.GameObjects.Guidance
             var angle = this.Missile.Velocity.AngleBetween(los, true);
             var adjustment = pValue * angle * los;
 
-            var leadRotation = adjustment.Angle(true);
+            var leadRotation = adjustment.Angle();
             var targetRot = leadRotation;
 
             ImpactPoint = (targetPos + Target.Velocity * navigationTime);

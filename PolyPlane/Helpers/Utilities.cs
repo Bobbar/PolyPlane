@@ -103,7 +103,7 @@ namespace PolyPlane.Helpers
             return vec * length;
         }
 
-        public static float AngleBetween(D2DPoint vector, D2DPoint other, bool clamp = false)
+        public static float AngleBetween(D2DPoint vector, D2DPoint other, bool clamp = true)
         {
             var angA = vector.Angle(clamp);
             var angB = other.Angle(clamp);
@@ -231,7 +231,7 @@ namespace PolyPlane.Helpers
         public static bool IsPosInFOV(GameObject obj, D2DPoint pos, float fov)
         {
             var dir = pos - obj.Position;
-            var angle = dir.Angle(true);
+            var angle = dir.Angle();
             var diff = AngleDiff(obj.Rotation, angle);
 
             return diff <= fov * 0.5f;

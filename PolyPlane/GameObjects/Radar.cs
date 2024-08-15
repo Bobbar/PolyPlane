@@ -123,7 +123,7 @@ namespace PolyPlane
             if (_hostIsAI)
             {
                 var dist = this.HostPlane.Position.DistanceTo(obj.Position);
-                var angle = (this.HostPlane.Position - obj.Position).Angle(true);
+                var angle = (this.HostPlane.Position - obj.Position).Angle();
                 var radDist = (_radius / _maxRange) * dist;
                 var radPos = this.Position - Utilities.AngleToVectorDegrees(angle, radDist);
 
@@ -139,7 +139,7 @@ namespace PolyPlane
                 if (IsInFOV(obj, _sweepAngle, SWEEP_FOV))
                 {
                     var dist = this.HostPlane.Position.DistanceTo(obj.Position);
-                    var angle = (this.HostPlane.Position - obj.Position).Angle(true);
+                    var angle = (this.HostPlane.Position - obj.Position).Angle();
                     var radDist = (_radius / _maxRange) * dist;
                     var radPos = this.Position - Utilities.AngleToVectorDegrees(angle, radDist);
 
@@ -451,7 +451,7 @@ namespace PolyPlane
         {
             var dir = obj.Position - this.HostPlane.Position;
 
-            var angle = dir.Angle(true);
+            var angle = dir.Angle();
             var diff = Utilities.AngleDiff(sweepAngle, angle);
 
             return diff <= (fov * 0.5f);
@@ -460,7 +460,7 @@ namespace PolyPlane
         private float FOVToSweep(GameObject obj)
         {
             var dir = obj.Position - this.Position;
-            var angle = dir.Angle(true);
+            var angle = dir.Angle();
             var diff = Utilities.AngleDiff(_sweepAngle, angle);
 
             return diff;
