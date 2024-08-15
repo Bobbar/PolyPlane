@@ -150,7 +150,15 @@ namespace PolyPlane
         private void EnableRespawn()
         {
             if (World.ViewPlaneID.Equals(_playerPlane.ID))
-                _render.NewHudMessage("Press 'R' to respawn.", D2DColor.Green);
+            {
+                string spawnDirText = "Left";
+                var guideAngle = GetPlayerGuidanceAngle();
+
+                if (Utilities.IsPointingRight(guideAngle))
+                    spawnDirText = "Right";
+
+                _render.NewHudMessage($"Press 'R' or left-click to respawn.\n\n Direction: {spawnDirText}", D2DColor.GreenYellow);
+            }
 
             _canRespawn = true;
         }
@@ -402,9 +410,19 @@ namespace PolyPlane
             _playerPlane.AutoPilotOn = true;
             _playerPlane.ThrustOn = true;
             _playerPlane.Position = Utilities.FindSafeSpawnPoint(_objs, _playerPlane);
-            _playerPlane.Velocity = new D2DPoint(500f, 0f);
+
+            // Set player plane rotation to current guidance angle.
+            // Allow players to choose to spawn traveling left or right.
+            var guideAngle = GetPlayerGuidanceAngle();
+
+            if (Utilities.IsPointingRight(guideAngle))
+                _playerPlane.Rotation = 0f;
+            else
+                _playerPlane.Rotation = 180f;
+
+            _playerPlane.Velocity = Utilities.AngleToVectorDegrees(_playerPlane.Rotation, 500f);
+
             _playerPlane.RotationSpeed = 0f;
-            _playerPlane.Rotation = 0f;
             //_playerPlane.SASOn = true;
             _playerPlane.IsDisabled = false;
             _playerPlane.Reset();
@@ -641,6 +659,27 @@ namespace PolyPlane
                 _playerPlane.DroppingDecoy = true;
             else
                 _playerPlane.DroppingDecoy = false;
+
+            var guideAngle = GetPlayerGuidanceAngle();
+            _playerPlane.SetAutoPilotAngle(guideAngle);
+        }
+
+        private float GetPlayerGuidanceAngle()
+        {
+            // Poll current mouse position and apply offsets and scaling.
+            var mousePos = Control.MousePosition.ToD2DPoint();
+            var windowPos = this.DesktopLocation.ToD2DPoint();
+            var offsetPos = mousePos - windowPos;
+            var scaledPos = offsetPos * World.ViewPortScaleMulti;
+
+            // Get the scaled center point of the viewport.
+            var center = new D2DPoint(World.ViewPortSize.width * 0.5f, World.ViewPortSize.height * 0.5f);
+            center /= World.DEFAULT_DPI / (float)this.DeviceDpi; // Scale for DPI.
+
+            // Compute angle from center and update guidance.
+            var angle = center.AngleTo(scaledPos);
+
+            return angle;
         }
 
         private void ProcessQueuedEvents()
@@ -892,6 +931,11 @@ namespace PolyPlane
         {
             switch (e.Button)
             {
+                case MouseButtons.Left:
+                    if (_playerPlane.HasCrashed)
+                        _queueResetPlane = true;
+                    break;
+
                 case MouseButtons.Middle:
                     TargetLockedWithMissile();
                     break;
@@ -935,16 +979,6 @@ namespace PolyPlane
         {
             _shiftDown = e.Shift;
             _ctrlDown = e.Control;
-        }
-
-        private void PolyPlaneUI_MouseMove(object sender, MouseEventArgs e)
-        {
-            var center = new D2DPoint(World.ViewPortSize.width * 0.5f, World.ViewPortSize.height * 0.5f);
-            center /= World.DEFAULT_DPI / (float)this.DeviceDpi; // Scale for DPI.
-            var pos = new D2DPoint(e.X, e.Y) * World.ViewPortScaleMulti;
-            var angle = center.AngleTo(pos);
-
-            _playerPlane.SetAutoPilotAngle(angle);
         }
 
         private void PolyPlaneUI_MouseWheel(object? sender, MouseEventArgs e)

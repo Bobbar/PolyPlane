@@ -1019,11 +1019,11 @@ namespace PolyPlane.Rendering
             if (_hudMessageTimeout.IsRunning && !string.IsNullOrEmpty(_hudMessage))
             {
                 var pos = new D2DPoint(viewportsize.width * 0.5f, 300f);
-                var initSize = new D2DSize(400, 100);
+                var initSize = new D2DSize(600, 100);
                 var size = gfx.MeasureText(_hudMessage, _defaultFontName, FONT_SIZE, initSize);
                 var rect = new D2DRect(pos, size);
 
-                gfx.FillRectangle(rect, new D2DColor(0.5f, D2DColor.Gray));
+                gfx.FillRectangle(rect.Inflate(10f, 10f), new D2DColor(0.7f, D2DColor.Gray));
                 gfx.DrawTextCenter(_hudMessage, _hudMessageColor, _defaultFontName, FONT_SIZE, rect);
             }
 

@@ -44,6 +44,11 @@ namespace PolyPlane.Helpers
             return new D2DPoint(Math.Abs(point.X - other.X), Math.Abs(point.Y - other.Y));
         }
 
+        public static D2DPoint ToD2DPoint(this Point pnt)
+        {
+            return new D2DPoint(pnt.X, pnt.Y);
+        }
+
         public static float Angle(this D2DPoint vector, bool clamp = false)
         {
             var angle = (float)Math.Atan2(vector.Y, vector.X) * Utilities.RADS_TO_DEGREES;

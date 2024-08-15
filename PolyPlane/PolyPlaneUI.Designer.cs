@@ -47,7 +47,6 @@
             KeyPress += PolyPlaneUI_KeyPress;
             KeyUp += PolyPlaneUI_KeyUp;
             MouseDown += PolyPlaneUI_MouseDown;
-            MouseMove += PolyPlaneUI_MouseMove;
             ResumeLayout(false);
         }
 
