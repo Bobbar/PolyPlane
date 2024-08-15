@@ -171,9 +171,10 @@ namespace PolyPlane.GameObjects.Manager
 
                                     ImpactEvent?.Invoke(this, new ImpactEvent(plane, bullet, result.DoesDamage));
 
+                                    bullet.Position = pos;
+
                                     plane.HandleImpactResult(bullet, result);
 
-                                    bullet.Position = pos;
                                     bullet.IsExpired = true;
                                 }
                             }

@@ -608,7 +608,7 @@ namespace PolyPlane.Net
         {
             if (packet != null)
             {
-                var impactor = _objs.GetObjectByID(packet.ImpactorID);
+                var impactor = _objs.GetObjectByID(packet.ImpactorID) as GameObjectPoly;
 
                 if (impactor == null)
                     return;

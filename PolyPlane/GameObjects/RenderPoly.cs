@@ -6,6 +6,7 @@ namespace PolyPlane.GameObjects
     {
         public D2DPoint[] Poly;
         public D2DPoint[] SourcePoly;
+        public bool IsFlipped = false;
 
         public RenderPoly()
         {
@@ -59,11 +60,34 @@ namespace PolyPlane.GameObjects
             Utilities.ApplyTranslation(SourcePoly, SourcePoly, 0f, D2DPoint.Zero, scale);
         }
 
+
+        public int ClosestIdx(D2DPoint point)
+        {
+            int idx = 0;
+            float minDist = float.MaxValue;
+
+            for (int i = 0; i < SourcePoly.Length; i++)
+            {
+                var pnt = SourcePoly[i];
+                var dist = point.DistanceTo(pnt);
+
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    idx = i;
+                }
+            }
+
+            return idx;
+        }
+
         /// <summary>
         /// Flips the polygon along the Y axis.
         /// </summary>
         public void FlipY()
         {
+            IsFlipped = !IsFlipped;
+
             for (int i = 0; i < Poly.Length; i++)
             {
                 SourcePoly[i].Y = -SourcePoly[i].Y;
