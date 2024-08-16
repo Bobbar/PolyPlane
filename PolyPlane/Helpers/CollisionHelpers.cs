@@ -72,11 +72,21 @@ namespace PolyPlane.Helpers
         {
             var intersections = new List<D2DPoint>();
 
-            // Check the segment against every segment in the polygon.
-            for (int i = 0; i < poly.Length - 1; i++)
+            const int RANGE = 12; // Number of points on either side of the closest point to test.
+
+            // Find the point closed to the impactor and compute a range of points to check.
+            var closestIdx = Utilities.ClosestPolyIdx(a, poly);
+            var startIdx = Utilities.WrapIndex(closestIdx - RANGE, poly.Length);
+            var endIdx = Utilities.WrapIndex(closestIdx + RANGE, poly.Length);
+
+            // Check the segment against nearby segments in the polygon.
+            for (int i = 0; i < RANGE * 2; i++)
             {
-                var pnt1 = poly[i];
-                var pnt2 = poly[i + 1];
+                var idx1 = Utilities.WrapIndex(startIdx + i, poly.Length);
+                var idx2 = Utilities.WrapIndex(startIdx + i + 1, poly.Length);
+
+                var pnt1 = poly[idx1];
+                var pnt2 = poly[idx2];
 
                 if (IsIntersecting(a, b, pnt1, pnt2, out D2DPoint iPos))
                 {
@@ -102,11 +112,25 @@ namespace PolyPlane.Helpers
             // Project lines from each polygon vert of the impactor; one point at the current position, and one point at the next/future position.
             // Then for each of those lines, check for intersections on each line segment of the target object's polygon.
 
+            // Move the impactor backwards if it is inside the target poly.
+            while (Utilities.PointInPoly(impactorObj.Position, targPoly) && impactorObj.Position.Y != 0f)
+            {
+                impactorObj.Position -= impactorObj.Velocity * dt;
+                impactorObj.Update(World.DT, World.RenderScale);
+            }
+
             var hits = new List<D2DPoint>();
             var relVelo = (impactorObj.Velocity - targVelo) * dt; // Get relative velo.
             var relVeloHalf = relVelo * 0.5f; 
-            var impactorPoly = impactorObj.Polygon.Poly;
 
+            // One last check to make sure the previous position is also not inside the poly.
+            while (Utilities.PointInPoly(impactorObj.Position - relVeloHalf, targPoly) && impactorObj.Position.Y != 0f)
+            {
+                impactorObj.Position -= impactorObj.Velocity * dt;
+                impactorObj.Update(World.DT, World.RenderScale);
+            }
+
+            var impactorPoly = impactorObj.Polygon.Poly;
 
             // For new bullets, do a ray cast between the predicted "real" start position and the current position.
             // This is done because we are extrapolating the bullet position when a new packet is received,
@@ -123,11 +147,10 @@ namespace PolyPlane.Helpers
                 }
             }
 
-
             for (int i = 0; i < impactorPoly.Length; i++)
             {
-                var pnt1 = impactorPoly[i];
-                var pnt2 = impactorPoly[i] + relVelo;
+                var pnt1 = impactorPoly[i] - relVeloHalf;
+                var pnt2 = impactorPoly[i] + relVeloHalf;
 
                 // Check for an intersection and get the exact location of the impact.
                 if (PolyIntersect(pnt1, pnt2, targPoly, out D2DPoint iPosPoly))
@@ -137,8 +160,8 @@ namespace PolyPlane.Helpers
             }
 
             // One last check with the center point.
-            var centerPnt1 = impactorObj.Position;
-            var centerPnt2 = impactorObj.Position + relVelo;
+            var centerPnt1 = impactorObj.Position - relVeloHalf;
+            var centerPnt2 = impactorObj.Position + relVeloHalf;
 
             if (PolyIntersect(centerPnt1, centerPnt2, targPoly, out D2DPoint iPosCenter))
             {
@@ -171,8 +194,8 @@ namespace PolyPlane.Helpers
             var relVelo = (impactorObj.Velocity - targVelo) * dt; // Get relative velo.
             var relVeloHalf = relVelo * 0.5f;
 
-            var centerPnt1 = impactorObj.Position;
-            var centerPnt2 = impactorObj.Position + relVelo;
+            var centerPnt1 = impactorObj.Position - relVeloHalf;
+            var centerPnt2 = impactorObj.Position + relVeloHalf;
 
             if (PolyIntersect(centerPnt1, centerPnt2, targPoly, out D2DPoint iPosCenter))
             {

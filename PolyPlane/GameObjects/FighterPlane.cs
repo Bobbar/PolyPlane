@@ -134,7 +134,7 @@ namespace PolyPlane.GameObjects
         private int _numDecoys = MAX_DECOYS;
         private float _health = MAX_HEALTH;
 
-        private const float POLY_TESSELLATE_DIST = 3f; // Tessellation amount.
+        private const float POLY_TESSELLATE_DIST = 2f; // Tessellation amount. Smaller = higher resolution.
         private RenderPoly FlamePoly;
         private D2DLayer _polyClipLayer = null;
         private D2DColor _flameFillColor = new D2DColor(0.6f, D2DColor.Yellow);
@@ -541,6 +541,10 @@ namespace PolyPlane.GameObjects
             Wings.ForEach(w => w.Render(ctx));
             _gun.Render(ctx);
 
+
+            //foreach (var b in _bulletHoles)
+            //    ctx.DrawArrow(b.Position, b.Position + Utilities.AngleToVectorDegrees(b.Rotation, 10), D2DColor.Blue, 1f);
+
             //foreach (var pnt in this.Polygon.Poly)
             //    ctx.FillEllipseSimple(pnt, 0.5f, D2DColor.Red);
 
@@ -702,15 +706,20 @@ namespace PolyPlane.GameObjects
             _gun.Update(0f, World.RenderScale * this.RenderOffset);
         }
 
-        public void AddBulletHole(D2DPoint pos, float angle)
+        public void AddBulletHole(D2DPoint pos, float angle, float distortAmt = 3f)
         {
-            const float DISTORT_AMT = 3f;
-            
             // Find the closest poly point to the impact and distort the polygon.
             // Adds a "dent" basically.
-            var distortVec = Utilities.AngleToVectorDegrees(angle, DISTORT_AMT);
+            var distortVec = Utilities.AngleToVectorDegrees(angle, distortAmt);
             var closestIdx = this.Polygon.ClosestIdx(pos);
+
+            // Distort the closest point and the two surrounding points.
+            var prevIdx = Utilities.WrapIndex(closestIdx - 1, this.Polygon.Poly.Length);
+            var nextIdx = Utilities.WrapIndex(closestIdx + 1, this.Polygon.Poly.Length);
+
+            this.Polygon.SourcePoly[prevIdx] += distortVec * 0.6f;
             this.Polygon.SourcePoly[closestIdx] += distortVec;
+            this.Polygon.SourcePoly[nextIdx] += distortVec * 0.6f;
 
             var bulletHole = new BulletHole(this, pos + distortVec, angle);
             bulletHole.IsNetObject = this.IsNetObject;
@@ -734,7 +743,13 @@ namespace PolyPlane.GameObjects
             var ogPos = Utilities.ScaleToOrigin(this, result.ImpactPoint);
             var angle = result.ImpactAngle;
 
-            AddBulletHole(ogPos, angle);
+            const float BULLET_DISTORT_AMT = 3f;
+            const float MISSILE_DISTORT_AMT = 6f;
+            var distortAmt = BULLET_DISTORT_AMT;
+            if (impactor is Missile)
+                distortAmt = MISSILE_DISTORT_AMT;
+
+            AddBulletHole(ogPos, angle, distortAmt);
 
             if (result.DoesDamage)
             {
@@ -805,7 +820,7 @@ namespace PolyPlane.GameObjects
             // Make sure cockpit position is up-to-date.
             _cockpitPosition.Update(0f, World.RenderScale * this.RenderOffset);
 
-            var angle = impactor.Velocity.Angle() - this.Rotation;
+            var angle = (impactor.Velocity - this.Velocity).Angle() - this.Rotation;
             var result = new PlaneImpactResult();
             result.ImpactPoint = impactPos;
             result.ImpactAngle = angle;

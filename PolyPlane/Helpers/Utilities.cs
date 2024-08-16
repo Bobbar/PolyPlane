@@ -295,6 +295,50 @@ namespace PolyPlane.Helpers
             return c;
         }
 
+        /// <summary>
+        /// Finds the index of the polygon point which is closest to the specified point.
+        /// </summary>
+        /// <param name="point"></param>
+        /// <returns></returns>
+        public static int ClosestPolyIdx(D2DPoint point, D2DPoint[] poly)
+        {
+            int idx = 0;
+            float minDist = float.MaxValue;
+
+            for (int i = 0; i < poly.Length; i++)
+            {
+                var pnt = poly[i];
+                var dist = point.DistanceTo(pnt);
+
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    idx = i;
+                }
+            }
+
+            return idx;
+        }
+
+        /// <summary>
+        /// Wraps the specified index with to the specified length.
+        /// 
+        /// If the index is less than zero it wraps to the the length.  If the index is greater than length it wraps to zero.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        public static int WrapIndex(int index, int length)
+        {
+            if (index < 0)
+                index = length + index;
+
+            if (index >= length)
+                index = index % length;
+
+            return index;
+        }
+
         public static float ImpactTime(FighterPlane plane, Missile missile)
         {
             var dist = plane.Position.DistanceTo(missile.Position);
@@ -346,9 +390,9 @@ namespace PolyPlane.Helpers
             var groundPos1 = new D2DPoint(obj.Position.X - 99999f, 0f);
             var groundPos2 = new D2DPoint(obj.Position.X + 99999f, 0f);
 
-            // Find where our current velocity vector intersects the ground.
-            if (CollisionHelpers.IsIntersecting(obj.Position, obj.Position + obj.Velocity * 1000f, groundPos1, groundPos2, out D2DPoint iPos))
-                groundPos = iPos;
+            //// Find where our current velocity vector intersects the ground.
+            //if (CollisionHelpers.IsIntersecting(obj.Position, obj.Position + obj.Velocity * 1000f, groundPos1, groundPos2, out D2DPoint iPos))
+            //    groundPos = iPos;
 
             var groundDist = obj.Position.DistanceTo(groundPos);
             var closingRate = ClosingRate(obj, groundPos, D2DPoint.Zero);
