@@ -17,7 +17,7 @@ namespace PolyPlane.GameObjects
 
         private const float MIN_HOLE_SZ = 2f;
         private const float MAX_HOLE_SZ = 6f;
-        public float _rotOffset = 0f;
+        private float _rotOffset = 0f;
 
         public BulletHole(GameObject obj, D2DPoint offset, float angle, bool hasFlame = true) : base(obj, offset, hasFlame)
         {

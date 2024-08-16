@@ -89,11 +89,6 @@ namespace PolyPlane.AI_Behavior
             ConsiderNewTarget();
             ConsiderDropDecoy();
 
-            //this.Plane.Position = new D2DPoint(0f, -3000f);
-            //this.Plane.Rotation = 0f;
-            //this.Plane.Velocity = D2DPoint.Zero;
-            //this.Plane.SyncFixtures();
-
             var velo = this.Plane.AirSpeedTrue;
 
             if (velo > MAX_SPEED)

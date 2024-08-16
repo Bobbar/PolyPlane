@@ -157,61 +157,44 @@ namespace PolyPlane.GameObjects
 
         private IAIBehavior _aiBehavior;
 
-        //private readonly D2DPoint[] _planePoly =
-        //[
-        //    new D2DPoint(28,0),
-        //    new D2DPoint(25,-2),
-        //    new D2DPoint(20,-3),
-        //    new D2DPoint(16,-5),
-        //    new D2DPoint(13,-6),
-        //    new D2DPoint(10,-5),
-        //    new D2DPoint(7,-4),
-        //    new D2DPoint(4,-3),
-        //    new D2DPoint(-13,-3),
-        //    new D2DPoint(-17,-10),
-        //    new D2DPoint(-21,-10),
-        //    new D2DPoint(-25,-3),
-        //    new D2DPoint(-28,-1),
-        //    new D2DPoint(-28,2),
-        //    new D2DPoint(-19,3),
-        //    new D2DPoint(21,3),
-        //    new D2DPoint(25,2),
-        //];
-
         private readonly D2DPoint[] _planePoly =
         [
            new D2DPoint(28,0),
-new D2DPoint(25,-2),
-new D2DPoint(20,-3),
-new D2DPoint(16,-5),
-new D2DPoint(13,-6),
-new D2DPoint(10,-5),
-new D2DPoint(7,-4),
-new D2DPoint(4,-3),
-new D2DPoint(-1,-3),
-new D2DPoint(-5,-3),
-new D2DPoint(-9,-3),
-new D2DPoint(-13,-3),
-new D2DPoint(-15,-7),
-new D2DPoint(-17,-10),
-new D2DPoint(-21,-10),
-new D2DPoint(-23,-7),
-new D2DPoint(-25,-3),
-new D2DPoint(-28,-1),
-new D2DPoint(-28,2),
-new D2DPoint(-24,3),
-new D2DPoint(-19,3),
-new D2DPoint(-14,3),
-new D2DPoint(-9,3),
-new D2DPoint(-4,3),
-new D2DPoint(1,3),
-new D2DPoint(6,3),
-new D2DPoint(11,3),
-new D2DPoint(15,3),
-new D2DPoint(18,3),
-new D2DPoint(21,3),
-new D2DPoint(25,2),
-
+           new D2DPoint(25,-2),
+           new D2DPoint(20,-3),
+           new D2DPoint(16,-5.3f),
+           new D2DPoint(13,-6),
+           new D2DPoint(10,-5.3f),
+           new D2DPoint(7,-4),
+           new D2DPoint(4,-3),
+           new D2DPoint(-1,-3),
+           new D2DPoint(-5,-3),
+           new D2DPoint(-9,-3),
+           new D2DPoint(-13,-3),
+           new D2DPoint(-14,-5),
+           new D2DPoint(-15,-7),
+           new D2DPoint(-16,-9),
+           new D2DPoint(-17,-10),
+           new D2DPoint(-19,-10),
+           new D2DPoint(-21,-10),
+           new D2DPoint(-22,-9),
+           new D2DPoint(-23,-7),
+           new D2DPoint(-24,-5),
+           new D2DPoint(-25,-3),
+           new D2DPoint(-28,-1),
+           new D2DPoint(-28,2),
+           new D2DPoint(-24,3),
+           new D2DPoint(-19,3),
+           new D2DPoint(-14,3),
+           new D2DPoint(-9,3),
+           new D2DPoint(-4,3),
+           new D2DPoint(1,3),
+           new D2DPoint(6,3),
+           new D2DPoint(11,3),
+           new D2DPoint(15,3),
+           new D2DPoint(18,3),
+           new D2DPoint(21,3),
+           new D2DPoint(25,2),
         ];
 
         private readonly D2DPoint[] _flamePoly =
@@ -416,11 +399,22 @@ new D2DPoint(25,2),
 
                 foreach (var wing in Wings)
                 {
+                    // How much force a damaged wing contributes.
+                    const float DAMAGED_FACTOR = 0.2f;
+
                     var force = wing.GetLiftDragForce();
                     var torque = GetTorque(wing, force);
 
-                    wingForce += force;
-                    wingTorque += torque;
+                    if (wing.Visible)
+                    {
+                        wingForce += force;
+                        wingTorque += torque;
+                    }
+                    else
+                    {
+                        wingForce += force * DAMAGED_FACTOR;
+                        wingTorque += torque * DAMAGED_FACTOR;
+                    }
                 }
 
                 if (IsDisabled)
@@ -465,6 +459,24 @@ new D2DPoint(25,2),
                 Wings.ForEach(w => w.Update(partialDT, renderScale));
                 _centerOfThrust.Update(partialDT, renderScale);
                 _centerOfMass.Update(partialDT, renderScale);
+            }
+
+            // Check for wing and engine damage.
+            // If the plane polygon gets distorted to the point
+            // that a wing attachment or engine are no longer
+            // within the polygon, we consider them damaged.
+            foreach (var wing in Wings)
+            {
+                if (!Utilities.PointInPoly(wing.PivotPoint.Position, this.Polygon.Poly))
+                {
+                    wing.Visible = false;
+                }
+            }
+
+            if (!Utilities.PointInPoly(_centerOfThrust.Position, this.Polygon.Poly))
+            {
+                this.ThrustOn = false;
+                _thrustAmt.Set(0f);
             }
 
             _gForce = _gforceAvg.Current;
@@ -544,8 +556,7 @@ new D2DPoint(25,2),
                 _engineFireFlame.Render(ctx);
 
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black.WithAlpha(0.3f), 0.5f, D2DDashStyle.Solid, _planeColor);
-            DrawCockpit(ctx.Gfx);
-            DrawBulletHoles(ctx);
+            DrawClippedObjects(ctx);
             Wings.ForEach(w => w.Render(ctx));
             _gun.Render(ctx);
 
@@ -555,12 +566,12 @@ new D2DPoint(25,2),
             //_gunPosition.Render(ctx);
         }
 
-        private void DrawBulletHoles(RenderContext ctx)
+        private void DrawClippedObjects(RenderContext ctx)
         {
             if (_polyClipLayer == null)
                 _polyClipLayer = ctx.Device.CreateLayer();
 
-            // Clip the polygon to give the holes some depth/realism.
+            // Clip with the polygon.
             using (var polyClipGeo = ctx.Device.CreatePathGeometry())
             {
                 polyClipGeo.AddLines(this.Polygon.Poly);
@@ -568,49 +579,37 @@ new D2DPoint(25,2),
 
                 ctx.Gfx.PushLayer(_polyClipLayer, ctx.Viewport, polyClipGeo);
 
-                ctx.Gfx.PushTransform();
-                ctx.Gfx.RotateTransform(_cockpitPosition.Rotation, _cockpitPosition.Position);
+                DrawCockpit(ctx);
+                DrawBulletHoles(ctx);
 
-                var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
-                ctx.Gfx.FillEllipse(cockpitEllipse, WasHeadshot ? D2DColor.DarkRed : _cockpitColor);
-                ctx.Gfx.DrawEllipse(cockpitEllipse, D2DColor.Black, 0.5f);
-
-                ctx.Gfx.PopTransform();
-
-
-
-                foreach (var hole in _bulletHoles)
-                {
-                    ctx.Gfx.PushTransform();
-                    ctx.Gfx.RotateTransform(hole.Rotation, hole.Position);
-
-                    ctx.Gfx.FillEllipse(new D2DEllipse(hole.Position, hole.OuterHoleSize), hole.Color);
-                    ctx.Gfx.FillEllipse(new D2DEllipse(hole.Position, hole.HoleSize), D2DColor.Black);
-
-                    ctx.Gfx.PopTransform();
-
-                }
-
-
-              
                 ctx.Gfx.PopLayer();
             }
-
-
-            //foreach (var hole in _bulletHoles)
-            //    ctx.Gfx.DrawArrow(hole.Position, hole.Position + Utilities.AngleToVectorDegrees(hole.Rotation, 10f), D2DColor.Red);
         }
 
-        private void DrawCockpit(D2DGraphics gfx)
+        private void DrawBulletHoles(RenderContext ctx)
         {
-            //gfx.PushTransform();
-            //gfx.RotateTransform(_cockpitPosition.Rotation, _cockpitPosition.Position);
+            foreach (var hole in _bulletHoles)
+            {
+                ctx.Gfx.PushTransform();
+                ctx.Gfx.RotateTransform(hole.Rotation, hole.Position);
 
-            //var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
-            //gfx.FillEllipse(cockpitEllipse, WasHeadshot ? D2DColor.DarkRed : _cockpitColor);
-            //gfx.DrawEllipse(cockpitEllipse, D2DColor.Black, 0.5f);
+                ctx.Gfx.FillEllipse(new D2DEllipse(hole.Position, hole.OuterHoleSize), hole.Color);
+                ctx.Gfx.FillEllipse(new D2DEllipse(hole.Position, hole.HoleSize), D2DColor.Black);
 
-            //gfx.PopTransform();
+                ctx.Gfx.PopTransform();
+            }
+        }
+
+        private void DrawCockpit(RenderContext ctx)
+        {
+            ctx.Gfx.PushTransform();
+            ctx.Gfx.RotateTransform(_cockpitPosition.Rotation, _cockpitPosition.Position);
+
+            var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
+            ctx.Gfx.FillEllipse(cockpitEllipse, WasHeadshot ? D2DColor.DarkRed : _cockpitColor);
+            ctx.Gfx.DrawEllipse(cockpitEllipse, D2DColor.Black, 0.5f);
+
+            ctx.Gfx.PopTransform();
         }
 
         private void DrawFOVCone(D2DGraphics gfx)
@@ -721,16 +720,15 @@ new D2DPoint(25,2),
 
         public void AddBulletHole(D2DPoint pos, float angle)
         {
-            var bulletHole = new BulletHole(this, pos, angle);
-
-
-            //var cpi = this.Polygon.ClosestIdx(pos);
-            //var distort = this.Polygon.SourcePoly[cpi] + Utilities.AngleToVectorDegrees(angle, 2f);
-
-            //this.Polygon.SourcePoly[cpi] = distort;
-
+            const float DISTORT_AMT = 3f;
             
+            // Find the closest poly point to the impact and distort the polygon.
+            // Adds a "dent" basically.
+            var distortVec = Utilities.AngleToVectorDegrees(angle, DISTORT_AMT);
+            var closestIdx = this.Polygon.ClosestIdx(pos);
+            this.Polygon.SourcePoly[closestIdx] += distortVec;
 
+            var bulletHole = new BulletHole(this, pos + distortVec, angle);
             bulletHole.IsNetObject = this.IsNetObject;
             _bulletHoles.Add(bulletHole);
         }
@@ -751,56 +749,6 @@ new D2DPoint(25,2),
             // Scale the impact position back to the origin of the polygon.
             var ogPos = Utilities.ScaleToOrigin(this, result.ImpactPoint);
             var angle = result.ImpactAngle;
-
-
-            var cpi = this.Polygon.ClosestIdx(ogPos);
-            var distort = this.Polygon.SourcePoly[cpi] + Utilities.AngleToVectorDegrees(angle, 3f);
-
-            this.Polygon.SourcePoly[cpi] = distort;
-
-            //var polyList = this.Polygon.SourcePoly.ToList();
-
-            //var A = ogPos;
-            //var B = ogPos + Utilities.AngleToVectorDegrees(result.ImpactAngle, 2f);
-            //int idxA = 0;
-            //int idxB = 0;
-
-            //for (int i = 0; i < this.Polygon.SourcePoly.Length - 1; i++)
-            //{
-            //    var pntA = polyList[i];
-            //    var pntB = polyList[i + 1];
-
-            //    if (CollisionHelpers.IsIntersecting(A, B, pntA, pntB, out D2DPoint pos))
-            //    {
-            //        idxA = i;
-            //        idxB = i + 1;
-            //    }
-
-            //}
-
-            //var dentPoly = new D2DPoint[]
-            //{
-            //    new D2DPoint(1, -2),
-            //    new D2DPoint(3, 0),
-            //    new D2DPoint(1, 2)
-            //};
-
-            //Utilities.ApplyTranslation(dentPoly, dentPoly, result.ImpactAngle, ogPos, World.RenderScale);
-
-            ////polyList.Insert(idxA + 1, dentPoly[0]);
-            ////polyList.Insert(idxA + 2, dentPoly[1]);
-            ////polyList.Insert(idxA + 3, dentPoly[2]);
-
-
-            //polyList[idxA] = dentPoly[0];
-            //polyList.Insert(idxA + 1, dentPoly[1]);
-            //polyList.Insert(idxA + 2, dentPoly[2]);
-
-            //this.Polygon.SourcePoly = polyList.ToArray();
-            //this.Polygon.Poly = new D2DPoint[this.Polygon.SourcePoly.Length];
-            //Array.Copy(this.Polygon.SourcePoly, this.Polygon.Poly, this.Polygon.SourcePoly.Length);
-            ////polyList.Insert(idxA, )
-
 
             AddBulletHole(ogPos, angle);
 
@@ -967,6 +915,8 @@ new D2DPoint(25,2),
             _easePhysicsTimer.Restart();
             AIRespawnReady = false;
             _engineFireFlame.StopSpawning();
+
+            Wings.ForEach(w => w.Visible = true);
 
             var flipped = this.Polygon.IsFlipped;
 

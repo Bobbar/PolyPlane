@@ -871,7 +871,6 @@ namespace PolyPlane
                     break;
 
                 case 't':
-                    _playerPlane.Position = new D2DPoint(0f, -3000f);
                     break;
 
                 case 'u':

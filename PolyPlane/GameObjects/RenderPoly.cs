@@ -60,7 +60,11 @@ namespace PolyPlane.GameObjects
             Utilities.ApplyTranslation(SourcePoly, SourcePoly, 0f, D2DPoint.Zero, scale);
         }
 
-
+        /// <summary>
+        /// Finds the index of the polygon point which is closest to the specified point.
+        /// </summary>
+        /// <param name="point"></param>
+        /// <returns></returns>
         public int ClosestIdx(D2DPoint point)
         {
             int idx = 0;

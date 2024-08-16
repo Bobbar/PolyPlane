@@ -24,8 +24,9 @@ namespace PolyPlane.GameObjects
         public D2DPoint DragVector { get; set; }
         public float AoA { get; set; }
 
-        private FixturePoint FixedPosition;
-        private FixturePoint PivotPoint;
+        public FixturePoint FixedPosition;
+        public FixturePoint PivotPoint;
+
         private GameObject _parentObject;
         private RateLimiter _defRateLimit = new RateLimiter(rate: 80f);
 
@@ -96,12 +97,15 @@ namespace PolyPlane.GameObjects
             //var end2Raw = this.Position + wingVecRaw * RenderLength;
             //gfx.DrawLine(startRaw, end2Raw, D2DColor.Red, 1f, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Round);
 
-            // Draw wing.
-            var wingVec = Utilities.AngleToVectorDegrees(this.Rotation);
-            var start = this.Position - wingVec * _params.RenderLength;
-            var end = this.Position + wingVec * _params.RenderLength;
-            ctx.DrawLine(start, end, D2DColor.Black, _params.RenderWidth + 0.5f, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
-            ctx.DrawLine(start, end, D2DColor.Gray, _params.RenderWidth, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+            if (this.Visible)
+            {
+                // Draw wing.
+                var wingVec = Utilities.AngleToVectorDegrees(this.Rotation);
+                var start = this.Position - wingVec * _params.RenderLength;
+                var end = this.Position + wingVec * _params.RenderLength;
+                ctx.DrawLine(start, end, D2DColor.Black, _params.RenderWidth + 0.5f, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+                ctx.DrawLine(start, end, D2DColor.Gray, _params.RenderWidth, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+            }
 
             if (World.ShowAero)
             {

@@ -1,7 +1,6 @@
 ﻿using PolyPlane.Helpers;
 using PolyPlane.Net;
 using PolyPlane.Rendering;
-using System.Diagnostics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -323,7 +322,7 @@ namespace PolyPlane.GameObjects
             base.Update(dt, renderScale);
 
             if (Polygon != null)
-                Polygon.Update(this.Position, this.Rotation, renderScale);
+                Polygon.Update(this.Position, this.Rotation, renderScale); 
         }
 
         /// <summary>
