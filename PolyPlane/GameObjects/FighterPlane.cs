@@ -134,7 +134,7 @@ namespace PolyPlane.GameObjects
         private int _numDecoys = MAX_DECOYS;
         private float _health = MAX_HEALTH;
 
-
+        private const float POLY_TESSELLATE_DIST = 3f; // Tessellation amount.
         private RenderPoly FlamePoly;
         private D2DLayer _polyClipLayer = null;
         private D2DColor _flameFillColor = new D2DColor(0.6f, D2DColor.Yellow);
@@ -159,42 +159,23 @@ namespace PolyPlane.GameObjects
 
         private readonly D2DPoint[] _planePoly =
         [
-           new D2DPoint(28,0),
-           new D2DPoint(25,-2),
-           new D2DPoint(20,-3),
-           new D2DPoint(16,-5.3f),
-           new D2DPoint(13,-6),
-           new D2DPoint(10,-5.3f),
-           new D2DPoint(7,-4),
-           new D2DPoint(4,-3),
-           new D2DPoint(-1,-3),
-           new D2DPoint(-5,-3),
-           new D2DPoint(-9,-3),
-           new D2DPoint(-13,-3),
-           new D2DPoint(-14,-5),
-           new D2DPoint(-15,-7),
-           new D2DPoint(-16,-9),
-           new D2DPoint(-17,-10),
-           new D2DPoint(-19,-10),
-           new D2DPoint(-21,-10),
-           new D2DPoint(-22,-9),
-           new D2DPoint(-23,-7),
-           new D2DPoint(-24,-5),
-           new D2DPoint(-25,-3),
-           new D2DPoint(-28,-1),
-           new D2DPoint(-28,2),
-           new D2DPoint(-24,3),
-           new D2DPoint(-19,3),
-           new D2DPoint(-14,3),
-           new D2DPoint(-9,3),
-           new D2DPoint(-4,3),
-           new D2DPoint(1,3),
-           new D2DPoint(6,3),
-           new D2DPoint(11,3),
-           new D2DPoint(15,3),
-           new D2DPoint(18,3),
-           new D2DPoint(21,3),
-           new D2DPoint(25,2),
+            new D2DPoint(28,0),
+            new D2DPoint(25,-2),
+            new D2DPoint(20,-3),
+            new D2DPoint(16,-5.3f),
+            new D2DPoint(13,-6),
+            new D2DPoint(10,-5.3f),
+            new D2DPoint(7,-4),
+            new D2DPoint(4,-3),
+            new D2DPoint(-13,-3),
+            new D2DPoint(-17,-10),
+            new D2DPoint(-21,-10),
+            new D2DPoint(-25,-3),
+            new D2DPoint(-28,-1),
+            new D2DPoint(-28,2),
+            new D2DPoint(-19,3),
+            new D2DPoint(21,3),
+            new D2DPoint(25,2),
         ];
 
         private readonly D2DPoint[] _flamePoly =
@@ -240,7 +221,7 @@ namespace PolyPlane.GameObjects
 
             this.RenderOffset = 1.5f;
 
-            this.Polygon = new RenderPoly(_planePoly, this.RenderOffset);
+            this.Polygon = new RenderPoly(_planePoly, this.RenderOffset, POLY_TESSELLATE_DIST);
             this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), this.RenderOffset);
 
             InitWings();
@@ -559,6 +540,9 @@ namespace PolyPlane.GameObjects
             DrawClippedObjects(ctx);
             Wings.ForEach(w => w.Render(ctx));
             _gun.Render(ctx);
+
+            //foreach (var pnt in this.Polygon.Poly)
+            //    ctx.FillEllipseSimple(pnt, 0.5f, D2DColor.Red);
 
             //DrawFOVCone(gfx);
             //_cockpitPosition.Render(ctx);
@@ -920,7 +904,8 @@ namespace PolyPlane.GameObjects
 
             var flipped = this.Polygon.IsFlipped;
 
-            this.Polygon = new RenderPoly(_planePoly, this.RenderOffset);
+            this.Polygon = new RenderPoly(_planePoly, this.RenderOffset, POLY_TESSELLATE_DIST);
+
             if (flipped)
                 this.Polygon.FlipY();
 
