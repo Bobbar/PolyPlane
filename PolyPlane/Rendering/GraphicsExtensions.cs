@@ -27,9 +27,8 @@ namespace PolyPlane.Rendering
         }
 
 
-        public static void DrawArrow(this D2DGraphics gfx, D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f)
+        public static void DrawArrow(this D2DGraphics gfx, D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f, float arrowLen = 10f)
         {
-            const float ARROW_LEN = 10f;
             const float ARROW_ANGLE = 140f;
 
             var angle = (end - start).Angle();
@@ -37,13 +36,12 @@ namespace PolyPlane.Rendering
             var arrow2 = Utilities.AngleToVectorDegrees(angle - ARROW_ANGLE);
 
             gfx.DrawLine(start, end, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
-            gfx.DrawLine(end, end + arrow1 * ARROW_LEN, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
-            gfx.DrawLine(end, end + arrow2 * ARROW_LEN, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+            gfx.DrawLine(end, end + arrow1 * arrowLen, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+            gfx.DrawLine(end, end + arrow2 * arrowLen, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
         }
 
-        public static void DrawArrowClamped(this D2DGraphics gfx, D2DRect viewport, D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f)
+        public static void DrawArrowClamped(this D2DGraphics gfx, D2DRect viewport, D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f, float arrowLen = 10f)
         {
-            const float ARROW_LEN = 10f;
             const float ARROW_ANGLE = 140f;
 
             var angle = (end - start).Angle();
@@ -51,8 +49,8 @@ namespace PolyPlane.Rendering
             var arrow2 = Utilities.AngleToVectorDegrees(angle - ARROW_ANGLE);
 
             gfx.DrawLineClamped(viewport, start, end, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
-            gfx.DrawLineClamped(viewport, end, end + arrow1 * ARROW_LEN, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
-            gfx.DrawLineClamped(viewport, end, end + arrow2 * ARROW_LEN, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+            gfx.DrawLineClamped(viewport, end, end + arrow1 * arrowLen, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+            gfx.DrawLineClamped(viewport, end, end + arrow2 * arrowLen, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
         }
 
         public static void DrawCrosshair(this D2DGraphics gfx, D2DPoint pos, float weight, D2DColor color, float innerRadius, float outerRadius)

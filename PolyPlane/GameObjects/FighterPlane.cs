@@ -543,7 +543,7 @@ namespace PolyPlane.GameObjects
 
 
             //foreach (var b in _bulletHoles)
-            //    ctx.DrawArrow(b.Position, b.Position + Utilities.AngleToVectorDegrees(b.Rotation, 10), D2DColor.Blue, 1f);
+            //    ctx.DrawArrow(b.Position, b.Position + Utilities.AngleToVectorDegrees(b.Rotation, 10), D2DColor.Blue, 1f, 3f);
 
             //foreach (var pnt in this.Polygon.Poly)
             //    ctx.FillEllipseSimple(pnt, 0.5f, D2DColor.Red);
@@ -551,7 +551,6 @@ namespace PolyPlane.GameObjects
             //DrawFOVCone(gfx);
             //_cockpitPosition.Render(ctx);
             //_centerOfThrust.Render(ctx);
-            //_gunPosition.Render(ctx);
         }
 
         private void DrawClippedObjects(RenderContext ctx)

@@ -4,7 +4,7 @@ namespace PolyPlane.Helpers
 {
     public sealed class SpatialGrid
     {
-        private const int SPATIAL_GRID_SIDE_LEN = 10;
+        private const int SPATIAL_GRID_SIDE_LEN = 9;
 
         private Dictionary<int, List<GameObject>> _grid = new Dictionary<int, List<GameObject>>();
         private List<KeyValuePair<int, GameObject>> _tempStorage = new List<KeyValuePair<int, GameObject>>();
