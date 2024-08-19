@@ -135,6 +135,9 @@ namespace PolyPlane.GameObjects
         private float _health = MAX_HEALTH;
 
         private const float POLY_TESSELLATE_DIST = 2f; // Tessellation amount. Smaller = higher resolution.
+        private const float BULLET_DISTORT_AMT = 3f;
+        private const float MISSILE_DISTORT_AMT = 6f;
+
         private RenderPoly FlamePoly;
         private D2DLayer _polyClipLayer = null;
         private D2DColor _flameFillColor = new D2DColor(0.6f, D2DColor.Yellow);
@@ -287,9 +290,6 @@ namespace PolyPlane.GameObjects
         private void InitWings()
         {
             float defRate = 55f;
-
-            if (_isAIPlane)
-                defRate = 40f;
 
             // Main wing.
             AddWing(new Wing(this, new WingParameters()
@@ -742,8 +742,6 @@ namespace PolyPlane.GameObjects
             var ogPos = Utilities.ScaleToOrigin(this, result.ImpactPoint);
             var angle = result.ImpactAngle;
 
-            const float BULLET_DISTORT_AMT = 3f;
-            const float MISSILE_DISTORT_AMT = 6f;
             var distortAmt = BULLET_DISTORT_AMT;
             if (impactor is Missile)
                 distortAmt = MISSILE_DISTORT_AMT;
@@ -819,7 +817,7 @@ namespace PolyPlane.GameObjects
             // Make sure cockpit position is up-to-date.
             _cockpitPosition.Update(0f, World.RenderScale * this.RenderOffset);
 
-            var angle = (impactor.Velocity - this.Velocity).Angle() - this.Rotation;
+            var angle = Utilities.ClampAngle((impactor.Velocity - this.Velocity).Angle() - this.Rotation);
             var result = new PlaneImpactResult();
             result.ImpactPoint = impactPos;
             result.ImpactAngle = angle;
@@ -830,8 +828,13 @@ namespace PolyPlane.GameObjects
 
                 if (this.Health > 0)
                 {
+                    var distortAmt = BULLET_DISTORT_AMT;
+                    if (impactor is Missile)
+                        distortAmt = MISSILE_DISTORT_AMT;
+                    
+                    var distortVec = Utilities.AngleToVectorDegrees(angle + this.Rotation, distortAmt);
                     var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
-                    var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos);
+                    var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos + distortVec);
                     if (hitCockpit)
                     {
                         result.WasHeadshot = true;
