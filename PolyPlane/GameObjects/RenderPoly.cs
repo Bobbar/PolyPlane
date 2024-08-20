@@ -99,19 +99,19 @@ namespace PolyPlane.GameObjects
             var srcCopy = new List<D2DPoint>();
 
             // Iterate poly points and add new points as needed.
-            for (int i = 0; i < this.SourcePoly.Length - 1; i++)
+            for (int i = 0; i < this.SourcePoly.Length; i++)
             {
-                var pnt1 = this.SourcePoly[i];
-                var pnt2 = this.SourcePoly[i + 1];
+                var pnt1 = this.SourcePoly[Utilities.WrapIndex(i, this.SourcePoly.Length)];
+                var pnt2 = this.SourcePoly[Utilities.WrapIndex(i + 1, this.SourcePoly.Length)];
                 var dist = pnt1.DistanceTo(pnt2);
                 var dir = (pnt2 - pnt1).Normalized();
 
-                if (dist > minDist)
+                if (dist >= minDist)
                 {
                     var num = (int)(dist / minDist);
                     var amt = dist / (float)num;
                     var pos = pnt1;
-                   
+
                     for (int j = 0; j < num; j++)
                     {
                         srcCopy.Add(pos);
@@ -123,29 +123,6 @@ namespace PolyPlane.GameObjects
                     srcCopy.Add(pnt1);
                 }
             }
-
-            // Handle the last and first points.
-            var last = this.SourcePoly.Last();
-            var first = this.SourcePoly.First();
-            var ldist = last.DistanceTo(first);
-            var ldir = (first - last).Normalized();
-            if (ldist > minDist)
-            {
-                var num = (int)(ldist / minDist);
-                var amt = ldist / (float)num;
-                var pos = last;
-
-                for (int j = 0; j < num; j++)
-                {
-                    srcCopy.Add(pos);
-                    pos += ldir * amt;
-                }
-            }
-            else
-            {
-                srcCopy.Add(last);
-            }
-
 
             this.SourcePoly = srcCopy.ToArray();
             this.Poly = new D2DPoint[this.SourcePoly.Length];
