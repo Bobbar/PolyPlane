@@ -74,8 +74,9 @@ namespace PolyPlane.GameObjects
             this.Velocity = D2DPoint.Zero;
         }
 
-        public void FlipY()
+        public override void FlipY()
         {
+            base.FlipY();
             PivotPoint.FlipY();
             FixedPosition.FlipY();
             Reset(this.Position);

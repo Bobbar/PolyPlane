@@ -62,8 +62,9 @@ namespace PolyPlane.GameObjects
             _smoke.Render(ctx);
         }
 
-        public void FlipY()
+        public override void FlipY()
         {
+            base.FlipY();
             _attachPoint.FlipY();
         }
 

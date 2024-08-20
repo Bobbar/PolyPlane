@@ -30,8 +30,9 @@ namespace PolyPlane.GameObjects
             this.Position = Utilities.ApplyTranslation(ReferencePosition, gameObject.Rotation, gameObject.Position, World.RenderScale);
         }
   
-        public void FlipY()
+        public override void FlipY()
         {
+            base.FlipY();
             ReferencePosition = new D2DPoint(ReferencePosition.X, ReferencePosition.Y * -1);
         }
 

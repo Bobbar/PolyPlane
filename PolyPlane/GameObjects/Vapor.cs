@@ -71,8 +71,9 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public void FlipY()
+        public override void FlipY()
         {
+            base.FlipY();
             _refPos.FlipY();
         }
 

@@ -124,8 +124,9 @@ namespace PolyPlane.GameObjects
             _parts.ForEach(p => p.Render(ctx));
         }
 
-        public void FlipY()
+        public override void FlipY()
         {
+            base.FlipY();
             this._refPos.FlipY();
         }
 

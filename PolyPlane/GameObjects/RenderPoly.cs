@@ -2,7 +2,7 @@
 
 namespace PolyPlane.GameObjects
 {
-    public class RenderPoly
+    public class RenderPoly : IFlippable
     {
         public D2DPoint[] Poly;
         public D2DPoint[] SourcePoly;

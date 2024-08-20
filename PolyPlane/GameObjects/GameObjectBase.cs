@@ -5,7 +5,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public abstract class GameObject : IEquatable<GameObject>, IDisposable
+    public abstract class GameObject : IEquatable<GameObject>, IDisposable, IFlippable
     {
         private const float MAX_ROT_SPD = 3000f;
 
@@ -234,6 +234,9 @@ namespace PolyPlane.GameObjects
                 return;
         }
 
+        public virtual void FlipY()
+        { }
+
         public float FOVToObject(GameObject obj)
         {
             var dir = obj.Position - this.Position;
@@ -323,6 +326,11 @@ namespace PolyPlane.GameObjects
 
             if (Polygon != null)
                 Polygon.Update(this.Position, this.Rotation, renderScale); 
+        }
+
+        public override void FlipY()
+        {
+            base.FlipY();
         }
 
         /// <summary>

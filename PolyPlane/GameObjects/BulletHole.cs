@@ -32,7 +32,7 @@ namespace PolyPlane.GameObjects
             _rotOffset = angle;
         }
 
-        public void FlipY()
+        public override void FlipY()
         {
             base.FlipY();
             _rotOffset = Utilities.ClampAngle(_rotOffset * -1f);
