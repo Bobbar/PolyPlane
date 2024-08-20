@@ -31,7 +31,7 @@ namespace PolyPlane
         private readonly float SWEEP_RATE = 300f;
 
         private float _sweepAngle = 0f;
-        private float _maxRange = 40000f;
+        private float _maxRange = 60000f;
         private float _maxAge = 2f;
         private float _radius = 150f;
         private bool _hostIsAI = false;
