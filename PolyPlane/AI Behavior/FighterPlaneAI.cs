@@ -1,5 +1,6 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.Helpers;
+using System.Diagnostics;
 
 namespace PolyPlane.AI_Behavior
 {
@@ -70,7 +71,8 @@ namespace PolyPlane.AI_Behavior
 
             _sineWavePos += 0.3f * dt;
 
-            if (_sineWavePos > 99999f)
+            const float MAX_SIN_POS = 360f * Utilities.DEGREES_TO_RADS;
+            if (_sineWavePos > MAX_SIN_POS)
                 _sineWavePos = 0f;
 
             _fireBurstTimer.Update(dt);

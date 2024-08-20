@@ -135,6 +135,9 @@ namespace PolyPlane.Helpers
 
         public static float ClampAngle(float angle)
         {
+            if (angle >= 0f && angle <= 360f)
+                return angle;
+
             var ret = angle % 360f;
 
             if (ret < 0f)
