@@ -5,7 +5,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane
 {
-    public class Radar : GameObject
+    public class Radar
     {
         public D2DPoint Position { get; set; } = D2DPoint.Zero;
         public FighterPlane HostPlane;
@@ -62,13 +62,11 @@ namespace PolyPlane
             _lostLockTimer.TriggerCallback = () => ClearLock();
         }
 
-        public override void Update(float dt, float renderScale)
+        public void Update(float dt, float renderScale)
         {
             // Increase sweep FOV as needed to ensure we don't skip over any objects?
             if (SWEEP_RATE * World.DT > SWEEP_FOV)
                 SWEEP_FOV = (SWEEP_RATE * World.DT) * 1.2f;
-
-            base.Update(dt, renderScale);
 
             _lockTimer.Update(dt);
             _lostLockTimer.Update(dt);
@@ -154,10 +152,8 @@ namespace PolyPlane
 
         }
 
-        public override void Render(RenderContext ctx)
+        public void Render(RenderContext ctx)
         {
-            base.Render(ctx);
-
             var gfx = ctx.Gfx;
 
             // Background
