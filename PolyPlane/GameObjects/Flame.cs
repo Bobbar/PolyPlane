@@ -159,7 +159,7 @@ namespace PolyPlane.GameObjects
             if (_parts.Count < MAX_PARTS)
             {
                 _parts.Add(newPart);
-                World.ObjectManager.AddFlame(newPart);
+                World.ObjectManager.EnqueueFlame(newPart);
             }
             else
             {
@@ -168,7 +168,7 @@ namespace PolyPlane.GameObjects
                 _parts.RemoveAt(0);
 
                 _parts.Add(newPart);
-                World.ObjectManager.AddFlame(newPart);
+                World.ObjectManager.EnqueueFlame(newPart);
             }
         }
 

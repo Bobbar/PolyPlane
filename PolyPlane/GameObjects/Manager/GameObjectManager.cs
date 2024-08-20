@@ -28,6 +28,7 @@ namespace PolyPlane.GameObjects
         public RingBuffer<GameObject> NewBullets = new RingBuffer<GameObject>(500);
         public RingBuffer<GameObject> NewMissiles = new RingBuffer<GameObject>(500);
         public RingBuffer<FighterPlane> NewPlanes = new RingBuffer<FighterPlane>(500);
+        public RingBuffer<FlamePart> NewFlames = new RingBuffer<FlamePart>(500);
 
         private Dictionary<int, GameObject> _objLookup = new Dictionary<int, GameObject>();
         private SpatialGrid _spatialGrid = new SpatialGrid();
@@ -72,6 +73,11 @@ namespace PolyPlane.GameObjects
             Flames.Add(flame);
 
             _spatialGrid.Add(flame);
+        }
+
+        public void EnqueueFlame(FlamePart flame)
+        {
+            NewFlames.Enqueue(flame);
         }
 
         public void AddDebris(Debris debris)
@@ -429,6 +435,15 @@ namespace PolyPlane.GameObjects
                     AddPlane(plane);
                 }
             }
+
+            while (NewFlames.Count > 0)
+            {
+                if (NewFlames.TryDequeue(out FlamePart flame))
+                {
+                    AddFlame(flame);
+                }
+            }
+
         }
 
         private void SyncObjCollections()
