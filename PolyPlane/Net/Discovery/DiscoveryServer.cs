@@ -21,7 +21,7 @@ namespace PolyPlane.Net.Discovery
         /// <summary>
         /// Begin listening for broadcast packets.
         /// </summary>
-        public async void StartListen()
+        public void StartListen()
         {
             _stopListenToken = _tokenSource.Token;
             _listenThread = new Thread(ListenLoop);

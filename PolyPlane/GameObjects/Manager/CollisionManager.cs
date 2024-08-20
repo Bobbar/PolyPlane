@@ -31,8 +31,6 @@ namespace PolyPlane.GameObjects.Manager
                 return;
             }
 
-            const float LAG_COMP_OFFSET = 30f;
-
             var now = World.CurrentTime();
 
             // Targets/AI Planes vs missiles and bullets.

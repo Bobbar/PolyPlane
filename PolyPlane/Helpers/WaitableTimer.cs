@@ -97,25 +97,5 @@ namespace PolyPlane
 
         [DllImport("kernel32", SetLastError = true, ExactSpelling = true)]
         public static extern Int32 WaitForSingleObject(IntPtr handle, uint milliseconds);
-
-
-        public struct LARGE_INTEGER
-        {
-            struct DUMMY
-            {
-                UInt32 LowPart;
-                Int64 HighPart;
-            }
-
-            struct u
-            {
-                UInt32 LowPart;
-                Int64 HighPart;
-            }
-
-            public Int64 QuadPart;
-        }
-
-
     }
 }

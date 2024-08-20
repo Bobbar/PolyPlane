@@ -1275,7 +1275,6 @@ namespace PolyPlane.Rendering
         private void DrawMissilePointers(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
         {
             const float MIN_DIST = 1000f;
-            const float MAX_DIST = 20000f;
 
             bool warningMessage = false;
             var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
