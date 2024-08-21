@@ -1,5 +1,6 @@
 ﻿using PolyPlane.Helpers;
 using PolyPlane.Rendering;
+using System.Collections.Concurrent;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -13,32 +14,32 @@ namespace PolyPlane.GameObjects
 
         private const int MAX_GROUND_IMPACTS = 500;
 
-        public List<GameObject> Missiles = new List<GameObject>();
-        public List<GameObject> MissileTrails = new List<GameObject>();
-        public List<GameObject> Decoys = new List<GameObject>();
-        public List<GameObject> Bullets = new List<GameObject>();
-        public List<GameObject> Explosions = new List<GameObject>();
-        public List<GameObject> Debris = new List<GameObject>();
-        public List<GameObject> Flames = new List<GameObject>();
+        public List<GameObject> Missiles = new();
+        public List<GameObject> MissileTrails = new();
+        public List<GameObject> Decoys = new();
+        public List<GameObject> Bullets = new();
+        public List<GameObject> Explosions = new();
+        public List<GameObject> Debris = new();
+        public List<GameObject> Flames = new();
 
-        public List<GroundImpact> GroundImpacts = new List<GroundImpact>();
-        public List<FighterPlane> Planes = new List<FighterPlane>();
+        public List<GroundImpact> GroundImpacts = new();
+        public List<FighterPlane> Planes = new();
 
-        public RingBuffer<GameObject> NewDecoys = new RingBuffer<GameObject>(500);
-        public RingBuffer<GameObject> NewBullets = new RingBuffer<GameObject>(500);
-        public RingBuffer<GameObject> NewMissiles = new RingBuffer<GameObject>(500);
-        public RingBuffer<FighterPlane> NewPlanes = new RingBuffer<FighterPlane>(500);
-        public RingBuffer<FlamePart> NewFlames = new RingBuffer<FlamePart>(500);
+        public ConcurrentQueue<GameObject> NewDecoys = new();
+        public ConcurrentQueue<GameObject> NewBullets = new();
+        public ConcurrentQueue<GameObject> NewMissiles = new();
+        public ConcurrentQueue<FighterPlane> NewPlanes = new();
+        public ConcurrentQueue<FlamePart> NewFlames = new();
 
-        private Dictionary<int, GameObject> _objLookup = new Dictionary<int, GameObject>();
-        private SpatialGrid _spatialGrid = new SpatialGrid();
+        private Dictionary<int, GameObject> _objLookup = new();
+        private SpatialGrid _spatialGrid = new();
 
-        private List<GameObject> _allNetObjects = new List<GameObject>();
-        private List<GameObject> _allObjects = new List<GameObject>();
-        private List<GameObject> _expiredObjs = new List<GameObject>();
+        private List<GameObject> _allNetObjects = new();
+        private List<GameObject> _allObjects = new();
+        private List<GameObject> _expiredObjs = new();
 
-        private GameObjectPool<FlamePart> _flamePool = new GameObjectPool<FlamePart>(() => new FlamePart());
-        private GameObjectPool<Bullet> _bulletPool = new GameObjectPool<Bullet>(() => new Bullet());
+        private GameObjectPool<FlamePart> _flamePool = new(() => new FlamePart());
+        private GameObjectPool<Bullet> _bulletPool = new(() => new Bullet());
 
         public event EventHandler<PlayerScoredEventArgs> PlayerScoredEvent;
         public event EventHandler<EventMessage> PlayerKilledEvent;
