@@ -8,9 +8,7 @@ namespace PolyPlane.GameObjects
     public class SmokeTrail : GameObject
     {
         private const int TRAIL_LEN = 400;
-        private readonly int TRAIL_STEP = 10;
         private readonly float TRAIL_DIST = 40f;
-        private long _trailFrame = 0;
         private Queue<D2DPoint> _trailQueue = new Queue<D2DPoint>();
         private GameObject _gameObject;
         private const float ALPHA = 0.3f;
@@ -71,28 +69,6 @@ namespace PolyPlane.GameObjects
             }
 
             this.Position = _gameObject.Position;
-        }
-
-        public void Update(float dt, D2DPoint position)
-        {
-            _timeOut.Update(dt);
-
-            if (_gameObject.IsExpired)
-            {
-                _timeOut.Start();
-                _trailColor.a = ALPHA * (1f - Utilities.Factor(_timeOut.Value, TIMEOUT));
-                return;
-            }
-
-            _trailFrame++;
-
-            if (_trailFrame % TRAIL_STEP == 0)
-            {
-                _trailQueue.Enqueue(position);
-
-                if (_trailQueue.Count == TRAIL_LEN)
-                    _trailQueue.Dequeue();
-            }
         }
 
         public void Clear()
