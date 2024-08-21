@@ -1,4 +1,6 @@
-﻿using PolyPlane.GameObjects.Guidance;
+﻿using PolyPlane.GameObjects.Fixtures;
+using PolyPlane.GameObjects.Guidance;
+using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using unvell.D2DLib;

@@ -1,4 +1,4 @@
-﻿namespace PolyPlane.GameObjects
+﻿namespace PolyPlane.Helpers
 {
     public enum Direction
     {

@@ -2,7 +2,7 @@
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
-namespace PolyPlane.GameObjects
+namespace PolyPlane.GameObjects.Fixtures
 {
     public class Wing : GameObject
     {
@@ -55,23 +55,23 @@ namespace PolyPlane.GameObjects
 
         public override void Update(float dt, float renderScale)
         {
-            PivotPoint.Rotation = _parentObject.Rotation + this.Deflection;
+            PivotPoint.Rotation = _parentObject.Rotation + Deflection;
 
             _defRateLimit.Update(dt);
             PivotPoint.Update(dt, renderScale);
             FixedPosition.Update(dt, renderScale);
 
-            this.Rotation = PivotPoint.Rotation;
-            this.Position = FixedPosition.Position;
+            Rotation = PivotPoint.Rotation;
+            Position = FixedPosition.Position;
 
-            var nextVelo = Utilities.AngularVelocity(_parentObject, this.Position, dt);
-            this.Velocity = nextVelo;
+            var nextVelo = Utilities.AngularVelocity(_parentObject, Position, dt);
+            Velocity = nextVelo;
         }
 
         public void Reset(D2DPoint pos)
         {
-            this.Position = pos;
-            this.Velocity = D2DPoint.Zero;
+            Position = pos;
+            Velocity = D2DPoint.Zero;
         }
 
         public override void FlipY()
@@ -79,7 +79,7 @@ namespace PolyPlane.GameObjects
             base.FlipY();
             PivotPoint.FlipY();
             FixedPosition.FlipY();
-            Reset(this.Position);
+            Reset(Position);
         }
 
         public override void Render(RenderContext ctx)
@@ -98,12 +98,12 @@ namespace PolyPlane.GameObjects
             //var end2Raw = this.Position + wingVecRaw * RenderLength;
             //gfx.DrawLine(startRaw, end2Raw, D2DColor.Red, 1f, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Round);
 
-            if (this.Visible)
+            if (Visible)
             {
                 // Draw wing.
-                var wingVec = Utilities.AngleToVectorDegrees(this.Rotation);
-                var start = this.Position - wingVec * _params.RenderLength;
-                var end = this.Position + wingVec * _params.RenderLength;
+                var wingVec = Utilities.AngleToVectorDegrees(Rotation);
+                var start = Position - wingVec * _params.RenderLength;
+                var end = Position + wingVec * _params.RenderLength;
                 ctx.DrawLine(start, end, D2DColor.Black, _params.RenderWidth + 0.5f, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
                 ctx.DrawLine(start, end, D2DColor.Gray, _params.RenderWidth, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
             }
@@ -112,19 +112,19 @@ namespace PolyPlane.GameObjects
             {
                 const float SCALE = 0.1f;//0.04f;
                 const float AERO_WEIGHT = 2f;
-                ctx.DrawLine(this.Position, this.Position + (LiftVector * SCALE), D2DColor.SkyBlue, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
-                ctx.DrawLine(this.Position, this.Position + (DragVector * (SCALE + 0.03f)), D2DColor.Red, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
+                ctx.DrawLine(Position, Position + LiftVector * SCALE, D2DColor.SkyBlue, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
+                ctx.DrawLine(Position, Position + DragVector * (SCALE + 0.03f), D2DColor.Red, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
 
                 var aggForce = (LiftVector + DragVector) * 0.5f;
-                ctx.DrawLine(this.Position, this.Position + (aggForce * (SCALE + 0.03f)), D2DColor.Yellow, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
+                ctx.DrawLine(Position, Position + aggForce * (SCALE + 0.03f), D2DColor.Yellow, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
 
-                ctx.DrawLine(this.Position, this.Position + (this.Velocity * (SCALE + 0.5f)), D2DColor.Green, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
+                ctx.DrawLine(Position, Position + Velocity * (SCALE + 0.5f), D2DColor.Green, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
             }
         }
 
         public D2DPoint GetLiftDragForce()
         {
-            if (this.Velocity.Length() == 0f)
+            if (Velocity.Length() == 0f)
                 return D2DPoint.Zero;
 
             // Wing & air parameters.
@@ -134,29 +134,29 @@ namespace PolyPlane.GameObjects
             float MAX_LIFT = _params.MaxLiftForce; // Max lift force allowed.
             float MAX_DRAG = _params.MaxDragForce; // Max drag force allowed.
             float MAX_AOA = _params.MaxAOA; // Max AoA allowed before lift force reduces. (Stall)
-            float AIR_DENSITY = World.GetDensityAltitude(this.Position);
+            float AIR_DENSITY = World.GetDensityAltitude(Position);
             float PARASITIC_DRAG = _params.ParasiticDrag;
             float MIN_VELO = _params.MinVelo;
 
-            var velo = this.Velocity;
+            var velo = Velocity;
             velo += -World.Wind;
 
             // Lerp in turbulence as altitude changes.
             // Greater altitude = less turbulence.
-            var altOffset = this.Altitude - 3000f; // Offset the altitude such that turbulence is always at max when below 3000.
+            var altOffset = Altitude - 3000f; // Offset the altitude such that turbulence is always at max when below 3000.
             var turbAltFact = Utilities.FactorWithEasing(altOffset, World.MAX_TURB_ALT, EasingFunctions.EaseInCirc);
             velo = Utilities.LerpPoints(velo * World.Turbulence, velo, turbAltFact);
 
             var veloMag = velo.Length();
             var veloMagSq = Math.Pow(veloMag, 2f);
-            var veloAngle = this.Velocity.Angle();
+            var veloAngle = Velocity.Angle();
 
             // Compute velo tangent.
             var veloNorm = D2DPoint.Normalize(velo);
             var veloNormTan = veloNorm.Tangent();
 
             // Compute angle of attack.
-            var aoaDegrees = Utilities.ClampAngle180(veloAngle - this.Rotation);
+            var aoaDegrees = Utilities.ClampAngle180(veloAngle - Rotation);
             var aoaRads = Utilities.DegreesToRads(aoaDegrees);
 
             // Reduce velo as we approach the minimum. (Increases stall effect)
@@ -166,7 +166,7 @@ namespace PolyPlane.GameObjects
 
             // Drag force.
             var coeffDrag = 1f - Math.Cos(2f * aoaRads);
-            var dragForce = (coeffDrag * AOA_FACT) * WING_AREA * 0.5f * AIR_DENSITY * veloMagSq * VELO_FACT;
+            var dragForce = coeffDrag * AOA_FACT * WING_AREA * 0.5f * AIR_DENSITY * veloMagSq * VELO_FACT;
             dragForce += veloMag * (WING_AREA * PARASITIC_DRAG);
 
             // Factor for max AoA.
@@ -186,11 +186,11 @@ namespace PolyPlane.GameObjects
             var dragVec = -veloNorm * (float)dragForce;
             var liftVec = veloNormTan * (float)liftForce;
 
-            this.LiftVector = liftVec;
-            this.DragVector = dragVec;
-            this.AoA = aoaDegrees;
+            LiftVector = liftVec;
+            DragVector = dragVec;
+            AoA = aoaDegrees;
 
-            return (liftVec + dragVec);
+            return liftVec + dragVec;
         }
     }
 

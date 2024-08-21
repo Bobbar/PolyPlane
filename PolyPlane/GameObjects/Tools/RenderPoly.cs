@@ -1,6 +1,7 @@
-﻿using PolyPlane.Helpers;
+﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.Helpers;
 
-namespace PolyPlane.GameObjects
+namespace PolyPlane.GameObjects.Tools
 {
     public class RenderPoly : IFlippable
     {
@@ -99,17 +100,17 @@ namespace PolyPlane.GameObjects
             var srcCopy = new List<D2DPoint>();
 
             // Iterate poly points and add new points as needed.
-            for (int i = 0; i < this.SourcePoly.Length; i++)
+            for (int i = 0; i < SourcePoly.Length; i++)
             {
-                var pnt1 = this.SourcePoly[Utilities.WrapIndex(i, this.SourcePoly.Length)];
-                var pnt2 = this.SourcePoly[Utilities.WrapIndex(i + 1, this.SourcePoly.Length)];
+                var pnt1 = SourcePoly[Utilities.WrapIndex(i, SourcePoly.Length)];
+                var pnt2 = SourcePoly[Utilities.WrapIndex(i + 1, SourcePoly.Length)];
                 var dist = pnt1.DistanceTo(pnt2);
                 var dir = (pnt2 - pnt1).Normalized();
 
                 if (dist >= minDist)
                 {
                     var num = (int)(dist / minDist);
-                    var amt = dist / (float)num;
+                    var amt = dist / num;
                     var pos = pnt1;
 
                     for (int j = 0; j < num; j++)
@@ -124,9 +125,9 @@ namespace PolyPlane.GameObjects
                 }
             }
 
-            this.SourcePoly = srcCopy.ToArray();
-            this.Poly = new D2DPoint[this.SourcePoly.Length];
-            Array.Copy(this.SourcePoly, this.Poly, this.SourcePoly.Length);
+            SourcePoly = srcCopy.ToArray();
+            Poly = new D2DPoint[SourcePoly.Length];
+            Array.Copy(SourcePoly, Poly, SourcePoly.Length);
         }
 
         /// <summary>

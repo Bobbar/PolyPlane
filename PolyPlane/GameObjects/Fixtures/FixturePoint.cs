@@ -2,7 +2,7 @@
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
-namespace PolyPlane.GameObjects
+namespace PolyPlane.GameObjects.Fixtures
 {
     public class FixturePoint : GameObject
     {
@@ -21,15 +21,15 @@ namespace PolyPlane.GameObjects
         {
             _copyRotation = copyRotation;
 
-            this.GameObject = gameObject;
-            this.ReferencePosition = referencePosition;
+            GameObject = gameObject;
+            ReferencePosition = referencePosition;
 
             if (_copyRotation)
-                this.Rotation = GameObject.Rotation;
+                Rotation = GameObject.Rotation;
 
-            this.Position = Utilities.ApplyTranslation(ReferencePosition, gameObject.Rotation, gameObject.Position, World.RenderScale);
+            Position = Utilities.ApplyTranslation(ReferencePosition, gameObject.Rotation, gameObject.Position, World.RenderScale);
         }
-  
+
         public override void FlipY()
         {
             base.FlipY();
@@ -39,17 +39,17 @@ namespace PolyPlane.GameObjects
         public override void Update(float dt, float renderScale)
         {
             if (_copyRotation)
-                this.Rotation = GameObject.Rotation;
+                Rotation = GameObject.Rotation;
 
-            this.Position = Utilities.ApplyTranslation(ReferencePosition, GameObject.Rotation, GameObject.Position, renderScale);
-            this.Velocity = GameObject.Velocity;
+            Position = Utilities.ApplyTranslation(ReferencePosition, GameObject.Rotation, GameObject.Position, renderScale);
+            Velocity = GameObject.Velocity;
         }
 
         public override void Render(RenderContext ctx)
         {
             base.Render(ctx);
 
-            ctx.FillEllipse(new D2DEllipse(this.Position, new D2DSize(3f, 3f)), D2DColor.Red);
+            ctx.FillEllipse(new D2DEllipse(Position, new D2DSize(3f, 3f)), D2DColor.Red);
         }
 
     }

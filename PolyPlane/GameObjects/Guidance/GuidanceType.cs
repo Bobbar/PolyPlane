@@ -1,4 +1,4 @@
-﻿namespace PolyPlane.GameObjects
+﻿namespace PolyPlane.GameObjects.Guidance
 {
     public enum GuidanceType
     {

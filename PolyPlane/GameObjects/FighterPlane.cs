@@ -1,5 +1,9 @@
 ﻿using PolyPlane.AI_Behavior;
+using PolyPlane.GameObjects.Fixtures;
+using PolyPlane.GameObjects.Guidance;
+using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.GameObjects.Manager;
+using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using unvell.D2DLib;

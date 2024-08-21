@@ -1,7 +1,8 @@
-﻿using PolyPlane.Rendering;
+﻿using PolyPlane.GameObjects.Tools;
+using PolyPlane.Rendering;
 using unvell.D2DLib;
 
-namespace PolyPlane.GameObjects
+namespace PolyPlane.GameObjects.Fixtures
 {
     public sealed class Gun : GameObject
     {
@@ -16,7 +17,7 @@ namespace PolyPlane.GameObjects
 
         public Gun(FighterPlane plane, D2DPoint position, Action<Bullet> fireBulletCallback) : base(plane)
         {
-            this.IsNetObject = plane.IsNetObject;
+            IsNetObject = plane.IsNetObject;
             _ownerPlane = plane;
             FireBulletCallback = fireBulletCallback;
 
@@ -39,8 +40,8 @@ namespace PolyPlane.GameObjects
             _attachPoint.Update(dt, renderScale);
             _smoke.Update(dt, renderScale);
 
-            this.Position = _attachPoint.Position;
-            this.Rotation = _attachPoint.Rotation;
+            Position = _attachPoint.Position;
+            Rotation = _attachPoint.Rotation;
 
             if (_ownerPlane.FiringBurst && _ownerPlane.NumBullets > 0 && _ownerPlane.IsDisabled == false)
             {
@@ -81,8 +82,8 @@ namespace PolyPlane.GameObjects
 
             // Make sure fixture point is synced at the time of firing.
             _attachPoint.Update(0f, World.RenderScale);
-            this.Rotation = _attachPoint.Rotation;
-            this.Position = _attachPoint.Position;
+            Rotation = _attachPoint.Rotation;
+            Position = _attachPoint.Position;
 
             var bullet = World.ObjectManager.RentBullet();
             bullet.ReInit(_ownerPlane);

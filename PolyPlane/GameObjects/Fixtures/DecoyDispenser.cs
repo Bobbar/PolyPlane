@@ -5,8 +5,9 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using PolyPlane.GameObjects.Tools;
 
-namespace PolyPlane.GameObjects
+namespace PolyPlane.GameObjects.Fixtures
 {
     public sealed class DecoyDispenser : GameObject
     {

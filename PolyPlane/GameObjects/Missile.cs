@@ -1,4 +1,6 @@
-﻿namespace PolyPlane.GameObjects
+﻿using PolyPlane.GameObjects.Interfaces;
+
+namespace PolyPlane.GameObjects
 {
     public abstract class Missile : GameObjectPoly, ICollidable
     {

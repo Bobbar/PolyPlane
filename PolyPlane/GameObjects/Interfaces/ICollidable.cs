@@ -1,4 +1,4 @@
-﻿namespace PolyPlane.GameObjects
+﻿namespace PolyPlane.GameObjects.Interfaces
 {
     /// <summary>
     /// Marker interface for objects which will be considered during collisions.

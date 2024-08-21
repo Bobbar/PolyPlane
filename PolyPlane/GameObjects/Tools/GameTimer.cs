@@ -1,4 +1,4 @@
-﻿namespace PolyPlane.GameObjects
+﻿namespace PolyPlane.GameObjects.Tools
 {
     public class GameTimer
     {
