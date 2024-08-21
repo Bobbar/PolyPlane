@@ -310,8 +310,6 @@ namespace PolyPlane.Server
             // Update/advance objects.
             if (!_isPaused)
             {
-                var partialDT = World.SUB_DT;
-
                 var objs = _objs.GetAllObjects();
 
                 _timer.Restart();

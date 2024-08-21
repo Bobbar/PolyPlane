@@ -14,7 +14,7 @@ namespace PolyPlane
 
         public static bool InterpOn = true;
 
-        public const int PHYSICS_SUB_STEPS = 6;
+        public static int PHYSICS_SUB_STEPS => _sub_steps;
 
         public const bool NET_UPDATE_SKIP_FRAMES = true;
         public const int NET_SERVER_FPS = 60;
@@ -54,7 +54,14 @@ namespace PolyPlane
 
             set
             {
-                _dt = Math.Clamp(value, 0.0004f, 1f);
+                _dt = Math.Clamp(value, 0.0025f, 1f);
+
+                // Compute number of sub steps.
+                var subSteps = (int)Math.Ceiling(_dt / DEFAULT_SUB_DT);
+                if (subSteps <= 0)
+                    subSteps = 1;
+
+                _sub_steps = subSteps;
             }
         }
 
@@ -62,7 +69,7 @@ namespace PolyPlane
         {
             get
             {
-                return DT / PHYSICS_SUB_STEPS;
+                return DEFAULT_SUB_DT;
             }
         }
 
@@ -113,8 +120,11 @@ namespace PolyPlane
 
         private static float _zoomScale = 0.11f;
         private static float _dt = DEFAULT_DT;
+        private static int _sub_steps = DEFAULT_SUB_STEPS;
 
+        public const int DEFAULT_SUB_STEPS = 6;
         public const float DEFAULT_DT = 0.0425f;
+        public static readonly float DEFAULT_SUB_DT = DEFAULT_DT / DEFAULT_SUB_STEPS;
         public const float DEFAULT_DPI = 96f;
         public const float SENSOR_FOV = 60f; // TODO: Not sure this belongs here. Maybe make this unique based on missile/plane types and move it there.
         public const float MAX_ALTITUDE = 60000f; // Max density altitude.  (Air density drops to zero at this altitude)
