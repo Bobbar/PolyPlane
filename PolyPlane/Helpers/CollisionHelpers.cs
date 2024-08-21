@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects;
+using System.Diagnostics;
 using System.Numerics;
 using unvell.D2DLib;
 
@@ -127,7 +128,7 @@ namespace PolyPlane.Helpers
                 var lagPntEnd = impactorObj.Position;
 
                 // Check for intersection on bounding box first.
-                if (PolyIntersect(lagPntStart, lagPntEnd, impactorBounds.BoundsPoly, out D2DPoint boundsPnt))
+                if (PolyIntersect(lagPntStart, lagPntEnd, impactorBounds.BoundsPoly, out D2DPoint boundsPnt) || impactorBounds.Contains(lagPntStart, lagPntEnd, impactorObj.Position))
                 {
                     if (PolyIntersect(lagPntStart, lagPntEnd, targPoly, out D2DPoint iPosLag))
                     {
@@ -143,7 +144,7 @@ namespace PolyPlane.Helpers
                 var pnt2 = impactorPoly[i] + veloHalf;
 
                 // Check for intersection on bounding box first.
-                if (PolyIntersect(pnt1, pnt2, impactorBounds.BoundsPoly, out D2DPoint boundsPnt))
+                if (PolyIntersect(pnt1, pnt2, impactorBounds.BoundsPoly, out D2DPoint boundsPnt) || impactorBounds.Contains(pnt1, pnt2, impactorObj.Position))
                 {
                     // Check for an intersection and get the exact location of the impact.
                     if (PolyIntersect(pnt1, pnt2, targPoly, out D2DPoint iPosPoly))
@@ -158,7 +159,7 @@ namespace PolyPlane.Helpers
             var centerPnt2 = impactorObj.Position + veloHalf;
 
             // Check for intersection on bounding box first.
-            if (PolyIntersect(centerPnt1, centerPnt2, impactorBounds.BoundsPoly, out D2DPoint boundsPntCenter))
+            if (PolyIntersect(centerPnt1, centerPnt2, impactorBounds.BoundsPoly, out D2DPoint boundsPntCenter) || impactorBounds.Contains(centerPnt1, centerPnt2))
             {
                 if (PolyIntersect(centerPnt1, centerPnt2, targPoly, out D2DPoint iPosCenter))
                 {
