@@ -429,7 +429,7 @@ namespace PolyPlane.Helpers
             else
                 altDir = amt;
 
-            return altDir;
+            return ClampAngle(altDir);
         }
 
         /// <summary>

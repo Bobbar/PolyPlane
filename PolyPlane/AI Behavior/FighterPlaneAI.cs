@@ -1,7 +1,6 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
-using System.Diagnostics;
 
 namespace PolyPlane.AI_Behavior
 {
@@ -248,6 +247,7 @@ namespace PolyPlane.AI_Behavior
         {
             const float MIN_IMPACT_TIME = 7f; // Min ground impact time to consider avoiding ground.
             const float BLOCK_PITCH_DOWN_ALT = 800f; // Do not allow pitch down angles below this altitude.
+            const float EXTRA_AIM_AMT = 0.6f; // How much to pitch beyond the location of the target plane.  (Helps with dog-fighting)
 
             var patrolDir = Utilities.ClampAngle(Utilities.RadsToDegrees((float)Math.Sin(_sineWavePos)));
 
@@ -269,7 +269,13 @@ namespace PolyPlane.AI_Behavior
                     angle += patrolDir * 0.2f; // Incorporate a small amount of the sine wave so we 'bob & weave' a little bit.
                 }
                 else
+                {
                     angle = dirToPlayer.Angle();
+                    
+                    // Add additional pitch. Helps increase agro while dog-fighting.
+                    var rotAmt = Utilities.RadsToDegrees((this.Plane.Position - TargetPlane.Position).Normalized().Cross(this.Plane.Velocity.Normalized()));
+                    angle = Utilities.ClampAngle(angle + rotAmt * EXTRA_AIM_AMT);
+                }
             }
 
             // Run away from missile?
