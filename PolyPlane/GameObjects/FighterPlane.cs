@@ -139,8 +139,8 @@ namespace PolyPlane.GameObjects
         private float _health = MAX_HEALTH;
 
         private const float POLY_TESSELLATE_DIST = 2f; // Tessellation amount. Smaller = higher resolution.
-        private const float BULLET_DISTORT_AMT = 3f;
-        private const float MISSILE_DISTORT_AMT = 6f;
+        private const float BULLET_DISTORT_AMT = 4f;
+        private const float MISSILE_DISTORT_AMT = 7f;
 
         private RenderPoly FlamePoly;
         private D2DLayer _polyClipLayer = null;
@@ -452,16 +452,21 @@ namespace PolyPlane.GameObjects
             // within the polygon, we consider them damaged.
             foreach (var wing in Wings)
             {
-                if (!Utilities.PointInPoly(wing.PivotPoint.Position, this.Polygon.Poly))
+                if (wing.Visible && !Utilities.PointInPoly(wing.PivotPoint.Position, this.Polygon.Poly))
                 {
                     wing.Visible = false;
+
+                    SpawnDebris(1, wing.Position, D2DColor.Gray);
                 }
             }
 
             if (!Utilities.PointInPoly(_centerOfThrust.Position, this.Polygon.Poly))
             {
-                this.ThrustOn = false;
-                _thrustAmt.Set(0f);
+                if (this.ThrustOn)
+                {
+                    this.ThrustOn = false;
+                    _thrustAmt.Set(0f);
+                }
             }
 
             _gForce = _gforceAvg.Current;
