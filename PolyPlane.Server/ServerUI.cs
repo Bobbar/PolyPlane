@@ -422,7 +422,6 @@ namespace PolyPlane.Server
             plane.Rotation = 0f;
             //plane.SASOn = true;
             plane.IsDisabled = false;
-            plane.Reset();
             plane.FixPlane();
         }
 

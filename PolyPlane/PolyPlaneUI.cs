@@ -395,7 +395,6 @@ namespace PolyPlane
             plane.Rotation = 0f;
             //plane.SASOn = true;
             plane.IsDisabled = false;
-            plane.Reset();
             plane.FixPlane();
         }
 
@@ -425,7 +424,6 @@ namespace PolyPlane
             _playerPlane.RotationSpeed = 0f;
             //_playerPlane.SASOn = true;
             _playerPlane.IsDisabled = false;
-            _playerPlane.Reset();
             _playerPlane.FixPlane();
 
             _canRespawn = false;
@@ -576,7 +574,6 @@ namespace PolyPlane
                 _playerPlane.Rotation = _playerPlane.PlayerGuideAngle;
                 _playerPlane.RotationSpeed = 0f;
                 _playerPlane.Position = _playerPlaneSlewPos;
-                _playerPlane.Reset();
                 _playerPlane.Velocity = D2DPoint.Zero;
             }
 

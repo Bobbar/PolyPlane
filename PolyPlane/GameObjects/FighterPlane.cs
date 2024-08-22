@@ -690,11 +690,6 @@ namespace PolyPlane.GameObjects
             Wings.Add(wing);
         }
 
-        public void Reset()
-        {
-            Wings.ForEach(w => w.Reset(this.Position));
-        }
-
         /// <summary>
         /// Update FixturePoint objects to move them to the current position.
         /// </summary>
@@ -723,6 +718,8 @@ namespace PolyPlane.GameObjects
             this.Polygon.SourcePoly[prevIdx] += distortVec * 0.6f;
             this.Polygon.SourcePoly[closestIdx] += distortVec;
             this.Polygon.SourcePoly[nextIdx] += distortVec * 0.6f;
+
+            this.Polygon.Update(this.Position, this.Rotation, this.RenderOffset);
 
             var bulletHole = new BulletHole(this, pos + distortVec, angle);
             bulletHole.IsNetObject = this.IsNetObject;
@@ -835,7 +832,7 @@ namespace PolyPlane.GameObjects
                     var distortAmt = BULLET_DISTORT_AMT;
                     if (impactor is Missile)
                         distortAmt = MISSILE_DISTORT_AMT;
-                    
+
                     var distortVec = Utilities.AngleToVectorDegrees(angle + this.Rotation, distortAmt);
                     var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
                     var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos + distortVec);
@@ -984,7 +981,9 @@ namespace PolyPlane.GameObjects
                 return;
 
             this.Polygon.FlipY();
+            this.Polygon.Update(this.Position, this.Rotation, this.RenderOffset);
             Wings.ForEach(w => w.FlipY());
+            Wings.ForEach(w => w.Update(World.SUB_DT, this.RenderOffset));
             _vaporTrails.ForEach(v => v.FlipY());
             _flamePos.FlipY();
             _bulletHoles.ForEach(f => f.FlipY());

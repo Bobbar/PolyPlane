@@ -271,7 +271,7 @@ namespace PolyPlane.GameObjects
 
         public bool Equals(GameObject? other)
         {
-            if (other == null) 
+            if (other == null)
                 return false;
 
             return this.ID.Equals(other.ID);
@@ -327,7 +327,7 @@ namespace PolyPlane.GameObjects
             base.Update(dt, renderScale);
 
             if (Polygon != null)
-                Polygon.Update(this.Position, this.Rotation, renderScale); 
+                Polygon.Update(this.Position, this.Rotation, renderScale);
         }
 
         public override void FlipY()
@@ -406,7 +406,7 @@ namespace PolyPlane.GameObjects
                 return false;
             }
 
-            return CollisionHelpers.PolygonSweepCollision(obj, this.Polygon.Poly, this.Velocity, World.DT, out pos);
+            return CollisionHelpers.PolygonSweepCollision(obj, this, World.DT, out pos);
         }
 
         public bool CollidesWith(GameObject obj, out D2DPoint pos)
@@ -430,8 +430,9 @@ namespace PolyPlane.GameObjects
             foreach (var pnt in this.Polygon.Poly)
             {
                 var aVelo = Utilities.AngularVelocity(this, pnt, dt) * dt;
-                var veloPnt1 = pnt - relVeloHalf;
-                var veloPnt2 = pnt + relVeloHalf;
+                var veloPnt1 = pnt;
+                var veloPnt2 = pnt + relVelo;
+
 
                 gfx.DrawLine(veloPnt1, veloPnt2, D2DColor.Red);
             }

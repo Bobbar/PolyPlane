@@ -68,18 +68,11 @@ namespace PolyPlane.GameObjects.Fixtures
             Velocity = nextVelo;
         }
 
-        public void Reset(D2DPoint pos)
-        {
-            Position = pos;
-            Velocity = D2DPoint.Zero;
-        }
-
         public override void FlipY()
         {
             base.FlipY();
             PivotPoint.FlipY();
             FixedPosition.FlipY();
-            Reset(Position);
         }
 
         public override void Render(RenderContext ctx)

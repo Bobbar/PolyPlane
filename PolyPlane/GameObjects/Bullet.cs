@@ -27,30 +27,6 @@ namespace PolyPlane.GameObjects
             this.Polygon = new RenderPoly(_poly);
         }
 
-        public Bullet(D2DPoint pos) : base(pos) { }
-
-        public Bullet(FighterPlane plane) : base(plane.GunPosition, plane.Velocity, plane.Rotation)
-        {
-            this.Owner = plane;
-            this.PlayerID = plane.PlayerID;
-
-            this.Polygon = new RenderPoly(_poly);
-            this.Polygon.Update(this.Position, this.Rotation, World.RenderScale * this.RenderOffset);
-
-            var velo = (Utilities.AngleToVectorDegrees(plane.Rotation, Bullet.SPEED));
-            velo += plane.Velocity;
-            this.Velocity = velo;
-
-            // Make sure the rotation is aligned with the resulting velocity.
-            this.Rotation = this.Velocity.Angle();
-        }
-
-        public Bullet(D2DPoint pos, D2DPoint velo, float rotation) : base(pos, velo, rotation)
-        {
-            this.Polygon = new RenderPoly(_poly);
-            this.Polygon.Update(this.Position, this.Rotation, World.RenderScale * this.RenderOffset);
-        }
-
         public void ReInit(FighterPlane plane)
         {
             this.IsExpired = false;
@@ -69,9 +45,12 @@ namespace PolyPlane.GameObjects
 
             // Make sure the rotation is aligned with the resulting velocity.
             this.Rotation = this.Velocity.Angle();
+            
+            // Start the bullet slightly backwards since their appears is delayed by one frame.
+            this.Position -= this.Velocity * (World.SUB_DT * 2f);
         }
 
-        public void ReInit(D2DPoint pos, D2DPoint velo, float rotation)
+        public void ReInitNet(D2DPoint pos, D2DPoint velo, float rotation)
         {
             this.IsExpired = false;
             this.Age = 0f;

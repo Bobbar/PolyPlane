@@ -34,6 +34,7 @@ namespace PolyPlane.GameObjects.Fixtures
         {
             base.FlipY();
             ReferencePosition = new D2DPoint(ReferencePosition.X, ReferencePosition.Y * -1);
+            this.Update(0f, GameObject.RenderOffset);
         }
 
         public override void Update(float dt, float renderScale)

@@ -273,7 +273,7 @@ namespace PolyPlane.AI_Behavior
                     angle = dirToPlayer.Angle();
 
                     // Add additional pitch. Helps increase agro while dog-fighting.
-                    var rotAmt = Utilities.RadsToDegrees((this.Plane.Position - TargetPlane.Position).Normalized().Cross(this.Plane.Velocity.Normalized()));
+                    var rotAmt = Utilities.RadsToDegrees((this.Plane.Position - TargetPlane.Position).Normalized().Cross(Utilities.AngleToVectorDegrees(this.Plane.Rotation)));
                     angle = Utilities.ClampAngle(angle + rotAmt * EXTRA_AIM_AMT);
                 }
             }

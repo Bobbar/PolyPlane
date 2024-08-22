@@ -345,13 +345,11 @@ namespace PolyPlane.GameObjects.Manager
                 {
                     plane.Position = new D2DPoint(World.FieldXBounds.X, plane.Position.Y);
                     plane.SyncFixtures();
-                    plane.Reset();
                 }
                 else if (plane.Position.X < World.FieldXBounds.X)
                 {
                     plane.Position = new D2DPoint(World.FieldXBounds.Y, plane.Position.Y);
                     plane.SyncFixtures();
-                    plane.Reset();
                 }
             }
         }

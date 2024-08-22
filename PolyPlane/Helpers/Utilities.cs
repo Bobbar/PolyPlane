@@ -299,6 +299,30 @@ namespace PolyPlane.Helpers
             return c;
         }
 
+        public static bool CircleInPoly(D2DPoint pos, float radius, D2DPoint[] poly)
+        {
+            if (!PointInPoly(pos, poly)) 
+                return false;
+
+            float minDist = float.MaxValue;
+
+            for (int i = 0; i < poly.Length; i++)
+            {
+                var pnt = poly[i];
+                var dist = pos.DistanceTo(pnt);
+
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                }
+            }
+
+            if (minDist >= radius)
+                return true;
+            
+            return false;
+        }
+
         /// <summary>
         /// Finds the index of the polygon point which is closest to the specified point.
         /// </summary>
