@@ -971,7 +971,7 @@ namespace PolyPlane.Rendering
             var lineHeight = 20f;
             var linePosY = topLeft.Y;
 
-            var sortedPlanes = _objs.Planes.OrderByDescending(p => p.Kills).ToArray();
+            var sortedPlanes = _objs.Planes.OrderByDescending(p => p.Kills).ThenBy(p => p.Deaths).ToArray();
 
             if (_scoreScrollPos >= sortedPlanes.Length)
                 _scoreScrollPos = sortedPlanes.Length - 1;
