@@ -37,17 +37,13 @@ namespace PolyPlane.GameObjects
             this.Owner = plane;
             this.PlayerID = plane.PlayerID;
 
-            this.Polygon.Update(this.Position, this.Rotation, World.RenderScale * this.RenderOffset);
-
-            var velo = (Utilities.AngleToVectorDegrees(plane.Rotation, Bullet.SPEED));
-            velo += plane.Velocity;
+            var velo = (Utilities.AngleToVectorDegrees(plane.Rotation, Bullet.SPEED + plane.Velocity.Length()));
             this.Velocity = velo;
 
             // Make sure the rotation is aligned with the resulting velocity.
             this.Rotation = this.Velocity.Angle();
-            
-            // Start the bullet slightly backwards since their appears is delayed by one frame.
-            this.Position -= this.Velocity * (World.SUB_DT * 2f);
+
+            this.Polygon.Update(this.Position, this.Rotation, World.RenderScale * this.RenderOffset);
         }
 
         public void ReInitNet(D2DPoint pos, D2DPoint velo, float rotation)

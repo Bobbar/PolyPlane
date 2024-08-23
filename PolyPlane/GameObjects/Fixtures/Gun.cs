@@ -81,7 +81,7 @@ namespace PolyPlane.GameObjects.Fixtures
                 return;
 
             // Make sure fixture point is synced at the time of firing.
-            _attachPoint.Update(0f, World.RenderScale);
+            _attachPoint.Update(0f, World.RenderScale * _ownerPlane.RenderOffset);
             Rotation = _attachPoint.Rotation;
             Position = _attachPoint.Position;
 

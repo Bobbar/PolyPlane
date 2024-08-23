@@ -326,6 +326,9 @@ namespace PolyPlane.Server
 
                 World.UpdateAirDensityAndWind(World.DT);
 
+                _objs.PruneExpired();
+                _objs.SyncAll();
+
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
             }
@@ -338,7 +341,6 @@ namespace PolyPlane.Server
             _timer.Stop();
             _renderTime = _timer.Elapsed;
 
-            _objs.PruneExpired();
 
             _timer.Restart();
             _netMan.DoNetEvents();
@@ -427,8 +429,6 @@ namespace PolyPlane.Server
 
         private void ProcessObjQueue()
         {
-            _objs.SyncAll();
-
             if (_queueNextViewId)
             {
                 World.NextViewPlane();
