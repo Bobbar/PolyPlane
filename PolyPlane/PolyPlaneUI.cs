@@ -16,7 +16,6 @@ namespace PolyPlane
         private ManualResetEventSlim _renderExitEvent = new ManualResetEventSlim(false);
 
         private bool _isFullScreen = false;
-        private bool _isPaused = false;
         private bool _oneStep = false;
         private bool _killRender = false;
         private bool _shiftDown = false;
@@ -527,7 +526,7 @@ namespace PolyPlane
             var viewPlane = World.GetViewPlane();
 
             // Update/advance objects.
-            if (!_isPaused || _oneStep)
+            if (!World.IsPaused || _oneStep)
             {
                 _timer.Restart();
 
@@ -725,12 +724,12 @@ namespace PolyPlane
 
         private void PauseGame()
         {
-            _isPaused = true;
+            World.IsPaused = true;
         }
 
         private void ResumeGame()
         {
-            _isPaused = false;
+            World.IsPaused = false;
         }
 
         private void StopRender()
@@ -823,7 +822,7 @@ namespace PolyPlane
                     if (World.IsNetGame)
                         break;
 
-                    _isPaused = true;
+                    World.IsPaused = true;
                     _oneStep = true;
                     break;
 
@@ -836,7 +835,7 @@ namespace PolyPlane
                     if (World.IsNetGame)
                         break;
 
-                    if (!_isPaused)
+                    if (!World.IsPaused)
                         PauseGame();
                     else
                         ResumeGame();

@@ -20,7 +20,6 @@ namespace PolyPlane.Server
         private bool _spawnRandomAIPlane = false;
         private bool _clearAIPlanes = false;
         private bool _stopRender = false;
-        private bool _isPaused = false;
         private bool _killThread = false;
         private bool _toggleGunsOnly = false;
 
@@ -287,7 +286,7 @@ namespace PolyPlane.Server
 
                 if (!_pauseRenderEvent.Wait(0))
                 {
-                    _isPaused = true;
+                    World.IsPaused = true;
                     _pauseRenderEvent.Set();
                 }
             }
@@ -308,7 +307,7 @@ namespace PolyPlane.Server
             FighterPlane viewPlane = World.GetViewPlane();
 
             // Update/advance objects.
-            if (!_isPaused)
+            if (!World.IsPaused)
             {
                 var objs = _objs.GetAllObjects();
 
@@ -357,10 +356,10 @@ namespace PolyPlane.Server
 
             if (this._pauseRequested)
             {
-                if (!_isPaused)
-                    _isPaused = true;
+                if (!World.IsPaused)
+                    World.IsPaused = true;
                 else
-                    _isPaused = false;
+                    World.IsPaused = false;
 
                 this._pauseRequested = false;
             }
@@ -567,7 +566,7 @@ namespace PolyPlane.Server
             UpdateBandwidthStats();
 
             string infoText = string.Empty;
-            infoText += $"Paused: {_isPaused}\n\n";
+            infoText += $"Paused: {World.IsPaused}\n\n";
 
             var numObj = _objs.TotalObjects;
             infoText += $"Num Objects: {numObj}\n";

@@ -420,12 +420,22 @@ namespace PolyPlane.GameObjects
             return CollisionHelpers.PolygonSweepCollision(obj, this.Polygon.Poly, this.Velocity, World.DT, out pos);
         }
 
-        public void DrawVeloLines(D2DGraphics gfx)
+        public void DrawVeloLines(D2DGraphics gfx, D2DColor color)
         {
             var dt = World.DT;
 
             var relVelo = this.Velocity * dt;
             var relVeloHalf = relVelo * 0.5f;
+
+            if (this is Bullet)
+            {
+                var nearest = World.ObjectManager.GetNear(this).Where(o => !o.ID.Equals(this.ID) && o is FighterPlane).OrderBy(o => o.Position.DistanceTo(this.Position)).FirstOrDefault();
+                if (nearest != null)
+                {
+                    relVelo = (this.Velocity - nearest.Velocity) * dt;
+                    relVeloHalf = relVelo * 0.5f;
+                }
+            }
 
             foreach (var pnt in this.Polygon.Poly)
             {
@@ -434,14 +444,14 @@ namespace PolyPlane.GameObjects
                 var veloPnt2 = pnt + relVelo;
 
 
-                gfx.DrawLine(veloPnt1, veloPnt2, D2DColor.Red);
+                gfx.DrawLine(veloPnt1, veloPnt2, color);
             }
 
             var lagPntStart = this.Position - (this.Velocity * (float)((this.LagAmount / 16.6f) * World.DT));
             var lagPntEnd = this.Position;
 
             if (this.AgeMs < (this.LagAmount * 2f))
-                gfx.DrawLine(lagPntStart, lagPntEnd, D2DColor.Red);
+                gfx.DrawLine(lagPntStart, lagPntEnd, color);
         }
 
         public virtual bool Contains(D2DPoint pnt)

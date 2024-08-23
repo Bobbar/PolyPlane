@@ -407,6 +407,9 @@ namespace PolyPlane.Rendering
 
         private void UpdateTimersAndAnims()
         {
+            if (World.IsPaused)
+                return;
+
             _hudMessageTimeout.Update(World.DT);
             _missileFlashTimer.Update(World.DT);
 
