@@ -1042,6 +1042,7 @@ namespace PolyPlane.GameObjects
 
             _polyClipLayer?.Dispose();
             _contrail.Clear();
+            _bulletHoles.ForEach(b => b.Dispose());
             _bulletHoles.Clear();
             _vaporTrails.Clear();
         }

@@ -205,6 +205,8 @@ namespace PolyPlane.GameObjects
         {
             base.Dispose();
 
+            _spawnTimer.Stop();
+
             _parts.ForEach(p =>
             {
                 p.IsExpired = true;
