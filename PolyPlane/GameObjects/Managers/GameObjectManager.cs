@@ -271,8 +271,12 @@ namespace PolyPlane.GameObjects
             return _allObjects;
         }
 
-        public void SyncAll()
+        /// <summary>
+        /// Updates and syncs all object collections/queues and spatial grid.
+        /// </summary>
+        public void Update()
         {
+            PruneExpired();
             SyncObjQueues();
             SyncObjCollections();
         }

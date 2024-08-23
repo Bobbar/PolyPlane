@@ -546,8 +546,7 @@ namespace PolyPlane
 
                 World.UpdateAirDensityAndWind(World.DT);
 
-                _objs.PruneExpired();
-                _objs.SyncAll();
+                _objs.Update();
 
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
