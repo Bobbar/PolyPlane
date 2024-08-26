@@ -192,25 +192,25 @@ namespace PolyPlane.GameObjects
             new D2DPoint(-8, -1),
         ];
 
-        public FighterPlane(D2DPoint pos) : base(pos)
-        {
-            _thrustAmt.Target = 1f;
-            _planeColor = D2DColor.Randomly();
+        //public FighterPlane(D2DPoint pos) : base(pos)
+        //{
+        //    _thrustAmt.Target = 1f;
+        //    _planeColor = D2DColor.Randomly();
 
-            InitStuff();
-        }
+        //    InitStuff();
+        //}
 
-        public FighterPlane(D2DPoint pos, D2DColor color) : base(pos)
-        {
-            IsNetObject = true;
-            _planeColor = color;
-            _isAIPlane = false;
-            AutoPilotOn = false;
-            ThrustOn = true;
-            _thrustAmt.Target = 1f;
+        //public FighterPlane(D2DPoint pos, D2DColor color) : base(pos)
+        //{
+        //    IsNetObject = true;
+        //    _planeColor = color;
+        //    _isAIPlane = false;
+        //    AutoPilotOn = false;
+        //    ThrustOn = true;
+        //    _thrustAmt.Target = 1f;
 
-            InitStuff();
-        }
+        //    InitStuff();
+        //}
 
         public FighterPlane(D2DPoint pos, AIPersonality personality) : base(pos)
         {
@@ -218,6 +218,39 @@ namespace PolyPlane.GameObjects
             _isAIPlane = true;
             _thrustAmt.Target = 1f;
             _planeColor = D2DColor.Randomly();
+
+            InitStuff();
+        }
+
+        public FighterPlane(D2DPoint pos, D2DColor color, bool isAI = false, bool isNetPlane = false) : base(pos)
+        {
+            _thrustAmt.Target = 1f;
+            IsNetObject = isNetPlane;
+            _isAIPlane = isAI;
+            _planeColor = color;
+            ThrustOn = true;
+
+            if (isAI)
+            {
+                AIPersonality personality = AIPersonality.Normal;
+
+                const int NUM_PERS = 2;
+                int nAdded = 0;
+
+                while (nAdded < NUM_PERS)
+                {
+                    var rndPers = Utilities.RandomEnum<AIPersonality>();
+
+                    if (!personality.HasFlag(rndPers))
+                    {
+                        personality |= rndPers;
+                        nAdded++;
+                    }
+                }
+
+                _aiBehavior = new FighterPlaneAI(this, personality);
+
+            }
 
             InitStuff();
         }

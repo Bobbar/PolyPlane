@@ -136,7 +136,7 @@ namespace PolyPlane.Net
                     {
                         if (playerPacket != null)
                         {
-                            var newPlane = new FighterPlane(playerPacket.Position, playerPacket.PlaneColor);
+                            var newPlane = new FighterPlane(playerPacket.Position, playerPacket.PlaneColor, isAI: false, isNetPlane: true);
                             newPlane.ID = playerPacket.ID;
                             newPlane.PlayerName = playerPacket.Name;
                             newPlane.IsNetObject = true;
@@ -532,7 +532,7 @@ namespace PolyPlane.Net
 
                 if (!existing)
                 {
-                    var newPlane = new FighterPlane(player.Position, player.PlaneColor);
+                    var newPlane = new FighterPlane(player.Position, player.PlaneColor, isAI: false, isNetPlane: true);
                     newPlane.ID = player.ID;
                     newPlane.PlayerName = player.Name;
                     newPlane.IsNetObject = true;

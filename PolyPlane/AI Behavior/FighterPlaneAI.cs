@@ -13,6 +13,7 @@ namespace PolyPlane.AI_Behavior
 
         private FighterPlane _plane;
         private FighterPlane _targetPlane;
+        private FighterPlane _killedByPlane;
         private D2DPoint _threatPosition = D2DPoint.Zero;
         private float _sineWavePos = 0f;
         private float _avoidingGroundAlt = 0f;
@@ -43,6 +44,8 @@ namespace PolyPlane.AI_Behavior
 
         private void InitStuff()
         {
+            Plane.PlayerKilledCallback += HandlePlayerKilled;
+
             Plane.ThrustOn = true;
             Plane.AutoPilotOn = true;
 
@@ -99,34 +102,91 @@ namespace PolyPlane.AI_Behavior
                 this.Plane.ThrustOn = true;
         }
 
+
         private void ConfigPersonality()
         {
-            switch (this.Personality)
+
+            var types = Enum.GetValues(typeof(AIPersonality));
+            foreach (AIPersonality type in types)
             {
-                case AIPersonality.Normal:
+                if ((this.Personality & type) == type)
+                {
+                    switch (type)
+                    {
+                        case AIPersonality.Normal:
 
-                    break;
+                            break;
 
-                case AIPersonality.MissileHappy:
-                    MIN_MISSILE_TIME = 20f;
-                    MAX_MISSILE_TIME = 40f;
+                        case AIPersonality.MissileHappy:
+                            MIN_MISSILE_TIME = 20f;
+                            MAX_MISSILE_TIME = 40f;
 
-                    break;
+                            break;
 
-                case AIPersonality.LongBursts:
-                    _fireBurstTimer.Interval = 3f;
-                    break;
+                        case AIPersonality.LongBursts:
+                            _fireBurstTimer.Interval = 3f;
+                            break;
 
-                case AIPersonality.Cowardly:
-                    MAX_SPEED = 700f;
-                    this.Plane.Thrust = 700f;
-                    break;
+                        case AIPersonality.Cowardly:
+                            // Don't allow both cowardly and speedy.
+                            if (this.Personality.HasFlag(AIPersonality.Speedy) == false)
+                            {
+                                MAX_SPEED = 700f;
+                                this.Plane.Thrust = 700f;
+                            }
+                            break;
 
-                case AIPersonality.Speedy:
-                    MAX_SPEED = 2000f;
-                    this.Plane.Thrust = 2000f;
-                    break;
+                        case AIPersonality.Speedy:
+                            // Don't allow both cowardly and speedy.
+                            if (this.Personality.HasFlag(AIPersonality.Cowardly) == false)
+                            {
+                                MAX_SPEED = 2000f;
+                                this.Plane.Thrust = 2000f;
+                            }
+                           
+                            break;
+                    }
+                }
+               
             }
+
+           
+        }
+
+        //private void ConfigPersonality()
+        //{
+        //    switch (this.Personality)
+        //    {
+        //        case AIPersonality.Normal:
+
+        //            break;
+
+        //        case AIPersonality.MissileHappy:
+        //            MIN_MISSILE_TIME = 20f;
+        //            MAX_MISSILE_TIME = 40f;
+
+        //            break;
+
+        //        case AIPersonality.LongBursts:
+        //            _fireBurstTimer.Interval = 3f;
+        //            break;
+
+        //        case AIPersonality.Cowardly:
+        //            MAX_SPEED = 700f;
+        //            this.Plane.Thrust = 700f;
+        //            break;
+
+        //        case AIPersonality.Speedy:
+        //            MAX_SPEED = 2000f;
+        //            this.Plane.Thrust = 2000f;
+        //            break;
+        //    }
+        //}
+
+        private void HandlePlayerKilled(FighterPlane plane, GameObject impactor)
+        {
+            if (impactor.Owner is FighterPlane attackerPlane)
+                _killedByPlane = attackerPlane;
         }
 
         private void ConsiderNewTarget()
@@ -134,6 +194,9 @@ namespace PolyPlane.AI_Behavior
             if (this.TargetPlane == null || this.TargetPlane.IsExpired || this.TargetPlane.HasCrashed || this.TargetPlane.IsDisabled)
             {
                 var rndTarg = this.Plane.Radar.FindNearestPlane();
+
+                if (this.Personality.HasFlag(AIPersonality.Vengeful) && (_killedByPlane != null && _killedByPlane.IsDisabled == false))
+                    rndTarg = _killedByPlane;
 
                 _targetPlane = rndTarg;
 
@@ -262,7 +325,7 @@ namespace PolyPlane.AI_Behavior
                 var dirToPlayer = TargetPlane.Position - this.Plane.Position;
 
                 // Fly away from target plane?
-                if (this.Personality == AIPersonality.Cowardly && this.Plane.Position.DistanceTo(TargetPlane.Position) < RUN_DISTANCE)
+                if (this.Personality.HasFlag(AIPersonality.Cowardly) && this.Plane.Position.DistanceTo(TargetPlane.Position) < RUN_DISTANCE)
                 {
                     dirToPlayer *= -1f;
                     angle = dirToPlayer.Angle();

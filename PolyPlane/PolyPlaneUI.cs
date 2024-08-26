@@ -175,8 +175,9 @@ namespace PolyPlane
                         World.IsNetGame = true;
                         World.IsServer = false;
 
-                        InitPlane(config.IsAI, config.PlayerName);
-                        _playerPlane.PlaneColor = config.PlaneColor;
+                        //InitPlane(config.PlaneColor, config.IsAI, config.PlayerName);
+
+                        _playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
 
                         _client = new ClientNetHost(config.Port, config.ServerIPAddress);
                         _netMan = new NetEventManager(_client, _playerPlane);
@@ -216,9 +217,8 @@ namespace PolyPlane
                         _collisions = new CollisionManager();
                         _collisions.ImpactEvent += HandleNewImpact;
 
-                        InitPlane(config.IsAI, config.PlayerName);
-
-                        _playerPlane.PlaneColor = config.PlaneColor;
+                        //InitPlane(config.PlaneColor, config.IsAI, config.PlayerName);
+                        _playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
 
                         InitGfx();
                         StartGameThread();
@@ -340,21 +340,19 @@ namespace PolyPlane
             _fpsLimiter?.Dispose();
         }
 
-        private void InitPlane(bool asAI = false, string playerName = "Player")
+
+        private FighterPlane GetNewPlane(D2DColor planeColor, bool isAI = false, string playerName = "Player")
         {
-            if (asAI)
-            {
-                _playerPlane = GetAIPlane();
-            }
-            else
-            {
-                _playerPlane = new FighterPlane(Utilities.FindSafeSpawnPoint(_objs));
-            }
+            var pos = Utilities.FindSafeSpawnPoint(_objs);
+            var plane = new FighterPlane(pos, planeColor, isAI, false);
 
-            _playerPlane.PlayerName = playerName;
-            _playerPlane.PlayerID = World.GetNextPlayerId();
+            plane.PlayerName = playerName;
+            plane.PlayerID = World.GetNextPlayerId();
+            plane.AutoPilotOn = true;
+            plane.ThrustOn = true;
+            plane.Velocity = new D2DPoint(500f, 0f);
 
-            _playerPlane.FireBulletCallback = b =>
+            plane.FireBulletCallback = b =>
             {
                 _objs.EnqueueBullet(b);
 
@@ -365,13 +363,7 @@ namespace PolyPlane
                     _client.SendNewBulletPacket(b);
             };
 
-            _playerPlane.DropDecoyCallback = DropDecoy;
-
-            _playerPlane.AutoPilotOn = true;
-            _playerPlane.ThrustOn = true;
-            _playerPlane.Velocity = new D2DPoint(500f, 0f);
-
-            _playerPlane.FireMissileCallback = (m) =>
+            plane.FireMissileCallback = (m) =>
             {
                 _objs.EnqueueMissile(m);
 
@@ -380,7 +372,11 @@ namespace PolyPlane
 
             };
 
-            _objs.EnqueuePlane(_playerPlane);
+            plane.DropDecoyCallback = DropDecoy;
+
+            _objs.EnqueuePlane(plane);
+
+            return plane;
         }
 
         private void ResetAIPlane(FighterPlane plane)
@@ -438,48 +434,9 @@ namespace PolyPlane
                 _playerPlane.FireMissile(_playerPlane.Radar.LockedObj);
         }
 
-        private FighterPlane GetAIPlane()
-        {
-            var pos = Utilities.FindSafeSpawnPoint(_objs);
-
-            var aiPlane = new FighterPlane(pos, Utilities.RandomEnum<AIPersonality>());
-            aiPlane.PlayerID = World.GetNextPlayerId();
-            aiPlane.PlayerName = "(BOT) " + Utilities.GetRandomName();
-
-            aiPlane.FireMissileCallback = (m) =>
-            {
-                _objs.EnqueueMissile(m);
-
-                if (World.IsNetGame)
-                {
-                    _client.SendNewMissilePacket(m);
-                }
-
-            };
-
-            aiPlane.FireBulletCallback = b =>
-            {
-                _objs.EnqueueBullet(b);
-
-                if (b.Owner.ID.Equals(World.ViewPlaneID))
-                    _render.DoScreenShake(2f);
-
-                if (World.IsNetGame)
-                {
-                    _client.SendNewBulletPacket(b);
-                }
-            };
-
-            aiPlane.DropDecoyCallback = DropDecoy;
-
-            aiPlane.Velocity = new D2DPoint(500f, 0f);
-
-            return aiPlane;
-        }
-
         private void SpawnAIPlane()
         {
-            var aiPlane = GetAIPlane();
+            var aiPlane = GetNewPlane(D2DColor.Randomly(), isAI: true, playerName: "(BOT) " + Utilities.GetRandomName());
             _objs.EnqueuePlane(aiPlane);
         }
 
