@@ -45,7 +45,6 @@ namespace PolyPlane.Rendering
         private float _renderFPS = 0;
         private long _lastRenderTime = 0;
         private string _hudMessage = string.Empty;
-        private D2DColor _hudMessageColor = D2DColor.Red;
         private GameTimer _hudMessageTimeout = new GameTimer(10f);
         private GameTimer _missileFlashTimer = new GameTimer(0.5f, 0.5f, false);
         private List<EventMessage> _messageEvents = new List<EventMessage>();
@@ -61,7 +60,16 @@ namespace PolyPlane.Rendering
         private D2DPoint _screenShakeTrans = D2DPoint.Zero;
 
         private float _screenFlashOpacity = 0f;
+
+        private D2DColor _hudMessageColor = D2DColor.Red;
         private D2DColor _screenFlashColor = D2DColor.Red;
+        private readonly D2DColor _groundImpactOuterColor = new D2DColor(1f, 0.56f, 0.32f, 0.18f);
+        private readonly D2DColor _groundImpactInnerColor = new D2DColor(1f, 0.35f, 0.2f, 0.1f);
+        private readonly D2DColor _skyColorLight = new D2DColor(0.5f, D2DColor.SkyBlue);
+        private readonly D2DColor _skyColorDark = new D2DColor(0.5f, D2DColor.Black);
+        private readonly D2DColor _cloudColorLight = D2DColor.WhiteSmoke;
+        private readonly D2DColor _cloudColorDark = new D2DColor(1f, 0.6f, 0.6f, 0.6f);
+
         private FloatAnimation _screenShakeX;
         private FloatAnimation _screenShakeY;
         private FloatAnimation _screenFlash;
@@ -385,7 +393,6 @@ namespace PolyPlane.Rendering
 
         private void DrawPopMessages(RenderContext ctx, D2DSize vpSize, FighterPlane viewPlane)
         {
-
             for (int i = 0; i < _popMessages.Count; i++)
             {
                 var msg = _popMessages[i];
@@ -738,8 +745,6 @@ namespace PolyPlane.Rendering
             if (_groundClipLayer == null)
                 _groundClipLayer = ctx.Device.CreateLayer();
 
-            var color1 = new D2DColor(1f, 0.56f, 0.32f, 0.18f);
-            var color2 = new D2DColor(1f, 0.35f, 0.2f, 0.1f);
             var rect = new D2DRect(new D2DPoint(plane.Position.X, 2000f), new D2DSize(this.Width * World.ViewPortScaleMulti, 4000f));
 
             using (var clipGeo = ctx.Device.CreateRectangleGeometry(rect))
@@ -750,8 +755,8 @@ namespace PolyPlane.Rendering
                 {
                     if (ctx.Viewport.Contains(impact.Position))
                     {
-                        ctx.FillEllipse(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), color1);
-                        ctx.FillEllipse(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), color2);
+                        ctx.FillEllipse(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), _groundImpactOuterColor);
+                        ctx.FillEllipse(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), _groundImpactInnerColor);
                     }
                 }
 
@@ -761,11 +766,13 @@ namespace PolyPlane.Rendering
 
         private void DrawGroundObjs(RenderContext ctx, FighterPlane plane)
         {
+            var todColor = GetTimeOfDayColor();
+
             foreach (var tree in _trees)
             {
                 if (ctx.Viewport.Contains(tree.Position))
                 {
-                    tree.Render(ctx, GetTimeOfDayColor(), GROUND_OBJ_SCALE);
+                    tree.Render(ctx, todColor, GROUND_OBJ_SCALE);
                 }
             }
         }
@@ -1364,8 +1371,8 @@ namespace PolyPlane.Rendering
             if (viewPlane.Position.Y >= 0)
                 plrAlt = 0f;
 
-            var color1 = new D2DColor(0.5f, D2DColor.SkyBlue);
-            var color2 = new D2DColor(0.5f, D2DColor.Black);
+            var color1 = _skyColorLight;
+            var color2 = _skyColorDark;
             var color = Utilities.LerpColor(color1, color2, (plrAlt / (World.MAX_ALTITUDE - MAX_ALT_OFFSET)));
 
             // Add time of day color.
@@ -1422,9 +1429,8 @@ namespace PolyPlane.Rendering
 
         private void DrawCloud(RenderContext ctx, Cloud cloud)
         {
-            const float DARKER_COLOR = 0.6f;
-            var color1 = new D2DColor(1f, DARKER_COLOR, DARKER_COLOR, DARKER_COLOR);
-            var color2 = D2DColor.WhiteSmoke;
+            var color1 = _cloudColorDark;
+            var color2 = _cloudColorLight;
             var points = cloud.Points;
 
             // Find min/max height.
