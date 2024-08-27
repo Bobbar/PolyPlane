@@ -105,7 +105,6 @@ namespace PolyPlane.AI_Behavior
 
         private void ConfigPersonality()
         {
-
             var types = Enum.GetValues(typeof(AIPersonality));
             foreach (AIPersonality type in types)
             {
@@ -147,41 +146,8 @@ namespace PolyPlane.AI_Behavior
                             break;
                     }
                 }
-               
             }
-
-           
         }
-
-        //private void ConfigPersonality()
-        //{
-        //    switch (this.Personality)
-        //    {
-        //        case AIPersonality.Normal:
-
-        //            break;
-
-        //        case AIPersonality.MissileHappy:
-        //            MIN_MISSILE_TIME = 20f;
-        //            MAX_MISSILE_TIME = 40f;
-
-        //            break;
-
-        //        case AIPersonality.LongBursts:
-        //            _fireBurstTimer.Interval = 3f;
-        //            break;
-
-        //        case AIPersonality.Cowardly:
-        //            MAX_SPEED = 700f;
-        //            this.Plane.Thrust = 700f;
-        //            break;
-
-        //        case AIPersonality.Speedy:
-        //            MAX_SPEED = 2000f;
-        //            this.Plane.Thrust = 2000f;
-        //            break;
-        //    }
-        //}
 
         private void HandlePlayerKilled(FighterPlane plane, GameObject impactor)
         {
@@ -195,7 +161,7 @@ namespace PolyPlane.AI_Behavior
             {
                 var rndTarg = this.Plane.Radar.FindNearestPlane();
 
-                if (this.Personality.HasFlag(AIPersonality.Vengeful) && (_killedByPlane != null && _killedByPlane.IsDisabled == false))
+                if ((this.Personality & AIPersonality.Vengeful) == AIPersonality.Vengeful && (_killedByPlane != null && _killedByPlane.IsDisabled == false))
                     rndTarg = _killedByPlane;
 
                 _targetPlane = rndTarg;
@@ -325,7 +291,7 @@ namespace PolyPlane.AI_Behavior
                 var dirToPlayer = TargetPlane.Position - this.Plane.Position;
 
                 // Fly away from target plane?
-                if (this.Personality.HasFlag(AIPersonality.Cowardly) && this.Plane.Position.DistanceTo(TargetPlane.Position) < RUN_DISTANCE)
+                if ((this.Personality & AIPersonality.Cowardly) == AIPersonality.Cowardly && this.Plane.Position.DistanceTo(TargetPlane.Position) < RUN_DISTANCE)
                 {
                     dirToPlayer *= -1f;
                     angle = dirToPlayer.Angle();

@@ -601,7 +601,7 @@ namespace PolyPlane
 
             var buttons = Control.MouseButtons;
 
-            if (buttons.HasFlag(MouseButtons.Left))
+            if ((buttons & MouseButtons.Left) == MouseButtons.Left)
             {
                 _playerPlane.FiringBurst = true;
             }
@@ -610,7 +610,7 @@ namespace PolyPlane
                 _playerPlane.FiringBurst = false;
             }
 
-            if (buttons.HasFlag(MouseButtons.Right))
+            if ((buttons & MouseButtons.Right) == MouseButtons.Right)
                 _playerPlane.DroppingDecoy = true;
             else
                 _playerPlane.DroppingDecoy = false;
