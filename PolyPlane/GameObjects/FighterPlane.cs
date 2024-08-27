@@ -597,6 +597,9 @@ namespace PolyPlane.GameObjects
         {
             foreach (var hole in _bulletHoles)
             {
+                if (!ctx.Viewport.Contains(hole.Position))
+                    return;
+
                 ctx.Gfx.PushTransform();
                 ctx.Gfx.RotateTransform(hole.Rotation, hole.Position);
 
@@ -609,6 +612,9 @@ namespace PolyPlane.GameObjects
 
         private void DrawCockpit(RenderContext ctx)
         {
+            if (!ctx.Viewport.Contains(_cockpitPosition.Position))
+                return;
+
             ctx.Gfx.PushTransform();
             ctx.Gfx.RotateTransform(_cockpitPosition.Rotation, _cockpitPosition.Position);
 

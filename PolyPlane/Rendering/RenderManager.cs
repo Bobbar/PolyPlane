@@ -604,7 +604,7 @@ namespace PolyPlane.Rendering
             DrawGroundObjs(ctx, plane);
             DrawGroundImpacts(ctx, plane);
 
-            _objs.Decoys.ForEach(o => o.Render(ctx));
+            RenderObjectsClamped(ctx, _objs.Decoys);
             _objs.MissileTrails.ForEach(o => o.Render(ctx));
 
             _objs.Missiles.ForEach(o =>
@@ -616,7 +616,7 @@ namespace PolyPlane.Rendering
                     ctx.DrawEllipse(new D2DEllipse(o.Position, new D2DSize(50f, 50f)), new D2DColor(0.4f, D2DColor.Red), 8f);
             });
 
-            _objs.Bullets.ForEach(o => o.Render(ctx));
+            RenderObjectsClamped(ctx, _objs.Bullets);
 
             _objs.Planes.ForEach(p =>
             {
@@ -635,8 +635,8 @@ namespace PolyPlane.Rendering
 
             DrawPlaneShadow(ctx, plane);
             plane.Render(ctx);
-            _objs.Debris.ForEach(o => o.Render(ctx));
-            _objs.Explosions.ForEach(o => o.Render(ctx));
+            RenderObjectsClamped(ctx, _objs.Debris);
+            RenderObjectsClamped(ctx, _objs.Explosions);
 
             DrawClouds(ctx);
             DrawPlaneCloudShadows(ctx);
@@ -645,6 +645,22 @@ namespace PolyPlane.Rendering
 
             ctx.PopViewPort();
             ctx.Gfx.PopTransform();
+        }
+
+        /// <summary>
+        /// Renders the specified list of objects and skips any which are outside the viewport.
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="objs"></param>
+        private void RenderObjectsClamped(RenderContext ctx, List<GameObject> objs)
+        {
+            foreach (var obj in objs)
+            {
+                if (ctx.Viewport.Contains(obj.Position))
+                {
+                    obj.Render(ctx);
+                }
+            }
         }
 
         private void DrawPlaneCloudShadows(RenderContext ctx)
@@ -662,10 +678,11 @@ namespace PolyPlane.Rendering
             const float MAX_SHOW_ALT = 1400f;
             const float Y_POS = 20f;
 
-            if (plane.Altitude > MAX_SHOW_ALT)
+            var shadowPos = new D2DPoint(plane.Position.X, Y_POS);
+
+            if (plane.Altitude > MAX_SHOW_ALT || !ctx.Viewport.Contains(shadowPos))
                 return;
 
-            var shadowPos = new D2DPoint(plane.Position.X, Y_POS);
             var shadowWidth = Utilities.Lerp(0, MAX_WIDTH, Utilities.Factor(MAX_SIZE_ALT, plane.Altitude));
             if (plane.Altitude <= 0f)
                 shadowWidth = MAX_WIDTH;
@@ -729,6 +746,9 @@ namespace PolyPlane.Rendering
 
         private void DrawMuzzleFlash(RenderContext ctx, FighterPlane plane)
         {
+            if (!ctx.Viewport.Contains(plane.Gun.Position))
+                return;
+
             const float MUZZ_FLASH_RADIUS = 60f;
             if (_muzzleFlashBrush == null)
                 _muzzleFlashBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, MUZZ_FLASH_RADIUS, MUZZ_FLASH_RADIUS, new D2DGradientStop[] { new D2DGradientStop(1f, D2DColor.Transparent), new D2DGradientStop(0f, new D2DColor(0.2f, D2DColor.Orange)) });
@@ -822,6 +842,9 @@ namespace PolyPlane.Rendering
 
         private void DrawHealthBarClamped(RenderContext ctx, FighterPlane plane, D2DPoint position, D2DSize size)
         {
+            if (!ctx.Viewport.Contains(position))
+                return;
+
             var healthPct = plane.Health / FighterPlane.MAX_HEALTH;
 
             if (healthPct > 0f && healthPct < 0.05f)
