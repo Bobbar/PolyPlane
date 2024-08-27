@@ -66,13 +66,16 @@ namespace PolyPlane.Rendering
             // Add time of day color
             var trunkColor = Utilities.LerpColor(this.TrunkColor, timeOfDayColor, 0.3f);
             var shadowColor = GetShadowColor(timeOfDayColor);
-            var shadowLeafPos = this.Position - new D2DPoint(0, (-this.Height * scale) - (this.Radius));
+            var leafYPos = new D2DPoint(0f, (-this.Height * scale) - this.Radius);
+            var shadowLeafPos = this.Position - leafYPos;
+            var normalLeafPos = this.Position + leafYPos;
             var shadowAngle = GetShadowAngle();
+            var size = new D2DSize(this.Radius, this.Radius);
 
             // Draw shadow.
             ctx.Gfx.PushTransform();
-
             ctx.Gfx.RotateTransform(shadowAngle, this.Position);
+
             Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, D2DPoint.Zero, 0f, this.Position, scale, scale * 2f);
 
             // Adjust the bottom two points of the shadow to line up with the bottom of the trunk.
@@ -82,7 +85,8 @@ namespace PolyPlane.Rendering
             ctx.DrawPolygon(_trunkTransPoly, shadowColor, 0f, D2DDashStyle.Solid, shadowColor);
 
             ctx.Gfx.ScaleTransform(1f, 2f, this.Position);
-            ctx.FillEllipse(new D2DEllipse(shadowLeafPos, new D2DSize(this.Radius, this.Radius)), shadowColor);
+
+            ctx.FillEllipse(new D2DEllipse(shadowLeafPos, size), shadowColor);
 
             ctx.Gfx.PopTransform();
 
@@ -90,17 +94,17 @@ namespace PolyPlane.Rendering
             // Draw tree.
             Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, 180f, this.Position, scale);
 
-            var leafPos = this.Position + new D2DPoint(0, (-this.Height * scale) - this.Radius);
             ctx.DrawPolygon(_trunkTransPoly, trunkColor, 0f, D2DDashStyle.Solid, trunkColor);
 
             ctx.Gfx.PushTransform();
-            ctx.Gfx.TranslateTransform(leafPos.X * ctx.CurrentScale, leafPos.Y * ctx.CurrentScale);
+            ctx.Gfx.TranslateTransform(normalLeafPos.X * ctx.CurrentScale, normalLeafPos.Y * ctx.CurrentScale);
 
-            ctx.Gfx.FillEllipse(new D2DEllipse(D2DPoint.Zero, new D2DSize(this.Radius, this.Radius)), _leafBrush);
+            var leafEllipse = new D2DEllipse(D2DPoint.Zero, size);
+            ctx.Gfx.FillEllipse(leafEllipse, _leafBrush);
 
             // Add time of day color to leafs.
             var todOverlay = new D2DColor(0.2f, timeOfDayColor);
-            ctx.Gfx.FillEllipse(new D2DEllipse(D2DPoint.Zero, new D2DSize(this.Radius, this.Radius)), todOverlay);
+            ctx.Gfx.FillEllipse(leafEllipse, todOverlay);
 
             ctx.Gfx.PopTransform();
         }
