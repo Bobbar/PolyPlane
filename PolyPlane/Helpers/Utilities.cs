@@ -1,4 +1,5 @@
-﻿using PolyPlane.GameObjects;
+﻿using PolyPlane.AI_Behavior;
+using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Fixtures;
 using System.Net;
 using System.Numerics;
@@ -544,6 +545,67 @@ namespace PolyPlane.Helpers
             }
 
             return Name;
+        }
+
+        public static string GetPersonalityTag(AIPersonality personality)
+        {
+            string tagText = "";
+            var types = Enum.GetValues(typeof(AIPersonality));
+
+            foreach (AIPersonality type in types)
+            {
+                if ((personality & type) == type)
+                {
+                    switch (type)
+                    {
+                        case AIPersonality.Normal:
+                            //text += "N";
+                            break;
+
+                        case AIPersonality.MissileHappy:
+                            tagText += "M";
+                            break;
+
+                        case AIPersonality.LongBursts:
+                            tagText += "L";
+                            break;
+
+                        case AIPersonality.Cowardly:
+                            tagText += "C";
+                            break;
+
+                        case AIPersonality.Speedy:
+                            tagText += "S";
+                            break;
+
+                        case AIPersonality.Vengeful:
+                            tagText += "V";
+                            break;
+                    }
+                }
+            }
+
+            return tagText;
+        }
+
+        public static AIPersonality GetRandomPersonalities(int num)
+        {
+            AIPersonality personality = AIPersonality.Normal;
+
+            int nAdded = 0;
+
+            while (nAdded < num)
+            {
+                var rndPers = RandomEnum<AIPersonality>();
+
+                if (!personality.HasFlag(rndPers))
+                {
+                    personality |= rndPers;
+                    nAdded++;
+                }
+            }
+
+            return personality;
         }
 
         public static D2DPoint ScaleToOrigin(GameObject obj, D2DPoint point)

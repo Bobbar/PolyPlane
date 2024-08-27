@@ -14,6 +14,17 @@ namespace PolyPlane.GameObjects
     {
         public Gun Gun => _gun;
 
+        public AIPersonality Personality
+        {
+            get
+            {
+                if (_aiBehavior != null)
+                    return _aiBehavior.Personality;
+                else
+                    return AIPersonality.Normal;
+            }
+        }
+
         public bool InResetCooldown
         {
             get { return !_easePhysicsComplete; }
@@ -192,25 +203,6 @@ namespace PolyPlane.GameObjects
             new D2DPoint(-8, -1),
         ];
 
-        //public FighterPlane(D2DPoint pos) : base(pos)
-        //{
-        //    _thrustAmt.Target = 1f;
-        //    _planeColor = D2DColor.Randomly();
-
-        //    InitStuff();
-        //}
-
-        //public FighterPlane(D2DPoint pos, D2DColor color) : base(pos)
-        //{
-        //    IsNetObject = true;
-        //    _planeColor = color;
-        //    _isAIPlane = false;
-        //    AutoPilotOn = false;
-        //    ThrustOn = true;
-        //    _thrustAmt.Target = 1f;
-
-        //    InitStuff();
-        //}
 
         public FighterPlane(D2DPoint pos, AIPersonality personality) : base(pos)
         {
@@ -232,24 +224,10 @@ namespace PolyPlane.GameObjects
 
             if (isAI)
             {
-                AIPersonality personality = AIPersonality.Normal;
-
                 const int NUM_PERS = 2;
-                int nAdded = 0;
-
-                while (nAdded < NUM_PERS)
-                {
-                    var rndPers = Utilities.RandomEnum<AIPersonality>();
-
-                    if (!personality.HasFlag(rndPers))
-                    {
-                        personality |= rndPers;
-                        nAdded++;
-                    }
-                }
+                var personality = Utilities.GetRandomPersonalities(NUM_PERS);
 
                 _aiBehavior = new FighterPlaneAI(this, personality);
-
             }
 
             InitStuff();

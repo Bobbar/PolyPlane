@@ -347,6 +347,10 @@ namespace PolyPlane
             var plane = new FighterPlane(pos, planeColor, isAI, false);
 
             plane.PlayerName = playerName;
+
+            if (isAI && World.ShowAITags)
+                plane.PlayerName += $" [{Utilities.GetPersonalityTag(plane.Personality)}]";
+
             plane.PlayerID = World.GetNextPlayerId();
             plane.AutoPilotOn = true;
             plane.ThrustOn = true;
