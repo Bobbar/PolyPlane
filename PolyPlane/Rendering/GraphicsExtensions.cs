@@ -18,14 +18,11 @@ namespace PolyPlane.Rendering
         public static void DrawTriangle(this D2DGraphics gfx, D2DPoint position, D2DColor color, D2DColor fillColor, float scale = 1f)
         {
             var tri = new D2DPoint[TrianglePoly.Length];
-            Array.Copy(TrianglePoly, tri, tri.Length);
 
             Utilities.ApplyTranslation(TrianglePoly, tri, 0f, position, scale);
 
             gfx.DrawPolygon(tri, color, 1f, D2DDashStyle.Solid, fillColor);
-
         }
-
 
         public static void DrawArrow(this D2DGraphics gfx, D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f, float arrowLen = 10f)
         {
