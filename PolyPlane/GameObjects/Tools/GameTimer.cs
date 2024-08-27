@@ -20,12 +20,6 @@
         private bool _isRunning = false;
         private bool _isInCooldown = false;
 
-        public GameTimer(float interval, Action callback)
-        {
-            Interval = interval;
-            TriggerCallback = callback;
-        }
-
         public GameTimer(float interval)
         {
             Interval = interval;
@@ -45,12 +39,6 @@
         }
 
         public GameTimer(float interval, bool autoRestart)
-        {
-            Interval = interval;
-            AutoRestart = autoRestart;
-        }
-
-        public GameTimer(float interval, bool autoRestart, Action callback)
         {
             Interval = interval;
             AutoRestart = autoRestart;

@@ -32,6 +32,7 @@ namespace PolyPlane.Rendering
         private D2DRadialGradientBrush _missileLightingBrush = null;
         private D2DRadialGradientBrush _muzzleFlashBrush = null;
         private D2DRadialGradientBrush _decoyLightBrush = null;
+        private D2DLinearGradientBrush _groundBrush = null;
 
         private readonly D2DPoint _infoPosition = new D2DPoint(20, 20);
 
@@ -47,6 +48,7 @@ namespace PolyPlane.Rendering
         private string _hudMessage = string.Empty;
         private GameTimer _hudMessageTimeout = new GameTimer(10f);
         private GameTimer _missileFlashTimer = new GameTimer(0.5f, 0.5f, false);
+        private GameTimer _groundColorUpdateTimer = new GameTimer(4f, true);
         private List<EventMessage> _messageEvents = new List<EventMessage>();
         private List<PopMessage> _popMessages = new List<PopMessage>();
 
@@ -69,6 +71,8 @@ namespace PolyPlane.Rendering
         private readonly D2DColor _skyColorDark = new D2DColor(0.5f, D2DColor.Black);
         private readonly D2DColor _cloudColorLight = D2DColor.WhiteSmoke;
         private readonly D2DColor _cloudColorDark = new D2DColor(1f, 0.6f, 0.6f, 0.6f);
+        private readonly D2DColor _groundColorLight = new D2DColor(1f, 0f, 0.29f, 0);
+        private readonly D2DColor _groundColorDark = D2DColor.DarkGreen;
 
         private FloatAnimation _screenShakeX;
         private FloatAnimation _screenShakeY;
@@ -135,6 +139,9 @@ namespace PolyPlane.Rendering
 
             InitProceduralGenStuff();
             InitGfx();
+
+            _groundColorUpdateTimer.TriggerCallback = () => UpdateGroundColor();
+            _groundColorUpdateTimer.Start();
         }
 
         private void PlayerScoredEvent(object? sender, PlayerScoredEventArgs e)
@@ -176,6 +183,8 @@ namespace PolyPlane.Rendering
             _screenFlash = new FloatAnimation(0.4f, 0f, 4f, EasingFunctions.EaseOutQuintic, v => _screenFlashOpacity = v);
             _screenShakeX = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.X = v);
             _screenShakeY = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.Y = v);
+
+            _groundBrush = _ctx.Device.CreateLinearGradientBrush(new D2DPoint(0f, 50f), new D2DPoint(0f, 4000f), [new D2DGradientStop(0.2f, AddTimeOfDayColor(_groundColorDark)), new D2DGradientStop(0.1f, AddTimeOfDayColor(_groundColorLight))]);
         }
 
         public void InitProceduralGenStuff()
@@ -419,6 +428,7 @@ namespace PolyPlane.Rendering
 
             _hudMessageTimeout.Update(World.DT);
             _missileFlashTimer.Update(World.DT);
+            _groundColorUpdateTimer.Update(World.DT);
 
             if (!_missileFlashTimer.IsInCooldown && !_missileFlashTimer.IsRunning)
                 _missileFlashTimer.Restart();
@@ -427,6 +437,12 @@ namespace PolyPlane.Rendering
             _screenShakeX.Update(World.DT, World.RenderScale);
             _screenShakeY.Update(World.DT, World.RenderScale);
             MoveClouds(World.DT);
+        }
+
+        private void UpdateGroundColor()
+        {
+            _groundBrush?.Dispose();
+            _groundBrush = _ctx.Device.CreateLinearGradientBrush(new D2DPoint(0f, 50f), new D2DPoint(0f, 4000f), [new D2DGradientStop(0.2f, AddTimeOfDayColor(_groundColorDark)), new D2DGradientStop(0.1f, AddTimeOfDayColor(_groundColorLight))]);
         }
 
         public void ResizeGfx(bool force = false)
@@ -452,11 +468,17 @@ namespace PolyPlane.Rendering
 
         public void Dispose()
         {
+            _hudMessageTimeout.Stop();
+            _missileFlashTimer.Stop();
+            _groundColorUpdateTimer.Stop();
+
             _groundClipLayer?.Dispose();
             _bulletLightingBrush?.Dispose();
             _missileLightingBrush?.Dispose();
             _muzzleFlashBrush?.Dispose();
             _decoyLightBrush?.Dispose();
+            _groundBrush?.Dispose();
+
             _device?.Dispose();
             _fpsLimiter?.Dispose();
         }
@@ -731,13 +753,8 @@ namespace PolyPlane.Rendering
             var yPos = HEIGHT / ctx.CurrentScale;
             groundPos += new D2DPoint(0f, yPos);
 
-            var color1 = D2DColor.DarkGreen;
-            var color2 = new D2DColor(1f, 0f, 0.29f, 0);
-            using (var brush = ctx.Device.CreateLinearGradientBrush(new D2DPoint(plane.Position.X, 50f), new D2DPoint(plane.Position.X, 4000f), [new D2DGradientStop(0.2f, AddTimeOfDayColor(color1)), new D2DGradientStop(0.1f, AddTimeOfDayColor(color2))]))
-            {
-                // Draw the ground.
-                ctx.Gfx.FillRectangle(new D2DRect(groundPos, new D2DSize(this.Width * World.ViewPortScaleMulti, (HEIGHT * 2f) / ctx.CurrentScale)), brush);
-            }
+            // Draw the ground.
+            ctx.Gfx.FillRectangle(new D2DRect(groundPos, new D2DSize(this.Width * World.ViewPortScaleMulti, (HEIGHT * 2f) / ctx.CurrentScale)), _groundBrush);
         }
 
         private void DrawGroundImpacts(RenderContext ctx, FighterPlane plane)
