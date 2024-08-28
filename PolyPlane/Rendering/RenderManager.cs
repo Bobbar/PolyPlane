@@ -25,7 +25,7 @@ namespace PolyPlane.Rendering
         }
 
         private D2DDevice _device;
-        private D2DGraphics _gfx;
+        private D2DGraphics _gfx = null;
         private RenderContext _ctx;
         private D2DLayer _groundClipLayer = null;
         private D2DRadialGradientBrush _bulletLightingBrush = null;
@@ -94,6 +94,7 @@ namespace PolyPlane.Rendering
         private const float CLOUD_SCALE = 5f;
         private const float GROUND_OBJ_SCALE = 4f;
         private const float SCREEN_SHAKE_G = 9f; // Amount of g-force before screen shake.
+        private const float ZOOM_FACTOR = 0.07f; // Effects zoom in/out speed.
 
         private List<Cloud> _clouds = new List<Cloud>();
         private List<Tree> _trees = new List<Tree>();
@@ -138,10 +139,27 @@ namespace PolyPlane.Rendering
             _missileFlashTimer.Start();
 
             InitProceduralGenStuff();
-            InitGfx();
+            InitRenderTarget();
 
             _groundColorUpdateTimer.TriggerCallback = () => UpdateGroundColor();
             _groundColorUpdateTimer.Start();
+        }
+
+        public void Dispose()
+        {
+            _hudMessageTimeout.Stop();
+            _missileFlashTimer.Stop();
+            _groundColorUpdateTimer.Stop();
+
+            _groundClipLayer?.Dispose();
+            _bulletLightingBrush?.Dispose();
+            _missileLightingBrush?.Dispose();
+            _muzzleFlashBrush?.Dispose();
+            _decoyLightBrush?.Dispose();
+            _groundBrush?.Dispose();
+
+            _device?.Dispose();
+            _fpsLimiter?.Dispose();
         }
 
         private void PlayerScoredEvent(object? sender, PlayerScoredEventArgs e)
@@ -166,10 +184,18 @@ namespace PolyPlane.Rendering
             AddNewEventMessage($"{e.PlayerName}: {e.Message}", EventType.Chat);
         }
 
-        public void InitGfx()
+        private void InitRenderTarget()
         {
             _device?.Dispose();
             _device = D2DDevice.FromHwnd(_renderTarget.Handle);
+            _device.Resize();
+        }
+
+        private void InitGfx()
+        {
+            if (_gfx != null)
+                return;
+
             _gfx = new D2DGraphics(_device);
             _gfx.Antialias = true;
             _device.Resize();
@@ -185,6 +211,27 @@ namespace PolyPlane.Rendering
             _screenShakeY = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.Y = v);
 
             _groundBrush = _ctx.Device.CreateLinearGradientBrush(new D2DPoint(0f, 50f), new D2DPoint(0f, 4000f), [new D2DGradientStop(0.2f, AddTimeOfDayColor(_groundColorDark)), new D2DGradientStop(0.1f, AddTimeOfDayColor(_groundColorLight))]);
+        }
+
+        public void ResizeGfx(bool force = false)
+        {
+            if (!force)
+                if (World.ViewPortBaseSize.width == this.Width && World.ViewPortBaseSize.height == this.Height)
+                    return;
+
+            _device?.Resize();
+
+            var scaleSize = GetViewportScaled();
+            World.UpdateViewport(scaleSize);
+
+            // Resizing graphics causes spikes in FPS. Try to limit them here.
+            _fpsLimiter.Wait(60);
+        }
+
+        private Size GetViewportScaled()
+        {
+            var scaleSize = new Size((int)((float)_renderTarget.Size.Width / ((float)_currentDPI / World.DEFAULT_DPI)), (int)((float)_renderTarget.Size.Height / ((float)_currentDPI / World.DEFAULT_DPI)));
+            return scaleSize;
         }
 
         public void InitProceduralGenStuff()
@@ -303,7 +350,7 @@ namespace PolyPlane.Rendering
 
         public void ZoomIn()
         {
-            var amt = 0.06f * World.ZoomScale;
+            var amt = ZOOM_FACTOR * World.ZoomScale;
             World.ZoomScale += amt;
 
             ResizeGfx(force: true);
@@ -311,7 +358,7 @@ namespace PolyPlane.Rendering
 
         public void ZoomOut()
         {
-            var amt = 0.06f * World.ZoomScale;
+            var amt = ZOOM_FACTOR * World.ZoomScale;
             World.ZoomScale -= amt;
 
             ResizeGfx(force: true);
@@ -346,6 +393,7 @@ namespace PolyPlane.Rendering
 
         public void RenderFrame(FighterPlane viewplane)
         {
+            InitGfx();
             ResizeGfx();
 
             _timer.Restart();
@@ -443,44 +491,6 @@ namespace PolyPlane.Rendering
         {
             _groundBrush?.Dispose();
             _groundBrush = _ctx.Device.CreateLinearGradientBrush(new D2DPoint(0f, 50f), new D2DPoint(0f, 4000f), [new D2DGradientStop(0.2f, AddTimeOfDayColor(_groundColorDark)), new D2DGradientStop(0.1f, AddTimeOfDayColor(_groundColorLight))]);
-        }
-
-        public void ResizeGfx(bool force = false)
-        {
-            if (!force)
-                if (World.ViewPortBaseSize.width == this.Width && World.ViewPortBaseSize.height == this.Height)
-                    return;
-
-            _device?.Resize();
-
-            var scaleSize = GetViewportScaled();
-            World.UpdateViewport(scaleSize);
-
-            // Resizing graphics causes spikes in FPS. Try to limit them here.
-            _fpsLimiter.Wait(60);
-        }
-
-        private Size GetViewportScaled()
-        {
-            var scaleSize = new Size((int)((float)_renderTarget.Size.Width / ((float)_currentDPI / World.DEFAULT_DPI)), (int)((float)_renderTarget.Size.Height / ((float)_currentDPI / World.DEFAULT_DPI)));
-            return scaleSize;
-        }
-
-        public void Dispose()
-        {
-            _hudMessageTimeout.Stop();
-            _missileFlashTimer.Stop();
-            _groundColorUpdateTimer.Stop();
-
-            _groundClipLayer?.Dispose();
-            _bulletLightingBrush?.Dispose();
-            _missileLightingBrush?.Dispose();
-            _muzzleFlashBrush?.Dispose();
-            _decoyLightBrush?.Dispose();
-            _groundBrush?.Dispose();
-
-            _device?.Dispose();
-            _fpsLimiter?.Dispose();
         }
 
         public void NewHudMessage(string message, D2DColor color)
