@@ -1494,6 +1494,10 @@ namespace PolyPlane.Rendering
             var minY = points.Min(p => p.Y);
             var maxY = points.Max(p => p.Y);
 
+            // Apply translations.
+            Utilities.ApplyTranslation(cloud.PointsOrigin, cloud.Points, cloud.Rotation, cloud.Position, CLOUD_SCALE);
+            Utilities.ApplyTranslation(cloud.Points, cloud.Points, cloud.Position, 0f, D2DPoint.Zero, cloud.ScaleX, cloud.ScaleY);
+
             for (int i = 0; i < points.Length; i++)
             {
                 var point = points[i];
@@ -1569,10 +1573,6 @@ namespace PolyPlane.Rendering
                 {
                     cloud.Position.X = -MAX_CLOUD_X;
                 }
-
-                // Rotate then scale.
-                Utilities.ApplyTranslation(cloud.PointsOrigin, cloud.Points, cloud.Rotation, cloud.Position, CLOUD_SCALE);
-                Utilities.ApplyTranslation(cloud.Points, cloud.Points, cloud.Position, 0f, D2DPoint.Zero, cloud.ScaleX, cloud.ScaleY);
             }
         }
 
