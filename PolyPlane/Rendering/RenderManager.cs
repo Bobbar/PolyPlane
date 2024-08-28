@@ -727,8 +727,9 @@ namespace PolyPlane.Rendering
 
         private void DrawPlaneCloudShadows(RenderContext ctx, D2DColor shadowColor)
         {
+            var color = shadowColor.WithAlpha(0.07f);
             foreach (var plane in _objs.Planes)
-                ctx.DrawPolygon(plane.Polygon.Poly, shadowColor, 0f, D2DDashStyle.Solid, shadowColor);
+                ctx.DrawPolygon(plane.Polygon.Poly, color, 0f, D2DDashStyle.Solid, color);
         }
 
         private void DrawPlaneShadow(RenderContext ctx, FighterPlane plane, D2DColor shadowColor)

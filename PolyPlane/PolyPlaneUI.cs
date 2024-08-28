@@ -58,7 +58,7 @@ namespace PolyPlane
             this.Disposed += PolyPlaneUI_Disposed;
             this.MouseWheel += PolyPlaneUI_MouseWheel;
 
-            _multiThreadNum = Environment.ProcessorCount - 2;
+            _multiThreadNum = Environment.ProcessorCount;
         }
 
         /// <summary>
