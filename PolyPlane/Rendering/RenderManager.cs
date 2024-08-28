@@ -555,6 +555,11 @@ namespace PolyPlane.Rendering
         private D2DColor AddTimeOfDayColor(D2DColor color)
         {
             var todColor = GetTimeOfDayColor();
+            return AddTimeOfDayColor(color, todColor);
+        }
+
+        private D2DColor AddTimeOfDayColor(D2DColor color, D2DColor todColor)
+        {
             return Utilities.LerpColor(color, todColor, 0.3f);
         }
 
@@ -653,6 +658,8 @@ namespace PolyPlane.Rendering
             var viewPortRect = new D2DRect(plane.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
             viewPortRect = viewPortRect.Inflate(600f, 300f); // Inflate slightly to prevent "pop-in".
 
+            var shadowColor = GetShadowColor();
+
             ctx.PushViewPort(viewPortRect);
 
             DrawGround(ctx, plane);
@@ -677,7 +684,7 @@ namespace PolyPlane.Rendering
             {
                 if (!p.Equals(plane))
                 {
-                    DrawPlaneShadow(ctx, p);
+                    DrawPlaneShadow(ctx, p, shadowColor);
                     p.Render(ctx);
                     DrawHealthBarClamped(ctx, p, new D2DPoint(p.Position.X, p.Position.Y - 110f), healthBarSize);
                     DrawMuzzleFlash(ctx, p);
@@ -688,13 +695,13 @@ namespace PolyPlane.Rendering
                 }
             });
 
-            DrawPlaneShadow(ctx, plane);
+            DrawPlaneShadow(ctx, plane, shadowColor);
             plane.Render(ctx);
             RenderObjectsClamped(ctx, _objs.Debris);
             RenderObjectsClamped(ctx, _objs.Explosions);
 
             DrawClouds(ctx);
-            DrawPlaneCloudShadows(ctx);
+            DrawPlaneCloudShadows(ctx, shadowColor);
             DrawLightingEffects(ctx, plane);
             DrawMuzzleFlash(ctx, plane);
 
@@ -718,14 +725,13 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private void DrawPlaneCloudShadows(RenderContext ctx)
+        private void DrawPlaneCloudShadows(RenderContext ctx, D2DColor shadowColor)
         {
-            var shadowColor = new D2DColor(0.07f, GetShadowColor());
             foreach (var plane in _objs.Planes)
                 ctx.DrawPolygon(plane.Polygon.Poly, shadowColor, 0f, D2DDashStyle.Solid, shadowColor);
         }
 
-        private void DrawPlaneShadow(RenderContext ctx, FighterPlane plane)
+        private void DrawPlaneShadow(RenderContext ctx, FighterPlane plane, D2DColor shadowColor)
         {
             const float MAX_WIDTH = 100f;
             const float HEIGHT = 10f;
@@ -742,7 +748,7 @@ namespace PolyPlane.Rendering
             if (plane.Altitude <= 0f)
                 shadowWidth = MAX_WIDTH;
 
-            ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(shadowWidth, HEIGHT)), GetShadowColor());
+            ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(shadowWidth, HEIGHT)), shadowColor);
         }
 
         private void DrawLightingEffects(RenderContext ctx, FighterPlane plane)
@@ -1471,20 +1477,22 @@ namespace PolyPlane.Rendering
 
         private void DrawClouds(RenderContext ctx)
         {
+            var todColor = GetTimeOfDayColor();
+
             for (int i = 0; i < _clouds.Count; i++)
             {
                 var cloud = _clouds[i];
 
                 if (ctx.Viewport.Contains(cloud.Position))
                 {
-                    DrawCloud(ctx, cloud);
+                    DrawCloud(ctx, cloud, todColor);
                 }
 
-                DrawCloudShadow(ctx, cloud);
+                DrawCloudShadow(ctx, cloud, todColor);
             }
         }
 
-        private void DrawCloud(RenderContext ctx, Cloud cloud)
+        private void DrawCloud(RenderContext ctx, Cloud cloud, D2DColor todColor)
         {
             var color1 = _cloudColorDark;
             var color2 = _cloudColorLight;
@@ -1518,13 +1526,13 @@ namespace PolyPlane.Rendering
                 var color = Utilities.LerpColor(color1, color2, 1f - amt);
 
                 // Add time of day color.
-                color = AddTimeOfDayColor(color);
+                color = AddTimeOfDayColor(color, todColor);
 
                 ctx.FillEllipse(new D2DEllipse(point, dims), color);
             }
         }
 
-        private void DrawCloudShadow(RenderContext ctx, Cloud cloud)
+        private void DrawCloudShadow(RenderContext ctx, Cloud cloud, D2DColor todColor)
         {
             if (cloud.Position.Y < -8000f)
                 return;
@@ -1534,7 +1542,7 @@ namespace PolyPlane.Rendering
             if (!ctx.Viewport.Contains(new D2DPoint(cloud.Position.X + todOffset, 0f)))
                 return;
 
-            var shadowColor = new D2DColor(0.05f, Utilities.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.7f));
+            var shadowColor = new D2DColor(0.05f, Utilities.LerpColor(todColor, D2DColor.Black, 0.7f));
 
             for (int i = 0; i < cloud.Points.Length; i++)
             {
