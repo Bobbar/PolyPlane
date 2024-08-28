@@ -203,6 +203,17 @@ namespace PolyPlane.Rendering
                 OffScreen++;
         }
 
+        public static void DrawTextClamped(this D2DGraphics gfx, D2DRect viewport, string text, D2DBrush brush, D2DTextFormat format, D2DRect rect)
+        {
+            if (viewport.Contains(rect))
+            {
+                gfx.DrawText(text, brush, format, rect);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
+        }
+
         public static void DrawEllipseClamped(this D2DGraphics gfx, D2DRect viewport, D2DEllipse ellipse, D2DColor color, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid)
         {
             if (viewport.Contains(ellipse))

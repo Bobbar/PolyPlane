@@ -16,15 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="d2dlibexport">
-      <HintPath>d2dlibexport.dll</HintPath>
-    </Reference>
-    <Reference Include="d2dwinform">
-      <HintPath>d2dwinform.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="d2dlib64.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -34,6 +25,7 @@
 
   <ItemGroup>
     <PackageReference Include="ENet-CSharp" Version="2.4.8" />
+    <PackageReference Include="unvell.D2DLib-x64" Version="1.5.0" />
   </ItemGroup>
 
   <ItemGroup>

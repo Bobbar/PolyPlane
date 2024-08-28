@@ -130,6 +130,11 @@ namespace PolyPlane.Helpers
             return new D2DRect(rect.left - width, rect.top - height, rect.Width + 2f * width, rect.Height + 2f * height);
         }
 
+        public static D2DRect Deflate(this D2DRect rect, float width, float height)
+        {
+            return new D2DRect(rect.left + width, rect.top + height, rect.Width - 2f * width, rect.Height - 2f * height);
+        }
+
         public static D2DColor ToD2DColor(this Color color)
         {
             return D2DColor.FromGDIColor(color);
