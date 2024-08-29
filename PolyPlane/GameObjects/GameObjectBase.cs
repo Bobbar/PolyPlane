@@ -239,6 +239,11 @@ namespace PolyPlane.GameObjects
         public virtual void FlipY()
         { }
 
+        public virtual bool ContainedBy(D2DRect rect)
+        {
+            return rect.Contains(this.Position);
+        }
+
         public float FOVToObject(GameObject obj)
         {
             var dir = obj.Position - this.Position;

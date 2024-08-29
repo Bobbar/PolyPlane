@@ -7,6 +7,7 @@ namespace PolyPlane.GameObjects
     public class Explosion : GameObject
     {
         public float MaxRadius { get; set; } = 100f;
+        public float MaxShockwaveRadius { get; set; } = 100f;
         public float Duration { get; set; } = 1f;
         public float Radius => _currentRadius;
 
@@ -23,6 +24,7 @@ namespace PolyPlane.GameObjects
         {
             this.Owner = owner;
             this.MaxRadius = maxRadius;
+            this.MaxShockwaveRadius = maxRadius * 6f;
             this.Duration = duration;
             this.PlayerID = 0;
 
@@ -53,7 +55,7 @@ namespace PolyPlane.GameObjects
 
             if (_hasShockWave)
             {
-                _currentShockWaveRadius = (MaxRadius * 6f) * Utilities.FactorWithEasing(this.Age * 1f, Duration, EasingFunctions.EaseOutCirc);
+                _currentShockWaveRadius = MaxShockwaveRadius * Utilities.FactorWithEasing(this.Age * 1f, Duration, EasingFunctions.EaseOutCirc);
                 _showckWaveColor.a = 1f - Utilities.FactorWithEasing(this.Age * 1.5f, Duration, EasingFunctions.EaseOutExpo);
             }
 
@@ -76,6 +78,11 @@ namespace PolyPlane.GameObjects
             }
 
             _flames.ForEach(f => f.Render(ctx));
+        }
+
+        public override bool ContainedBy(D2DRect rect)
+        {
+            return rect.Inflate(MaxShockwaveRadius, MaxShockwaveRadius).Contains(this.Position);
         }
 
         public override void Dispose()

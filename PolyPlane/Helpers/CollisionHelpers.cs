@@ -135,7 +135,7 @@ namespace PolyPlane.Helpers
             // Project lines from each polygon vert of the impactor; one point at the current position, and one point at the next/future position.
             // Then for each of those lines, check for intersections on each line segment of the target object's polygon.
 
-            const float BB_INFLATE_AMT = 10f;
+            const float BB_INFLATE_AMT = 20f;
             var hits = new List<D2DPoint>();
             var relVelo = (impactorObj.Velocity - targVelo) * dt; // Get relative velo.
             var relVeloHalf = relVelo * 0.5f;
