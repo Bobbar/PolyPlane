@@ -79,7 +79,6 @@ namespace PolyPlane.Rendering
             Gfx.DrawEllipseClamped(Viewport, ellipse, color, weight, dashStyle);
         }
 
-
         public void DrawLine(D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid, D2DCapStyle startCap = D2DCapStyle.Flat, D2DCapStyle endCap = D2DCapStyle.Flat)
         {
             Gfx.DrawLineClamped(Viewport, start, end, color, weight, dashStyle, startCap, endCap);

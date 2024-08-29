@@ -103,10 +103,18 @@ namespace PolyPlane.Helpers
 
         public static bool Contains(this D2DRect rect, D2DRect rect2)
         {
-            return rect.X <= rect2.X &&
+            bool contains = false;
+
+            if (rect.X <= rect2.X &&
             rect2.X + rect2.Width <= rect.X + rect.Width &&
             rect.Y <= rect2.Y &&
-            rect2.Y + rect2.Height <= rect.Y + rect.Height;
+            rect2.Y + rect2.Height <= rect.Y + rect.Height)
+                contains = true;
+
+            if (!contains && rect.Contains(rect2.ToPoints()))
+                contains = true;
+
+            return contains;
         }
 
         public static bool Contains(this D2DRect rect, D2DPoint[] poly)
@@ -133,6 +141,16 @@ namespace PolyPlane.Helpers
         public static D2DRect Deflate(this D2DRect rect, float width, float height)
         {
             return new D2DRect(rect.left + width, rect.top + height, rect.Width - 2f * width, rect.Height - 2f * height);
+        }
+
+        public static D2DPoint[] ToPoints(this D2DRect rect)
+        {
+            var points = new D2DPoint[4];
+            points[0] = new D2DPoint(rect.left, rect.top);
+            points[1] = new D2DPoint(rect.right, rect.top);
+            points[2] = new D2DPoint(rect.right, rect.bottom);
+            points[3] = new D2DPoint(rect.left, rect.bottom);
+            return points;
         }
 
         public static D2DColor ToD2DColor(this Color color)

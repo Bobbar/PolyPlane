@@ -47,11 +47,7 @@ namespace PolyPlane.Helpers
 
             BoundsRect = rect;
 
-            BoundsPoly = new D2DPoint[4];
-            BoundsPoly[0] = new D2DPoint(rect.left, rect.top);
-            BoundsPoly[1] = new D2DPoint(rect.right, rect.top);
-            BoundsPoly[2] = new D2DPoint(rect.right, rect.bottom);
-            BoundsPoly[3] = new D2DPoint(rect.left, rect.bottom);
+            BoundsPoly = rect.ToPoints();
         }
     }
 }
