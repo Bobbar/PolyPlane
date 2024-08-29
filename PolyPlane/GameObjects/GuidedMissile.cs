@@ -166,6 +166,8 @@ namespace PolyPlane.GameObjects
             this.Polygon = new RenderPoly(_missilePoly, new D2DPoint(-2f, 0f));
             this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(6f, 0));
 
+            this.Polygon.Update(this.Position, this.Rotation, World.RenderScale);
+
             InitWings();
 
             _igniteCooldown.TriggerCallback = () =>

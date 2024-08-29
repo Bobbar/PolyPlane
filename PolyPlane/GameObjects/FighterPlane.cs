@@ -241,6 +241,7 @@ namespace PolyPlane.GameObjects
 
             this.Polygon = new RenderPoly(_planePoly, this.RenderOffset, POLY_TESSELLATE_DIST);
             this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), this.RenderOffset);
+            this.Polygon.Update(this.Position, this.Rotation, this.RenderOffset);
 
             InitWings();
 

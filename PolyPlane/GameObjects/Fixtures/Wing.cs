@@ -51,6 +51,8 @@ namespace PolyPlane.GameObjects.Fixtures
 
             if (_params.MaxDragForce == 0f)
                 _params.MaxDragForce = _params.MaxLiftForce;
+
+            this.Update(0f, _parentObject.RenderOffset);
         }
 
         public override void Update(float dt, float renderScale)

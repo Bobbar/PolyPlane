@@ -656,7 +656,10 @@ namespace PolyPlane.Rendering
             ctx.Gfx.TranslateTransform(pos.X, pos.Y);
 
             var viewPortRect = new D2DRect(plane.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
-            viewPortRect = viewPortRect.Inflate(viewPortRect.Width * 0.3f, viewPortRect.Height * 0.3f); // Inflate slightly to prevent "pop-in".
+
+            const float VIEWPORT_PADDING_AMT = 4f;
+            var inflatAmt = VIEWPORT_PADDING_AMT * zAmt;
+            viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflatAmt, viewPortRect.Height * inflatAmt); // Inflate slightly to prevent "pop-in".
 
             var shadowColor = GetShadowColor();
 
