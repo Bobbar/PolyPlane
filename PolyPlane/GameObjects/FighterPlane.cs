@@ -725,6 +725,7 @@ namespace PolyPlane.GameObjects
             _centerOfMass.Update(0f, World.RenderScale * this.RenderOffset);
             _cockpitPosition.Update(0f, World.RenderScale * this.RenderOffset);
             _gun.Update(0f, World.RenderScale * this.RenderOffset);
+            this.Wings.ForEach(w => w.Update(0f, World.RenderScale * this.RenderOffset));
         }
 
         public void AddBulletHole(D2DPoint pos, float angle, float distortAmt = 3f)
