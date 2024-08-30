@@ -29,25 +29,26 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(PolyPlaneUI));
-            renderTarget = new PictureBox();
-            ((System.ComponentModel.ISupportInitialize)renderTarget).BeginInit();
+            RenderTarget = new PictureBox();
+            ((System.ComponentModel.ISupportInitialize)RenderTarget).BeginInit();
             SuspendLayout();
             // 
-            // renderTarget
+            // RenderTarget
             // 
-            renderTarget.Dock = DockStyle.Fill;
-            renderTarget.Location = new Point(0, 0);
-            renderTarget.Name = "renderTarget";
-            renderTarget.Size = new Size(1008, 729);
-            renderTarget.TabIndex = 0;
-            renderTarget.TabStop = false;
+            RenderTarget.Dock = DockStyle.Fill;
+            RenderTarget.Location = new Point(0, 0);
+            RenderTarget.Name = "renderTarget";
+            RenderTarget.Size = new Size(1008, 729);
+            RenderTarget.TabIndex = 0;
+            RenderTarget.TabStop = false;
+            RenderTarget.MouseDown += RenderTarget_MouseDown;
             // 
             // PolyPlaneUI
             // 
             AutoScaleDimensions = new SizeF(96F, 96F);
             AutoScaleMode = AutoScaleMode.Dpi;
             ClientSize = new Size(1008, 729);
-            Controls.Add(renderTarget);
+            Controls.Add(RenderTarget);
             Cursor = Cursors.Cross;
             Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "PolyPlaneUI";
@@ -58,13 +59,12 @@
             KeyDown += PolyPlaneUI_KeyDown;
             KeyPress += PolyPlaneUI_KeyPress;
             KeyUp += PolyPlaneUI_KeyUp;
-            MouseDown += PolyPlaneUI_MouseDown;
-            ((System.ComponentModel.ISupportInitialize)renderTarget).EndInit();
+            ((System.ComponentModel.ISupportInitialize)RenderTarget).EndInit();
             ResumeLayout(false);
         }
 
         #endregion
 
-        private PictureBox renderTarget;
+        private PictureBox RenderTarget;
     }
 }

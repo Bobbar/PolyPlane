@@ -1014,7 +1014,7 @@ namespace PolyPlane.Rendering
             if (chatActive)
                 scale = ACTIVE_SCALE;
 
-            var boxPos = new D2DPoint(160f * ((HudScale * 2f) * scale), viewportsize.height - ((100f * (HudScale * 2f)) * scale));
+            var boxPos = new D2DPoint(370f * HudScale * scale, viewportsize.height - (220f * HudScale * scale));
             var linePos = boxPos;
 
             ctx.Gfx.PushTransform();
@@ -1338,8 +1338,8 @@ namespace PolyPlane.Rendering
 
         private void DrawRadar(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)
         {
-            const float SCALE = 0.8f;
-            var pos = new D2DPoint(viewportsize.width - (100f * (HudScale * 2.5f)), viewportsize.height - (90f * (HudScale * 2.5f)));
+            const float SCALE = 0.9f;
+            var pos = new D2DPoint(viewportsize.width - (110f * (HudScale * 2.5f)), viewportsize.height - (90f * (HudScale * 2.5f)));
 
             ctx.Gfx.PushTransform();
             ctx.Gfx.ScaleTransform(SCALE, SCALE, pos);
@@ -1627,11 +1627,10 @@ namespace PolyPlane.Rendering
             }
             else
             {
-                infoText += "\n";
                 infoText += "H: Show help";
             }
 
-            gfx.DrawText(infoText, _greenYellowColorBrush, _textConsolas12, World.ViewPortRect.Deflate(50f, 50f));
+            gfx.DrawText(infoText, _greenYellowColorBrush, _textConsolas12, World.ViewPortRect.Deflate(30f, 30f));
         }
 
         private string GetInfo(FighterPlane viewplane)

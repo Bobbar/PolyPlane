@@ -456,7 +456,7 @@ namespace PolyPlane
         private void InitGfx()
         {
             _render?.Dispose();
-            _render = new RenderManager(renderTarget, _netMan);
+            _render = new RenderManager(RenderTarget, _netMan);
         }
 
         private void GameLoop()
@@ -882,7 +882,7 @@ namespace PolyPlane
             }
         }
 
-        private void PolyPlaneUI_MouseDown(object sender, MouseEventArgs e)
+        private void RenderTarget_MouseDown(object sender, MouseEventArgs e)
         {
             switch (e.Button)
             {
