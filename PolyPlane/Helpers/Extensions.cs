@@ -133,9 +133,36 @@ namespace PolyPlane.Helpers
             return rect.Inflate(ellipse.radiusX * World.ViewPortScaleMulti, ellipse.radiusY * World.ViewPortScaleMulti).Contains(ellipse.origin);
         }
 
-        public static D2DRect Inflate(this D2DRect rect, float width, float height)
+        public static D2DPoint AspectRatioFactor(D2DRect rect)
         {
-            return new D2DRect(rect.left - (width * 0.5f), rect.top - (height * 0.5f), rect.Width + width, rect.Height + height);
+            var rH = rect.Height / rect.Width;
+            var rW = rect.Width / rect.Height;
+
+            var rMax = Math.Max(rH, rW);
+
+            var ratio = new D2DPoint(1f, 1f);
+
+            if (rect.Width > rect.Height)
+                ratio.Y = rMax;
+            else
+                ratio.X = rMax;
+
+            return ratio;
+        }
+
+        public static D2DRect Inflate(this D2DRect rect, float width, float height, bool keepAspectRatio = false)
+        {
+            if (keepAspectRatio)
+            {
+                var ratio = AspectRatioFactor(rect);
+                var rWidth = width * ratio.X;
+                var rHeight = height * ratio.Y;
+                return new D2DRect(rect.left - (rWidth * 0.5f), rect.top - (rHeight * 0.5f), rect.Width + rWidth, rect.Height + rHeight);
+            }
+            else
+            {
+                return new D2DRect(rect.left - (width * 0.5f), rect.top - (height * 0.5f), rect.Width + width, rect.Height + height);
+            }
         }
 
         public static D2DRect Deflate(this D2DRect rect, float width, float height)

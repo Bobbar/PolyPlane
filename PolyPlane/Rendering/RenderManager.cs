@@ -659,7 +659,7 @@ namespace PolyPlane.Rendering
 
             const float VIEWPORT_PADDING_AMT = 2f;
             var inflateAmt = VIEWPORT_PADDING_AMT * zAmt;
-            viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt); // Inflate slightly to prevent "pop-in".
+            viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true); // Inflate slightly to prevent "pop-in".
 
             var shadowColor = GetShadowColor();
 
