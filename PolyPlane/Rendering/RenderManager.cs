@@ -1631,7 +1631,7 @@ namespace PolyPlane.Rendering
                 infoText += "H: Show help";
             }
 
-            gfx.DrawText(infoText, _greenYellowColorBrush, _textConsolas12, World.ViewPortRect.Deflate(20f, 20f));
+            gfx.DrawText(infoText, _greenYellowColorBrush, _textConsolas12, World.ViewPortRect.Deflate(50f, 50f));
         }
 
         private string GetInfo(FighterPlane viewplane)

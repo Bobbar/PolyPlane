@@ -140,7 +140,7 @@ namespace PolyPlane.Helpers
 
         public static D2DRect Deflate(this D2DRect rect, float width, float height)
         {
-            return new D2DRect(rect.left + width, rect.top + height, rect.Width - 2f * width, rect.Height - 2f * height);
+            return new D2DRect(rect.left + (width * 0.5f), rect.top + (height * 0.5f), rect.Width - width, rect.Height - height);
         }
 
         public static D2DPoint[] ToPoints(this D2DRect rect)
