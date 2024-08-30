@@ -54,12 +54,23 @@ namespace PolyPlane
 
             set
             {
-                _dt = Math.Clamp(value, 0.0025f, 1f);
+                _dt = Math.Clamp(value, 0.0045f, 1f);
 
-                // Compute number of sub steps.
+                // Compute sub DT and number of sub steps.
                 var subSteps = (int)Math.Ceiling(_dt / DEFAULT_SUB_DT);
-                if (subSteps <= 0)
-                    subSteps = 1;
+                var subStepFact = _dt / DEFAULT_SUB_DT;
+
+                if (subStepFact < 1f)
+                {
+                    // Compute a new sub DT once we fall below the default and only 1 sub step is possible.
+                    var newSubDT = DEFAULT_SUB_DT * subStepFact;
+                    _sub_dt = newSubDT;
+                }
+                else
+                {
+                    // Otherwise set to default when there is more than one sub step.
+                    _sub_dt = DEFAULT_SUB_DT;
+                }
 
                 _sub_steps = subSteps;
             }
@@ -69,7 +80,7 @@ namespace PolyPlane
         {
             get
             {
-                return DEFAULT_SUB_DT;
+                return _sub_dt;
             }
         }
 
@@ -120,13 +131,15 @@ namespace PolyPlane
         public static bool RespawnAIPlanes = true;
         public static bool GunsOnly = false;
 
-        private static float _zoomScale = 0.11f;
-        private static float _dt = DEFAULT_DT;
-        private static int _sub_steps = DEFAULT_SUB_STEPS;
-
         public const int DEFAULT_SUB_STEPS = 6;
         public const float DEFAULT_DT = 0.0425f;
         public static readonly float DEFAULT_SUB_DT = DEFAULT_DT / DEFAULT_SUB_STEPS;
+
+        private static float _dt = DEFAULT_DT;
+        private static float _sub_dt = DEFAULT_SUB_DT;
+        private static int _sub_steps = DEFAULT_SUB_STEPS;
+
+        private static float _zoomScale = 0.11f;
         public const float DEFAULT_DPI = 96f;
         public const float SENSOR_FOV = 60f; // TODO: Not sure this belongs here. Maybe make this unique based on missile/plane types and move it there.
         public const float MAX_ALTITUDE = 60000f; // Max density altitude.  (Air density drops to zero at this altitude)
