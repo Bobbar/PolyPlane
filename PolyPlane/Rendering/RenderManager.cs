@@ -657,7 +657,7 @@ namespace PolyPlane.Rendering
 
             var viewPortRect = new D2DRect(plane.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
 
-            const float VIEWPORT_PADDING_AMT = 2f;
+            const float VIEWPORT_PADDING_AMT = 3.5f;
             var inflateAmt = VIEWPORT_PADDING_AMT * zAmt;
             viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true); // Inflate slightly to prevent "pop-in".
 
