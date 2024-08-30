@@ -78,6 +78,10 @@ namespace PolyPlane.GameObjects
         public bool IsNetObject = false;
         public double LagAmount = 0;
         public float Age = 0f;
+        /// <summary>
+        /// True if gravity and physics should be applied.
+        /// </summary>
+        public bool IsAwake = true;
 
         /// <summary>
         /// Age in milliseconds.
@@ -173,13 +177,16 @@ namespace PolyPlane.GameObjects
             }
             else
             {
-                Position += Velocity * dt;
+                if (this.IsAwake)
+                {
+                    Position += Velocity * dt;
 
-                Rotation += RotationSpeed * dt;
+                    Rotation += RotationSpeed * dt;
 
-                var altDiff = this.Altitude - _prevAlt;
-                _verticalSpeed = altDiff / dt;
-                _prevAlt = this.Altitude;
+                    var altDiff = this.Altitude - _prevAlt;
+                    _verticalSpeed = altDiff / dt;
+                    _prevAlt = this.Altitude;
+                }
 
                 ClampToGround(dt);
             }
@@ -211,10 +218,27 @@ namespace PolyPlane.GameObjects
             if (this is Debris)
             {
                 // Let some objects bounce.
-                if (this.Altitude <= 2f)
+                if (this.Altitude <= 0f)
                 {
-                    this.Position = new D2DPoint(this.Position.X, -1f);
-                    this.Velocity = new D2DPoint(this.Velocity.X + -this.Velocity.X * (dt * 1f), -this.Velocity.Y * 0.2f);
+                    var veloMag = (this.Velocity * dt).Length();
+                    var gravMag = (World.Gravity * dt).Length();
+
+                    // If velo is greater than half gravity acceleration.
+                    if (veloMag > (gravMag * 0.5f) && this.IsAwake)
+                    {
+                        // Bounce.
+                        this.Velocity = new D2DPoint(this.Velocity.X * 0.4f, -this.Velocity.Y * 0.3f);
+                        this.Position = new D2DPoint(this.Position.X, 0f);
+                        this.RotationSpeed *= 0.5f;
+                    }
+                    else
+                    {
+                        // Go to sleep.
+                        this.Velocity = D2DPoint.Zero;
+                        this.Position = new D2DPoint(this.Position.X, 0f);
+                        this.RotationSpeed = 0f;
+                        this.IsAwake = false;
+                    }
                 }
             }
             else

@@ -32,15 +32,13 @@ namespace PolyPlane.GameObjects
             base.Update(dt, renderScale);
             _flame.Update(dt, renderScale);
 
-            this.Velocity += (World.Gravity * 1f) * dt;
+            if (this.IsAwake)
+                this.Velocity += (World.Gravity * 1f) * dt;
+
             this.Velocity += -this.Velocity * (dt * 0.01f);
 
-            if (this.Altitude <= 2f)
-            {
-                this.RotationSpeed += -this.RotationSpeed * (dt * 1f);
-
+            if (this.Altitude <= 1f)
                 _flame.StopSpawning();
-            }
         }
 
         public override void Render(RenderContext ctx)
