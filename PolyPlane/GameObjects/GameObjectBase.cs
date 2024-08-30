@@ -227,7 +227,7 @@ namespace PolyPlane.GameObjects
                     if (veloMag > (gravMag * 0.5f) && this.IsAwake)
                     {
                         // Bounce.
-                        this.Velocity = new D2DPoint(this.Velocity.X * 0.4f, -this.Velocity.Y * 0.3f);
+                        this.Velocity = new D2DPoint(this.Velocity.X * 0.95f, -this.Velocity.Y * 0.3f);
                         this.Position = new D2DPoint(this.Position.X, 0f);
                         this.RotationSpeed *= 0.5f;
                     }

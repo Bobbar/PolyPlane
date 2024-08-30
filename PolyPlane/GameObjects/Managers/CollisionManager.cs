@@ -251,6 +251,9 @@ namespace PolyPlane.GameObjects.Manager
                         var forceVec = dir * (FORCE * forceFact);
                         obj.Velocity += forceVec * World.DT;
 
+                        if (!obj.IsAwake)
+                            obj.IsAwake = true;
+
                         if (obj is FighterPlane plane && explosion.Owner is GuidedMissile missile)
                         {
                             if (!missile.Owner.Equals(plane))
