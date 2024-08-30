@@ -29,13 +29,25 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(PolyPlaneUI));
+            renderTarget = new PictureBox();
+            ((System.ComponentModel.ISupportInitialize)renderTarget).BeginInit();
             SuspendLayout();
+            // 
+            // renderTarget
+            // 
+            renderTarget.Dock = DockStyle.Fill;
+            renderTarget.Location = new Point(0, 0);
+            renderTarget.Name = "renderTarget";
+            renderTarget.Size = new Size(1008, 729);
+            renderTarget.TabIndex = 0;
+            renderTarget.TabStop = false;
             // 
             // PolyPlaneUI
             // 
             AutoScaleDimensions = new SizeF(96F, 96F);
             AutoScaleMode = AutoScaleMode.Dpi;
             ClientSize = new Size(1008, 729);
+            Controls.Add(renderTarget);
             Cursor = Cursors.Cross;
             Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "PolyPlaneUI";
@@ -47,9 +59,12 @@
             KeyPress += PolyPlaneUI_KeyPress;
             KeyUp += PolyPlaneUI_KeyUp;
             MouseDown += PolyPlaneUI_MouseDown;
+            ((System.ComponentModel.ISupportInitialize)renderTarget).EndInit();
             ResumeLayout(false);
         }
 
         #endregion
+
+        private PictureBox renderTarget;
     }
 }

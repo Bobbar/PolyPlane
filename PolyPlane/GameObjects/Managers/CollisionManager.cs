@@ -285,7 +285,7 @@ namespace PolyPlane.GameObjects.Manager
             {
                 var plane = _objs.Planes[a];
 
-                if (plane.Altitude <= 2f && !plane.InResetCooldown)
+                if (plane.Altitude <= 0f && !plane.InResetCooldown)
                 {
                     if (!plane.HasCrashed)
                         plane.DoHitGround();

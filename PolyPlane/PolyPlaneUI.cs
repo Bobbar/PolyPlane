@@ -456,7 +456,7 @@ namespace PolyPlane
         private void InitGfx()
         {
             _render?.Dispose();
-            _render = new RenderManager(this, _netMan);
+            _render = new RenderManager(renderTarget, _netMan);
         }
 
         private void GameLoop()
