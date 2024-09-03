@@ -123,7 +123,7 @@ namespace PolyPlane.Helpers
             if (movedBack)
             {
                 impactorObj.Position -= impactorObj.Velocity * World.SUB_DT;
-                impactorObj.Polygon.Update(impactorObj.Position, impactorObj.Rotation, World.RenderScale * impactorObj.RenderOffset);
+                impactorObj.Polygon.Update();
             }
 
             return PolygonSweepCollision(impactorObj, targObj.Polygon.Poly, targObj.Velocity, dt, out impactPoint);

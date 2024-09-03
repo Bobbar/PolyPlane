@@ -16,8 +16,7 @@ namespace PolyPlane.GameObjects
             this.PlayerID = owner.PlayerID;
             this.Owner = owner;
             _color = color;
-            this.Polygon = new RenderPoly(RandomPoly(8, 12));
-            this.Polygon.Update(pos, 0f, World.RenderScale);
+            this.Polygon = new RenderPoly(this, RandomPoly(8, 12));
 
             this.RotationSpeed = Utilities.Rnd.NextFloat(-200f, 200f);
 
@@ -47,7 +46,7 @@ namespace PolyPlane.GameObjects
 
             _flame.Render(ctx);
 
-            ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 0.5f, D2DDashStyle.Solid, _color);
+            ctx.DrawPolygon(this.Polygon, D2DColor.Black, 0.5f, D2DDashStyle.Solid, _color);
         }
 
         public override void Dispose()

@@ -240,6 +240,9 @@ namespace PolyPlane.GameObjects.Manager
 
                 foreach (var obj in nearObjs)
                 {
+                    if (obj.Equals(explosion))
+                        continue;
+
                     var dist = explosion.Position.DistanceTo(obj.Position) + EPSILON;
                     var effectRadius = explosion.Radius * 1.2f;
 

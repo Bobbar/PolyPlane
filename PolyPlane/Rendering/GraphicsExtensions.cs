@@ -1,4 +1,5 @@
-﻿using PolyPlane.Helpers;
+﻿using PolyPlane.GameObjects.Tools;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
@@ -133,6 +134,18 @@ namespace PolyPlane.Rendering
             else
                 OffScreen++;
         }
+
+        public static void DrawPolygonClamped(this D2DGraphics gfx, D2DRect viewport, RenderPoly poly, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
+        {
+            if (viewport.Contains(poly.Position))
+            {
+                gfx.DrawPolygon(poly.Poly, strokeColor, strokeWidth, dashStyle, fillColor);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
+        }
+
 
         public static void DrawPolygonClamped(this D2DGraphics gfx, D2DRect viewport, D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DBrush fillBrush)
         {

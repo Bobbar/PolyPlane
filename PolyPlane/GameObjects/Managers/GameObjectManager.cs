@@ -55,6 +55,7 @@ namespace PolyPlane.GameObjects
 
         public void ReturnBullet(Bullet bullet)
         {
+            bullet.IsExpired = true;
             _bulletPool.ReturnObject(bullet);
         }
 
@@ -73,7 +74,6 @@ namespace PolyPlane.GameObjects
         public void AddFlame(FlamePart flame)
         {
             Flames.Add(flame);
-
             _spatialGrid.Add(flame);
         }
 
@@ -229,6 +229,12 @@ namespace PolyPlane.GameObjects
             Debris.Clear();
             Flames.ForEach(f => f.Dispose());
             Flames.Clear();
+            NewDecoys.Clear();
+            NewBullets.Clear();
+            NewMissiles.Clear();
+            NewPlanes.Clear();
+            NewFlames.Clear();
+
             _objLookup.Clear();
             _spatialGrid.Clear();
             _expiredObjs.Clear();
@@ -370,7 +376,7 @@ namespace PolyPlane.GameObjects
                     }
                     else if (obj is Bullet bullet)
                     {
-                        _bulletPool.ReturnObject(bullet);
+                        ReturnBullet(bullet);
                         AddBulletExplosion(bullet);
                     }
                 }
@@ -471,6 +477,7 @@ namespace PolyPlane.GameObjects
         }
 
         public IEnumerable<GameObject> GetNear(GameObject obj) => _spatialGrid.GetNear(obj);
+        public IEnumerable<GameObject> GetInViewport(D2DRect viewport) => _spatialGrid.GetInViewport(viewport);
 
     }
 

@@ -356,7 +356,7 @@ namespace PolyPlane.GameObjects
             base.Update(dt, renderScale);
 
             if (Polygon != null)
-                Polygon.Update(this.Position, this.Rotation, renderScale);
+                Polygon.Update();
         }
 
         public override void FlipY()
@@ -396,7 +396,7 @@ namespace PolyPlane.GameObjects
             if (histPos != null)
             {
                 // Create a copy of the polygon and translate it to the historical position/rotation.
-                var histPoly = new RenderPoly(this.Polygon.SourcePoly, World.RenderScale * this.RenderOffset);
+                var histPoly = new RenderPoly(this, this.Polygon.SourcePoly, World.RenderScale * this.RenderOffset);
                 histPoly.Update(histPos.Position, histPos.Rotation, World.RenderScale);
 
                 // Flip plane poly to correct orientation.

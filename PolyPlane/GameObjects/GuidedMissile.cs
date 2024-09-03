@@ -163,10 +163,8 @@ namespace PolyPlane.GameObjects
             _motorCenterMass = new FixturePoint(this, new D2DPoint(-11f, 0));
             _flamePos = new FixturePoint(this, new D2DPoint(-22f, 0));
 
-            this.Polygon = new RenderPoly(_missilePoly, new D2DPoint(-2f, 0f));
-            this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(6f, 0));
-
-            this.Polygon.Update(this.Position, this.Rotation, World.RenderScale);
+            this.Polygon = new RenderPoly(this, _missilePoly, new D2DPoint(-2f, 0f));
+            this.FlamePoly = new RenderPoly(_flamePos, _flamePoly, new D2DPoint(6f, 0));
 
             InitWings();
 

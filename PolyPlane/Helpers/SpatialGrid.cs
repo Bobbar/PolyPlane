@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects;
+using unvell.D2DLib;
 
 namespace PolyPlane.Helpers
 {
@@ -8,6 +9,8 @@ namespace PolyPlane.Helpers
 
         private Dictionary<int, List<GameObject>> _grid = new Dictionary<int, List<GameObject>>();
         private List<KeyValuePair<int, GameObject>> _tempStorage = new List<KeyValuePair<int, GameObject>>();
+        private Dictionary<int, GameObject> _lookup = new Dictionary<int, GameObject>();
+
 
         /// <summary>
         /// Removes expired objects and moves live objects to their new grid positions as needed.
@@ -35,6 +38,7 @@ namespace PolyPlane.Helpers
                     {
                         // Just remove expired objects.
                         objs.RemoveAt(i);
+                        _lookup.Remove(obj.ID.GetHashCode());
                     }
                     else
                     {
@@ -43,6 +47,7 @@ namespace PolyPlane.Helpers
                         if (newHash != curHash)
                         {
                             objs.RemoveAt(i);
+                            _lookup.Remove(obj.ID.GetHashCode());
                             _tempStorage.Add(new KeyValuePair<int, GameObject>(newHash, obj));
                         }
                     }
@@ -99,18 +104,50 @@ namespace PolyPlane.Helpers
             }
         }
 
+
+        public IEnumerable<GameObject> GetInViewport(D2DRect viewport)
+        {
+            int nX = (int)(viewport.Width / (1 << SPATIAL_GRID_SIDE_LEN));
+            int nY = (int)(viewport.Height / (1 << SPATIAL_GRID_SIDE_LEN));
+
+            GetGridIdx(viewport.Location, out int idxX, out int idxY);
+
+            for (int x = idxX; x <= idxX + nX; x++)
+            {
+                for (int y = idxY; y <= idxY + nY; y++)
+                {
+                    var nHash = GetGridHash(x, y);
+
+                    if (_grid.TryGetValue(nHash, out var ns))
+                    {
+                        for (int i = 0; i < ns.Count; i++)
+                        {
+                            yield return ns[i];
+                        }
+                    }
+                }
+            }
+        }
+
         public void Clear()
         {
             _grid.Clear();
             _tempStorage.Clear();
+            _lookup.Clear();
         }
 
         private void AddInternal(int hash, GameObject obj)
         {
-            if (_grid.TryGetValue(hash, out var objs))
-                objs.Add(obj);
-            else
-                _grid.Add(hash, new List<GameObject> { obj });
+            var idHash = obj.ID.GetHashCode();
+            if (!_lookup.ContainsKey(idHash))
+            {
+                _lookup.Add(idHash, obj);
+
+                if (_grid.TryGetValue(hash, out var objs))
+                    objs.Add(obj);
+                else
+                    _grid.Add(hash, new List<GameObject> { obj });
+            }
         }
 
         private void GetGridIdx(GameObject obj, out int idxX, out int idxY)

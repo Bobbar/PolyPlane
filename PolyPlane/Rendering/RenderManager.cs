@@ -669,7 +669,6 @@ namespace PolyPlane.Rendering
             DrawGroundObjs(ctx, plane);
             DrawGroundImpacts(ctx, plane);
 
-            RenderObjectsClamped(ctx, _objs.Decoys);
             _objs.MissileTrails.ForEach(o => o.Render(ctx));
 
             _objs.Missiles.ForEach(o =>
@@ -681,11 +680,11 @@ namespace PolyPlane.Rendering
                     ctx.DrawEllipse(new D2DEllipse(o.Position, new D2DSize(50f, 50f)), new D2DColor(0.4f, D2DColor.Red), 8f);
             });
 
-            RenderObjectsClamped(ctx, _objs.Bullets);
+            var objsInViewport = _objs.GetInViewport(ctx.Viewport);
 
-            _objs.Planes.ForEach(p =>
+            foreach (var obj in objsInViewport)
             {
-                if (!p.Equals(plane))
+                if (obj is FighterPlane p && !p.Equals(plane))
                 {
                     DrawPlaneShadow(ctx, p, shadowColor);
                     p.Render(ctx);
@@ -696,12 +695,14 @@ namespace PolyPlane.Rendering
                     if (plane.Radar.LockedObj != null && plane.Radar.LockedObj.Equals(p))
                         ctx.DrawEllipse(new D2DEllipse(p.Position, new D2DSize(80f, 80f)), World.HudColor, 4f);
                 }
-            });
+                else
+                {
+                    obj.Render(ctx);
+                }
+            }
 
             DrawPlaneShadow(ctx, plane, shadowColor);
             plane.Render(ctx);
-            RenderObjectsClamped(ctx, _objs.Debris);
-            RenderObjectsClamped(ctx, _objs.Explosions);
 
             DrawClouds(ctx);
             DrawPlaneCloudShadows(ctx, shadowColor);

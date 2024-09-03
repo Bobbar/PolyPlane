@@ -24,7 +24,7 @@ namespace PolyPlane.GameObjects
 
         public Bullet() : base()
         {
-            this.Polygon = new RenderPoly(_poly);
+            this.Polygon = new RenderPoly(this, _poly);
         }
 
         public void ReInit(FighterPlane plane)
@@ -35,13 +35,13 @@ namespace PolyPlane.GameObjects
             this.Position = plane.GunPosition;
             this.Rotation = plane.Rotation;
             this.Owner = plane;
-            this.PlayerID = plane.PlayerID;
+            //this.PlayerID = plane.PlayerID;
 
             var velo = (Utilities.AngleToVectorDegrees(plane.Rotation, Bullet.SPEED));
             this.Velocity = velo + Utilities.AngularVelocity(plane, plane.Gun.Position, World.SUB_DT);
 
             this.Rotation = this.Velocity.Angle();
-            this.Polygon.Update(this.Position, this.Rotation, World.RenderScale * this.RenderOffset);
+            this.Polygon.Update();
         }
 
         public void ReInitNet(D2DPoint pos, D2DPoint velo, float rotation)
@@ -53,7 +53,7 @@ namespace PolyPlane.GameObjects
             this.Velocity = velo;
             this.Rotation = rotation;
 
-            this.Polygon.Update(this.Position, this.Rotation, World.RenderScale * this.RenderOffset);
+            this.Polygon.Update();
         }
 
         public override void Update(float dt, float renderScale)
@@ -68,7 +68,7 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
-            ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 1f, D2DDashStyle.Solid, D2DColor.Yellow);
+            ctx.DrawPolygon(this.Polygon, D2DColor.Black, 1f, D2DDashStyle.Solid, D2DColor.Yellow);
         }
     }
 }

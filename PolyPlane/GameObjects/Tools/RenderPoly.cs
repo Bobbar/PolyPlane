@@ -8,23 +8,28 @@ namespace PolyPlane.GameObjects.Tools
         public D2DPoint[] Poly;
         public D2DPoint[] SourcePoly;
         public bool IsFlipped = false;
+        public GameObject ParentObject;
+        public D2DPoint Position => ParentObject.Position;
 
-        public RenderPoly()
+        public RenderPoly(GameObject parent)
         {
+            ParentObject = parent;
             Poly = new D2DPoint[0];
             SourcePoly = new D2DPoint[0];
         }
 
-        public RenderPoly(D2DPoint[] polygon)
+        public RenderPoly(GameObject parent, D2DPoint[] polygon) : this(parent)
         {
             Poly = new D2DPoint[polygon.Length];
             SourcePoly = new D2DPoint[polygon.Length];
 
             Array.Copy(polygon, Poly, polygon.Length);
             Array.Copy(polygon, SourcePoly, polygon.Length);
+
+            this.Update();
         }
 
-        public RenderPoly(D2DPoint[] polygon, D2DPoint offset)
+        public RenderPoly(GameObject parent, D2DPoint[] polygon, D2DPoint offset) : this(parent)
         {
             Poly = new D2DPoint[polygon.Length];
             SourcePoly = new D2DPoint[polygon.Length];
@@ -35,9 +40,11 @@ namespace PolyPlane.GameObjects.Tools
 
             Utilities.ApplyTranslation(Poly, Poly, 0f, offset);
             Utilities.ApplyTranslation(SourcePoly, SourcePoly, 0f, offset);
+
+            this.Update();
         }
 
-        public RenderPoly(D2DPoint[] polygon, D2DPoint offset, float scale)
+        public RenderPoly(GameObject parent, D2DPoint[] polygon, D2DPoint offset, float scale) : this(parent)
         {
             Poly = new D2DPoint[polygon.Length];
             SourcePoly = new D2DPoint[polygon.Length];
@@ -47,9 +54,11 @@ namespace PolyPlane.GameObjects.Tools
 
             Utilities.ApplyTranslation(Poly, Poly, 0f, offset, scale);
             Utilities.ApplyTranslation(SourcePoly, SourcePoly, 0f, offset, scale);
+
+            this.Update();
         }
 
-        public RenderPoly(D2DPoint[] polygon, float scale, float tessalateDist = 0f)
+        public RenderPoly(GameObject parent, D2DPoint[] polygon, float scale, float tessalateDist = 0f) : this(parent)
         {
             Poly = new D2DPoint[polygon.Length];
             SourcePoly = new D2DPoint[polygon.Length];
@@ -62,6 +71,8 @@ namespace PolyPlane.GameObjects.Tools
 
             if (tessalateDist > 0f)
                 Tessellate(tessalateDist);
+
+            this.Update();
         }
 
         /// <summary>
@@ -147,5 +158,11 @@ namespace PolyPlane.GameObjects.Tools
         {
             Utilities.ApplyTranslation(SourcePoly, Poly, rotation, pos, scale);
         }
+
+        public void Update()
+        {
+            this.Update(this.ParentObject.Position, this.ParentObject.Rotation, this.ParentObject.RenderOffset);
+        }
+
     }
 }

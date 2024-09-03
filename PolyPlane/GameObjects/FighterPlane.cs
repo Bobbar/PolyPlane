@@ -239,9 +239,8 @@ namespace PolyPlane.GameObjects
 
             this.RenderOffset = 1.5f;
 
-            this.Polygon = new RenderPoly(_planePoly, this.RenderOffset, POLY_TESSELLATE_DIST);
-            this.FlamePoly = new RenderPoly(_flamePoly, new D2DPoint(12f, 0), this.RenderOffset);
-            this.Polygon.Update(this.Position, this.Rotation, this.RenderOffset);
+            this.Polygon = new RenderPoly(this, _planePoly, this.RenderOffset, POLY_TESSELLATE_DIST);
+            this.FlamePoly = new RenderPoly(this, _flamePoly, new D2DPoint(12f, 0), this.RenderOffset);
 
             InitWings();
 
@@ -549,13 +548,13 @@ namespace PolyPlane.GameObjects
 
             _vaporTrails.ForEach(v => v.Render(ctx));
             _contrail.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000 && ThrustAmount > 0f);
-            _bulletHoles.ForEach(f => f.Render(ctx));
+            //_bulletHoles.ForEach(f => f.Render(ctx));
 
             if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
                 ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
 
-            if (this.IsDisabled)
-                _engineFireFlame.Render(ctx);
+            //if (this.IsDisabled)
+            //    _engineFireFlame.Render(ctx);
 
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black.WithAlpha(0.3f), 0.5f, D2DDashStyle.Solid, _planeColor);
             DrawClippedObjects(ctx);
@@ -718,7 +717,7 @@ namespace PolyPlane.GameObjects
         /// </summary>
         public void SyncFixtures()
         {
-            this.Polygon.Update(this.Position, this.Rotation, World.RenderScale * this.RenderOffset);
+            this.Polygon.Update();
             _flamePos.Update(0f, World.RenderScale * this.RenderOffset);
             _bulletHoles.ForEach(f => f.Update(0f, World.RenderScale * this.RenderOffset));
             _centerOfThrust.Update(0f, World.RenderScale * this.RenderOffset);
@@ -743,7 +742,7 @@ namespace PolyPlane.GameObjects
             this.Polygon.SourcePoly[closestIdx] += distortVec;
             this.Polygon.SourcePoly[nextIdx] += distortVec * 0.6f;
 
-            this.Polygon.Update(this.Position, this.Rotation, this.RenderOffset);
+            this.Polygon.Update();
 
             var bulletHole = new BulletHole(this, pos + distortVec, angle);
             bulletHole.IsNetObject = this.IsNetObject;
@@ -946,7 +945,7 @@ namespace PolyPlane.GameObjects
 
             var flipped = this.Polygon.IsFlipped;
 
-            this.Polygon = new RenderPoly(_planePoly, this.RenderOffset, POLY_TESSELLATE_DIST);
+            this.Polygon = new RenderPoly(this, _planePoly, this.RenderOffset, POLY_TESSELLATE_DIST);
 
             if (flipped)
                 this.Polygon.FlipY();
@@ -1005,7 +1004,7 @@ namespace PolyPlane.GameObjects
                 return;
 
             this.Polygon.FlipY();
-            this.Polygon.Update(this.Position, this.Rotation, this.RenderOffset);
+            this.Polygon.Update();
             Wings.ForEach(w => w.FlipY());
             Wings.ForEach(w => w.Update(World.SUB_DT, this.RenderOffset));
             _vaporTrails.ForEach(v => v.FlipY());

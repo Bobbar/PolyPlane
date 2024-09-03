@@ -1,4 +1,5 @@
-﻿using unvell.D2DLib;
+﻿using PolyPlane.GameObjects.Tools;
+using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
 {
@@ -87,6 +88,11 @@ namespace PolyPlane.Rendering
         public void DrawPolygon(D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
         {
             Gfx.DrawPolygonClamped(Viewport, points, strokeColor, strokeWidth, dashStyle, fillColor);
+        }
+
+        public void DrawPolygon(RenderPoly poly, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
+        {
+            Gfx.DrawPolygonClamped(Viewport, poly, strokeColor, strokeWidth, dashStyle, fillColor);
         }
 
         public void DrawPolygon(D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DBrush fillBrush)

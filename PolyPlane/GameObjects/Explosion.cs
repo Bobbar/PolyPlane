@@ -1,10 +1,11 @@
-﻿using PolyPlane.Helpers;
+﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Explosion : GameObject
+    public class Explosion : GameObject, ICollidable
     {
         public float MaxRadius { get; set; } = 100f;
         public float MaxShockwaveRadius { get; set; } = 100f;
@@ -77,7 +78,6 @@ namespace PolyPlane.GameObjects
                     ctx.DrawEllipse(new D2DEllipse(this.Position, new D2DSize(_currentShockWaveRadius, _currentShockWaveRadius)), _showckWaveColor, 20f);
             }
 
-            _flames.ForEach(f => f.Render(ctx));
         }
 
         public override bool ContainedBy(D2DRect rect)

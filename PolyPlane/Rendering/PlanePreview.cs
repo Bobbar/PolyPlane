@@ -28,6 +28,7 @@ namespace PolyPlane.Rendering
 
             PlaneColor = planeColor;
             _plane = new FighterPlane(new D2DPoint(0, -20f), PlaneColor, isAI: false, isNetPlane: true);
+            World.ObjectManager.Clear();
             _renderThread = new Thread(RenderLoop);
             _renderThread.Start();
         }
