@@ -71,16 +71,16 @@ namespace PolyPlane.GameObjects
             _refPos = new FixturePoint(obj, offset);
             _refPos.Update(World.DT, World.RenderScale * obj.RenderOffset);
 
+            _spawnTimer.TriggerCallback = () => SpawnPart();
+
             if (hasFlame)
             {
-                _spawnTimer.TriggerCallback = () => SpawnPart();
                 _spawnTimer.Start();
+                SpawnPart();
             }
 
             this.Position = _refPos.Position;
             this.Rotation = _refPos.Rotation;
-
-            SpawnPart();
         }
 
         /// <summary>
