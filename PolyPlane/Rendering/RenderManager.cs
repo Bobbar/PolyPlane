@@ -680,6 +680,13 @@ namespace PolyPlane.Rendering
                     ctx.DrawEllipse(new D2DEllipse(o.Position, new D2DSize(50f, 50f)), new D2DColor(0.4f, D2DColor.Red), 8f);
             });
 
+
+            _objs.PlaneContrails.ForEach(o =>
+            {
+                if (o.ContainedBy(ctx.Viewport))
+                    o.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000);
+            });
+
             var objsInViewport = _objs.GetInViewport(ctx.Viewport);
 
             foreach (var obj in objsInViewport)
@@ -706,27 +713,11 @@ namespace PolyPlane.Rendering
 
             DrawClouds(ctx);
             DrawPlaneCloudShadows(ctx, shadowColor);
-            DrawLightingEffects(ctx, plane);
+            DrawLightingEffects(ctx, objsInViewport);
             DrawMuzzleFlash(ctx, plane);
 
             ctx.PopViewPort();
             ctx.Gfx.PopTransform();
-        }
-
-        /// <summary>
-        /// Renders the specified list of objects and skips any which are outside the viewport.
-        /// </summary>
-        /// <param name="ctx"></param>
-        /// <param name="objs"></param>
-        private void RenderObjectsClamped(RenderContext ctx, List<GameObject> objs)
-        {
-            foreach (var obj in objs)
-            {
-                if (obj.ContainedBy(ctx.Viewport))
-                {
-                    obj.Render(ctx);
-                }
-            }
         }
 
         private void DrawPlaneCloudShadows(RenderContext ctx, D2DColor shadowColor)
@@ -756,7 +747,7 @@ namespace PolyPlane.Rendering
             ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(shadowWidth, HEIGHT)), shadowColor);
         }
 
-        private void DrawLightingEffects(RenderContext ctx, FighterPlane plane)
+        private void DrawLightingEffects(RenderContext ctx, IEnumerable<GameObject> objs)
         {
             const float BULLET_LIGHT_RADIUS = 60f;
             if (_bulletLightingBrush == null)
@@ -770,22 +761,19 @@ namespace PolyPlane.Rendering
             if (_decoyLightBrush == null)
                 _decoyLightBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, DECOY_LIGHT_RADIUS, DECOY_LIGHT_RADIUS, new D2DGradientStop[] { new D2DGradientStop(1.4f, D2DColor.Transparent), new D2DGradientStop(0f, new D2DColor(0.3f, D2DColor.LightYellow)) });
 
-            _objs.Bullets.ForEach(o =>
+
+            foreach (var obj in objs)
             {
-                if (ctx.Viewport.Contains(o.Position))
+                if (obj is Bullet bullet)
                 {
                     ctx.Gfx.PushTransform();
-                    ctx.Gfx.TranslateTransform(o.Position.X * ctx.CurrentScale, o.Position.Y * ctx.CurrentScale);
+                    ctx.Gfx.TranslateTransform(bullet.Position.X * ctx.CurrentScale, bullet.Position.Y * ctx.CurrentScale);
                     ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, BULLET_LIGHT_RADIUS, _bulletLightingBrush);
                     ctx.Gfx.PopTransform();
                 }
-            });
-
-            _objs.Missiles.ForEach(o =>
-            {
-                if (o is GuidedMissile missile && missile.FlameOn && missile.CurrentFuel > 0f)
+                else if (obj is GuidedMissile missile)
                 {
-                    if (ctx.Viewport.Contains(missile.Position))
+                    if (missile.FlameOn && missile.CurrentFuel > 0f)
                     {
                         ctx.Gfx.PushTransform();
                         ctx.Gfx.TranslateTransform(missile.CenterOfThrust.X * ctx.CurrentScale, missile.CenterOfThrust.Y * ctx.CurrentScale);
@@ -793,13 +781,9 @@ namespace PolyPlane.Rendering
                         ctx.Gfx.PopTransform();
                     }
                 }
-            });
-
-            _objs.Decoys.ForEach(o =>
-            {
-                if (o is Decoy decoy)
+                else if (obj is Decoy decoy)
                 {
-                    if (ctx.Viewport.Contains(decoy.Position) && (decoy.CurrentFrame % 21 == 0 || decoy.CurrentFrame % 33 == 0))
+                    if ((decoy.CurrentFrame % 21 == 0 || decoy.CurrentFrame % 33 == 0))
                     {
                         ctx.Gfx.PushTransform();
                         ctx.Gfx.TranslateTransform(decoy.Position.X * ctx.CurrentScale, decoy.Position.Y * ctx.CurrentScale);
@@ -807,7 +791,7 @@ namespace PolyPlane.Rendering
                         ctx.Gfx.PopTransform();
                     }
                 }
-            });
+            }
         }
 
         private void DrawMuzzleFlash(RenderContext ctx, FighterPlane plane)

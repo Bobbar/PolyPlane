@@ -20,7 +20,7 @@ namespace PolyPlane.GameObjects
         private float _lineWeight = 2f;
         private bool _trailEnabled = true;
 
-        public SmokeTrail(GameObject obj, Func<GameObject, D2DPoint> positionSelector, float lineWeight)
+        public SmokeTrail(GameObject obj, Func<GameObject, D2DPoint> positionSelector, float lineWeight) : base(obj)
         {
             this.PlayerID = obj.PlayerID;
             _gameObject = obj;
@@ -140,6 +140,23 @@ namespace PolyPlane.GameObjects
                 if (visiblePredicate.Invoke(endPosition))
                     ctx.DrawLine(lastPos, endPosition, _trailColor, _lineWeight);
             }
+        }
+
+        public override bool ContainedBy(D2DRect rect)
+        {
+            if (_trailQueue.Count == 0)
+                return false;
+            else
+            {
+                foreach (var trail in _trailQueue)
+                {
+                    if (rect.Contains(trail))
+                        return true;
+                }
+            }
+
+            return false;
+
         }
     }
 }

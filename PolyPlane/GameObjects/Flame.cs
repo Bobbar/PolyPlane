@@ -158,7 +158,8 @@ namespace PolyPlane.GameObjects
             var newPart = World.ObjectManager.RentFlamePart();
             newPart.ReInit(newPos, newRad, newColor, endColor, newVelo);
 
-            //newPart.PlayerID = this.PlayerID;
+            newPart.PlayerID = this.PlayerID;
+            newPart.Owner = this;
 
             if (_parts.Count < MAX_PARTS)
             {

@@ -12,6 +12,11 @@ namespace PolyPlane.GameObjects
 {
     public class FighterPlane : GameObjectPoly, ICollidable
     {
+        public SmokeTrail Contrail 
+        { 
+            get { return _contrail; }
+            set { _contrail = value; }
+        }
         public Gun Gun => _gun;
 
         public AIPersonality Personality
@@ -257,14 +262,6 @@ namespace PolyPlane.GameObjects
             _flamePos.IsNetObject = this.IsNetObject;
             _cockpitPosition.IsNetObject = this.IsNetObject;
 
-            _contrail = new SmokeTrail(this, o =>
-            {
-                var p = o as FighterPlane;
-                return p.ExhaustPosition;
-            }, lineWeight: 8f);
-
-            _contrail.IsNetObject = this.IsNetObject;
-
             _expireTimeout.TriggerCallback = () =>
             {
                 if (!World.RespawnAIPlanes)
@@ -492,7 +489,6 @@ namespace PolyPlane.GameObjects
             if (!World.IsNetGame || World.IsClient)
             {
                 _bulletHoles.ForEach(f => f.Update(dt, renderScale));
-                _contrail.Update(dt, renderScale);
                 _vaporTrails.ForEach(v => v.Update(dt, renderScale));
             }
 
@@ -547,14 +543,9 @@ namespace PolyPlane.GameObjects
             base.Render(ctx);
 
             _vaporTrails.ForEach(v => v.Render(ctx));
-            _contrail.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000 && ThrustAmount > 0f);
-            //_bulletHoles.ForEach(f => f.Render(ctx));
 
             if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
                 ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
-
-            //if (this.IsDisabled)
-            //    _engineFireFlame.Render(ctx);
 
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black.WithAlpha(0.3f), 0.5f, D2DDashStyle.Solid, _planeColor);
             DrawClippedObjects(ctx);

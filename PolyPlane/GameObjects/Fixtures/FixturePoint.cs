@@ -17,8 +17,9 @@ namespace PolyPlane.GameObjects.Fixtures
         /// <param name="gameObject">Parent object.</param>
         /// <param name="referencePosition">Position within the parent object to attach to.</param>
         /// <param name="copyRotation">Copy current rotation from parent object on every update.  Otherwise set manually.</param>
-        public FixturePoint(GameObject gameObject, D2DPoint referencePosition, bool copyRotation = true)
+        public FixturePoint(GameObject gameObject, D2DPoint referencePosition, bool copyRotation = true) : base(gameObject)
         {
+            this.PlayerID = gameObject.PlayerID;
             _copyRotation = copyRotation;
 
             GameObject = gameObject;

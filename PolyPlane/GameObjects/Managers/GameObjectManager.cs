@@ -13,10 +13,11 @@ namespace PolyPlane.GameObjects
     {
         public int TotalObjects = 0;
 
-        private const int MAX_GROUND_IMPACTS = 500;
+        private const int MAX_GROUND_IMPACTS = 1000;
 
         public List<GameObject> Missiles = new();
         public List<GameObject> MissileTrails = new();
+        public List<SmokeTrail> PlaneContrails = new();
         public List<GameObject> Decoys = new();
         public List<GameObject> Bullets = new();
         public List<GameObject> Explosions = new();
@@ -146,6 +147,19 @@ namespace PolyPlane.GameObjects
 
                 if (plane.IsAI)
                     NewPlayerEvent?.Invoke(this, plane);
+
+                var contrail = new SmokeTrail(plane, o =>
+                {
+                    var p = o as FighterPlane;
+                    return p.ExhaustPosition;
+                }, lineWeight: 8f);
+
+                contrail.IsNetObject = plane.IsNetObject;
+
+                plane.Contrail = contrail;
+
+                AddObject(contrail);
+                PlaneContrails.Add(contrail);
 
                 // Add first plane as the initial view plane.
                 if (Planes.Count == 1)

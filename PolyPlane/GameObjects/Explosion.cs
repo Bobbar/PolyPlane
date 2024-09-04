@@ -27,7 +27,7 @@ namespace PolyPlane.GameObjects
             this.MaxRadius = maxRadius;
             this.MaxShockwaveRadius = maxRadius * 6f;
             this.Duration = duration;
-            this.PlayerID = 0;
+            this.PlayerID = owner.PlayerID;
 
             if (this.Owner == null || this.Owner is not Bullet)
                 _hasShockWave = true;
@@ -82,7 +82,10 @@ namespace PolyPlane.GameObjects
 
         public override bool ContainedBy(D2DRect rect)
         {
-            return rect.Inflate(MaxShockwaveRadius, MaxShockwaveRadius).Contains(this.Position);
+            var ret = rect.Contains(new D2DEllipse(this.Position, new D2DSize(_currentShockWaveRadius, _currentShockWaveRadius)))
+                   || rect.Contains(new D2DEllipse(this.Position, new D2DSize(_currentRadius, _currentRadius)));
+
+            return ret;
         }
 
         public override void Dispose()
@@ -92,7 +95,6 @@ namespace PolyPlane.GameObjects
             _flames.ForEach(f => f.Dispose());
 
             _flames.Clear();
-            _flames = null;
         }
     }
 }

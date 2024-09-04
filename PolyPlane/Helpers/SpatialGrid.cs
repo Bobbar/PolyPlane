@@ -11,7 +11,6 @@ namespace PolyPlane.Helpers
         private List<KeyValuePair<int, GameObject>> _tempStorage = new List<KeyValuePair<int, GameObject>>();
         private Dictionary<int, GameObject> _lookup = new Dictionary<int, GameObject>();
 
-
         /// <summary>
         /// Removes expired objects and moves live objects to their new grid positions as needed.
         /// </summary>
@@ -38,7 +37,7 @@ namespace PolyPlane.Helpers
                     {
                         // Just remove expired objects.
                         objs.RemoveAt(i);
-                        _lookup.Remove(obj.ID.GetHashCode());
+                        _lookup.Remove(obj.ID.ObjectID);
                     }
                     else
                     {
@@ -47,7 +46,7 @@ namespace PolyPlane.Helpers
                         if (newHash != curHash)
                         {
                             objs.RemoveAt(i);
-                            _lookup.Remove(obj.ID.GetHashCode());
+                            _lookup.Remove(obj.ID.ObjectID);
                             _tempStorage.Add(new KeyValuePair<int, GameObject>(newHash, obj));
                         }
                     }
@@ -104,17 +103,24 @@ namespace PolyPlane.Helpers
             }
         }
 
-
+        /// <summary>
+        /// Get all objects within the specified rectangle.
+        /// </summary>
+        /// <param name="viewport"></param>
+        /// <returns></returns>
         public IEnumerable<GameObject> GetInViewport(D2DRect viewport)
         {
+            // Calc number of indexes for x/y coords.
             int nX = (int)(viewport.Width / (1 << SPATIAL_GRID_SIDE_LEN));
             int nY = (int)(viewport.Height / (1 << SPATIAL_GRID_SIDE_LEN));
 
+            // Find the initial indices for the top-left corner.
             GetGridIdx(viewport.Location, out int idxX, out int idxY);
 
-            for (int x = idxX; x <= idxX + nX; x++)
+            // Iterate x/y indices and return objects.
+            for (int x = idxX + 1; x <= idxX + nX; x++)
             {
-                for (int y = idxY; y <= idxY + nY; y++)
+                for (int y = idxY + 1; y <= idxY + nY; y++)
                 {
                     var nHash = GetGridHash(x, y);
 
@@ -138,7 +144,7 @@ namespace PolyPlane.Helpers
 
         private void AddInternal(int hash, GameObject obj)
         {
-            var idHash = obj.ID.GetHashCode();
+            var idHash = obj.ID.ObjectID;
             if (!_lookup.ContainsKey(idHash))
             {
                 _lookup.Add(idHash, obj);
