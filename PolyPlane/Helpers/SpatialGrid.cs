@@ -37,7 +37,7 @@ namespace PolyPlane.Helpers
                     {
                         // Just remove expired objects.
                         objs.RemoveAt(i);
-                        _lookup.Remove(obj.ID.ObjectID);
+                        _lookup.Remove(obj.LocalID);
                     }
                     else
                     {
@@ -46,7 +46,7 @@ namespace PolyPlane.Helpers
                         if (newHash != curHash)
                         {
                             objs.RemoveAt(i);
-                            _lookup.Remove(obj.ID.ObjectID);
+                            _lookup.Remove(obj.LocalID);
                             _tempStorage.Add(new KeyValuePair<int, GameObject>(newHash, obj));
                         }
                     }
@@ -144,7 +144,7 @@ namespace PolyPlane.Helpers
 
         private void AddInternal(int hash, GameObject obj)
         {
-            var idHash = obj.ID.ObjectID;
+            var idHash = obj.LocalID;
             if (!_lookup.ContainsKey(idHash))
             {
                 _lookup.Add(idHash, obj);

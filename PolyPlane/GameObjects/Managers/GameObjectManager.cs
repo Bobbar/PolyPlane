@@ -48,21 +48,37 @@ namespace PolyPlane.GameObjects
         public event EventHandler<FighterPlane> NewPlayerEvent;
 
 
-        public Bullet RentBullet()
+        public Bullet RentBullet(int newPlayerId)
         {
             var bullet = _bulletPool.RentObject();
+
+            this.ChangeObjID(bullet, new GameID(newPlayerId, bullet.ID.ObjectID));
+
+            return bullet;
+        }
+
+        public Bullet RentBullet(GameID newId)
+        {
+            var bullet = _bulletPool.RentObject();
+
+            this.ChangeObjID(bullet, newId);
+
             return bullet;
         }
 
         public void ReturnBullet(Bullet bullet)
         {
             bullet.IsExpired = true;
+
             _bulletPool.ReturnObject(bullet);
         }
 
-        public FlamePart RentFlamePart()
+        public FlamePart RentFlamePart(int newPlayerId)
         {
             var part = _flamePool.RentObject();
+
+            this.ChangeObjID(part, new GameID(newPlayerId, part.ID.ObjectID));
+
             return part;
         }
 
@@ -323,8 +339,6 @@ namespace PolyPlane.GameObjects
                 _objLookup.Remove(obj.ID.GetHashCode());
                 obj.ID = id;
                 _objLookup.Add(id.GetHashCode(), obj);
-
-                World.ViewPlaneID = obj.ID;
             }
         }
 
@@ -339,6 +353,7 @@ namespace PolyPlane.GameObjects
             PruneExpired(Explosions);
             PruneExpired(Debris);
             PruneExpired(Flames);
+            PruneContrails();
 
             TotalObjects += Planes.Count;
 
@@ -357,6 +372,21 @@ namespace PolyPlane.GameObjects
 
             if (GroundImpacts.Count > MAX_GROUND_IMPACTS)
                 GroundImpacts.RemoveAt(0);
+        }
+
+        private void PruneContrails()
+        {
+            for (int i = 0; i < PlaneContrails.Count; i++)
+            {
+                var trail = PlaneContrails[i];
+
+                if (trail.IsExpired)
+                {
+                    PlaneContrails.RemoveAt(i);
+                    trail.Dispose();
+                    _objLookup.Remove(trail.ID.GetHashCode());
+                }
+            }
         }
 
         private void PruneExpired(List<GameObject> objs)

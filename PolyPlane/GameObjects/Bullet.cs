@@ -35,7 +35,6 @@ namespace PolyPlane.GameObjects
             this.Position = plane.GunPosition;
             this.Rotation = plane.Rotation;
             this.Owner = plane;
-            this.PlayerID = plane.PlayerID;
 
             var velo = (Utilities.AngleToVectorDegrees(plane.Rotation, Bullet.SPEED));
             this.Velocity = velo + Utilities.AngularVelocity(plane, plane.Gun.Position, World.SUB_DT);

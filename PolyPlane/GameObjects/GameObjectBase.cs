@@ -13,6 +13,8 @@ namespace PolyPlane.GameObjects
 
         public GameID ID { get; set; } = new GameID();
 
+        public readonly int LocalID;
+
         public D2DPoint Position { get; set; }
 
         public D2DPoint Velocity { get; set; }
@@ -116,6 +118,7 @@ namespace PolyPlane.GameObjects
         public GameObject()
         {
             this.ID = new GameID(-1, World.GetNextObjectId());
+            this.LocalID = World.GetNextLocalId();
 
             if (World.IsNetGame && (this is FighterPlane || this is GuidedMissile))
             {
@@ -306,7 +309,10 @@ namespace PolyPlane.GameObjects
             return this.ID.Equals(other.ID);
         }
 
-        public virtual void Dispose() { }
+        public virtual void Dispose()
+        {
+            this.IsExpired = true;
+        }
 
         private void InterpObject(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
         {

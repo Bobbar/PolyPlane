@@ -161,6 +161,7 @@ namespace PolyPlane
 
         public static int CurrentObjId = 0;
         public static int CurrentPlayerId = 1000;
+        public static int CurrentLocalId = 0;
 
         public static GameID ViewPlaneID;
 
@@ -252,6 +253,11 @@ namespace PolyPlane
         public static int GetNextPlayerId()
         {
             return Interlocked.Increment(ref CurrentPlayerId);
+        }
+
+        public static int GetNextLocalId()
+        {
+            return Interlocked.Increment(ref CurrentLocalId);
         }
 
         public static long CurrentTime()

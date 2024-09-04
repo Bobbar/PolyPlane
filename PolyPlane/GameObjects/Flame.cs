@@ -45,6 +45,7 @@ namespace PolyPlane.GameObjects
         {
             _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
 
+            this.Owner = obj;
             this.PlayerID = obj.PlayerID;
 
             Radius = radius;
@@ -142,7 +143,7 @@ namespace PolyPlane.GameObjects
 
             D2DPoint newVelo = this.Velocity;
 
-            if (this.Owner != null)
+            if (this.Owner != null && this.Owner is not Explosion)
                 newVelo = this.Owner.Velocity;
 
             newVelo += Utilities.RandOPoint(10f);
@@ -155,10 +156,10 @@ namespace PolyPlane.GameObjects
             var newRad = this.Radius + Utilities.Rnd.NextFloat(-3f, 3f);
             var newColor = new D2DColor(_flameColor.a, 1f, Utilities.Rnd.NextFloat(0f, 0.86f), _flameColor.b);
 
-            var newPart = World.ObjectManager.RentFlamePart();
+            var newPart = World.ObjectManager.RentFlamePart(this.PlayerID);
             newPart.ReInit(newPos, newRad, newColor, endColor, newVelo);
 
-            newPart.PlayerID = this.PlayerID;
+            //newPart.PlayerID = this.PlayerID;
             newPart.Owner = this;
 
             if (_parts.Count < MAX_PARTS)

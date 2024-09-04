@@ -176,9 +176,12 @@ namespace PolyPlane.Net
                     {
                         _netIDIsSet = true;
 
-                        _objs.ChangeObjID(PlayerPlane, new GameID(packet.ID.PlayerID, PlayerPlane.ID.ObjectID));
+                        var newID = new GameID(packet.ID.PlayerID, PlayerPlane.ID.ObjectID);
+                        _objs.ChangeObjID(PlayerPlane, newID);
                         var netPacket = new NewPlayerPacket(PlayerPlane);
                         Host.EnqueuePacket(netPacket);
+
+                        World.ViewPlaneID = newID;
 
                         PlayerIDReceived?.Invoke(this, packet.ID.PlayerID);
                     }
@@ -647,10 +650,9 @@ namespace PolyPlane.Net
 
         private void DoNewBullet(GameObjectPacket bulletPacket)
         {
-            var bullet = _objs.RentBullet();
+            var bullet = _objs.RentBullet(bulletPacket.ID);
             bullet.ReInitNet(bulletPacket.Position, bulletPacket.Velocity, bulletPacket.Rotation);
 
-            bullet.ID = bulletPacket.ID;
             bulletPacket.SyncObj(bullet);
             var owner = GetNetPlane(bulletPacket.OwnerID);
 

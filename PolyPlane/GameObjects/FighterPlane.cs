@@ -1051,9 +1051,12 @@ namespace PolyPlane.GameObjects
 
             _polyClipLayer?.Dispose();
             _contrail.Clear();
+            _contrail.Dispose();
             _bulletHoles.ForEach(b => b.Dispose());
             _bulletHoles.Clear();
             _vaporTrails.Clear();
+            _engineFireFlame?.Dispose();
+            World.ObjectManager.CleanDebris(this.ID);
         }
     }
 }

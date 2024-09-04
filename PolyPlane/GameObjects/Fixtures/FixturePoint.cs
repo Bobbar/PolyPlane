@@ -45,6 +45,8 @@ namespace PolyPlane.GameObjects.Fixtures
 
             Position = Utilities.ApplyTranslation(ReferencePosition, GameObject.Rotation, GameObject.Position, renderScale);
             Velocity = GameObject.Velocity;
+
+            this.IsExpired = GameObject.IsExpired;
         }
 
         public override void Render(RenderContext ctx)

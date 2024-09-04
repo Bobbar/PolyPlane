@@ -85,7 +85,7 @@ namespace PolyPlane.GameObjects.Fixtures
             Rotation = _attachPoint.Rotation;
             Position = _attachPoint.Position;
 
-            var bullet = World.ObjectManager.RentBullet();
+            var bullet = World.ObjectManager.RentBullet(_ownerPlane.PlayerID);
             bullet.ReInit(_ownerPlane);
 
             FireBulletCallback(bullet);
