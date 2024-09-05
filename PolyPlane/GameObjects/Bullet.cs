@@ -28,7 +28,7 @@ namespace PolyPlane.GameObjects
             this.RenderOrder = 4;
         }
 
-        public void ReInit(FighterPlane plane)
+        public Bullet(FighterPlane plane) : this()
         {
             this.IsExpired = false;
             this.Age = 0f;
@@ -44,7 +44,7 @@ namespace PolyPlane.GameObjects
             this.Polygon.Update();
         }
 
-        public void ReInitNet(D2DPoint pos, D2DPoint velo, float rotation)
+        public Bullet(D2DPoint pos, D2DPoint velo, float rotation) : this()
         {
             this.IsExpired = false;
             this.Age = 0f;

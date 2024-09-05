@@ -32,9 +32,9 @@ namespace PolyPlane.GameObjects
         public ConcurrentQueue<GameObject> NewMissiles = new();
         public ConcurrentQueue<FighterPlane> NewPlanes = new();
         public ConcurrentQueue<FlamePart> NewFlames = new();
-        public ConcurrentQueue<KeyValuePair<GameID, GameObject>> NewIdChanges = new();
 
         private Dictionary<int, GameObject> _objLookup = new();
+        private HashSet<int> _localIDFilter = new();
         private SpatialGrid _spatialGrid = new();
 
         private List<GameObject> _allNetObjects = new();
@@ -42,49 +42,17 @@ namespace PolyPlane.GameObjects
         private List<GameObject> _expiredObjs = new();
 
         private GameObjectPool<FlamePart> _flamePool = new(() => new FlamePart());
-        private GameObjectPool<Bullet> _bulletPool = new(() => new Bullet());
 
         public event EventHandler<PlayerScoredEventArgs> PlayerScoredEvent;
         public event EventHandler<EventMessage> PlayerKilledEvent;
         public event EventHandler<FighterPlane> NewPlayerEvent;
-
-
-        public Bullet RentBullet(int newPlayerId)
-        {
-            var bullet = _bulletPool.RentObject();
-
-            var newId = new GameID(newPlayerId, bullet.ID.ObjectID);
-
-            if (!bullet.ID.Equals(newId))
-                NewIdChanges.Enqueue(new KeyValuePair<GameID, GameObject>(newId, bullet));
-
-            return bullet;
-        }
-
-        public Bullet RentBullet(GameID newId)
-        {
-            var bullet = _bulletPool.RentObject();
-
-            if (!bullet.ID.Equals(newId))
-                NewIdChanges.Enqueue(new KeyValuePair<GameID, GameObject>(newId, bullet));
-
-            return bullet;
-        }
-
-        public void ReturnBullet(Bullet bullet)
-        {
-            bullet.IsExpired = true;
-            _bulletPool.ReturnObject(bullet);
-        }
 
         public FlamePart RentFlamePart(int newPlayerId)
         {
             var part = _flamePool.RentObject();
 
             var newId = new GameID(newPlayerId, part.ID.ObjectID);
-
-            if (!part.ID.Equals(newId))
-                NewIdChanges.Enqueue(new KeyValuePair<GameID, GameObject>(newId, part));
+            part.ID = newId;
 
             return part;
         }
@@ -97,10 +65,11 @@ namespace PolyPlane.GameObjects
 
         public void AddFlame(FlamePart flame)
         {
-            if (!Contains(flame))
+            if (!_localIDFilter.Contains(flame.LocalID))
             {
-                AddObject(flame);
+                _localIDFilter.Add(flame.LocalID);
                 Flames.Add(flame);
+                _spatialGrid.Add(flame);
             }
         }
 
@@ -274,7 +243,6 @@ namespace PolyPlane.GameObjects
             NewMissiles.Clear();
             NewPlanes.Clear();
             NewFlames.Clear();
-            NewIdChanges.Clear();
 
             _objLookup.Clear();
             _spatialGrid.Clear();
@@ -415,6 +383,8 @@ namespace PolyPlane.GameObjects
                     _objLookup.Remove(obj.ID.GetHashCode());
                     obj.Dispose();
 
+                    _localIDFilter.Remove(obj.LocalID);
+
                     if (World.IsNetGame)
                         _expiredObjs.Add(obj);
 
@@ -432,7 +402,6 @@ namespace PolyPlane.GameObjects
                     }
                     else if (obj is Bullet bullet)
                     {
-                        ReturnBullet(bullet);
                         AddBulletExplosion(bullet);
                     }
                 }
@@ -511,14 +480,6 @@ namespace PolyPlane.GameObjects
                     AddFlame(flame);
                 }
             }
-
-            while (NewIdChanges.Count > 0)
-            {
-                if (NewIdChanges.TryDequeue(out var idChange))
-                {
-                    ChangeObjID(idChange.Value, idChange.Key);
-                }
-            }
         }
 
         private void SyncObjCollections()
@@ -535,6 +496,8 @@ namespace PolyPlane.GameObjects
 
                 _allObjects.Add(obj);
             }
+
+            _allObjects.AddRange(Flames);
 
             _spatialGrid.Update();
         }

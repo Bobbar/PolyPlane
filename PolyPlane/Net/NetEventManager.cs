@@ -648,8 +648,8 @@ namespace PolyPlane.Net
 
         private void DoNewBullet(GameObjectPacket bulletPacket)
         {
-            var bullet = _objs.RentBullet(bulletPacket.ID);
-            bullet.ReInitNet(bulletPacket.Position, bulletPacket.Velocity, bulletPacket.Rotation);
+            var bullet = new Bullet(bulletPacket.Position, bulletPacket.Velocity, bulletPacket.Rotation);
+            bullet.ID = bulletPacket.ID;
 
             bulletPacket.SyncObj(bullet);
             var owner = GetNetPlane(bulletPacket.OwnerID);
