@@ -97,8 +97,11 @@ namespace PolyPlane.GameObjects
 
         public void AddFlame(FlamePart flame)
         {
-            Flames.Add(flame);
-            _spatialGrid.Add(flame);
+            if (!Contains(flame))
+            {
+                AddObject(flame);
+                Flames.Add(flame);
+            }
         }
 
         public void EnqueueFlame(FlamePart flame)

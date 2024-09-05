@@ -104,7 +104,6 @@ namespace PolyPlane.GameObjects
         {
             base.Update(dt, renderScale);
             _spawnTimer.Update(dt);
-            UpdateParts(dt, renderScale);
 
             if (_refPos != null)
             {
@@ -137,11 +136,13 @@ namespace PolyPlane.GameObjects
         private void SpawnPart()
         {
             D2DPoint newPos = this.Position;
+            D2DPoint newVelo = this.Velocity;
 
             if (_refPos != null)
+            {
+                _refPos.Update(World.DT, World.RenderScale);
                 newPos = _refPos.Position;
-
-            D2DPoint newVelo = this.Velocity;
+            }
 
             if (this.Owner != null && this.Owner is not Explosion)
                 newVelo = this.Owner.Velocity;
@@ -158,8 +159,6 @@ namespace PolyPlane.GameObjects
 
             var newPart = World.ObjectManager.RentFlamePart(this.PlayerID);
             newPart.ReInit(newPos, newRad, newColor, endColor, newVelo);
-
-            //newPart.PlayerID = this.PlayerID;
             newPart.Owner = this;
 
             if (_parts.Count < MAX_PARTS)
@@ -178,31 +177,6 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private void UpdateParts(float dt, float renderScale)
-        {
-            int i = 0;
-            while (i < _parts.Count)
-            {
-                var part = _parts[i];
-                part.Update(dt, renderScale);
-
-                var ageFactFade = 1f - Utilities.Factor(part.Age, MAX_AGE);
-                var ageFactSmoke = Utilities.Factor(part.Age, MAX_AGE * 3f);
-                var alpha = _flameColor.a * ageFactFade;
-
-                part.Color = new D2DColor(alpha, Utilities.LerpColor(part.Color, part.EndColor, ageFactSmoke));
-
-                if (part.Age > MAX_AGE)
-                {
-                    _parts[i].IsExpired = true;
-                    World.ObjectManager.ReturnFlamePart(_parts[i]);
-                    _parts.RemoveAt(i);
-                }
-
-                i++;
-            }
-        }
-
         public override void Dispose()
         {
             base.Dispose();
@@ -216,7 +190,6 @@ namespace PolyPlane.GameObjects
             });
 
             _parts.Clear();
-            //_parts = null;
         }
     }
 
@@ -224,6 +197,7 @@ namespace PolyPlane.GameObjects
     {
         public D2DEllipse Ellipse => _ellipse;
         public D2DColor Color { get; set; }
+        public D2DColor StartColor { get; set; }
         public D2DColor EndColor { get; set; }
 
         private D2DEllipse _ellipse;
@@ -239,23 +213,6 @@ namespace PolyPlane.GameObjects
             _ellipse = new D2DEllipse();
         }
 
-        public FlamePart(D2DEllipse ellipse, D2DColor color, D2DPoint velo) : base(ellipse.origin, velo)
-        {
-            _ellipse = ellipse;
-            Color = color;
-
-            _riseRate = new D2DPoint(0f, Utilities.Rnd.NextFloat(MAX_RISE_RATE, MIN_RISE_RATE));
-        }
-
-        public FlamePart(D2DEllipse ellipse, D2DColor color, D2DColor endColor, D2DPoint velo) : base(ellipse.origin, velo)
-        {
-            _ellipse = ellipse;
-            Color = color;
-            EndColor = endColor;
-
-            _riseRate = new D2DPoint(0f, Utilities.Rnd.NextFloat(MAX_RISE_RATE, MIN_RISE_RATE));
-        }
-
         public void ReInit(D2DPoint pos, float radius, D2DColor color, D2DColor endColor, D2DPoint velo)
         {
             this.Age = 0f;
@@ -266,6 +223,7 @@ namespace PolyPlane.GameObjects
             _ellipse.radiusY = radius;
 
             Color = color;
+            StartColor = color;
             EndColor = endColor;
 
             _riseRate = new D2DPoint(0f, Utilities.Rnd.NextFloat(MAX_RISE_RATE, MIN_RISE_RATE));
@@ -278,8 +236,19 @@ namespace PolyPlane.GameObjects
         {
             base.Update(dt, renderScale);
 
-            this.Velocity += -this.Velocity * 0.9f * dt;
+            var ageFactFade = 1f - Utilities.Factor(this.Age, Flame.MAX_AGE);
+            var ageFactSmoke = Utilities.Factor(this.Age, Flame.MAX_AGE * 3f);
+            var alpha = StartColor.a * ageFactFade;
 
+            this.Color = new D2DColor(alpha, Utilities.LerpColor(this.Color, this.EndColor, ageFactSmoke));
+
+            if (this.Age > Flame.MAX_AGE)
+            {
+                this.IsExpired = true;
+            }
+
+
+            this.Velocity += -this.Velocity * 0.9f * dt;
             this.Velocity += _riseRate * dt;
 
             // Simulate the particles being blown by the wind.
@@ -293,7 +262,6 @@ namespace PolyPlane.GameObjects
             base.Render(ctx);
 
             ctx.FillEllipse(Ellipse, Color);
-            //ctx.FillRectangle(new D2DRect(_ellipse.origin, new D2DSize(_ellipse.radiusX, _ellipse.radiusY)), Color);
         }
     }
 }

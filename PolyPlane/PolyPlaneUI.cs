@@ -490,6 +490,8 @@ namespace PolyPlane
             {
                 _timer.Restart();
 
+                _objs.Update();
+
                 var allObjs = _objs.GetAllObjects();
                 allObjs.ForEachParallel(o => o.Update(World.DT, World.RenderScale), _multiThreadNum);
 
@@ -504,8 +506,6 @@ namespace PolyPlane
                 _timer.Restart();
 
                 World.UpdateAirDensityAndWind(World.DT);
-
-                _objs.Update();
 
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;

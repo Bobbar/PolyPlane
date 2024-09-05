@@ -309,10 +309,13 @@ namespace PolyPlane.Server
             // Update/advance objects.
             if (!World.IsPaused)
             {
-                var objs = _objs.GetAllObjects();
-
                 _timer.Restart();
+
+                _objs.Update();
+
+                var objs = _objs.GetAllObjects();
                 objs.ForEachParallel(o => o.Update(World.DT, World.RenderScale), _multiThreadNum);
+
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
 
@@ -325,7 +328,6 @@ namespace PolyPlane.Server
 
                 World.UpdateAirDensityAndWind(World.DT);
 
-                _objs.Update();
 
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
