@@ -671,16 +671,6 @@ namespace PolyPlane.Rendering
 
             _objs.MissileTrails.ForEach(o => o.Render(ctx));
 
-            _objs.Missiles.ForEach(o =>
-            {
-                o.Render(ctx);
-
-                // Circle enemy missiles.
-                if (!o.Owner.Equals(plane))
-                    ctx.DrawEllipse(new D2DEllipse(o.Position, new D2DSize(50f, 50f)), new D2DColor(0.4f, D2DColor.Red), 8f);
-            });
-
-
             _objs.PlaneContrails.ForEach(o =>
             {
                 if (o.ContainedBy(ctx.Viewport))
@@ -701,6 +691,14 @@ namespace PolyPlane.Rendering
                     // Draw circle around locked on plane.
                     if (plane.Radar.LockedObj != null && plane.Radar.LockedObj.Equals(p))
                         ctx.DrawEllipse(new D2DEllipse(p.Position, new D2DSize(80f, 80f)), World.HudColor, 4f);
+                }
+                else if (obj is GuidedMissile missile)
+                {
+                    missile.Render(ctx);
+
+                    // Circle enemy missiles.
+                    if (!missile.Owner.Equals(plane))
+                        ctx.DrawEllipse(new D2DEllipse(missile.Position, new D2DSize(50f, 50f)), new D2DColor(0.4f, D2DColor.Red), 8f);
                 }
                 else
                 {
