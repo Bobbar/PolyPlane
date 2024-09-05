@@ -19,6 +19,7 @@ namespace PolyPlane.GameObjects
             this.PlayerID = owner.PlayerID;
             this.Owner = owner;
             this.Velocity = owner.Velocity;
+            this.RenderOrder = 1;
 
             // Make the decoy shoot out from the top of the plane.
             const float EJECT_FORCE = 200f;
@@ -38,6 +39,7 @@ namespace PolyPlane.GameObjects
         {
             this.PlayerID = owner.PlayerID;
             this.Owner = owner;
+            this.RenderOrder = 1;
         }
 
         public override void Update(float dt, float renderScale)

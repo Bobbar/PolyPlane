@@ -265,6 +265,7 @@ namespace PolyPlane.GameObjects
             this.Radar = new Radar(this);
 
             this.RenderOffset = 1.5f;
+            this.RenderOrder = 5;
 
             this.Polygon = new RenderPoly(this, _planePoly, this.RenderOffset, POLY_TESSELLATE_DIST);
             this.FlamePoly = new RenderPoly(this, _flamePoly, new D2DPoint(12f, 0), this.RenderOffset);

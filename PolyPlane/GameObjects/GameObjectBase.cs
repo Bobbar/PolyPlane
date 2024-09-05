@@ -14,6 +14,7 @@ namespace PolyPlane.GameObjects
         public GameID ID { get; set; } = new GameID();
 
         public readonly int LocalID;
+        public int RenderOrder = 99;
 
         public D2DPoint Position { get; set; }
 

@@ -25,6 +25,7 @@ namespace PolyPlane.GameObjects
         public Bullet() : base()
         {
             this.Polygon = new RenderPoly(this, _poly);
+            this.RenderOrder = 4;
         }
 
         public void ReInit(FighterPlane plane)

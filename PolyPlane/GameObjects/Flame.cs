@@ -211,6 +211,7 @@ namespace PolyPlane.GameObjects
         public FlamePart()
         {
             _ellipse = new D2DEllipse();
+            this.RenderOrder = 0;
         }
 
         public void ReInit(D2DPoint pos, float radius, D2DColor color, D2DColor endColor, D2DPoint velo)

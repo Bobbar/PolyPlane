@@ -677,7 +677,7 @@ namespace PolyPlane.Rendering
                     o.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000);
             });
 
-            var objsInViewport = _objs.GetInViewport(ctx.Viewport);
+            var objsInViewport = _objs.GetInViewport(ctx.Viewport).OrderBy(o => o.RenderOrder); 
 
             foreach (var obj in objsInViewport)
             {
