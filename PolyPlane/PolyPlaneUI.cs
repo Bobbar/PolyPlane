@@ -344,14 +344,13 @@ namespace PolyPlane
         private FighterPlane GetNewPlane(D2DColor planeColor, bool isAI = false, string playerName = "Player")
         {
             var pos = Utilities.FindSafeSpawnPoint(_objs);
-            var plane = new FighterPlane(pos, planeColor, isAI, false);
+            var plane = new FighterPlane(pos, planeColor, World.GetNextPlayerId(), isAI, false);
 
             plane.PlayerName = playerName;
 
             if (isAI && World.ShowAITags)
                 plane.PlayerName += $" [{Utilities.GetPersonalityTag(plane.Personality)}]";
 
-            plane.PlayerID = World.GetNextPlayerId();
             plane.AutoPilotOn = true;
             plane.ThrustOn = true;
             plane.Velocity = new D2DPoint(500f, 0f);

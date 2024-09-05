@@ -27,7 +27,7 @@ namespace PolyPlane.Rendering
             InitGfx();
 
             PlaneColor = planeColor;
-            _plane = new FighterPlane(new D2DPoint(0, -20f), PlaneColor, isAI: false, isNetPlane: true);
+            _plane = new FighterPlane(new D2DPoint(0, -20f), PlaneColor, -1, isAI: false, isNetPlane: true);
             World.ObjectManager.Clear();
             _renderThread = new Thread(RenderLoop);
             _renderThread.Start();

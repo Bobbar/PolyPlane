@@ -209,8 +209,9 @@ namespace PolyPlane.GameObjects
         ];
 
 
-        public FighterPlane(D2DPoint pos, AIPersonality personality) : base(pos)
+        public FighterPlane(D2DPoint pos, AIPersonality personality, int playerId) : base(pos)
         {
+            this.PlayerID = playerId;
             _aiBehavior = new FighterPlaneAI(this, personality);
             _isAIPlane = true;
             _thrustAmt.Target = 1f;
@@ -219,8 +220,29 @@ namespace PolyPlane.GameObjects
             InitStuff();
         }
 
-        public FighterPlane(D2DPoint pos, D2DColor color, bool isAI = false, bool isNetPlane = false) : base(pos)
+        public FighterPlane(D2DPoint pos, D2DColor color, int playerId, bool isAI = false, bool isNetPlane = false) : base(pos)
         {
+            this.PlayerID = playerId;
+            _thrustAmt.Target = 1f;
+            IsNetObject = isNetPlane;
+            _isAIPlane = isAI;
+            _planeColor = color;
+            ThrustOn = true;
+
+            if (isAI)
+            {
+                const int NUM_PERS = 2;
+                var personality = Utilities.GetRandomPersonalities(NUM_PERS);
+
+                _aiBehavior = new FighterPlaneAI(this, personality);
+            }
+
+            InitStuff();
+        }
+
+        public FighterPlane(D2DPoint pos, D2DColor color, GameID id, bool isAI = false, bool isNetPlane = false) : base(pos)
+        {
+            this.ID = id;
             _thrustAmt.Target = 1f;
             IsNetObject = isNetPlane;
             _isAIPlane = isAI;

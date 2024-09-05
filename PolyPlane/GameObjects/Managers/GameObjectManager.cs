@@ -32,6 +32,7 @@ namespace PolyPlane.GameObjects
         public ConcurrentQueue<GameObject> NewMissiles = new();
         public ConcurrentQueue<FighterPlane> NewPlanes = new();
         public ConcurrentQueue<FlamePart> NewFlames = new();
+        public ConcurrentQueue<KeyValuePair<GameID, GameObject>> NewIdChanges = new();
 
         private Dictionary<int, GameObject> _objLookup = new();
         private SpatialGrid _spatialGrid = new();
@@ -52,7 +53,10 @@ namespace PolyPlane.GameObjects
         {
             var bullet = _bulletPool.RentObject();
 
-            this.ChangeObjID(bullet, new GameID(newPlayerId, bullet.ID.ObjectID));
+            var newId = new GameID(newPlayerId, bullet.ID.ObjectID);
+
+            if (!bullet.ID.Equals(newId))
+                NewIdChanges.Enqueue(new KeyValuePair<GameID, GameObject>(newId, bullet));
 
             return bullet;
         }
@@ -61,7 +65,8 @@ namespace PolyPlane.GameObjects
         {
             var bullet = _bulletPool.RentObject();
 
-            this.ChangeObjID(bullet, newId);
+            if (!bullet.ID.Equals(newId))
+                NewIdChanges.Enqueue(new KeyValuePair<GameID, GameObject>(newId, bullet));
 
             return bullet;
         }
@@ -69,7 +74,6 @@ namespace PolyPlane.GameObjects
         public void ReturnBullet(Bullet bullet)
         {
             bullet.IsExpired = true;
-
             _bulletPool.ReturnObject(bullet);
         }
 
@@ -77,7 +81,10 @@ namespace PolyPlane.GameObjects
         {
             var part = _flamePool.RentObject();
 
-            this.ChangeObjID(part, new GameID(newPlayerId, part.ID.ObjectID));
+            var newId = new GameID(newPlayerId, part.ID.ObjectID);
+
+            if (!part.ID.Equals(newId))
+                NewIdChanges.Enqueue(new KeyValuePair<GameID, GameObject>(newId, part));
 
             return part;
         }
@@ -264,6 +271,7 @@ namespace PolyPlane.GameObjects
             NewMissiles.Clear();
             NewPlanes.Clear();
             NewFlames.Clear();
+            NewIdChanges.Clear();
 
             _objLookup.Clear();
             _spatialGrid.Clear();
@@ -337,9 +345,10 @@ namespace PolyPlane.GameObjects
             if (_objLookup.TryGetValue(obj.ID.GetHashCode(), out GameObject existingObj))
             {
                 _objLookup.Remove(obj.ID.GetHashCode());
-                obj.ID = id;
                 _objLookup.Add(id.GetHashCode(), obj);
             }
+
+            obj.ID = id;
         }
 
         public void PruneExpired()
@@ -500,6 +509,13 @@ namespace PolyPlane.GameObjects
                 }
             }
 
+            while (NewIdChanges.Count > 0)
+            {
+                if (NewIdChanges.TryDequeue(out var idChange))
+                {
+                    ChangeObjID(idChange.Value, idChange.Key);
+                }
+            }
         }
 
         private void SyncObjCollections()

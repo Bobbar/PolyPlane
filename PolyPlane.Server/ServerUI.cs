@@ -454,11 +454,10 @@ namespace PolyPlane.Server
             FighterPlane aiPlane;
 
             if (personality.HasValue)
-                aiPlane = new FighterPlane(pos, personality.Value);
+                aiPlane = new FighterPlane(pos, personality.Value, World.GetNextPlayerId());
             else
-                aiPlane = new FighterPlane(pos, Utilities.RandomEnum<AIPersonality>());
+                aiPlane = new FighterPlane(pos, Utilities.RandomEnum<AIPersonality>(), World.GetNextPlayerId());
 
-            aiPlane.PlayerID = World.GetNextPlayerId();
             aiPlane.PlayerName = "(BOT) " + Utilities.GetRandomName();
 
             aiPlane.FireMissileCallback = (m) =>
