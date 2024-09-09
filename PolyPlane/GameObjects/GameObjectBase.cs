@@ -227,8 +227,8 @@ namespace PolyPlane.GameObjects
                     var veloMag = (this.Velocity * dt).Length();
                     var gravMag = (World.Gravity * dt).Length();
 
-                    // If velo is greater than half gravity acceleration.
-                    if (veloMag > (gravMag * 0.5f) && this.IsAwake)
+                    // If velo is greater than a fraction of gravity acceleration.
+                    if (veloMag > (gravMag * 0.25f) && this.IsAwake)
                     {
                         // Bounce.
                         this.Velocity = new D2DPoint(this.Velocity.X * 0.7f, -this.Velocity.Y * 0.3f);
