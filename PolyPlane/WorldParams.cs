@@ -120,6 +120,7 @@ namespace PolyPlane
         public static bool EnableWind = false;
         public static bool EnableTurbulence = true;
         public static bool ExpireMissilesOnMiss = false;
+        public static bool BulletHoleDrag = true;
         public static bool IsPaused = false;
         public static bool IsNetGame = false;
         public static bool IsServer = false;

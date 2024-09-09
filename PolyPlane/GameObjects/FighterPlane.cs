@@ -433,10 +433,38 @@ namespace PolyPlane.GameObjects
                     }
                 }
 
+                // Apply small amount of drag and torque for bullet holes.
+                // Decreases handling and max speed with damage.
+                const float DAMAGE_DRAG_AMT = 0.003f;
+                float damageTorque = 0f;
+                D2DPoint damageForce = D2DPoint.Zero;
+
+                if (World.BulletHoleDrag)
+                {
+                    foreach (var hole in _bulletHoles)
+                    {
+                        var hDens = World.GetDensityAltitude(hole.Position);
+                        var hVelo = Utilities.AngularVelocity(this, hole.Position, partialDT);
+                        var hVeloNorm = hVelo.Normalized();
+                        var hVeloMag = hVelo.Length();
+                        var hVeloMagSq = (float)Math.Pow(hVeloMag, 2f);
+                        var dAmt = DAMAGE_DRAG_AMT * 0.5f * hDens * hVeloMagSq;
+                        var dVec = -hVeloNorm * dAmt;
+                        var dTq = GetTorque(hole.Position, dVec);
+
+                        damageTorque += dTq;
+                        damageForce += dVec;
+                    }
+                }
+               
                 if (IsDisabled)
                 {
                     wingForce *= 0.1f;
                     wingTorque *= 0.1f;
+
+                    damageTorque *= 0.1f;
+                    damageForce *= 0.1f;
+
                     AutoPilotOn = false;
                     SASOn = false;
                     ThrustOn = false;
@@ -461,10 +489,12 @@ namespace PolyPlane.GameObjects
 
                     // Integrate torque, thrust and wing force.
                     var thrustTorque = GetTorque(_centerOfThrust.Position, thrust);
-                    var rotAmt = ((wingTorque + thrustTorque) * easeFact) / this.Inertia;
+                    var rotAmt = ((wingTorque + thrustTorque + damageTorque) * easeFact) / this.Inertia;
+
                     this.RotationSpeed += rotAmt * partialDT;
                     this.Velocity += (thrust * easeFact) / this.MASS * partialDT;
                     this.Velocity += (wingForce * easeFact) / this.MASS * partialDT;
+                    this.Velocity += (damageForce * easeFact) / this.MASS * partialDT;
                     this.Velocity += (World.Gravity * partialDT);
                 }
 
@@ -759,6 +789,7 @@ namespace PolyPlane.GameObjects
             this.Polygon.Update();
 
             var bulletHole = new BulletHole(this, pos + distortVec, angle);
+            bulletHole.Update(0f, this.RenderOffset);
             bulletHole.IsNetObject = this.IsNetObject;
             _bulletHoles.Add(bulletHole);
         }
