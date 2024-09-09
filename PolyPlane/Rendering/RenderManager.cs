@@ -55,6 +55,7 @@ namespace PolyPlane.Rendering
         private bool _showInfo = false;
         private bool _showHelp = false;
         private bool _showScore = false;
+        private bool _showHUD = true;
         private int _scoreScrollPos = 0;
 
         private SmoothDouble _renderTimeSmooth = new SmoothDouble(10);
@@ -391,6 +392,11 @@ namespace PolyPlane.Rendering
         {
             _showScore = !_showScore;
             _scoreScrollPos = 0;
+        }
+
+        public void ToggleHUD()
+        {
+            _showHUD = !_showHUD;
         }
 
         public void ZoomIn()
@@ -937,32 +943,34 @@ namespace PolyPlane.Rendering
             ctx.Gfx.PushTransform();
             ctx.Gfx.ScaleTransform(_hudScale, _hudScale, new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f));
 
-            DrawAltimeter(ctx.Gfx, viewportsize, viewPlane);
-            DrawSpeedo(ctx.Gfx, viewportsize, viewPlane);
-
-            if (!viewPlane.IsDisabled)
+            if (_showHUD)
             {
-                if (viewPlane.IsAI == false)
+                DrawAltimeter(ctx.Gfx, viewportsize, viewPlane);
+                DrawSpeedo(ctx.Gfx, viewportsize, viewPlane);
+
+                if (!viewPlane.IsDisabled)
                 {
-                    DrawGuideIcon(ctx.Gfx, viewportsize, viewPlane);
-                    DrawGroundWarning(ctx, viewportsize, viewPlane);
+                    if (viewPlane.IsAI == false)
+                    {
+                        DrawGuideIcon(ctx.Gfx, viewportsize, viewPlane);
+                        DrawGroundWarning(ctx, viewportsize, viewPlane);
+                    }
+
+                    DrawPlanePointers(ctx, viewportsize, viewPlane);
+                    DrawMissilePointers(ctx.Gfx, viewportsize, viewPlane);
                 }
 
-                DrawPlanePointers(ctx, viewportsize, viewPlane);
-                DrawMissilePointers(ctx.Gfx, viewportsize, viewPlane);
+                DrawHudMessage(ctx.Gfx, viewportsize);
+                DrawRadar(ctx, viewportsize, viewPlane);
+
+                var healthBarSize = new D2DSize(300, 30);
+                var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height - (viewportsize.height * 0.85f));
+                DrawHealthBar(ctx.Gfx, viewPlane, pos, healthBarSize);
+
+                DrawMessageBox(ctx, viewportsize, viewPlane);
             }
 
-            DrawHudMessage(ctx.Gfx, viewportsize);
-            DrawRadar(ctx, viewportsize, viewPlane);
-
-            var healthBarSize = new D2DSize(300, 30);
-            var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height - (viewportsize.height * 0.85f));
-            DrawHealthBar(ctx.Gfx, viewPlane, pos, healthBarSize);
-
-            DrawMessageBox(ctx, viewportsize, viewPlane);
-
             DrawPopMessages(ctx, viewportsize, viewPlane);
-
 
             if (_showScore)
                 DrawScoreCard(ctx, viewportsize, viewPlane);
@@ -1603,6 +1611,7 @@ namespace PolyPlane.Rendering
                 infoText += $"Right-Click: Drop Decoys\n";
                 infoText += $"Middle-Click/Space Bar: Fire Missile\n";
                 infoText += $"L: Toggle Lead Indicators\n";
+                infoText += $"F2: Toggle HUD\n";
 
                 infoText += $"\nSpectate (While crashed)\n";
                 infoText += $"([/]): Prev/Next Spectate Plane\n";

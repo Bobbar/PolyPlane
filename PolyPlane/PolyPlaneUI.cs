@@ -726,8 +726,10 @@ namespace PolyPlane
                 if (_netMan.ChatInterface.ChatIsActive)
                     return;
             }
+            
+            var key = char.ToLower(e.KeyChar);
 
-            switch (e.KeyChar)
+            switch (key)
             {
                 case 'a':
                     if (World.IsNetGame)
@@ -921,6 +923,9 @@ namespace PolyPlane
                         break;
                 }
             }
+
+            if (e.KeyData.HasFlag(Keys.F2))
+                _render?.ToggleHUD();
 
             if (e.KeyData.HasFlag(Keys.Enter) && e.KeyData.HasFlag(Keys.Alt))
                 ToggleFullscreen();
