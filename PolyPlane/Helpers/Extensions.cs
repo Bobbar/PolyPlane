@@ -133,6 +133,11 @@ namespace PolyPlane.Helpers
             return rect.Inflate(ellipse.radiusX * World.ViewPortScaleMulti, ellipse.radiusY * World.ViewPortScaleMulti).Contains(ellipse.origin);
         }
 
+        public static bool Contains(this D2DRect rect, D2DPoint pos, float radius)
+        {
+            return rect.Inflate(radius * World.ViewPortScaleMulti, radius * World.ViewPortScaleMulti).Contains(pos);
+        }
+
         public static D2DPoint AspectRatioFactor(this D2DRect rect)
         {
             var rH = rect.Height / rect.Width;

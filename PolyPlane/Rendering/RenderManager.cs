@@ -1478,7 +1478,7 @@ namespace PolyPlane.Rendering
             {
                 var cloud = _clouds[i];
 
-                if (ctx.Viewport.Contains(cloud.Position))
+                if (ctx.Viewport.Contains(cloud.Position, cloud.Radius * 3f))
                 {
                     DrawCloud(ctx, cloud, todColor);
                 }
