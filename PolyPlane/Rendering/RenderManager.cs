@@ -1480,7 +1480,7 @@ namespace PolyPlane.Rendering
             {
                 var cloud = _clouds[i];
 
-                if (ctx.Viewport.Contains(cloud.Position, cloud.Radius * 3f))
+                if (ctx.Viewport.Contains(cloud.Position, cloud.Radius * cloud.ScaleX * CLOUD_SCALE))
                 {
                     DrawCloud(ctx, cloud, todColor);
                 }
@@ -1538,7 +1538,7 @@ namespace PolyPlane.Rendering
             var todAngle = Utilities.Lerp(TOD_ANGLE_START, TOD_ANGLE_END, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
             var cloudShadowPos = GetCloudShadowPos(cloud.Position, todAngle);
 
-            if (!ctx.Viewport.Contains(new D2DEllipse(cloudShadowPos, new D2DSize(cloud.Radius * 2f, cloud.Radius * 2f))))
+            if (!ctx.Viewport.Contains(new D2DEllipse(cloudShadowPos, new D2DSize(cloud.Radius * cloud.ScaleX * CLOUD_SCALE, cloud.Radius * cloud.ScaleX * CLOUD_SCALE))))
                 return;
 
             var shadowColor = new D2DColor(0.05f, Utilities.LerpColor(todColor, D2DColor.Black, 0.7f));
