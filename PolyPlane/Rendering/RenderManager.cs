@@ -663,7 +663,7 @@ namespace PolyPlane.Rendering
 
             var viewPortRect = new D2DRect(plane.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
 
-            const float VIEWPORT_PADDING_AMT = 3.5f;
+            const float VIEWPORT_PADDING_AMT = 1f;
             var inflateAmt = VIEWPORT_PADDING_AMT * zAmt;
             viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true); // Inflate slightly to prevent "pop-in".
 
@@ -683,7 +683,7 @@ namespace PolyPlane.Rendering
                     o.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000);
             });
 
-            var objsInViewport = _objs.GetInViewport(ctx.Viewport).OrderBy(o => o.RenderOrder); 
+            var objsInViewport = _objs.GetInViewport(ctx.Viewport).Where(o => o is not Explosion).OrderBy(o => o.RenderOrder);
 
             foreach (var obj in objsInViewport)
             {
@@ -711,6 +711,8 @@ namespace PolyPlane.Rendering
                     obj.Render(ctx);
                 }
             }
+
+            _objs.Explosions.ForEach(e => e.Render(ctx));
 
             DrawPlaneShadow(ctx, plane, shadowColor);
             plane.Render(ctx);
@@ -861,7 +863,7 @@ namespace PolyPlane.Rendering
 
             foreach (var tree in _trees)
             {
-                if (ctx.Viewport.Contains(tree.Position))
+                if (ctx.Viewport.Contains(tree.Position, tree.Height))
                 {
                     tree.Render(ctx, todColor, GROUND_OBJ_SCALE);
                 }

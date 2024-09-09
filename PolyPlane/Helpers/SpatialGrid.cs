@@ -111,16 +111,16 @@ namespace PolyPlane.Helpers
         public IEnumerable<GameObject> GetInViewport(D2DRect viewport)
         {
             // Calc number of indexes for x/y coords.
-            int nX = (int)(viewport.Width / (1 << SPATIAL_GRID_SIDE_LEN));
-            int nY = (int)(viewport.Height / (1 << SPATIAL_GRID_SIDE_LEN));
+            int nX = (int)(viewport.Width / (1 << SPATIAL_GRID_SIDE_LEN)) + 1;
+            int nY = (int)(viewport.Height / (1 << SPATIAL_GRID_SIDE_LEN)) + 1;
 
             // Find the initial indices for the top-left corner.
             GetGridIdx(viewport.Location, out int idxX, out int idxY);
 
             // Iterate x/y indices and return objects.
-            for (int x = idxX + 1; x <= idxX + nX; x++)
+            for (int x = idxX; x <= idxX + nX; x++)
             {
-                for (int y = idxY + 1; y <= idxY + nY; y++)
+                for (int y = idxY; y <= idxY + nY; y++)
                 {
                     var nHash = GetGridHash(x, y);
 
