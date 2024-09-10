@@ -9,7 +9,6 @@ namespace PolyPlane.Helpers
 
         private Dictionary<int, List<GameObject>> _grid = new Dictionary<int, List<GameObject>>();
         private List<KeyValuePair<int, GameObject>> _tempStorage = new List<KeyValuePair<int, GameObject>>();
-        private Dictionary<int, GameObject> _lookup = new Dictionary<int, GameObject>();
 
         /// <summary>
         /// Removes expired objects and moves live objects to their new grid positions as needed.
@@ -29,7 +28,7 @@ namespace PolyPlane.Helpers
                 var curHash = kvp.Key;
                 var objs = kvp.Value;
 
-                for (int i = 0; i < objs.Count; i++)
+                for (int i = objs.Count - 1; i >= 0; i--)
                 {
                     var obj = objs[i];
 
@@ -37,7 +36,6 @@ namespace PolyPlane.Helpers
                     {
                         // Just remove expired objects.
                         objs.RemoveAt(i);
-                        _lookup.Remove(obj.LocalID);
                     }
                     else
                     {
@@ -46,7 +44,6 @@ namespace PolyPlane.Helpers
                         if (newHash != curHash)
                         {
                             objs.RemoveAt(i);
-                            _lookup.Remove(obj.LocalID);
                             _tempStorage.Add(new KeyValuePair<int, GameObject>(newHash, obj));
                         }
                     }
@@ -139,21 +136,14 @@ namespace PolyPlane.Helpers
         {
             _grid.Clear();
             _tempStorage.Clear();
-            _lookup.Clear();
         }
 
         private void AddInternal(int hash, GameObject obj)
         {
-            var idHash = obj.LocalID;
-            if (!_lookup.ContainsKey(idHash))
-            {
-                _lookup.Add(idHash, obj);
-
-                if (_grid.TryGetValue(hash, out var objs))
-                    objs.Add(obj);
-                else
-                    _grid.Add(hash, new List<GameObject> { obj });
-            }
+            if (_grid.TryGetValue(hash, out var objs))
+                objs.Add(obj);
+            else
+                _grid.Add(hash, new List<GameObject> { obj });
         }
 
         private void GetGridIdx(GameObject obj, out int idxX, out int idxY)

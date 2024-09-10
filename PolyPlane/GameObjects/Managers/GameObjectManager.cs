@@ -34,7 +34,6 @@ namespace PolyPlane.GameObjects
         public ConcurrentQueue<FlamePart> NewFlames = new();
 
         private Dictionary<int, GameObject> _objLookup = new();
-        private HashSet<int> _localIDFilter = new();
         private SpatialGrid _spatialGrid = new();
 
         private List<GameObject> _allNetObjects = new();
@@ -63,14 +62,10 @@ namespace PolyPlane.GameObjects
             _flamePool.ReturnObject(part);
         }
 
-        public void AddFlame(FlamePart flame)
+        private void AddFlame(FlamePart flame)
         {
-            if (!_localIDFilter.Contains(flame.LocalID))
-            {
-                _localIDFilter.Add(flame.LocalID);
-                Flames.Add(flame);
-                _spatialGrid.Add(flame);
-            }
+            Flames.Add(flame);
+            _spatialGrid.Add(flame);
         }
 
         public void EnqueueFlame(FlamePart flame)
@@ -291,8 +286,11 @@ namespace PolyPlane.GameObjects
         /// </summary>
         public void Update()
         {
-            PruneExpired();
             SyncObjQueues();
+
+            PruneExpired();
+            _spatialGrid.Update();
+
             SyncObjCollections();
         }
 
@@ -335,7 +333,7 @@ namespace PolyPlane.GameObjects
             PruneExpired(Flames);
             PruneContrails();
 
-            for (int i = 0; i < Planes.Count; i++)
+            for (int i = Planes.Count - 1; i >= 0; i--)
             {
                 var plane = Planes[i];
 
@@ -356,7 +354,7 @@ namespace PolyPlane.GameObjects
 
         private void PruneContrails()
         {
-            for (int i = 0; i < PlaneContrails.Count; i++)
+            for (int i = PlaneContrails.Count - 1; i >= 0; i--)
             {
                 var trail = PlaneContrails[i];
 
@@ -373,7 +371,7 @@ namespace PolyPlane.GameObjects
 
         private void PruneExpired(List<GameObject> objs)
         {
-            for (int i = 0; i < objs.Count; i++)
+            for (int i = objs.Count - 1; i >= 0; i--)
             {
                 var obj = objs[i];
 
@@ -382,8 +380,6 @@ namespace PolyPlane.GameObjects
                     objs.RemoveAt(i);
                     _objLookup.Remove(obj.ID.GetHashCode());
                     obj.Dispose();
-
-                    _localIDFilter.Remove(obj.LocalID);
 
                     if (World.IsNetGame)
                         _expiredObjs.Add(obj);
@@ -500,8 +496,6 @@ namespace PolyPlane.GameObjects
             }
 
             _allObjects.AddRange(Flames);
-
-            _spatialGrid.Update();
         }
 
         public IEnumerable<GameObject> GetNear(GameObject obj) => _spatialGrid.GetNear(obj);
