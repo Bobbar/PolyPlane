@@ -335,8 +335,6 @@ namespace PolyPlane.GameObjects
             PruneExpired(Flames);
             PruneContrails();
 
-            TotalObjects += Planes.Count;
-
             for (int i = 0; i < Planes.Count; i++)
             {
                 var plane = Planes[i];
@@ -349,6 +347,8 @@ namespace PolyPlane.GameObjects
                     plane.Dispose();
                 }
             }
+
+            TotalObjects += Planes.Count;
 
             if (GroundImpacts.Count > MAX_GROUND_IMPACTS)
                 GroundImpacts.RemoveAt(0);
@@ -367,12 +367,12 @@ namespace PolyPlane.GameObjects
                     _objLookup.Remove(trail.ID.GetHashCode());
                 }
             }
+
+            TotalObjects += PlaneContrails.Count;
         }
 
         private void PruneExpired(List<GameObject> objs)
         {
-            TotalObjects += objs.Count;
-
             for (int i = 0; i < objs.Count; i++)
             {
                 var obj = objs[i];
@@ -406,6 +406,8 @@ namespace PolyPlane.GameObjects
                     }
                 }
             }
+
+            TotalObjects += objs.Count;
         }
 
         private void AddObject(GameObject obj)

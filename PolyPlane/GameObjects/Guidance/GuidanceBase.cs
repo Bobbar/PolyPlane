@@ -146,7 +146,7 @@ namespace PolyPlane.GameObjects.Guidance
         protected void DoDecoySuccess()
         {
             // Test for decoy success.
-            const float MIN_DECOY_FOV = SENSOR_FOV;
+            const float MIN_DECOY_FOV = SENSOR_FOV * 0.5f;
             const float MAX_DISTANCE = 20000f; // Max distance for decoys to be considered.
 
             var decoys = World.ObjectManager.Decoys;
