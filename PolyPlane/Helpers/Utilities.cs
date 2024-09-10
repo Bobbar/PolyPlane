@@ -160,6 +160,12 @@ namespace PolyPlane.Helpers
             return ret;
         }
 
+        public static float PositionToAltitude(D2DPoint position)
+        {
+            // Up = negative on the Y axis.
+            return position.Y * -1f;
+        }
+
         public static float Cross(D2DPoint vector1, D2DPoint vector2)
         {
             return vector1.X * vector2.Y - vector1.Y * vector2.X;

@@ -34,7 +34,7 @@ namespace PolyPlane.GameObjects
         {
             get
             {
-                return this.Position.Y * -1f;
+                return Utilities.PositionToAltitude(this.Position);
             }
         }
 

@@ -138,9 +138,7 @@ namespace PolyPlane.GameObjects.Fixtures
 
             // Lerp in turbulence as altitude changes.
             // Greater altitude = less turbulence.
-            var altOffset = Altitude - 3000f; // Offset the altitude such that turbulence is always at max when below 3000.
-            var turbAltFact = Utilities.FactorWithEasing(altOffset, World.MAX_TURB_ALT, EasingFunctions.EaseInCirc);
-            velo = Utilities.LerpPoints(velo * World.Turbulence, velo, turbAltFact);
+            velo = World.GetTurbulenceVeloAltitude(this.Position, velo);
 
             var veloMag = velo.Length();
             var veloMagSq = Math.Pow(veloMag, 2f);

@@ -12,8 +12,8 @@ namespace PolyPlane.GameObjects
 {
     public class FighterPlane : GameObjectPoly, ICollidable
     {
-        public SmokeTrail Contrail 
-        { 
+        public SmokeTrail Contrail
+        {
             get { return _contrail; }
             set { _contrail = value; }
         }
@@ -435,7 +435,6 @@ namespace PolyPlane.GameObjects
 
                 // Apply small amount of drag and torque for bullet holes.
                 // Decreases handling and max speed with damage.
-                const float DAMAGE_DRAG_AMT = 0.003f;
                 float damageTorque = 0f;
                 D2DPoint damageForce = D2DPoint.Zero;
 
@@ -443,20 +442,12 @@ namespace PolyPlane.GameObjects
                 {
                     foreach (var hole in _bulletHoles)
                     {
-                        var hDens = World.GetDensityAltitude(hole.Position);
-                        var hVelo = Utilities.AngularVelocity(this, hole.Position, partialDT);
-                        var hVeloNorm = hVelo.Normalized();
-                        var hVeloMag = hVelo.Length();
-                        var hVeloMagSq = (float)Math.Pow(hVeloMag, 2f);
-                        var dAmt = DAMAGE_DRAG_AMT * 0.5f * hDens * hVeloMagSq;
-                        var dVec = -hVeloNorm * dAmt;
-                        var dTq = GetTorque(hole.Position, dVec);
-
+                        GetBulletHoleDrag(hole, partialDT, out D2DPoint dVec, out float dTq);
                         damageTorque += dTq;
                         damageForce += dVec;
                     }
                 }
-               
+
                 if (IsDisabled)
                 {
                     wingForce *= 0.1f;
@@ -604,7 +595,6 @@ namespace PolyPlane.GameObjects
             DrawClippedObjects(ctx);
             Wings.ForEach(w => w.Render(ctx));
             _gun.Render(ctx);
-
 
             //foreach (var b in _bulletHoles)
             //    ctx.DrawArrow(b.Position, b.Position + Utilities.AngleToVectorDegrees(b.Rotation, 10), D2DColor.Blue, 1f, 3f);
@@ -1029,6 +1019,32 @@ namespace PolyPlane.GameObjects
 
             var torque = Utilities.Cross(r, force);
             return torque;
+        }
+
+        private void GetBulletHoleDrag(BulletHole hole, float dt, out D2DPoint force, out float torque)
+        {
+            const float DAMAGE_DRAG_AMT = 0.002f;
+            const float DAMAGE_TQ_FACTOR = 2f;
+
+            var hDens = World.GetDensityAltitude(hole.Position);
+            var hVelo = Utilities.AngularVelocity(this, hole.Position, dt);
+
+            // Apply turbulence.
+            hVelo = World.GetTurbulenceVeloAltitude(hole.Position, hVelo);
+
+            var hVeloNorm = hVelo.Normalized();
+            var hVeloMag = hVelo.Length();
+            var hVeloMagSq = (float)Math.Pow(hVeloMag, 2f);
+            var dAmt = DAMAGE_DRAG_AMT * 0.5f * hDens * hVeloMagSq;
+
+            var dVec = -hVeloNorm * dAmt;
+            var dTq = GetTorque(hole.Position, dVec);
+
+            dTq *= DAMAGE_TQ_FACTOR;
+
+            force = dVec;
+            torque = dTq;
+            return;
         }
 
         public void FlipPoly(Direction direction)
