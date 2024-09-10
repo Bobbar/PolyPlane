@@ -96,9 +96,9 @@ namespace PolyPlane.GameObjects.Fixtures
             if (Visible)
             {
                 // Draw wing.
-                var wingVec = Utilities.AngleToVectorDegrees(Rotation);
-                var start = Position - wingVec * _params.RenderLength;
-                var end = Position + wingVec * _params.RenderLength;
+                var wingVec = Utilities.AngleToVectorDegrees(Rotation, _params.RenderLength);
+                var start = Position - wingVec;
+                var end = Position + wingVec;
                 ctx.DrawLine(start, end, D2DColor.Black, _params.RenderWidth + 0.5f, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
                 ctx.DrawLine(start, end, D2DColor.Gray, _params.RenderWidth, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
             }

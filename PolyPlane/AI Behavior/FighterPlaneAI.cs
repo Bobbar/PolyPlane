@@ -161,6 +161,9 @@ namespace PolyPlane.AI_Behavior
             {
                 var rndTarg = this.Plane.Radar.FindNearestPlane();
 
+                if (_killedByPlane != null && _killedByPlane.IsExpired)
+                    _killedByPlane = null;
+
                 if ((this.Personality & AIPersonality.Vengeful) == AIPersonality.Vengeful && (_killedByPlane != null && _killedByPlane.IsDisabled == false))
                     rndTarg = _killedByPlane;
 
