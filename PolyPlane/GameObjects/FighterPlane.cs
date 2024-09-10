@@ -779,7 +779,6 @@ namespace PolyPlane.GameObjects
             this.Polygon.Update();
 
             var bulletHole = new BulletHole(this, pos + distortVec, angle);
-            bulletHole.Update(0f, this.RenderOffset);
             bulletHole.IsNetObject = this.IsNetObject;
             _bulletHoles.Add(bulletHole);
         }

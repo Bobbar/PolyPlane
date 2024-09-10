@@ -30,13 +30,11 @@ namespace PolyPlane.GameObjects
 
             Radius = radius;
             _refPos = new FixturePoint(obj, offset);
-            _refPos.Update(World.DT, World.RenderScale * obj.RenderOffset);
 
             _spawnTimer.TriggerCallback = () => SpawnPart();
             _spawnTimer.Start();
 
-            this.Position = _refPos.Position;
-            this.Rotation = _refPos.Rotation;
+            Update(World.DT, World.RenderScale * obj.RenderOffset);
 
             SpawnPart();
         }
@@ -50,13 +48,11 @@ namespace PolyPlane.GameObjects
 
             Radius = radius;
             _refPos = new FixturePoint(obj, offset);
-            _refPos.Update(World.DT, World.RenderScale * obj.RenderOffset);
 
             _spawnTimer.TriggerCallback = () => SpawnPart();
             _spawnTimer.Start();
 
-            this.Position = _refPos.Position;
-            this.Rotation = _refPos.Rotation;
+            Update(World.DT, World.RenderScale * obj.RenderOffset);
 
             SpawnPart();
         }
@@ -70,18 +66,16 @@ namespace PolyPlane.GameObjects
 
             Radius = Utilities.Rnd.NextFloat(4f, 15f);
             _refPos = new FixturePoint(obj, offset);
-            _refPos.Update(World.DT, World.RenderScale * obj.RenderOffset);
 
             _spawnTimer.TriggerCallback = () => SpawnPart();
+
+            Update(World.DT, World.RenderScale * obj.RenderOffset);
 
             if (hasFlame)
             {
                 _spawnTimer.Start();
                 SpawnPart();
             }
-
-            this.Position = _refPos.Position;
-            this.Rotation = _refPos.Rotation;
         }
 
         /// <summary>
