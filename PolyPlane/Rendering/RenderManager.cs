@@ -59,6 +59,7 @@ namespace PolyPlane.Rendering
         private int _scoreScrollPos = 0;
 
         private SmoothDouble _renderTimeSmooth = new SmoothDouble(10);
+        private SmoothDouble _updateTimeSmooth = new SmoothDouble(10);
         private Stopwatch _timer = new Stopwatch();
         private float _renderFPS = 0;
         private long _lastRenderTime = 0;
@@ -1647,7 +1648,7 @@ namespace PolyPlane.Rendering
                 infoText += $"On Screen: {GraphicsExtensions.OnScreen}\n";
                 infoText += $"Off Screen: {GraphicsExtensions.OffScreen}\n";
                 infoText += $"Planes: {_objs.Planes.Count}\n";
-                infoText += $"Update ms: {Math.Round(UpdateTime.TotalMilliseconds, 2)}\n";
+                infoText += $"Update ms: {Math.Round(_updateTimeSmooth.Add(UpdateTime.TotalMilliseconds), 2)}\n";
                 infoText += $"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}\n";
                 infoText += $"Collision ms: {Math.Round(CollisionTime.TotalMilliseconds, 2)}\n";
                 infoText += $"Total ms: {Math.Round(UpdateTime.TotalMilliseconds + CollisionTime.TotalMilliseconds + _renderTimeSmooth.Current, 2)}\n";

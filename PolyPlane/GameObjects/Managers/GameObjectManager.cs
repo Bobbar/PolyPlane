@@ -46,6 +46,13 @@ namespace PolyPlane.GameObjects
         public event EventHandler<EventMessage> PlayerKilledEvent;
         public event EventHandler<FighterPlane> NewPlayerEvent;
 
+        private int _multiThreadNum = 2;
+
+        public GameObjectManager()
+        {
+            _multiThreadNum = Environment.ProcessorCount;
+        }
+
         public FlamePart RentFlamePart(int newPlayerId)
         {
             var part = _flamePool.RentObject();
@@ -282,9 +289,9 @@ namespace PolyPlane.GameObjects
         }
 
         /// <summary>
-        /// Updates and syncs all object collections/queues and spatial grid.
+        /// Updates and syncs all collections/queues, spatial grid and advances all objects.
         /// </summary>
-        public void Update()
+        public void Update(float dt)
         {
             SyncObjQueues();
 
@@ -292,6 +299,17 @@ namespace PolyPlane.GameObjects
             _spatialGrid.Update();
 
             SyncObjCollections();
+
+            // Update all regular objects.
+            var allObjs = _allObjects;
+            allObjs.ForEachParallel(o => o.Update(dt), _multiThreadNum);
+
+            if (!World.IsNetGame || World.IsClient)
+            {
+                // Update flame particles.
+                var flames = Flames;
+                flames.ForEachParallel(o => o.Update(dt), _multiThreadNum);
+            }
         }
 
         public bool Contains(GameObject obj)
@@ -494,8 +512,6 @@ namespace PolyPlane.GameObjects
 
                 _allObjects.Add(obj);
             }
-
-            _allObjects.AddRange(Flames);
         }
 
         public IEnumerable<GameObject> GetNear(GameObject obj) => _spatialGrid.GetNear(obj);
