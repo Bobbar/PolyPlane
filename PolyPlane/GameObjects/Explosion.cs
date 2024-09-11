@@ -47,9 +47,9 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public override void Update(float dt, float renderScale)
+        public override void Update(float dt)
         {
-            base.Update(dt, renderScale);
+            base.Update(dt);
 
             _currentRadius = MaxRadius * Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.EaseOutElastic);
             _color.a = 1f - Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.EaseOutQuintic);
@@ -63,7 +63,7 @@ namespace PolyPlane.GameObjects
             if (this.Age >= Flame.MAX_AGE)
                 this.IsExpired = true;
 
-            _flames.ForEach(f => f.Update(dt, renderScale));
+            _flames.ForEach(f => f.Update(dt));
         }
 
         public override void Render(RenderContext ctx)

@@ -20,30 +20,31 @@ namespace PolyPlane.GameObjects.Fixtures
         public FixturePoint(GameObject gameObject, D2DPoint referencePosition, bool copyRotation = true) : base(gameObject)
         {
             this.PlayerID = gameObject.PlayerID;
+            this.RenderScale = gameObject.RenderScale;
             _copyRotation = copyRotation;
 
             GameObject = gameObject;
             ReferencePosition = referencePosition;
-
+            
             if (_copyRotation)
                 Rotation = GameObject.Rotation;
 
-            Position = Utilities.ApplyTranslation(ReferencePosition, gameObject.Rotation, gameObject.Position, World.RenderScale);
+            this.Update(0f);
         }
 
         public override void FlipY()
         {
             base.FlipY();
             ReferencePosition = new D2DPoint(ReferencePosition.X, ReferencePosition.Y * -1);
-            this.Update(0f, GameObject.RenderOffset);
+            this.Update(0f);
         }
 
-        public override void Update(float dt, float renderScale)
+        public override void Update(float dt)
         {
             if (_copyRotation)
                 Rotation = GameObject.Rotation;
 
-            Position = Utilities.ApplyTranslation(ReferencePosition, GameObject.Rotation, GameObject.Position, renderScale);
+            Position = Utilities.ApplyTranslation(ReferencePosition, GameObject.Rotation, GameObject.Position, this.RenderScale);
             Velocity = GameObject.Velocity;
 
             this.IsExpired = GameObject.IsExpired;

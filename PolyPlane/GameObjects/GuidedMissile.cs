@@ -156,7 +156,7 @@ namespace PolyPlane.GameObjects
 
         private void InitStuff()
         {
-            this.RenderOffset = 0.9f;
+            this.RenderScale = 0.9f;
             this.RenderOrder = 2;
 
             _centerOfThrust = new FixturePoint(this, new D2DPoint(-22, 0));
@@ -236,7 +236,7 @@ namespace PolyPlane.GameObjects
         }
 
 
-        public override void Update(float dt, float renderScale)
+        public override void Update(float dt)
         {
             // Apply guidance.
             var guideRotation = 0f;
@@ -248,23 +248,23 @@ namespace PolyPlane.GameObjects
             {
                 var partialDT = World.SUB_DT;
 
-                base.Update(partialDT, renderScale * this.RenderOffset);
+                base.Update(partialDT);
 
                 if (_useControlSurfaces)
                 {
-                    _tailWing.Update(partialDT, renderScale * this.RenderOffset);
-                    _noseWing.Update(partialDT, renderScale * this.RenderOffset);
-                    _rocketBody.Update(partialDT, renderScale * this.RenderOffset);
+                    _tailWing.Update(partialDT);
+                    _noseWing.Update(partialDT);
+                    _rocketBody.Update(partialDT);
                 }
                 else
                 {
-                    _rocketBody.Update(partialDT, renderScale * this.RenderOffset);
+                    _rocketBody.Update(partialDT);
                 }
 
-                _centerOfThrust.Update(partialDT, renderScale * this.RenderOffset);
-                _warheadCenterMass.Update(partialDT, renderScale * this.RenderOffset);
-                _motorCenterMass.Update(partialDT, renderScale * this.RenderOffset);
-                _flamePos.Update(partialDT, renderScale * this.RenderOffset);
+                _centerOfThrust.Update(partialDT);
+                _warheadCenterMass.Update(partialDT);
+                _motorCenterMass.Update(partialDT);
+                _flamePos.Update(partialDT);
 
                 D2DPoint accel = D2DPoint.Zero;
 
@@ -454,7 +454,7 @@ namespace PolyPlane.GameObjects
             len *= 0.8f;
             FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
             _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
-            FlamePoly.Update(_flamePos.Position, flameAngle, World.RenderScale * this.RenderOffset);
+            FlamePoly.Update(_flamePos.Position, flameAngle, this.RenderScale);
         }
 
         private void DrawFOVCone(D2DGraphics gfx, float fov)

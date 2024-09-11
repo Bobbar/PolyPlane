@@ -29,7 +29,7 @@
             _setVal = setValFunc;
         }
 
-        public override void Update(float dt, float renderScale)
+        public override void Update(float dt)
         {
             if (!IsPlaying)
                 return;

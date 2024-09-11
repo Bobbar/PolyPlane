@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
-using PolyPlane.GameObjects.Tools;
+﻿using PolyPlane.GameObjects.Tools;
 
 namespace PolyPlane.GameObjects.Fixtures
 {
@@ -27,12 +20,12 @@ namespace PolyPlane.GameObjects.Fixtures
             _decoyTimer.TriggerCallback = DropDecoy;
         }
 
-        public override void Update(float dt, float renderScale)
+        public override void Update(float dt)
         {
-            base.Update(dt, renderScale);
+            base.Update(dt);
 
             _decoyTimer.Update(dt);
-            _attachPoint.Update(dt, renderScale);
+            _attachPoint.Update(dt);
 
             if (_plane.DroppingDecoy && !_decoyTimer.IsRunning)
             {
@@ -52,7 +45,7 @@ namespace PolyPlane.GameObjects.Fixtures
             if (_plane.IsDisabled)
                 return;
 
-            _attachPoint.Update(0f, World.RenderScale);
+            _attachPoint.Update(0f);
 
             var decoy = new Decoy(_plane, _attachPoint.Position);
 

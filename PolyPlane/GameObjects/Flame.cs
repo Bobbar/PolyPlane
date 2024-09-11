@@ -34,7 +34,7 @@ namespace PolyPlane.GameObjects
             _spawnTimer.TriggerCallback = () => SpawnPart();
             _spawnTimer.Start();
 
-            Update(World.DT, World.RenderScale * obj.RenderOffset);
+            Update(World.DT);
 
             SpawnPart();
         }
@@ -52,7 +52,7 @@ namespace PolyPlane.GameObjects
             _spawnTimer.TriggerCallback = () => SpawnPart();
             _spawnTimer.Start();
 
-            Update(World.DT, World.RenderScale * obj.RenderOffset);
+            Update(World.DT);
 
             SpawnPart();
         }
@@ -69,7 +69,7 @@ namespace PolyPlane.GameObjects
 
             _spawnTimer.TriggerCallback = () => SpawnPart();
 
-            Update(World.DT, World.RenderScale * obj.RenderOffset);
+            Update(World.DT);
 
             if (hasFlame)
             {
@@ -94,14 +94,14 @@ namespace PolyPlane.GameObjects
             _spawnTimer.Start();
         }
 
-        public override void Update(float dt, float renderScale)
+        public override void Update(float dt)
         {
-            base.Update(dt, renderScale);
+            base.Update(dt);
             _spawnTimer.Update(dt);
 
             if (_refPos != null)
             {
-                _refPos.Update(dt, renderScale);
+                _refPos.Update(dt);
                 this.Position = _refPos.Position;
                 this.Rotation = _refPos.Rotation;
             }
@@ -134,7 +134,7 @@ namespace PolyPlane.GameObjects
 
             if (_refPos != null)
             {
-                _refPos.Update(World.DT, World.RenderScale);
+                _refPos.Update(World.DT);
                 newPos = _refPos.Position;
             }
 
@@ -227,9 +227,9 @@ namespace PolyPlane.GameObjects
             this.Velocity = velo;
         }
 
-        public override void Update(float dt, float renderScale)
+        public override void Update(float dt)
         {
-            base.Update(dt, renderScale);
+            base.Update(dt);
 
             var ageFactFade = 1f - Utilities.Factor(this.Age, Flame.MAX_AGE);
             var ageFactSmoke = Utilities.Factor(this.Age, Flame.MAX_AGE * 3f);

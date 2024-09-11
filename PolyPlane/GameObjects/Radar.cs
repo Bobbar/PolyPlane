@@ -62,7 +62,7 @@ namespace PolyPlane.GameObjects
             _lostLockTimer.TriggerCallback = () => ClearLock();
         }
 
-        public void Update(float dt, float renderScale)
+        public void Update(float dt)
         {
             // Increase sweep FOV as needed to ensure we don't skip over any objects?
             if (SWEEP_RATE * World.DT > SWEEP_FOV)

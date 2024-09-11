@@ -27,10 +27,10 @@ namespace PolyPlane.GameObjects
             _flame = new Flame(this, D2DPoint.Zero, 3f);
         }
 
-        public override void Update(float dt, float renderScale)
+        public override void Update(float dt)
         {
-            base.Update(dt, renderScale);
-            _flame.Update(dt, renderScale);
+            base.Update(dt);
+            _flame.Update(dt);
 
             if (this.IsAwake)
                 this.Velocity += (World.Gravity * 1f) * dt;

@@ -493,7 +493,7 @@ namespace PolyPlane
                 _objs.Update();
 
                 var allObjs = _objs.GetAllObjects();
-                allObjs.ForEachParallel(o => o.Update(World.DT, World.RenderScale), _multiThreadNum);
+                allObjs.ForEachParallel(o => o.Update(World.DT), _multiThreadNum);
 
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;

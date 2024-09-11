@@ -29,7 +29,7 @@ namespace PolyPlane.GameObjects
             _lineWeight = lineWeight;
         }
 
-        public override void Update(float dt, float renderScale)
+        public override void Update(float dt)
         {
             _timeOut.Update(dt);
 

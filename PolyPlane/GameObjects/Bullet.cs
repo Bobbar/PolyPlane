@@ -56,9 +56,9 @@ namespace PolyPlane.GameObjects
             this.Polygon.Update();
         }
 
-        public override void Update(float dt, float renderScale)
+        public override void Update(float dt)
         {
-            base.Update(dt, renderScale);
+            base.Update(dt);
 
             if (this.Age >= Lifetime)
                 this.IsExpired = true;

@@ -84,7 +84,7 @@ namespace PolyPlane
             }
         }
 
-        public static float RenderScale { get; set; } = 1f;
+        public const float RenderScale = 1f;
 
         public static float ZoomScale
         {

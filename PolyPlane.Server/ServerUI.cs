@@ -314,7 +314,7 @@ namespace PolyPlane.Server
                 _objs.Update();
 
                 var objs = _objs.GetAllObjects();
-                objs.ForEachParallel(o => o.Update(World.DT, World.RenderScale), _multiThreadNum);
+                objs.ForEachParallel(o => o.Update(World.DT), _multiThreadNum);
 
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;

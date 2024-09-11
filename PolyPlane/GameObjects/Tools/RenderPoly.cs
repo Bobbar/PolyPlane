@@ -9,6 +9,7 @@ namespace PolyPlane.GameObjects.Tools
         public D2DPoint[] SourcePoly;
         public bool IsFlipped = false;
         public GameObject ParentObject;
+
         public D2DPoint Position => ParentObject.Position;
 
         public RenderPoly(GameObject parent)
@@ -16,6 +17,17 @@ namespace PolyPlane.GameObjects.Tools
             ParentObject = parent;
             Poly = new D2DPoint[0];
             SourcePoly = new D2DPoint[0];
+        }
+
+        public RenderPoly(RenderPoly copyPoly, D2DPoint pos, float rotation) : this(copyPoly.ParentObject)
+        {
+            Poly = new D2DPoint[copyPoly.SourcePoly.Length];
+            SourcePoly = new D2DPoint[copyPoly.SourcePoly.Length];
+
+            Array.Copy(copyPoly.SourcePoly, Poly, copyPoly.SourcePoly.Length);
+            Array.Copy(copyPoly.SourcePoly, SourcePoly, copyPoly.SourcePoly.Length);
+
+            this.Update(pos, rotation, copyPoly.ParentObject.RenderScale);
         }
 
         public RenderPoly(GameObject parent, D2DPoint[] polygon) : this(parent)
@@ -161,7 +173,7 @@ namespace PolyPlane.GameObjects.Tools
 
         public void Update()
         {
-            this.Update(this.ParentObject.Position, this.ParentObject.Rotation, this.ParentObject.RenderOffset);
+            this.Update(this.ParentObject.Position, this.ParentObject.Rotation, this.ParentObject.RenderScale);
         }
 
     }

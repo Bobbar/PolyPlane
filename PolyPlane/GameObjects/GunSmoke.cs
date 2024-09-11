@@ -29,15 +29,15 @@ namespace PolyPlane.GameObjects
             _spawnTimer.Start();
         }
 
-        public override void Update(float dt, float renderScale)
+        public override void Update(float dt)
         {
-            base.Update(dt, renderScale);
+            base.Update(dt);
             _spawnTimer.Update(dt);
-            UpdateParts(dt, renderScale);
+            UpdateParts(dt);
 
             if (_refPos != null)
             {
-                _refPos.Update(dt, renderScale);
+                _refPos.Update(dt);
                 this.Position = _refPos.Position;
             }
 
@@ -97,13 +97,13 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private void UpdateParts(float dt, float renderScale)
+        private void UpdateParts(float dt)
         {
             int i = 0;
             while (i < _parts.Count)
             {
                 var part = _parts[i];
-                part.Update(dt, renderScale);
+                part.Update(dt);
 
                 var ageFact = 1f - Utilities.Factor(part.Age, MAX_AGE);
                 var alpha = _smokeColor.a * ageFact;
@@ -146,9 +146,9 @@ namespace PolyPlane.GameObjects
                 Color = color;
             }
 
-            public override void Update(float dt, float renderScale)
+            public override void Update(float dt)
             {
-                base.Update(dt, renderScale);
+                base.Update(dt);
 
                 this.Velocity += -this.Velocity * (dt * 3f);
 

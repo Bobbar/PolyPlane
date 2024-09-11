@@ -7,6 +7,8 @@ namespace PolyPlane.GameObjects
 {
     public class Decoy : GameObject, ICollidable
     {
+        public int CurrentFrame;
+
         private float _radius = 5f;
         private float _flashAmt = 5f;
         private float _currentFlash = 0f;
@@ -42,9 +44,9 @@ namespace PolyPlane.GameObjects
             this.RenderOrder = 1;
         }
 
-        public override void Update(float dt, float renderScale)
+        public override void Update(float dt)
         {
-            base.Update(dt, renderScale);
+            base.Update(dt);
 
             this.Velocity += -this.Velocity * (dt * 0.6f);
             this.Velocity += ((World.Gravity * 2f) * dt);
@@ -56,6 +58,8 @@ namespace PolyPlane.GameObjects
 
             if (this.Age > _lifeSpan)
                 this.IsExpired = true;
+
+            CurrentFrame++;
         }
 
         public override void Render(RenderContext ctx)

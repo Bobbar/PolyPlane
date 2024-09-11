@@ -75,11 +75,12 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public float RenderOffset = 1f;
+        public float RenderScale = World.RenderScale;
         public bool Visible = true;
         public bool IsNetObject = false;
         public double LagAmount = 0;
         public float Age = 0f;
+
         /// <summary>
         /// True if gravity and physics should be applied.
         /// </summary>
@@ -103,7 +104,6 @@ namespace PolyPlane.GameObjects
         public GameObject Owner { get; set; }
 
         public bool IsExpired = false;
-        public long CurrentFrame { get; set; } = 0;
 
         protected Random _rnd => Utilities.Rnd;
         protected InterpolationBuffer<GameObjectPacket> InterpBuffer = null;
@@ -165,7 +165,7 @@ namespace PolyPlane.GameObjects
             RotationSpeed = rotationSpeed;
         }
 
-        public virtual void Update(float dt, float renderScale)
+        public virtual void Update(float dt)
         {
             Age += dt;
 
@@ -259,8 +259,6 @@ namespace PolyPlane.GameObjects
 
         public virtual void Render(RenderContext ctx)
         {
-            CurrentFrame++;
-
             if (this.IsExpired || !this.Visible)
                 return;
         }
@@ -359,9 +357,9 @@ namespace PolyPlane.GameObjects
         }
 
 
-        public override void Update(float dt, float renderScale)
+        public override void Update(float dt)
         {
-            base.Update(dt, renderScale);
+            base.Update(dt);
 
             if (Polygon != null)
                 Polygon.Update();
@@ -404,8 +402,7 @@ namespace PolyPlane.GameObjects
             if (histPos != null)
             {
                 // Create a copy of the polygon and translate it to the historical position/rotation.
-                var histPoly = new RenderPoly(this, this.Polygon.SourcePoly, World.RenderScale * this.RenderOffset);
-                histPoly.Update(histPos.Position, histPos.Rotation, World.RenderScale);
+                var histPoly = new RenderPoly(this.Polygon, histPos.Position, histPos.Rotation);
 
                 // Flip plane poly to correct orientation.
                 if (this is FighterPlane)

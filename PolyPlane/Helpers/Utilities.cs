@@ -616,7 +616,7 @@ namespace PolyPlane.Helpers
 
         public static D2DPoint ScaleToOrigin(GameObject obj, D2DPoint point)
         {
-            var mat = Matrix3x2.CreateScale(1f * (1f / obj.RenderOffset), obj.Position);
+            var mat = Matrix3x2.CreateScale(1f * (1f / obj.RenderScale), obj.Position);
             mat *= Matrix3x2.CreateRotation(-obj.Rotation * DEGREES_TO_RADS, obj.Position);
             mat *= Matrix3x2.CreateTranslation(new D2DPoint(-obj.Position.X, -obj.Position.Y));
             return D2DPoint.Transform(point, mat);

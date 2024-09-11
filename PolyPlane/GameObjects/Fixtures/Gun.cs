@@ -31,14 +31,14 @@ namespace PolyPlane.GameObjects.Fixtures
             _muzzleFlashTimer.TriggerCallback = () => { MuzzleFlashOn = false; };
         }
 
-        public override void Update(float dt, float renderScale)
+        public override void Update(float dt)
         {
-            base.Update(dt, renderScale);
+            base.Update(dt);
 
             _burstTimer.Update(dt);
             _muzzleFlashTimer.Update(dt);
-            _attachPoint.Update(dt, renderScale);
-            _smoke.Update(dt, renderScale);
+            _attachPoint.Update(dt);
+            _smoke.Update(dt);
 
             Position = _attachPoint.Position;
             Rotation = _attachPoint.Rotation;
@@ -81,7 +81,7 @@ namespace PolyPlane.GameObjects.Fixtures
                 return;
 
             // Make sure fixture point is synced at the time of firing.
-            _attachPoint.Update(0f, World.RenderScale * _ownerPlane.RenderOffset);
+            _attachPoint.Update(0f);
             Rotation = _attachPoint.Rotation;
             Position = _attachPoint.Position;
 

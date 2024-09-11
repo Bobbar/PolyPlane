@@ -532,9 +532,9 @@ namespace PolyPlane.Rendering
             if (!_missileFlashTimer.IsInCooldown && !_missileFlashTimer.IsRunning)
                 _missileFlashTimer.Restart();
 
-            _screenFlash.Update(World.DT, World.RenderScale);
-            _screenShakeX.Update(World.DT, World.RenderScale);
-            _screenShakeY.Update(World.DT, World.RenderScale);
+            _screenFlash.Update(World.DT);
+            _screenShakeX.Update(World.DT);
+            _screenShakeY.Update(World.DT);
             MoveClouds(World.DT);
         }
 
