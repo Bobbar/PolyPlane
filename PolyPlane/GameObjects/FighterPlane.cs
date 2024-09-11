@@ -528,12 +528,8 @@ namespace PolyPlane.GameObjects
             _gun.Update(dt);
             _decoyDispenser.Update(dt);
             _engineFireFlame.Update(dt);
-
-            if (!World.IsNetGame || World.IsClient)
-            {
-                _bulletHoles.ForEach(f => f.Update(dt));
-                _vaporTrails.ForEach(v => v.Update(dt));
-            }
+            _bulletHoles.ForEach(f => f.Update(dt));
+            _vaporTrails.ForEach(v => v.Update(dt));
 
             CheckForFlip();
             UpdateFlame();
