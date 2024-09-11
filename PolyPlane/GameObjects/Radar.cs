@@ -123,10 +123,10 @@ namespace PolyPlane.GameObjects
                 var dist = HostPlane.Position.DistanceTo(obj.Position);
                 var angle = (HostPlane.Position - obj.Position).Angle();
                 var radDist = _radius / _maxRange * dist;
-                var radPos = Position - Utilities.AngleToVectorDegrees(angle, radDist);
+                var radPos = D2DPoint.Zero - Utilities.AngleToVectorDegrees(angle, radDist);
 
                 if (dist > _maxRange)
-                    radPos = Position - Utilities.AngleToVectorDegrees(angle, _radius);
+                    radPos = D2DPoint.Zero - Utilities.AngleToVectorDegrees(angle, _radius);
 
                 var pObj = new PingObj(obj, radPos);
 
@@ -139,10 +139,10 @@ namespace PolyPlane.GameObjects
                     var dist = HostPlane.Position.DistanceTo(obj.Position);
                     var angle = (HostPlane.Position - obj.Position).Angle();
                     var radDist = _radius / _maxRange * dist;
-                    var radPos = Position - Utilities.AngleToVectorDegrees(angle, radDist);
+                    var radPos = D2DPoint.Zero - Utilities.AngleToVectorDegrees(angle, radDist);
 
                     if (dist > _maxRange)
-                        radPos = Position - Utilities.AngleToVectorDegrees(angle, _radius);
+                        radPos = D2DPoint.Zero - Utilities.AngleToVectorDegrees(angle, _radius);
 
                     var pObj = new PingObj(obj, radPos);
 
@@ -158,7 +158,7 @@ namespace PolyPlane.GameObjects
 
             // Background
             var bgColor = new D2DColor(_color.a * 0.05f, _color);
-            gfx.FillEllipse(new D2DEllipse(Position, new D2DSize(_radius, _radius)), bgColor);
+            gfx.FillEllipse(new D2DEllipse(D2DPoint.Zero, new D2DSize(_radius, _radius)), bgColor);
 
             // Draw icons.
             foreach (var p in _pings.Values)
@@ -185,7 +185,7 @@ namespace PolyPlane.GameObjects
 
             // Sweep line, direction line and FOV cone.
             var sweepLine = Utilities.AngleToVectorDegrees(_sweepAngle, _radius);
-            gfx.DrawLine(Position, Position + sweepLine, _color, 1f, D2DDashStyle.Dot);
+            gfx.DrawLine(D2DPoint.Zero, sweepLine, _color, 1f, D2DDashStyle.Dot);
 
             DrawFOVCone(gfx, _color);
 
@@ -200,7 +200,7 @@ namespace PolyPlane.GameObjects
                 if (aimedAtPlane != null)
                 {
                     var dist = HostPlane.Position.DistanceTo(aimedAtPlane.Position);
-                    var distPos = Position + new D2DPoint(-240f, 100f);
+                    var distPos = new D2DPoint(-240f, 100f);
                     var dRect = new D2DRect(distPos, new D2DSize(180, 80));
                     gfx.FillRectangle(dRect, new D2DColor(0.5f, D2DColor.Black));
                     var info = $"D:{Math.Round(dist / 1000f, 0)}\nA:{Math.Round(aimedAtPlane.Altitude / 1000f, 0)}\n{aimedAtPlane.PlayerName}";
@@ -218,20 +218,20 @@ namespace PolyPlane.GameObjects
             var step = _radius / N_RANGES;
             for (int i = 0; i < N_RANGES; i++)
             {
-                gfx.DrawEllipse(new D2DEllipse(Position, new D2DSize(step * i, step * i)), _color, 1f, D2DDashStyle.Dot);
+                gfx.DrawEllipse(new D2DEllipse(D2DPoint.Zero, new D2DSize(step * i, step * i)), _color, 1f, D2DDashStyle.Dot);
             }
 
             // Draw ground indicator.
             DrawGround(ctx);
 
             // Border
-            gfx.DrawEllipse(new D2DEllipse(Position, new D2DSize(_radius, _radius)), _color);
+            gfx.DrawEllipse(new D2DEllipse(D2DPoint.Zero, new D2DSize(_radius, _radius)), _color);
 
             // Lock icon.
             if (HasLock)
             {
                 var color = Utilities.LerpColor(World.HudColor, D2DColor.WhiteSmoke, 0.3f);
-                var lockPos = Position + new D2DPoint(0f, -130f);
+                var lockPos = new D2DPoint(0f, -130f);
                 var lRect = new D2DRect(lockPos, new D2DSize(80, 20));
                 ctx.Gfx.DrawTextCenter("LOCKED", color, "Consolas", 15f, lRect);
                 ctx.Gfx.FillRectangle(lRect, color.WithAlpha(0.1f));
@@ -246,18 +246,18 @@ namespace PolyPlane.GameObjects
             // Calculate ground position relative to the plane.
             var groundDist = HostPlane.Position.DistanceTo(new D2DPoint(HostPlane.Position.X, 0f));
             var radDist = _radius / _maxRange * groundDist;
-            var radPos = Position + Utilities.AngleToVectorDegrees(90f, radDist);
+            var radPos = Utilities.AngleToVectorDegrees(90f, radDist);
 
             if (groundDist > _maxRange)
-                radPos = Position + Utilities.AngleToVectorDegrees(90f, _radius);
+                radPos = Utilities.AngleToVectorDegrees(90f, _radius);
 
             radPos += new D2DPoint(0f, _radius);
 
             // Draw a clipped rectangle to represent the ground.
             using (var clipGeo = ctx.Device.CreatePathGeometry())
             {
-                var start = new D2DPoint(Position.X - _radius, Position.Y);
-                var end = new D2DPoint(Position.X + _radius, Position.Y);
+                var start = new D2DPoint(-_radius, 0f);
+                var end = new D2DPoint(_radius, 0f);
                 var groundRectSize = new D2DSize(_radius * 2f, _radius * 2f);
                 var groundRect = new D2DRect(radPos, groundRectSize);
 
@@ -266,7 +266,7 @@ namespace PolyPlane.GameObjects
                 clipGeo.AddArc(end, new D2DSize(_radius, _radius), 0f, D2DArcSize.Small, D2DSweepDirection.CounterClockwise);
                 clipGeo.ClosePath();
 
-                ctx.Gfx.PushLayer(_groundClipLayer, new D2DRect(Position, groundRectSize), clipGeo);
+                ctx.Gfx.PushLayer(_groundClipLayer, new D2DRect(D2DPoint.Zero, groundRectSize), clipGeo);
 
                 ctx.Gfx.FillRectangle(groundRect, _color.WithAlpha(0.05f));
 

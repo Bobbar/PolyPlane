@@ -1333,12 +1333,12 @@ namespace PolyPlane.Rendering
         private void DrawRadar(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)
         {
             const float SCALE = 0.9f;
-            var pos = new D2DPoint(viewportsize.width - (110f * (HudScale * 2.5f)), viewportsize.height - (90f * (HudScale * 2.5f)));
+            var pos = new D2DPoint(viewportsize.width * 0.82f * HudScale * SCALE, viewportsize.height * 0.76f * HudScale * SCALE);
 
             ctx.Gfx.PushTransform();
             ctx.Gfx.ScaleTransform(SCALE, SCALE, pos);
+            ctx.Gfx.TranslateTransform(pos.X, pos.Y);
 
-            plane.Radar.Position = pos;
             plane.Radar.Render(ctx);
 
             ctx.Gfx.PopTransform();
