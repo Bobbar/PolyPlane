@@ -129,6 +129,9 @@ namespace PolyPlane.GameObjects
 
         private void SpawnPart()
         {
+            if (World.IsNetGame && World.IsServer)
+                return;
+
             D2DPoint newPos = this.Position;
             D2DPoint newVelo = this.Velocity;
 
