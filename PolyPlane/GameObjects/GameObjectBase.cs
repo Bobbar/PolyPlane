@@ -13,7 +13,6 @@ namespace PolyPlane.GameObjects
 
         public GameID ID { get; set; } = new GameID();
 
-        public readonly int LocalID;
         public int RenderOrder = 99;
 
         public D2DPoint Position { get; set; }
@@ -119,7 +118,6 @@ namespace PolyPlane.GameObjects
         public GameObject()
         {
             this.ID = new GameID(-1, World.GetNextObjectId());
-            this.LocalID = World.GetNextLocalId();
 
             if (World.IsNetGame && (this is FighterPlane || this is GuidedMissile))
             {
