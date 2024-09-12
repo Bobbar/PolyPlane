@@ -835,7 +835,7 @@ namespace PolyPlane.Rendering
             if (_groundClipLayer == null)
                 _groundClipLayer = ctx.Device.CreateLayer();
 
-            var rect = new D2DRect(new D2DPoint(plane.Position.X, 2000f), new D2DSize(this.Width * World.ViewPortScaleMulti, 4000f));
+            var rect = new D2DRect(ctx.Viewport.Location.X, 0f, ctx.Viewport.Width, 4000f);
 
             using (var clipGeo = ctx.Device.CreateRectangleGeometry(rect))
             {
