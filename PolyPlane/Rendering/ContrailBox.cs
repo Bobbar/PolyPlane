@@ -49,7 +49,7 @@ namespace PolyPlane.Rendering
                                 // just update the previous position and continue.
                                 // This can happen when a plane re-spawns at another
                                 // point inside the box.
-                                if (dist > minDistDT * 2f)
+                                if (dist > minDistDT * 3f)
                                 {
                                     tag.PrevPos = newPos;
                                     continue;
@@ -68,12 +68,10 @@ namespace PolyPlane.Rendering
                 }
                 else
                 {
-                    // Update previous position for planes outside the box.
+                    // Remove planes that leave the box.
                     if (!IsNew(plane))
                     {
-                        if (_currentPlanes.TryGetValue(plane.ID, out var tag))
-                            tag.PrevPos = plane.ExhaustPosition;
-
+                        _currentPlanes.Remove(plane.ID);
                     }
                 }
 
