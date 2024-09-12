@@ -44,10 +44,6 @@ namespace PolyPlane.GameObjects
             {
                 _trailEnabled = missile.FlameOn;
             }
-            else if (_gameObject is FighterPlane plane)
-            {
-                _trailEnabled = !plane.IsDisabled;
-            }
             else
             {
                 _trailEnabled = true;
