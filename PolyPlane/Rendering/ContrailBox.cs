@@ -95,6 +95,16 @@ namespace PolyPlane.Rendering
                     if (seg.Age > MAX_SEG_AGE || seg.Plane.IsExpired)
                         _segments.RemoveAt(i);
                 }
+
+                // Prune expired planes.
+                foreach (var kvp in _currentPlanes)
+                {
+                    var tag = kvp.Value;
+                    var plane = tag.Plane;
+
+                    if (plane.IsExpired)
+                        _currentPlanes.Remove(plane.ID);
+                }
             }
         }
 
