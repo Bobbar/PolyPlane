@@ -12,11 +12,6 @@ namespace PolyPlane.GameObjects
 {
     public class FighterPlane : GameObjectPoly, ICollidable
     {
-        public SmokeTrail Contrail
-        {
-            get { return _contrail; }
-            set { _contrail = value; }
-        }
         public Gun Gun => _gun;
 
         public AIPersonality Personality
@@ -173,7 +168,6 @@ namespace PolyPlane.GameObjects
         private D2DSize _cockpitSize = new D2DSize(9f, 6f);
         private D2DColor _planeColor;
         private D2DColor _cockpitColor = new D2DColor(0.5f, D2DColor.LightBlue);
-        private SmokeTrail _contrail;
         private List<BulletHole> _bulletHoles = new List<BulletHole>();
         private List<Vapor> _vaporTrails = new List<Vapor>();
         private Flame _engineFireFlame;
@@ -959,7 +953,6 @@ namespace PolyPlane.GameObjects
             _expireTimeout.Stop();
             _flipTimer.Restart();
             _bulletHoles.Clear();
-            _contrail.Clear();
             World.ObjectManager.CleanDebris(this.ID);
             _thrustAmt.Target = 1f;
             WasHeadshot = false;
@@ -1115,8 +1108,6 @@ namespace PolyPlane.GameObjects
             base.Dispose();
 
             _polyClipLayer?.Dispose();
-            _contrail.Clear();
-            _contrail.Dispose();
             _bulletHoles.ForEach(b => b.Dispose());
             _bulletHoles.Clear();
             _vaporTrails.Clear();

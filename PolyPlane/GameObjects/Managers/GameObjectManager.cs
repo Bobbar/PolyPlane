@@ -17,7 +17,6 @@ namespace PolyPlane.GameObjects
 
         public List<GameObject> Missiles = new();
         public List<GameObject> MissileTrails = new();
-        public List<SmokeTrail> PlaneContrails = new();
         public List<GameObject> Decoys = new();
         public List<GameObject> Bullets = new();
         public List<GameObject> Explosions = new();
@@ -145,18 +144,6 @@ namespace PolyPlane.GameObjects
                 if (plane.IsAI)
                     NewPlayerEvent?.Invoke(this, plane);
 
-                var contrail = new SmokeTrail(plane, o =>
-                {
-                    var p = o as FighterPlane;
-                    return p.ExhaustPosition;
-                }, lineWeight: 8f);
-
-                contrail.IsNetObject = plane.IsNetObject;
-
-                plane.Contrail = contrail;
-
-                AddObject(contrail);
-                PlaneContrails.Add(contrail);
 
                 // Add first plane as the initial view plane.
                 if (Planes.Count == 1)
@@ -349,7 +336,6 @@ namespace PolyPlane.GameObjects
             PruneExpired(Explosions);
             PruneExpired(Debris);
             PruneExpired(Flames);
-            PruneContrails();
 
             for (int i = Planes.Count - 1; i >= 0; i--)
             {
@@ -368,23 +354,6 @@ namespace PolyPlane.GameObjects
 
             if (GroundImpacts.Count > MAX_GROUND_IMPACTS)
                 GroundImpacts.RemoveAt(0);
-        }
-
-        private void PruneContrails()
-        {
-            for (int i = PlaneContrails.Count - 1; i >= 0; i--)
-            {
-                var trail = PlaneContrails[i];
-
-                if (trail.IsExpired)
-                {
-                    PlaneContrails.RemoveAt(i);
-                    trail.Dispose();
-                    _objLookup.Remove(trail.ID.GetHashCode());
-                }
-            }
-
-            TotalObjects += PlaneContrails.Count;
         }
 
         private void PruneExpired(List<GameObject> objs)

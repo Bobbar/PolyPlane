@@ -111,37 +111,6 @@ namespace PolyPlane.GameObjects
                 ctx.FillEllipse(new D2DEllipse(endPosition, new D2DSize(50f, 50f)), _trailColor);
         }
 
-        public void Render(RenderContext ctx, Func<D2DPoint, bool> visiblePredicate)
-        {
-            if (_trailQueue.Count == 0)
-                return;
-
-            var lastPos = _trailQueue.First();
-            foreach (var trail in _trailQueue)
-            {
-                var nextPos = trail;
-
-                var color = _trailColor;
-
-                if (visiblePredicate.Invoke(nextPos))
-                    ctx.DrawLine(lastPos, nextPos, color, _lineWeight);
-
-                lastPos = nextPos;
-            }
-
-            // Draw connecting line between last trail segment and the source position.
-            if (_trailQueue.Count > 1 && _trailEnabled)
-            {
-                var endPosition = _gameObject.Position;
-
-                if (_posSelector != null)
-                    endPosition = _posSelector.Invoke(_gameObject);
-
-                if (visiblePredicate.Invoke(endPosition))
-                    ctx.DrawLine(lastPos, endPosition, _trailColor, _lineWeight);
-            }
-        }
-
         public override bool ContainedBy(D2DRect rect)
         {
             if (_trailQueue.Count == 0)

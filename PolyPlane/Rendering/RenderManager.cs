@@ -76,6 +76,7 @@ namespace PolyPlane.Rendering
         private readonly D2DColor _clearColor = D2DColor.Black;
         private GameObjectManager _objs = World.ObjectManager;
         private NetEventManager _netMan;
+        private ContrailBox _contrailBox = new ContrailBox();
 
         private D2DPoint _screenShakeTrans = D2DPoint.Zero;
 
@@ -138,6 +139,7 @@ namespace PolyPlane.Rendering
         private double _gaussianSigma = Math.Sqrt(2.0 * Math.PI * _gaussianSigma_2);
 
         private FPSLimiter _fpsLimiter = new FPSLimiter();
+
 
         public RenderManager(Control renderTarget, NetEventManager netMan)
         {
@@ -521,11 +523,8 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private void UpdateTimersAndAnims()
+        public void UpdateTimersAndAnims()
         {
-            if (World.IsPaused)
-                return;
-
             _hudMessageTimeout.Update(World.DT);
             _missileFlashTimer.Update(World.DT);
             _groundColorUpdateTimer.Update(World.DT);
@@ -537,6 +536,8 @@ namespace PolyPlane.Rendering
             _screenShakeX.Update(World.DT);
             _screenShakeY.Update(World.DT);
             MoveClouds(World.DT);
+
+            _contrailBox.Update(_objs.Planes, World.DT);
         }
 
         private void UpdateGroundColor()
@@ -677,12 +678,7 @@ namespace PolyPlane.Rendering
             DrawGroundImpacts(ctx, plane);
 
             _objs.MissileTrails.ForEach(o => o.Render(ctx));
-
-            _objs.PlaneContrails.ForEach(o =>
-            {
-                if (o.ContainedBy(ctx.Viewport))
-                    o.Render(ctx, p => -p.Y > 20000 && -p.Y < 70000);
-            });
+            _contrailBox.Render(ctx); 
 
             var objsInViewport = _objs.GetInViewport(ctx.Viewport).Where(o => o is not Explosion).OrderBy(o => o.RenderOrder);
 
