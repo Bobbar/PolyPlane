@@ -1,5 +1,6 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.Helpers;
+using System.Runtime.InteropServices.Marshalling;
 using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
@@ -58,7 +59,7 @@ namespace PolyPlane.Rendering
                                 // Add a new segment and update previous position.
                                 if (dist >= minDistDT)
                                 {
-                                    var seg = new TrailSegment() { PointA = tag.PrevPos, PointB = newPos, Plane = plane };
+                                    var seg = new TrailSegment(plane, tag.PrevPos, newPos);
                                     _segments.Add(seg);
                                     tag.PrevPos = newPos;
                                 }
@@ -169,7 +170,6 @@ namespace PolyPlane.Rendering
                 this.Plane = plane;
                 this.PrevPos = plane.Position;
             }
-
         }
 
         private class TrailSegment
@@ -178,6 +178,14 @@ namespace PolyPlane.Rendering
             public D2DPoint PointB;
             public FighterPlane Plane;
             public float Age = 0;
+
+            public TrailSegment(FighterPlane plane, D2DPoint pointA, D2DPoint pointB)
+            {
+                this.Plane = plane;
+                this.PointA = pointA;
+                this.PointB = pointB;
+            }
+
         }
     }
 }
