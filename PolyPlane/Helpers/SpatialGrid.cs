@@ -1,14 +1,32 @@
-﻿using PolyPlane.GameObjects;
-using unvell.D2DLib;
+﻿using unvell.D2DLib;
 
 namespace PolyPlane.Helpers
 {
-    public sealed class SpatialGrid
+    /// <summary>
+    /// Provides a dynamic sparse 2D spatial grid for fast nearest-neighbor searching.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public sealed class SpatialGrid<T>
     {
-        private const int SPATIAL_GRID_SIDE_LEN = 9;
+        private Dictionary<int, List<T>> _grid = new Dictionary<int, List<T>>();
+        private List<KeyValuePair<int, T>> _movedObjects = new List<KeyValuePair<int, T>>();
 
-        private Dictionary<int, List<GameObject>> _grid = new Dictionary<int, List<GameObject>>();
-        private List<KeyValuePair<int, GameObject>> _tempStorage = new List<KeyValuePair<int, GameObject>>();
+        private readonly Func<T, D2DPoint> _positionSelector;
+        private readonly Func<T, bool> _isExpiredSelector;
+        private readonly int SIDE_LEN = 9;
+
+        /// <summary>
+        /// Create a new instance of <see cref="SpatialGrid{T}"/>
+        /// </summary>
+        /// <param name="positionSelector">Selector for current object positions. Grid positions are updated on <see cref="Update"/></param>
+        /// <param name="isExpiredSelector">Selector for object expired status.  Expired objects are removed on <see cref="Update"/></param>
+        /// <param name="sideLen">And integer (S) representing the grid cell side length (L), L = 1 << S. </param>
+        public SpatialGrid(Func<T, D2DPoint> positionSelector, Func<T, bool> isExpiredSelector, int sideLen = 9)
+        {
+            SIDE_LEN = sideLen;
+            _positionSelector = positionSelector;
+            _isExpiredSelector = isExpiredSelector;
+        }
 
         /// <summary>
         /// Removes expired objects and moves live objects to their new grid positions as needed.
@@ -21,7 +39,7 @@ namespace PolyPlane.Helpers
             // We save the new hashes in a KVP so that we do not need to compute
             // the hash twice.
 
-            _tempStorage.Clear(); // Clear the temp storage.
+            _movedObjects.Clear(); // Clear the temp storage.
 
             foreach (var kvp in _grid)
             {
@@ -32,7 +50,7 @@ namespace PolyPlane.Helpers
                 {
                     var obj = objs[i];
 
-                    if (obj.IsExpired)
+                    if (_isExpiredSelector(obj))
                     {
                         // Just remove expired objects.
                         objs.RemoveAt(i);
@@ -44,7 +62,7 @@ namespace PolyPlane.Helpers
                         if (newHash != curHash)
                         {
                             objs.RemoveAt(i);
-                            _tempStorage.Add(new KeyValuePair<int, GameObject>(newHash, obj));
+                            _movedObjects.Add(new KeyValuePair<int, T>(newHash, obj));
                         }
                     }
                 }
@@ -55,9 +73,9 @@ namespace PolyPlane.Helpers
             }
 
             // Add moved objects.
-            for (int i = 0; i < _tempStorage.Count; i++)
+            for (int i = 0; i < _movedObjects.Count; i++)
             {
-                var tmp = _tempStorage[i];
+                var tmp = _movedObjects[i];
                 AddInternal(tmp.Key, tmp.Value);
             }
         }
@@ -66,7 +84,7 @@ namespace PolyPlane.Helpers
         /// Add object to the spatial grid.
         /// </summary>
         /// <param name="obj"></param>
-        public void Add(GameObject obj)
+        public void Add(T obj)
         {
             var hash = GetGridHash(obj);
             AddInternal(hash, obj);
@@ -77,7 +95,7 @@ namespace PolyPlane.Helpers
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public IEnumerable<GameObject> GetNear(GameObject obj)
+        public IEnumerable<T> GetNear(T obj)
         {
             GetGridIdx(obj, out int idxX, out int idxY);
 
@@ -105,11 +123,11 @@ namespace PolyPlane.Helpers
         /// </summary>
         /// <param name="viewport"></param>
         /// <returns></returns>
-        public IEnumerable<GameObject> GetInViewport(D2DRect viewport)
+        public IEnumerable<T> GetInViewport(D2DRect viewport)
         {
             // Calc number of indexes for x/y coords.
-            int nX = (int)(viewport.Width / (1 << SPATIAL_GRID_SIDE_LEN)) + 1;
-            int nY = (int)(viewport.Height / (1 << SPATIAL_GRID_SIDE_LEN)) + 1;
+            int nX = (int)(viewport.Width / (1 << SIDE_LEN)) + 1;
+            int nY = (int)(viewport.Height / (1 << SIDE_LEN)) + 1;
 
             // Find the initial indices for the top-left corner.
             GetGridIdx(viewport.Location, out int idxX, out int idxY);
@@ -135,36 +153,31 @@ namespace PolyPlane.Helpers
         public void Clear()
         {
             _grid.Clear();
-            _tempStorage.Clear();
+            _movedObjects.Clear();
         }
 
-        private void AddInternal(int hash, GameObject obj)
+        private void AddInternal(int hash, T obj)
         {
             if (_grid.TryGetValue(hash, out var objs))
                 objs.Add(obj);
             else
-                _grid.Add(hash, new List<GameObject> { obj });
-        }
-
-        private void GetGridIdx(GameObject obj, out int idxX, out int idxY)
-        {
-            GetGridIdx(obj.Position, out idxX, out idxY);
+                _grid.Add(hash, new List<T> { obj });
         }
 
         private void GetGridIdx(D2DPoint pos, out int idxX, out int idxY)
         {
-            idxX = (int)Math.Floor(pos.X) >> SPATIAL_GRID_SIDE_LEN;
-            idxY = (int)Math.Floor(pos.Y) >> SPATIAL_GRID_SIDE_LEN;
+            idxX = (int)Math.Floor(pos.X) >> SIDE_LEN;
+            idxY = (int)Math.Floor(pos.Y) >> SIDE_LEN;
         }
 
-        private int GetGridHash(GameObject obj)
+        private void GetGridIdx(T obj, out int idxX, out int idxY)
         {
-            return GetGridHash(obj.Position);
+            GetGridIdx(_positionSelector(obj), out idxX, out idxY);
         }
 
-        private int GetGridHash(D2DPoint pos)
+        private int GetGridHash(T obj)
         {
-            GetGridIdx(pos, out int idxX, out int idxY);
+            GetGridIdx(_positionSelector(obj), out int idxX, out int idxY);
             return GetGridHash(idxX, idxY);
         }
 

@@ -33,7 +33,7 @@ namespace PolyPlane.GameObjects
         public ConcurrentQueue<FlamePart> NewFlames = new();
 
         private Dictionary<int, GameObject> _objLookup = new();
-        private SpatialGrid _spatialGrid = new();
+        private SpatialGrid<GameObject> _spatialGrid = new(o => o.Position, o => o.IsExpired);
 
         private List<GameObject> _allNetObjects = new();
         private List<GameObject> _allObjects = new();
@@ -485,7 +485,6 @@ namespace PolyPlane.GameObjects
 
         public IEnumerable<GameObject> GetNear(GameObject obj) => _spatialGrid.GetNear(obj);
         public IEnumerable<GameObject> GetInViewport(D2DRect viewport) => _spatialGrid.GetInViewport(viewport);
-
     }
 
     public struct GroundImpact
