@@ -32,8 +32,6 @@ namespace PolyPlane
         private bool _isHoldingAlt = false;
         private float _holdAltitude = 0f;
 
-        private int _multiThreadNum = 4;
-
         private D2DPoint _playerPlaneSlewPos = D2DPoint.Zero;
 
         private Stopwatch _timer = new Stopwatch();
@@ -57,8 +55,6 @@ namespace PolyPlane
             this.LostFocus += PolyPlaneUI_LostFocus;
             this.Disposed += PolyPlaneUI_Disposed;
             this.MouseWheel += PolyPlaneUI_MouseWheel;
-
-            _multiThreadNum = Environment.ProcessorCount;
         }
 
         /// <summary>
