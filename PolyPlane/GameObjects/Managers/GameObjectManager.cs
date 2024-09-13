@@ -330,12 +330,12 @@ namespace PolyPlane.GameObjects
             TotalObjects = 0;
 
             PruneExpired(Missiles);
-            PruneExpired(MissileTrails);
+            PruneExpired(MissileTrails, recordExpired: false);
             PruneExpired(Decoys);
             PruneExpired(Bullets);
-            PruneExpired(Explosions);
-            PruneExpired(Debris);
-            PruneExpired(Flames);
+            PruneExpired(Explosions, recordExpired: false);
+            PruneExpired(Debris, recordExpired: false);
+            PruneExpired(Flames, recordExpired: false);
 
             for (int i = Planes.Count - 1; i >= 0; i--)
             {
@@ -343,7 +343,9 @@ namespace PolyPlane.GameObjects
 
                 if (plane.IsExpired)
                 {
-                    _expiredObjs.Add(plane);
+                    if (World.IsNetGame)
+                        _expiredObjs.Add(plane);
+
                     Planes.RemoveAt(i);
                     _objLookup.Remove(plane.ID.GetHashCode());
                     plane.Dispose();
@@ -356,7 +358,7 @@ namespace PolyPlane.GameObjects
                 GroundImpacts.RemoveAt(0);
         }
 
-        private void PruneExpired(List<GameObject> objs)
+        private void PruneExpired(List<GameObject> objs, bool recordExpired = true)
         {
             for (int i = objs.Count - 1; i >= 0; i--)
             {
@@ -368,7 +370,7 @@ namespace PolyPlane.GameObjects
                     _objLookup.Remove(obj.ID.GetHashCode());
                     obj.Dispose();
 
-                    if (World.IsNetGame)
+                    if (recordExpired && World.IsNetGame)
                         _expiredObjs.Add(obj);
 
                     // Add explosions when missiles & bullets are expired.

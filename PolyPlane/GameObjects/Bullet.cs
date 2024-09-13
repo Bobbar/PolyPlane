@@ -30,6 +30,7 @@ namespace PolyPlane.GameObjects
 
         public Bullet(FighterPlane plane) : this()
         {
+            this.PlayerID = plane.PlayerID;
             this.IsExpired = false;
             this.Age = 0f;
 
