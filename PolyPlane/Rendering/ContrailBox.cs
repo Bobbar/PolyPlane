@@ -115,6 +115,9 @@ namespace PolyPlane.Rendering
             // Render all segments.
             foreach (var seg in _segments)
             {
+                if (!ctx.Viewport.Contains(seg.PointA))
+                    continue;
+
                 var altFact = GetAltFadeInFactor(seg.PointA);
                 var ageFact = (1f - Utilities.Factor(seg.Age, MAX_SEG_AGE));
                 var alpha = ALPHA * ageFact * altFact;
