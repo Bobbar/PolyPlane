@@ -19,8 +19,8 @@ namespace PolyPlane.Rendering
 
         private Dictionary<GameID, PlaneTag> _currentPlanes = new();
         private List<TrailSegment> _segments = new List<TrailSegment>();
-        private SpatialGrid<TrailSegment> _segmentGrid = new(s => s.PointA, s => SegmentIsExpired(s));
-        private D2DColor _trailColor = new D2DColor(0.3f, D2DColor.WhiteSmoke);
+        private SpatialGrid<TrailSegment> _segmentGrid = new(s => s.PointA, SegmentIsExpired);
+        private D2DColor _trailColor = new D2DColor(ALPHA, D2DColor.WhiteSmoke);
 
         public void Update(List<FighterPlane> planes, float dt)
         {

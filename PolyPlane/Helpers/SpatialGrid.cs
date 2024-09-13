@@ -6,27 +6,20 @@ namespace PolyPlane.Helpers
     /// Provides a dynamic sparse 2D spatial grid for fast nearest-neighbor searching.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public sealed class SpatialGrid<T>
+    /// <remarks>
+    /// Create a new instance of <see cref="SpatialGrid{T}"/>
+    /// </remarks>
+    /// <param name="positionSelector">Selector for current object positions. Grid positions are updated on <see cref="Update"/></param>
+    /// <param name="isExpiredSelector">Selector for object expired status.  Expired objects are removed on <see cref="Update"/></param>
+    /// <param name="sideLen">And integer (S) representing the grid cell side length (L), L = 1 << S. </param>
+    public sealed class SpatialGrid<T>(Func<T, D2DPoint> positionSelector, Func<T, bool> isExpiredSelector, int sideLen = 9)
     {
         private Dictionary<int, List<T>> _grid = new Dictionary<int, List<T>>();
         private List<KeyValuePair<int, T>> _movedObjects = new List<KeyValuePair<int, T>>();
 
-        private readonly Func<T, D2DPoint> _positionSelector;
-        private readonly Func<T, bool> _isExpiredSelector;
-        private readonly int SIDE_LEN = 9;
-
-        /// <summary>
-        /// Create a new instance of <see cref="SpatialGrid{T}"/>
-        /// </summary>
-        /// <param name="positionSelector">Selector for current object positions. Grid positions are updated on <see cref="Update"/></param>
-        /// <param name="isExpiredSelector">Selector for object expired status.  Expired objects are removed on <see cref="Update"/></param>
-        /// <param name="sideLen">And integer (S) representing the grid cell side length (L), L = 1 << S. </param>
-        public SpatialGrid(Func<T, D2DPoint> positionSelector, Func<T, bool> isExpiredSelector, int sideLen = 9)
-        {
-            SIDE_LEN = sideLen;
-            _positionSelector = positionSelector;
-            _isExpiredSelector = isExpiredSelector;
-        }
+        private readonly Func<T, D2DPoint> _positionSelector = positionSelector;
+        private readonly Func<T, bool> _isExpiredSelector = isExpiredSelector;
+        private readonly int SIDE_LEN = sideLen;
 
         /// <summary>
         /// Removes expired objects and moves live objects to their new grid positions as needed.
