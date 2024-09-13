@@ -1,6 +1,5 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.Helpers;
-using System.Runtime.InteropServices.Marshalling;
 using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
@@ -15,6 +14,8 @@ namespace PolyPlane.Rendering
         private const float MAX_SEG_AGE = 40f;
         private const float ALPHA = 0.3f;
         private const float MIN_DIST = 40f;
+        private const float MAX_ALPHA_ALT = 3000f;
+        private const float TRAIL_WEIGHT = 8f;
 
         private Dictionary<GameID, PlaneTag> _currentPlanes = new();
         private List<TrailSegment> _segments = new List<TrailSegment>();
@@ -114,8 +115,12 @@ namespace PolyPlane.Rendering
             // Render all segments.
             foreach (var seg in _segments)
             {
-                var color = _trailColor.WithAlpha(ALPHA * (1f - Utilities.Factor(seg.Age, MAX_SEG_AGE)));
-                ctx.DrawLine(seg.PointA, seg.PointB, color, 8f);
+                var altFact = GetAltFadeInFactor(seg.PointA);
+                var ageFact = (1f - Utilities.Factor(seg.Age, MAX_SEG_AGE));
+                var alpha = ALPHA * ageFact * altFact;
+                var color = _trailColor.WithAlpha(alpha);
+
+                ctx.DrawLine(seg.PointA, seg.PointB, color, TRAIL_WEIGHT);
             }
 
             // Draw final connectors between planes and the last segment.
@@ -124,10 +129,19 @@ namespace PolyPlane.Rendering
                 var tag = kvp.Value;
                 var plane = tag.Plane;
 
-                if (IsInside(plane) && plane.ThrustOn && IsNotInSpace(plane) && !plane.IsDisabled)
-                    ctx.DrawLine(tag.PrevPos, plane.ExhaustPosition, _trailColor, 8f);
-            }
+                var altFact = GetAltFadeInFactor(tag.PrevPos);
+                var alpha = ALPHA * altFact;
+                var color = _trailColor.WithAlpha(alpha);
 
+                if (IsInside(plane) && plane.ThrustOn && IsNotInSpace(plane) && !plane.IsDisabled)
+                    ctx.DrawLine(tag.PrevPos, plane.ExhaustPosition, color, TRAIL_WEIGHT);
+            }
+        }
+
+        private float GetAltFadeInFactor(D2DPoint point)
+        {
+            var altFact = Utilities.Factor(Math.Abs(point.Y) - MIN_ALT, MAX_ALPHA_ALT);
+            return altFact;
         }
 
         /// <summary>
