@@ -19,6 +19,7 @@ namespace PolyPlane.Rendering
 
         private Dictionary<GameID, PlaneTag> _currentPlanes = new();
         private List<TrailSegment> _segments = new List<TrailSegment>();
+        private SpatialGrid<TrailSegment> _segmentGrid = new(s => s.PointA, s => SegmentIsExpired(s));
         private D2DColor _trailColor = new D2DColor(0.3f, D2DColor.WhiteSmoke);
 
         public void Update(List<FighterPlane> planes, float dt)
@@ -61,7 +62,10 @@ namespace PolyPlane.Rendering
                                 if (dist >= minDistDT)
                                 {
                                     var seg = new TrailSegment(plane, tag.PrevPos, newPos);
+                                   
                                     _segments.Add(seg);
+                                    _segmentGrid.Add(seg);
+
                                     tag.PrevPos = newPos;
                                 }
                             }
@@ -94,7 +98,7 @@ namespace PolyPlane.Rendering
                     var seg = _segments[i];
                     seg.Age += dt;
 
-                    if (seg.Age > MAX_SEG_AGE || seg.Plane.IsExpired)
+                    if (SegmentIsExpired(seg))
                         _segments.RemoveAt(i);
                 }
 
@@ -107,17 +111,18 @@ namespace PolyPlane.Rendering
                     if (plane.IsExpired)
                         _currentPlanes.Remove(plane.ID);
                 }
+
+                _segmentGrid.Update();
             }
         }
 
         public void Render(RenderContext ctx)
         {
-            // Render all segments.
-            foreach (var seg in _segments)
-            {
-                if (!ctx.Viewport.Contains(seg.PointA))
-                    continue;
+            // Render all visible segments.
+            var inViewPort = _segmentGrid.GetInViewport(ctx.Viewport);
 
+            foreach (var seg in inViewPort)
+            {
                 var altFact = GetAltFadeInFactor(seg.PointA);
                 var ageFact = (1f - Utilities.Factor(seg.Age, MAX_SEG_AGE));
                 var alpha = ALPHA * ageFact * altFact;
@@ -177,6 +182,16 @@ namespace PolyPlane.Rendering
             return plane.Altitude >= MIN_ALT && plane.Altitude <= MAX_ALT;
         }
 
+        /// <summary>
+        /// Returns true if the specified segment age has exceeded the max, or if the associated plane is expired.
+        /// </summary>
+        /// <param name="segment"></param>
+        /// <returns></returns>
+        private static bool SegmentIsExpired(TrailSegment segment)
+        {
+            return segment.Age > MAX_SEG_AGE || segment.Plane.IsExpired;
+        }
+
         private class PlaneTag
         {
             public FighterPlane Plane;
@@ -202,7 +217,6 @@ namespace PolyPlane.Rendering
                 this.PointA = pointA;
                 this.PointB = pointB;
             }
-
         }
     }
 }
