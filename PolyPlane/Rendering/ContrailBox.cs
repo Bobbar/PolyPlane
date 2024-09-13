@@ -11,7 +11,7 @@ namespace PolyPlane.Rendering
     {
         private const float MIN_ALT = 20000f;
         private const float MAX_ALT = 70000f;
-        private const float MAX_SEG_AGE = 40f;
+        private const float MAX_SEG_AGE = 60f;
         private const float ALPHA = 0.3f;
         private const float MIN_DIST = 40f;
         private const float MAX_ALPHA_ALT = 3000f;
@@ -42,7 +42,7 @@ namespace PolyPlane.Rendering
                         if (_currentPlanes.TryGetValue(plane.ID, out var tag))
                         {
                             // Is the engine running and making thrust?
-                            if (plane.ThrustOn && IsNotInSpace(plane) && !plane.IsDisabled)
+                            if (plane.ThrustAmount > 0f && IsNotInSpace(plane) && !plane.IsDisabled)
                             {
                                 var newPos = plane.ExhaustPosition;
                                 var dist = newPos.DistanceTo(tag.PrevPos);
@@ -133,7 +133,7 @@ namespace PolyPlane.Rendering
                 var alpha = ALPHA * altFact;
                 var color = _trailColor.WithAlpha(alpha);
 
-                if (IsInside(plane) && plane.ThrustOn && IsNotInSpace(plane) && !plane.IsDisabled)
+                if (IsInside(plane) && plane.ThrustAmount > 0f && IsNotInSpace(plane) && !plane.IsDisabled)
                     ctx.DrawLine(tag.PrevPos, plane.ExhaustPosition, color, TRAIL_WEIGHT);
             }
         }
