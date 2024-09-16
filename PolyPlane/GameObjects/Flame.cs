@@ -236,7 +236,7 @@ namespace PolyPlane.GameObjects
             var ageFactSmoke = Utilities.Factor(this.Age, Flame.MAX_AGE * 3f);
             var alpha = StartColor.a * ageFactFade;
 
-            this.Color = new D2DColor(alpha, Utilities.LerpColor(this.Color, this.EndColor, ageFactSmoke));
+            this.Color = Utilities.LerpColorWithAlpha(this.Color, this.EndColor, ageFactSmoke, alpha);
 
             if (this.Age > Flame.MAX_AGE)
             {

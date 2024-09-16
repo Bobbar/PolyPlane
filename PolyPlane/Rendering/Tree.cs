@@ -22,7 +22,7 @@ namespace PolyPlane.Rendering
 
         protected D2DColor GetShadowColor(D2DColor timeOfDayColor)
         {
-            var shadowColor = new D2DColor(0.4f, Utilities.LerpColor(timeOfDayColor, D2DColor.Black, 0.7f));
+            var shadowColor = Utilities.LerpColorWithAlpha(timeOfDayColor, D2DColor.Black, 0.7f, 0.4f);
             return shadowColor;
         }
 

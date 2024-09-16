@@ -239,6 +239,17 @@ namespace PolyPlane.Helpers
             return newColor;
         }
 
+        public static D2DColor LerpColorWithAlpha(D2DColor color1, D2DColor color2, float amount, float alpha)
+        {
+            var newColor = new D2DColor(
+                alpha,
+                color1.r + (color2.r - color1.r) * amount,
+                color1.g + (color2.g - color1.g) * amount,
+                color1.b + (color2.b - color1.b) * amount);
+
+            return newColor;
+        }
+
         public static bool IsPosInFOV(GameObject obj, D2DPoint pos, float fov)
         {
             var dir = pos - obj.Position;

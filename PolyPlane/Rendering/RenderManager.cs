@@ -656,7 +656,7 @@ namespace PolyPlane.Rendering
 
         private D2DColor GetShadowColor()
         {
-            var shadowColor = new D2DColor(0.4f, Utilities.LerpColor(GetTimeOfDayColor(), D2DColor.Black, 0.7f));
+            var shadowColor = Utilities.LerpColorWithAlpha(GetTimeOfDayColor(), D2DColor.Black, 0.7f, 0.4f);
             return shadowColor;
         }
 
@@ -1538,7 +1538,7 @@ namespace PolyPlane.Rendering
             if (!ctx.Viewport.Contains(new D2DEllipse(cloudShadowPos, new D2DSize(cloud.Radius * cloud.ScaleX * CLOUD_SCALE, cloud.Radius * cloud.ScaleX * CLOUD_SCALE))))
                 return;
 
-            var shadowColor = new D2DColor(0.05f, Utilities.LerpColor(todColor, D2DColor.Black, 0.7f));
+            var shadowColor = Utilities.LerpColorWithAlpha(todColor, D2DColor.Black, 0.7f, 0.05f);
 
             for (int i = 0; i < cloud.Points.Length; i++)
             {
