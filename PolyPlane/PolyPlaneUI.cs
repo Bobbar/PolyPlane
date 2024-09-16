@@ -526,6 +526,7 @@ namespace PolyPlane
                 _playerPlane.RotationSpeed = 0f;
                 _playerPlane.Position = _playerPlaneSlewPos;
                 _playerPlane.Velocity = D2DPoint.Zero;
+                _playerPlane.Update(0f);
             }
 
             if (_playerPlane.HasCrashed)

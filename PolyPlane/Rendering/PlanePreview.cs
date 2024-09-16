@@ -47,12 +47,11 @@ namespace PolyPlane.Rendering
                 _gfx.TranslateTransform(0f, 90f);
 
                 _plane.PlaneColor = PlaneColor;
-                _plane.Update(World.DT);
                 _plane.Position = center;
                 _angle = Utilities.ClampAngle(_angle + 1f);
                 _plane.Rotation = _angle;
                 _plane.Velocity = D2DPoint.Zero;
-                //_plane.SyncFixtures();
+                _plane.Update(World.DT);
                 _plane.Render(_ctx);
 
                 _gfx.PopTransform();

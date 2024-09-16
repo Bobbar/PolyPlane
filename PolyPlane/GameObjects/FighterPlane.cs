@@ -1018,6 +1018,13 @@ namespace PolyPlane.GameObjects
             var hDens = World.GetDensityAltitude(hole.Position);
             var hVelo = Utilities.AngularVelocity(this, hole.Position, dt);
 
+            if (hVelo.Length() == 0f)
+            {
+                force = D2DPoint.Zero;
+                torque = 0f;
+                return;
+            }
+
             // Apply turbulence.
             hVelo = World.GetTurbulenceVeloAltitude(hole.Position, hVelo);
 

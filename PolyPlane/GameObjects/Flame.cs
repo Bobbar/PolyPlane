@@ -47,7 +47,6 @@ namespace PolyPlane.GameObjects
             this.PlayerID = obj.PlayerID;
 
             Radius = radius;
-            _refPos = new FixturePoint(obj, offset);
 
             _spawnTimer.TriggerCallback = () => SpawnPart();
             _spawnTimer.Start();
@@ -104,6 +103,7 @@ namespace PolyPlane.GameObjects
                 _refPos.Update(dt);
                 this.Position = _refPos.Position;
                 this.Rotation = _refPos.Rotation;
+                this.Velocity = _refPos.Velocity;
             }
 
             if (this.Owner != null && this.Owner.IsExpired)
@@ -111,7 +111,6 @@ namespace PolyPlane.GameObjects
 
             if (_parts.Count == 0 && !_spawnTimer.IsRunning)
                 this.IsExpired = true;
-
         }
 
         public override void Render(RenderContext ctx)
@@ -132,24 +131,23 @@ namespace PolyPlane.GameObjects
             if (World.IsNetGame && World.IsServer)
                 return;
 
+            var endColor = _blackSmoke;
             D2DPoint newPos = this.Position;
             D2DPoint newVelo = this.Velocity;
 
+            // Take velo and position if we have an attachment.  (For bullet holes, debris and such)
             if (_refPos != null)
             {
                 _refPos.Update(World.DT);
                 newPos = _refPos.Position;
+                newVelo = _refPos.Velocity;
+
+                // Change end color if associated plane is disabled.
+                if (_refPos.GameObject is FighterPlane plane && !plane.IsDisabled)
+                    endColor = _graySmoke;
             }
 
-            if (this.Owner != null && this.Owner is not Explosion)
-                newVelo = this.Owner.Velocity;
-
             newVelo += Utilities.RandOPoint(10f);
-
-            var endColor = _blackSmoke;
-
-            if (_refPos.GameObject is FighterPlane plane && !plane.IsDisabled)
-                endColor = _graySmoke;
 
             var newRad = this.Radius + Utilities.Rnd.NextFloat(-3f, 3f);
             var newColor = new D2DColor(_flameColor.a, 1f, Utilities.Rnd.NextFloat(0f, 0.86f), _flameColor.b);
