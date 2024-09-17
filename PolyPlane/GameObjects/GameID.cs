@@ -2,9 +2,6 @@
 {
     public struct GameID : IEquatable<GameID>
     {
-        //public int PlayerID;
-        //public int ObjectID;
-
         public int PlayerID 
         {
             get {  return _playerID; }
@@ -19,7 +16,7 @@
             }
         }
 
-        public int ObjectID
+        public uint ObjectID
         {
             get { return _objectID; }
 
@@ -35,13 +32,13 @@
 
 
         private int _playerID;
-        private int _objectID;
+        private uint _objectID;
 
         private int _hashCode = -1;
 
         public GameID() { }
 
-        public GameID(int playerID, int objectID)
+        public GameID(int playerID, uint objectID)
         {
             PlayerID = playerID;
             ObjectID = objectID;
@@ -50,7 +47,7 @@
         public GameID(uint playerID)
         {
             PlayerID = (int)playerID;
-            ObjectID = -1;
+            ObjectID = 0;
         }
 
         public bool Equals(GameID other)
@@ -72,7 +69,6 @@
         public override int GetHashCode()
         {
             return _hashCode;
-            //return HashCode.Combine(PlayerID, ObjectID);
         }
 
     }

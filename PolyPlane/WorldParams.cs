@@ -161,7 +161,7 @@ namespace PolyPlane
         public static readonly D2DPoint PlaneSpawnRange = new D2DPoint(-250000, 250000);
         public static readonly D2DPoint FieldXBounds = new D2DPoint(-350000, 350000);
 
-        public static int CurrentObjId = 0;
+        public static uint CurrentObjId = 0;
         public static int CurrentPlayerId = 1000;
 
         public static GameID ViewPlaneID;
@@ -255,7 +255,7 @@ namespace PolyPlane
                 TimeOfDayDir = 1f;
         }
 
-        public static int GetNextObjectId()
+        public static uint GetNextObjectId()
         {
             return Interlocked.Increment(ref CurrentObjId);
         }

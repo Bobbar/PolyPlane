@@ -67,7 +67,7 @@ namespace PolyPlane.Net.NetHost
 
         private void RequestOtherPlanes()
         {
-            var netPacket = new BasicPacket(PacketTypes.GetOtherPlanes, new GameObjects.GameID(-1, (int)Peer.ID));
+            var netPacket = new BasicPacket(PacketTypes.GetOtherPlanes, new GameObjects.GameID(-1, Peer.ID));
             EnqueuePacket(netPacket);
         }
 
