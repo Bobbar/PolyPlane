@@ -864,7 +864,7 @@ namespace PolyPlane.Rendering
 
             foreach (var tree in _trees)
             {
-                if (ctx.Viewport.Contains(tree.Position, tree.Height))
+                if (ctx.Viewport.Contains(tree.Position, tree.Height * 3f))
                 {
                     tree.Render(ctx, todColor, GROUND_OBJ_SCALE);
                 }
