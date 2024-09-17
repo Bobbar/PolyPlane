@@ -170,7 +170,7 @@ namespace PolyPlane.GameObjects
         private D2DColor _cockpitColor = new D2DColor(0.5f, D2DColor.LightBlue);
         private List<BulletHole> _bulletHoles = new List<BulletHole>();
         private List<Vapor> _vaporTrails = new List<Vapor>();
-        private Flame _engineFireFlame;
+        private FlameEmitter _engineFireFlame;
 
         private IAIBehavior _aiBehavior;
 
@@ -273,7 +273,7 @@ namespace PolyPlane.GameObjects
             _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
             _gun = new Gun(this, new D2DPoint(35f, 0), FireBulletCallback);
             _decoyDispenser = new DecoyDispenser(this, new D2DPoint(-24f, 0f));
-            _engineFireFlame = new Flame(_centerOfThrust, D2DPoint.Zero, false);
+            _engineFireFlame = new FlameEmitter(_centerOfThrust, D2DPoint.Zero, false);
             _engineFireFlame.StopSpawning();
 
             _flamePos.IsNetObject = this.IsNetObject;
@@ -1115,7 +1115,7 @@ namespace PolyPlane.GameObjects
             base.Dispose();
 
             _polyClipLayer?.Dispose();
-            _bulletHoles.ForEach(b => b.Dispose());
+            //_bulletHoles.ForEach(b => b.Dispose());
             _bulletHoles.Clear();
             _vaporTrails.Clear();
             _engineFireFlame?.Dispose();

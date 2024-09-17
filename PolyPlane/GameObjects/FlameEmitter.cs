@@ -3,25 +3,26 @@ using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
+using System.Diagnostics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Flame : GameObject
+    public class FlameEmitter : GameObject
     {
         public float Radius { get; set; }
 
         public const int MAX_PARTS = 50;
         public const float MAX_AGE = 20f;
 
-        private List<FlamePart> _parts = new List<FlamePart>();
-        private readonly D2DColor _flameColor = new D2DColor(0.6f, D2DColor.Yellow);
-        private readonly D2DColor _blackSmoke = new D2DColor(0.6f, D2DColor.Black);
-        private readonly D2DColor _graySmoke = new D2DColor(0.6f, D2DColor.Gray);
+        public static readonly D2DColor DefaultFlameColor = new D2DColor(0.6f, D2DColor.Yellow);
+        public static readonly D2DColor BlackSmokeColor = new D2DColor(0.6f, D2DColor.Black);
+        public static readonly D2DColor GraySmokeColor = new D2DColor(0.6f, D2DColor.Gray);
+
         private FixturePoint _refPos = null;
         private GameTimer _spawnTimer = new GameTimer(0.1f, true);
 
-        public Flame(GameObject obj, D2DPoint offset, float radius = 10f) : base(obj.Position, obj.Velocity)
+        public FlameEmitter(GameObject obj, D2DPoint offset, float radius = 10f) : base(obj.Position, obj.Velocity)
         {
             _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
 
@@ -39,24 +40,7 @@ namespace PolyPlane.GameObjects
             SpawnPart();
         }
 
-        public Flame(GameObject obj, D2DPoint offset, D2DPoint velo, float radius = 10f) : base(obj.Position, velo)
-        {
-            _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
-
-            this.Owner = obj;
-            this.PlayerID = obj.PlayerID;
-
-            Radius = radius;
-
-            _spawnTimer.TriggerCallback = () => SpawnPart();
-            _spawnTimer.Start();
-
-            Update(World.DT);
-
-            SpawnPart();
-        }
-
-        public Flame(GameObject obj, D2DPoint offset, bool hasFlame = true) : base(obj.Position, obj.Velocity)
+        public FlameEmitter(GameObject obj, D2DPoint offset, bool hasFlame = true) : base(obj.Position, obj.Velocity)
         {
             _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
 
@@ -98,26 +82,13 @@ namespace PolyPlane.GameObjects
             base.Update(dt);
             _spawnTimer.Update(dt);
 
-            if (_refPos != null)
-            {
-                _refPos.Update(dt);
-                this.Position = _refPos.Position;
-                this.Rotation = _refPos.Rotation;
-                this.Velocity = _refPos.Velocity;
-            }
+            _refPos.Update(dt);
+            this.Position = _refPos.Position;
+            this.Rotation = _refPos.Rotation;
+            this.Velocity = _refPos.Velocity;
 
             if (this.Owner != null && this.Owner.IsExpired)
                 _spawnTimer.Stop();
-
-            if (_parts.Count == 0 && !_spawnTimer.IsRunning)
-                this.IsExpired = true;
-        }
-
-        public override void Render(RenderContext ctx)
-        {
-            base.Render(ctx);
-
-            _parts.ForEach(p => p.Render(ctx));
         }
 
         public override void FlipY()
@@ -131,45 +102,22 @@ namespace PolyPlane.GameObjects
             if (World.IsNetGame && World.IsServer)
                 return;
 
-            var endColor = _blackSmoke;
-            D2DPoint newPos = this.Position;
-            D2DPoint newVelo = this.Velocity;
-
-            // Take velo and position if we have an attachment.  (For bullet holes, debris and such)
-            if (_refPos != null)
-            {
-                _refPos.Update(World.DT);
-                newPos = _refPos.Position;
-                newVelo = _refPos.Velocity;
-
-                // Change end color if associated plane is disabled.
-                if (_refPos.GameObject is FighterPlane plane && !plane.IsDisabled)
-                    endColor = _graySmoke;
-            }
-
+            _refPos.Update(World.DT);
+            D2DPoint newPos = _refPos.Position;
+            D2DPoint newVelo = _refPos.Velocity;
             newVelo += Utilities.RandOPoint(10f);
 
-            var newRad = this.Radius + Utilities.Rnd.NextFloat(-3f, 3f);
-            var newColor = new D2DColor(_flameColor.a, 1f, Utilities.Rnd.NextFloat(0f, 0.86f), _flameColor.b);
+            var endColor = BlackSmokeColor;
 
+            if (_refPos.GameObject is FighterPlane plane && !plane.IsDisabled)
+                endColor = GraySmokeColor;
+
+            var newRad = this.Radius + Utilities.Rnd.NextFloat(-3f, 3f);
             var newPart = World.ObjectManager.RentFlamePart(this.PlayerID);
-            newPart.ReInit(newPos, newRad, newColor, endColor, newVelo);
+            newPart.ReInit(newPos, newRad, endColor, newVelo);
             newPart.Owner = this;
 
-            if (_parts.Count < MAX_PARTS)
-            {
-                _parts.Add(newPart);
-                World.ObjectManager.EnqueueFlame(newPart);
-            }
-            else
-            {
-                _parts[0].IsExpired = true;
-                World.ObjectManager.ReturnFlamePart(_parts[0]);
-                _parts.RemoveAt(0);
-
-                _parts.Add(newPart);
-                World.ObjectManager.EnqueueFlame(newPart);
-            }
+            World.ObjectManager.EnqueueFlame(newPart);
         }
 
         public override void Dispose()
@@ -177,14 +125,6 @@ namespace PolyPlane.GameObjects
             base.Dispose();
 
             _spawnTimer.Stop();
-
-            _parts.ForEach(p =>
-            {
-                p.IsExpired = true;
-                World.ObjectManager.ReturnFlamePart(p);
-            });
-
-            _parts.Clear();
         }
     }
 
@@ -209,7 +149,7 @@ namespace PolyPlane.GameObjects
             this.RenderOrder = 0;
         }
 
-        public void ReInit(D2DPoint pos, float radius, D2DColor color, D2DColor endColor, D2DPoint velo)
+        public void ReInit(D2DPoint pos, float radius, D2DColor endColor, D2DPoint velo)
         {
             this.Age = 0f;
             this.IsExpired = false;
@@ -218,8 +158,10 @@ namespace PolyPlane.GameObjects
             _ellipse.radiusX = radius;
             _ellipse.radiusY = radius;
 
-            Color = color;
-            StartColor = color;
+            var newColor = new D2DColor(FlameEmitter.DefaultFlameColor.a, 1f, Utilities.Rnd.NextFloat(0f, 0.86f), FlameEmitter.DefaultFlameColor.b);
+
+            Color = newColor;
+            StartColor = newColor;
             EndColor = endColor;
 
             _riseRate = new D2DPoint(0f, Utilities.Rnd.NextFloat(MAX_RISE_RATE, MIN_RISE_RATE));
@@ -232,25 +174,21 @@ namespace PolyPlane.GameObjects
         {
             base.Update(dt);
 
-            var ageFactFade = 1f - Utilities.Factor(this.Age, Flame.MAX_AGE);
-            var ageFactSmoke = Utilities.Factor(this.Age, Flame.MAX_AGE * 3f);
+            var ageFactFade = 1f - Utilities.Factor(this.Age, FlameEmitter.MAX_AGE);
+            var ageFactSmoke = Utilities.Factor(this.Age, FlameEmitter.MAX_AGE * 3f);
             var alpha = StartColor.a * ageFactFade;
 
             this.Color = Utilities.LerpColorWithAlpha(this.Color, this.EndColor, ageFactSmoke, alpha);
-
-            if (this.Age > Flame.MAX_AGE)
-            {
-                this.IsExpired = true;
-            }
-
-
             this.Velocity += -this.Velocity * 0.9f * dt;
             this.Velocity += _riseRate * dt;
 
             // Simulate the particles being blown by the wind.
-            _riseRate.X = WIND_SPEED * Utilities.FactorWithEasing(this.Age, Flame.MAX_AGE, EasingFunctions.EaseOutSine);
+            _riseRate.X = WIND_SPEED * Utilities.FactorWithEasing(this.Age, FlameEmitter.MAX_AGE, EasingFunctions.EaseOutSine);
 
             _ellipse.origin = this.Position;
+
+            if (this.Age > FlameEmitter.MAX_AGE)
+                this.IsExpired = true;
         }
 
         public override void Render(RenderContext ctx)
@@ -258,6 +196,13 @@ namespace PolyPlane.GameObjects
             base.Render(ctx);
 
             ctx.FillEllipse(Ellipse, Color);
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+
+            World.ObjectManager.ReturnFlamePart(this);
         }
     }
 }

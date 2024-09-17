@@ -6,7 +6,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Bullet : GameObjectPoly, ICollidable
+    public class Bullet : GameObjectPoly
     {
         public const float SPEED = 800f;
         public float Lifetime = 10f;

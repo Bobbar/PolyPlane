@@ -1,4 +1,5 @@
-﻿using PolyPlane.Helpers;
+﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.Helpers;
 using PolyPlane.Net;
 
 namespace PolyPlane.GameObjects.Manager
@@ -241,6 +242,9 @@ namespace PolyPlane.GameObjects.Manager
                 foreach (var obj in nearObjs)
                 {
                     if (obj.Equals(explosion))
+                        continue;
+
+                    if (obj is not ICollidable)
                         continue;
 
                     var dist = explosion.Position.DistanceTo(obj.Position) + EPSILON;

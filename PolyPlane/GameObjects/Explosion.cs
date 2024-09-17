@@ -19,8 +19,6 @@ namespace PolyPlane.GameObjects
         private D2DColor _color = new D2DColor(0.4f, D2DColor.Orange);
         private D2DColor _showckWaveColor = new D2DColor(1f, D2DColor.White);
 
-        private List<Flame> _flames = new List<Flame>();
-
         public Explosion(GameObject owner, float maxRadius, float duration) : base(owner.Position)
         {
             this.Owner = owner;
@@ -38,12 +36,15 @@ namespace PolyPlane.GameObjects
 
             for (int i = 0; i < NUM_FLAME; i++)
             {
-                var pnt = Utilities.RandomPointInCircle(5f);
+                var pnt = this.Position + Utilities.RandomPointInCircle(5f);
                 var velo = Utilities.AngleToVectorDegrees(Utilities.RandomDirection(), Utilities.Rnd.NextFloat(maxRadius, maxRadius * 2f));
-                var radius = NUM_FLAME + Utilities.Rnd.NextFloat(-10f, 10f);
-                var flame = new Flame(this, pnt, velo, radius);
-                flame.StopSpawning();
-                _flames.Add(flame);
+                var radius = NUM_FLAME + Utilities.Rnd.NextFloat(-20f, 10f);
+                radius = Math.Clamp(radius, 8f, 100f);
+                var flame = World.ObjectManager.RentFlamePart(this.PlayerID);
+                flame.ReInit(pnt, radius, FlameEmitter.BlackSmokeColor, velo);
+                flame.Owner = this;
+
+                World.ObjectManager.EnqueueFlame(flame);
             }
         }
 
@@ -60,10 +61,8 @@ namespace PolyPlane.GameObjects
                 _showckWaveColor.a = 1f - Utilities.FactorWithEasing(this.Age * 1.5f, Duration, EasingFunctions.EaseOutExpo);
             }
 
-            if (this.Age >= Flame.MAX_AGE)
+            if (this.Age >= Duration)
                 this.IsExpired = true;
-
-            _flames.ForEach(f => f.Update(dt));
         }
 
         public override void Render(RenderContext ctx)
@@ -91,10 +90,6 @@ namespace PolyPlane.GameObjects
         public override void Dispose()
         {
             base.Dispose();
-
-            _flames.ForEach(f => f.Dispose());
-
-            _flames.Clear();
         }
     }
 }
