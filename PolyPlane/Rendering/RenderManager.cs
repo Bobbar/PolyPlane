@@ -604,7 +604,6 @@ namespace PolyPlane.Rendering
         {
             _hudMessageTimeout.Update(World.DT);
             _missileFlashTimer.Update(World.DT);
-            _groundColorUpdateTimer.Update(World.DT);
 
             if (!_missileFlashTimer.IsInCooldown && !_missileFlashTimer.IsRunning)
                 _missileFlashTimer.Restart();
@@ -612,9 +611,14 @@ namespace PolyPlane.Rendering
             _screenFlash.Update(World.DT);
             _screenShakeX.Update(World.DT);
             _screenShakeY.Update(World.DT);
-            MoveClouds(World.DT);
 
             _contrailBox.Update(_objs.Planes, World.DT);
+
+            if (!World.IsPaused)
+            {
+                MoveClouds(World.DT);
+                _groundColorUpdateTimer.Update(World.DT);
+            }
         }
 
         private void UpdateGroundColor()
