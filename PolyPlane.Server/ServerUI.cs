@@ -469,7 +469,7 @@ namespace PolyPlane.Server
 
             aiPlane.FireBulletCallback = b =>
             {
-                _objs.AddBullet(b);
+                _objs.EnqueueBullet(b);
                 _server.SendNewBulletPacket(b);
             };
 

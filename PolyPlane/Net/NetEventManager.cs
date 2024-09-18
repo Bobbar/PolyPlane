@@ -314,7 +314,7 @@ namespace PolyPlane.Net
                             {
                                 var decoy = new Decoy(owner, d.Position, d.Velocity);
                                 decoy.ID = d.ID;
-                                _objs.AddDecoy(decoy);
+                                _objs.EnqueueDecoy(decoy);
                             }
                         });
                     }
@@ -664,7 +664,7 @@ namespace PolyPlane.Net
             // Try to spawn the bullet ahead (extrapolate) to compensate for latency?
             bullet.Position += bullet.Velocity * (float)(((bullet.LagAmount) / 16.6f) * World.DT);
 
-            _objs.AddBullet(bullet);
+            _objs.EnqueueBullet(bullet);
         }
 
         private void DoNewMissile(MissilePacket missilePacket)
@@ -685,7 +685,7 @@ namespace PolyPlane.Net
                 missilePacket.SyncObj(missile);
                 missile.Target = missileTarget;
                 missile.LagAmount = World.CurrentTime() - missilePacket.FrameTime;
-                _objs.AddMissile(missile);
+                _objs.EnqueueMissile(missile);
             }
         }
 
@@ -699,7 +699,7 @@ namespace PolyPlane.Net
                 decoy.ID = decoyPacket.ID;
                 decoyPacket.SyncObj(decoy);
 
-                _objs.AddDecoy(decoy);
+                _objs.EnqueueDecoy(decoy);
 
                 if (IsServer)
                     Host.EnqueuePacket(decoyPacket);

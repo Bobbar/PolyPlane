@@ -27,6 +27,7 @@ namespace PolyPlane.GameObjects
         public List<FighterPlane> Planes = new();
 
         public ConcurrentQueue<GameObject> NewDecoys = new();
+        public ConcurrentQueue<GameObject> NewDebris = new();
         public ConcurrentQueue<GameObject> NewBullets = new();
         public ConcurrentQueue<GameObject> NewMissiles = new();
         public ConcurrentQueue<FighterPlane> NewPlanes = new();
@@ -79,7 +80,12 @@ namespace PolyPlane.GameObjects
             NewFlames.Enqueue(flame);
         }
 
-        public void AddDebris(Debris debris)
+        public void EnqueueDebris(Debris debris)
+        {
+            NewDebris.Enqueue(debris);
+        }
+
+        private void AddDebris(Debris debris)
         {
             if (!Contains(debris))
             {
@@ -94,7 +100,7 @@ namespace PolyPlane.GameObjects
                 debris.IsExpired = true;
         }
 
-        public void AddBullet(Bullet bullet)
+        private void AddBullet(Bullet bullet)
         {
             if (!Contains(bullet))
             {
@@ -108,7 +114,7 @@ namespace PolyPlane.GameObjects
             NewBullets.Enqueue(bullet);
         }
 
-        public void AddMissile(GuidedMissile missile)
+        private void AddMissile(GuidedMissile missile)
         {
             if (!Contains(missile))
             {
@@ -156,7 +162,7 @@ namespace PolyPlane.GameObjects
             NewPlanes.Enqueue(plane);
         }
 
-        public void AddDecoy(Decoy decoy)
+        private void AddDecoy(Decoy decoy)
         {
             if (!Contains(decoy))
             {
@@ -180,7 +186,7 @@ namespace PolyPlane.GameObjects
             NewDecoys.Enqueue(decoy);
         }
 
-        public void AddExplosion(GameObject explosion)
+        private void AddExplosion(GameObject explosion)
         {
             if (!Contains(explosion))
             {
@@ -203,13 +209,13 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public void AddMissileExplosion(GuidedMissile missile)
+        private void AddMissileExplosion(GuidedMissile missile)
         {
             var explosion = new Explosion(missile, 300f, 2.4f);
             AddExplosion(explosion);
         }
 
-        public void AddBulletExplosion(Bullet bullet)
+        private void AddBulletExplosion(Bullet bullet)
         {
             var explosion = new Explosion(bullet, 50f, 0.5f);
             AddExplosion(explosion);
@@ -228,6 +234,7 @@ namespace PolyPlane.GameObjects
             Flames.ForEach(f => f.Dispose());
             Flames.Clear();
             NewDecoys.Clear();
+            NewDebris.Clear();
             NewBullets.Clear();
             NewMissiles.Clear();
             NewPlanes.Clear();
@@ -433,6 +440,14 @@ namespace PolyPlane.GameObjects
                 if (NewDecoys.TryDequeue(out GameObject decoy))
                 {
                     AddDecoy(decoy as Decoy);
+                }
+            }
+
+            while (NewDebris.Count > 0)
+            {
+                if (NewDebris.TryDequeue(out GameObject debris))
+                {
+                    AddDebris(debris as Debris);
                 }
             }
 

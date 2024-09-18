@@ -916,7 +916,7 @@ namespace PolyPlane.GameObjects
             for (int i = 0; i < num; i++)
             {
                 var debris = new Debris(this, pos, this.Velocity, color);
-                World.ObjectManager.AddDebris(debris);
+                World.ObjectManager.EnqueueDebris(debris);
             }
         }
 
