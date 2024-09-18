@@ -298,6 +298,11 @@ namespace PolyPlane.GameObjects
             var allObjs = _allObjects;
             allObjs.ForEachParallel(o => o.Update(dt), _multiThreadNum);
 
+            // Update planes separately.
+            // They are pretty expensive, so we want "all threads on deck"
+            // to be working on the updates.
+            Planes.ForEachParallel(o => o.Update(dt), _multiThreadNum);
+
             if (!World.IsNetGame || World.IsClient)
             {
                 // Update flame particles.
@@ -496,7 +501,9 @@ namespace PolyPlane.GameObjects
                 if (World.IsNetGame && obj.IsNetObject)
                     _allNetObjects.Add(obj);
 
-                _allObjects.Add(obj);
+                // Don't add planes. We will update them separately.
+                if (obj is not FighterPlane)
+                    _allObjects.Add(obj);
             }
         }
 
