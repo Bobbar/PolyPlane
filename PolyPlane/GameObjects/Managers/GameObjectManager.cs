@@ -94,12 +94,6 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public void CleanDebris(GameID ownerID)
-        {
-            foreach (var debris in Debris.Where(d => d.Owner.ID.Equals(ownerID)))
-                debris.IsExpired = true;
-        }
-
         private void AddBullet(Bullet bullet)
         {
             if (!Contains(bullet))

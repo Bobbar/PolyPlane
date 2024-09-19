@@ -953,7 +953,6 @@ namespace PolyPlane.GameObjects
             _expireTimeout.Stop();
             _flipTimer.Restart();
             _bulletHoles.Clear();
-            World.ObjectManager.CleanDebris(this.ID);
             _thrustAmt.Target = 1f;
             WasHeadshot = false;
             PlayerGuideAngle = 0f;
@@ -1119,7 +1118,6 @@ namespace PolyPlane.GameObjects
             _bulletHoles.Clear();
             _vaporTrails.Clear();
             _engineFireFlame?.Dispose();
-            World.ObjectManager.CleanDebris(this.ID);
         }
     }
 }

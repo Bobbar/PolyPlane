@@ -10,6 +10,7 @@ namespace PolyPlane.GameObjects
     {
         private D2DColor _color;
         private FlameEmitter _flame;
+        private const float MAX_AGE = 70f;
 
         public Debris(GameObject owner, D2DPoint pos, D2DPoint velo, D2DColor color) : base(pos, velo)
         {
@@ -39,13 +40,19 @@ namespace PolyPlane.GameObjects
 
             if (this.Altitude <= 1f)
                 _flame.StopSpawning();
+            else
+                this.Age = 0f; // Don't age until we are on the ground.
+
+            if (this.Age > MAX_AGE)
+                this.IsExpired = true;
         }
 
         public override void Render(RenderContext ctx)
         {
             base.Render(ctx);
 
-            ctx.DrawPolygon(this.Polygon, D2DColor.Black, 0.5f, D2DDashStyle.Solid, _color);
+            var ageAlpha = 1f - Utilities.FactorWithEasing(this.Age, MAX_AGE, EasingFunctions.EaseInExpo);
+            ctx.DrawPolygon(this.Polygon, D2DColor.Black.WithAlpha(ageAlpha), 0.5f, D2DDashStyle.Solid, _color.WithAlpha(ageAlpha));
         }
 
         public override void Dispose()
