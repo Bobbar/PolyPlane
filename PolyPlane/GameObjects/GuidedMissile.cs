@@ -186,7 +186,7 @@ namespace PolyPlane.GameObjects
         {
             if (_useControlSurfaces)
             {
-                var liftScale = 0.8f;
+                var liftScale = 0.6f;
 
                 _tailWing = new Wing(this, new WingParameters()
                 {
@@ -198,7 +198,7 @@ namespace PolyPlane.GameObjects
                     PivotPoint = new D2DPoint(-20f, 0f),
                     Position = new D2DPoint(-22f, 0f),
                     MinVelo = 650f,
-                    ParasiticDrag = 0.4f,
+                    ParasiticDrag = 0.8f,
                     AOAFactor = 0.5f,
                     DeflectionRate = 30f,
                     MaxAOA = 50f
@@ -210,7 +210,7 @@ namespace PolyPlane.GameObjects
                     Area = 0.075f,
                     MaxLiftForce = 1500f * liftScale,
                     MinVelo = 700f,
-                    ParasiticDrag = 0.2f,
+                    ParasiticDrag = 0.4f,
                     MaxAOA = 40f,
                     AOAFactor = 0.2f
                 });
@@ -224,7 +224,7 @@ namespace PolyPlane.GameObjects
                     MaxLiftForce = 4000f * liftScale,
                     Position = new D2DPoint(21.5f, 0f),
                     MinVelo = 650f,
-                    ParasiticDrag = 0.2f,
+                    ParasiticDrag = 0.4f,
                     AOAFactor = 0.1f,
                     MaxAOA = 40f
                 });
