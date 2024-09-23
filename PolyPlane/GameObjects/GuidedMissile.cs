@@ -160,7 +160,7 @@ namespace PolyPlane.GameObjects
             this.RenderOrder = 2;
 
             _centerOfThrust = new FixturePoint(this, new D2DPoint(-22, 0));
-            _warheadCenterMass = new FixturePoint(this, new D2DPoint(6f, 0));
+            _warheadCenterMass = new FixturePoint(this, new D2DPoint(7f, 0));
             _motorCenterMass = new FixturePoint(this, new D2DPoint(-11f, 0));
             _flamePos = new FixturePoint(this, new D2DPoint(-22f, 0));
 
@@ -186,32 +186,32 @@ namespace PolyPlane.GameObjects
         {
             if (_useControlSurfaces)
             {
-                var liftScale = 0.6f;
+                var liftScale = 0.8f;
 
                 _tailWing = new Wing(this, new WingParameters()
                 {
                     RenderLength = 2.5f,
                     RenderWidth = 1f,
                     Area = 0.1f,
-                    MaxDeflection = 50f,
-                    MaxLiftForce = 6500f * liftScale,
+                    MaxDeflection = 40f,
+                    MaxLiftForce = 4500f * liftScale,
                     PivotPoint = new D2DPoint(-20f, 0f),
                     Position = new D2DPoint(-22f, 0f),
-                    MinVelo = 650f,
-                    ParasiticDrag = 0.8f,
-                    AOAFactor = 0.5f,
+                    MinVelo = 600f,
+                    ParasiticDrag = 0.7f,
+                    AOAFactor = 0.3f,
                     DeflectionRate = 30f,
-                    MaxAOA = 50f
+                    MaxAOA = 40f
                 });
 
                 _rocketBody = new Wing(this, new WingParameters()
                 {
                     RenderLength = 0f,
-                    Area = 0.075f,
-                    MaxLiftForce = 1500f * liftScale,
-                    MinVelo = 700f,
+                    Area = 0.045f,
+                    MaxLiftForce = 500f * liftScale,
+                    MinVelo = 600f,
                     ParasiticDrag = 0.4f,
-                    MaxAOA = 40f,
+                    MaxAOA = 30f,
                     AOAFactor = 0.2f
                 });
 
@@ -219,14 +219,14 @@ namespace PolyPlane.GameObjects
                 {
                     RenderLength = 2.5f,
                     RenderWidth = 1f,
-                    Area = 0.025f,
+                    Area = 0.05f,
                     MaxDeflection = 20f,
-                    MaxLiftForce = 4000f * liftScale,
+                    MaxLiftForce = 2000f * liftScale,
                     Position = new D2DPoint(21.5f, 0f),
-                    MinVelo = 650f,
+                    MinVelo = 600f,
                     ParasiticDrag = 0.4f,
-                    AOAFactor = 0.1f,
-                    MaxAOA = 40f
+                    AOAFactor = 0.2f,
+                    MaxAOA = 30f
                 });
             }
             else

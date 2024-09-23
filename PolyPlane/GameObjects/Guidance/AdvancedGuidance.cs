@@ -6,8 +6,6 @@ namespace PolyPlane.GameObjects.Guidance
     {
         private D2DPoint _prevTargPos = D2DPoint.Zero;
         private D2DPoint _prevImpactPnt = D2DPoint.Zero;
-        private SmoothPoint _impactSmooth = new SmoothPoint(10);
-        private SmoothPoint _aimDirSmooth = new SmoothPoint(5);
         private SmoothFloat _closingRateSmooth = new SmoothFloat(5);
 
         private float _prevVelo = 0f;
@@ -64,7 +62,7 @@ namespace PolyPlane.GameObjects.Guidance
 
                 var relVelo = (missileVelo - targetVelo).Length();
                 var timeToImpact = ImpactTime(targDist, (relVelo * dt), (deltaV * dt));
-                impactPnt = _impactSmooth.Add(RefineImpact(targetPosition, targetVelo, targAngleDelta, timeToImpact, dt));
+                impactPnt = RefineImpact(targetPosition, targetVelo, targAngleDelta, timeToImpact, dt);
             }
 
             // Compute the speed (delta) of the impact point as it is refined.
@@ -85,7 +83,7 @@ namespace PolyPlane.GameObjects.Guidance
             var closeRateFact = Utilities.Factor(closingRate, MIN_CLOSE_RATE);
             var targetDir = (targetPosition - this.Missile.Position).Normalized();
             var predictedDir = (stableAimPoint - this.Missile.Position).Normalized();
-            var aimDirection = _aimDirSmooth.Add(D2DPoint.Lerp(targetDir, predictedDir, closeRateFact));
+            var aimDirection = D2DPoint.Lerp(targetDir, predictedDir, closeRateFact);
 
             // Compute rotation amount.
             var veloNorm = D2DPoint.Normalize(this.Missile.Velocity);
