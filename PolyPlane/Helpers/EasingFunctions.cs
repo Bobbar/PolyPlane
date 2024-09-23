@@ -100,6 +100,11 @@
             return k * k * k;
         }
 
+        public static float EaseInQuad(float k)
+        {
+            return k * k;
+        }
+            
         public static float EaseInSine(float k)
         {
             return 1f - (float)Math.Cos((k * Math.PI) / 2f);

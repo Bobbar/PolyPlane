@@ -6,6 +6,7 @@ using PolyPlane.GameObjects.Manager;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
+using System.Runtime.Serialization;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -577,13 +578,17 @@ namespace PolyPlane.GameObjects
 
             _vaporTrails.ForEach(v => v.Render(ctx));
 
+
             if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
                 ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
+
+            DrawShockwave(ctx);
 
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black.WithAlpha(0.3f), 0.5f, D2DDashStyle.Solid, _planeColor);
             DrawClippedObjects(ctx);
             Wings.ForEach(w => w.Render(ctx));
             _gun.Render(ctx);
+
 
             //foreach (var b in _bulletHoles)
             //    ctx.DrawArrow(b.Position, b.Position + Utilities.AngleToVectorDegrees(b.Rotation, 10), D2DColor.Blue, 1f, 3f);
@@ -594,6 +599,69 @@ namespace PolyPlane.GameObjects
             //DrawFOVCone(gfx);
             //_cockpitPosition.Render(ctx);
             //_centerOfThrust.Render(ctx);
+        }
+
+        private void DrawShockwave(RenderContext ctx)
+        {
+            const float MIN_VELO = 850f;
+            const int NUM_SEGS = 30;
+
+            // Compute speed factor and fiddle with dimensions, positions, line weight and color alpha.
+            var speedFact = Utilities.FactorWithEasing(this.AirSpeedIndicated - MIN_VELO, MIN_VELO, EasingFunctions.EaseInSine);
+
+            var width = 40f;
+            width += 30f * speedFact;
+            width += 30f * World.Turbulence;
+
+            var height = 100f;
+            height += 300f * speedFact;
+            height += 30f * World.Turbulence;
+
+            var lineWeight = 4f;
+            lineWeight += 9f * speedFact * World.Turbulence;
+
+            var alpha = 0.8f * speedFact * World.Turbulence;
+            var pos = this.Position + Utilities.AngleToVectorDegrees(this.Rotation, 30f - (30f * speedFact));
+
+            // Control points for beziers.
+            var startCenter = pos;
+            var rot = this.Velocity.Angle();
+            var endCenter = pos - Utilities.AngleToVectorDegrees(rot, width);
+            var endTop = endCenter - Utilities.AngleToVectorDegrees(rot - 90f, height);
+            var endBot = endCenter + Utilities.AngleToVectorDegrees(rot - 90f, height);
+            var color = D2DColor.White.WithAlpha(alpha);
+
+            for (int i = 0; i < NUM_SEGS - 1; i++)
+            {
+                var t = (float)i / (float)NUM_SEGS;
+                var t2 = (float)(i + 1) / (float)NUM_SEGS;
+                var w = (lineWeight * (1f - t)) + 0.2f;
+                var a = alpha * EasingFunctions.EaseInSine(1f - t);
+                var lineColor = color.WithAlpha(a);
+
+                var p0 = startCenter;
+                var p1 = endCenter;
+                var p2 = endTop;
+                var p3 = endBot;
+
+                var B1 = Utilities.LerpBezierCurve(p0, p1, p2, t);
+                var B2 = Utilities.LerpBezierCurve(p0, p1, p2, t2);
+
+                var B12 = Utilities.LerpBezierCurve(p0, p1, p3, t);
+                var B22 = Utilities.LerpBezierCurve(p0, p1, p3, t2);
+
+                if (i == 0)
+                {
+                    // Round start cap for first lines.
+                    ctx.DrawLine(B1, B2, lineColor, w, D2DDashStyle.Solid, D2DCapStyle.Round);
+                    ctx.DrawLine(B12, B22, lineColor, w, D2DDashStyle.Solid, D2DCapStyle.Round);
+                }
+                else
+                {
+                    ctx.DrawLine(B1, B2, lineColor, w);
+                    ctx.DrawLine(B12, B22, lineColor, w);
+                }
+            }
         }
 
         private void DrawClippedObjects(RenderContext ctx)

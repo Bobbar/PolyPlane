@@ -113,6 +113,7 @@ namespace PolyPlane.GameObjects
 
             var newEllipse = new D2DEllipse(newPos, new D2DSize(newRad, newRad));
             var newPart = new VaporPart(newEllipse, newColor, newVelo);
+            newPart.Owner = this.Owner;
 
             if (_parts.Count < MAX_PARTS)
                 _parts.Add(newPart);
@@ -186,8 +187,13 @@ namespace PolyPlane.GameObjects
             public override void Render(RenderContext ctx)
             {
                 base.Render(ctx);
+                const float MIN_VELO = 800f;
+                const float VELO_MOVE_AMT = 40f;
 
-                ctx.FillEllipse(_ellipse, Color);
+                // Move the ellipse backwards as velo increases.
+                var veloFact = Utilities.Factor(this.Owner.Velocity.Length() - MIN_VELO, MIN_VELO);
+                var ellip = new D2DEllipse(_ellipse.origin - Utilities.AngleToVectorDegrees(this.Owner.Rotation, VELO_MOVE_AMT * veloFact), new D2DSize(_ellipse.radiusX, _ellipse.radiusY));
+                ctx.FillEllipse(ellip, Color);
             }
         }
     }

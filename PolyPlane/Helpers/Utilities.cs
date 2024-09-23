@@ -96,6 +96,11 @@ namespace PolyPlane.Helpers
             return vec;
         }
 
+        public static D2DPoint LerpBezierCurve(D2DPoint p0, D2DPoint p1, D2DPoint p2, float t)
+        {
+            return ((1f - t) * (1f - t) * p0) + (2f * t * (1f - t) * p1) + (t * t * p2);
+        }
+
         public static D2DPoint AngleToVectorDegrees(float angle, float length = 1f)
         {
             var rads = angle * DEGREES_TO_RADS;
