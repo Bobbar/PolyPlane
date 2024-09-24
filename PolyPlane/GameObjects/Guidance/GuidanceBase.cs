@@ -186,6 +186,9 @@ namespace PolyPlane.GameObjects.Guidance
             {
                 var decoy = decoys[k];
 
+                if (decoy.IsExpired)
+                    continue;
+
                 if (decoy.Owner == this.Missile.Owner)
                     continue;
 

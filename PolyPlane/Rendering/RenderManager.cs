@@ -530,8 +530,8 @@ namespace PolyPlane.Rendering
             ctx.PushViewPort(viewPortRect);
 
             DrawGround(ctx, plane);
-            DrawGroundObjs(ctx, plane);
-            DrawGroundImpacts(ctx, plane);
+            DrawGroundObjs(ctx);
+            DrawGroundImpacts(ctx);
 
             _objs.MissileTrails.ForEach(o => o.Render(ctx));
             _contrailBox.Render(ctx);
@@ -834,7 +834,7 @@ namespace PolyPlane.Rendering
             ctx.Gfx.FillRectangle(new D2DRect(groundPos, new D2DSize(this.Width * World.ViewPortScaleMulti, (HEIGHT * 2f) / ctx.CurrentScale)), _groundBrush);
         }
 
-        private void DrawGroundImpacts(RenderContext ctx, FighterPlane plane)
+        private void DrawGroundImpacts(RenderContext ctx)
         {
             if (_groundClipLayer == null)
                 _groundClipLayer = ctx.Device.CreateLayer();
@@ -865,7 +865,7 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private void DrawGroundObjs(RenderContext ctx, FighterPlane plane)
+        private void DrawGroundObjs(RenderContext ctx)
         {
             var todColor = GetTimeOfDayColor();
 

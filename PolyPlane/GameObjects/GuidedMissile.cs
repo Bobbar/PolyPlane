@@ -193,7 +193,7 @@ namespace PolyPlane.GameObjects
                     RenderLength = 2.5f,
                     RenderWidth = 1f,
                     Area = 0.1f,
-                    MaxDeflection = 40f,
+                    MaxDeflection = 50f,
                     MaxLiftForce = 4500f * liftScale,
                     PivotPoint = new D2DPoint(-20f, 0f),
                     Position = new D2DPoint(-22f, 0f),
@@ -201,7 +201,7 @@ namespace PolyPlane.GameObjects
                     ParasiticDrag = 0.7f,
                     AOAFactor = 0.3f,
                     DeflectionRate = 30f,
-                    MaxAOA = 40f
+                    MaxAOA = 50f
                 });
 
                 _rocketBody = new Wing(this, new WingParameters()
@@ -211,7 +211,7 @@ namespace PolyPlane.GameObjects
                     MaxLiftForce = 500f * liftScale,
                     MinVelo = 600f,
                     ParasiticDrag = 0.4f,
-                    MaxAOA = 30f,
+                    MaxAOA = 40f,
                     AOAFactor = 0.2f
                 });
 
@@ -226,7 +226,7 @@ namespace PolyPlane.GameObjects
                     MinVelo = 600f,
                     ParasiticDrag = 0.4f,
                     AOAFactor = 0.2f,
-                    MaxAOA = 30f
+                    MaxAOA = 40f
                 });
             }
             else
@@ -305,8 +305,7 @@ namespace PolyPlane.GameObjects
                         const float NOSE_AUTH = 0f;
 
                         // Compute deflection.
-                        var veloAngle = this.Velocity.Angle();
-                        var nextDeflect = Utilities.ClampAngle180(guideRotation - veloAngle);
+                        var nextDeflect = Utilities.ClampAngle180(guideRotation - this.Rotation);
 
                         // Adjust the deflection as speed, rotation speed and AoA increases.
                         // This is to try to prevent over-rotation caused by thrust vectoring.

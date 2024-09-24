@@ -23,9 +23,8 @@ namespace PolyPlane.GameObjects.Guidance
             // Tweakables
             const float MAX_ROT_RATE = 1f; // Max rotation rate.
             const float MIN_ROT_RATE = 0.5f; // Min rotation rate.
-            const float MIN_ROT_SPEED = 1000f; // Speed at which rotation rate will be the smallest.
             const float ROT_MOD_DIST = 4000f; // Distance to begin increasing rotation rate. (Get more aggro the closer we get)
-            const float ROT_MOD_AMT = 0.8f; // Max amount to increase rot rate per above distance.
+            const float ROT_MOD_AMT = 1.2f;//0.8f; // Max amount to increase rot rate per above distance.
             const float IMPACT_POINT_DELTA_THRESH = 10f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
             const float MIN_CLOSE_RATE = 0.05f; // Min closing rate required to aim at predicted impact point.
             const float MIN_GUIDE_DIST = 200f; // Distance in which guidance is ignored and we aim directly at the target.
@@ -89,16 +88,11 @@ namespace PolyPlane.GameObjects.Guidance
             var veloNorm = D2DPoint.Normalize(this.Missile.Velocity);
             var rotAmt = Utilities.RadsToDegrees(aimDirection.Cross(veloNorm));
 
-            // Reduce rotation rate as velocity increases. Helps conserve inertia and reduce drag.
-            var veloFact = Utilities.Factor(missileVeloMag, MIN_ROT_SPEED);
-            var rotFact = Math.Clamp((MAX_ROT_RATE * (1f - veloFact)) + MIN_ROT_RATE, MIN_ROT_RATE, MAX_ROT_RATE);
-
             // Increase rotation rate modifier as we approach the target.
-            var rotMod = (1f - Utilities.FactorWithEasing(targDist, ROT_MOD_DIST, EasingFunctions.EaseInSine)) * ROT_MOD_AMT;
-            rotFact += rotMod;
+            var rotMod = 1f + (1f - Utilities.FactorWithEasing(targDist, ROT_MOD_DIST, EasingFunctions.EaseInSine)) * ROT_MOD_AMT;
 
             // Offset our current rotation from our current velocity vector to compute the next rotation.
-            var nextRot = missileVeloAngle + -(rotAmt * rotFact);
+            var nextRot = missileVeloAngle + -(rotAmt * rotMod);
 
             if (targDist < MIN_GUIDE_DIST)
                 nextRot = (targetPosition - this.Missile.Position).Angle();
