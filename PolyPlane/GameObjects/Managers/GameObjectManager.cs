@@ -20,6 +20,7 @@ namespace PolyPlane.GameObjects
         public List<GameObject> Explosions = new();
         public List<GameObject> Debris = new();
         public List<GameObject> Flames = new();
+        public List<GameObject> DummyObjs = new();
 
         public List<GroundImpact> GroundImpacts = new();
         public List<FighterPlane> Planes = new();
@@ -75,7 +76,8 @@ namespace PolyPlane.GameObjects
 
         public void EnqueueFlame(FlamePart flame)
         {
-            NewFlames.Enqueue(flame);
+            if (!World.IsServer)
+                NewFlames.Enqueue(flame);
         }
 
         public void EnqueueDebris(Debris debris)
@@ -168,7 +170,10 @@ namespace PolyPlane.GameObjects
             var obj = new DummyObject();
 
             if (!Contains(obj))
+            {
                 AddObject(obj);
+                DummyObjs.Add(obj);
+            }
 
             return obj;
         }
@@ -225,6 +230,7 @@ namespace PolyPlane.GameObjects
             Debris.Clear();
             Flames.ForEach(f => f.Dispose());
             Flames.Clear();
+            DummyObjs.Clear();
             NewDecoys.Clear();
             NewDebris.Clear();
             NewBullets.Clear();
@@ -343,6 +349,7 @@ namespace PolyPlane.GameObjects
             PruneExpired(Explosions, recordExpired: false);
             PruneExpired(Debris, recordExpired: false);
             PruneExpired(Flames, recordExpired: false);
+            PruneExpired(DummyObjs, recordExpired: false);
 
             // Prune planes.
             for (int i = Planes.Count - 1; i >= 0; i--)

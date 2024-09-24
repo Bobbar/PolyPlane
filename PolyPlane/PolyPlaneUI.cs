@@ -1,4 +1,3 @@
-using PolyPlane.AI_Behavior;
 using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Manager;
 using PolyPlane.Helpers;
@@ -171,9 +170,9 @@ namespace PolyPlane
                         World.IsNetGame = true;
                         World.IsServer = false;
 
-                        //InitPlane(config.PlaneColor, config.IsAI, config.PlayerName);
-
                         _playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
+                        World.ViewPlaneID = _playerPlane.ID;
+                        _objs.EnqueuePlane(_playerPlane);
 
                         _client = new ClientNetHost(config.Port, config.ServerIPAddress);
                         _netMan = new NetEventManager(_client, _playerPlane);
@@ -199,7 +198,6 @@ namespace PolyPlane
                         StartGameThread();
                         ResumeGame();
 
-                        World.ViewPlaneID = _playerPlane.ID;
 
 
                         result = true;
@@ -213,8 +211,9 @@ namespace PolyPlane
                         _collisions = new CollisionManager();
                         _collisions.ImpactEvent += HandleNewImpact;
 
-                        //InitPlane(config.PlaneColor, config.IsAI, config.PlayerName);
                         _playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
+                        World.ViewPlaneID = _playerPlane.ID;
+                        _objs.EnqueuePlane(_playerPlane);
 
                         InitGfx();
                         StartGameThread();
@@ -372,8 +371,6 @@ namespace PolyPlane
             };
 
             plane.DropDecoyCallback = DropDecoy;
-
-            _objs.EnqueuePlane(plane);
 
             return plane;
         }

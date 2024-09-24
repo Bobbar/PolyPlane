@@ -593,7 +593,12 @@ namespace PolyPlane.Net
                         if (netMissileTarget != null)
                         {
                             if (!netMissileTarget.Equals(netMissile.Target))
+                            {
+                                if (netMissile.Target != null && netMissile.Target is DummyObject)
+                                    netMissile.Target.IsExpired = true;
+
                                 netMissile.ChangeTarget(netMissileTarget);
+                            }
                         }
                     }
 
