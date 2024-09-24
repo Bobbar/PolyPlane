@@ -849,8 +849,15 @@ namespace PolyPlane.Rendering
                 {
                     if (ctx.Viewport.Contains(impact.Position))
                     {
-                        ctx.FillEllipse(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), _groundImpactOuterColor);
-                        ctx.FillEllipse(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), _groundImpactInnerColor);
+                        ctx.Gfx.PushTransform();
+
+                        ctx.Gfx.RotateTransform(impact.Angle, impact.Position);
+
+                        var ageAlpha = 1f - Utilities.FactorWithEasing(impact.Age, GroundImpact.MAX_AGE, EasingFunctions.EaseInExpo);
+                        ctx.FillEllipse(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), _groundImpactOuterColor.WithAlpha(ageAlpha));
+                        ctx.FillEllipse(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), _groundImpactInnerColor.WithAlpha(ageAlpha));
+
+                        ctx.Gfx.PopTransform();
                     }
                 }
 

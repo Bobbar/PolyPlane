@@ -15,6 +15,7 @@ namespace PolyPlane.GameObjects.Fixtures
             _plane = plane;
 
             _attachPoint = new FixturePoint(plane, position);
+            this.Position = _attachPoint.Position;
 
             _decoyTimer.StartCallback = DropDecoy;
             _decoyTimer.TriggerCallback = DropDecoy;
@@ -35,6 +36,8 @@ namespace PolyPlane.GameObjects.Fixtures
             {
                 _decoyTimer.Stop();
             }
+
+            this.Position = _attachPoint.Position;
         }
 
         private void DropDecoy()

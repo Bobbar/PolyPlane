@@ -582,7 +582,8 @@ namespace PolyPlane.GameObjects
             if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
                 ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
 
-            DrawShockwave(ctx);
+            if (!this.IsDisabled)
+                DrawShockwave(ctx);
 
             ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black.WithAlpha(0.3f), 0.5f, D2DDashStyle.Solid, _planeColor);
             DrawClippedObjects(ctx);

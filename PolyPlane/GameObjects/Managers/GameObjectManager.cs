@@ -13,8 +13,6 @@ namespace PolyPlane.GameObjects
     {
         public int TotalObjects = 0;
 
-        private const int MAX_GROUND_IMPACTS = 1000;
-
         public List<GameObject> Missiles = new();
         public List<GameObject> MissileTrails = new();
         public List<GameObject> Decoys = new();
@@ -192,12 +190,12 @@ namespace PolyPlane.GameObjects
                     if (explosion.Owner is Missile)
                     {
                         var missileRadius = Utilities.Rnd.NextFloat(23f, 27f);
-                        GroundImpacts.Add(new GroundImpact(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 8f)), new D2DSize(missileRadius, missileRadius)));
+                        GroundImpacts.Add(new GroundImpact(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 8f)), new D2DSize(missileRadius + 8f, missileRadius), explosion.Owner.Rotation));
                     }
                     else if (explosion.Owner is Bullet)
                     {
                         var bulletRadius = Utilities.Rnd.NextFloat(9f, 12f);
-                        GroundImpacts.Add(new GroundImpact(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 5f)), new D2DSize(bulletRadius, bulletRadius)));
+                        GroundImpacts.Add(new GroundImpact(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 5f)), new D2DSize(bulletRadius + 8f, bulletRadius), explosion.Owner.Rotation));
                     }
                 }
             }
@@ -303,6 +301,9 @@ namespace PolyPlane.GameObjects
                 var flames = Flames;
                 flames.ForEachParallel(o => o.Update(dt), _multiThreadNum);
             }
+
+            // Update ground impacts.
+            GroundImpacts.ForEach(i => i.Age += dt);
         }
 
         public bool Contains(GameObject obj)
@@ -343,6 +344,7 @@ namespace PolyPlane.GameObjects
             PruneExpired(Debris, recordExpired: false);
             PruneExpired(Flames, recordExpired: false);
 
+            // Prune planes.
             for (int i = Planes.Count - 1; i >= 0; i--)
             {
                 var plane = Planes[i];
@@ -360,8 +362,16 @@ namespace PolyPlane.GameObjects
 
             TotalObjects += Planes.Count;
 
-            if (GroundImpacts.Count > MAX_GROUND_IMPACTS)
-                GroundImpacts.RemoveAt(0);
+            // Prune ground impacts.
+            for (int i = GroundImpacts.Count - 1; i >= 0; i--)
+            {
+                var impact = GroundImpacts[i];
+
+                if (impact.Age > GroundImpact.MAX_AGE)
+                    GroundImpacts.RemoveAt(i);
+            }
+
+            TotalObjects += GroundImpacts.Count;
         }
 
         private void PruneExpired(List<GameObject> objs, bool recordExpired = true)
@@ -505,15 +515,20 @@ namespace PolyPlane.GameObjects
         public IEnumerable<GameObject> GetInViewport(D2DRect viewport) => _spatialGrid.GetInViewport(viewport);
     }
 
-    public struct GroundImpact
+    public class GroundImpact
     {
+        public const float MAX_AGE = 800f;
+
         public D2DPoint Position;
         public D2DSize Size;
+        public float Angle;
+        public float Age = 0f;
 
-        public GroundImpact(D2DPoint pos, D2DSize size)
+        public GroundImpact(D2DPoint pos, D2DSize size, float angle)
         {
             Position = pos;
             Size = size;
+            Angle = angle;
         }
     }
 }
