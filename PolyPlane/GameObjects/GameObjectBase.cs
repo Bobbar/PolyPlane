@@ -390,13 +390,6 @@ namespace PolyPlane.GameObjects
 
         public bool CollidesWithNet(GameObjectPoly obj, out D2DPoint pos, out GameObjectPacket? histState, double frameTime)
         {
-            if (obj.Owner == this)
-            {
-                pos = D2DPoint.Zero;
-                histState = null;
-                return false;
-            }
-
             var histPos = this.HistoryBuffer.GetHistoricalState(frameTime);
 
             if (histPos != null)
@@ -413,7 +406,7 @@ namespace PolyPlane.GameObjects
                         histPoly.FlipY();
                 }
 
-                if (CollisionHelpers.PolygonSweepCollision(obj, histPoly.Poly, histPos.Velocity, World.DT, out pos))
+                if (CollisionHelpers.PolygonSweepCollision(obj, histPoly, histPos.Velocity, World.DT, out pos))
                 {
                     histState = histPos;
                     return true;
@@ -434,24 +427,12 @@ namespace PolyPlane.GameObjects
 
         public bool CollidesWith(GameObjectPoly obj, out D2DPoint pos)
         {
-            if (obj.Owner == this)
-            {
-                pos = D2DPoint.Zero;
-                return false;
-            }
-
-            return CollisionHelpers.PolygonSweepCollision(obj, this, World.DT, out pos);
+            return CollisionHelpers.PolygonSweepCollision(obj, this.Polygon, this.Velocity, World.DT, out pos);
         }
 
         public bool CollidesWith(GameObject obj, out D2DPoint pos)
         {
-            if (obj.Owner == this)
-            {
-                pos = D2DPoint.Zero;
-                return false;
-            }
-
-            return CollisionHelpers.PolygonSweepCollision(obj, this.Polygon.Poly, this.Velocity, World.DT, out pos);
+            return CollisionHelpers.PolygonSweepCollision(obj, this.Polygon, this.Velocity, World.DT, out pos);
         }
 
         public void DrawVeloLines(D2DGraphics gfx, D2DColor color)

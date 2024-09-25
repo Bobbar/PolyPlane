@@ -36,6 +36,7 @@ namespace PolyPlane.GameObjects
         {
             base.FlipY();
             _rotOffset = Utilities.ClampAngle(_rotOffset * -1f);
+            this.Update(0f);
         }
 
         private D2DColor GetColor()

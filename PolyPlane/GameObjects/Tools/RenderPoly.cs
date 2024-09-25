@@ -113,6 +113,36 @@ namespace PolyPlane.GameObjects.Tools
         }
 
         /// <summary>
+        /// Returns a list of line segments representing the faces of the polygon which are facing the specified direction.
+        /// </summary>
+        /// <param name="direction">Angle in degrees.</param>
+        /// <param name="reverseTangent">True to invert normals. Depends on polygon direction. (CCW vs CW)</param>
+        /// <returns></returns>
+        public IEnumerable<LineSegment> GetSidesFacingDirection(float direction, bool reverseTangent = false)
+        {
+            const float FOV = 180f;
+
+            for (int i = 0; i < Poly.Length; i++)
+            {
+                var idx1 = Utilities.WrapIndex(i, Poly.Length);
+                var idx2 = Utilities.WrapIndex(i + 1, Poly.Length);
+
+                var pnt1 = Poly[idx1];
+                var pnt2 = Poly[idx2];
+
+                var dir = (pnt1 - pnt2);
+                var norm = dir.Tangent(reverseTangent ? this.IsFlipped : !this.IsFlipped);
+                var normAngle = norm.Angle();
+                var diff = Utilities.AngleDiff(direction, normAngle);
+
+                if (diff <= 90f)
+                {
+                    yield return new LineSegment(pnt1, pnt2);
+                }
+            }
+        }
+
+        /// <summary>
         /// Adds points between polygon points where the distance is greater than the specified amount.
         /// 
         /// Increases polygon resolution without changing the original shape.

@@ -1,5 +1,5 @@
 ﻿using PolyPlane.GameObjects;
-using System.Diagnostics;
+using PolyPlane.GameObjects.Tools;
 using System.Numerics;
 using unvell.D2DLib;
 
@@ -75,10 +75,8 @@ namespace PolyPlane.Helpers
             return p <= 1f;
         }
 
-        public static bool PolyIntersect(D2DPoint a, D2DPoint b, D2DPoint[] poly, out D2DPoint pos)
+        public static bool PolyIntersect(D2DPoint a, D2DPoint b, D2DPoint[] poly)
         {
-            var intersections = new List<D2DPoint>();
-
             for (int i = 0; i < poly.Length; i++)
             {
                 var idx1 = Utilities.WrapIndex(i, poly.Length);
@@ -88,28 +86,38 @@ namespace PolyPlane.Helpers
                 var pnt2 = poly[idx2];
 
                 if (IsIntersecting(a, b, pnt1, pnt2, out D2DPoint iPos))
-                {
-                    intersections.Add(iPos);
-                }
+                    return true;
             }
 
-            // Return the intersection closest to the first point.
-            if (intersections.Count > 0)
+            return false;
+        }
+
+        public static bool PolyIntersect(D2DPoint a, D2DPoint b, IEnumerable<LineSegment> segs, out D2DPoint pos)
+        {
+            foreach (var seg in segs)
             {
-                var best = intersections.OrderBy(i => i.DistanceTo(a));
-                pos = best.First();
-                return true;
+                if (IsIntersecting(a, b, seg.A, seg.B, out D2DPoint iPos))
+                {
+                    pos = iPos;
+                    return true;
+                }
             }
 
             pos = D2DPoint.Zero;
             return false;
         }
 
-        public static bool PolygonSweepCollision(GameObjectPoly impactorObj, GameObjectPoly targObj, float dt, out D2DPoint impactPoint)
+        public static bool PolygonSweepCollision(GameObjectPoly impactorObj, RenderPoly targetPoly, D2DPoint targetVelo, float dt, out D2DPoint impactPoint)
         {
+            // Sweep-based Continuous Collision Detection technique.
+            // Project lines from each polygon vert of the impactor; one point at the current position, and one point at the next/future position.
+            // Then for each of those lines, check for intersections on each line segment of the target object's polygon.
+
+            const float BB_INFLATE_AMT = 20f;
+
             // First, check if we need to move the impactor backwards because it is already inside the polygon.
             bool movedBack = false;
-            while (Utilities.PointInPoly(impactorObj.Position, targObj.Polygon.Poly))
+            while (Utilities.PointInPoly(impactorObj.Position, targetPoly.Poly))
             {
                 movedBack = true;
                 impactorObj.Position -= impactorObj.Velocity * World.SUB_DT;
@@ -126,22 +134,12 @@ namespace PolyPlane.Helpers
                 impactorObj.Polygon.Update();
             }
 
-            return PolygonSweepCollision(impactorObj, targObj.Polygon.Poly, targObj.Velocity, dt, out impactPoint);
-        }
-
-        public static bool PolygonSweepCollision(GameObjectPoly impactorObj, D2DPoint[] targPoly, D2DPoint targVelo, float dt, out D2DPoint impactPoint)
-        {
-            // Sweep-based Continuous Collision Detection technique.
-            // Project lines from each polygon vert of the impactor; one point at the current position, and one point at the next/future position.
-            // Then for each of those lines, check for intersections on each line segment of the target object's polygon.
-
-            const float BB_INFLATE_AMT = 20f;
-            var hits = new List<D2DPoint>();
-            var relVelo = (impactorObj.Velocity - targVelo) * dt; // Get relative velo.
+            // Now do the collisions.
+            var relVelo = (impactorObj.Velocity - targetVelo) * dt; // Get relative velo.
             var relVeloHalf = relVelo * 0.5f;
 
             var impactorPoly = impactorObj.Polygon.Poly;
-            var impactorBounds = new BoundingBox(impactorPoly, BB_INFLATE_AMT);
+            var targetBounds = new BoundingBox(targetPoly.Poly, BB_INFLATE_AMT);
 
             // For new bullets in net games, do a ray cast between the predicted "real" start position and the current position.
             // This is done because we are extrapolating the bullet position when a new packet is received,
@@ -154,9 +152,13 @@ namespace PolyPlane.Helpers
                     var lagPntEnd = impactorObj.Position;
 
                     // Check for intersection on bounding box first.
-                    if (PolyIntersect(lagPntStart, lagPntEnd, impactorBounds.BoundsPoly, out D2DPoint boundsPnt) || impactorBounds.Contains(lagPntStart, lagPntEnd, impactorObj.Position))
+                    if (PolyIntersect(lagPntStart, lagPntEnd, targetBounds.BoundsPoly) || targetBounds.Contains(lagPntStart, lagPntEnd, impactorObj.Position))
                     {
-                        if (PolyIntersect(lagPntStart, lagPntEnd, targPoly, out D2DPoint iPosLag))
+                        // Get the sides of the poly which face the impactor.
+                        var angle = (lagPntStart - lagPntEnd).Angle();
+                        var polyFaces = targetPoly.GetSidesFacingDirection(angle);
+
+                        if (PolyIntersect(lagPntStart, lagPntEnd, polyFaces, out D2DPoint iPosLag))
                         {
                             impactPoint = iPosLag;
                             return true;
@@ -164,7 +166,7 @@ namespace PolyPlane.Helpers
                     }
                 }
             }
-          
+
             // Test each point of the impactor with the target poly.
             for (int i = 0; i < impactorPoly.Length; i++)
             {
@@ -172,12 +174,17 @@ namespace PolyPlane.Helpers
                 var pnt2 = impactorPoly[i] + relVelo;
 
                 // Check for intersection on bounding box first.
-                if (PolyIntersect(pnt1, pnt2, impactorBounds.BoundsPoly, out D2DPoint boundsPnt) || impactorBounds.Contains(pnt1, pnt2, impactorObj.Position))
+                if (PolyIntersect(pnt1, pnt2, targetBounds.BoundsPoly) || targetBounds.Contains(pnt1, pnt2, impactorObj.Position))
                 {
+                    // Get the sides of the poly which face the impactor.
+                    var angle = (pnt1 - pnt2).Angle();
+                    var polyFaces = targetPoly.GetSidesFacingDirection(angle);
+
                     // Check for an intersection and get the exact location of the impact.
-                    if (PolyIntersect(pnt1, pnt2, targPoly, out D2DPoint iPosPoly))
+                    if (PolyIntersect(pnt1, pnt2, polyFaces, out D2DPoint iPosPoly))
                     {
-                        hits.Add(iPosPoly);
+                        impactPoint = iPosPoly;
+                        return true;
                     }
                 }
             }
@@ -187,56 +194,43 @@ namespace PolyPlane.Helpers
             var centerPnt2 = impactorObj.Position + relVelo;
 
             // Check for intersection on bounding box first.
-            if (PolyIntersect(centerPnt1, centerPnt2, impactorBounds.BoundsPoly, out D2DPoint boundsPntCenter) || impactorBounds.Contains(centerPnt1, centerPnt2))
+            if (PolyIntersect(centerPnt1, centerPnt2, targetBounds.BoundsPoly) || targetBounds.Contains(centerPnt1, centerPnt2))
             {
-                if (PolyIntersect(centerPnt1, centerPnt2, targPoly, out D2DPoint iPosCenter))
-                {
-                    hits.Add(iPosCenter);
-                }
-            }
+                // Get the sides of the poly which face the impactor.
+                var angle = (centerPnt1 - centerPnt2).Angle();
+                var polyFaces = targetPoly.GetSidesFacingDirection(angle);
 
-            if (hits.Count == 1)
-            {
-                impactPoint = hits.First();
-                return true;
-            }
-            else if (hits.Count > 1)  // If we have multiple hits, find the one closest to the impactor's previous position.
-            {
-                var closest = hits.OrderBy(p => p.DistanceTo(impactorObj.Position - relVelo));
-                impactPoint = closest.First();
-                return true;
+                // Check for an intersection and get the exact location of the impact.
+                if (PolyIntersect(centerPnt1, centerPnt2, polyFaces, out D2DPoint iPosPoly))
+                {
+                    impactPoint = iPosPoly;
+                    return true;
+                }
             }
 
             impactPoint = D2DPoint.Zero;
             return false;
         }
 
-        public static bool PolygonSweepCollision(GameObject impactorObj, D2DPoint[] targPoly, D2DPoint targVelo, float dt, out D2DPoint impactPoint)
+        public static bool PolygonSweepCollision(GameObject impactorObj, RenderPoly targetPoly, D2DPoint targVelo, float dt, out D2DPoint impactPoint)
         {
             // Sweep-based Continuous Collision Detection technique.
             // Project lines from each polygon vert of the impactor; one point at the current position, and one point at the next/future position.
             // Then for each of those lines, check for intersections on each line segment of the target object's polygon.
 
-            var hits = new List<D2DPoint>();
             var relVelo = (impactorObj.Velocity - targVelo) * dt; // Get relative velo.
 
             var centerPnt1 = impactorObj.Position;
             var centerPnt2 = impactorObj.Position + relVelo;
 
-            if (PolyIntersect(centerPnt1, centerPnt2, targPoly, out D2DPoint iPosCenter))
-            {
-                hits.Add(iPosCenter);
-            }
+            // Get the sides of the poly which face the impactor.
+            var angle = (centerPnt1 - centerPnt2).Angle();
+            var polyFaces = targetPoly.GetSidesFacingDirection(angle);
 
-            if (hits.Count == 1)
+            // Check for an intersection and get the exact location of the impact.
+            if (PolyIntersect(centerPnt1, centerPnt2, polyFaces, out D2DPoint iPosPoly))
             {
-                impactPoint = hits.First();
-                return true;
-            }
-            else if (hits.Count > 1)  // If we have multiple hits, find the one closest to the impactor's previous position.
-            {
-                var closest = hits.OrderBy(p => p.DistanceTo(impactorObj.Position - relVelo));
-                impactPoint = closest.First();
+                impactPoint = iPosPoly;
                 return true;
             }
 
