@@ -610,6 +610,8 @@ namespace PolyPlane.GameObjects
             // Compute speed factor and fiddle with dimensions, positions, line weight and color alpha.
             var speedFact = Utilities.FactorWithEasing(this.AirSpeedIndicated - MIN_VELO, MIN_VELO, EasingFunctions.EaseInSine);
 
+            // Increase width and height with speed,
+            // and add some wiggle from turbulence.
             var width = 40f;
             width += 30f * speedFact;
             width += 30f * World.Turbulence;
@@ -618,49 +620,74 @@ namespace PolyPlane.GameObjects
             height += 300f * speedFact;
             height += 30f * World.Turbulence;
 
+            // Increase the initial line thiccness
+            // and color alpha with speed and turbs.
             var lineWeight = 4f;
             lineWeight += 9f * speedFact * World.Turbulence;
 
-            var alpha = 0.8f * speedFact * World.Turbulence;
-            var pos = this.Position + Utilities.AngleToVectorDegrees(this.Rotation, 30f - (30f * speedFact));
+            var alpha = 0.8f;
+            alpha *= speedFact * World.Turbulence;
 
-            // Control points for beziers.
-            var startCenter = pos;
-            var rot = this.Velocity.Angle();
-            var endCenter = pos - Utilities.AngleToVectorDegrees(rot, width);
-            var endTop = endCenter - Utilities.AngleToVectorDegrees(rot - 90f, height);
-            var endBot = endCenter + Utilities.AngleToVectorDegrees(rot - 90f, height);
+            // ## Control points for beziers. ##
+
+            // Move center start point backwards with speed.
+            var startCenter = this.Position + Utilities.AngleToVectorDegrees(this.Rotation, 30f - (30f * speedFact));
+
+            // Reference angle for beziers.
+            var angle = this.Velocity.Angle();
+
+            // Compute the width vector and center end point.
+            var widthVec = Utilities.AngleToVectorDegrees(angle, width);
+            var endCenter = startCenter - widthVec;
+
+            // Computer the height/tangent vector and top/bot points.
+            var heightVec = Utilities.AngleToVectorDegrees(angle - 90f, height);
+            var endTop = endCenter - heightVec;
+            var endBot = endCenter + heightVec;
+
+            // Initial color.
             var color = D2DColor.White.WithAlpha(alpha);
 
             for (int i = 0; i < NUM_SEGS - 1; i++)
             {
+                // Current positions of curve segment.
                 var t = (float)i / (float)NUM_SEGS;
                 var t2 = (float)(i + 1) / (float)NUM_SEGS;
+
+                // Simple linear curve for line width, with some padding.
+                // It just looks better compared to any of the easing funcs.
                 var w = (lineWeight * (1f - t)) + 0.2f;
+
+                // Decrease alpha with position.
                 var a = alpha * EasingFunctions.EaseInSine(1f - t);
+
+                // Color of this segment.
                 var lineColor = color.WithAlpha(a);
 
+                // Control points for top and bottom beziers.
                 var p0 = startCenter;
                 var p1 = endCenter;
-                var p2 = endTop;
-                var p3 = endBot;
+                var p2Top = endTop;
+                var p2Bot = endBot;
 
-                var B1 = Utilities.LerpBezierCurve(p0, p1, p2, t);
-                var B2 = Utilities.LerpBezierCurve(p0, p1, p2, t2);
+                // Plot top and bottom line segment points.
+                var B1Top = Utilities.LerpBezierCurve(p0, p1, p2Top, t);
+                var B2Top = Utilities.LerpBezierCurve(p0, p1, p2Top, t2);
 
-                var B12 = Utilities.LerpBezierCurve(p0, p1, p3, t);
-                var B22 = Utilities.LerpBezierCurve(p0, p1, p3, t2);
+                var B1Bot = Utilities.LerpBezierCurve(p0, p1, p2Bot, t);
+                var B2Bot = Utilities.LerpBezierCurve(p0, p1, p2Bot, t2);
 
                 if (i == 0)
                 {
                     // Round start cap for first lines.
-                    ctx.DrawLine(B1, B2, lineColor, w, D2DDashStyle.Solid, D2DCapStyle.Round);
-                    ctx.DrawLine(B12, B22, lineColor, w, D2DDashStyle.Solid, D2DCapStyle.Round);
+                    // Try to keep corners hidden behind the plane poly.
+                    ctx.DrawLine(B1Top, B2Top, lineColor, w, D2DDashStyle.Solid, D2DCapStyle.Round);
+                    ctx.DrawLine(B1Bot, B2Bot, lineColor, w, D2DDashStyle.Solid, D2DCapStyle.Round);
                 }
                 else
                 {
-                    ctx.DrawLine(B1, B2, lineColor, w);
-                    ctx.DrawLine(B12, B22, lineColor, w);
+                    ctx.DrawLine(B1Top, B2Top, lineColor, w);
+                    ctx.DrawLine(B1Bot, B2Bot, lineColor, w);
                 }
             }
         }

@@ -96,6 +96,15 @@ namespace PolyPlane.Helpers
             return vec;
         }
 
+        /// <summary>
+        /// Computes a quadratic bezier point from the specified control points and position <paramref name="t"/>.
+        /// </summary>
+        /// <param name="p0"></param>
+        /// <param name="p1"></param>
+        /// <param name="p2"></param>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        // See: https://en.wikipedia.org/wiki/B%C3%A9zier_curve#Quadratic_B%C3%A9zier_curves
         public static D2DPoint LerpBezierCurve(D2DPoint p0, D2DPoint p1, D2DPoint p2, float t)
         {
             return ((1f - t) * (1f - t) * p0) + (2f * t * (1f - t) * p1) + (t * t * p2);
