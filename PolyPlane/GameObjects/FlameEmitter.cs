@@ -12,8 +12,8 @@ namespace PolyPlane.GameObjects
     {
         public float Radius { get; set; }
 
-        public const int MAX_PARTS = 50;
-        public const float MAX_AGE = 20f;
+        public const int MAX_PARTS = 75;
+        public const float MAX_AGE = 30f;
 
         public static readonly D2DColor DefaultFlameColor = new D2DColor(0.6f, D2DColor.Yellow);
         public static readonly D2DColor BlackSmokeColor = new D2DColor(0.6f, D2DColor.Black);
