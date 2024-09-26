@@ -1,10 +1,11 @@
-﻿using PolyPlane.GameObjects.Tools;
+﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.GameObjects.Tools;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects.Fixtures
 {
-    public sealed class Gun : GameObject
+    public sealed class Gun : GameObject, INoGameID
     {
         public Action<Bullet> FireBulletCallback;
         public bool MuzzleFlashOn = false;

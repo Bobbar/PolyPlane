@@ -117,7 +117,8 @@ namespace PolyPlane.GameObjects
 
         public GameObject()
         {
-            this.ID = new GameID(-1, World.GetNextObjectId());
+            if (this is not INoGameID)
+                this.ID = new GameID(-1, World.GetNextObjectId());
 
             if (World.IsNetGame && (this is FighterPlane || this is GuidedMissile))
             {

@@ -1,11 +1,12 @@
-﻿using PolyPlane.GameObjects.Tools;
+﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class SmokeTrail : GameObject
+    public class SmokeTrail : GameObject, INoGameID
     {
         private const int TRAIL_LEN = 400;
         private readonly float TRAIL_DIST = 40f;
@@ -22,7 +23,6 @@ namespace PolyPlane.GameObjects
 
         public SmokeTrail(GameObject obj, Func<GameObject, D2DPoint> positionSelector, float lineWeight) : base(obj)
         {
-            this.PlayerID = obj.PlayerID;
             _gameObject = obj;
             _timeOut.TriggerCallback = () => this.IsExpired = true;
             _posSelector = positionSelector;

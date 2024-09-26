@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects.Fixtures;
+using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
@@ -6,7 +7,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class GunSmoke : GameObject
+    public class GunSmoke : GameObject, INoGameID
     {
         private FixturePoint _refPos;
         private List<SmokePart> _parts = new List<SmokePart>();
@@ -118,7 +119,7 @@ namespace PolyPlane.GameObjects
         }
 
 
-        private class SmokePart : GameObject
+        private class SmokePart : GameObject, INoGameID
         {
             public D2DColor Color;
 

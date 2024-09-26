@@ -6,7 +6,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Debris : GameObjectPoly, ICollidable
+    public class Debris : GameObjectPoly, ICollidable, INoGameID
     {
         private D2DColor _color;
         private FlameEmitter _flame;
@@ -15,7 +15,6 @@ namespace PolyPlane.GameObjects
         public Debris(GameObject owner, D2DPoint pos, D2DPoint velo, D2DColor color) : base(pos, velo)
         {
             this.RenderOrder = 3;
-            this.PlayerID = owner.PlayerID;
             this.Owner = owner;
             _color = color;
             this.Polygon = new RenderPoly(this, RandomPoly(8, 12));

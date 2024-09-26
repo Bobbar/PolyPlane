@@ -241,7 +241,7 @@ namespace PolyPlane.GameObjects.Manager
 
                 foreach (var obj in nearObjs)
                 {
-                    if (obj.Equals(explosion))
+                    if (obj is Explosion)
                         continue;
 
                     if (obj is not ICollidable)
@@ -263,7 +263,7 @@ namespace PolyPlane.GameObjects.Manager
 
                         if (obj is FighterPlane plane && explosion.Owner is GuidedMissile missile)
                         {
-                            if (!missile.Owner.Equals(plane))
+                            if (!missile.Owner.Equals(plane) && !plane.IsDisabled)
                             {
                                 // Apply a small amount of damage to planes within the blast radius of the explosion.
                                 plane.Health -= (forceFact * DAMAGE_AMT) * World.DT;

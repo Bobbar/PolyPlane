@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects.Fixtures;
+using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
@@ -6,7 +7,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Vapor : GameObject
+    public class Vapor : GameObject, INoGameID
     {
         private FixturePoint _refPos;
         private List<VaporPart> _parts = new List<VaporPart>();
@@ -146,7 +147,7 @@ namespace PolyPlane.GameObjects
         }
 
 
-        private class VaporPart : GameObject
+        private class VaporPart : GameObject, INoGameID
         {
             public D2DColor Color;
 

@@ -52,13 +52,9 @@ namespace PolyPlane.GameObjects
             _multiThreadNum = Environment.ProcessorCount;
         }
 
-        public FlamePart RentFlamePart(int newPlayerId)
+        public FlamePart RentFlamePart()
         {
             var part = _flamePool.RentObject();
-
-            var newId = new GameID(newPlayerId, part.ID.ObjectID);
-            part.ID = newId;
-
             return part;
         }
 
@@ -121,7 +117,6 @@ namespace PolyPlane.GameObjects
                     return m.CenterOfThrust;
                 }, lineWeight: 2f);
 
-                AddObject(trail);
                 MissileTrails.Add(trail);
             }
         }
@@ -143,7 +138,6 @@ namespace PolyPlane.GameObjects
 
                 if (plane.IsAI)
                     NewPlayerEvent?.Invoke(this, plane);
-
 
                 // Add first plane as the initial view plane.
                 if (Planes.Count == 1)
@@ -420,10 +414,13 @@ namespace PolyPlane.GameObjects
 
         private void AddObject(GameObject obj)
         {
-            var hash = obj.ID.GetHashCode();
-            _objLookup.Add(hash, obj);
+            if (obj is not INoGameID)
+            {
+                var hash = obj.ID.GetHashCode();
+                _objLookup.Add(hash, obj);
+            }
 
-            // Add collidable objects to spatial lookup.
+            // Add collidable objects (and bullets) to spatial lookup.
             if (obj is ICollidable || obj is Bullet)
                 _spatialGrid.Add(obj);
         }
@@ -507,6 +504,7 @@ namespace PolyPlane.GameObjects
 
             _allObjects.Clear();
 
+            // Add objects from the lookup.
             foreach (var obj in _objLookup.Values)
             {
                 if (World.IsNetGame && obj.IsNetObject)
@@ -516,6 +514,12 @@ namespace PolyPlane.GameObjects
                 if (obj is not FighterPlane)
                     _allObjects.Add(obj);
             }
+
+            // Add other objects which are not in the lookup.
+            _allObjects.AddRange(MissileTrails);
+            _allObjects.AddRange(Debris);
+            _allObjects.AddRange(Explosions);
+
         }
 
         public IEnumerable<GameObject> GetNear(GameObject obj) => _spatialGrid.GetNear(obj);

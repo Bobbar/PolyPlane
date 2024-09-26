@@ -1,10 +1,11 @@
-﻿using PolyPlane.Helpers;
+﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects.Fixtures
 {
-    public class Wing : GameObject
+    public class Wing : GameObject, INoGameID
     {
         public WingParameters Parameters => _params;
 

@@ -1,8 +1,9 @@
-﻿using PolyPlane.GameObjects.Tools;
+﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.GameObjects.Tools;
 
 namespace PolyPlane.GameObjects.Fixtures
 {
-    public sealed class DecoyDispenser : GameObject
+    public sealed class DecoyDispenser : GameObject, INoGameID
     {
         public Action<Decoy> DropDecoyCallback;
 

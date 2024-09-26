@@ -1,10 +1,11 @@
-﻿using PolyPlane.Helpers;
+﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects.Fixtures
 {
-    public class FixturePoint : GameObject
+    public class FixturePoint : GameObject, INoGameID
     {
         public GameObject GameObject { get; private set; }
         public D2DPoint ReferencePosition { get; private set; }
@@ -19,7 +20,6 @@ namespace PolyPlane.GameObjects.Fixtures
         /// <param name="copyRotation">Copy current rotation from parent object on every update.  Otherwise set manually.</param>
         public FixturePoint(GameObject gameObject, D2DPoint referencePosition, bool copyRotation = true) : base(gameObject)
         {
-            this.PlayerID = gameObject.PlayerID;
             this.RenderScale = gameObject.RenderScale;
             _copyRotation = copyRotation;
 
