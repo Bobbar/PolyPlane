@@ -442,13 +442,16 @@ namespace PolyPlane.GameObjects
             var relVelo = this.Velocity * dt;
             var relVeloHalf = relVelo * 0.5f;
 
-            if (this is Bullet)
+            var targAngle = 0f;
+
+            if (this is Bullet || this is GuidedMissile)
             {
                 var nearest = World.ObjectManager.GetNear(this).Where(o => !o.ID.Equals(this.ID) && o is FighterPlane).OrderBy(o => o.Position.DistanceTo(this.Position)).FirstOrDefault();
                 if (nearest != null)
                 {
                     relVelo = (this.Velocity - nearest.Velocity) * dt;
                     relVeloHalf = relVelo * 0.5f;
+                    targAngle = relVelo.Angle();
                 }
             }
 
@@ -467,6 +470,15 @@ namespace PolyPlane.GameObjects
 
             if (this.AgeMs < (this.LagAmount * 2f))
                 gfx.DrawLine(lagPntStart, lagPntEnd, color);
+
+
+            var pnts = this.Polygon.GetPointsFacingDirection(targAngle);
+
+            foreach (var pnt in pnts)
+            {
+                gfx.FillEllipseSimple(pnt, 1f, D2DColor.Blue);
+            }
+
         }
 
         public virtual bool Contains(D2DPoint pnt)

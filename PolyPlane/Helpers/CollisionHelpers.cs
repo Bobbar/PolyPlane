@@ -135,10 +135,12 @@ namespace PolyPlane.Helpers
             }
 
             // Now do the collisions.
-            var relVelo = (impactorObj.Velocity - targetVelo) * dt; // Get relative velo.
+            // Get relative velo and angle.
+            var relVelo = (impactorObj.Velocity - targetVelo) * dt; 
             var relVeloHalf = relVelo * 0.5f;
+            var angleToTarget = relVelo.Angle();
 
-            var impactorPoly = impactorObj.Polygon.Poly;
+            // Bounding box for initial collision testing.
             var targetBounds = new BoundingBox(targetPoly.Poly, BB_INFLATE_AMT);
 
             // For new bullets in net games, do a ray cast between the predicted "real" start position and the current position.
@@ -167,18 +169,19 @@ namespace PolyPlane.Helpers
                 }
             }
 
-            // Test each point of the impactor with the target poly.
-            for (int i = 0; i < impactorPoly.Length; i++)
+            // Test the facing points of the impactor with the target poly.
+            var impactorPoints = impactorObj.Polygon.GetPointsFacingDirection(angleToTarget);
+            foreach (var pnt in impactorPoints)
             {
-                var pnt1 = impactorPoly[i];
-                var pnt2 = impactorPoly[i] + relVelo;
+                var pnt1 = pnt;
+                var pnt2 = pnt + relVelo;
 
                 // Check for intersection on bounding box first.
                 if (PolyIntersect(pnt1, pnt2, targetBounds.BoundsPoly) || targetBounds.Contains(pnt1, pnt2, impactorObj.Position))
                 {
                     // Get the sides of the poly which face the impactor.
-                    var angle = (pnt1 - pnt2).Angle();
-                    var polyFaces = targetPoly.GetSidesFacingDirection(angle);
+                    var angleToImpactor = (pnt1 - pnt2).Angle();
+                    var polyFaces = targetPoly.GetSidesFacingDirection(angleToImpactor);
 
                     // Check for an intersection and get the exact location of the impact.
                     if (PolyIntersect(pnt1, pnt2, polyFaces, out D2DPoint iPosPoly))

@@ -150,6 +150,43 @@ namespace PolyPlane.GameObjects.Tools
 
 
         /// <summary>
+        /// Returns a list of points for the faces of the polygon which are facing the specified direction.
+        /// </summary>
+        /// <param name="direction">Angle in degrees.</param>
+        /// <param name="reverseTangent">True to invert normals. Depends on polygon direction. (CCW vs CW)</param>
+        /// <returns></returns>
+        public IEnumerable<D2DPoint> GetPointsFacingDirection(float direction)
+        {
+            const float FACING_ANGLE = 90f;
+
+            // Determine if the polygon is clockwise or counter-clockwise.
+            bool clockwise = IsClockwise();
+
+            for (int i = 0; i < Poly.Length; i++)
+            {
+                var idx1 = Utilities.WrapIndex(i, Poly.Length);
+                var idx2 = Utilities.WrapIndex(i + 1, Poly.Length);
+
+                var pnt1 = Poly[idx1];
+                var pnt2 = Poly[idx2];
+
+                // Compute the normal of the current segment.
+                var dirNorm = (pnt1 - pnt2).Normalized();
+                var tangent = dirNorm.Tangent(clockwise: clockwise);  // Choose CW/CCW tangent as needed.
+                var tangentAngle = tangent.Angle();
+
+                // Compare the angle of the normal with the specified direction.
+                // If the difference is less than 90 degrees, we have a valid face.
+                var diff = Utilities.AngleDiff(direction, tangentAngle);
+                if (diff <= FACING_ANGLE)
+                {
+                    yield return pnt1;
+                }
+            }
+        }
+
+
+        /// <summary>
         /// Performs a polygon winding algorithm and returns true if the polygon is wound in the clockwise direction.
         /// </summary>
         /// <returns></returns>
