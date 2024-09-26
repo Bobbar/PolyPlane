@@ -157,8 +157,8 @@ namespace PolyPlane.Helpers
                     if (PolyIntersect(lagPntStart, lagPntEnd, targetBounds.BoundsPoly) || targetBounds.Contains(lagPntStart, lagPntEnd, impactorObj.Position))
                     {
                         // Get the sides of the poly which face the impactor.
-                        var angle = (lagPntStart - lagPntEnd).Angle();
-                        var polyFaces = targetPoly.GetSidesFacingDirection(angle);
+                        var angleToImpactor = (lagPntStart - lagPntEnd).Angle();
+                        var polyFaces = targetPoly.GetSidesFacingDirection(angleToImpactor);
 
                         if (PolyIntersect(lagPntStart, lagPntEnd, polyFaces, out D2DPoint iPosLag))
                         {
@@ -200,8 +200,8 @@ namespace PolyPlane.Helpers
             if (PolyIntersect(centerPnt1, centerPnt2, targetBounds.BoundsPoly) || targetBounds.Contains(centerPnt1, centerPnt2))
             {
                 // Get the sides of the poly which face the impactor.
-                var angle = (centerPnt1 - centerPnt2).Angle();
-                var polyFaces = targetPoly.GetSidesFacingDirection(angle);
+                var angleToImpactor = (centerPnt1 - centerPnt2).Angle();
+                var polyFaces = targetPoly.GetSidesFacingDirection(angleToImpactor);
 
                 // Check for an intersection and get the exact location of the impact.
                 if (PolyIntersect(centerPnt1, centerPnt2, polyFaces, out D2DPoint iPosPoly))
@@ -227,8 +227,8 @@ namespace PolyPlane.Helpers
             var centerPnt2 = impactorObj.Position + relVelo;
 
             // Get the sides of the poly which face the impactor.
-            var angle = (centerPnt1 - centerPnt2).Angle();
-            var polyFaces = targetPoly.GetSidesFacingDirection(angle);
+            var angleToImpactor = (centerPnt1 - centerPnt2).Angle();
+            var polyFaces = targetPoly.GetSidesFacingDirection(angleToImpactor);
 
             // Check for an intersection and get the exact location of the impact.
             if (PolyIntersect(centerPnt1, centerPnt2, polyFaces, out D2DPoint iPosPoly))

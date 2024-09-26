@@ -51,7 +51,7 @@ namespace PolyPlane.GameObjects.Manager
 
                 foreach (var obj in nearObjs)
                 {
-                    if (obj is Missile missile)
+                    if (obj is GuidedMissile missile)
                     {
                         var missileOwner = missile.Owner as FighterPlane;
 

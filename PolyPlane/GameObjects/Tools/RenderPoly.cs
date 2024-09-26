@@ -116,7 +116,6 @@ namespace PolyPlane.GameObjects.Tools
         /// Returns a list of line segments representing the faces of the polygon which are facing the specified direction.
         /// </summary>
         /// <param name="direction">Angle in degrees.</param>
-        /// <param name="reverseTangent">True to invert normals. Depends on polygon direction. (CCW vs CW)</param>
         /// <returns></returns>
         public IEnumerable<LineSegment> GetSidesFacingDirection(float direction)
         {
@@ -153,7 +152,6 @@ namespace PolyPlane.GameObjects.Tools
         /// Returns a list of points for the faces of the polygon which are facing the specified direction.
         /// </summary>
         /// <param name="direction">Angle in degrees.</param>
-        /// <param name="reverseTangent">True to invert normals. Depends on polygon direction. (CCW vs CW)</param>
         /// <returns></returns>
         public IEnumerable<D2DPoint> GetPointsFacingDirection(float direction)
         {

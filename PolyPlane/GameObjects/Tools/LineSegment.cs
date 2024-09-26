@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PolyPlane.GameObjects.Tools
 {
-    public class LineSegment
+    public struct LineSegment
     {
         public D2DPoint A;
         public D2DPoint B;
