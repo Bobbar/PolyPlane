@@ -118,9 +118,12 @@ namespace PolyPlane.GameObjects.Tools
         /// <param name="direction">Angle in degrees.</param>
         /// <param name="reverseTangent">True to invert normals. Depends on polygon direction. (CCW vs CW)</param>
         /// <returns></returns>
-        public IEnumerable<LineSegment> GetSidesFacingDirection(float direction, bool reverseTangent = false)
+        public IEnumerable<LineSegment> GetSidesFacingDirection(float direction)
         {
-            const float FOV = 180f;
+            const float FACING_ANGLE = 90f;
+
+            // Determine if the polygon is clockwise or counter-clockwise.
+            bool clockwise = IsClockwise(); 
 
             for (int i = 0; i < Poly.Length; i++)
             {
@@ -130,16 +133,47 @@ namespace PolyPlane.GameObjects.Tools
                 var pnt1 = Poly[idx1];
                 var pnt2 = Poly[idx2];
 
-                var dir = (pnt1 - pnt2);
-                var norm = dir.Tangent(reverseTangent ? this.IsFlipped : !this.IsFlipped);
-                var normAngle = norm.Angle();
-                var diff = Utilities.AngleDiff(direction, normAngle);
+                // Compute the normal of the current segment.
+                var dirNorm = (pnt1 - pnt2).Normalized();
+                var tangent = dirNorm.Tangent(clockwise: clockwise);  // Choose CW/CCW tangent as needed.
+                var tangentAngle = tangent.Angle();
 
-                if (diff <= 90f)
+                // Compare the angle of the normal with the specified direction.
+                // If the difference is less than 90 degrees, we have a valid face.
+                var diff = Utilities.AngleDiff(direction, tangentAngle);
+                if (diff <= FACING_ANGLE)
                 {
                     yield return new LineSegment(pnt1, pnt2);
                 }
             }
+        }
+
+
+        /// <summary>
+        /// Performs a polygon winding algorithm and returns true if the polygon is wound in the clockwise direction.
+        /// </summary>
+        /// <returns></returns>
+        /// <remarks>
+        /// Credit: https://stackoverflow.com/a/1165943/8581226
+        /// https://element84.com/software-engineering/web-development/determining-the-winding-of-a-polygon-given-as-a-set-of-ordered-points/
+        /// </remarks>
+        private bool IsClockwise()
+        {
+            float sum = 0f;
+
+            for (int i = 0; i < Poly.Length; i++)
+            {
+                var idx1 = Utilities.WrapIndex(i, Poly.Length);
+                var idx2 = Utilities.WrapIndex(i + 1, Poly.Length);
+
+                var pnt1 = Poly[idx1];
+                var pnt2 = Poly[idx2];
+
+                var edge = (pnt2.X - pnt1.X) * (pnt2.Y + pnt1.Y);
+                sum += edge;
+            }
+
+            return sum > 0f;
         }
 
         /// <summary>
