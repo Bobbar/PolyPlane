@@ -514,7 +514,7 @@ namespace PolyPlane.GameObjects
             return centroid;
         }
 
-        public static D2DPoint[] RandomPoly(int nPoints, int radius)
+        public static D2DPoint[] RandomPoly(int nPoints, float radius)
         {
             var rnd = Utilities.Rnd;
 
@@ -523,10 +523,10 @@ namespace PolyPlane.GameObjects
 
             for (int i = 0; i < nPoints; i++)
             {
-                dists[i] = rnd.Next(radius / 2, radius);
+                dists[i] = rnd.NextFloat(radius / 2f, radius);
             }
 
-            var radians = rnd.NextFloat(0.8f, 1.01f);
+            var radians = rnd.NextFloat(0.8f, 1f);
             var angle = 0f;
 
             for (int i = 0; i < nPoints; i++)
