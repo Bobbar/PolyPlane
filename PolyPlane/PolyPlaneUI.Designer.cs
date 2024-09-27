@@ -37,11 +37,12 @@
             // 
             RenderTarget.Dock = DockStyle.Fill;
             RenderTarget.Location = new Point(0, 0);
-            RenderTarget.Name = "renderTarget";
+            RenderTarget.Name = "RenderTarget";
             RenderTarget.Size = new Size(1008, 729);
             RenderTarget.TabIndex = 0;
             RenderTarget.TabStop = false;
             RenderTarget.MouseDown += RenderTarget_MouseDown;
+            RenderTarget.MouseMove += RenderTarget_MouseMove;
             // 
             // PolyPlaneUI
             // 

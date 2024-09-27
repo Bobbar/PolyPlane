@@ -32,6 +32,7 @@ namespace PolyPlane
         private float _holdAltitude = 0f;
 
         private D2DPoint _playerPlaneSlewPos = D2DPoint.Zero;
+        private D2DPoint _mousePosition = D2DPoint.Zero;
 
         private Stopwatch _timer = new Stopwatch();
         private TimeSpan _updateTime = new TimeSpan();
@@ -613,10 +614,8 @@ namespace PolyPlane
         private float GetPlayerGuidanceAngle()
         {
             // Poll current mouse position and apply offsets and scaling.
-            var mousePos = Control.MousePosition.ToD2DPoint();
-            var windowPos = this.DesktopLocation.ToD2DPoint();
-            var offsetPos = mousePos - windowPos;
-            var scaledPos = offsetPos * World.ViewPortScaleMulti;
+            var mousePos = _mousePosition;
+            var scaledPos = mousePos * World.ViewPortScaleMulti;
 
             // Get the scaled center point of the viewport.
             var center = new D2DPoint(World.ViewPortSize.width * 0.5f, World.ViewPortSize.height * 0.5f);
@@ -956,6 +955,11 @@ namespace PolyPlane
             {
                 this.Close();
             }
+        }
+
+        private void RenderTarget_MouseMove(object sender, MouseEventArgs e)
+        {
+            _mousePosition = e.Location.ToD2DPoint();
         }
     }
 }
