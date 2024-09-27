@@ -140,7 +140,7 @@ namespace PolyPlane.GameObjects.Tools
                 // Compare the angle of the normal with the specified direction.
                 // If the difference is less than 90 degrees, we have a valid face.
                 var diff = Utilities.AngleDiff(direction, tangentAngle);
-                if (diff <= FACING_ANGLE)
+                if (diff < FACING_ANGLE)
                 {
                     yield return new LineSegment(pnt1, pnt2);
                 }
@@ -176,7 +176,7 @@ namespace PolyPlane.GameObjects.Tools
                 // Compare the angle of the normal with the specified direction.
                 // If the difference is less than 90 degrees, we have a valid face.
                 var diff = Utilities.AngleDiff(direction, tangentAngle);
-                if (diff <= FACING_ANGLE)
+                if (diff < FACING_ANGLE)
                 {
                     yield return pnt1;
                 }

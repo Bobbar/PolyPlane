@@ -445,7 +445,7 @@ namespace PolyPlane.GameObjects
 
             var targAngle = 0f;
 
-            if (this is Bullet || this is GuidedMissile)
+            if (this is Bullet || this is GuidedMissile || this is FighterPlane)
             {
                 var nearest = World.ObjectManager.GetNear(this).Where(o => !o.ID.Equals(this.ID) && o is FighterPlane).OrderBy(o => o.Position.DistanceTo(this.Position)).FirstOrDefault();
                 if (nearest != null)
@@ -463,7 +463,7 @@ namespace PolyPlane.GameObjects
                 var veloPnt2 = pnt + relVelo;
 
 
-                gfx.DrawLine(veloPnt1, veloPnt2, color);
+                gfx.DrawLine(veloPnt1, veloPnt2, color, 0.5f);
             }
 
             var lagPntStart = this.Position - (this.Velocity * (float)((this.LagAmount / 16.6f) * World.DT));
