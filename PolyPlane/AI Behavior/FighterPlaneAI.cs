@@ -330,7 +330,7 @@ namespace PolyPlane.AI_Behavior
                 else if (diffTwo < diffOne)
                     angle = defendAngleTwo;
 
-                angle += patrolDir * 0.05f;
+                angle += patrolDir * 0.1f;
             }
 
             // Try to lead the target if we are firing a burst.

@@ -186,7 +186,7 @@ namespace PolyPlane.GameObjects
         {
             if (_useControlSurfaces)
             {
-                var liftScale = 0.8f;
+                var liftScale = 0.9f;
 
                 _tailWing = new Wing(this, new WingParameters()
                 {
@@ -305,7 +305,7 @@ namespace PolyPlane.GameObjects
                         const float NOSE_AUTH = 0f;
 
                         // Compute deflection.
-                        var nextDeflect = Utilities.ClampAngle180(guideRotation - this.Rotation);
+                        var nextDeflect = GetDeflectionAmount(guideRotation);
 
                         // Adjust the deflection as speed, rotation speed and AoA increases.
                         // This is to try to prevent over-rotation caused by thrust vectoring.
@@ -362,6 +362,21 @@ namespace PolyPlane.GameObjects
                 FlameOn = false;
 
             this.RecordHistory();
+        }
+
+        private float GetDeflectionAmount(float dir)
+        {
+            const float MIN_VELO = 400f; // Minimum velo before using rotation based calculation.
+            
+            // Lerp between velo and rotation based deflection amounts.
+            // Rotation works better a slow speeds.
+            var amtVelo = Utilities.ClampAngle180(dir - this.Velocity.Angle());
+            var amtRot = Utilities.ClampAngle180(dir - this.Rotation);
+            var veloLen = this.Velocity.Length();
+            var veloFact = Utilities.Factor(MIN_VELO, veloLen);
+            var amt = Utilities.Lerp(amtVelo, amtRot, veloFact);
+
+            return amt;
         }
 
         public override void NetUpdate(float dt, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
