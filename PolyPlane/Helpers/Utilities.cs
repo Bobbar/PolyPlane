@@ -408,31 +408,6 @@ namespace PolyPlane.Helpers
             return navTime;
         }
 
-        //public static float ImpactTime(FighterPlane plane, D2DPoint pos)
-        //{
-        //    var dist = plane.Position.DistanceTo(pos);
-        //    var navTime = ImpactTime(dist, plane.Velocity.Length(), 1f);
-        //    return navTime;
-        //}
-
-        //public static float ImpactTime(float dist, float velo, float accel)
-        //{
-        //    var finalVelo = (float)Math.Sqrt(Math.Pow(velo, 2f) + 2f * accel * dist);
-
-        //    return (finalVelo - velo) / accel;
-        //}
-
-        public static float ClosingRate(GameObject obj, D2DPoint pos, D2DPoint velo)
-        {
-            var nextPos1 = pos + velo;
-            var nextPos2 = obj.Position + obj.Velocity;
-
-            var curDist = pos.DistanceTo(obj.Position);
-            var nextDist = nextPos1.DistanceTo(nextPos2);
-
-            return curDist - nextDist;
-        }
-
         public static float ClosingRate(GameObject objA, GameObject objB)
         {
             var nextPos1 = objA.Position + objA.Velocity;
@@ -447,16 +422,9 @@ namespace PolyPlane.Helpers
         public static float GroundImpactTime(GameObject obj)
         {
             var groundPos = new D2DPoint(obj.Position.X, 0f);
-            var groundPos1 = new D2DPoint(obj.Position.X - 99999f, 0f);
-            var groundPos2 = new D2DPoint(obj.Position.X + 99999f, 0f);
-
-            //// Find where our current velocity vector intersects the ground.
-            //if (CollisionHelpers.IsIntersecting(obj.Position, obj.Position + obj.Velocity * 1000f, groundPos1, groundPos2, out D2DPoint iPos))
-            //    groundPos = iPos;
-
             var groundDist = obj.Position.DistanceTo(groundPos);
-            var closingRate = ClosingRate(obj, groundPos, D2DPoint.Zero);
-            var impactTime = groundDist / closingRate;
+            var vs = -obj.VerticalSpeed;
+            var impactTime = groundDist / vs;
 
             return impactTime;
         }
