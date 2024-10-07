@@ -146,7 +146,7 @@ namespace PolyPlane
         public const float MAX_ALTITUDE = 60000f; // Max density altitude.  (Air density drops to zero at this altitude)
         public const float MIN_TURB_ALT = 3000f; // Altitude below which turbulence is at maximum.
         public const float MAX_TURB_ALT = 20000f; // Max altitude at which turbulence decreases to zero.
-        private const float MIN_TURB = 0.7f;
+        private const float MIN_TURB = 0.85f;
         private const float MAX_TURB = 1f;
         private const float MAX_WIND_MAG = 100f;
         public const float AirDensity = 1.225f;
@@ -201,13 +201,12 @@ namespace PolyPlane
             return AirDensity * fact;
         }
 
-        public static D2DPoint GetTurbulenceVeloAltitude(D2DPoint position, D2DPoint velo)
+        public static float GetTurbulenceForAltitude(D2DPoint position)
         {
             var altOffset = Utilities.PositionToAltitude(position) - World.MIN_TURB_ALT; // Offset the altitude such that turbulence is always at max when below 3000.
             var turbAltFact = Utilities.FactorWithEasing(altOffset, World.MAX_TURB_ALT, EasingFunctions.EaseInCirc);
-            var turbVelo = Utilities.LerpPoints(velo * World.Turbulence, velo, turbAltFact);
-
-            return turbVelo;
+            var turb = Utilities.Lerp(World.Turbulence, 1f, turbAltFact);
+            return turb;
         }
 
         public static void UpdateViewport(Size viewPortSize)

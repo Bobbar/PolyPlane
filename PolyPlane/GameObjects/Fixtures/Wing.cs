@@ -123,6 +123,9 @@ namespace PolyPlane.GameObjects.Fixtures
             if (Velocity.Length() == 0f)
                 return D2DPoint.Zero;
 
+            // Get the current turbulence for this altitude.
+            var turbulence = World.GetTurbulenceForAltitude(this.Position);
+
             // Wing & air parameters.
             float AOA_FACT = _params.AOAFactor; // How much AoA effects drag.
             float VELO_FACT = _params.VeloFactor; // How much velocity effects drag.
@@ -137,9 +140,10 @@ namespace PolyPlane.GameObjects.Fixtures
             var velo = Velocity;
             velo += -World.Wind;
 
-            // Lerp in turbulence as altitude changes.
-            // Greater altitude = less turbulence.
-            velo = World.GetTurbulenceVeloAltitude(this.Position, velo);
+            // Add turbulence factor.
+            velo *= turbulence;
+            MAX_LIFT *= turbulence;
+            MAX_DRAG *= turbulence;
 
             var veloMag = velo.Length();
             var veloMagSq = Math.Pow(veloMag, 2f);

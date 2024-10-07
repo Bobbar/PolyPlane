@@ -1121,7 +1121,7 @@ namespace PolyPlane.GameObjects
             }
 
             // Apply turbulence.
-            hVelo = World.GetTurbulenceVeloAltitude(hole.Position, hVelo);
+            hVelo *= World.GetTurbulenceForAltitude(hole.Position);
 
             var hVeloNorm = hVelo.Normalized();
             var hVeloMag = hVelo.Length();
