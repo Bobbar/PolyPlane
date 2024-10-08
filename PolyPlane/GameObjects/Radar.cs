@@ -26,33 +26,24 @@ namespace PolyPlane.GameObjects
         private PingObj _aimedAtPingObj = null;
 
         private readonly float MIN_IMPACT_TIME = 20f; // Min time before defending.
-        private float SWEEP_FOV = 10f; // How wide the radar beam is?
-        private readonly float AIM_FOV = 10f; // How wide the radar beam is?
-        private readonly float SWEEP_RATE = 300f;
 
-        private float _sweepAngle = 0f;
         private float _maxRange = 60000f;
         private float _maxAge = 2f;
         private float _radius = 150f;
-        private bool _hostIsAI = false;
+        private long _currentFrame = 0;
+        private const long UPDATE_FRAMES = 10; // Number of frames between updates.
+
         private D2DColor _color = World.HudColor;
         private Dictionary<GameID, PingObj> _pings = new Dictionary<GameID, PingObj>();
 
         private GameTimer _lockTimer = new GameTimer(2f);
         private GameTimer _lostLockTimer = new GameTimer(10f);
-        private GameTimer _AIUpdateRate = new GameTimer(1f);
 
         private D2DLayer _groundClipLayer = null;
 
         public Radar(FighterPlane hostPlane)
         {
             HostPlane = hostPlane;
-
-            if (HostPlane.IsAI)
-            {
-                _hostIsAI = true;
-                _AIUpdateRate.Restart();
-            }
 
             _lockTimer.TriggerCallback = () =>
             {
@@ -64,38 +55,23 @@ namespace PolyPlane.GameObjects
 
         public void Update(float dt)
         {
-            // Increase sweep FOV as needed to ensure we don't skip over any objects?
-            if (SWEEP_RATE * World.DT > SWEEP_FOV)
-                SWEEP_FOV = SWEEP_RATE * World.DT * 1.2f;
-
             _lockTimer.Update(dt);
             _lostLockTimer.Update(dt);
-            _AIUpdateRate.Update(dt);
 
-            bool timeForUpdate = true;
-
-            if (_hostIsAI && _AIUpdateRate.IsRunning)
+            // Check all sources and add pings if they are within the FOV of the current sweep.
+            if (_currentFrame % UPDATE_FRAMES == 0)
             {
-                timeForUpdate = false;
-            }
-
-            if (timeForUpdate)
-            {
-                _sweepAngle += SWEEP_RATE * dt;
-                _sweepAngle = Utilities.ClampAngle(_sweepAngle);
-
-                // Check all sources and add pings if they are within the FOV of the current sweep.
-
                 foreach (var missile in World.ObjectManager.Missiles)
                     DoSweep(missile);
 
                 foreach (var plane in World.ObjectManager.Planes)
                     DoSweep(plane);
 
-                _AIUpdateRate.Restart();
+                CheckForLock();
             }
 
-
+            _currentFrame++;
+          
             PrunePings();
 
             foreach (var ping in _pings.Values)
@@ -103,7 +79,6 @@ namespace PolyPlane.GameObjects
                 ping.Update(dt);
             }
 
-            CheckForLock();
             NotifyLocks();
         }
 
@@ -118,38 +93,17 @@ namespace PolyPlane.GameObjects
             if (obj.Equals(HostPlane)) // Really needed?
                 return;
 
-            if (_hostIsAI)
-            {
-                var dist = HostPlane.Position.DistanceTo(obj.Position);
-                var angle = (HostPlane.Position - obj.Position).Angle();
-                var radDist = _radius / _maxRange * dist;
-                var radPos = D2DPoint.Zero - Utilities.AngleToVectorDegrees(angle, radDist);
+            var dist = HostPlane.Position.DistanceTo(obj.Position);
+            var angle = (HostPlane.Position - obj.Position).Angle();
+            var radDist = _radius / _maxRange * dist;
+            var radPos = D2DPoint.Zero - Utilities.AngleToVectorDegrees(angle, radDist);
 
-                if (dist > _maxRange)
-                    radPos = D2DPoint.Zero - Utilities.AngleToVectorDegrees(angle, _radius);
+            if (dist > _maxRange)
+                radPos = D2DPoint.Zero - Utilities.AngleToVectorDegrees(angle, _radius);
 
-                var pObj = new PingObj(obj, radPos);
+            var pObj = new PingObj(obj, radPos);
 
-                AddOrRefresh(pObj);
-            }
-            else
-            {
-                if (IsInFOV(obj, _sweepAngle, SWEEP_FOV))
-                {
-                    var dist = HostPlane.Position.DistanceTo(obj.Position);
-                    var angle = (HostPlane.Position - obj.Position).Angle();
-                    var radDist = _radius / _maxRange * dist;
-                    var radPos = D2DPoint.Zero - Utilities.AngleToVectorDegrees(angle, radDist);
-
-                    if (dist > _maxRange)
-                        radPos = D2DPoint.Zero - Utilities.AngleToVectorDegrees(angle, _radius);
-
-                    var pObj = new PingObj(obj, radPos);
-
-                    AddOrRefresh(pObj);
-                }
-            }
-
+            AddOrRefresh(pObj);
         }
 
         public void Render(RenderContext ctx)
@@ -183,10 +137,7 @@ namespace PolyPlane.GameObjects
                 }
             }
 
-            // Sweep line, direction line and FOV cone.
-            var sweepLine = Utilities.AngleToVectorDegrees(_sweepAngle, _radius);
-            gfx.DrawLine(D2DPoint.Zero, sweepLine, _color, 1f, D2DDashStyle.Dot);
-
+            // Direction line and FOV cone.
             DrawFOVCone(gfx, _color);
 
             // Draw crosshairs on aimed at obj.
@@ -439,25 +390,6 @@ namespace PolyPlane.GameObjects
                 nearest = first.Obj as GuidedMissile;
 
             return nearest;
-        }
-
-        private bool IsInFOV(GameObject obj, float sweepAngle, float fov)
-        {
-            var dir = obj.Position - HostPlane.Position;
-
-            var angle = dir.Angle();
-            var diff = Utilities.AngleDiff(sweepAngle, angle);
-
-            return diff <= fov * 0.5f;
-        }
-
-        private float FOVToSweep(GameObject obj)
-        {
-            var dir = obj.Position - Position;
-            var angle = dir.Angle();
-            var diff = Utilities.AngleDiff(_sweepAngle, angle);
-
-            return diff;
         }
 
         private void PrunePings()
