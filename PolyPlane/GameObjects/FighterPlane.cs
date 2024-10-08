@@ -506,13 +506,10 @@ namespace PolyPlane.GameObjects
                 }
             }
 
-            if (!Utilities.PointInPoly(_centerOfThrust.Position, this.Polygon.Poly))
+            if (this.ThrustOn && !Utilities.PointInPoly(_centerOfThrust.Position, this.Polygon.Poly))
             {
-                if (this.ThrustOn)
-                {
-                    this.ThrustOn = false;
-                    _thrustAmt.Set(0f);
-                }
+                this.ThrustOn = false;
+                _thrustAmt.Set(0f);
             }
 
             _gForce = _gforceAvg.Current;
