@@ -10,7 +10,6 @@ namespace PolyPlane.Rendering
     public sealed class ContrailBox
     {
         private const float MIN_ALT = 20000f;
-        private const float MAX_ALT = 70000f;
         private const float MAX_SEG_AGE = 60f;
         private const float ALPHA = 0.3f;
         private const float MIN_DIST = 40f;
@@ -179,7 +178,7 @@ namespace PolyPlane.Rendering
         /// <returns></returns>
         private bool IsInside(FighterPlane plane)
         {
-            return plane.Altitude >= MIN_ALT && plane.Altitude <= MAX_ALT;
+            return plane.Altitude >= MIN_ALT;
         }
 
         /// <summary>
