@@ -143,7 +143,7 @@ namespace PolyPlane
         private static float _zoomScale = 0.11f;
         public const float DEFAULT_DPI = 96f;
         public const float SENSOR_FOV = 60f; // TODO: Not sure this belongs here. Maybe make this unique based on missile/plane types and move it there.
-        public const float MAX_ALTITUDE = 60000f; // Max density altitude.  (Air density drops to zero at this altitude)
+        public const float MAX_ALTITUDE = 80000f; // Max density altitude.  (Air density drops to zero at this altitude)
         public const float MIN_TURB_ALT = 3000f; // Altitude below which turbulence is at maximum.
         public const float MAX_TURB_ALT = 20000f; // Max altitude at which turbulence decreases to zero.
         private const float MIN_TURB = 0.85f;
@@ -192,11 +192,11 @@ namespace PolyPlane
 
         public static float GetDensityAltitude(D2DPoint position)
         {
-            if (position.Y > 0)
+            if (position.Y > 0f)
                 return AirDensity;
 
             var alt = Math.Abs(position.Y);
-            var fact = 1f - Utilities.FactorWithEasing(alt, MAX_ALTITUDE, EasingFunctions.EaseInSine);
+            var fact = 1f - Utilities.FactorWithEasing(alt, MAX_ALTITUDE, EasingFunctions.EaseOutSine);
 
             return AirDensity * fact;
         }

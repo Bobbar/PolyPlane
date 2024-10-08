@@ -280,6 +280,8 @@ namespace PolyPlane.AI_Behavior
             const float MIN_IMPACT_TIME = 7f; // Min ground impact time to consider avoiding ground.
             const float BLOCK_PITCH_DOWN_ALT = 800f; // Do not allow pitch down angles below this altitude.
             const float EXTRA_AIM_AMT = 0.4f; // How much to pitch beyond the location of the target plane.  (Helps with dog-fighting)
+            const float MIN_VELO = 160f; // Min velo before trying to gain velocity;
+            const float OK_VELO = 210f; // Velo to stop trying to gain velocity.
 
             var patrolDir = Utilities.ClampAngle(Utilities.RadsToDegrees((float)Math.Sin(_sineWavePos)));
 
@@ -342,9 +344,9 @@ namespace PolyPlane.AI_Behavior
 
             // Level out if we get too slow.
             var velo = this.Plane.AirSpeedIndicated;
-            if (velo < 180f)
+            if (velo < MIN_VELO)
                 _gainingVelo = true;
-            else if (velo > 250f)
+            else if (velo > OK_VELO)
                 _gainingVelo = false;
 
             if (_gainingVelo)

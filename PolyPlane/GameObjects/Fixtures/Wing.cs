@@ -165,7 +165,7 @@ namespace PolyPlane.GameObjects.Fixtures
             // Drag force.
             var coeffDrag = 1f - Math.Cos(2f * aoaRads);
             var dragForce = coeffDrag * AOA_FACT * WING_AREA * 0.5f * AIR_DENSITY * veloMagSq * VELO_FACT;
-            dragForce += veloMag * (WING_AREA * PARASITIC_DRAG);
+            dragForce += veloMag * WING_AREA * PARASITIC_DRAG * AIR_DENSITY;
 
             // Factor for max AoA.
             // Clamp AoA to always allow a little bit a of lift.
