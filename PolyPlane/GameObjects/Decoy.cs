@@ -18,6 +18,7 @@ namespace PolyPlane.GameObjects
 
         public Decoy(FighterPlane owner, D2DPoint pos) : base(pos)
         {
+            this.Mass = 50f;
             this.PlayerID = owner.PlayerID;
             this.Owner = owner;
             this.Velocity = owner.Velocity;
@@ -39,6 +40,7 @@ namespace PolyPlane.GameObjects
 
         public Decoy(FighterPlane owner, D2DPoint pos, D2DPoint velo) : base(pos, velo)
         {
+            this.Mass = 50f;
             this.PlayerID = owner.PlayerID;
             this.Owner = owner;
             this.RenderOrder = 1;
