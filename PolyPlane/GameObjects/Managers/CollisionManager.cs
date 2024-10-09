@@ -229,7 +229,6 @@ namespace PolyPlane.GameObjects.Manager
         private void HandleExplosionImpulse()
         {
             const float FORCE = 250f;
-            const float EPSILON = 0.0001f;
             const float DAMAGE_AMT = 25f;
 
             foreach (Explosion explosion in _objs.Explosions)
@@ -247,7 +246,7 @@ namespace PolyPlane.GameObjects.Manager
                     if (obj is not ICollidable)
                         continue;
 
-                    var dist = explosion.Position.DistanceTo(obj.Position) + EPSILON;
+                    var dist = explosion.Position.DistanceTo(obj.Position) + float.Epsilon;
                     var effectRadius = explosion.Radius * 1.2f;
 
                     if (dist <= effectRadius)

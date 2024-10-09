@@ -31,7 +31,6 @@ namespace PolyPlane.AI_Behavior
         private float MIN_MISSILE_TIME = 40f;
         private float MAX_MISSILE_TIME = 80f;
         private float MAX_SPEED = 1000f;
-        private readonly float RUN_DISTANCE = 30000f; // How close before cowardly AI runs away.
         private readonly float MAX_DECOY_DIST = 20000f; // Max distance between missile and plane before dropping decoys.
 
 
@@ -142,7 +141,7 @@ namespace PolyPlane.AI_Behavior
                                 MAX_SPEED = 2000f;
                                 this.Plane.Thrust = 2000f;
                             }
-                           
+
                             break;
                     }
                 }
@@ -282,6 +281,8 @@ namespace PolyPlane.AI_Behavior
             const float EXTRA_AIM_AMT = 0.4f; // How much to pitch beyond the location of the target plane.  (Helps with dog-fighting)
             const float MIN_VELO = 160f; // Min velo before trying to gain velocity;
             const float OK_VELO = 210f; // Velo to stop trying to gain velocity.
+            const float RUN_DISTANCE = 30000f; // Cowardly IA: How close before we run away from the target plane.
+            const float FIGHT_DISTANCE = 4000f; // Cowardly IA: If the target is closer than this, engage and fight them.
 
             var patrolDir = Utilities.ClampAngle(Utilities.RadsToDegrees((float)Math.Sin(_sineWavePos)));
 
@@ -293,18 +294,22 @@ namespace PolyPlane.AI_Behavior
 
             if (TargetPlane != null)
             {
-                var dirToPlayer = TargetPlane.Position - this.Plane.Position;
+                var dirToTarget = TargetPlane.Position - this.Plane.Position;
+                var distToTarget = this.Plane.Position.DistanceTo(TargetPlane.Position);
 
-                // Fly away from target plane?
-                if ((this.Personality & AIPersonality.Cowardly) == AIPersonality.Cowardly && this.Plane.Position.DistanceTo(TargetPlane.Position) < RUN_DISTANCE)
+                if ((this.Personality & AIPersonality.Cowardly) == AIPersonality.Cowardly)
                 {
-                    dirToPlayer *= -1f;
-                    angle = dirToPlayer.Angle();
-                    angle += patrolDir * 0.2f; // Incorporate a small amount of the sine wave so we 'bob & weave' a little bit.
+                    // Fly away from target plane.
+                    if (distToTarget < RUN_DISTANCE && distToTarget > FIGHT_DISTANCE)
+                    {
+                        dirToTarget *= -1f;
+                        angle = dirToTarget.Angle();
+                        angle += patrolDir * 0.2f; // Incorporate a small amount of the sine wave so we 'bob & weave' a little bit.
+                    }
                 }
-                else
+                else // Fly towards target plane.
                 {
-                    angle = dirToPlayer.Angle();
+                    angle = dirToTarget.Angle();
 
                     // Add additional pitch. Helps increase agro while dog-fighting.
                     var rotAmt = Utilities.RadsToDegrees((this.Plane.Position - TargetPlane.Position).Normalized().Cross(Utilities.AngleToVectorDegrees(this.Plane.Rotation)));
@@ -312,10 +317,11 @@ namespace PolyPlane.AI_Behavior
                 }
             }
 
-            // Run away from missile?
+            // Fly away from missile?
             if (_isDefending)
             {
-                // Compute two tangential angles and choose the one closest to the current rotation.
+                // Compute two tangential angles and choose the one closest
+                // to the current rotation to try to maintain as much speed as possible.
                 // We basically try to fly away and slightly perpendicular to the direction of the incoming missile.
 
                 var angleAwayFromThreat = (this.Plane.Position - _threatPosition).Angle();
@@ -342,13 +348,14 @@ namespace PolyPlane.AI_Behavior
                 angle = aimAmt;
             }
 
-            // Level out if we get too slow.
+            // Do we need to gain velocity?
             var velo = this.Plane.AirSpeedIndicated;
             if (velo < MIN_VELO)
                 _gainingVelo = true;
             else if (velo > OK_VELO)
                 _gainingVelo = false;
 
+            // Pitch down to gain velo.
             if (_gainingVelo)
                 angle = Utilities.MaintainAltitudeAngle(this.Plane, this.Plane.Altitude - 200f);
 

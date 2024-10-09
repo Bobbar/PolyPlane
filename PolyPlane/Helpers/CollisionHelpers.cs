@@ -59,10 +59,9 @@ namespace PolyPlane.Helpers
             return false;
         }
 
-        private const float Epsilon = 1e-10f;
         private static bool IsZero(this float value)
         {
-            return Math.Abs(value) < Epsilon;
+            return Math.Abs(value) < float.Epsilon;
         }
 
         public static bool EllipseContains(D2DEllipse ellipse, float ellipseRotation, D2DPoint pos)
