@@ -24,6 +24,7 @@ namespace PolyPlane.GameObjects
         {
             _ellipse = new D2DEllipse();
             this.RenderOrder = 0;
+            this.Mass = 30f;
         }
 
         public void ReInit(D2DPoint pos, float radius, D2DColor endColor, D2DPoint velo)

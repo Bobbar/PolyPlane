@@ -25,7 +25,7 @@ namespace PolyPlane.GameObjects
 
         public float TotalMass
         {
-            get { return MASS + _currentFuel; }
+            get { return this.Mass + _currentFuel; }
 
         }
 
@@ -47,7 +47,6 @@ namespace PolyPlane.GameObjects
         private readonly float LIFESPAN = 70f;
         private readonly float BURN_RATE = 0.85f;
         private readonly float THRUST = 2500f;
-        private readonly float MASS = 22.5f;
         private readonly float FUEL = 10f;
 
         private float Inertia
@@ -156,6 +155,7 @@ namespace PolyPlane.GameObjects
 
         private void InitStuff()
         {
+            this.Mass = 22.5f;
             this.RenderScale = 0.9f;
             this.RenderOrder = 2;
 
@@ -501,7 +501,7 @@ namespace PolyPlane.GameObjects
 
         private D2DPoint GetCenterOfGravity()
         {
-            var cm = (MASS * _warheadCenterMass.Position + _currentFuel * _motorCenterMass.Position) / (MASS + _currentFuel);
+            var cm = (this.Mass * _warheadCenterMass.Position + _currentFuel * _motorCenterMass.Position) / (this.Mass + _currentFuel);
             return cm;
         }
 

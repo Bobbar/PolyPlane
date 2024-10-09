@@ -228,7 +228,7 @@ namespace PolyPlane.GameObjects.Manager
 
         private void HandleExplosionImpulse()
         {
-            const float FORCE = 250f;
+            const float FORCE = 50000f;
             const float DAMAGE_AMT = 25f;
 
             foreach (Explosion explosion in _objs.Explosions)
@@ -252,10 +252,20 @@ namespace PolyPlane.GameObjects.Manager
                     if (dist <= effectRadius)
                     {
                         // Impart an impulse on other nearby objects.
-                        var forceFact = Utilities.FactorWithEasing(dist, effectRadius, EasingFunctions.EaseOutExpo);
-                        var dir = (obj.Position - explosion.Position).Normalized();
-                        var forceVec = dir * (FORCE * forceFact);
-                        obj.Velocity += forceVec * World.DT;
+                        var forceFact = 1f - Utilities.FactorWithEasing(dist, effectRadius, EasingFunctions.EaseOutCirc) + 0.1f;
+
+                        var dir = (obj.Position - explosion.Position);
+                        var dirNorm = D2DPoint.Zero;
+
+                        // Make sure there is separation between the object and the explosion.
+                        // Otherwise we will get a NaN.
+                        if (dir.Length() > 0f)
+                        {
+                            dirNorm = dir.Normalized();
+                        }
+
+                        var forceVec = dirNorm * (FORCE * forceFact);
+                        obj.Velocity += forceVec / obj.Mass * World.DT;
 
                         if (!obj.IsAwake)
                             obj.IsAwake = true;

@@ -125,11 +125,10 @@ namespace PolyPlane.GameObjects
         private Direction _currentDir = Direction.Right;
         private Direction _queuedDir = Direction.Right;
         private bool _isAIPlane = false;
-        private readonly float MASS = 90f;
 
         private float Inertia
         {
-            get { return MASS * 20f; }
+            get { return this.Mass * 20f; }
         }
 
         private GameTimer _flipTimer = new GameTimer(2f);
@@ -259,6 +258,7 @@ namespace PolyPlane.GameObjects
         {
             this.Radar = new Radar(this);
 
+            this.Mass = 90f;
             this.RenderScale = 1.5f;
             this.RenderOrder = 5;
 
@@ -477,13 +477,13 @@ namespace PolyPlane.GameObjects
                     var rotAmt = ((wingTorque + thrustTorque + damageTorque) * easeFact) / this.Inertia;
 
                     this.RotationSpeed += rotAmt * partialDT;
-                    this.Velocity += (thrust * easeFact) / this.MASS * partialDT;
-                    this.Velocity += (wingForce * easeFact) / this.MASS * partialDT;
-                    this.Velocity += (damageForce * easeFact) / this.MASS * partialDT;
+                    this.Velocity += (thrust * easeFact) / this.Mass * partialDT;
+                    this.Velocity += (wingForce * easeFact) / this.Mass * partialDT;
+                    this.Velocity += (damageForce * easeFact) / this.Mass * partialDT;
                     this.Velocity += (World.Gravity * partialDT);
                 }
 
-                var totForce = (thrust / this.MASS * partialDT) + (wingForce / this.MASS * partialDT);
+                var totForce = (thrust / this.Mass * partialDT) + (wingForce / this.Mass * partialDT);
                 var gforce = totForce.Length() / partialDT / World.Gravity.Y;
                 _gforceAvg.Add(gforce);
 
@@ -949,7 +949,7 @@ namespace PolyPlane.GameObjects
             var impactTq = GetTorque(impactPos, forceVec);
 
             this.RotationSpeed += (float)(impactTq / this.Inertia * World.DT);
-            this.Velocity += forceVec / this.MASS * World.DT;
+            this.Velocity += forceVec / this.Mass * World.DT;
         }
 
         public PlaneImpactResult GetImpactResult(GameObject impactor, D2DPoint impactPos)

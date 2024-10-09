@@ -14,6 +14,7 @@ namespace PolyPlane.GameObjects
 
         public Debris(GameObject owner, D2DPoint pos, D2DPoint velo, D2DColor color) : base(pos, velo)
         {
+            this.Mass = 40f;
             this.RenderOrder = 3;
             this.Owner = owner;
             _color = color;

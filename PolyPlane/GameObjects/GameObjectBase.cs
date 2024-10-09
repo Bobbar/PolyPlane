@@ -19,6 +19,8 @@ namespace PolyPlane.GameObjects
 
         public D2DPoint Velocity { get; set; }
 
+        public float Mass { get; set; } = 1f;
+
         public virtual float Rotation
         {
             get { return _rotation; }
@@ -249,6 +251,10 @@ namespace PolyPlane.GameObjects
             }
             else
             {
+                // Let explosions spawn below ground.
+                if (this is Explosion)
+                    return;
+
                 // Clamp all other objects to ground level.
                 if (this.Altitude <= 0f)
                 {
