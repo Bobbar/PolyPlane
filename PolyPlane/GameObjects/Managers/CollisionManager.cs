@@ -27,6 +27,7 @@ namespace PolyPlane.GameObjects.Manager
         {
             if (_netMan != null && !_netMan.IsServer)
             {
+                HandleExplosionImpulse();
                 HandleGroundImpacts();
                 HandleFieldWrap();
                 return;
@@ -240,6 +241,9 @@ namespace PolyPlane.GameObjects.Manager
 
                 foreach (var obj in nearObjs)
                 {
+                    if (obj.IsNetObject)
+                        continue;
+
                     if (obj is Explosion)
                         continue;
 

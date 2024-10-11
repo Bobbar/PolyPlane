@@ -655,6 +655,7 @@ namespace PolyPlane.Net
         private void DoNewBullet(GameObjectPacket bulletPacket)
         {
             var bullet = new Bullet(bulletPacket.Position, bulletPacket.Velocity, bulletPacket.Rotation);
+            bullet.IsNetObject = true;
             bullet.ID = bulletPacket.ID;
 
             bulletPacket.SyncObj(bullet);
@@ -701,7 +702,9 @@ namespace PolyPlane.Net
             if (decoyOwner != null)
             {
                 var decoy = new Decoy(decoyOwner, decoyOwner.ExhaustPosition, decoyPacket.Velocity);
+                decoy.IsNetObject = true;
                 decoy.ID = decoyPacket.ID;
+
                 decoyPacket.SyncObj(decoy);
 
                 _objs.EnqueueDecoy(decoy);

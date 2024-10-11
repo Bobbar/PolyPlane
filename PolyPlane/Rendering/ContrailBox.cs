@@ -140,6 +140,10 @@ namespace PolyPlane.Rendering
                 var alpha = ALPHA * altFact;
                 var color = _trailColor.WithAlpha(alpha);
 
+                var dist = tag.PrevPos.DistanceTo(plane.ExhaustPosition);
+                if (dist > MIN_DIST * 3f)
+                    continue;
+
                 if (IsInside(plane) && plane.ThrustAmount > 0f && IsNotInSpace(plane) && !plane.IsDisabled)
                     ctx.DrawLine(tag.PrevPos, plane.ExhaustPosition, color, TRAIL_WEIGHT);
             }
