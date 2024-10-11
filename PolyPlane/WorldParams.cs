@@ -116,7 +116,7 @@ namespace PolyPlane
         public static bool ShowLeadIndicators = true;
         public static bool ShowAero = false;
         public static bool ShowTracking = false;
-        public static bool ShowAITags = true;//false;
+        public static bool ShowAITags = false;
         public static bool EnableWind = false;
         public static bool EnableTurbulence = true;
         public static bool ExpireMissilesOnMiss = false;
