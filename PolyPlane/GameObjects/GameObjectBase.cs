@@ -375,6 +375,9 @@ namespace PolyPlane.GameObjects
         public override void FlipY()
         {
             base.FlipY();
+
+            if (Polygon != null)
+                Polygon.FlipY();
         }
 
         /// <summary>

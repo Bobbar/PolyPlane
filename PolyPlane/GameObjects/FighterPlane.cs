@@ -1151,8 +1151,8 @@ namespace PolyPlane.GameObjects
             if (_currentDir == _queuedDir || this.HasCrashed || this.IsDisabled)
                 return;
 
-            this.Polygon.FlipY();
-            this.Polygon.Update();
+            this.FlipY();
+
             Wings.ForEach(w => w.FlipY());
             Wings.ForEach(w => w.Update(World.SUB_DT));
             _vaporTrails.ForEach(v => v.FlipY());

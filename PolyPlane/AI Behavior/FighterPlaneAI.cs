@@ -297,18 +297,16 @@ namespace PolyPlane.AI_Behavior
                 var dirToTarget = TargetPlane.Position - this.Plane.Position;
                 var distToTarget = this.Plane.Position.DistanceTo(TargetPlane.Position);
 
-                if ((this.Personality & AIPersonality.Cowardly) == AIPersonality.Cowardly)
+                if ((this.Personality & AIPersonality.Cowardly) == AIPersonality.Cowardly && distToTarget < RUN_DISTANCE && distToTarget > FIGHT_DISTANCE)
                 {
                     // Fly away from target plane.
-                    if (distToTarget < RUN_DISTANCE && distToTarget > FIGHT_DISTANCE)
-                    {
-                        dirToTarget *= -1f;
-                        angle = dirToTarget.Angle();
-                        angle += patrolDir * 0.2f; // Incorporate a small amount of the sine wave so we 'bob & weave' a little bit.
-                    }
+                    dirToTarget *= -1f;
+                    angle = dirToTarget.Angle();
+                    angle += patrolDir * 0.2f; // Incorporate a small amount of the sine wave so we 'bob & weave' a little bit.
                 }
-                else // Fly towards target plane.
+                else 
                 {
+                    // Fly towards target plane.
                     angle = dirToTarget.Angle();
 
                     // Add additional pitch. Helps increase agro while dog-fighting.

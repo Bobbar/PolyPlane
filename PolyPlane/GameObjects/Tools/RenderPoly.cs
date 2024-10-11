@@ -263,6 +263,8 @@ namespace PolyPlane.GameObjects.Tools
             {
                 SourcePoly[i].Y = -SourcePoly[i].Y;
             }
+
+            this.Update();
         }
 
         public void Update(D2DPoint pos, float rotation, float scale)
