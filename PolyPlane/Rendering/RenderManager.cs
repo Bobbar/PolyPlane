@@ -1663,7 +1663,6 @@ namespace PolyPlane.Rendering
                 infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
                 infoText += $"HUD Scale: {_hudScale}\n";
                 infoText += $"DT: {Math.Round(World.DT, 4)}\n";
-                infoText += $"AutoPilot: {(viewplane.AutoPilotOn ? "On" : "Off")}\n";
                 infoText += $"Position: {viewplane?.Position}\n";
                 infoText += $"Kills: {viewplane.Kills}\n";
                 infoText += $"Bullets (Fired/Hit): ({viewplane.BulletsFired} / {viewplane.BulletsHit}) \n";

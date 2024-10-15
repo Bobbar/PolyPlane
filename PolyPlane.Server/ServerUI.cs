@@ -413,14 +413,12 @@ namespace PolyPlane.Server
         {
             _netMan.SendPlaneReset(plane);
 
-            plane.AutoPilotOn = true;
             plane.ThrustOn = true;
             plane.Position = Utilities.FindSafeSpawnPoint(_objs, plane);
             plane.Velocity = new D2DPoint(500f, 0f);
             plane.SyncFixtures();
             plane.RotationSpeed = 0f;
             plane.Rotation = 0f;
-            //plane.SASOn = true;
             plane.IsDisabled = false;
             plane.FixPlane();
         }

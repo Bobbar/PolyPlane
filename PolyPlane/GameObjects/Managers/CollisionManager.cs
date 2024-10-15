@@ -259,15 +259,7 @@ namespace PolyPlane.GameObjects.Manager
                         var forceFact = 1f - Utilities.FactorWithEasing(dist, effectRadius, EasingFunctions.EaseOutCirc) + 0.1f;
 
                         var dir = (obj.Position - explosion.Position);
-                        var dirNorm = D2DPoint.Zero;
-
-                        // Make sure there is separation between the object and the explosion.
-                        // Otherwise we will get a NaN.
-                        if (dir.Length() > 0f)
-                        {
-                            dirNorm = dir.Normalized();
-                        }
-
+                        var dirNorm = dir.Normalized();
                         var forceVec = dirNorm * (FORCE * forceFact);
                         obj.Velocity += forceVec / obj.Mass * World.DT;
 

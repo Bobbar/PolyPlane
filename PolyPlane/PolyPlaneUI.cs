@@ -347,7 +347,6 @@ namespace PolyPlane
             if (isAI && World.ShowAITags)
                 plane.PlayerName += $" [{Utilities.GetPersonalityTag(plane.Personality)}]";
 
-            plane.AutoPilotOn = true;
             plane.ThrustOn = true;
             plane.Velocity = new D2DPoint(500f, 0f);
 
@@ -378,7 +377,6 @@ namespace PolyPlane
 
         private void ResetAIPlane(FighterPlane plane)
         {
-            plane.AutoPilotOn = true;
             plane.ThrustOn = true;
             plane.Position = Utilities.FindSafeSpawnPoint(_objs, plane);
             plane.Velocity = new D2DPoint(500f, 0f);
@@ -398,7 +396,6 @@ namespace PolyPlane
             if (World.IsNetGame)
                 SendPlayerReset();
 
-            _playerPlane.AutoPilotOn = true;
             _playerPlane.ThrustOn = true;
             _playerPlane.Position = Utilities.FindSafeSpawnPoint(_objs, _playerPlane);
 
@@ -622,7 +619,7 @@ namespace PolyPlane
             center /= World.DEFAULT_DPI / (float)this.DeviceDpi; // Scale for DPI.
 
             // Compute angle from center and update guidance.
-            var angle = center.AngleTo(scaledPos);
+            var angle = scaledPos.AngleTo(center);
 
             return angle;
         }

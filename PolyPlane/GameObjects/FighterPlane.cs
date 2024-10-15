@@ -79,8 +79,6 @@ namespace PolyPlane.GameObjects
 
             set { _thrustAmt.Set(value); }
         }
-        public bool AutoPilotOn { get; set; } = false;
-        public bool SASOn { get; set; } = false;
         public bool HasCrashed { get; set; } = false;
         public bool WasHeadshot { get; set; } = false;
         public D2DPoint GunPosition => _gun.Position;
@@ -362,51 +360,27 @@ namespace PolyPlane.GameObjects
             {
                 var partialDT = World.SUB_DT;
 
-                base.Update(partialDT);
-
                 var wingForce = D2DPoint.Zero;
                 var wingTorque = 0f;
-                var deflection = this.Deflection;
-                var thrust = GetThrust(true);
+                var guideRot = this.Rotation;
 
-                if (AutoPilotOn)
-                {
-                    float guideRot = this.Rotation;
+                // Get guidance direction.
+                if (_isAIPlane)
+                    guideRot = GetAPGuidanceDirection(_aiBehavior.GetAIGuidance());
+                else
+                    guideRot = GetAPGuidanceDirection(PlayerGuideAngle);
 
-                    if (_isAIPlane)
-                        guideRot = GetAPGuidanceDirection(_aiBehavior.GetAIGuidance());
-                    else
-                        guideRot = GetAPGuidanceDirection(PlayerGuideAngle);
-
-                    var nextDeflect = Utilities.ClampAngle180(guideRot - this.Rotation);
-                    deflection = nextDeflect;
-                }
-
-                float ogDef = deflection;
-
-                // Apply some stability control to try to prevent thrust vectoring from spinning the plane.
-                if (_thrustAmt.Value > 0f && SASOn)
-                {
-                    var velo = this.AirSpeedIndicated;
-
-                    const float MIN_DEF_SPD = 300f; // Minimum speed required for full deflection.
-                    var spdFact = Utilities.Factor(velo, MIN_DEF_SPD);
-
-                    const float MAX_DEF_AOA = 40f;// Maximum AoA allowed. Reduce deflection as AoA increases.
-                    var aoaFact = 1f - (Math.Abs(Wings[0].AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 6f))));
-
-                    const float MAX_DEF_ROT_SPD = 200f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
-                    var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 8f))));
-
-                    // Ease out when thrust is decreasing.
-                    deflection = Utilities.Lerp(ogDef, ogDef * aoaFact * rotSpdFact, _thrustAmt.Value);
-                }
-
-                if (float.IsNaN(deflection))
-                    deflection = 0f;
-
+                // Deflection direction.
+                var deflection = Utilities.ClampAngle180(guideRot);
                 _controlWing.Deflection = deflection;
 
+                // Update
+                base.Update(partialDT);
+                Wings.ForEach(w => w.Update(partialDT));
+                _centerOfThrust.Update(partialDT);
+                _centerOfMass.Update(partialDT);
+
+                // Wing force and torque.
                 foreach (var wing in Wings)
                 {
                     // How much force a damaged wing contributes.
@@ -442,6 +416,7 @@ namespace PolyPlane.GameObjects
                     }
                 }
 
+                // Apply disabled effects.
                 if (IsDisabled)
                 {
                     wingForce *= 0.1f;
@@ -450,14 +425,14 @@ namespace PolyPlane.GameObjects
                     damageTorque *= 0.1f;
                     damageForce *= 0.1f;
 
-                    AutoPilotOn = false;
-                    SASOn = false;
                     ThrustOn = false;
                     _thrustAmt.Set(0f);
                     _controlWing.Deflection = _damageDeflection;
                     FiringBurst = false;
                     _engineFireFlame.StartSpawning();
                 }
+
+                var thrust = GetThrust(true);
 
                 if (!this.IsNetObject)
                 {
@@ -483,13 +458,10 @@ namespace PolyPlane.GameObjects
                     this.Velocity += (World.Gravity * partialDT);
                 }
 
+                // Compute g-force.
                 var totForce = (thrust / this.Mass * partialDT) + (wingForce / this.Mass * partialDT);
                 var gforce = totForce.Length() / partialDT / World.Gravity.Y;
                 _gforceAvg.Add(gforce);
-
-                Wings.ForEach(w => w.Update(partialDT));
-                _centerOfThrust.Update(partialDT);
-                _centerOfMass.Update(partialDT);
             }
 
             // Check for wing and engine damage.
@@ -506,6 +478,7 @@ namespace PolyPlane.GameObjects
                 }
             }
 
+            // Check for engine damage.
             if (this.ThrustOn && !Utilities.PointInPoly(_centerOfThrust.Position, this.Polygon.Poly))
             {
                 this.ThrustOn = false;
@@ -514,6 +487,7 @@ namespace PolyPlane.GameObjects
 
             _gForce = _gforceAvg.Current;
 
+            // Update all the low frequency stuff.
             _flamePos.Update(dt);
             _cockpitPosition.Update(dt);
             _thrustAmt.Update(dt);
@@ -794,11 +768,12 @@ namespace PolyPlane.GameObjects
             // The velocity angle is much better at rotating quickly and accurately to the specified direction.
             // The rotation angle works better when velocities are very low and the velocity angle becomes unreliable.
             var dirVec = Utilities.AngleToVectorDegrees(dir, SENSITIVITY);
-            var amtVelo = Utilities.RadsToDegrees(this.Velocity.Normalized().Cross(dirVec));
-            var amtRot = Utilities.RadsToDegrees(Utilities.AngleToVectorDegrees(this.Rotation).Cross(dirVec));
+            var amtVelo = Utilities.RadsToDegrees(dirVec.Cross(this.Velocity.Normalized()));
+            var amtRot = Utilities.RadsToDegrees(dirVec.Cross(Utilities.AngleToVectorDegrees(this.Rotation)));
             var amt = Utilities.Lerp(amtVelo, amtRot, Utilities.Factor(MIN_VELO, this.Velocity.Length()));
 
-            var rot = this.Rotation - amt;
+            var rot = amt;
+
             rot = Utilities.ClampAngle(rot);
 
             return rot;
@@ -1029,7 +1004,6 @@ namespace PolyPlane.GameObjects
 
             HasCrashed = true;
             IsDisabled = true;
-            SASOn = false;
             _flipTimer.Stop();
             Health = 0;
         }

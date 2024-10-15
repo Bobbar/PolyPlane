@@ -46,7 +46,6 @@ namespace PolyPlane.AI_Behavior
             Plane.PlayerKilledCallback += HandlePlayerKilled;
 
             Plane.ThrustOn = true;
-            Plane.AutoPilotOn = true;
 
             ConfigPersonality();
 

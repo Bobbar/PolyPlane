@@ -29,9 +29,13 @@ namespace PolyPlane.Helpers
             return (float)rnd.NextDouble() * (max - min) + min;
         }
 
-        public static D2DPoint Normalized(this D2DPoint point)
+        public static D2DPoint Normalized(this D2DPoint vector)
         {
-            return D2DPoint.Normalize(point);
+            // Avoid NaN for zero length vectors.
+            if (vector.LengthSquared() == 0f)
+                return D2DPoint.Zero;
+
+            return D2DPoint.Normalize(vector);
         }
 
         public static D2DPoint Tangent(this D2DPoint point, bool clockwise = true)
@@ -81,7 +85,7 @@ namespace PolyPlane.Helpers
 
         public static float AngleTo(this D2DPoint vector, D2DPoint other, bool clamp = false)
         {
-            var dir = other - vector;
+            var dir = vector - other;
             var angle = dir.Angle();
             return angle;
         }
