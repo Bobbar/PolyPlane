@@ -372,7 +372,11 @@ namespace PolyPlane.GameObjects
 
                 // Deflection direction.
                 var deflection = Utilities.ClampAngle180(guideRot);
-                _controlWing.Deflection = deflection;
+
+                if (!this.IsDisabled)
+                    _controlWing.Deflection = deflection;
+                else
+                    _controlWing.Deflection = _damageDeflection;
 
                 // Update
                 base.Update(partialDT);
@@ -427,7 +431,6 @@ namespace PolyPlane.GameObjects
 
                     ThrustOn = false;
                     _thrustAmt.Set(0f);
-                    _controlWing.Deflection = _damageDeflection;
                     FiringBurst = false;
                     _engineFireFlame.StartSpawning();
                 }
