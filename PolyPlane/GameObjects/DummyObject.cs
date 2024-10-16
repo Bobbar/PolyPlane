@@ -6,5 +6,8 @@
     public class DummyObject : GameObject
     {
         public DummyObject() : base() { }
+
+        public DummyObject(D2DPoint pos) : base(pos) { }
+
     }
 }

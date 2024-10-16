@@ -108,13 +108,15 @@ namespace PolyPlane.GameObjects.Fixtures
             {
                 const float SCALE = 0.1f;//0.04f;
                 const float AERO_WEIGHT = 2f;
-                ctx.DrawLine(Position, Position + LiftVector * SCALE, D2DColor.SkyBlue, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
-                ctx.DrawLine(Position, Position + DragVector * (SCALE + 0.03f), D2DColor.Red, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
+                const float ALPHA = 0.5f;
+
+                ctx.DrawLine(Position, Position + LiftVector * SCALE, D2DColor.SkyBlue.WithAlpha(ALPHA), AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
+                ctx.DrawLine(Position, Position + DragVector * (SCALE + 0.03f), D2DColor.Red.WithAlpha(ALPHA), AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
 
                 var aggForce = (LiftVector + DragVector) * 0.5f;
-                ctx.DrawLine(Position, Position + aggForce * (SCALE + 0.03f), D2DColor.Yellow, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
+                ctx.DrawLine(Position, Position + aggForce * (SCALE + 0.03f), D2DColor.Yellow.WithAlpha(ALPHA), AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
 
-                ctx.DrawLine(Position, Position + Velocity * (SCALE + 0.5f), D2DColor.Green, AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
+                ctx.DrawLine(Position, Position + Velocity * (SCALE + 0.5f), D2DColor.Green.WithAlpha(ALPHA), AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
             }
         }
 

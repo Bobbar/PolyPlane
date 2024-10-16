@@ -285,7 +285,7 @@ namespace PolyPlane
                     this.Invoke(() => HandleNewImpact(sender, e));
                 else
                 {
-                    var viewPlane = World.GetViewPlane();
+                    var viewPlane = World.GetViewObject();
 
                     if (viewPlane != null)
                     {
@@ -474,7 +474,7 @@ namespace PolyPlane
 
             ProcessQueuedEvents();
 
-            var viewPlane = World.GetViewPlane();
+            var viewObject = World.GetViewObject();
 
             // Update/advance objects.
             if (!World.IsPaused || _oneStep)
@@ -506,7 +506,7 @@ namespace PolyPlane
             _render.UpdateTime = _updateTime;
 
             if (!_skipRender && !_killRender && this.WindowState != FormWindowState.Minimized)
-                _render.RenderFrame(viewPlane);
+                _render.RenderFrame(viewObject);
             else
                 _fpsLimiter.Wait(60);
 
@@ -704,6 +704,12 @@ namespace PolyPlane
                 _queuePrevViewId = true;
         }
 
+        private void ShowSelectObjectUI()
+        {
+            var selector = new SelectObjectUI(_objs);
+            selector.Show();
+        }
+
 
         private void PolyPlaneUI_KeyPress(object sender, KeyPressEventArgs e)
         {
@@ -820,6 +826,10 @@ namespace PolyPlane
                 case 'u':
                     if (!World.IsNetGame)
                         _queueSpawnPlane = true;
+                    break;
+
+                case 'v':
+                    ShowSelectObjectUI();
                     break;
 
                 case 'y':

@@ -276,6 +276,12 @@ namespace PolyPlane
             return plane;
         }
 
+        public static GameObject GetViewObject()
+        {
+            var obj = ObjectManager.GetObjectByID(ViewPlaneID);
+            return obj;
+        }
+
         public static void NextViewPlane()
         {
             lock (ObjectManager)
