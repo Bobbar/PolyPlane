@@ -888,6 +888,11 @@ namespace PolyPlane.Rendering
                     {
                         ctx.Gfx.PushTransform();
                         ctx.Gfx.TranslateTransform(missile.CenterOfThrust.X * ctx.CurrentScale, missile.CenterOfThrust.Y * ctx.CurrentScale);
+                        
+                        // Add a little flicker effect to missile lights.
+                        var flickerScale = Utilities.Rnd.NextFloat(0.7f, 1f);
+                        ctx.Gfx.ScaleTransform(flickerScale, flickerScale);
+                        
                         ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, MISSILE_LIGHT_RADIUS, _missileLightingBrush);
                         ctx.Gfx.PopTransform();
                     }

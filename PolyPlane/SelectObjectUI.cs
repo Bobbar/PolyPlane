@@ -1,14 +1,4 @@
 ﻿using PolyPlane.GameObjects;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.ComponentModel.Design.ObjectSelectorEditor;
 
 namespace PolyPlane
 {
@@ -33,7 +23,6 @@ namespace PolyPlane
             ObjectTypeCombo.Items.Add("Missiles");
 
             ObjectTypeCombo.SelectedIndex = 0;
-
         }
 
         private void ObjectTypeCombo_SelectedValueChanged(object sender, EventArgs e)
@@ -46,9 +35,6 @@ namespace PolyPlane
             ObjectsListbox.Items.Clear();
             ObjectsListbox.ValueMember = nameof(ObjectEntry);
             ObjectsListbox.DisplayMember = nameof(ObjectEntry);
-
-            //ObjectsListbox.ValueMember = nameof(ObjectEntry.Ref);
-            //ObjectsListbox.DisplayMember = nameof(ObjectEntry.Text);
 
             if (ObjectTypeCombo.SelectedItem != null)
             {
@@ -68,18 +54,19 @@ namespace PolyPlane
                         ObjectsListbox.Items.Add(new ObjectEntry(missile, $"{missile.ID}  {missile.Position}"));
                     }
                 }
-
             }
-
         }
 
         private void SelectObject()
         {
             var selectedItem = ObjectsListbox.SelectedItem;
             var obj = selectedItem as ObjectEntry;
-            SelectedObject = obj.Ref;
 
-            World.ViewPlaneID = SelectedObject.ID;
+            if (obj != null)
+            {
+                SelectedObject = obj.Ref;
+                World.ViewPlaneID = SelectedObject.ID;
+            }
         }
 
         private void OKButton_Click(object sender, EventArgs e)
@@ -92,6 +79,16 @@ namespace PolyPlane
         private void CancelButton_Click(object sender, EventArgs e)
         {
             this.DialogResult = DialogResult.Cancel;
+        }
+
+        private void ObjectsListbox_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            SelectObject();
+        }
+
+        private void RefreshButton_Click(object sender, EventArgs e)
+        {
+            UpdateObjectList();
         }
 
         private class ObjectEntry
@@ -110,22 +107,5 @@ namespace PolyPlane
                 return Text;
             }
         }
-
-        private void ObjectsListbox_MouseDoubleClick(object sender, MouseEventArgs e)
-        {
-            SelectObject();
-        }
-
-        private void RefreshButton_Click(object sender, EventArgs e)
-        {
-            UpdateObjectList();
-        }
-
-        private void FreezeCameraButton_Click(object sender, EventArgs e)
-        {
-           
-        }
     }
-
-
 }
