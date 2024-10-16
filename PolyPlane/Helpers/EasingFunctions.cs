@@ -114,5 +114,10 @@
         {
             return k == 0f ? 0f : (float)Math.Pow(2f, 10f * k - 10f);
         }
+
+        public static float EaseLinear(float k)
+        {
+            return k;
+        }
     }
 }

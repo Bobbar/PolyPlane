@@ -34,10 +34,14 @@
             if (!IsPlaying)
                 return;
 
-            _elapsed += dt;
+            if (_isReversed)
+                _elapsed -= dt;
+            else
+                _elapsed += dt;
+
             AnimPostition = _elapsed / Duration;
 
-            if (_elapsed < Duration)
+            if (_elapsed < Duration && _elapsed >= 0f)
             {
                 var factor = EaseFunc(AnimPostition);
                 DoStep(factor);
@@ -46,11 +50,15 @@
             {
                 if (Loop)
                 {
-                    _elapsed = 0f;
                     AnimPostition = 0f;
 
                     if (ReverseOnLoop)
+                    {
                         _isReversed = !_isReversed;
+
+                        if (!_isReversed)
+                            _elapsed = 0f;
+                    }
                 }
                 else
                 {

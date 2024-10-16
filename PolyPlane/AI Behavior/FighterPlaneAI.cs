@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects;
+using PolyPlane.GameObjects.Animations;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 
@@ -21,12 +22,14 @@ namespace PolyPlane.AI_Behavior
         private bool _gainingVelo = false;
         private bool _reverseDirection = false;
         private bool _isDefending = false;
+        private float _zigZagAngle = 0f;
 
         private GameTimer _fireBurstTimer = new GameTimer(2f, 6f);
         private GameTimer _fireMissileCooldown = new GameTimer(6f);
         private GameTimer _dropDecoysTimer = new GameTimer(2f, 3f);
         private GameTimer _changeTargetCooldown = new GameTimer(10f);
         private GameTimer _defendMissileCooldown = new GameTimer(4f);
+        private FloatAnimation _defendZigZag;
 
         private float MIN_MISSILE_TIME = 40f;
         private float MAX_MISSILE_TIME = 80f;
@@ -63,6 +66,11 @@ namespace PolyPlane.AI_Behavior
 
             _defendMissileCooldown.StartCallback = () => _isDefending = true;
             _defendMissileCooldown.TriggerCallback = () => _isDefending = false;
+
+            _defendZigZag = new FloatAnimation(-40f, 40f, 3f, EasingFunctions.EaseLinear, v => _zigZagAngle = v);
+            _defendZigZag.Loop = true;
+            _defendZigZag.ReverseOnLoop = true;
+            _defendZigZag.IsPlaying = true;
         }
 
         public void Update(float dt)
@@ -71,6 +79,7 @@ namespace PolyPlane.AI_Behavior
                 return;
 
             _sineWavePos += 0.3f * dt;
+            _defendZigZag.Update(dt);
 
             const float MAX_SIN_POS = 360f * Utilities.DEGREES_TO_RADS;
             if (_sineWavePos > MAX_SIN_POS)
@@ -303,7 +312,7 @@ namespace PolyPlane.AI_Behavior
                     angle = dirToTarget.Angle();
                     angle += patrolDir * 0.2f; // Incorporate a small amount of the sine wave so we 'bob & weave' a little bit.
                 }
-                else 
+                else
                 {
                     // Fly towards target plane.
                     angle = dirToTarget.Angle();
@@ -322,8 +331,11 @@ namespace PolyPlane.AI_Behavior
                 // We basically try to fly away and slightly perpendicular to the direction of the incoming missile.
 
                 var angleAwayFromThreat = (this.Plane.Position - _threatPosition).Angle();
+                var distanceToThreat = this.Plane.Position.DistanceTo(_threatPosition);
 
-                const float DEFEND_ANGLE = 25f;
+                const float DEFEND_ANGLE = 35f;
+                const float ZIGZAG_DIST = 4000f;
+
                 var defendAngleOne = Utilities.ClampAngle(angleAwayFromThreat + DEFEND_ANGLE);
                 var defendAngleTwo = Utilities.ClampAngle(angleAwayFromThreat - DEFEND_ANGLE);
 
@@ -335,7 +347,9 @@ namespace PolyPlane.AI_Behavior
                 else if (diffTwo < diffOne)
                     angle = defendAngleTwo;
 
-                angle += patrolDir * 0.1f;
+                // Try zig-zag when the missile gets close.
+                if (distanceToThreat < ZIGZAG_DIST)
+                    angle += _zigZagAngle;
             }
 
             // Try to lead the target if we are firing a burst.

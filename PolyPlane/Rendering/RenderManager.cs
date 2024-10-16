@@ -597,7 +597,6 @@ namespace PolyPlane.Rendering
 
             _objs.Explosions.ForEach(e => e.Render(ctx));
 
-            viewObj.Render(ctx);
 
             DrawClouds(ctx);
             DrawPlaneCloudShadows(ctx, shadowColor);
