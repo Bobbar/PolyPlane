@@ -94,7 +94,7 @@ namespace PolyPlane.GameObjects.Fixtures
             //var end2Raw = this.Position + wingVecRaw * RenderLength;
             //gfx.DrawLine(startRaw, end2Raw, D2DColor.Red, 1f, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Round);
 
-            if (Visible)
+            if (Visible && _params.RenderLength > 0f)
             {
                 // Draw wing.
                 var wingVec = Utilities.AngleToVectorDegrees(Rotation, _params.RenderLength);
@@ -110,13 +110,13 @@ namespace PolyPlane.GameObjects.Fixtures
                 const float AERO_WEIGHT = 2f;
                 const float ALPHA = 0.5f;
 
-                ctx.DrawLine(Position, Position + LiftVector * SCALE, D2DColor.SkyBlue.WithAlpha(ALPHA), AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
-                ctx.DrawLine(Position, Position + DragVector * (SCALE + 0.03f), D2DColor.Red.WithAlpha(ALPHA), AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
+                ctx.DrawLine(Position, Position + LiftVector * SCALE, D2DColor.SkyBlue.WithAlpha(ALPHA), AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Triangle);
+                ctx.DrawLine(Position, Position + DragVector * (SCALE + 0.03f), D2DColor.Red.WithAlpha(ALPHA), AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Triangle);
 
                 var aggForce = (LiftVector + DragVector) * 0.5f;
-                ctx.DrawLine(Position, Position + aggForce * (SCALE + 0.03f), D2DColor.Yellow.WithAlpha(ALPHA), AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
+                ctx.DrawLine(Position, Position + aggForce * (SCALE + 0.03f), D2DColor.Yellow.WithAlpha(ALPHA), AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Triangle);
 
-                ctx.DrawLine(Position, Position + Velocity * (SCALE + 0.5f), D2DColor.Green.WithAlpha(ALPHA), AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Flat, D2DCapStyle.Triangle);
+                ctx.DrawLine(Position, Position + Velocity * (SCALE + 0.5f), D2DColor.Green.WithAlpha(ALPHA), AERO_WEIGHT, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Triangle);
             }
         }
 

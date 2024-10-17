@@ -433,6 +433,7 @@ namespace PolyPlane.GameObjects
             if (_useControlSurfaces)
             {
                 _tailWing.Render(ctx);
+                _rocketBody.Render(ctx);
                 _noseWing.Render(ctx);
             }
 
