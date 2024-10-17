@@ -42,14 +42,21 @@ namespace PolyPlane
 
                 if (value == "Planes")
                 {
-                    foreach (var plane in _objs.Planes)
+                    // Take a copy of the objects from the manager to avoid racing with the game thread. :-}
+                    var planesCopy = new FighterPlane[_objs.Planes.Count];
+                    _objs.Planes.CopyTo(planesCopy, 0);
+
+                    foreach (var plane in planesCopy)
                     {
                         ObjectsListbox.Items.Add(new ObjectEntry(plane, $"{plane.ID}  {plane.Position}"));
                     }
                 }
                 else if (value == "Missiles")
                 {
-                    foreach (var missile in _objs.Missiles)
+                    var missilesCopy = new GuidedMissile[_objs.Missiles.Count];
+                    _objs.Missiles.CopyTo(missilesCopy, 0);
+
+                    foreach (var missile in missilesCopy)
                     {
                         ObjectsListbox.Items.Add(new ObjectEntry(missile, $"{missile.ID}  {missile.Position}"));
                     }
