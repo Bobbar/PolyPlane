@@ -1244,7 +1244,7 @@ namespace PolyPlane.Rendering
 
         private void DrawHudMessage(D2DGraphics gfx, D2DSize viewportsize)
         {
-            const float FONT_SIZE = 40f;
+            const float FONT_SIZE = 30f;
             if (_hudMessageTimeout.IsRunning && !string.IsNullOrEmpty(_hudMessage))
             {
                 var pos = new D2DPoint(viewportsize.width * 0.5f, 300f);
@@ -1252,7 +1252,6 @@ namespace PolyPlane.Rendering
                 var size = gfx.MeasureText(_hudMessage, _defaultFontName, FONT_SIZE, initSize);
                 var rect = new D2DRect(pos, size);
 
-                gfx.FillRectangle(rect.Inflate(10f, 10f), new D2DColor(0.7f, D2DColor.Gray));
                 gfx.DrawTextCenter(_hudMessage, _hudMessageColor, _defaultFontName, FONT_SIZE, rect);
             }
 
@@ -1662,7 +1661,7 @@ namespace PolyPlane.Rendering
             var todAngle = Utilities.Lerp(TOD_ANGLE_START, TOD_ANGLE_END, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
             var cloudShadowPos = GetCloudShadowPos(cloud.Position, todAngle);
 
-            if (!ctx.Viewport.Contains(new D2DEllipse(cloudShadowPos, new D2DSize(cloud.Radius * cloud.ScaleX * CLOUD_SCALE, cloud.Radius * cloud.ScaleX * CLOUD_SCALE))))
+            if (!ctx.Viewport.Contains(new D2DEllipse(cloudShadowPos, new D2DSize(cloud.Radius * cloud.ScaleX * (CLOUD_SCALE + 3f), cloud.Radius * cloud.ScaleX * (CLOUD_SCALE + 1f)))))
                 return;
 
             var shadowColor = Utilities.LerpColorWithAlpha(todColor, D2DColor.Black, 0.7f, 0.05f);
