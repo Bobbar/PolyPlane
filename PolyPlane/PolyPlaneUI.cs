@@ -46,6 +46,7 @@ namespace PolyPlane
         private CollisionManager _collisions;
         private RenderManager _render;
         private FPSLimiter _fpsLimiter = new FPSLimiter();
+        private SelectObjectUI? _selectObjectUI = null;
 
         public PolyPlaneUI()
         {
@@ -706,10 +707,13 @@ namespace PolyPlane
 
         private void ShowSelectObjectUI()
         {
-            var selector = new SelectObjectUI(_objs);
-            selector.Show();
-        }
+            if (_selectObjectUI == null || (_selectObjectUI != null && _selectObjectUI.IsDisposed))
+                _selectObjectUI = new SelectObjectUI(_objs);
 
+            _selectObjectUI.WindowState = FormWindowState.Normal;
+            _selectObjectUI.Show();
+            _selectObjectUI.BringToFront();
+        }
 
         private void PolyPlaneUI_KeyPress(object sender, KeyPressEventArgs e)
         {

@@ -37,7 +37,7 @@
             // ObjectTypeCombo
             // 
             ObjectTypeCombo.FormattingEnabled = true;
-            ObjectTypeCombo.Location = new Point(110, 40);
+            ObjectTypeCombo.Location = new Point(28, 21);
             ObjectTypeCombo.Name = "ObjectTypeCombo";
             ObjectTypeCombo.Size = new Size(171, 23);
             ObjectTypeCombo.TabIndex = 0;
@@ -45,16 +45,18 @@
             // 
             // ObjectsListbox
             // 
+            ObjectsListbox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             ObjectsListbox.FormattingEnabled = true;
-            ObjectsListbox.Location = new Point(28, 97);
+            ObjectsListbox.Location = new Point(28, 52);
             ObjectsListbox.Name = "ObjectsListbox";
-            ObjectsListbox.Size = new Size(334, 409);
+            ObjectsListbox.Size = new Size(339, 469);
             ObjectsListbox.TabIndex = 1;
             ObjectsListbox.MouseDoubleClick += ObjectsListbox_MouseDoubleClick;
             // 
             // OKButton
             // 
-            OKButton.Location = new Point(158, 512);
+            OKButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            OKButton.Location = new Point(28, 534);
             OKButton.Name = "OKButton";
             OKButton.Size = new Size(75, 23);
             OKButton.TabIndex = 2;
@@ -64,7 +66,8 @@
             // 
             // RefreshButton
             // 
-            RefreshButton.Location = new Point(158, 577);
+            RefreshButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            RefreshButton.Location = new Point(292, 534);
             RefreshButton.Name = "RefreshButton";
             RefreshButton.Size = new Size(75, 23);
             RefreshButton.TabIndex = 4;
@@ -76,16 +79,16 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(403, 612);
+            ClientSize = new Size(398, 578);
             Controls.Add(RefreshButton);
             Controls.Add(OKButton);
             Controls.Add(ObjectsListbox);
             Controls.Add(ObjectTypeCombo);
-            FormBorderStyle = FormBorderStyle.FixedSingle;
-            MinimizeBox = false;
+            MaximizeBox = false;
             Name = "SelectObjectUI";
+            SizeGripStyle = SizeGripStyle.Show;
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "SelectObjectUI";
+            Text = "Select View Object";
             ResumeLayout(false);
         }
 

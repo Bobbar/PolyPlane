@@ -44,7 +44,7 @@ namespace PolyPlane.GameObjects
 
         private bool IsActivated = false;
         private readonly float THURST_VECTOR_AMT = 1f;
-        private readonly float LIFESPAN = 70f;
+        private readonly float LIFESPAN = 100f;
         private readonly float BURN_RATE = 0.85f;
         private readonly float THRUST = 2500f;
         private readonly float FUEL = 10f;
@@ -105,9 +105,9 @@ namespace PolyPlane.GameObjects
 
         private static readonly D2DPoint[] _flamePoly =
         [
-            new D2DPoint(-8, 2),
+            new D2DPoint(-8, 1.5f),
             new D2DPoint(-10, 0),
-            new D2DPoint(-8, -2),
+            new D2DPoint(-8, -1.5f),
         ];
 
         public GuidedMissile(GameObject player, D2DPoint position, D2DPoint velocity, float rotation)
@@ -186,18 +186,19 @@ namespace PolyPlane.GameObjects
         {
             if (_useControlSurfaces)
             {
-                var liftScale = 0.9f;
+                const float liftScale = 0.9f;
+                const float minVelo = 600f;
 
                 _tailWing = new Wing(this, new WingParameters()
                 {
                     RenderLength = 2.5f,
                     RenderWidth = 1f,
                     Area = 0.1f,
-                    MaxDeflection = 50f,
+                    MaxDeflection = 40f,
                     MaxLiftForce = 4500f * liftScale,
-                    PivotPoint = new D2DPoint(-20f, 0f),
+                    PivotPoint = new D2DPoint(-21f, 0f),
                     Position = new D2DPoint(-22f, 0f),
-                    MinVelo = 600f,
+                    MinVelo = minVelo,
                     ParasiticDrag = 0.7f,
                     AOAFactor = 0.3f,
                     DeflectionRate = 30f,
@@ -209,7 +210,7 @@ namespace PolyPlane.GameObjects
                     RenderLength = 0f,
                     Area = 0.045f,
                     MaxLiftForce = 500f * liftScale,
-                    MinVelo = 600f,
+                    MinVelo = minVelo,
                     ParasiticDrag = 0.4f,
                     MaxAOA = 40f,
                     AOAFactor = 0.2f
@@ -223,7 +224,7 @@ namespace PolyPlane.GameObjects
                     MaxDeflection = 20f,
                     MaxLiftForce = 2000f * liftScale,
                     Position = new D2DPoint(21.5f, 0f),
-                    MinVelo = 600f,
+                    MinVelo = minVelo,
                     ParasiticDrag = 0.4f,
                     AOAFactor = 0.2f,
                     MaxAOA = 40f
@@ -427,7 +428,7 @@ namespace PolyPlane.GameObjects
                 ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
 
             var fillColor = D2DColor.White;
-            ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 0.5f, D2DDashStyle.Solid, fillColor);
+            ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 0.3f, D2DDashStyle.Solid, fillColor);
 
             if (_useControlSurfaces)
             {
