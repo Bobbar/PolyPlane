@@ -72,7 +72,7 @@ namespace PolyPlane
             if (obj != null)
             {
                 SelectedObject = obj.Ref;
-                World.ViewPlaneID = SelectedObject.ID;
+                World.ViewObjectID = SelectedObject.ID;
             }
         }
 

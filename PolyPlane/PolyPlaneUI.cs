@@ -144,7 +144,7 @@ namespace PolyPlane
 
         private void EnableRespawn()
         {
-            if (World.ViewPlaneID.Equals(_playerPlane.ID))
+            if (World.ViewObjectID.Equals(_playerPlane.ID))
             {
                 string spawnDirText = "Left";
                 var guideAngle = GetPlayerGuidanceAngle();
@@ -172,7 +172,7 @@ namespace PolyPlane
                         World.IsServer = false;
 
                         _playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
-                        World.ViewPlaneID = _playerPlane.ID;
+                        World.ViewObjectID = _playerPlane.ID;
                         _objs.EnqueuePlane(_playerPlane);
 
                         _client = new ClientNetHost(config.Port, config.ServerIPAddress);
@@ -213,7 +213,7 @@ namespace PolyPlane
                         _collisions.ImpactEvent += HandleNewImpact;
 
                         _playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
-                        World.ViewPlaneID = _playerPlane.ID;
+                        World.ViewObjectID = _playerPlane.ID;
                         _objs.EnqueuePlane(_playerPlane);
 
                         InitGfx();
@@ -354,7 +354,7 @@ namespace PolyPlane
             {
                 _objs.EnqueueBullet(b);
 
-                if (b.Owner.ID.Equals(World.ViewPlaneID))
+                if (b.Owner.ID.Equals(World.ViewObjectID))
                     _render.DoScreenShake(2f);
 
                 if (World.IsNetGame)
@@ -419,7 +419,7 @@ namespace PolyPlane
             _render.ClearHudMessage();
 
             if (!_playerPlane.IsAI)
-                World.ViewPlaneID = _playerPlane.ID;
+                World.ViewObjectID = _playerPlane.ID;
         }
 
         private void TargetLockedWithMissile()
@@ -867,7 +867,7 @@ namespace PolyPlane
                     break;
 
                 case (char)8: //Backspace
-                    World.ViewPlaneID = _playerPlane.ID;
+                    World.ViewObjectID = _playerPlane.ID;
                     break;
 
                 case (char)9: //Tab
