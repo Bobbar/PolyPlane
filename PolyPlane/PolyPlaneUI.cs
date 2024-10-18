@@ -641,8 +641,10 @@ namespace PolyPlane
 
             if (_queueResetPlane)
             {
-                ResetPlane();
                 _queueResetPlane = false;
+
+                if (World.ViewObjectID.Equals(_playerPlane.ID))
+                    ResetPlane();
             }
 
             if (_queueClearPlanes)
