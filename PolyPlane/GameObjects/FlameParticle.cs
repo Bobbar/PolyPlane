@@ -48,6 +48,25 @@ namespace PolyPlane.GameObjects
             this.Velocity = velo;
         }
 
+        public void ReInit(D2DPoint pos, float radius, D2DColor startColor, D2DColor endColor, D2DPoint velo)
+        {
+            this.Age = 0f;
+            this.IsExpired = false;
+
+            _ellipse.origin = pos;
+            _ellipse.radiusX = radius;
+            _ellipse.radiusY = radius;
+
+            Color = startColor;
+            StartColor = startColor;
+            EndColor = endColor;
+
+            _riseRate = new D2DPoint(0f, Utilities.Rnd.NextFloat(MAX_RISE_RATE, MIN_RISE_RATE));
+
+            this.Position = _ellipse.origin;
+            this.Velocity = velo;
+        }
+
         public override void Update(float dt)
         {
             base.Update(dt);

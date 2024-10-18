@@ -502,6 +502,7 @@ namespace PolyPlane.GameObjects
 
             CheckForFlip();
             UpdateFlame();
+            DoGroundDustEffect();
 
             _easePhysicsTimer.Update(dt);
             _flipTimer.Update(dt);
@@ -544,6 +545,29 @@ namespace PolyPlane.GameObjects
             _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
 
             FlamePoly.Update(_flamePos.Position, flameAngle, this.RenderScale);
+        }
+
+        private void DoGroundDustEffect()
+        {
+            // Spawn dust particles when very near the ground.
+            const float DUST_ALT = 400f;
+            const float MIN_VELO = 100f;
+
+            if (this.Altitude < DUST_ALT && this.Velocity.Length() > MIN_VELO)
+            {
+                var dustColor = new D2DColor(1f, 0.35f, 0.2f, 0.1f);
+                var altFact = 1f - Utilities.FactorWithEasing(this.Altitude, DUST_ALT, EasingFunctions.EaseLinear);
+                var alpha = Math.Clamp(altFact, 0f, 0.5f);
+                var radius = 15f * (altFact) + Utilities.Rnd.NextFloat(1f, 3f);
+                var velo = this.Velocity + new D2DPoint(Utilities.Rnd.NextFloat(-200f, 200f), 0f);
+                var groundPos = new D2DPoint(this.Position.X - (this.Velocity.X * 0.1f) + Utilities.Rnd.NextFloat(-100f, 100f), 0f);
+
+                var flame = World.ObjectManager.RentFlamePart();
+                flame.ReInit(groundPos, radius, dustColor.WithAlpha(alpha), dustColor.WithAlpha(1f), velo);
+                flame.Owner = this;
+
+                World.ObjectManager.EnqueueFlame(flame);
+            }
         }
 
         public override void Render(RenderContext ctx)
