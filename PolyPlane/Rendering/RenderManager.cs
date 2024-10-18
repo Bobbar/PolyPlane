@@ -501,20 +501,15 @@ namespace PolyPlane.Rendering
                 _gfx.PushTransform(); // Push scale transform.
                 _gfx.ScaleTransform(World.ZoomScale, World.ZoomScale);
 
+                // Draw the main player view.
+                DrawPlayerView(_ctx, viewObj);
+
                 if (viewObj is FighterPlane plane)
                 {
-                    // Draw plane and other objects.
-                    DrawPlayerView(_ctx, plane);
-
                     if (plane.GForce > SCREEN_SHAKE_G)
                         DoScreenShake(plane.GForce / 5f);
                 }
-                else
-                {
-                    // Draw simplified view for other objects.
-                    DrawObjectView(_ctx, viewObj);
-                }
-              
+
                 _gfx.PopTransform(); // Pop scale transform.
 
                 // Draw HUD.
@@ -540,9 +535,14 @@ namespace PolyPlane.Rendering
             _renderFPS = fps;
         }
 
-        private void DrawObjectView(RenderContext ctx, GameObject viewObj)
+        private void DrawPlayerView(RenderContext ctx, GameObject viewObj)
         {
             var healthBarSize = new D2DSize(80, 20);
+
+            FighterPlane? viewPlane = null;
+
+            if (viewObj is FighterPlane plane)
+                viewPlane = plane;
 
             ctx.Gfx.PushTransform();
 
@@ -582,85 +582,25 @@ namespace PolyPlane.Rendering
                 {
                     DrawPlaneShadow(ctx, p, shadowColor);
                     p.Render(ctx);
-                    DrawHealthBarClamped(ctx, p, new D2DPoint(p.Position.X, p.Position.Y - 110f), healthBarSize);
-                    DrawMuzzleFlash(ctx, p);
-                }
-                else if (obj is GuidedMissile missile)
-                {
-                    missile.Render(ctx);
-                }
-                else
-                {
-                    obj.Render(ctx);
-                }
-            }
-
-            _objs.Explosions.ForEach(e => e.Render(ctx));
-
-
-            DrawClouds(ctx);
-            DrawPlaneCloudShadows(ctx, shadowColor);
-            DrawLightingEffects(ctx, objsInViewport);
-
-            ctx.PopViewPort();
-            ctx.Gfx.PopTransform();
-        }
-
-        private void DrawPlayerView(RenderContext ctx, FighterPlane plane)
-        {
-            var healthBarSize = new D2DSize(80, 20);
-
-            ctx.Gfx.PushTransform();
-
-            var zAmt = World.ZoomScale;
-            var pos = new D2DPoint(World.ViewPortSize.width * 0.5f, World.ViewPortSize.height * 0.5f);
-            pos *= zAmt;
-
-            var offset = new D2DPoint(-plane.Position.X, -plane.Position.Y);
-            offset *= zAmt;
-
-            ctx.Gfx.ScaleTransform(VIEW_SCALE, VIEW_SCALE, plane.Position);
-            ctx.Gfx.TranslateTransform(offset.X, offset.Y);
-            ctx.Gfx.TranslateTransform(pos.X, pos.Y);
-
-            var viewPortRect = new D2DRect(plane.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
-
-            const float VIEWPORT_PADDING_AMT = 1f;
-            var inflateAmt = VIEWPORT_PADDING_AMT * zAmt;
-            viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true); // Inflate slightly to prevent "pop-in".
-
-            var shadowColor = GetShadowColor();
-
-            ctx.PushViewPort(viewPortRect);
-
-            DrawGround(ctx, plane.Position);
-            DrawGroundObjs(ctx);
-            DrawGroundImpacts(ctx);
-
-            _objs.MissileTrails.ForEach(o => o.Render(ctx));
-            _contrailBox.Render(ctx);
-
-            var objsInViewport = _objs.GetInViewport(ctx.Viewport).Where(o => o is not Explosion).OrderBy(o => o.RenderOrder);
-
-            foreach (var obj in objsInViewport)
-            {
-                if (obj is FighterPlane p && !p.Equals(plane))
-                {
-                    DrawPlaneShadow(ctx, p, shadowColor);
-                    p.Render(ctx);
-                    DrawHealthBarClamped(ctx, p, new D2DPoint(p.Position.X, p.Position.Y - 110f), healthBarSize);
                     DrawMuzzleFlash(ctx, p);
 
-                    // Draw circle around locked on plane.
-                    if (plane.Radar.LockedObj != null && plane.Radar.LockedObj.Equals(p))
-                        ctx.DrawEllipse(new D2DEllipse(p.Position, new D2DSize(80f, 80f)), World.HudColor, 4f);
+                    if (viewPlane != null)
+                    {
+                        // Draw health bars for other planes.
+                        if (!p.Equals(viewPlane))
+                            DrawHealthBarClamped(ctx, p, new D2DPoint(p.Position.X, p.Position.Y - 110f), healthBarSize);
+
+                        // Draw circle around locked on plane.
+                        if (viewPlane.Radar.LockedObj != null && viewPlane.Radar.LockedObj.Equals(p))
+                            ctx.DrawEllipse(new D2DEllipse(p.Position, new D2DSize(80f, 80f)), World.HudColor, 4f);
+                    }
                 }
                 else if (obj is GuidedMissile missile)
                 {
                     missile.Render(ctx);
 
                     // Circle enemy missiles.
-                    if (!missile.Owner.Equals(plane))
+                    if (viewPlane != null && !missile.Owner.Equals(viewPlane))
                         ctx.DrawEllipse(new D2DEllipse(missile.Position, new D2DSize(50f, 50f)), new D2DColor(0.4f, D2DColor.Red), 8f);
                 }
                 else
@@ -671,13 +611,9 @@ namespace PolyPlane.Rendering
 
             _objs.Explosions.ForEach(e => e.Render(ctx));
 
-            DrawPlaneShadow(ctx, plane, shadowColor);
-            plane.Render(ctx);
-
             DrawClouds(ctx);
             DrawPlaneCloudShadows(ctx, shadowColor);
             DrawLightingEffects(ctx, objsInViewport);
-            DrawMuzzleFlash(ctx, plane);
 
             ctx.PopViewPort();
             ctx.Gfx.PopTransform();
@@ -888,11 +824,11 @@ namespace PolyPlane.Rendering
                     {
                         ctx.Gfx.PushTransform();
                         ctx.Gfx.TranslateTransform(missile.CenterOfThrust.X * ctx.CurrentScale, missile.CenterOfThrust.Y * ctx.CurrentScale);
-                        
+
                         // Add a little flicker effect to missile lights.
                         var flickerScale = Utilities.Rnd.NextFloat(0.7f, 1f);
                         ctx.Gfx.ScaleTransform(flickerScale, flickerScale);
-                        
+
                         ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, MISSILE_LIGHT_RADIUS, _missileLightingBrush);
                         ctx.Gfx.PopTransform();
                     }
@@ -1787,7 +1723,7 @@ namespace PolyPlane.Rendering
                     infoText += $"Missiles (Fired/Hit): ({plane.MissilesFired} / {plane.MissilesHit}) \n";
                     infoText += $"Headshots: {plane.Headshots}\n";
                 }
-               
+
                 infoText += $"Interp: {World.InterpOn.ToString()}\n";
                 infoText += $"GunsOnly: {World.GunsOnly.ToString()}\n";
                 infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
