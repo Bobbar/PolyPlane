@@ -559,9 +559,8 @@ namespace PolyPlane.GameObjects
                 var altFact = 1f - Utilities.FactorWithEasing(this.Altitude, DUST_ALT, EasingFunctions.EaseLinear);
                 var alpha = Math.Clamp(altFact, 0f, 0.5f);
                 var radius = 15f * (altFact) + Utilities.Rnd.NextFloat(1f, 3f);
-                var velo = this.Velocity + new D2DPoint(Utilities.Rnd.NextFloat(-200f, 200f), 0f);
-                var groundPos = new D2DPoint(this.Position.X - (this.Velocity.X * 0.1f) + Utilities.Rnd.NextFloat(-100f, 100f), 0f);
-
+                var velo = (this.Velocity + (this.Velocity * 0.4f)) + new D2DPoint(Utilities.Rnd.NextFloat(-150f, 150f), 0f);
+                var groundPos = new D2DPoint(this.Position.X - (this.Velocity.X * 0.2f) + Utilities.Rnd.NextFloat(-100f, 100f), 0f);
                 var flame = World.ObjectManager.RentFlamePart();
                 flame.ReInit(groundPos, radius, dustColor.WithAlpha(alpha), dustColor.WithAlpha(1f), velo);
                 flame.Owner = this;
