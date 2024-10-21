@@ -6,7 +6,6 @@ using PolyPlane.GameObjects.Manager;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
-using System.Runtime.Serialization;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -140,6 +139,7 @@ namespace PolyPlane.GameObjects
 
         private float _damageDeflection = 0f;
         private float _gForce = 0f;
+        private float _gForceDirection = 0f;
         private SmoothFloat _gforceAvg = new SmoothFloat(8);
         private int _throttlePos = 0;
         private int _numMissiles = MAX_MISSILES;
@@ -465,6 +465,7 @@ namespace PolyPlane.GameObjects
                 var totForce = (thrust / this.Mass * partialDT) + (wingForce / this.Mass * partialDT);
                 var gforce = totForce.Length() / partialDT / World.Gravity.Y;
                 _gforceAvg.Add(gforce);
+                _gForceDirection = totForce.Angle();
             }
 
             // Check for wing and engine damage.
@@ -1171,7 +1172,7 @@ namespace PolyPlane.GameObjects
 
         private void CheckForFlip()
         {
-            var pointingRight = Utilities.IsPointingRight(this.Rotation);
+            var pointingRight = Utilities.ClampAngle180(_gForceDirection - this.Rotation) < 0f;
             FlipPoly(pointingRight ? Direction.Right : Direction.Left);
         }
 

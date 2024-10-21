@@ -410,7 +410,7 @@ namespace PolyPlane.GameObjects
                 // Flip plane poly to correct orientation.
                 if (this is FighterPlane)
                 {
-                    var pointingRight = Utilities.IsPointingRight(histPos.Rotation);
+                    var pointingRight = Utilities.ClampAngle180((histPos.Velocity.Angle() + 180f) - this.Rotation) < 0f;
 
                     if (!pointingRight)
                         histPoly.FlipY();
