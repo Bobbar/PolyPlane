@@ -17,8 +17,9 @@ namespace PolyPlane
         public static int PHYSICS_SUB_STEPS => _sub_steps;
 
         public const bool NET_UPDATE_SKIP_FRAMES = true;
+        public const int TARGET_FPS = 60; // Primary FPS target. Change this to match the desired refresh rate.
         public const int NET_SERVER_FPS = 60;
-        public const int NET_CLIENT_FPS = 60;
+        public const int NET_CLIENT_FPS = TARGET_FPS;
 
         static World()
         {
@@ -132,12 +133,12 @@ namespace PolyPlane
         public static bool RespawnAIPlanes = true;
         public static bool GunsOnly = false;
 
+        public const int DEFAULT_FPS = 60;
         public const int DEFAULT_SUB_STEPS = 6;
         public const float DEFAULT_DT = 0.0425f;
         public static readonly float DEFAULT_SUB_DT = DEFAULT_DT / DEFAULT_SUB_STEPS;
-
-        private static float _dt = DEFAULT_DT;
-        private static float _sub_dt = DEFAULT_SUB_DT;
+        private static float _dt = DEFAULT_DT * ((float)DEFAULT_FPS / (float)TARGET_FPS);
+        private static float _sub_dt = DEFAULT_SUB_DT * ((float)DEFAULT_FPS / (float)TARGET_FPS);
         private static int _sub_steps = DEFAULT_SUB_STEPS;
 
         private static float _zoomScale = 0.11f;

@@ -275,7 +275,7 @@ namespace PolyPlane.Rendering
             World.UpdateViewport(scaleSize);
 
             // Resizing graphics causes spikes in FPS. Try to limit them here.
-            _fpsLimiter.Wait(60);
+            _fpsLimiter.Wait(World.TARGET_FPS);
         }
 
         private Size GetViewportScaled()

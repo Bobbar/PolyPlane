@@ -509,7 +509,7 @@ namespace PolyPlane
             if (!_skipRender && !_killRender && this.WindowState != FormWindowState.Minimized)
                 _render.RenderFrame(viewObject);
             else
-                _fpsLimiter.Wait(60);
+                _fpsLimiter.Wait(World.TARGET_FPS);
 
             if (World.IsNetGame)
                 _netMan.DoNetEvents();
