@@ -805,7 +805,7 @@ namespace PolyPlane.GameObjects
             return rot;
         }
 
-        public void SetAutoPilotAngle(float angle)
+        public void SetGuidanceAngle(float angle)
         {
             PlayerGuideAngle = angle;
         }

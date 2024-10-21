@@ -384,7 +384,6 @@ namespace PolyPlane
             plane.SyncFixtures();
             plane.RotationSpeed = 0f;
             plane.Rotation = 0f;
-            //plane.SASOn = true;
             plane.IsDisabled = false;
             plane.FixPlane();
         }
@@ -412,7 +411,6 @@ namespace PolyPlane
             _playerPlane.Velocity = Utilities.AngleToVectorDegrees(_playerPlane.Rotation, 500f);
 
             _playerPlane.RotationSpeed = 0f;
-            //_playerPlane.SASOn = true;
             _playerPlane.IsDisabled = false;
             _playerPlane.FixPlane();
 
@@ -540,7 +538,7 @@ namespace PolyPlane
                     _holdAltitude = _playerPlane.Altitude;
 
                 var altHoldAngle = Utilities.MaintainAltitudeAngle(_playerPlane, _holdAltitude);
-                _playerPlane.SetAutoPilotAngle(altHoldAngle);
+                _playerPlane.SetGuidanceAngle(altHoldAngle);
             }
             else
             {
@@ -606,7 +604,7 @@ namespace PolyPlane
                 _playerPlane.DroppingDecoy = false;
 
             var guideAngle = GetPlayerGuidanceAngle();
-            _playerPlane.SetAutoPilotAngle(guideAngle);
+            _playerPlane.SetGuidanceAngle(guideAngle);
         }
 
         private float GetPlayerGuidanceAngle()
