@@ -1484,7 +1484,7 @@ namespace PolyPlane.Rendering
 
         private void DrawSky(RenderContext ctx, GameObject viewObject)
         {
-            const float MAX_ALT_OFFSET = 10000f;
+            const float MAX_ALT_OFFSET = 50000f;
 
             var plrAlt = viewObject.Altitude;
             if (viewObject.Position.Y >= 0)
