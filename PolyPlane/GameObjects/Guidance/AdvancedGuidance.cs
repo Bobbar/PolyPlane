@@ -23,8 +23,8 @@ namespace PolyPlane.GameObjects.Guidance
             // Tweakables
             const float MAX_ROT_RATE = 1f; // Max rotation rate.
             const float MIN_ROT_RATE = 0.5f; // Min rotation rate.
-            const float ROT_MOD_DIST = 4000f; // Distance to begin increasing rotation rate. (Get more aggro the closer we get)
-            const float ROT_MOD_AMT = 1.2f;//0.8f; // Max amount to increase rot rate per above distance.
+            const float ROT_MOD_TIME = 4f; // Impact time to begin increasing rotation rate. (Get more aggro the closer we get)
+            const float ROT_MOD_AMT = 0.8f; // Max amount to increase rot rate per above time.
             const float IMPACT_POINT_DELTA_THRESH = 10f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
             const float MIN_CLOSE_RATE = 0.05f; // Min closing rate required to aim at predicted impact point.
             const float MIN_GUIDE_DIST = 200f; // Distance in which guidance is ignored and we aim directly at the target.
@@ -48,6 +48,7 @@ namespace PolyPlane.GameObjects.Guidance
             _prevTargPos = targetPosition;
 
             var targDist = D2DPoint.Distance(this.Missile.Position, targetPosition);
+            var timeToImpact = Utilities.ImpactTime(this.Missile, this.Target);
 
             // Set initial impact point directly on the target.
             var impactPnt = targetPosition;
@@ -60,8 +61,8 @@ namespace PolyPlane.GameObjects.Guidance
                 _prevTargVeloAngle = targetVeloAngle;
 
                 var relVelo = (missileVelo - targetVelo).Length();
-                var timeToImpact = ImpactTime(targDist, (relVelo * dt), (deltaV * dt));
-                impactPnt = RefineImpact(targetPosition, targetVelo, targAngleDelta, timeToImpact, dt);
+                var framesToImpact = ImpactTime(targDist, (relVelo * dt), (deltaV * dt));
+                impactPnt = RefineImpact(targetPosition, targetVelo, targAngleDelta, framesToImpact, dt);
             }
 
             // Compute the speed (delta) of the impact point as it is refined.
@@ -89,7 +90,7 @@ namespace PolyPlane.GameObjects.Guidance
             var rotAmt = Utilities.RadsToDegrees(aimDirection.Cross(veloNorm));
 
             // Increase rotation rate modifier as we approach the target.
-            var rotMod = 1f + (1f - Utilities.FactorWithEasing(targDist, ROT_MOD_DIST, EasingFunctions.EaseInSine)) * ROT_MOD_AMT;
+            var rotMod = 1f + (1f - Utilities.FactorWithEasing(timeToImpact, ROT_MOD_TIME, EasingFunctions.EaseInSine)) * ROT_MOD_AMT;
 
             // Offset our current rotation from our current velocity vector to compute the next rotation.
             var nextRot = missileVeloAngle + -(rotAmt * rotMod);
@@ -113,20 +114,20 @@ namespace PolyPlane.GameObjects.Guidance
             return impactTime;
         }
 
-        private D2DPoint RefineImpact(D2DPoint targetPos, D2DPoint targetVelo, float targAngleDelta, float timeToImpact, float dt)
+        private D2DPoint RefineImpact(D2DPoint targetPos, D2DPoint targetVelo, float targAngleDelta, float framesToImpact, float dt)
         {
             // To obtain a high order target position we basically run a small simulation here.
             // This considers the target velocity as well as the change in angular velocity.
 
             D2DPoint predicted = targetPos;
 
-            if (timeToImpact >= 1 && timeToImpact < MAX_FTI)
+            if (framesToImpact >= 1 && framesToImpact < MAX_FTI)
             {
                 var targLoc = targetPos;
                 var angle = targetVelo.Angle();
 
                 // Advance the target position and velocity angle.
-                for (int i = 0; i <= timeToImpact; i++)
+                for (int i = 0; i <= framesToImpact; i++)
                 {
                     var avec = Utilities.AngleToVectorDegrees(angle) * targetVelo.Length();
                     targLoc += avec * dt;
@@ -135,7 +136,7 @@ namespace PolyPlane.GameObjects.Guidance
                 }
 
                 // Include the remainder after the loop.
-                var rem = timeToImpact % (int)timeToImpact;
+                var rem = framesToImpact % (int)framesToImpact;
                 angle += targAngleDelta * rem * dt;
                 angle = Utilities.ClampAngle(angle);
                 targLoc += (Utilities.AngleToVectorDegrees(angle) * targetVelo.Length()) * rem * dt;

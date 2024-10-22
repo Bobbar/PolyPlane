@@ -333,7 +333,7 @@ namespace PolyPlane.Helpers
 
         public static bool CircleInPoly(D2DPoint pos, float radius, D2DPoint[] poly)
         {
-            if (!PointInPoly(pos, poly)) 
+            if (!PointInPoly(pos, poly))
                 return false;
 
             float minDist = float.MaxValue;
@@ -351,7 +351,7 @@ namespace PolyPlane.Helpers
 
             if (minDist >= radius)
                 return true;
-            
+
             return false;
         }
 
@@ -399,24 +399,19 @@ namespace PolyPlane.Helpers
             return index;
         }
 
-        public static float ImpactTime(FighterPlane plane, Missile missile)
+        public static float ImpactTime(GameObject objA, GameObject objB)
         {
-            var dist = plane.Position.DistanceTo(missile.Position);
-            var closingRate = ClosingRate(plane, missile);
-
+            var dist = objA.Position.DistanceTo(objB.Position);
+            var closingRate = ClosingRate(objA, objB);
             var navTime = dist / closingRate;
+
             return navTime;
         }
 
         public static float ClosingRate(GameObject objA, GameObject objB)
         {
-            var nextPos1 = objA.Position + objA.Velocity;
-            var nextPos2 = objB.Position + objB.Velocity;
-
-            var curDist = objA.Position.DistanceTo(objB.Position);
-            var nextDist = nextPos1.DistanceTo(nextPos2);
-
-            return curDist - nextDist;
+            var veloDiff = objA.Velocity - objB.Velocity;
+            return veloDiff.Length();
         }
 
         public static float GroundImpactTime(GameObject obj)
