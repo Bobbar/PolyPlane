@@ -324,17 +324,17 @@ namespace PolyPlane.AI_Behavior
             }
 
             // Fly away from missile?
-            if (_isDefending)
+            if (_isDefending && DefendingMissile != null)
             {
                 // Compute two tangential angles and choose the one closest
                 // to the current rotation to try to maintain as much speed as possible.
                 // We basically try to fly away and slightly perpendicular to the direction of the incoming missile.
 
                 var angleAwayFromThreat = (this.Plane.Position - _threatPosition).Angle();
-                var distanceToThreat = this.Plane.Position.DistanceTo(_threatPosition);
+                var impactTime = Utilities.ImpactTime(this.Plane, DefendingMissile);
 
                 const float DEFEND_ANGLE = 35f;
-                const float ZIGZAG_DIST = 4000f;
+                const float ZIGZAG_TIME = 8f;
 
                 var defendAngleOne = Utilities.ClampAngle(angleAwayFromThreat + DEFEND_ANGLE);
                 var defendAngleTwo = Utilities.ClampAngle(angleAwayFromThreat - DEFEND_ANGLE);
@@ -348,7 +348,7 @@ namespace PolyPlane.AI_Behavior
                     angle = defendAngleTwo;
 
                 // Try zig-zag when the missile gets close.
-                if (distanceToThreat < ZIGZAG_DIST)
+                if (impactTime < ZIGZAG_TIME)
                     angle += _zigZagAngle;
             }
 
