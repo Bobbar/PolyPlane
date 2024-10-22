@@ -580,7 +580,7 @@ namespace PolyPlane.Rendering
             {
                 if (obj is FighterPlane p)
                 {
-                    DrawPlaneShadow(ctx, p, shadowColor);
+                    DrawPlaneGroundShadow(ctx, p, shadowColor);
                     p.Render(ctx);
                     DrawMuzzleFlash(ctx, p);
 
@@ -692,6 +692,16 @@ namespace PolyPlane.Rendering
             return Utilities.LerpColor(color, todColor, 0.3f);
         }
 
+        private float GetTimeOfDayAngle()
+        {
+            const float TOD_ANGLE_START = 45f;
+            const float TOD_ANGLE_END = 135f;
+
+            var todAngle = Utilities.Lerp(TOD_ANGLE_START, TOD_ANGLE_END, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
+
+            return todAngle;
+        }
+
         private D2DColor GetTimeOfDayColor()
         {
             var todColor = InterpolateColorGaussian(_todPallet, World.TimeOfDay, World.MAX_TIMEOFDAY);
@@ -774,22 +784,55 @@ namespace PolyPlane.Rendering
                 ctx.DrawPolygon(plane.Polygon.Poly, color, 0f, D2DDashStyle.Solid, color);
         }
 
-        private void DrawPlaneShadow(RenderContext ctx, FighterPlane plane, D2DColor shadowColor)
+        private void DrawPlaneGroundShadow(RenderContext ctx, FighterPlane plane, D2DColor shadowColor)
         {
-            const float MAX_WIDTH = 100f;
+            const float WIDTH_PADDING = 20f;
             const float HEIGHT = 10f;
             const float MAX_SIZE_ALT = 500f;
-            const float MAX_SHOW_ALT = 1400f;
+            const float MAX_SHOW_ALT = 2000f;
             const float Y_POS = 20f;
 
-            var shadowPos = new D2DPoint(plane.Position.X, Y_POS);
-
-            if (plane.Altitude > MAX_SHOW_ALT || !ctx.Viewport.Contains(shadowPos))
+            if (plane.Altitude > MAX_SHOW_ALT)
                 return;
 
-            var shadowWidth = Utilities.Lerp(0, MAX_WIDTH, Utilities.Factor(MAX_SIZE_ALT, plane.Altitude));
+            var todAngle = GetTimeOfDayAngle();
+
+            // Get poly segments facing the ToD angle.
+            var segs = plane.Polygon.GetSidesFacingDirection(Utilities.ReverseAngle(todAngle));
+
+            // Offset the ToD angle by plane rotation and turn it 90 degrees.
+            var todAngleOffset = Utilities.ClampAngle(plane.Rotation - todAngle + 90f);
+
+            // Translate the segment points by the offset angle and find min/max X coord.
+            var minX = float.MaxValue;
+            var maxX = float.MinValue;
+
+            foreach (var seg in segs)
+            {
+                var transSeg = Utilities.ApplyTranslation(seg.A, todAngleOffset - plane.Rotation, plane.Position, D2DPoint.Zero);
+
+                minX = Math.Min(minX, transSeg.X);
+                maxX = Math.Max(maxX, transSeg.X);
+            }
+
+            // Compute the width.
+            var maxWidth = ((maxX - minX) * 0.5f) + WIDTH_PADDING;
+
+            // Project a line along the ToD angle towards the ground and find the intersection point for the shadow position.
+            var todVec = plane.Position + Utilities.AngleToVectorDegrees(todAngle, 3000f);
+            var shadowPos = Utilities.IntersectionPoint(plane.Position, todVec, new D2DPoint(plane.Position.X - this.Width, 0f), new D2DPoint(plane.Position.X + this.Width, 0f));
+
+            // Move shadow position down slightly to keep it visible.
+            shadowPos += new D2DPoint(0f, Y_POS);
+
+            // Compute the shadow width per altitude and draw it.
+            var shadowWidth = Utilities.Lerp(1f, maxWidth, Utilities.Factor(MAX_SIZE_ALT, plane.Altitude));
+
             if (plane.Altitude <= 0f)
-                shadowWidth = MAX_WIDTH;
+                shadowWidth = maxWidth;
+
+            if (shadowWidth <= 0f)
+                return;
 
             ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(shadowWidth, HEIGHT)), shadowColor);
         }
@@ -1534,6 +1577,7 @@ namespace PolyPlane.Rendering
         private void DrawClouds(RenderContext ctx)
         {
             var todColor = GetTimeOfDayColor();
+            var todAngle = GetTimeOfDayAngle();
 
             for (int i = 0; i < _clouds.Count; i++)
             {
@@ -1544,7 +1588,7 @@ namespace PolyPlane.Rendering
                     DrawCloud(ctx, cloud, todColor);
                 }
 
-                DrawCloudShadow(ctx, cloud, todColor);
+                DrawCloudShadow(ctx, cloud, todColor, todAngle);
             }
         }
 
@@ -1585,16 +1629,13 @@ namespace PolyPlane.Rendering
             return cloudShadowPos;
         }
 
-        private void DrawCloudShadow(RenderContext ctx, Cloud cloud, D2DColor todColor)
+        private void DrawCloudShadow(RenderContext ctx, Cloud cloud, D2DColor todColor, float todAngle)
         {
-            const float TOD_ANGLE_START = 45f;
-            const float TOD_ANGLE_END = 135f;
             const float MAX_ALT = -8000f;
 
             if (cloud.Position.Y < MAX_ALT)
                 return;
 
-            var todAngle = Utilities.Lerp(TOD_ANGLE_START, TOD_ANGLE_END, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
             var cloudShadowPos = GetCloudShadowPos(cloud.Position, todAngle);
 
             if (!ctx.Viewport.Contains(new D2DEllipse(cloudShadowPos, new D2DSize(cloud.Radius * cloud.ScaleX * (CLOUD_SCALE + 3f), cloud.Radius * cloud.ScaleX * (CLOUD_SCALE + 1f)))))

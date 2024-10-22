@@ -174,6 +174,24 @@ namespace PolyPlane.Helpers
             return ret;
         }
 
+        public static float ReverseAngle(float angle)
+        {
+            return ClampAngle((angle + 180f) % 360f);
+        }
+
+        public static D2DPoint IntersectionPoint(D2DPoint P1, D2DPoint P2, D2DPoint P3, D2DPoint P4)
+        {
+            if (CollisionHelpers.IsIntersecting(P1, P2, P3, P4, out D2DPoint pos))
+            {
+                return pos;
+            }
+            else
+            {
+                return D2DPoint.Zero;
+            }
+        
+        }
+
         public static float PositionToAltitude(D2DPoint position)
         {
             // Up = negative on the Y axis.
@@ -215,6 +233,17 @@ namespace PolyPlane.Helpers
 
             return D2DPoint.Transform(src, mat);
         }
+
+        public static D2DPoint ApplyTranslation(D2DPoint src, float rotation, D2DPoint centerPoint, D2DPoint translation, float scale = 1f)
+        {
+            var mat = Matrix3x2.CreateScale(scale);
+            mat *= Matrix3x2.CreateRotation(rotation * DEGREES_TO_RADS, centerPoint);
+            mat *= Matrix3x2.CreateTranslation(translation);
+
+            return D2DPoint.Transform(src, mat);
+        }
+
+
 
         public static void ApplyTranslation(D2DPoint[] src, D2DPoint[] dst, float rotation, D2DPoint translation, float scale = 1f)
         {
