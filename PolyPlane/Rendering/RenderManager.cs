@@ -791,7 +791,7 @@ namespace PolyPlane.Rendering
             const float HEIGHT = 10f;
             const float MAX_SIZE_ALT = 500f;
             const float MAX_SHOW_ALT = 2000f;
-            const float Y_POS = 20f;
+            const float Y_POS = 15f;
 
             if (plane.Altitude > MAX_SHOW_ALT)
                 return;
@@ -816,10 +816,10 @@ namespace PolyPlane.Rendering
 
             // Project a line along the ToD angle towards the ground and find the intersection point for the shadow position.
             var todVec = plane.Position + Utilities.AngleToVectorDegrees(todAngle, MAX_SHOW_ALT * 2f);
-            var shadowPos = Utilities.IntersectionPoint(plane.Position, todVec, new D2DPoint(plane.Position.X - this.Width, 0f), new D2DPoint(plane.Position.X + this.Width, 0f));
-
-            // Move shadow position down slightly to keep it visible.
-            shadowPos += new D2DPoint(0f, Y_POS);
+            var vpWidth = this.Width * World.ViewPortScaleMulti;
+            var groundLineA = new D2DPoint(plane.Position.X - vpWidth, Y_POS);
+            var groundLineB = new D2DPoint(plane.Position.X + vpWidth, Y_POS);
+            var shadowPos = Utilities.IntersectionPoint(plane.Position, todVec, groundLineA, groundLineB);
 
             // Compute the shadow width and alpha per altitude and draw it.
             var shadowWidth = Utilities.Lerp(1f, initialWidth, Utilities.Factor(MAX_SIZE_ALT, plane.Altitude));

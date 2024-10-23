@@ -179,17 +179,25 @@ namespace PolyPlane.Helpers
             return ClampAngle((angle + 180f) % 360f);
         }
 
-        public static D2DPoint IntersectionPoint(D2DPoint P1, D2DPoint P2, D2DPoint P3, D2DPoint P4)
+        public static D2DPoint IntersectionPoint(D2DPoint line1A, D2DPoint line1B, D2DPoint line2A, D2DPoint line2B)
         {
-            if (CollisionHelpers.IsIntersecting(P1, P2, P3, P4, out D2DPoint pos))
-            {
-                return pos;
-            }
-            else
-            {
+            var A1 = line1B.Y - line1A.Y;
+            var B1 = line1A.X - line1B.X;
+            var C1 = A1 * line1A.X + B1 * line1A.Y;
+
+            var A2 = line2B.Y - line2A.Y;
+            var B2 = line2A.X - line2B.X;
+            var C2 = A2 * line2A.X + B2 * line2A.Y;
+
+            var delta = A1 * B2 - A2 + B1;
+
+            if (delta == 0f)
                 return D2DPoint.Zero;
-            }
-        
+
+            var x = (B2 * C1 - B1 * C2) / delta;
+            var y = (A1 * C2 - A2 * C1) / delta;
+
+            return new D2DPoint(x, y);
         }
 
         public static float PositionToAltitude(D2DPoint position)
