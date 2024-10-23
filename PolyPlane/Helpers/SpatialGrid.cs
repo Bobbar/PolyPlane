@@ -1,4 +1,5 @@
-﻿using unvell.D2DLib;
+﻿using System.Runtime.CompilerServices;
+using unvell.D2DLib;
 
 namespace PolyPlane.Helpers
 {
@@ -176,7 +177,14 @@ namespace PolyPlane.Helpers
 
         private int GetGridHash(int idxX, int idxY)
         {
-            return HashCode.Combine(idxX, idxY);
+            return Combine(idxX, idxY);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int Combine(int h1, int h2)
+        {
+            uint rol5 = ((uint)h1 << 5) | ((uint)h1 >> 27);
+            return ((int)rol5 + h1) ^ h2;
         }
     }
 }
