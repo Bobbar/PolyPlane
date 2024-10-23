@@ -692,7 +692,7 @@ namespace PolyPlane.Rendering
             return Utilities.LerpColor(color, todColor, 0.3f);
         }
 
-        private float GetTimeOfDayAngle()
+        private float GetTimeOfDaySunAngle()
         {
             const float TOD_ANGLE_START = 45f;
             const float TOD_ANGLE_END = 135f;
@@ -787,6 +787,7 @@ namespace PolyPlane.Rendering
         private void DrawPlaneGroundShadow(RenderContext ctx, FighterPlane plane, D2DColor shadowColor)
         {
             const float WIDTH_PADDING = 20f;
+            const float MAX_WIDTH = 120f;
             const float HEIGHT = 10f;
             const float MAX_SIZE_ALT = 500f;
             const float MAX_SHOW_ALT = 2000f;
@@ -795,46 +796,42 @@ namespace PolyPlane.Rendering
             if (plane.Altitude > MAX_SHOW_ALT)
                 return;
 
-            var todAngle = GetTimeOfDayAngle();
+            var todAngle = GetTimeOfDaySunAngle();
 
-            // Get poly segments facing the ToD angle.
-            var segs = plane.Polygon.GetSidesFacingDirection(Utilities.ReverseAngle(todAngle));
+            // Two offsets. One for ToD angle offset by 90 degrees, another offset by plane rotation.
+            var todAngleOffset = Utilities.ClampAngle(todAngle + 90f);
+            var todRotationOffset = Utilities.ClampAngle(todAngleOffset - plane.Rotation);
 
-            // Offset the ToD angle by plane rotation and turn it 90 degrees.
-            var todAngleOffset = Utilities.ClampAngle(plane.Rotation - todAngle + 90f);
+            // Make a line segment to represent the plane's rotation in relation to the angle of the sun.
+            var lineA = new D2DPoint(0f, 0f);
+            var lineB = new D2DPoint(MAX_WIDTH, 0f);
 
-            // Translate the segment points by the offset angle and find min/max X coord.
-            var minX = float.MaxValue;
-            var maxX = float.MinValue;
+            // Rotate the segment.
+            lineA = Utilities.ApplyTranslation(lineA, todRotationOffset, D2DPoint.Zero);
+            lineB = Utilities.ApplyTranslation(lineB, todRotationOffset, D2DPoint.Zero);
 
-            foreach (var seg in segs)
-            {
-                var transSeg = Utilities.ApplyTranslation(seg.A, todAngleOffset - plane.Rotation, plane.Position, D2DPoint.Zero);
-
-                minX = Math.Min(minX, transSeg.X);
-                maxX = Math.Max(maxX, transSeg.X);
-            }
-
-            // Compute the width.
-            var maxWidth = ((maxX - minX) * 0.5f) + WIDTH_PADDING;
+            // Get the abs diff between the X coords of the line to compute the initial shadow width.
+            var width = Math.Abs(lineB.X - lineA.X);
+            var initialWidth = ((width) * 0.5f) + WIDTH_PADDING;
 
             // Project a line along the ToD angle towards the ground and find the intersection point for the shadow position.
-            var todVec = plane.Position + Utilities.AngleToVectorDegrees(todAngle, 3000f);
+            var todVec = plane.Position + Utilities.AngleToVectorDegrees(todAngle, MAX_SHOW_ALT * 2f);
             var shadowPos = Utilities.IntersectionPoint(plane.Position, todVec, new D2DPoint(plane.Position.X - this.Width, 0f), new D2DPoint(plane.Position.X + this.Width, 0f));
 
             // Move shadow position down slightly to keep it visible.
             shadowPos += new D2DPoint(0f, Y_POS);
 
-            // Compute the shadow width per altitude and draw it.
-            var shadowWidth = Utilities.Lerp(1f, maxWidth, Utilities.Factor(MAX_SIZE_ALT, plane.Altitude));
+            // Compute the shadow width and alpha per altitude and draw it.
+            var shadowWidth = Utilities.Lerp(1f, initialWidth, Utilities.Factor(MAX_SIZE_ALT, plane.Altitude));
+            var shadowAlpha = shadowColor.a * (1f - Utilities.FactorWithEasing(plane.Altitude, MAX_SHOW_ALT, EasingFunctions.EaseInSine));
 
             if (plane.Altitude <= 0f)
-                shadowWidth = maxWidth;
+                shadowWidth = initialWidth;
 
             if (shadowWidth <= 0f)
                 return;
 
-            ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(shadowWidth, HEIGHT)), shadowColor);
+            ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(shadowWidth, HEIGHT)), shadowColor.WithAlpha(shadowAlpha));
         }
 
         private void DrawLightingEffects(RenderContext ctx, IEnumerable<GameObject> objs)
@@ -1577,7 +1574,7 @@ namespace PolyPlane.Rendering
         private void DrawClouds(RenderContext ctx)
         {
             var todColor = GetTimeOfDayColor();
-            var todAngle = GetTimeOfDayAngle();
+            var todAngle = GetTimeOfDaySunAngle();
 
             for (int i = 0; i < _clouds.Count; i++)
             {
