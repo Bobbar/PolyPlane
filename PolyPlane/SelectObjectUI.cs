@@ -72,7 +72,8 @@ namespace PolyPlane
             if (obj != null)
             {
                 SelectedObject = obj.Ref;
-                World.ViewObjectID = SelectedObject.ID;
+                World.ViewObject = SelectedObject;
+                World.FreeCameraMode = false;
             }
         }
 

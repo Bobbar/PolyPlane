@@ -125,6 +125,7 @@ namespace PolyPlane
         public static bool IsPaused = false;
         public static bool IsNetGame = false;
         public static bool IsServer = false;
+        public static bool FreeCameraMode = false;
         public static bool IsClient
         {
             get { return World.IsNetGame && !World.IsServer; }
@@ -165,7 +166,9 @@ namespace PolyPlane
         public static uint CurrentObjId = 0;
         public static int CurrentPlayerId = 1000;
 
-        public static GameID ViewObjectID;
+        
+        private static GameID ViewObjectID;
+        public static GameObject ViewObject;
 
         public static double ServerTimeOffset
         {
@@ -273,13 +276,15 @@ namespace PolyPlane
 
         public static FighterPlane GetViewPlane()
         {
-            var plane = ObjectManager.GetPlaneByPlayerID(ViewObjectID.PlayerID);
+            var plane = ObjectManager.GetPlaneByPlayerID(ViewObject.PlayerID);
             return plane;
         }
 
         public static GameObject GetViewObject()
         {
-            var obj = ObjectManager.GetObjectByID(ViewObjectID);
+            var obj = ViewObject;
+            ViewObjectID = obj.ID;
+
             return obj;
         }
 
@@ -291,7 +296,10 @@ namespace PolyPlane
                 var plane = ObjectManager.GetPlaneByPlayerID(nextId);
 
                 if (plane != null)
+                {
+                    ViewObject = plane;
                     ViewObjectID = plane.ID;
+                }
             }
         }
 
@@ -303,7 +311,10 @@ namespace PolyPlane
                 var plane = ObjectManager.GetPlaneByPlayerID(prevId);
 
                 if (plane != null)
+                {
+                    ViewObject = plane;
                     ViewObjectID = plane.ID;
+                }
             }
         }
 

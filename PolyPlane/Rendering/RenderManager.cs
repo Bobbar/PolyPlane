@@ -446,33 +446,6 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private GameObject GetViewObject(GameObject viewObject)
-        {
-            // Returns the specified object if it is not null and not expired.
-            // Otherwise return a dummy object at the last known position to keep the view active.
-            GameObject viewObj = null;
-
-            if (viewObject != null)
-            {
-                _prevViewObjPos = viewObject.Position;
-
-                if (viewObject.IsExpired)
-                {
-                    viewObj = new DummyObject(_prevViewObjPos);
-                }
-                else
-                {
-                    viewObj = viewObject;
-                }
-            }
-            else
-            {
-                viewObj = new DummyObject(_prevViewObjPos);
-            }
-
-            return viewObj;
-        }
-
         public void RenderFrame(GameObject viewObject)
         {
             InitGfx();
@@ -484,27 +457,26 @@ namespace PolyPlane.Rendering
 
             _gfx.BeginRender(_clearColor);
 
-            GameObject viewObj = GetViewObject(viewObject);
-
-            if (viewObj != null)
+            if (viewObject != null)
             {
-                var viewPortRect = new D2DRect(viewObj.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
+                var viewPortSize = new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE);
+                var viewPortRect = new D2DRect(viewObject.Position, viewPortSize);
                 _ctx.Viewport = viewPortRect;
 
                 _gfx.PushTransform(); // Push screen shake transform.
                 _gfx.TranslateTransform(_screenShakeTrans.X, _screenShakeTrans.Y);
 
                 // Sky and background.
-                DrawSky(_ctx, viewObj);
-                DrawMovingBackground(_ctx, viewObj);
+                DrawSky(_ctx, viewObject);
+                DrawMovingBackground(_ctx, viewObject);
 
                 _gfx.PushTransform(); // Push scale transform.
                 _gfx.ScaleTransform(World.ZoomScale, World.ZoomScale);
 
                 // Draw the main player view.
-                DrawPlayerView(_ctx, viewObj);
+                DrawPlayerView(_ctx, viewObject);
 
-                if (viewObj is FighterPlane plane)
+                if (viewObject is FighterPlane plane)
                 {
                     if (plane.GForce > SCREEN_SHAKE_G)
                         DoScreenShake(plane.GForce / 5f);
@@ -514,12 +486,15 @@ namespace PolyPlane.Rendering
 
                 // Draw HUD.
                 var hudVPSize = new D2DSize(this.Width, this.Height);
-                DrawHud(_ctx, hudVPSize, viewObj);
+                DrawHud(_ctx, hudVPSize, viewObject);
+
+                if (World.FreeCameraMode)
+                    DrawFreeCamPrompt(_ctx.Gfx, hudVPSize);
 
                 _gfx.PopTransform(); // Pop screen shake transform.
 
                 // Add overlays.
-                DrawOverlays(_ctx, viewObj);
+                DrawOverlays(_ctx, viewObject);
 
                 DrawScreenFlash(_gfx);
             }
@@ -1235,6 +1210,19 @@ namespace PolyPlane.Rendering
                 _hudMessage = string.Empty;
         }
 
+        private void DrawFreeCamPrompt(D2DGraphics gfx, D2DSize viewportsize)
+        {
+            const float FONT_SIZE = 20f;
+            const string MSG = "Free Camera Mode";
+
+            var pos = new D2DPoint(viewportsize.width * 0.5f, 100f);
+            var initSize = new D2DSize(600, 100);
+            var size = gfx.MeasureText(MSG, _defaultFontName, FONT_SIZE, initSize);
+            var rect = new D2DRect(pos, size);
+
+            gfx.DrawTextCenter(MSG, D2DColor.Red, _defaultFontName, FONT_SIZE, rect);
+        }
+
         private void DrawAltimeter(D2DGraphics gfx, D2DSize viewportsize, GameObject viewObject)
         {
             const float MIN_ALT = 3000f;
@@ -1715,6 +1703,7 @@ namespace PolyPlane.Rendering
                 infoText += $"\nSpectate (While crashed)\n";
                 infoText += $"([/]): Prev/Next Spectate Plane\n";
                 infoText += $"Backspace: Reset Spectate\n";
+                infoText += $"F: Toggle Free Camera Mode (Hold Right-Mouse to move)\n";
             }
             else
             {

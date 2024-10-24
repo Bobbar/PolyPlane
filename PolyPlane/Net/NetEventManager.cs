@@ -181,8 +181,6 @@ namespace PolyPlane.Net
                         var netPacket = new NewPlayerPacket(PlayerPlane);
                         Host.EnqueuePacket(netPacket);
 
-                        World.ViewObjectID = newID;
-
                         PlayerIDReceived?.Invoke(this, packet.ID.PlayerID);
                     }
 

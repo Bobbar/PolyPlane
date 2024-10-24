@@ -141,7 +141,7 @@ namespace PolyPlane.GameObjects
 
                 // Add first plane as the initial view plane.
                 if (Planes.Count == 1)
-                    World.ViewObjectID = Planes.First().ID;
+                    World.ViewObject = Planes.First();
             }
         }
 

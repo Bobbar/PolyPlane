@@ -24,15 +24,21 @@ namespace PolyPlane
         private bool _queueResetPlane = false;
         private bool _queueSpawnPlane = false;
         private bool _queueClearPlanes = false;
+        private bool _queueEnableFreeCam = false;
+        private bool _queueDisableFreeCam = false;
+
         private bool _skipRender = false;
         private bool _canRespawn = false;
         private bool _slewEnable = false;
         private bool _hasFocus = true;
         private bool _isHoldingAlt = false;
+        private bool _rightMouseDown = false;
         private float _holdAltitude = 0f;
 
         private D2DPoint _playerPlaneSlewPos = D2DPoint.Zero;
         private D2DPoint _mousePosition = D2DPoint.Zero;
+        private D2DPoint _mouseDownPosition = D2DPoint.Zero;
+        private D2DPoint _prevViewObjectPosition = D2DPoint.Zero;
 
         private Stopwatch _timer = new Stopwatch();
         private TimeSpan _updateTime = new TimeSpan();
@@ -40,6 +46,7 @@ namespace PolyPlane
 
         private GameObjectManager _objs = World.ObjectManager;
         private FighterPlane _playerPlane;
+        private DummyObject? _freeCamObject = null;
 
         private NetPlayHost _client;
         private NetEventManager _netMan;
@@ -145,7 +152,7 @@ namespace PolyPlane
 
         private void EnableRespawn()
         {
-            if (World.ViewObjectID.Equals(_playerPlane.ID))
+            if (World.ViewObject.Equals(_playerPlane))
             {
                 string spawnDirText = "Left";
                 var guideAngle = GetPlayerGuidanceAngle();
@@ -173,8 +180,8 @@ namespace PolyPlane
                         World.IsServer = false;
 
                         _playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
-                        World.ViewObjectID = _playerPlane.ID;
-                        _objs.EnqueuePlane(_playerPlane);
+                        World.ViewObject = _playerPlane;
+                        _objs.AddPlane(_playerPlane);
 
                         _client = new ClientNetHost(config.Port, config.ServerIPAddress);
                         _netMan = new NetEventManager(_client, _playerPlane);
@@ -214,8 +221,8 @@ namespace PolyPlane
                         _collisions.ImpactEvent += HandleNewImpact;
 
                         _playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
-                        World.ViewObjectID = _playerPlane.ID;
-                        _objs.EnqueuePlane(_playerPlane);
+                        World.ViewObject = _playerPlane;
+                        _objs.AddPlane(_playerPlane);
 
                         InitGfx();
                         StartGameThread();
@@ -355,7 +362,7 @@ namespace PolyPlane
             {
                 _objs.EnqueueBullet(b);
 
-                if (b.Owner.ID.Equals(World.ViewObjectID))
+                if (b.Owner.Equals(World.ViewObject))
                     _render.DoScreenShake(2f);
 
                 if (World.IsNetGame)
@@ -418,7 +425,7 @@ namespace PolyPlane
             _render.ClearHudMessage();
 
             if (!_playerPlane.IsAI)
-                World.ViewObjectID = _playerPlane.ID;
+                World.ViewObject = _playerPlane;
         }
 
         private void TargetLockedWithMissile()
@@ -473,7 +480,7 @@ namespace PolyPlane
 
             ProcessQueuedEvents();
 
-            var viewObject = World.GetViewObject();
+            var viewObject = GetViewObjectOrCamera(World.GetViewObject());
 
             // Update/advance objects.
             if (!World.IsPaused || _oneStep)
@@ -548,6 +555,39 @@ namespace PolyPlane
             HandleAIPlaneRespawn();
         }
 
+        private GameObject GetViewObjectOrCamera(GameObject viewObject)
+        {
+            // Returns the specified object if it is not null and not expired.
+            // Otherwise enable free camera and return a dummy object at the last known position to keep the view active.
+            GameObject viewObj = null;
+
+            if (viewObject != null)
+            {
+                _prevViewObjectPosition = viewObject.Position;
+
+                if (viewObject.IsExpired)
+                {
+                    World.FreeCameraMode = true;
+                    _freeCamObject = new DummyObject(_prevViewObjectPosition);
+                    World.ViewObject = _freeCamObject;
+                    viewObj = _freeCamObject;
+                }
+                else
+                {
+                    viewObj = viewObject;
+                }
+            }
+            else
+            {
+                World.FreeCameraMode = true;
+                _freeCamObject = new DummyObject(_prevViewObjectPosition);
+                World.ViewObject = _freeCamObject;
+                viewObj = _freeCamObject;
+            }
+
+            return viewObj;
+        }
+
         private void HandleAIPlaneRespawn()
         {
             if (!World.RespawnAIPlanes)
@@ -564,10 +604,49 @@ namespace PolyPlane
 
         private void DoMouseButtons()
         {
-            if (_playerPlane.IsAI)
-                return;
+            var buttons = Control.MouseButtons;
 
-            if (!_hasFocus)
+            if (!World.FreeCameraMode && !_playerPlane.IsAI)
+            {
+                if ((buttons & MouseButtons.Left) == MouseButtons.Left)
+                {
+                    _playerPlane.FiringBurst = true;
+                }
+                else
+                {
+                    _playerPlane.FiringBurst = false;
+                }
+            }
+
+            if ((buttons & MouseButtons.Right) == MouseButtons.Right)
+            {
+
+                if (!World.FreeCameraMode && !_playerPlane.IsAI)
+                    _playerPlane.DroppingDecoy = true;
+
+                _rightMouseDown = true;
+            }
+            else
+            {
+                if (!World.FreeCameraMode && !_playerPlane.IsAI)
+                    _playerPlane.DroppingDecoy = false;
+
+                _rightMouseDown = false;
+            }
+
+            if (!World.FreeCameraMode)
+            {
+                var guideAngle = GetPlayerGuidanceAngle();
+                _playerPlane.SetGuidanceAngle(guideAngle);
+            }
+            else
+            {
+                if (_rightMouseDown)
+                    DoFreeCamMovement();
+            }
+
+
+            if (!_hasFocus && !_playerPlane.IsAI)
             {
                 _playerPlane.FiringBurst = false;
                 _playerPlane.DroppingDecoy = false;
@@ -575,7 +654,7 @@ namespace PolyPlane
             }
 
             // Don't allow inputs if mouse left the window.
-            if (!this.DesktopBounds.Contains(Control.MousePosition))
+            if (!this.DesktopBounds.Contains(Control.MousePosition) && !_playerPlane.IsAI)
             {
                 _playerPlane.FiringBurst = false;
                 _playerPlane.DroppingDecoy = false;
@@ -586,25 +665,6 @@ namespace PolyPlane
             {
                 _isHoldingAlt = false;
             }
-
-            var buttons = Control.MouseButtons;
-
-            if ((buttons & MouseButtons.Left) == MouseButtons.Left)
-            {
-                _playerPlane.FiringBurst = true;
-            }
-            else
-            {
-                _playerPlane.FiringBurst = false;
-            }
-
-            if ((buttons & MouseButtons.Right) == MouseButtons.Right)
-                _playerPlane.DroppingDecoy = true;
-            else
-                _playerPlane.DroppingDecoy = false;
-
-            var guideAngle = GetPlayerGuidanceAngle();
-            _playerPlane.SetGuidanceAngle(guideAngle);
         }
 
         private float GetPlayerGuidanceAngle()
@@ -621,6 +681,28 @@ namespace PolyPlane
             var angle = scaledPos.AngleTo(center);
 
             return angle;
+        }
+
+        private void DoFreeCamMovement()
+        {
+            if (_freeCamObject == null)
+                return;
+
+            var mousePos = _mousePosition;
+
+            var center = _mouseDownPosition;
+            center /= World.DEFAULT_DPI / (float)this.DeviceDpi; // Scale for DPI.
+
+            var dist = mousePos.DistanceTo(center);
+            var angle = mousePos.AngleTo(center);
+
+            if (dist > 0f)
+            {
+                _freeCamObject.Position += Utilities.AngleToVectorDegrees(angle, dist * 0.5f);
+            }
+
+            if (_freeCamObject.Position.Y >= 0f)
+                _freeCamObject.Position = new D2DPoint(_freeCamObject.Position.X, 0f);
         }
 
         private void ProcessQueuedEvents()
@@ -641,7 +723,7 @@ namespace PolyPlane
             {
                 _queueResetPlane = false;
 
-                if (World.ViewObjectID.Equals(_playerPlane.ID))
+                if (World.ViewObject.Equals(_playerPlane))
                     ResetPlane();
             }
 
@@ -660,6 +742,23 @@ namespace PolyPlane
             {
                 SpawnAIPlane();
                 _queueSpawnPlane = false;
+            }
+
+            if (_queueEnableFreeCam)
+            {
+                _queueEnableFreeCam = false;
+
+                var currentObj = World.GetViewObject();
+                _freeCamObject = new DummyObject(currentObj.Position);
+                World.ViewObject = _freeCamObject;
+            }
+
+            if (_queueDisableFreeCam)
+            {
+                _queueDisableFreeCam = false;
+
+                if (!_playerPlane.IsAI)
+                    World.ViewObject = _playerPlane;
             }
         }
 
@@ -696,13 +795,19 @@ namespace PolyPlane
         private void NextViewPlane()
         {
             if ((_playerPlane.IsDisabled || _playerPlane.HasCrashed || _playerPlane.IsAI))
+            {
+                World.FreeCameraMode = false;
                 _queueNextViewId = true;
+            }
         }
 
         private void PrevViewPlane()
         {
             if ((_playerPlane.IsDisabled || _playerPlane.HasCrashed || _playerPlane.IsAI))
+            {
+                World.FreeCameraMode = false;
                 _queuePrevViewId = true;
+            }
         }
 
         private void ShowSelectObjectUI()
@@ -750,6 +855,17 @@ namespace PolyPlane
                     break;
 
                 case 'e':
+                    break;
+
+                case 'f':
+
+                    World.FreeCameraMode = !World.FreeCameraMode;
+
+                    if (World.FreeCameraMode)
+                        _queueEnableFreeCam = true;
+                    else
+                        _queueDisableFreeCam = true;
+
                     break;
 
                 case 'g':
@@ -871,7 +987,10 @@ namespace PolyPlane
                     break;
 
                 case (char)8: //Backspace
-                    World.ViewObjectID = _playerPlane.ID;
+                    World.ViewObject = _playerPlane;
+                    World.FreeCameraMode = false;
+                    _queueDisableFreeCam = true;
+
                     break;
 
                 case (char)9: //Tab
@@ -899,6 +1018,8 @@ namespace PolyPlane
                     break;
 
             }
+
+            _mouseDownPosition = e.Location.ToD2DPoint();
         }
 
         private void PolyPlaneUI_KeyDown(object sender, KeyEventArgs e)
