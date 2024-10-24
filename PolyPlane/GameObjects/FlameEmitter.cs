@@ -21,10 +21,12 @@ namespace PolyPlane.GameObjects
 
         private FixturePoint _refPos = null;
         private GameTimer _spawnTimer = new GameTimer(0.1f, true);
+        private float _interval = 0f;
 
         public FlameEmitter(GameObject obj, D2DPoint offset, float radius = 10f) : base(obj.Position, obj.Velocity)
         {
-            _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
+            _interval = MAX_AGE / MAX_PARTS;
+            _spawnTimer.Interval = _interval;
 
             this.Owner = obj;
 
@@ -41,7 +43,8 @@ namespace PolyPlane.GameObjects
 
         public FlameEmitter(GameObject obj, D2DPoint offset, bool hasFlame = true) : base(obj.Position, obj.Velocity)
         {
-            _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
+            _interval = MAX_AGE / MAX_PARTS;
+            _spawnTimer.Interval = _interval;
 
             this.Owner = obj;
 
@@ -99,6 +102,8 @@ namespace PolyPlane.GameObjects
         {
             if (World.IsNetGame && World.IsServer)
                 return;
+            
+            _spawnTimer.Interval = _interval + Utilities.Rnd.NextFloat(-0.1f, 0.1f);
 
             _refPos.Update(World.DT);
             D2DPoint newPos = _refPos.Position;

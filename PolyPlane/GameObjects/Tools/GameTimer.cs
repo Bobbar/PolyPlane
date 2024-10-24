@@ -2,7 +2,19 @@
 {
     public class GameTimer
     {
-        public float Interval { get; set; }
+        public float Interval
+        {
+            get { return _interval; }
+
+            set
+            {
+                if (value < 0f)
+                    _interval = 0f;
+                else
+                    _interval = value;
+            }
+        }
+
         public float Cooldown { get; set; } = -1;
         public bool IsInCooldown => _isInCooldown;
         public bool IsRunning => _isRunning;
@@ -13,6 +25,7 @@
         public Action CoolDownEndCallback { get; set; }
         public Action TriggerCallback { get; set; }
 
+        private float _interval = 0f;
         private float _current = 0f;
         private float _currentCooldown = 0f;
 

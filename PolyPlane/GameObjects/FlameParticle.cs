@@ -13,12 +13,12 @@ namespace PolyPlane.GameObjects
         public D2DColor EndColor { get; set; }
 
         private D2DEllipse _ellipse;
+        private D2DPoint _riseRate;
+        private float _maxAge = 1f;
 
         private const float MIN_RISE_RATE = -50f;
         private const float MAX_RISE_RATE = -70f;
         private const float WIND_SPEED = 20f; // Fake wind effect amount.
-
-        private D2DPoint _riseRate;
 
         public FlamePart()
         {
@@ -29,6 +29,7 @@ namespace PolyPlane.GameObjects
 
         public void ReInit(D2DPoint pos, float radius, D2DColor endColor, D2DPoint velo)
         {
+            _maxAge = FlameEmitter.MAX_AGE + Utilities.Rnd.NextFloat(-5f, 5f);
             this.Age = 0f;
             this.IsExpired = false;
 
@@ -50,6 +51,7 @@ namespace PolyPlane.GameObjects
 
         public void ReInit(D2DPoint pos, float radius, D2DColor startColor, D2DColor endColor, D2DPoint velo)
         {
+            _maxAge = FlameEmitter.MAX_AGE + Utilities.Rnd.NextFloat(-5f, 5f);
             this.Age = 0f;
             this.IsExpired = false;
 
@@ -71,8 +73,8 @@ namespace PolyPlane.GameObjects
         {
             base.Update(dt);
 
-            var ageFactFade = 1f - Utilities.Factor(this.Age, FlameEmitter.MAX_AGE);
-            var ageFactSmoke = Utilities.Factor(this.Age, FlameEmitter.MAX_AGE * 3f);
+            var ageFactFade = 1f - Utilities.Factor(this.Age, _maxAge);
+            var ageFactSmoke = Utilities.Factor(this.Age, _maxAge * 3f);
             var alpha = StartColor.a * ageFactFade;
 
             this.Color = Utilities.LerpColorWithAlpha(this.Color, this.EndColor, ageFactSmoke, alpha);
@@ -80,11 +82,11 @@ namespace PolyPlane.GameObjects
             this.Velocity += _riseRate * dt;
 
             // Simulate the particles being blown by the wind.
-            _riseRate.X = WIND_SPEED * Utilities.FactorWithEasing(this.Age, FlameEmitter.MAX_AGE, EasingFunctions.EaseOutSine);
+            _riseRate.X = WIND_SPEED * Utilities.FactorWithEasing(this.Age, _maxAge, EasingFunctions.EaseOutSine);
 
             _ellipse.origin = this.Position;
 
-            if (this.Age > FlameEmitter.MAX_AGE)
+            if (this.Age > _maxAge)
                 this.IsExpired = true;
         }
 
