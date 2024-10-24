@@ -698,7 +698,7 @@ namespace PolyPlane
 
             if (dist > 0f)
             {
-                _freeCamObject.Position += Utilities.AngleToVectorDegrees(angle, dist * 0.5f);
+                _freeCamObject.Position += Utilities.AngleToVectorDegrees(angle, dist * (0.5f * Math.Clamp(1f - Utilities.Factor(World.ZoomScale, 0.5f), 0.1f, 1f)));
             }
 
             if (_freeCamObject.Position.Y >= 0f)
