@@ -273,6 +273,7 @@ namespace PolyPlane.GameObjects
             _gun = new Gun(this, new D2DPoint(35f, 0), FireBulletCallback);
             _decoyDispenser = new DecoyDispenser(this, new D2DPoint(-24f, 0f));
             _engineFireFlame = new FlameEmitter(_centerOfThrust, D2DPoint.Zero, false);
+            _engineFireFlame.Owner = this;
             _engineFireFlame.StopSpawning();
 
             _flamePos.IsNetObject = this.IsNetObject;

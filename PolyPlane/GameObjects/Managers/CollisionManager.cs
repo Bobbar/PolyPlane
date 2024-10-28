@@ -179,6 +179,8 @@ namespace PolyPlane.GameObjects.Manager
                             }
                         }
                     }
+
+                    DoParticleImpulse(plane, obj);
                 }
             }
 
@@ -219,12 +221,79 @@ namespace PolyPlane.GameObjects.Manager
                             decoy.IsExpired = true;
                         }
                     }
+
+                    DoParticleImpulse(missile, obj);
                 }
             }
 
             HandleExplosionImpulse();
             HandleGroundImpacts();
             HandleFieldWrap();
+        }
+
+        private void DoParticleImpulse(GameObject pushObject, GameObject particleObject)
+        {
+            const float EFFECT_DIST_PLANE = 90f;
+            const float EFFECT_DIST_MISSILE = 55f;
+            const float EFFECT_DIST_GROW = 20f;
+            const float EFFECT_GROW_VELO = 1000f;
+
+            const float MIN_EFFECT_AGE = 2f;
+            const float FORCE = 5000f;
+            const float VELO_FACTOR = 0.1f;
+            const float MIN_VELO = 10f;
+
+            if (particleObject.IsNetObject)
+                return;
+
+            if (particleObject is Explosion || particleObject is Decoy || particleObject is FighterPlane || particleObject is GuidedMissile)
+                return;
+
+            if (particleObject is not ICollidable)
+                return;
+
+            if (particleObject.Equals(pushObject))
+                return;
+
+            var pushVelo = pushObject.Velocity.Length();
+
+            // Skip impulse when velo is low.
+            if (pushVelo < MIN_VELO)
+                return;
+
+            // Increase effect distance with velo.            
+            var effectDist = EFFECT_DIST_PLANE;
+
+            if (pushObject is GuidedMissile)
+                effectDist = EFFECT_DIST_MISSILE;
+
+            var veloFact = Utilities.Factor(pushVelo, EFFECT_GROW_VELO);
+            effectDist += EFFECT_DIST_GROW * veloFact;
+
+            var dist = pushObject.Position.DistanceTo(particleObject.Position) + float.Epsilon;
+
+            // Skip if outside effect dist.
+            if (dist > effectDist)
+                return;
+
+
+            var forceFact = 1f - Utilities.FactorWithEasing(dist, effectDist, EasingFunctions.EaseInSine);
+
+            float ageFact = 1f;
+
+            // Ease in impulse for particles spawned by the pusher object.
+            if (particleObject.Owner != null && particleObject.Owner.Equals(pushObject))
+                ageFact = Utilities.FactorWithEasing(particleObject.Age, MIN_EFFECT_AGE, EasingFunctions.EaseInQuintic);
+
+            var dir = (particleObject.Position - pushObject.Position);
+            var dirNorm = dir.Normalized();
+            var forceVec = dirNorm * (FORCE * forceFact);
+
+            // Push particles away.
+            particleObject.Velocity += (forceVec / particleObject.Mass * World.DT) * ageFact;
+
+            // Add some velo from the pusher object.
+            particleObject.Velocity += ((pushObject.Velocity * VELO_FACTOR) * forceFact * ageFact);
         }
 
         private void HandleExplosionImpulse()

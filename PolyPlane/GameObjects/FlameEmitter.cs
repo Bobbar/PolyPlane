@@ -22,6 +22,7 @@ namespace PolyPlane.GameObjects
         private FixturePoint _refPos = null;
         private GameTimer _spawnTimer = new GameTimer(0.1f, true);
         private float _interval = 0f;
+        private bool _hasFlame = true;
 
         public FlameEmitter(GameObject obj, D2DPoint offset, float radius = 10f) : base(obj.Position, obj.Velocity)
         {
@@ -36,14 +37,12 @@ namespace PolyPlane.GameObjects
             _spawnTimer.TriggerCallback = () => SpawnPart();
             _spawnTimer.Start();
 
-            Update(World.DT);
-
-            SpawnPart();
         }
 
         public FlameEmitter(GameObject obj, D2DPoint offset, bool hasFlame = true) : base(obj.Position, obj.Velocity)
         {
             _interval = MAX_AGE / MAX_PARTS;
+            _hasFlame = hasFlame;
             _spawnTimer.Interval = _interval;
 
             this.Owner = obj;
@@ -53,12 +52,10 @@ namespace PolyPlane.GameObjects
 
             _spawnTimer.TriggerCallback = () => SpawnPart();
 
-            Update(World.DT);
 
             if (hasFlame)
             {
                 _spawnTimer.Start();
-                SpawnPart();
             }
         }
 
@@ -80,6 +77,10 @@ namespace PolyPlane.GameObjects
 
         public override void Update(float dt)
         {
+            // Spawn a new particle on first frame as needed.
+            if (this.Age == 0f && _hasFlame)
+                SpawnPart();
+
             base.Update(dt);
             _spawnTimer.Update(dt);
 
@@ -99,7 +100,7 @@ namespace PolyPlane.GameObjects
         }
 
         private void SpawnPart()
-        {
+        { 
             if (World.IsNetGame && World.IsServer)
                 return;
             
@@ -118,7 +119,7 @@ namespace PolyPlane.GameObjects
             var newRad = this.Radius + Utilities.Rnd.NextFloat(-3f, 3f);
             var newPart = World.ObjectManager.RentFlamePart();
             newPart.ReInit(newPos, newRad, endColor, newVelo);
-            newPart.Owner = this;
+            newPart.Owner = this.Owner;
 
             World.ObjectManager.EnqueueFlame(newPart);
         }
