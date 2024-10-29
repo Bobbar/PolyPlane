@@ -14,12 +14,14 @@ namespace PolyPlane.Helpers
     /// <param name="sideLen">And integer (S) representing the grid cell side length (L), L = 1 << S. </param>
     public sealed class SpatialGrid<T>(Func<T, D2DPoint> positionSelector, Func<T, bool> isExpiredSelector, int sideLen = 9)
     {
-        private Dictionary<int, List<T>> _grid = new Dictionary<int, List<T>>();
-        private List<KeyValuePair<int, T>> _movedObjects = new List<KeyValuePair<int, T>>();
+        private Dictionary<int, List<Entry>> _grid = new Dictionary<int, List<Entry>>();
+        private List<Entry> _movedObjects = new List<Entry>();
+        private List<Entry> _allObjects = new List<Entry>();
 
         private readonly Func<T, D2DPoint> _positionSelector = positionSelector;
         private readonly Func<T, bool> _isExpiredSelector = isExpiredSelector;
         private readonly int SIDE_LEN = sideLen;
+        private readonly int THREAD_NUM = Environment.ProcessorCount;
 
         /// <summary>
         /// Removes expired objects and moves live objects to their new grid positions as needed.
@@ -32,45 +34,53 @@ namespace PolyPlane.Helpers
             // We save the new hashes in a KVP so that we do not need to compute
             // the hash twice.
 
-            _movedObjects.Clear(); // Clear the temp storage.
+            // Compute new hashes in parallel.
+            ComputeNextHashes();
 
+            // Iterate all items in the grid and make/record changes as needed.
             foreach (var kvp in _grid)
             {
                 var curHash = kvp.Key;
-                var objs = kvp.Value;
+                var entries = kvp.Value;
 
-                for (int i = objs.Count - 1; i >= 0; i--)
+                for (int i = entries.Count - 1; i >= 0; i--)
                 {
-                    var obj = objs[i];
+                    var entry = entries[i];
+                    var obj = entry.Item;
 
                     if (_isExpiredSelector(obj))
                     {
                         // Just remove expired objects.
-                        objs.RemoveAt(i);
+                        entries.RemoveAt(i);
                     }
                     else
                     {
                         // Check hash and record moved objects as needed.
-                        var newHash = GetGridHash(obj);
+                        var newHash = entry.NextHash;
                         if (newHash != curHash)
                         {
-                            objs.RemoveAt(i);
-                            _movedObjects.Add(new KeyValuePair<int, T>(newHash, obj));
+                            entries.RemoveAt(i);
+                            _movedObjects.Add(entry);
                         }
                     }
                 }
 
                 // Remove empty cells.
-                if (objs.Count == 0)
+                if (entries.Count == 0)
                     _grid.Remove(curHash);
+                else // Record current objects.
+                    _allObjects.AddRange(entries);
             }
 
             // Add moved objects.
             for (int i = 0; i < _movedObjects.Count; i++)
             {
                 var tmp = _movedObjects[i];
-                AddInternal(tmp.Key, tmp.Value);
+                AddInternal(tmp.NextHash, tmp.Item);
             }
+
+            // Clear the temp storage.
+            _movedObjects.Clear(); 
         }
 
         /// <summary>
@@ -104,7 +114,7 @@ namespace PolyPlane.Helpers
                     {
                         for (int i = 0; i < ns.Count; i++)
                         {
-                            yield return ns[i];
+                            yield return ns[i].Item;
                         }
                     }
                 }
@@ -136,7 +146,7 @@ namespace PolyPlane.Helpers
                     {
                         for (int i = 0; i < ns.Count; i++)
                         {
-                            yield return ns[i];
+                            yield return ns[i].Item;
                         }
                     }
                 }
@@ -147,14 +157,36 @@ namespace PolyPlane.Helpers
         {
             _grid.Clear();
             _movedObjects.Clear();
+            _allObjects.Clear();
+        }
+
+        private void ComputeNextHashes()
+        {
+            ParallelHelpers.ParallelForSlim(_allObjects.Count, THREAD_NUM, (start, end) =>
+            {
+                for (int i = start; i < end; i++)
+                {
+                    var item = _allObjects[i];
+                    var obj = item.Item;
+                    var newHash = GetGridHash(obj);
+
+                    item.NextHash = newHash;
+                }
+            });
+
+            _allObjects.Clear();
         }
 
         private void AddInternal(int hash, T obj)
         {
+            var entry = new Entry(hash, obj);
+
             if (_grid.TryGetValue(hash, out var objs))
-                objs.Add(obj);
+                objs.Add(entry);
             else
-                _grid.Add(hash, new List<T> { obj });
+                _grid.Add(hash, new List<Entry> { entry });
+
+            _allObjects.Add(entry);
         }
 
         private void GetGridIdx(D2DPoint pos, out int idxX, out int idxY)
@@ -177,6 +209,19 @@ namespace PolyPlane.Helpers
         private int GetGridHash(int idxX, int idxY)
         {
             return HashCode.Combine(idxX, idxY);
+        }
+
+
+        private class Entry
+        {
+            public int NextHash;
+            public T Item;
+
+            public Entry(int curHash, T item)
+            {
+                NextHash = curHash;
+                Item = item;
+            }
         }
     }
 }

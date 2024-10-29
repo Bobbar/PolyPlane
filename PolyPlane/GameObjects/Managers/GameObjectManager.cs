@@ -282,6 +282,7 @@ namespace PolyPlane.GameObjects
             SyncObjQueues();
 
             PruneExpired();
+
             _spatialGrid.Update();
 
             SyncObjCollections();
