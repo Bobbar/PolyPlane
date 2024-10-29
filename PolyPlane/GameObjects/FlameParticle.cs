@@ -78,7 +78,7 @@ namespace PolyPlane.GameObjects
             var alpha = StartColor.a * ageFactFade;
 
             this.Color = Utilities.LerpColorWithAlpha(this.Color, this.EndColor, ageFactSmoke, alpha);
-            this.Velocity += -this.Velocity * 0.9f * dt;
+            this.Velocity += -this.Velocity * 0.8f * dt;
             this.Velocity += _riseRate * dt;
 
             // Simulate the particles being blown by the wind.
