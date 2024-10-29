@@ -5,7 +5,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class FlamePart : GameObject, ICollidable, INoGameID
+    public class FlamePart : GameObject, ICollidable, IPushable, INoGameID
     {
         public D2DEllipse Ellipse => _ellipse;
         public D2DColor Color { get; set; }

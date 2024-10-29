@@ -246,10 +246,11 @@ namespace PolyPlane.GameObjects.Manager
             if (particleObject.IsNetObject)
                 return;
 
-            if (particleObject is Explosion || particleObject is Decoy || particleObject is FighterPlane || particleObject is GuidedMissile)
+            if (particleObject is not IPushable)
                 return;
 
-            if (particleObject is not ICollidable)
+            // Don't push planes.
+            if (particleObject is FighterPlane)
                 return;
 
             if (particleObject.Equals(pushObject))
@@ -275,7 +276,6 @@ namespace PolyPlane.GameObjects.Manager
             // Skip if outside effect dist.
             if (dist > effectDist)
                 return;
-
 
             var forceFact = 1f - Utilities.FactorWithEasing(dist, effectDist, EasingFunctions.EaseInSine);
 
@@ -313,10 +313,7 @@ namespace PolyPlane.GameObjects.Manager
                     if (obj.IsNetObject)
                         continue;
 
-                    if (obj is Explosion)
-                        continue;
-
-                    if (obj is not ICollidable)
+                    if (obj is not IPushable)
                         continue;
 
                     var dist = explosion.Position.DistanceTo(obj.Position) + float.Epsilon;

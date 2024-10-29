@@ -10,7 +10,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class FighterPlane : GameObjectPoly, ICollidable
+    public class FighterPlane : GameObjectPoly, ICollidable, IPushable
     {
         public Gun Gun => _gun;
 
