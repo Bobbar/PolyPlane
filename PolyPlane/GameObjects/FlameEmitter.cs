@@ -32,11 +32,15 @@ namespace PolyPlane.GameObjects
             this.Owner = obj;
 
             Radius = radius;
+          
             _refPos = new FixturePoint(obj, offset);
+            _refPos.Update(0f);
+            this.Position = _refPos.Position;
+            this.Rotation = _refPos.Rotation;
+            this.Velocity = _refPos.Velocity;
 
             _spawnTimer.TriggerCallback = () => SpawnPart();
             _spawnTimer.Start();
-
         }
 
         public FlameEmitter(GameObject obj, D2DPoint offset, bool hasFlame = true) : base(obj.Position, obj.Velocity)
@@ -48,10 +52,14 @@ namespace PolyPlane.GameObjects
             this.Owner = obj;
 
             Radius = Utilities.Rnd.NextFloat(4f, 15f);
+            
             _refPos = new FixturePoint(obj, offset);
+            _refPos.Update(0f);
+            this.Position = _refPos.Position;
+            this.Rotation = _refPos.Rotation;
+            this.Velocity = _refPos.Velocity;
 
             _spawnTimer.TriggerCallback = () => SpawnPart();
-
 
             if (hasFlame)
             {

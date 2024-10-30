@@ -194,7 +194,7 @@ namespace PolyPlane.GameObjects
                     RenderLength = 2.5f,
                     RenderWidth = 1f,
                     Area = 0.1f,
-                    MaxDeflection = 40f,
+                    MaxDeflection = 45f,
                     MaxLiftForce = 4500f * liftScale,
                     PivotPoint = new D2DPoint(-21f, 0f),
                     Position = new D2DPoint(-22f, 0f),
@@ -209,7 +209,7 @@ namespace PolyPlane.GameObjects
                 {
                     RenderLength = 0f,
                     Area = 0.045f,
-                    MaxLiftForce = 500f * liftScale,
+                    MaxLiftForce = 1000f * liftScale,
                     MinVelo = minVelo,
                     ParasiticDrag = 0.4f,
                     MaxAOA = 40f,
