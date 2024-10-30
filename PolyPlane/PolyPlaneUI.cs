@@ -4,6 +4,7 @@ using PolyPlane.Helpers;
 using PolyPlane.Net;
 using PolyPlane.Net.NetHost;
 using PolyPlane.Rendering;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using unvell.D2DLib;
 
@@ -19,14 +20,7 @@ namespace PolyPlane
         private bool _killRender = false;
         private bool _shiftDown = false;
         private bool _ctrlDown = false;
-        private bool _queueNextViewId = false;
-        private bool _queuePrevViewId = false;
-        private bool _queueResetPlane = false;
-        private bool _queueSpawnPlane = false;
-        private bool _queueClearPlanes = false;
-        private bool _queueEnableFreeCam = false;
-        private bool _queueDisableFreeCam = false;
-
+      
         private bool _skipRender = false;
         private bool _canRespawn = false;
         private bool _slewEnable = false;
@@ -54,6 +48,8 @@ namespace PolyPlane
         private RenderManager _render;
         private FPSLimiter _fpsLimiter = new FPSLimiter();
         private SelectObjectUI? _selectObjectUI = null;
+
+        private ConcurrentQueue<Action> _actionQueue = new ConcurrentQueue<Action>();
 
         public PolyPlaneUI()
         {
@@ -84,6 +80,45 @@ namespace PolyPlane
                 this.WindowState = FormWindowState.Maximized;
                 _isFullScreen = false;
             }
+        }
+
+        private void EnqueueAction(Action action)
+        {
+            _actionQueue.Enqueue(action);
+        }
+
+        private void EnqueueResetPlane()
+        {
+            var resetAction = new Action(() =>
+            {
+                if (World.ViewObject.Equals(_playerPlane))
+                    ResetPlane();
+            });
+
+            EnqueueAction(resetAction);
+        }
+
+        private void EnqueueEnableFreeCam()
+        {
+            var enableFreeCamAction = new Action(() =>
+            {
+                var currentObj = World.GetViewObject();
+                _freeCamObject = new DummyObject(currentObj.Position);
+                World.ViewObject = _freeCamObject;
+            });
+
+            EnqueueAction(enableFreeCamAction);
+        }
+
+        private void EnqueueDisableFreeCam()
+        {
+            var disableFreeCamAction = new Action(() =>
+            {
+                if (!_playerPlane.IsAI)
+                    World.ViewObject = _playerPlane;
+            });
+
+            EnqueueAction(disableFreeCamAction);
         }
 
         private void NetMan_PlayerRespawned(object? sender, FighterPlane e)
@@ -478,7 +513,7 @@ namespace PolyPlane
 
             _render?.ResizeGfx();
 
-            ProcessQueuedEvents();
+            ProcessQueuedActions();
 
             var viewObject = GetViewObjectOrCamera(World.GetViewObject());
 
@@ -705,60 +740,12 @@ namespace PolyPlane
                 _freeCamObject.Position = new D2DPoint(_freeCamObject.Position.X, 0f);
         }
 
-        private void ProcessQueuedEvents()
+        private void ProcessQueuedActions()
         {
-            if (_queueNextViewId)
+            while (_actionQueue.Count > 0)
             {
-                World.NextViewPlane();
-                _queueNextViewId = false;
-            }
-
-            if (_queuePrevViewId)
-            {
-                World.PrevViewPlane();
-                _queuePrevViewId = false;
-            }
-
-            if (_queueResetPlane)
-            {
-                _queueResetPlane = false;
-
-                if (World.ViewObject.Equals(_playerPlane))
-                    ResetPlane();
-            }
-
-            if (_queueClearPlanes)
-            {
-                _objs.Planes.ForEach(p =>
-                {
-                    if (!p.Equals(_playerPlane))
-                        p.IsExpired = true;
-                });
-
-                _queueClearPlanes = false;
-            }
-
-            if (_queueSpawnPlane)
-            {
-                SpawnAIPlane();
-                _queueSpawnPlane = false;
-            }
-
-            if (_queueEnableFreeCam)
-            {
-                _queueEnableFreeCam = false;
-
-                var currentObj = World.GetViewObject();
-                _freeCamObject = new DummyObject(currentObj.Position);
-                World.ViewObject = _freeCamObject;
-            }
-
-            if (_queueDisableFreeCam)
-            {
-                _queueDisableFreeCam = false;
-
-                if (!_playerPlane.IsAI)
-                    World.ViewObject = _playerPlane;
+                if (_actionQueue.TryDequeue(out var action))
+                    action();
             }
         }
 
@@ -797,7 +784,7 @@ namespace PolyPlane
             if ((_playerPlane.IsDisabled || _playerPlane.HasCrashed || _playerPlane.IsAI))
             {
                 World.FreeCameraMode = false;
-                _queueNextViewId = true;
+                EnqueueAction(World.NextViewPlane);
             }
         }
 
@@ -806,7 +793,7 @@ namespace PolyPlane
             if ((_playerPlane.IsDisabled || _playerPlane.HasCrashed || _playerPlane.IsAI))
             {
                 World.FreeCameraMode = false;
-                _queuePrevViewId = true;
+                EnqueueAction(World.PrevViewPlane);
             }
         }
 
@@ -847,7 +834,18 @@ namespace PolyPlane
 
                 case 'c':
                     if (!World.IsNetGame)
-                        _queueClearPlanes = true;
+                    {
+                        var clearPlanesAction = new Action(() => 
+                        {
+                            _objs.Planes.ForEach(p =>
+                            {
+                                if (!p.Equals(_playerPlane))
+                                    p.IsExpired = true;
+                            });
+                        });
+
+                        EnqueueAction(clearPlanesAction);
+                    }
                     break;
 
                 case 'd':
@@ -862,9 +860,9 @@ namespace PolyPlane
                     World.FreeCameraMode = !World.FreeCameraMode;
 
                     if (World.FreeCameraMode)
-                        _queueEnableFreeCam = true;
+                        EnqueueEnableFreeCam();
                     else
-                        _queueDisableFreeCam = true;
+                        EnqueueDisableFreeCam();
 
                     break;
 
@@ -919,7 +917,9 @@ namespace PolyPlane
                     break;
 
                 case 'r':
-                    _queueResetPlane = true;
+
+                    EnqueueResetPlane();
+
                     break;
 
                 case 's':
@@ -944,8 +944,10 @@ namespace PolyPlane
                     break;
 
                 case 'u':
+
                     if (!World.IsNetGame)
-                        _queueSpawnPlane = true;
+                        EnqueueAction(SpawnAIPlane);
+
                     break;
 
                 case 'v':
@@ -989,7 +991,7 @@ namespace PolyPlane
                 case (char)8: //Backspace
                     World.ViewObject = _playerPlane;
                     World.FreeCameraMode = false;
-                    _queueDisableFreeCam = true;
+                    EnqueueDisableFreeCam();
 
                     break;
 
@@ -1010,7 +1012,7 @@ namespace PolyPlane
             {
                 case MouseButtons.Left:
                     if (_playerPlane.HasCrashed)
-                        _queueResetPlane = true;
+                        EnqueueResetPlane();
                     break;
 
                 case MouseButtons.Middle:
