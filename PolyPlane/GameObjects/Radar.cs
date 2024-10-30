@@ -27,6 +27,7 @@ namespace PolyPlane.GameObjects
 
         private readonly float MIN_IMPACT_TIME = 20f; // Min time before defending.
 
+        private readonly float _radarFOV = World.SENSOR_FOV * 0.25f;
         private float _maxRange = 60000f;
         private float _maxAge = 2f;
         private float _radius = 150f;
@@ -189,6 +190,20 @@ namespace PolyPlane.GameObjects
             }
         }
 
+        private void DrawFOVCone(D2DGraphics gfx, D2DColor color)
+        {
+            var fov = _radarFOV;
+
+            var centerLine = Utilities.AngleToVectorDegrees(HostPlane.Rotation, _radius);
+            var cone1 = Utilities.AngleToVectorDegrees(HostPlane.Rotation + fov, _radius);
+            var cone2 = Utilities.AngleToVectorDegrees(HostPlane.Rotation - fov, _radius);
+
+            gfx.DrawLine(Position, Position + cone1, color);
+            gfx.DrawLine(Position, Position + cone2, color);
+
+            gfx.DrawLine(Position, Position + centerLine, color, 1f, D2DDashStyle.DashDot);
+        }
+
         private void DrawGround(RenderContext ctx)
         {
             if (_groundClipLayer == null)
@@ -305,20 +320,6 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private void DrawFOVCone(D2DGraphics gfx, D2DColor color)
-        {
-            var fov = World.SENSOR_FOV * 0.5f;
-
-            var centerLine = Utilities.AngleToVectorDegrees(HostPlane.Rotation, _radius);
-            var cone1 = Utilities.AngleToVectorDegrees(HostPlane.Rotation + fov * 0.5f, _radius);
-            var cone2 = Utilities.AngleToVectorDegrees(HostPlane.Rotation - fov * 0.5f, _radius);
-
-            gfx.DrawLine(Position, Position + cone1, color);
-            gfx.DrawLine(Position, Position + cone2, color);
-
-            gfx.DrawLine(Position, Position + centerLine, color, 1f, D2DDashStyle.DashDot);
-        }
-
         public FighterPlane FindNearestPlane()
         {
             var planes = _pings.Values.Where(p =>
@@ -347,7 +348,7 @@ namespace PolyPlane.GameObjects
                     var fov = HostPlane.FOVToObject(plane);
                     var dist = HostPlane.Position.DistanceTo(plane.Position);
 
-                    if (fov <= World.SENSOR_FOV * 0.25f && fov < minFov && dist < minDist)
+                    if (fov <= _radarFOV && fov < minFov && dist < minDist)
                     {
                         minFov = fov;
                         minDist = dist;
