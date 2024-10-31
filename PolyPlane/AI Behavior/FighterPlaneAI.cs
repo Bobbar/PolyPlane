@@ -360,23 +360,16 @@ namespace PolyPlane.AI_Behavior
                     // Compute up & down tangents.
                     var defAngleTangentDown = Utilities.TangentAngle(defendAngle);
                     var defAngleTangentUp = Utilities.ReverseAngle(Utilities.TangentAngle(defendAngle));
+                  
+                    // Compute diffs between treat velo angle and choose the smallest.
+                    // Try to choose the option which will not cross paths with the incoming missile.
+                    var diffDown = Utilities.AngleDiff(defAngleTangentDown, threatVeloAngle);
+                    var diffUp = Utilities.AngleDiff(defAngleTangentUp, threatVeloAngle);
 
-                    // Try to pitch in a direction which will force the missile to overshoot.
-                    // Flip the pitch directions as needed depending on our current direction.
-                    if (Utilities.IsPointingDown(threatVeloAngle))
-                    {
-                        if (Utilities.IsPointingRight(this.Plane.Rotation))
-                            angle = defAngleTangentUp;
-                        else
-                            angle = defAngleTangentDown;
-                    }
+                    if (diffDown < diffUp)
+                        angle = defAngleTangentDown;
                     else
-                    {
-                        if (Utilities.IsPointingRight(this.Plane.Rotation))
-                            angle = defAngleTangentDown;
-                        else
-                            angle = defAngleTangentUp;
-                    }
+                        angle = defAngleTangentUp;
                 }
                 else
                 {
