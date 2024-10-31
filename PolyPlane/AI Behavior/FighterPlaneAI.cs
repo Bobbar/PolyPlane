@@ -22,14 +22,12 @@ namespace PolyPlane.AI_Behavior
         private bool _gainingVelo = false;
         private bool _reverseDirection = false;
         private bool _isDefending = false;
-        private float _zigZagAngle = 0f;
 
         private GameTimer _fireBurstTimer = new GameTimer(2f, 6f);
         private GameTimer _fireMissileCooldown = new GameTimer(6f);
         private GameTimer _dropDecoysTimer = new GameTimer(2f, 3f);
         private GameTimer _changeTargetCooldown = new GameTimer(10f);
         private GameTimer _defendMissileCooldown = new GameTimer(4f);
-        private FloatAnimation _defendZigZag;
 
         private float MIN_MISSILE_TIME = 40f;
         private float MAX_MISSILE_TIME = 80f;
@@ -66,11 +64,6 @@ namespace PolyPlane.AI_Behavior
 
             _defendMissileCooldown.StartCallback = () => _isDefending = true;
             _defendMissileCooldown.TriggerCallback = () => _isDefending = false;
-
-            _defendZigZag = new FloatAnimation(-40f, 40f, 3f, EasingFunctions.EaseLinear, v => _zigZagAngle = v);
-            _defendZigZag.Loop = true;
-            _defendZigZag.ReverseOnLoop = true;
-            _defendZigZag.IsPlaying = true;
         }
 
         public void Update(float dt)
@@ -79,7 +72,6 @@ namespace PolyPlane.AI_Behavior
                 return;
 
             _sineWavePos += 0.3f * dt;
-            _defendZigZag.Update(dt);
 
             const float MAX_SIN_POS = 360f * Utilities.DEGREES_TO_RADS;
             if (_sineWavePos > MAX_SIN_POS)
@@ -326,15 +318,19 @@ namespace PolyPlane.AI_Behavior
             // Fly away from missile?
             if (_isDefending && DefendingMissile != null)
             {
-                // Compute two tangential angles and choose the one closest
-                // to the current rotation to try to maintain as much speed as possible.
-                // We basically try to fly away and slightly perpendicular to the direction of the incoming missile.
+                // Compute two tangential angles and choose the one which
+                // should give us the best chance of gaining velo while also 
+                // putting decoys into the FOV of the missile.
+
+                // The idea is to lead the missile while gaining velo, then
+                // perform a rapid pitch maneuver at the last second to force an overshoot.
 
                 var angleAwayFromThreat = (this.Plane.Position - _threatPosition).Angle();
                 var impactTime = Utilities.ImpactTime(this.Plane, DefendingMissile);
+                var threatVeloAngle = DefendingMissile.Velocity.Angle();
 
-                const float DEFEND_ANGLE = 35f;
-                const float ZIGZAG_TIME = 8f;
+                const float DEFEND_ANGLE = 25f; // Offset angle to threat slightly to try to put decoys in the flight path.
+                const float DODGE_TIME = 3f; // Impact time to try to dodge the missile.
 
                 var defendAngleOne = Utilities.ClampAngle(angleAwayFromThreat + DEFEND_ANGLE);
                 var defendAngleTwo = Utilities.ClampAngle(angleAwayFromThreat - DEFEND_ANGLE);
@@ -342,14 +338,50 @@ namespace PolyPlane.AI_Behavior
                 var diffOne = Utilities.AngleDiff(defendAngleOne, this.Plane.Rotation);
                 var diffTwo = Utilities.AngleDiff(defendAngleTwo, this.Plane.Rotation);
 
-                if (diffOne < diffTwo)
-                    angle = defendAngleOne;
-                else if (diffTwo < diffOne)
-                    angle = defendAngleTwo;
+                float defendAngle = angle;
 
-                // Try zig-zag when the missile gets close.
-                if (impactTime < ZIGZAG_TIME)
-                    angle += _zigZagAngle;
+                // Try to select an angle which points down. (To maximize velo)
+                if (Utilities.IsPointingDown(defendAngleOne))
+                    defendAngle = defendAngleOne;
+                else if (Utilities.IsPointingDown(defendAngleTwo))
+                    defendAngle = defendAngleTwo;
+                else // Otherwise pick the one closest to our current rotation.
+                {
+                    if (diffOne < diffTwo)
+                        defendAngle = defendAngleOne;
+                    else if (diffTwo < diffOne)
+                        defendAngle = defendAngleTwo;
+                }
+
+                // Try dodge when the missile gets close.
+                // Perform a rapid pitch maneuver just before the missile impacts.
+                if (impactTime < DODGE_TIME)
+                {
+                    // Compute up & down tangents.
+                    var defAngleTangentDown = Utilities.TangentAngle(defendAngle);
+                    var defAngleTangentUp = Utilities.ReverseAngle(Utilities.TangentAngle(defendAngle));
+
+                    // Try to pitch in a direction which will force the missile to overshoot.
+                    // Flip the pitch directions as needed depending on our current direction.
+                    if (Utilities.IsPointingDown(threatVeloAngle))
+                    {
+                        if (Utilities.IsPointingRight(this.Plane.Rotation))
+                            angle = defAngleTangentUp;
+                        else
+                            angle = defAngleTangentDown;
+                    }
+                    else
+                    {
+                        if (Utilities.IsPointingRight(this.Plane.Rotation))
+                            angle = defAngleTangentDown;
+                        else
+                            angle = defAngleTangentUp;
+                    }
+                }
+                else
+                {
+                    angle = defendAngle;
+                }
             }
 
             // Try to lead the target if we are firing a burst.

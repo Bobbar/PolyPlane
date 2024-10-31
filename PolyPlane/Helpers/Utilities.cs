@@ -179,6 +179,11 @@ namespace PolyPlane.Helpers
             return ClampAngle((angle + 180f) % 360f);
         }
 
+        public static float TangentAngle(float angle)
+        {
+            return ClampAngle(angle + 90f);
+        }
+
         public static D2DPoint IntersectionPoint(D2DPoint line1A, D2DPoint line1B, D2DPoint line2A, D2DPoint line2B)
         {
             var A1 = line1B.Y - line1A.Y;
@@ -539,6 +544,13 @@ namespace PolyPlane.Helpers
             var rot180 = ClampAngle180(angle + 90f);
 
             return rot180 > 0f;
+        }
+
+        public static bool IsPointingDown(float angle)
+        {
+            var rot180 = ClampAngle180(angle + 180f);
+
+            return rot180 < 0f;
         }
 
         public static string GetLocalIP()
