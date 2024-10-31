@@ -511,8 +511,6 @@ namespace PolyPlane
             GraphicsExtensions.OnScreen = 0;
             GraphicsExtensions.OffScreen = 0;
 
-            _render?.ResizeGfx();
-
             ProcessQueuedActions();
 
             var viewObject = GetViewObjectOrCamera(World.GetViewObject());
