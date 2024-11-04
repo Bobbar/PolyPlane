@@ -5,7 +5,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Decoy : GameObject, ICollidable, IPushable
+    public class Decoy : GameObject, ICollidable
     {
         public int CurrentFrame;
 
