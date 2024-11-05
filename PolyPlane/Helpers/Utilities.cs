@@ -190,15 +190,15 @@ namespace PolyPlane.Helpers
 
             for (int i = 0; i < rPoly.Length; i++)
             {
-                var idx1 = Utilities.WrapIndex(i, rPoly.Length);
-                var idx2 = Utilities.WrapIndex(i + 1, rPoly.Length);
+                var idx1 = WrapIndex(i, rPoly.Length);
+                var idx2 = WrapIndex(i + 1, rPoly.Length);
 
                 var pnt1 = rPoly[idx1];
                 var pnt2 = rPoly[idx2];
 
-                var intersect = IntersectionPoint(lineA, lineB, pnt1, pnt2);
+                var intersect = CollisionHelpers.IsIntersecting(lineA, lineB, pnt1, pnt2, out var pos);
 
-                if (intersect != D2DPoint.Zero && rect.Contains(intersect))
+                if (intersect)
                     return true;
             }
 
