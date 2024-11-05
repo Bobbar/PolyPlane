@@ -637,6 +637,26 @@ namespace PolyPlane
 
         private void DoMouseButtons()
         {
+            // Don't allow inputs if mouse left the window.
+            if (!this.DesktopBounds.Contains(Control.MousePosition) && !_playerPlane.IsAI)
+            {
+                _playerPlane.FiringBurst = false;
+                _playerPlane.DroppingDecoy = false;
+                _isHoldingAlt = true; // Hold the plane at the current altitude if mouse leaves the window.
+                return;
+            }
+            else
+            {
+                _isHoldingAlt = false;
+            }
+
+            if (!_hasFocus && !_playerPlane.IsAI)
+            {
+                _playerPlane.FiringBurst = false;
+                _playerPlane.DroppingDecoy = false;
+                return;
+            }
+
             var buttons = Control.MouseButtons;
 
             if (!World.FreeCameraMode && !_playerPlane.IsAI)
@@ -676,27 +696,6 @@ namespace PolyPlane
             {
                 if (_rightMouseDown)
                     DoFreeCamMovement();
-            }
-
-
-            if (!_hasFocus && !_playerPlane.IsAI)
-            {
-                _playerPlane.FiringBurst = false;
-                _playerPlane.DroppingDecoy = false;
-                return;
-            }
-
-            // Don't allow inputs if mouse left the window.
-            if (!this.DesktopBounds.Contains(Control.MousePosition) && !_playerPlane.IsAI)
-            {
-                _playerPlane.FiringBurst = false;
-                _playerPlane.DroppingDecoy = false;
-                _isHoldingAlt = true; // Hold the plane at the current altitude if mouse leaves the window.
-                return;
-            }
-            else
-            {
-                _isHoldingAlt = false;
             }
         }
 
