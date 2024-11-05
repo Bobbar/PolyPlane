@@ -236,10 +236,10 @@ namespace PolyPlane.GameObjects.Manager
             const float EFFECT_DIST_PLANE = 90f;
             const float EFFECT_DIST_MISSILE = 55f;
             const float EFFECT_DIST_GROW = 20f;
-            const float EFFECT_GROW_VELO = 1000f;
+            const float EFFECT_GROW_VELO = 800f;
 
             const float MIN_EFFECT_AGE = 2f;
-            const float FORCE = 5000f;
+            const float FORCE = 8000f;
             const float VELO_FACTOR = 0.1f;
             const float MIN_VELO = 10f;
 
@@ -293,7 +293,7 @@ namespace PolyPlane.GameObjects.Manager
             particleObject.Velocity += (forceVec / particleObject.Mass * World.DT) * ageFact;
 
             // Add some velo from the pusher object.
-            particleObject.Velocity += ((pushObject.Velocity * VELO_FACTOR) * forceFact * ageFact);
+            particleObject.Velocity += ((pushObject.Velocity * VELO_FACTOR) * forceFact * ageFact * veloFact);
         }
 
         private void HandleExplosionImpulse()
