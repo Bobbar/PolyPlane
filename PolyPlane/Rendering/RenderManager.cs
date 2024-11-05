@@ -586,6 +586,7 @@ namespace PolyPlane.Rendering
 
             _objs.Explosions.ForEach(e => e.Render(ctx));
 
+            DrawCloudShadowRays(ctx, viewObj.Position);
             DrawClouds(ctx);
             DrawPlaneCloudShadows(ctx, shadowColor);
             DrawLightingEffects(ctx, objsInViewport);
@@ -1614,11 +1615,49 @@ namespace PolyPlane.Rendering
             return cloudShadowPos;
         }
 
+        private void DrawCloudShadowRays(RenderContext ctx, D2DPoint viewPosition)
+        {
+            const float MAX_ALT = 8000f;
+            const float WIDTH_OFFSET = 50f;
+            const float BOT_WIDTH_OFFSET = 40f;
+
+            var todAngle = GetTimeOfDaySunAngle();
+            var todColor = GetTimeOfDayColor();
+            var shadowColor = Utilities.LerpColorWithAlpha(todColor, D2DColor.Black, 0.7f, 0.05f);
+            var shadowRayPoly = new D2DPoint[4];
+
+            for (int i = 0; i < _clouds.Count; i++)
+            {
+                var cloud = _clouds[i];
+
+                var cloudAlt = Utilities.PositionToAltitude(cloud.Position);
+
+                if (cloudAlt > MAX_ALT)
+                    continue;
+
+                var alpha = 0.05f * Math.Clamp((1f - Utilities.FactorWithEasing(cloudAlt, MAX_ALT, EasingFunctions.EaseLinear)), 0.1f, 1f);
+
+                var rayColor = shadowColor.WithAlpha(alpha);
+
+                var minX = cloud.Points.Min(p => p.X) - WIDTH_OFFSET;
+                var maxX = cloud.Points.Max(p => p.X) + WIDTH_OFFSET;
+                var diff = maxX - minX;
+
+                shadowRayPoly[0] = new D2DPoint(minX, cloud.Position.Y);
+                shadowRayPoly[1] = new D2DPoint(maxX, cloud.Position.Y);
+                shadowRayPoly[2] = GetCloudShadowPos(new D2DPoint(maxX + BOT_WIDTH_OFFSET, cloud.Position.Y), todAngle);
+                shadowRayPoly[3] = GetCloudShadowPos(new D2DPoint(minX - BOT_WIDTH_OFFSET, cloud.Position.Y), todAngle);
+
+                if (ctx.Viewport.Contains(shadowRayPoly))
+                    ctx.Gfx.DrawPolygon(shadowRayPoly, rayColor, 0f, D2DDashStyle.Solid, rayColor);
+            }
+        }
+
         private void DrawCloudShadow(RenderContext ctx, Cloud cloud, D2DColor todColor, float todAngle)
         {
-            const float MAX_ALT = -8000f;
+            const float MAX_ALT = 8000f;
 
-            if (cloud.Position.Y < MAX_ALT)
+            if (Utilities.PositionToAltitude(cloud.Position) > MAX_ALT)
                 return;
 
             var cloudShadowPos = GetCloudShadowPos(cloud.Position, todAngle);
