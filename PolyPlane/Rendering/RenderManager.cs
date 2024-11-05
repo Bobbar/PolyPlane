@@ -1661,7 +1661,7 @@ namespace PolyPlane.Rendering
             shadowRayPoly[2] = GetCloudShadowPos(new D2DPoint(maxX + BOT_WIDTH_OFFSET, cloud.Position.Y), todAngle);
             shadowRayPoly[3] = GetCloudShadowPos(new D2DPoint(minX - BOT_WIDTH_OFFSET, cloud.Position.Y), todAngle);
 
-            if (ctx.Viewport.Inflate(500, 500).Contains(shadowRayPoly))
+            if (ctx.Viewport.Contains(shadowRayPoly))
                 ctx.Gfx.DrawPolygon(shadowRayPoly, rayColor, 0f, D2DDashStyle.Solid, rayColor);
         }
 
