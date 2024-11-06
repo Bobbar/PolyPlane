@@ -1,6 +1,7 @@
 ﻿using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.Helpers;
 using PolyPlane.Net;
+using System.Reflection;
 
 namespace PolyPlane.GameObjects.Manager
 {
@@ -180,6 +181,7 @@ namespace PolyPlane.GameObjects.Manager
                         }
                     }
 
+                    // Do plane particle pushes.
                     DoParticleImpulse(plane, obj);
                 }
             }
@@ -222,7 +224,20 @@ namespace PolyPlane.GameObjects.Manager
                         }
                     }
 
+                    // Do missile particle pushes.
                     DoParticleImpulse(missile, obj);
+                }
+            }
+
+            // Handle bullet particle pushes.
+            for (int b = 0; b < _objs.Bullets.Count; b++)
+            {
+                var bullet = _objs.Bullets[b];
+                var nearObjs = _objs.GetNear(bullet);
+
+                foreach (var obj in nearObjs)
+                {
+                    DoParticleImpulse(bullet, obj);
                 }
             }
 
@@ -235,6 +250,8 @@ namespace PolyPlane.GameObjects.Manager
         {
             const float EFFECT_DIST_PLANE = 90f;
             const float EFFECT_DIST_MISSILE = 55f;
+            const float EFFECT_DIST_BULLET = 15f;
+
             const float EFFECT_DIST_GROW = 20f;
             const float EFFECT_GROW_VELO = 800f;
 
@@ -267,6 +284,8 @@ namespace PolyPlane.GameObjects.Manager
 
             if (pushObject is GuidedMissile)
                 effectDist = EFFECT_DIST_MISSILE;
+            else if (pushObject is Bullet)
+                effectDist = EFFECT_DIST_BULLET;
 
             var veloFact = Utilities.Factor(pushVelo, EFFECT_GROW_VELO);
             effectDist += EFFECT_DIST_GROW * veloFact;
