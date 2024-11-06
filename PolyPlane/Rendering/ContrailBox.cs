@@ -61,7 +61,7 @@ namespace PolyPlane.Rendering
                                 if (dist >= minDistDT)
                                 {
                                     var seg = new TrailSegment(plane, tag.PrevPos, newPos);
-                                   
+
                                     _segments.Add(seg);
                                     _segmentGrid.Add(seg);
 

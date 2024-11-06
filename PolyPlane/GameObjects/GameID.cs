@@ -2,14 +2,14 @@
 {
     public struct GameID : IEquatable<GameID>
     {
-        public int PlayerID 
+        public int PlayerID
         {
-            get {  return _playerID; }
-            
-            set 
-            { 
-                if (_playerID != value) 
-                { 
+            get { return _playerID; }
+
+            set
+            {
+                if (_playerID != value)
+                {
                     _playerID = value;
                     _hashCode = HashCode.Combine(_playerID, _objectID);
                 }

@@ -20,7 +20,7 @@ namespace PolyPlane
         private bool _killRender = false;
         private bool _shiftDown = false;
         private bool _ctrlDown = false;
-      
+
         private bool _skipRender = false;
         private bool _canRespawn = false;
         private bool _slewEnable = false;
@@ -832,7 +832,7 @@ namespace PolyPlane
                 case 'c':
                     if (!World.IsNetGame)
                     {
-                        var clearPlanesAction = new Action(() => 
+                        var clearPlanesAction = new Action(() =>
                         {
                             _objs.Planes.ForEach(p =>
                             {

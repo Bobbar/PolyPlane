@@ -2,8 +2,6 @@
 using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
-using PolyPlane.Rendering;
-using System.Diagnostics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -32,7 +30,7 @@ namespace PolyPlane.GameObjects
             this.Owner = obj;
 
             Radius = radius;
-          
+
             _refPos = new FixturePoint(obj, offset);
             _refPos.Update(0f);
             this.Position = _refPos.Position;
@@ -52,7 +50,7 @@ namespace PolyPlane.GameObjects
             this.Owner = obj;
 
             Radius = Utilities.Rnd.NextFloat(4f, 15f);
-            
+
             _refPos = new FixturePoint(obj, offset);
             _refPos.Update(0f);
             this.Position = _refPos.Position;
@@ -108,10 +106,10 @@ namespace PolyPlane.GameObjects
         }
 
         private void SpawnPart()
-        { 
+        {
             if (World.IsNetGame && World.IsServer)
                 return;
-            
+
             _spawnTimer.Interval = _interval + Utilities.Rnd.NextFloat(-0.1f, 0.1f);
 
             _refPos.Update(World.DT);

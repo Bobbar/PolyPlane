@@ -80,7 +80,7 @@ namespace PolyPlane.Helpers
             }
 
             // Clear the temp storage.
-            _movedObjects.Clear(); 
+            _movedObjects.Clear();
         }
 
         /// <summary>

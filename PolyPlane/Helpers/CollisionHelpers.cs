@@ -135,7 +135,7 @@ namespace PolyPlane.Helpers
 
             // Now do the collisions.
             // Get relative velo and angle.
-            var relVelo = (impactorObj.Velocity - targetVelo) * dt; 
+            var relVelo = (impactorObj.Velocity - targetVelo) * dt;
             var relVeloHalf = relVelo * 0.5f;
             var angleToTarget = relVelo.Angle();
 
@@ -154,7 +154,6 @@ namespace PolyPlane.Helpers
 
                     // Check for intersection on bounding box first.
                     if (targetBounds.BoundsRect.Contains(lagPntStart, lagPntEnd) || targetBounds.Contains(lagPntStart, lagPntEnd, impactorObj.Position))
-
                     {
                         // Get the sides of the poly which face the impactor.
                         var angleToImpactor = (lagPntStart - lagPntEnd).Angle();

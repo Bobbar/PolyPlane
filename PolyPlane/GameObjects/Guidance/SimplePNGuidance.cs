@@ -15,7 +15,7 @@ namespace PolyPlane.GameObjects.Guidance
             var los = target - this.Missile.Position;
             var navigationTime = los.Length() / (this.Missile.Velocity.Length() * dt);
             var targRelInterceptPos = los + ((Target.Velocity * dt) * navigationTime);
-            
+
             ImpactPoint = targRelInterceptPos;
             targRelInterceptPos *= pValue;
 

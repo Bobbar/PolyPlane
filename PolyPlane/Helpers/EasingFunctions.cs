@@ -104,7 +104,7 @@
         {
             return k * k;
         }
-            
+
         public static float EaseInSine(float k)
         {
             return 1f - (float)Math.Cos((k * Math.PI) / 2f);

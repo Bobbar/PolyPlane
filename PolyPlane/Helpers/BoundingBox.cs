@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using unvell.D2DLib;
+﻿using unvell.D2DLib;
 
 namespace PolyPlane.Helpers
 {
@@ -21,11 +16,11 @@ namespace PolyPlane.Helpers
         /// </summary>
         /// <param name="points"></param>
         /// <returns></returns>
-        public bool Contains(params D2DPoint[] points) 
+        public bool Contains(params D2DPoint[] points)
         {
             foreach (var pnt in points)
             {
-                if (BoundsRect.Contains(pnt)) 
+                if (BoundsRect.Contains(pnt))
                     return true;
             }
 

@@ -72,7 +72,7 @@ namespace PolyPlane.GameObjects
             }
 
             _currentFrame++;
-          
+
             PrunePings();
 
             foreach (var ping in _pings.Values)

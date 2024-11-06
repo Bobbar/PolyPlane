@@ -122,7 +122,7 @@ namespace PolyPlane.GameObjects.Tools
             const float FACING_ANGLE = 90f;
 
             // Determine if the polygon is clockwise or counter-clockwise.
-            bool clockwise = IsClockwise(); 
+            bool clockwise = IsClockwise();
 
             for (int i = 0; i < Poly.Length; i++)
             {

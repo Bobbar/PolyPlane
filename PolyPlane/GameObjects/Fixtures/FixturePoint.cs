@@ -25,7 +25,7 @@ namespace PolyPlane.GameObjects.Fixtures
 
             GameObject = gameObject;
             ReferencePosition = referencePosition;
-            
+
             if (_copyRotation)
                 Rotation = GameObject.Rotation;
 

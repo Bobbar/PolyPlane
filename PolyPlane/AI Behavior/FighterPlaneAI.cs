@@ -1,5 +1,4 @@
 ﻿using PolyPlane.GameObjects;
-using PolyPlane.GameObjects.Animations;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 
@@ -360,7 +359,7 @@ namespace PolyPlane.AI_Behavior
                     // Compute up & down tangents.
                     var defAngleTangentDown = Utilities.TangentAngle(defendAngle);
                     var defAngleTangentUp = Utilities.ReverseAngle(Utilities.TangentAngle(defendAngle));
-                  
+
                     // Compute diffs between treat velo angle and choose the smallest.
                     // Try to choose the option which will not cross paths with the incoming missile.
                     var diffDown = Utilities.AngleDiff(defAngleTangentDown, threatVeloAngle);

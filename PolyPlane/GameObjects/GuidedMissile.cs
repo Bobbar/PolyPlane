@@ -368,7 +368,7 @@ namespace PolyPlane.GameObjects
         private float GetDeflectionAmount(float dir)
         {
             const float MIN_VELO = 400f; // Minimum velo before using rotation based calculation.
-            
+
             // Lerp between velo and rotation based deflection amounts.
             // Rotation works better a slow speeds.
             var amtVelo = Utilities.ClampAngle180(dir - this.Velocity.Angle());

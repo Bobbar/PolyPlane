@@ -166,7 +166,7 @@ namespace PolyPlane
         public static uint CurrentObjId = 0;
         public static int CurrentPlayerId = 1000;
 
-        
+
         private static GameID ViewObjectID;
         public static GameObject ViewObject;
 

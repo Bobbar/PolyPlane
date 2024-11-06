@@ -2,7 +2,6 @@
 using PolyPlane.GameObjects.Manager;
 using PolyPlane.Helpers;
 using PolyPlane.Net.NetHost;
-using System.Diagnostics;
 
 namespace PolyPlane.Net
 {
