@@ -7,6 +7,7 @@ namespace PolyPlane.Rendering
     {
         public D2DPoint Position;
         public float Height;
+        public float TotalHeight;
         public D2DColor TrunkColor;
         public D2DColor LeafColor;
 
@@ -46,6 +47,7 @@ namespace PolyPlane.Rendering
         {
             Radius = radius;
             TrunkWidth = trunkWidth;
+            TotalHeight = height + radius;
 
             TrunkPoly =
             [
@@ -123,6 +125,7 @@ namespace PolyPlane.Rendering
         public PineTree(D2DPoint pos, float height, float width, D2DColor trunkColor, D2DColor leafColor) : base(pos, height, trunkColor, leafColor)
         {
             Width = width;
+            TotalHeight = height;
 
             TopPoly =
             [
