@@ -148,12 +148,12 @@ namespace PolyPlane.Helpers
 
         public static bool Contains(this D2DRect rect, D2DEllipse ellipse)
         {
-            return rect.Inflate(ellipse.radiusX * World.ViewPortScaleMulti, ellipse.radiusY * World.ViewPortScaleMulti).Contains(ellipse.origin);
+            return rect.Inflate(ellipse.radiusX * 2f, ellipse.radiusY * 2f).Contains(ellipse.origin);
         }
 
         public static bool Contains(this D2DRect rect, D2DPoint pos, float radius)
         {
-            return rect.Inflate(radius * World.ViewPortScaleMulti, radius * World.ViewPortScaleMulti).Contains(pos);
+            return rect.Inflate(radius, radius).Contains(pos);
         }
 
         public static D2DPoint AspectRatioFactor(this D2DRect rect)

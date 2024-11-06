@@ -82,11 +82,11 @@ namespace PolyPlane.Rendering
             _trunkTransPoly[0] = Utilities.ApplyTranslation(TrunkPoly[0], -shadowAngle, this.Position, scale);
             _trunkTransPoly[1] = Utilities.ApplyTranslation(TrunkPoly[1], -shadowAngle, this.Position, scale);
 
-            ctx.DrawPolygon(_trunkTransPoly, shadowColor, 0f, D2DDashStyle.Solid, shadowColor);
+            ctx.Gfx.DrawPolygon(_trunkTransPoly, shadowColor, 0f, D2DDashStyle.Solid, shadowColor);
 
             ctx.Gfx.ScaleTransform(1f, 2f, this.Position);
 
-            ctx.FillEllipse(new D2DEllipse(shadowLeafPos, size), shadowColor);
+            ctx.Gfx.FillEllipse(new D2DEllipse(shadowLeafPos, size), shadowColor);
 
             ctx.Gfx.PopTransform();
 
@@ -94,7 +94,7 @@ namespace PolyPlane.Rendering
             // Draw tree.
             Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, 180f, this.Position, scale);
 
-            ctx.DrawPolygon(_trunkTransPoly, trunkColor, 0f, D2DDashStyle.Solid, trunkColor);
+            ctx.Gfx.DrawPolygon(_trunkTransPoly, trunkColor, 0f, D2DDashStyle.Solid, trunkColor);
 
             ctx.Gfx.PushTransform();
             ctx.Gfx.TranslateTransform(normalLeafPos.X * ctx.CurrentScale, normalLeafPos.Y * ctx.CurrentScale);

@@ -534,7 +534,7 @@ namespace PolyPlane.Rendering
 
             var viewPortRect = new D2DRect(viewObj.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
 
-            const float VIEWPORT_PADDING_AMT = 1f;
+            const float VIEWPORT_PADDING_AMT = 1.5f;
             var inflateAmt = VIEWPORT_PADDING_AMT * zAmt;
             viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true); // Inflate slightly to prevent "pop-in".
 
@@ -931,7 +931,7 @@ namespace PolyPlane.Rendering
 
             foreach (var tree in _trees)
             {
-                if (ctx.Viewport.Contains(tree.Position, tree.Height * 3f))
+                if (ctx.Viewport.Contains(tree.Position, tree.Height * 6f))
                 {
                     tree.Render(ctx, todColor, GROUND_OBJ_SCALE);
                 }
@@ -1628,9 +1628,8 @@ namespace PolyPlane.Rendering
 
             var cloudShadowPos = GetCloudShadowPos(cloud.Position, todAngle);
 
-            if (!ctx.Viewport.Contains(new D2DEllipse(cloudShadowPos, new D2DSize(cloud.Radius * cloud.ScaleX * (CLOUD_SCALE + 3f), cloud.Radius * cloud.ScaleX * (CLOUD_SCALE + 1f)))))
+            if (!ctx.Viewport.Contains(cloudShadowPos, cloud.Radius * cloud.ScaleX * CLOUD_SCALE * 3f))
                 return;
-
 
             for (int i = 0; i < cloud.Points.Length; i++)
             {
