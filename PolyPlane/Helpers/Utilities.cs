@@ -184,27 +184,6 @@ namespace PolyPlane.Helpers
             return ClampAngle(angle + 90f);
         }
 
-        public static bool LineIntersectsRect(D2DPoint lineA, D2DPoint lineB, D2DRect rect)
-        {
-            var rPoly = rect.ToPoints();
-
-            for (int i = 0; i < rPoly.Length; i++)
-            {
-                var idx1 = WrapIndex(i, rPoly.Length);
-                var idx2 = WrapIndex(i + 1, rPoly.Length);
-
-                var pnt1 = rPoly[idx1];
-                var pnt2 = rPoly[idx2];
-
-                var intersect = CollisionHelpers.IsIntersecting(lineA, lineB, pnt1, pnt2, out var pos);
-
-                if (intersect)
-                    return true;
-            }
-
-            return false;
-        }
-
         public static D2DPoint IntersectionPoint(D2DPoint line1A, D2DPoint line1B, D2DPoint line2A, D2DPoint line2B)
         {
             var A1 = line1B.Y - line1A.Y;

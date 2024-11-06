@@ -134,9 +134,6 @@ namespace PolyPlane.Helpers
                 var pnt1 = poly[idx1];
                 var pnt2 = poly[idx2];
 
-                if (rect.Contains(pnt1) || rect.Contains(pnt2))
-                    return true;
-
                 if (rect.Contains(pnt1, pnt2))
                     return true;
             }
@@ -146,7 +143,7 @@ namespace PolyPlane.Helpers
 
         public static bool Contains(this D2DRect rect, D2DPoint lineA, D2DPoint lineB)
         {
-            return Utilities.LineIntersectsRect(lineA, lineB, rect);
+            return LineClipping.CohenSutherlandLineClip(lineA, lineB, rect);
         }
 
         public static bool Contains(this D2DRect rect, D2DEllipse ellipse)

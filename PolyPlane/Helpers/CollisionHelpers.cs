@@ -153,7 +153,8 @@ namespace PolyPlane.Helpers
                     var lagPntEnd = impactorObj.Position;
 
                     // Check for intersection on bounding box first.
-                    if (PolyIntersect(lagPntStart, lagPntEnd, targetBounds.BoundsPoly) || targetBounds.Contains(lagPntStart, lagPntEnd, impactorObj.Position))
+                    if (targetBounds.BoundsRect.Contains(lagPntStart, lagPntEnd) || targetBounds.Contains(lagPntStart, lagPntEnd, impactorObj.Position))
+
                     {
                         // Get the sides of the poly which face the impactor.
                         var angleToImpactor = (lagPntStart - lagPntEnd).Angle();
@@ -176,7 +177,7 @@ namespace PolyPlane.Helpers
                 var pnt2 = pnt + relVelo;
 
                 // Check for intersection on bounding box first.
-                if (PolyIntersect(pnt1, pnt2, targetBounds.BoundsPoly) || targetBounds.Contains(pnt1, pnt2, impactorObj.Position))
+                if (targetBounds.BoundsRect.Contains(pnt1, pnt2) || targetBounds.Contains(pnt1, pnt2, impactorObj.Position))
                 {
                     // Get the sides of the poly which face the impactor.
                     var angleToImpactor = (pnt1 - pnt2).Angle();
@@ -196,7 +197,7 @@ namespace PolyPlane.Helpers
             var centerPnt2 = impactorObj.Position + relVelo;
 
             // Check for intersection on bounding box first.
-            if (PolyIntersect(centerPnt1, centerPnt2, targetBounds.BoundsPoly) || targetBounds.Contains(centerPnt1, centerPnt2))
+            if (targetBounds.BoundsRect.Contains(centerPnt1, centerPnt2) || targetBounds.Contains(centerPnt1, centerPnt2))
             {
                 // Get the sides of the poly which face the impactor.
                 var angleToImpactor = (centerPnt1 - centerPnt2).Angle();
