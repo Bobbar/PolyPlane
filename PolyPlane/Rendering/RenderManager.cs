@@ -1015,11 +1015,19 @@ namespace PolyPlane.Rendering
 
             if (_showHUD)
             {
-                DrawAltimeter(ctx.Gfx, viewportsize, viewObject);
-                DrawSpeedo(ctx.Gfx, viewportsize, viewObject);
+                var speedoPos = new D2DPoint(viewportsize.width * 0.15f, viewportsize.height * 0.3f);
+                var altimeterPos = new D2DPoint(viewportsize.width * 0.85f, viewportsize.height * 0.3f);
+
+                // Draw altimeter and speedo.
+                DrawTapeIndicator(ctx.Gfx, viewportsize, altimeterPos, viewObject.Altitude, 3000f, 175f);
+                DrawTapeIndicator(ctx.Gfx, viewportsize, speedoPos, viewObject.AirSpeedIndicated, 250f, 50f);
 
                 if (viewObject is FighterPlane plane)
                 {
+                    // Draw g-force.
+                    var gforceRect = new D2DRect(new D2DPoint(speedoPos.X, speedoPos.Y - 195f), new D2DSize(60f, 20f));
+                    ctx.Gfx.DrawText($"G {Math.Round(plane.GForce, 1)}", _hudColorBrush, _textConsolas15, gforceRect);
+
                     if (!plane.IsDisabled)
                     {
                         if (plane.IsAI == false)
@@ -1223,30 +1231,35 @@ namespace PolyPlane.Rendering
             gfx.DrawTextCenter(MSG, D2DColor.Red, _defaultFontName, FONT_SIZE, rect);
         }
 
-        private void DrawAltimeter(D2DGraphics gfx, D2DSize viewportsize, GameObject viewObject)
+        /// <summary>
+        /// Draws a tape style indicator for the specified value.
+        /// </summary>
+        /// <param name="gfx">Graphics context.</param>
+        /// <param name="viewportsize">Viewport size.</param>
+        /// <param name="pos">Position within the viewport.</param>
+        /// <param name="value">Current value.</param>
+        /// <param name="minValue">Minimum value. The background changes to red below this value.</param>
+        /// <param name="markerRange">Step size for markers.</param>
+        private void DrawTapeIndicator(D2DGraphics gfx, D2DSize viewportsize, D2DPoint pos, float value, float minValue, float markerRange)
         {
-            const float MIN_ALT = 3000f;
             const float W = 80f;
             const float H = 350f;
             const float HalfW = W * 0.5f;
             const float HalfH = H * 0.5f;
-            const float MARKER_STEP = 175f;
 
-            var pos = new D2DPoint(viewportsize.width * 0.85f, viewportsize.height * 0.3f);
             var rect = new D2DRect(pos, new D2DSize(W, H));
-            var alt = viewObject.Altitude;
-            var startAlt = alt - (alt % MARKER_STEP) + MARKER_STEP;
-            var altWarningColor = new D2DColor(0.2f, D2DColor.Red);
+            var startValue = (value) - (value % (markerRange)) + markerRange;
+            var valueWarningColor = new D2DColor(0.2f, D2DColor.Red);
 
-            var highestAlt = startAlt + MARKER_STEP;
-            var lowestAlt = startAlt - (MARKER_STEP * 2f);
+            var highestVal = startValue + markerRange;
+            var lowestVal = (startValue - HalfH) - markerRange;
 
             gfx.DrawRectangle(rect, World.HudColor);
             gfx.DrawLine(new D2DPoint(pos.X - HalfW, pos.Y), new D2DPoint(pos.X + HalfW, pos.Y), D2DColor.GreenYellow, 1f, D2DDashStyle.Solid);
 
-            if (highestAlt <= MIN_ALT || lowestAlt <= MIN_ALT)
+            if (highestVal <= minValue || lowestVal <= minValue)
             {
-                var s = new D2DPoint(pos.X - HalfW, (pos.Y + (alt - MIN_ALT)));
+                var s = new D2DPoint(pos.X - HalfW, (pos.Y + (value - minValue)));
 
                 if (s.Y < pos.Y - HalfH)
                     s.Y = pos.Y - HalfH;
@@ -1254,96 +1267,34 @@ namespace PolyPlane.Rendering
                 var sRect = new D2DRect(s.X, s.Y, W, (pos.Y + (H * 0.5f)) - s.Y);
 
                 if (sRect.Height > 0f)
-                    gfx.FillRectangle(sRect, altWarningColor);
+                    gfx.FillRectangle(sRect, valueWarningColor);
             }
 
-            for (float y = 0; y <= H; y += MARKER_STEP)
+
+            for (float y = -markerRange; y < H; y += markerRange)
             {
-                if (y % MARKER_STEP == 0)
-                {
-                    var posY = (pos.Y - y + HalfH - MARKER_STEP) + (alt % MARKER_STEP);
+                var posY = (pos.Y - y + HalfH - markerRange) + (value % markerRange);
 
-                    if (posY < (pos.Y - HalfH))
-                        continue;
+                if (posY <= (pos.Y - HalfH) - markerRange)
+                    continue;
 
-                    var start = new D2DPoint(pos.X - HalfW, posY);
-                    var end = new D2DPoint(pos.X + HalfW, posY);
+                var start = new D2DPoint(pos.X - HalfW, posY);
+                var end = new D2DPoint(pos.X + HalfW, posY);
 
-                    var div = y / MARKER_STEP;
-                    var altMarker = startAlt + (-HalfH + (div * MARKER_STEP));
+                var div = y / markerRange;
+                var markerValue = startValue + (-HalfH + (div * markerRange));
 
+                if (rect.Contains(start))
                     gfx.DrawLine(start, end, World.HudColor, 1f, D2DDashStyle.Dash);
-                    var textRect = new D2DRect(start - new D2DPoint(25f, 0f), new D2DSize(60f, 30f));
-                    gfx.DrawText(altMarker.ToString(), _hudColorBrush, _textConsolas15Centered, textRect);
-                }
+
+                // Fade in marker text as they move towards the center.
+                var alpha = Math.Clamp(1f - Utilities.Factor(Math.Abs(pos.Y - posY), HalfH), 0.0f, 0.4f);
+                var textRect = new D2DRect(start - new D2DPoint(25f, 0f), new D2DSize(60f, 30f));
+                gfx.DrawTextCenter(Math.Round(markerValue, 0).ToString(), World.HudColor.WithAlpha(alpha), _defaultFontName, 15f, textRect);
             }
 
-            var actualRect = new D2DRect(new D2DPoint(pos.X, pos.Y + HalfH + 20f), new D2DSize(60f, 20f));
-            gfx.DrawText(Math.Round(alt, 0).ToString(), _hudColorBrush, _textConsolas15Centered, actualRect);
-        }
-
-
-        private void DrawSpeedo(D2DGraphics gfx, D2DSize viewportsize, GameObject viewObject)
-        {
-            const float MIN_SPEED = 250f;
-            const float W = 80f;
-            const float H = 350f;
-            const float HalfW = W * 0.5f;
-            const float HalfH = H * 0.5f;
-            const float MARKER_STEP = 50f;
-
-            var pos = new D2DPoint(viewportsize.width * 0.15f, viewportsize.height * 0.3f);
-            var rect = new D2DRect(pos, new D2DSize(W, H));
-            var spd = viewObject.AirSpeedIndicated;
-
-            var startSpd = (spd) - (spd % (MARKER_STEP)) + MARKER_STEP;
-            var spdWarningColor = new D2DColor(0.2f, D2DColor.Red);
-
-            var highestSpd = startSpd + MARKER_STEP;
-            //var lowestSpd = startSpd - (MARKER_STEP * 2f);
-            var lowestSpd = (startSpd - HalfH) - MARKER_STEP;
-
-            gfx.DrawRectangle(rect, World.HudColor);
-            gfx.DrawLine(new D2DPoint(pos.X - HalfW, pos.Y), new D2DPoint(pos.X + HalfW, pos.Y), D2DColor.GreenYellow, 1f, D2DDashStyle.Solid);
-
-            if (highestSpd <= MIN_SPEED || lowestSpd <= MIN_SPEED)
-            {
-                var s = new D2DPoint(pos.X - HalfW, (pos.Y + (spd - MIN_SPEED)));
-
-                if (s.Y < pos.Y - HalfH)
-                    s.Y = pos.Y - HalfH;
-
-                var sRect = new D2DRect(s.X, s.Y, W, (pos.Y + (H * 0.5f)) - s.Y);
-
-                if (sRect.Height > 0f)
-                    gfx.FillRectangle(sRect, spdWarningColor);
-            }
-
-
-            for (float y = 0; y < H; y += MARKER_STEP)
-            {
-                if (y % MARKER_STEP == 0)
-                {
-                    var start = new D2DPoint(pos.X - HalfW, (pos.Y - y + HalfH - MARKER_STEP) + (spd % MARKER_STEP));
-                    var end = new D2DPoint(pos.X + HalfW, (pos.Y - y + HalfH - MARKER_STEP) + (spd % MARKER_STEP));
-
-                    var div = y / MARKER_STEP;
-                    var altMarker = startSpd + (-HalfH + (div * MARKER_STEP));
-
-                    gfx.DrawLine(start, end, World.HudColor, 1f, D2DDashStyle.Dash);
-                    var textRect = new D2DRect(start - new D2DPoint(25f, 0f), new D2DSize(60f, 30f));
-                    gfx.DrawText(altMarker.ToString(), _hudColorBrush, _textConsolas15Centered, textRect);
-                }
-            }
-
-            var speedRect = new D2DRect(new D2DPoint(pos.X, pos.Y + HalfH + 20f), new D2DSize(60f, 20f));
-            gfx.DrawText(Math.Round(spd, 0).ToString(), _hudColorBrush, _textConsolas15Centered, speedRect);
-
-            if (viewObject is FighterPlane plane)
-            {
-                var gforceRect = new D2DRect(new D2DPoint(pos.X, pos.Y - HalfH - 20f), new D2DSize(60f, 20f));
-                gfx.DrawText($"G {Math.Round(plane.GForce, 1)}", _hudColorBrush, _textConsolas15, gforceRect);
-            }
+            var curValueRect = new D2DRect(new D2DPoint(pos.X, pos.Y + HalfH + 20f), new D2DSize(60f, 20f));
+            gfx.DrawText(Math.Round(value, 0).ToString(), _hudColorBrush, _textConsolas15Centered, curValueRect);
         }
 
         private void DrawPlanePointers(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)
