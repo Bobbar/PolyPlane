@@ -9,7 +9,6 @@ namespace PolyPlane.Helpers
 {
     public struct BoundingBox
     {
-        public D2DPoint[] BoundsPoly;
         public D2DRect BoundsRect;
 
         public BoundingBox(D2DPoint[] polygon, float inflateAmount)
@@ -46,8 +45,6 @@ namespace PolyPlane.Helpers
             rect = rect.Inflate(inflateAmount, inflateAmount);
 
             BoundsRect = rect;
-
-            BoundsPoly = rect.ToPoints();
         }
     }
 }
