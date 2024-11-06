@@ -102,26 +102,39 @@ namespace PolyPlane.Helpers
 
         public static bool Contains(this D2DRect rect, D2DPoint pnt)
         {
-            return rect.X <= pnt.X &&
-            pnt.X < rect.X + rect.Width &&
-            rect.Y <= pnt.Y &&
-            pnt.Y < rect.Y + rect.Height;
+            return rect.Contains(pnt.X, pnt.Y);
+        }
+
+        public static bool Contains(this D2DRect rect, float x, float y)
+        {
+            return rect.X <= x &&
+            x < rect.X + rect.Width &&
+            rect.Y <= y &&
+            y < rect.Y + rect.Height;
         }
 
         public static bool Contains(this D2DRect rect, D2DRect rect2)
         {
-            bool contains = false;
-
             if (rect.X <= rect2.X &&
             rect2.X + rect2.Width <= rect.X + rect.Width &&
             rect.Y <= rect2.Y &&
             rect2.Y + rect2.Height <= rect.Y + rect.Height)
-                contains = true;
+                return true;
 
-            if (!contains && rect.Contains(rect2.ToPoints()))
-                contains = true;
+            // Check the 4 corners.
+            if (rect.Contains(rect2.left, rect2.top))
+                return true;
 
-            return contains;
+            if (rect.Contains(rect2.right, rect2.top))
+                return true;
+
+            if (rect.Contains(rect2.left, rect2.bottom))
+                return true;
+
+            if (rect.Contains(rect2.right, rect2.bottom))
+                return true;
+
+            return false;
         }
 
         public static bool Contains(this D2DRect rect, D2DPoint[] poly)
