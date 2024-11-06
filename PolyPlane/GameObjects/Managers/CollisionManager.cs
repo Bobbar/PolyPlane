@@ -256,7 +256,7 @@ namespace PolyPlane.GameObjects.Manager
 
             const float MIN_EFFECT_AGE = 2f;
             const float FORCE = 8000f;
-            const float VELO_FACTOR = 0.1f;
+            const float VELO_FACTOR = 2f;
             const float MIN_VELO = 10f;
 
             if (particleObject.IsNetObject)
@@ -311,7 +311,7 @@ namespace PolyPlane.GameObjects.Manager
             particleObject.Velocity += (forceVec / particleObject.Mass * World.DT) * ageFact;
 
             // Add some velo from the pusher object.
-            particleObject.Velocity += ((pushObject.Velocity * VELO_FACTOR) * forceFact * ageFact * veloFact);
+            particleObject.Velocity += ((pushObject.Velocity * VELO_FACTOR * World.DT) * forceFact * ageFact * veloFact);
         }
 
         private void HandleExplosionImpulse()
