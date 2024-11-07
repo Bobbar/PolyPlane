@@ -45,45 +45,42 @@ namespace PolyPlane.Rendering
 
         private D2DSolidColorBrush _hudColorBrush;
         private D2DSolidColorBrush _hudColorBrushLight;
-
         private D2DSolidColorBrush _redColorBrush;
         private D2DSolidColorBrush _whiteColorBrush;
         private D2DSolidColorBrush _greenYellowColorBrush;
-
-        private readonly D2DPoint _infoPosition = new D2DPoint(20, 20);
 
         private bool _showInfo = false;
         private bool _showHelp = false;
         private bool _showScore = false;
         private bool _showHUD = true;
         private int _scoreScrollPos = 0;
+        private int _currentDPI = 96;
+        private long _lastRenderTime = 0;
+        private float _hudScale = 1f;
+        private float _renderFPS = 0;
+        private float _screenFlashOpacity = 0f;
+        private string _hudMessage = string.Empty;
 
         private SmoothDouble _renderTimeSmooth = new SmoothDouble(10);
         private SmoothDouble _updateTimeSmooth = new SmoothDouble(10);
         private Stopwatch _timer = new Stopwatch();
-        private float _renderFPS = 0;
-        private long _lastRenderTime = 0;
-        private string _hudMessage = string.Empty;
         private GameTimer _hudMessageTimeout = new GameTimer(10f);
         private GameTimer _missileFlashTimer = new GameTimer(0.5f, 0.5f, false);
         private GameTimer _groundColorUpdateTimer = new GameTimer(4f, true);
         private List<EventMessage> _messageEvents = new List<EventMessage>();
         private List<PopMessage> _popMessages = new List<PopMessage>();
 
-        private readonly string _defaultFontName = "Consolas";
-
         private Control _renderTarget;
-        private readonly D2DColor _clearColor = D2DColor.Black;
         private GameObjectManager _objs = World.ObjectManager;
         private NetEventManager _netMan;
         private ContrailBox _contrailBox = new ContrailBox();
+        private FPSLimiter _fpsLimiter = new FPSLimiter();
 
         private D2DPoint _screenShakeTrans = D2DPoint.Zero;
-
-        private float _screenFlashOpacity = 0f;
-
         private D2DColor _hudMessageColor = D2DColor.Red;
         private D2DColor _screenFlashColor = D2DColor.Red;
+
+        private readonly D2DColor _clearColor = D2DColor.Black;
         private readonly D2DColor _groundImpactOuterColor = new D2DColor(1f, 0.56f, 0.32f, 0.18f);
         private readonly D2DColor _groundImpactInnerColor = new D2DColor(1f, 0.35f, 0.2f, 0.1f);
         private readonly D2DColor _skyColorLight = new D2DColor(0.5f, D2DColor.SkyBlue);
@@ -92,34 +89,12 @@ namespace PolyPlane.Rendering
         private readonly D2DColor _cloudColorDark = new D2DColor(1f, 0.6f, 0.6f, 0.6f);
         private readonly D2DColor _groundColorLight = new D2DColor(1f, 0f, 0.29f, 0);
         private readonly D2DColor _groundColorDark = D2DColor.DarkGreen;
+        private readonly D2DPoint _infoPosition = new D2DPoint(20, 20);
 
-        private FloatAnimation _screenShakeX;
-        private FloatAnimation _screenShakeY;
-        private FloatAnimation _screenFlash;
-        private const float VIEW_SCALE = 4f;
-        private const float DEFAULT_DPI = 96f;
-        private int _currentDPI = 96;
+        private const double _gaussianSigma_2 = 0.035;
+        private readonly double _gaussianSigma = Math.Sqrt(2.0 * Math.PI * _gaussianSigma_2);
 
-        private int Width => (int)(_renderTarget.Width / (_renderTarget.DeviceDpi / DEFAULT_DPI));
-        private int Height => (int)(_renderTarget.Height / (_renderTarget.DeviceDpi / DEFAULT_DPI));
-
-        private float _hudScale = 1f;
-
-
-        private const int NUM_CLOUDS = 2000;
-        private const int NUM_TREES = 1000;
-
-        private const float MAX_CLOUD_X = 400000f;
-        private const float CLOUD_SCALE = 5f;
-        private const float GROUND_OBJ_SCALE = 4f;
-        private const float SCREEN_SHAKE_G = 9f; // Amount of g-force before screen shake.
-        private const float ZOOM_FACTOR = 0.07f; // Effects zoom in/out speed.
-        private const float MESSAGEBOX_FONT_SIZE = 10f;
-
-        private List<Cloud> _clouds = new List<Cloud>();
-        private List<Tree> _trees = new List<Tree>();
-
-        private D2DColor[] _todPallet =
+        private readonly D2DColor[] _timeOfDayPallet =
         [
             new D2DColor(1f, 0f, 0f, 0f),
             new D2DColor(1f, 0f, 0f, 0f),
@@ -135,11 +110,29 @@ namespace PolyPlane.Rendering
             new D2DColor(1f, 0.37f, 0.4f, 0.54f),
         ];
 
-        private const double _gaussianSigma_2 = 0.035;
-        private double _gaussianSigma = Math.Sqrt(2.0 * Math.PI * _gaussianSigma_2);
+        private FloatAnimation _screenShakeX;
+        private FloatAnimation _screenShakeY;
+        private FloatAnimation _screenFlash;
 
-        private FPSLimiter _fpsLimiter = new FPSLimiter();
-        private D2DPoint _prevViewObjPos = D2DPoint.Zero;
+        private int Width => (int)(_renderTarget.Width / (_renderTarget.DeviceDpi / DEFAULT_DPI));
+        private int Height => (int)(_renderTarget.Height / (_renderTarget.DeviceDpi / DEFAULT_DPI));
+
+        private const float VIEW_SCALE = 4f;
+        private const float DEFAULT_DPI = 96f;
+
+        private const int NUM_CLOUDS = 2000;
+        private const int NUM_TREES = 1000;
+
+        private const float MAX_CLOUD_X = 400000f;
+        private const float CLOUD_SCALE = 5f;
+        private const float GROUND_OBJ_SCALE = 4f;
+        private const float SCREEN_SHAKE_G = 9f; // Amount of g-force before screen shake.
+        private const float ZOOM_FACTOR = 0.07f; // Effects zoom in/out speed.
+        private const float MESSAGEBOX_FONT_SIZE = 10f;
+        private const string DEFAULT_FONT_NAME = "Consolas";
+
+        private List<Cloud> _clouds = new List<Cloud>();
+        private List<Tree> _trees = new List<Tree>();
 
 
         public RenderManager(Control renderTarget, NetEventManager netMan)
@@ -249,13 +242,13 @@ namespace PolyPlane.Rendering
             _screenShakeX = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.X = v);
             _screenShakeY = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.Y = v);
 
-            _textConsolas12 = _ctx.Device.CreateTextFormat(_defaultFontName, 12f);
-            _textConsolas15Centered = _ctx.Device.CreateTextFormat(_defaultFontName, 15f, D2DFontWeight.Normal, D2DFontStyle.Normal, D2DFontStretch.Normal, DWriteTextAlignment.Center, DWriteParagraphAlignment.Center);
-            _textConsolas15 = _ctx.Device.CreateTextFormat(_defaultFontName, 15f);
-            _textConsolas25Centered = _ctx.Device.CreateTextFormat(_defaultFontName, 25f, D2DFontWeight.Normal, D2DFontStyle.Normal, D2DFontStretch.Normal, DWriteTextAlignment.Center, DWriteParagraphAlignment.Center);
-            _textConsolas30Centered = _ctx.Device.CreateTextFormat(_defaultFontName, 30f, D2DFontWeight.Normal, D2DFontStyle.Normal, D2DFontStretch.Normal, DWriteTextAlignment.Center, DWriteParagraphAlignment.Center);
-            _textConsolas30 = _ctx.Device.CreateTextFormat(_defaultFontName, 30f);
-            _messageBoxFont = _ctx.Device.CreateTextFormat(_defaultFontName, MESSAGEBOX_FONT_SIZE);
+            _textConsolas12 = _ctx.Device.CreateTextFormat(DEFAULT_FONT_NAME, 12f);
+            _textConsolas15Centered = _ctx.Device.CreateTextFormat(DEFAULT_FONT_NAME, 15f, D2DFontWeight.Normal, D2DFontStyle.Normal, D2DFontStretch.Normal, DWriteTextAlignment.Center, DWriteParagraphAlignment.Center);
+            _textConsolas15 = _ctx.Device.CreateTextFormat(DEFAULT_FONT_NAME, 15f);
+            _textConsolas25Centered = _ctx.Device.CreateTextFormat(DEFAULT_FONT_NAME, 25f, D2DFontWeight.Normal, D2DFontStyle.Normal, D2DFontStretch.Normal, DWriteTextAlignment.Center, DWriteParagraphAlignment.Center);
+            _textConsolas30Centered = _ctx.Device.CreateTextFormat(DEFAULT_FONT_NAME, 30f, D2DFontWeight.Normal, D2DFontStyle.Normal, D2DFontStretch.Normal, DWriteTextAlignment.Center, DWriteParagraphAlignment.Center);
+            _textConsolas30 = _ctx.Device.CreateTextFormat(DEFAULT_FONT_NAME, 30f);
+            _messageBoxFont = _ctx.Device.CreateTextFormat(DEFAULT_FONT_NAME, MESSAGEBOX_FONT_SIZE);
 
             _hudColorBrush = _ctx.Device.CreateSolidColorBrush(World.HudColor);
             _hudColorBrushLight = _ctx.Device.CreateSolidColorBrush(Utilities.LerpColor(World.HudColor, D2DColor.WhiteSmoke, 0.3f));
@@ -607,7 +600,7 @@ namespace PolyPlane.Rendering
                 {
                     var rect = new D2DRect(msg.RenderPos, new D2DSize(200, 50));
                     var color = Utilities.LerpColor(D2DColor.Red, D2DColor.Transparent, msg.Age / msg.LIFESPAN);
-                    ctx.Gfx.DrawTextCenter(msg.Message, color, _defaultFontName, 30f, rect);
+                    ctx.Gfx.DrawTextCenter(msg.Message, color, DEFAULT_FONT_NAME, 30f, rect);
                 }
                 else
                 {
@@ -682,7 +675,7 @@ namespace PolyPlane.Rendering
 
         private D2DColor GetTimeOfDayColor()
         {
-            var todColor = InterpolateColorGaussian(_todPallet, World.TimeOfDay, World.MAX_TIMEOFDAY);
+            var todColor = InterpolateColorGaussian(_timeOfDayPallet, World.TimeOfDay, World.MAX_TIMEOFDAY);
             return todColor;
         }
 
@@ -1211,10 +1204,10 @@ namespace PolyPlane.Rendering
             {
                 var pos = new D2DPoint(viewportsize.width * 0.5f, 300f);
                 var initSize = new D2DSize(600, 100);
-                var size = gfx.MeasureText(_hudMessage, _defaultFontName, FONT_SIZE, initSize);
+                var size = gfx.MeasureText(_hudMessage, DEFAULT_FONT_NAME, FONT_SIZE, initSize);
                 var rect = new D2DRect(pos, size);
 
-                gfx.DrawTextCenter(_hudMessage, _hudMessageColor, _defaultFontName, FONT_SIZE, rect);
+                gfx.DrawTextCenter(_hudMessage, _hudMessageColor, DEFAULT_FONT_NAME, FONT_SIZE, rect);
             }
 
             if (!_hudMessageTimeout.IsRunning)
@@ -1228,10 +1221,10 @@ namespace PolyPlane.Rendering
 
             var pos = new D2DPoint(viewportsize.width * 0.5f, 100f);
             var initSize = new D2DSize(600, 100);
-            var size = gfx.MeasureText(MSG, _defaultFontName, FONT_SIZE, initSize);
+            var size = gfx.MeasureText(MSG, DEFAULT_FONT_NAME, FONT_SIZE, initSize);
             var rect = new D2DRect(pos, size);
 
-            gfx.DrawTextCenter(MSG, D2DColor.Red, _defaultFontName, FONT_SIZE, rect);
+            gfx.DrawTextCenter(MSG, D2DColor.Red, DEFAULT_FONT_NAME, FONT_SIZE, rect);
         }
 
         /// <summary>
@@ -1298,7 +1291,7 @@ namespace PolyPlane.Rendering
                 if (markerValue >= 0f)
                 {
                     var textRect = new D2DRect(start - new D2DPoint(25f, 0f), new D2DSize(60f, 30f));
-                    gfx.DrawTextCenter(markerValue.ToString(), World.HudColor.WithAlpha(alpha), _defaultFontName, 15f, textRect);
+                    gfx.DrawTextCenter(markerValue.ToString(), World.HudColor.WithAlpha(alpha), DEFAULT_FONT_NAME, 15f, textRect);
                 }
             }
 
@@ -1441,7 +1434,7 @@ namespace PolyPlane.Rendering
                 var rect = new D2DRect(pos - new D2DPoint(0, -200), new D2DSize(120, 30));
                 var warnColor = D2DColor.Red.WithAlpha(_missileFlashTimer.Value / _missileFlashTimer.Interval);
                 gfx.DrawRectangle(rect, warnColor);
-                gfx.DrawTextCenter("MISSILE", warnColor, _defaultFontName, 30f, rect);
+                gfx.DrawTextCenter("MISSILE", warnColor, DEFAULT_FONT_NAME, 30f, rect);
             }
 
             if (plane.HasRadarLock)
@@ -1449,7 +1442,7 @@ namespace PolyPlane.Rendering
                 var lockRect = new D2DRect(pos - new D2DPoint(0, -160), new D2DSize(120, 30));
                 var lockColor = D2DColor.Red.WithAlpha(0.7f);
                 gfx.DrawRectangle(lockRect, lockColor);
-                gfx.DrawTextCenter("LOCK", lockColor, _defaultFontName, 30f, lockRect);
+                gfx.DrawTextCenter("LOCK", lockColor, DEFAULT_FONT_NAME, 30f, lockRect);
             }
         }
 
