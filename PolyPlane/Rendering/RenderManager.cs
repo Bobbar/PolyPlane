@@ -200,9 +200,12 @@ namespace PolyPlane.Rendering
 
         private void PlayerScoredEvent(object? sender, PlayerScoredEventArgs e)
         {
-            var msg = "+1 Kill!";
-            var popMsg = new PopMessage() { Message = msg, Position = new D2DPoint(this.Width / 2f, this.Height * 0.40f), TargetPlayerID = e.Player.ID };
-            _popMessages.Add(popMsg);
+            if (!World.FreeCameraMode)
+            {
+                var msg = "+1 Kill!";
+                var popMsg = new PopMessage() { Message = msg, Position = new D2DPoint(this.Width / 2f, this.Height * 0.40f), TargetPlayerID = e.Player.ID };
+                _popMessages.Add(popMsg);
+            }
         }
 
         private void PlayerKilledEvent(object? sender, EventMessage e)
