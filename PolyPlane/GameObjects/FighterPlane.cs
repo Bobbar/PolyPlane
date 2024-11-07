@@ -135,6 +135,8 @@ namespace PolyPlane.GameObjects
         private GameTimer _decoyRegenTimer = new GameTimer(0.6f, true);
         private GameTimer _missileRegenTimer = new GameTimer(60f, true);
         private GameTimer _easePhysicsTimer = new GameTimer(5f, true);
+        private GameTimer _groundDustSpawnTimer = new GameTimer(0.03f, true);
+
         private bool _easePhysicsComplete = false;
 
         private float _damageDeflection = 0f;
@@ -308,6 +310,9 @@ namespace PolyPlane.GameObjects
                     NumDecoys++;
             };
 
+            _groundDustSpawnTimer.TriggerCallback = DoGroundDustEffect;
+
+            _groundDustSpawnTimer.Start();
             _bulletRegenTimer.Start();
             _decoyRegenTimer.Start();
             _easePhysicsTimer.Start();
@@ -507,12 +512,12 @@ namespace PolyPlane.GameObjects
 
             CheckForFlip();
             UpdateFlame();
-            DoGroundDustEffect();
 
             _easePhysicsTimer.Update(dt);
             _flipTimer.Update(dt);
             _isLockOntoTimeout.Update(dt);
             _expireTimeout.Update(dt);
+            _groundDustSpawnTimer.Update(dt);
 
             this.Radar?.Update(dt);
 
