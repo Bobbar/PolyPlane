@@ -1278,19 +1278,25 @@ namespace PolyPlane.Rendering
                 if (posY <= (pos.Y - HalfH) - markerRange)
                     continue;
 
+                if (posY >= (pos.Y + HalfH))
+                    continue;
+
                 var start = new D2DPoint(pos.X - HalfW, posY);
                 var end = new D2DPoint(pos.X + HalfW, posY);
 
                 var div = y / markerRange;
-                var markerValue = startValue + (-HalfH + (div * markerRange));
+                var markerValue = Math.Round(startValue + (-HalfH + (div * markerRange)), 0);
 
                 if (rect.Contains(start))
                     gfx.DrawLine(start, end, World.HudColor, 1f, D2DDashStyle.Dash);
 
                 // Fade in marker text as they move towards the center.
-                var alpha = Math.Clamp(1f - Utilities.Factor(Math.Abs(pos.Y - posY), HalfH), 0.0f, 0.4f);
-                var textRect = new D2DRect(start - new D2DPoint(25f, 0f), new D2DSize(60f, 30f));
-                gfx.DrawTextCenter(Math.Round(markerValue, 0).ToString(), World.HudColor.WithAlpha(alpha), _defaultFontName, 15f, textRect);
+                var alpha = Math.Clamp(1f - Utilities.FactorWithEasing(Math.Abs(pos.Y - posY), HalfH, EasingFunctions.EaseOutSine), 0.02f, 0.4f);
+                if (markerValue >= 0f)
+                {
+                    var textRect = new D2DRect(start - new D2DPoint(25f, 0f), new D2DSize(60f, 30f));
+                    gfx.DrawTextCenter(markerValue.ToString(), World.HudColor.WithAlpha(alpha), _defaultFontName, 15f, textRect);
+                }
             }
 
             var curValueRect = new D2DRect(new D2DPoint(pos.X, pos.Y + HalfH + 20f), new D2DSize(60f, 20f));
