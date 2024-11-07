@@ -26,7 +26,6 @@
 
   <ItemGroup>
     <PackageReference Include="ENet-CSharp" Version="2.4.8" />
-    <PackageReference Include="System.Text.Json" Version="8.0.4" />
     <PackageReference Include="unvell.D2DLib-x64" Version="1.5.0" />
   </ItemGroup>
 
