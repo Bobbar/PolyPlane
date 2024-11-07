@@ -374,10 +374,13 @@ namespace PolyPlane.GameObjects
                 // Deflection direction.
                 var deflection = Utilities.ClampAngle180(guideRot);
 
-                if (!this.IsDisabled)
-                    _controlWing.Deflection = deflection;
-                else
-                    _controlWing.Deflection = _damageDeflection;
+                if (!this.IsNetObject)
+                {
+                    if (!this.IsDisabled)
+                        _controlWing.Deflection = deflection;
+                    else
+                        _controlWing.Deflection = _damageDeflection;
+                }
 
                 // Update
                 base.Update(partialDT);
@@ -1174,6 +1177,12 @@ namespace PolyPlane.GameObjects
         private void CheckForFlip()
         {
             var pointingRight = Utilities.ClampAngle180(_gForceDirection - this.Rotation) < 0f;
+
+            // For net planes we don't have an accurate g-force measurement,
+            // so estimate using the current velocity angle.
+            if (this.IsNetObject)
+                pointingRight = Utilities.ClampAngle180((this.Velocity.Angle() + 180f) - this.Rotation) < 0f;
+
             FlipPoly(pointingRight ? Direction.Right : Direction.Left);
         }
 

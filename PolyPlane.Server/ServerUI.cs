@@ -304,8 +304,6 @@ namespace PolyPlane.Server
             _timer.Stop();
             _updateTime += _timer.Elapsed;
 
-            FighterPlane viewPlane = World.GetViewPlane();
-
             // Update/advance objects.
             if (!World.IsPaused)
             {
@@ -326,7 +324,6 @@ namespace PolyPlane.Server
 
                 World.UpdateAirDensityAndWind(World.DT);
 
-
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
             }
@@ -334,7 +331,12 @@ namespace PolyPlane.Server
             _timer.Restart();
 
             if (_render != null && !_stopRender)
-                _render.RenderFrame(viewPlane);
+            {
+                FighterPlane viewPlane = World.GetViewPlane();
+                
+                if (viewPlane != null)
+                    _render.RenderFrame(viewPlane);
+            }
 
             _timer.Stop();
             _renderTime = _timer.Elapsed;

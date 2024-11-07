@@ -25,13 +25,10 @@ namespace PolyPlane.GameObjects.Manager
 
         public void DoCollisions()
         {
-            if (_netMan != null && !_netMan.IsServer)
-            {
-                HandleExplosionImpulse();
-                HandleGroundImpacts();
-                HandleFieldWrap();
-                return;
-            }
+            var doLocalCollisions = true;
+
+            if (World.IsNetGame && World.IsClient)
+                doLocalCollisions = false;
 
             var now = World.CurrentTime();
 
@@ -52,129 +49,132 @@ namespace PolyPlane.GameObjects.Manager
 
                 foreach (var obj in nearObjs)
                 {
-                    if (obj is GuidedMissile missile)
+                    if (doLocalCollisions)
                     {
-                        var missileOwner = missile.Owner as FighterPlane;
-
-                        if (missile.Owner.Equals(plane))
-                            continue;
-
-                        if (missile.IsExpired)
-                            continue;
-
-                        if (_isNetGame)
+                        if (obj is GuidedMissile missile)
                         {
-                            var missileLagComp = missile.LagAmount / 2f;
+                            var missileOwner = missile.Owner as FighterPlane;
 
-                            // Don't compensate as much for AI planes?
-                            if (missileOwner.IsAI)
-                                missileLagComp = planeRTT;
+                            if (missile.Owner.Equals(plane))
+                                continue;
 
-                            if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - missileLagComp))
+                            if (missile.IsExpired)
+                                continue;
+
+                            if (_isNetGame)
                             {
+                                var missileLagComp = missile.LagAmount / 2f;
 
-                                if (histState != null)
+                                // Don't compensate as much for AI planes?
+                                if (missileOwner.IsAI)
+                                    missileLagComp = planeRTT;
+
+                                if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - missileLagComp))
                                 {
-                                    var ogState = new GameObjectPacket(plane);
 
-                                    plane.Position = histState.Position;
-                                    plane.Rotation = histState.Rotation;
-                                    plane.SyncFixtures();
+                                    if (histState != null)
+                                    {
+                                        var ogState = new GameObjectPacket(plane);
 
-                                    var impactResultM = plane.GetImpactResult(missile, pos);
-                                    _netMan.SendNetImpact(missile, plane, impactResultM, histState);
+                                        plane.Position = histState.Position;
+                                        plane.Rotation = histState.Rotation;
+                                        plane.SyncFixtures();
 
-                                    plane.Position = ogState.Position;
-                                    plane.Rotation = ogState.Rotation;
-                                    plane.SyncFixtures();
-                                }
-                                else
-                                {
-                                    var impactResultM = plane.GetImpactResult(missile, pos);
-                                    _netMan.SendNetImpact(missile, plane, impactResultM, histState);
-                                }
+                                        var impactResultM = plane.GetImpactResult(missile, pos);
+                                        _netMan.SendNetImpact(missile, plane, impactResultM, histState);
 
-                                missile.IsExpired = true;
-                            }
-                        }
-                        else
-                        {
-                            if (plane.CollidesWith(missile, out D2DPoint pos))
-                            {
-                                if (!missile.IsExpired)
-                                {
-                                    var result = plane.GetImpactResult(missile, pos);
+                                        plane.Position = ogState.Position;
+                                        plane.Rotation = ogState.Rotation;
+                                        plane.SyncFixtures();
+                                    }
+                                    else
+                                    {
+                                        var impactResultM = plane.GetImpactResult(missile, pos);
+                                        _netMan.SendNetImpact(missile, plane, impactResultM, histState);
+                                    }
 
-                                    ImpactEvent?.Invoke(this, new ImpactEvent(plane, missile, result.DoesDamage));
-
-                                    plane.HandleImpactResult(missile, result);
-
-                                    missile.Position = pos;
                                     missile.IsExpired = true;
                                 }
                             }
-                        }
-                    }
-
-                    if (obj is Bullet bullet)
-                    {
-                        var bulletOwner = bullet.Owner as FighterPlane;
-
-                        if (bullet.IsExpired)
-                            continue;
-
-                        if (bullet.Owner.Equals(plane))
-                            continue;
-
-
-                        if (_isNetGame)
-                        {
-                            var bulletLagComp = bullet.LagAmount / 2f;
-
-                            if (bulletOwner.IsAI)
-                                bulletLagComp = planeRTT;
-
-                            if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - bulletLagComp))
+                            else
                             {
-                                if (histState != null)
+                                if (plane.CollidesWith(missile, out D2DPoint pos))
                                 {
-                                    var ogState = new GameObjectPacket(plane);
+                                    if (!missile.IsExpired)
+                                    {
+                                        var result = plane.GetImpactResult(missile, pos);
 
-                                    plane.Position = histState.Position;
-                                    plane.Rotation = histState.Rotation;
-                                    plane.SyncFixtures();
+                                        ImpactEvent?.Invoke(this, new ImpactEvent(plane, missile, result.DoesDamage));
 
-                                    var impactResult = plane.GetImpactResult(bullet, pos);
-                                    _netMan.SendNetImpact(bullet, plane, impactResult, histState);
+                                        plane.HandleImpactResult(missile, result);
 
-                                    plane.Position = ogState.Position;
-                                    plane.Rotation = ogState.Rotation;
-                                    plane.SyncFixtures();
+                                        missile.Position = pos;
+                                        missile.IsExpired = true;
+                                    }
                                 }
-                                else
-                                {
-                                    var impactResult = plane.GetImpactResult(bullet, pos);
-                                    _netMan.SendNetImpact(bullet, plane, impactResult, histState);
-                                }
-
-
-                                bullet.IsExpired = true;
                             }
                         }
-                        else
+
+                        if (obj is Bullet bullet)
                         {
-                            if (plane.CollidesWith(bullet, out D2DPoint pos))
+                            var bulletOwner = bullet.Owner as FighterPlane;
+
+                            if (bullet.IsExpired)
+                                continue;
+
+                            if (bullet.Owner.Equals(plane))
+                                continue;
+
+
+                            if (_isNetGame)
                             {
-                                if (!bullet.IsExpired)
+                                var bulletLagComp = bullet.LagAmount / 2f;
+
+                                if (bulletOwner.IsAI)
+                                    bulletLagComp = planeRTT;
+
+                                if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - bulletLagComp))
                                 {
-                                    var result = plane.GetImpactResult(bullet, pos);
+                                    if (histState != null)
+                                    {
+                                        var ogState = new GameObjectPacket(plane);
 
-                                    ImpactEvent?.Invoke(this, new ImpactEvent(plane, bullet, result.DoesDamage));
+                                        plane.Position = histState.Position;
+                                        plane.Rotation = histState.Rotation;
+                                        plane.SyncFixtures();
 
-                                    plane.HandleImpactResult(bullet, result);
+                                        var impactResult = plane.GetImpactResult(bullet, pos);
+                                        _netMan.SendNetImpact(bullet, plane, impactResult, histState);
 
-                                    bullet.Position = pos;
+                                        plane.Position = ogState.Position;
+                                        plane.Rotation = ogState.Rotation;
+                                        plane.SyncFixtures();
+                                    }
+                                    else
+                                    {
+                                        var impactResult = plane.GetImpactResult(bullet, pos);
+                                        _netMan.SendNetImpact(bullet, plane, impactResult, histState);
+                                    }
+
+
                                     bullet.IsExpired = true;
+                                }
+                            }
+                            else
+                            {
+                                if (plane.CollidesWith(bullet, out D2DPoint pos))
+                                {
+                                    if (!bullet.IsExpired)
+                                    {
+                                        var result = plane.GetImpactResult(bullet, pos);
+
+                                        ImpactEvent?.Invoke(this, new ImpactEvent(plane, bullet, result.DoesDamage));
+
+                                        plane.HandleImpactResult(bullet, result);
+
+                                        bullet.Position = pos;
+                                        bullet.IsExpired = true;
+                                    }
                                 }
                             }
                         }
@@ -197,29 +197,32 @@ namespace PolyPlane.GameObjects.Manager
 
                 foreach (var obj in nearObjs)
                 {
-                    if (obj is Bullet bullet)
+                    if (doLocalCollisions)
                     {
-                        if (bullet.IsExpired)
-                            continue;
-
-                        if (bullet.Owner == missile.Owner)
-                            continue;
-
-                        if (missile.CollidesWith(bullet, out D2DPoint posb))
+                        if (obj is Bullet bullet)
                         {
-                            missile.IsExpired = true;
-                            bullet.IsExpired = true;
+                            if (bullet.IsExpired)
+                                continue;
+
+                            if (bullet.Owner == missile.Owner)
+                                continue;
+
+                            if (missile.CollidesWith(bullet, out D2DPoint posb))
+                            {
+                                missile.IsExpired = true;
+                                bullet.IsExpired = true;
+                            }
                         }
-                    }
-                    else if (obj is Decoy decoy)
-                    {
-                        if (decoy.IsExpired)
-                            continue;
-
-                        if (missile.CollidesWith(decoy, out D2DPoint posb))
+                        else if (obj is Decoy decoy)
                         {
-                            missile.IsExpired = true;
-                            decoy.IsExpired = true;
+                            if (decoy.IsExpired)
+                                continue;
+
+                            if (missile.CollidesWith(decoy, out D2DPoint posb))
+                            {
+                                missile.IsExpired = true;
+                                decoy.IsExpired = true;
+                            }
                         }
                     }
 
