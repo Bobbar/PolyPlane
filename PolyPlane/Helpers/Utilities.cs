@@ -38,26 +38,12 @@ namespace PolyPlane.Helpers
 
         public static float Repeat(float t, float length)
         {
-            return Clamp(t - (float)Math.Floor(t / length) * length, 0.0f, length);
-        }
-
-        public static float Clamp(float value, float min, float max)
-        {
-            if (value < min)
-                value = min;
-            else if (value > max)
-                value = max;
-            return value;
+            return Math.Clamp(t - (float)Math.Floor(t / length) * length, 0.0f, length);
         }
 
         public static float Clamp01(float value)
         {
-            if (value < 0f)
-                return 0f;
-            else if (value > 1f)
-                return 1f;
-            else
-                return value;
+            return Math.Clamp(value, 0f, 1f);
         }
 
         public static D2DPoint LerpPoints(D2DPoint a, D2DPoint b, float amount)
@@ -90,6 +76,13 @@ namespace PolyPlane.Helpers
             return degrees * DEGREES_TO_RADS;
         }
 
+        public static D2DPoint AngleToVectorDegrees(float angle, float length = 1f)
+        {
+            var rads = DegreesToRads(angle);
+            var vec = new D2DPoint((float)Math.Cos(rads), (float)Math.Sin(rads));
+            return vec * length;
+        }
+
         public static D2DPoint AngleToVectorRads(float angle)
         {
             var vec = new D2DPoint((float)Math.Cos(angle), (float)Math.Sin(angle));
@@ -110,15 +103,6 @@ namespace PolyPlane.Helpers
             return ((1f - t) * (1f - t) * p0) + (2f * t * (1f - t) * p1) + (t * t * p2);
         }
 
-        public static D2DPoint AngleToVectorDegrees(float angle, float length = 1f)
-        {
-            var rads = angle * DEGREES_TO_RADS;
-
-            var vec = new D2DPoint((float)Math.Cos(rads), (float)Math.Sin(rads));
-
-            return vec * length;
-        }
-
         public static float AngleBetween(D2DPoint vector, D2DPoint other, bool clamp = true)
         {
             var angA = vector.Angle(clamp);
@@ -132,21 +116,6 @@ namespace PolyPlane.Helpers
         public static float AngleDiff(float a, float b)
         {
             return 180f - Math.Abs(Math.Abs(a - b) % (2f * 180f) - 180f);
-        }
-
-        public static float ModSign(float a, float n)
-        {
-            return a - (float)Math.Floor(a / n) * n;
-        }
-
-        public static double ModSignD(double a, double n)
-        {
-            return a - Math.Floor(a / n) * n;
-        }
-
-        public static float FMod(float a, float n)
-        {
-            return a % n;
         }
 
         public static float ClampAngle(float angle)
