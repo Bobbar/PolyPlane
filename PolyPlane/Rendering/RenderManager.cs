@@ -90,6 +90,8 @@ namespace PolyPlane.Rendering
         private readonly D2DColor _groundColorLight = new D2DColor(1f, 0f, 0.29f, 0);
         private readonly D2DColor _groundColorDark = D2DColor.DarkGreen;
         private readonly D2DPoint _infoPosition = new D2DPoint(20, 20);
+        private readonly D2DPoint _fieldRangeX = new D2DPoint(-MAX_CLOUD_X, MAX_CLOUD_X);
+        private readonly D2DPoint _cloudRangeY = new D2DPoint(-30000, -2000);
 
         private const double _gaussianSigma_2 = 0.035;
         private readonly double _gaussianSigma = Math.Sqrt(2.0 * Math.PI * _gaussianSigma_2);
@@ -259,7 +261,7 @@ namespace PolyPlane.Rendering
             _groundBrush = _ctx.Device.CreateLinearGradientBrush(new D2DPoint(0f, 50f), new D2DPoint(0f, 4000f), [new D2DGradientStop(0.2f, AddTimeOfDayColor(_groundColorDark)), new D2DGradientStop(0.1f, AddTimeOfDayColor(_groundColorLight))]);
         }
 
-        public void ResizeGfx(bool force = false)
+        private void ResizeGfx(bool force = false)
         {
             if (!force)
                 if (World.ViewPortBaseSize.width == this.Width && World.ViewPortBaseSize.height == this.Height)
@@ -280,16 +282,21 @@ namespace PolyPlane.Rendering
             return scaleSize;
         }
 
-        public void InitProceduralGenStuff()
+        private void InitProceduralGenStuff()
         {
             var rnd = new Random(1234);
 
+            GenClouds(rnd);
+            GenTrees(rnd);
+        }
+
+        private void GenClouds(Random rnd)
+        {
             // Generate a pseudo-random? list of clouds.
             // I tried to do clouds procedurally, but wasn't having much luck.
             // It turns out that we need a surprisingly few number of clouds
             // to cover a very large area, so we will just brute force this for now.
-            var cloudRangeX = new D2DPoint(-MAX_CLOUD_X, MAX_CLOUD_X);
-            var cloudRangeY = new D2DPoint(-30000, -2000);
+
             var cloudDeDup = new HashSet<D2DPoint>();
             const int MIN_PNTS = 12;
             const int MAX_PNTS = 28;
@@ -298,10 +305,10 @@ namespace PolyPlane.Rendering
 
             for (int i = 0; i < NUM_CLOUDS; i++)
             {
-                var rndPos = new D2DPoint(rnd.NextFloat(cloudRangeX.X, cloudRangeX.Y), rnd.NextFloat(cloudRangeY.X, cloudRangeY.Y));
+                var rndPos = new D2DPoint(rnd.NextFloat(_fieldRangeX.X, _fieldRangeX.Y), rnd.NextFloat(_cloudRangeY.X, _cloudRangeY.Y));
 
                 while (!cloudDeDup.Add(rndPos))
-                    rndPos = new D2DPoint(rnd.NextFloat(cloudRangeX.X, cloudRangeX.Y), rnd.NextFloat(cloudRangeY.X, cloudRangeY.Y));
+                    rndPos = new D2DPoint(rnd.NextFloat(_fieldRangeX.X, _fieldRangeX.Y), rnd.NextFloat(_cloudRangeY.X, _cloudRangeY.Y));
 
                 var rndCloud = Cloud.RandomCloud(rnd, rndPos, MIN_PNTS, MAX_PNTS, MIN_RADIUS, MAX_RADIUS);
                 _clouds.Add(rndCloud);
@@ -311,16 +318,18 @@ namespace PolyPlane.Rendering
             var cloudLayerRangeY = new D2DPoint(-2500, -2000);
             for (int i = 0; i < NUM_CLOUDS / 2; i++)
             {
-                var rndPos = new D2DPoint(rnd.NextFloat(cloudRangeX.X, cloudRangeX.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
+                var rndPos = new D2DPoint(rnd.NextFloat(_fieldRangeX.X, _fieldRangeX.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
 
                 while (!cloudDeDup.Add(rndPos))
-                    rndPos = new D2DPoint(rnd.NextFloat(cloudRangeX.X, cloudRangeX.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
+                    rndPos = new D2DPoint(rnd.NextFloat(_fieldRangeX.X, _fieldRangeX.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
 
                 var rndCloud = Cloud.RandomCloud(rnd, rndPos, MIN_PNTS, MAX_PNTS, MIN_RADIUS, MAX_RADIUS);
                 _clouds.Add(rndCloud);
             }
+        }
 
-
+        private void GenTrees(Random rnd)
+        {
             // Gen trees.
             var treeDeDup = new HashSet<D2DPoint>();
 
@@ -333,10 +342,10 @@ namespace PolyPlane.Rendering
 
             for (int i = 0; i < NUM_TREES; i++)
             {
-                var rndPos = new D2DPoint(rnd.NextFloat(cloudRangeX.X, cloudRangeX.Y), 0f);
+                var rndPos = new D2DPoint(rnd.NextFloat(_fieldRangeX.X, _fieldRangeX.Y), 0f);
 
                 while (!treeDeDup.Add(rndPos) || (_trees.Count > 0 && _trees.Min(t => t.Position.DistanceTo(rndPos)) < minDist))
-                    rndPos = new D2DPoint(rnd.NextFloat(cloudRangeX.X, cloudRangeX.Y), 0f);
+                    rndPos = new D2DPoint(rnd.NextFloat(_fieldRangeX.X, _fieldRangeX.Y), 0f);
 
                 var type = rnd.Next(10);
                 var height = 10f + (rnd.NextFloat(1f, 3f) * 20f);
