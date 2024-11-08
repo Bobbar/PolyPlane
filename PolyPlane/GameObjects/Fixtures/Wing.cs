@@ -126,7 +126,7 @@ namespace PolyPlane.GameObjects.Fixtures
                 return D2DPoint.Zero;
 
             // Get the current turbulence for this altitude.
-            var turbulence = World.GetTurbulenceForAltitude(this.Position);
+            var turbulence = World.GetTurbulenceForPosition(this.Position);
 
             // Wing & air parameters.
             float AOA_FACT = _params.AOAFactor; // How much AoA effects drag.

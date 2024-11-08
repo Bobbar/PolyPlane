@@ -36,6 +36,14 @@ namespace PolyPlane.Helpers
             return ret;
         }
 
+        public static float ClampRange(float value, float vmin, float vmax, float newMin, float newMax)
+        {
+            var range = vmax - vmin;
+            var pct = (value + vmax) / range;
+            var newVal = Lerp(newMin, newMax, pct);
+            return newVal;
+        }
+
         public static float Repeat(float t, float length)
         {
             return Math.Clamp(t - (float)Math.Floor(t / length) * length, 0.0f, length);

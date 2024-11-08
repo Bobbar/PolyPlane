@@ -171,6 +171,7 @@ namespace PolyPlane.GameObjects
         private List<BulletHole> _bulletHoles = new List<BulletHole>();
         private List<Vapor> _vaporTrails = new List<Vapor>();
         private FlameEmitter _engineFireFlame;
+        private FastNoiseLite _shockwaveNoise = new FastNoiseLite();
 
         private IAIBehavior _aiBehavior;
 
@@ -319,6 +320,9 @@ namespace PolyPlane.GameObjects
 
             _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
             _easePhysicsTimer.TriggerCallback = () => _easePhysicsComplete = true;
+
+            _shockwaveNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
+            _shockwaveNoise.SetFrequency(0.003f);
         }
 
         private void InitWings()
@@ -616,24 +620,28 @@ namespace PolyPlane.GameObjects
 
             // Compute speed factor and fiddle with dimensions, positions, line weight and color alpha.
             var speedFact = Utilities.FactorWithEasing(this.AirSpeedIndicated - MIN_VELO, MIN_VELO, EasingFunctions.EaseInSine);
+            if (speedFact < 0.01f)
+                return;
+
+            var turbulence = World.GetTurbulenceForPosition(this.Position);
 
             // Increase width and height with speed,
             // and add some wiggle from turbulence.
             var width = 40f;
             width += 30f * speedFact;
-            width += 30f * World.Turbulence;
+            width += 30f * turbulence;
 
             var height = 100f;
             height += 300f * speedFact;
-            height += 30f * World.Turbulence;
+            height += 30f * turbulence;
 
             // Increase the initial line thiccness
             // and color alpha with speed and turbs.
-            var lineWeight = 4f;
-            lineWeight += 9f * speedFact * World.Turbulence;
+            var lineWeight = 8f;
+            lineWeight += 9f * speedFact * turbulence;
 
             var alpha = 0.8f;
-            alpha *= speedFact * World.Turbulence;
+            alpha *= speedFact * turbulence;
 
             // ## Control points for beziers. ##
 
@@ -684,17 +692,14 @@ namespace PolyPlane.GameObjects
                 var B1Bot = Utilities.LerpBezierCurve(p0, p1, p2Bot, t);
                 var B2Bot = Utilities.LerpBezierCurve(p0, p1, p2Bot, t2);
 
-                if (i == 0)
+                if (i > 0) // Skip the first segment.
                 {
-                    // Round start cap for first lines.
-                    // Try to keep corners hidden behind the plane poly.
-                    ctx.DrawLine(B1Top, B2Top, lineColor, w, D2DDashStyle.Solid, D2DCapStyle.Round);
-                    ctx.DrawLine(B1Bot, B2Bot, lineColor, w, D2DDashStyle.Solid, D2DCapStyle.Round);
-                }
-                else
-                {
-                    ctx.DrawLine(B1Top, B2Top, lineColor, w);
-                    ctx.DrawLine(B1Bot, B2Bot, lineColor, w);
+                    // Get clamped noise for segment alpha.
+                    var noiseT = Math.Clamp(_shockwaveNoise.GetNoise(B1Top.X, B1Top.Y), 0.2f, 1f);
+                    var noiseB = Math.Clamp(_shockwaveNoise.GetNoise(B1Bot.X, B1Bot.Y), 0.2f, 1f);
+
+                    ctx.DrawLine(B1Top, B2Top, lineColor.WithAlpha(a * noiseT), w);
+                    ctx.DrawLine(B1Bot, B2Bot, lineColor.WithAlpha(a * noiseB), w);
                 }
             }
         }
@@ -1128,7 +1133,7 @@ namespace PolyPlane.GameObjects
             }
 
             // Apply turbulence.
-            hVelo *= World.GetTurbulenceForAltitude(hole.Position);
+            hVelo *= World.GetTurbulenceForPosition(hole.Position);
 
             var hVeloNorm = hVelo.Normalized();
             var hVeloMag = hVelo.Length();

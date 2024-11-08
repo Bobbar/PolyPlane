@@ -20,6 +20,7 @@ namespace PolyPlane.GameObjects
         private float _visibleVelo = 0f;
         private float _maxGs = 0f;
         private SmoothPoint _veloSmooth = new SmoothPoint(10);
+        private RandomVariationFloat _alphaVariation = new RandomVariationFloat(0.01f, 1f, 0.1f, 0.5f);
 
         public Vapor(GameObject obj, GameObject owner, D2DPoint offset, float radius, float visibleGs, float visibleVelo, float maxGs)
         {
@@ -45,6 +46,8 @@ namespace PolyPlane.GameObjects
             _refPos.Update(dt);
             this.Position = _refPos.Position;
             this.Velocity = _refPos.Velocity;
+
+            _alphaVariation.Update(dt);
 
 
             if (this.Owner != null && this.Owner.IsExpired)
@@ -110,7 +113,7 @@ namespace PolyPlane.GameObjects
             var newRad = _radius + Utilities.Rnd.NextFloat(-2f, 2f) + (radFact * 20f);
 
             var newColor = _vaporColor;
-            newColor.a = newColor.a * visFact;
+            newColor.a = newColor.a * visFact * _alphaVariation.Value;
 
             var newEllipse = new D2DEllipse(newPos, new D2DSize(newRad, newRad));
             var newPart = new VaporPart(newEllipse, newColor, newVelo);

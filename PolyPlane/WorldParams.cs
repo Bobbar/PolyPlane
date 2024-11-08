@@ -30,6 +30,9 @@ namespace PolyPlane
 
             VeloBounds[0] = new BoundedRange(-5000f, 5000f, 0.05f);
             VeloBounds[1] = new BoundedRange(-5000f, 5000f, 0.05f);
+
+            _turbulenceNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
+            _turbulenceNoise.SetFrequency(0.003f);
         }
 
         public static float SERVER_TICK_RATE
@@ -148,15 +151,14 @@ namespace PolyPlane
         public const float MAX_ALTITUDE = 100000f; // Max density altitude.  (Air density drops to zero at this altitude)
         public const float MIN_TURB_ALT = 3000f; // Altitude below which turbulence is at maximum.
         public const float MAX_TURB_ALT = 20000f; // Max altitude at which turbulence decreases to zero.
-        private const float MIN_TURB = 0.85f;
+        private const float MIN_TURB = 0.80f;
         private const float MAX_TURB = 1f;
         private const float MAX_WIND_MAG = 100f;
         public const float AirDensity = 1.225f;
-        public static float Turbulence = 1f;
         public static D2DPoint Wind = D2DPoint.Zero;
         private static SmoothDouble _serverTimeOffsetSmooth = new SmoothDouble(10);
-        private static RandomVariationFloat _turbulenceVariation = new RandomVariationFloat(MIN_TURB, MAX_TURB, 0.05f, 0.3f);
         private static RandomVariationVector _windVariation = new RandomVariationVector(MAX_WIND_MAG, 10f, 50f);
+        private static FastNoiseLite _turbulenceNoise = new FastNoiseLite();
 
         public static readonly D2DColor HudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
         public static readonly D2DPoint Gravity = new D2DPoint(0, 19.6f);
@@ -205,11 +207,20 @@ namespace PolyPlane
             return AirDensity * fact;
         }
 
-        public static float GetTurbulenceForAltitude(D2DPoint position)
+        public static float GetTurbulenceForPosition(D2DPoint position)
         {
+            if (!EnableTurbulence)
+                return MAX_TURB;
+
             var altOffset = Utilities.PositionToAltitude(position) - World.MIN_TURB_ALT; // Offset the altitude such that turbulence is always at max when below 3000.
             var turbAltFact = Utilities.FactorWithEasing(altOffset, World.MAX_TURB_ALT, EasingFunctions.EaseInCirc);
-            var turb = Utilities.Lerp(World.Turbulence, 1f, turbAltFact);
+
+            // Get noise value for the position and clamp it the desired range.
+            var noiseRaw = _turbulenceNoise.GetNoise(position.X, position.Y);
+            var noise = Utilities.ClampRange(noiseRaw, -1f, 1f, MIN_TURB, MAX_TURB);
+
+            var turb = Utilities.Lerp(noise, 1f, turbAltFact);
+
             return turb;
         }
 
@@ -223,17 +234,6 @@ namespace PolyPlane
 
         public static void UpdateAirDensityAndWind(float dt)
         {
-
-            if (EnableTurbulence)
-            {
-                _turbulenceVariation.Update(dt);
-                Turbulence = _turbulenceVariation.Value;
-            }
-            else
-            {
-                Turbulence = 1f;
-            }
-
             if (EnableWind)
             {
                 _windVariation.Update(dt);
