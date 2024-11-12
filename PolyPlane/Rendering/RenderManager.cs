@@ -1686,6 +1686,7 @@ namespace PolyPlane.Rendering
                 infoText += $"Right-Click: Drop Decoys\n";
                 infoText += $"Middle-Click/Space Bar: Fire Missile\n";
                 infoText += $"L: Toggle Lead Indicators\n";
+                infoText += $"M: Toggle Missiles On Radar\n";
                 infoText += $"F2: Toggle HUD\n";
 
                 infoText += $"\nSpectate (While crashed)\n";
@@ -1741,6 +1742,7 @@ namespace PolyPlane.Rendering
 
                 infoText += $"Interp: {World.InterpOn.ToString()}\n";
                 infoText += $"GunsOnly: {World.GunsOnly.ToString()}\n";
+                infoText += $"MissilesOnRadar: {World.ShowMissilesOnRadar.ToString()}\n";
                 infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
                 infoText += $"VP: {this.Width}, {this.Height}\n";
                 infoText += $"DPI: {this._renderTarget.DeviceDpi}\n";

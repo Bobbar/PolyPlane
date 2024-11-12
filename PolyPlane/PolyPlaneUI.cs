@@ -887,6 +887,7 @@ namespace PolyPlane
                     break;
 
                 case 'm':
+                    World.ShowMissilesOnRadar = !World.ShowMissilesOnRadar;
                     break;
 
                 case 'n':

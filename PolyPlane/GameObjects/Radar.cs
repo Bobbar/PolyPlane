@@ -129,12 +129,15 @@ namespace PolyPlane.GameObjects
                         gfx.FillRectangle(new D2DRect(p.RadarPos, new D2DSize(6f, 6f)), pColor);
                 }
 
-                if (p.Obj is GuidedMissile missile)
+                if (World.ShowMissilesOnRadar)
                 {
-                    if (!p.Obj.Owner.Equals(HostPlane))
-                        gfx.DrawTriangle(p.RadarPos, pColor, D2DColor.Red, 1f);
-                    else
-                        gfx.DrawTriangle(p.RadarPos, pColor, pColor, 1f);
+                    if (p.Obj is GuidedMissile missile)
+                    {
+                        if (!p.Obj.Owner.Equals(HostPlane))
+                            gfx.DrawTriangle(p.RadarPos, pColor, D2DColor.Red, 1f);
+                        else
+                            gfx.DrawTriangle(p.RadarPos, pColor, pColor, 1f);
+                    }
                 }
             }
 
