@@ -214,7 +214,7 @@ namespace PolyPlane
 
             // Noise comes in with the range of -0.9 to 0.9.
             // Change it to the new range of 0 to 1.
-            var noise = Utilities.ClampRange(noiseRaw, -0.9f, 0.9f, 0f, 1f);
+            var noise = Utilities.ClampRange(noiseRaw, -1f, 0.8f, 0f, 1f);
 
             return noise;
         }
