@@ -595,8 +595,27 @@ namespace PolyPlane.Rendering
             DrawPlaneCloudShadows(ctx, shadowColor);
             DrawLightingEffects(ctx, objsInViewport);
 
+            //DrawNoise(ctx);
+
             ctx.PopViewPort();
             ctx.Gfx.PopTransform();
+        }
+
+        private void DrawNoise(RenderContext ctx)
+        {
+            const float step = 25f;
+            const float size = 10f;
+
+            for (float x = ctx.Viewport.left; x <= ctx.Viewport.right; x += step)
+            {
+                for (float y = ctx.Viewport.top; y <= ctx.Viewport.bottom; y += step)
+                {
+                    var nPos = new D2DPoint(x, y);
+                    var noise = World.SampleNoise(nPos);
+
+                    ctx.FillRectangle(new D2DRect(nPos, new D2DSize(size, size)), D2DColor.Black.WithAlpha(noise));
+                }
+            }
         }
 
         private void DrawPopMessages(RenderContext ctx, D2DSize vpSize, FighterPlane viewPlane)

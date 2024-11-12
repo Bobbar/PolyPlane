@@ -32,7 +32,7 @@ namespace PolyPlane
             VeloBounds[1] = new BoundedRange(-5000f, 5000f, 0.05f);
 
             _turbulenceNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
-            _turbulenceNoise.SetFrequency(0.003f);
+            _turbulenceNoise.SetFrequency(0.002f);
         }
 
         public static float SERVER_TICK_RATE
