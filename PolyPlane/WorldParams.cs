@@ -207,6 +207,17 @@ namespace PolyPlane
             return AirDensity * fact;
         }
 
+        public static float SampleNoise(D2DPoint position)
+        {
+            var noiseRaw = _turbulenceNoise.GetNoise(position.X, position.Y);
+
+            // Noise comes in with the range of -0.9 to 0.9.
+            // Change it to the new range of 0 to 1.
+            var noise = Utilities.ClampRange(noiseRaw, -0.9f, 0.9f, 0f, 1f);
+
+            return noise;
+        }
+
         public static float GetTurbulenceForPosition(D2DPoint position)
         {
             if (!EnableTurbulence)
@@ -216,8 +227,8 @@ namespace PolyPlane
             var turbAltFact = Utilities.FactorWithEasing(altOffset, World.MAX_TURB_ALT, EasingFunctions.EaseInCirc);
 
             // Get noise value for the position and clamp it the desired range.
-            var noiseRaw = _turbulenceNoise.GetNoise(position.X, position.Y);
-            var noise = Utilities.ClampRange(noiseRaw, -1f, 1f, MIN_TURB, MAX_TURB);
+            var noiseRaw = SampleNoise(position);
+            var noise = Utilities.ClampRange(noiseRaw, 0f, 1f, MIN_TURB, MAX_TURB);
 
             var turb = Utilities.Lerp(noise, 1f, turbAltFact);
 

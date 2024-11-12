@@ -36,11 +36,19 @@ namespace PolyPlane.Helpers
             return ret;
         }
 
-        public static float ClampRange(float value, float vmin, float vmax, float newMin, float newMax)
+        /// <summary>
+        /// Clamps the specified value to a new range while maintaining ratio.
+        /// </summary>
+        /// <param name="value">Original value.</param>
+        /// <param name="oldMin">Old range min.</param>
+        /// <param name="oldMax">Old range max.</param>
+        /// <param name="newMin">New range min.</param>
+        /// <param name="newMax">New range max.</param>
+        /// <returns></returns>
+        public static float ClampRange(float value, float oldMin, float oldMax, float newMin, float newMax)
         {
-            var range = vmax - vmin;
-            var pct = (value + vmax) / range;
-            var newVal = Lerp(newMin, newMax, pct);
+            var newVal = (((value - oldMin) * (newMax - newMin)) / (oldMax - oldMin)) + newMin;
+
             return newVal;
         }
 

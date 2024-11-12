@@ -171,7 +171,6 @@ namespace PolyPlane.GameObjects
         private List<BulletHole> _bulletHoles = new List<BulletHole>();
         private List<Vapor> _vaporTrails = new List<Vapor>();
         private FlameEmitter _engineFireFlame;
-        private FastNoiseLite _shockwaveNoise = new FastNoiseLite();
 
         private IAIBehavior _aiBehavior;
 
@@ -320,9 +319,6 @@ namespace PolyPlane.GameObjects
 
             _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
             _easePhysicsTimer.TriggerCallback = () => _easePhysicsComplete = true;
-
-            _shockwaveNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
-            _shockwaveNoise.SetFrequency(0.003f);
         }
 
         private void InitWings()
@@ -695,8 +691,8 @@ namespace PolyPlane.GameObjects
                 if (i > 0) // Skip the first segment.
                 {
                     // Get clamped noise for segment alpha.
-                    var noiseT = Math.Clamp(_shockwaveNoise.GetNoise(B1Top.X, B1Top.Y), 0.2f, 1f);
-                    var noiseB = Math.Clamp(_shockwaveNoise.GetNoise(B1Bot.X, B1Bot.Y), 0.2f, 1f);
+                    var noiseT = Math.Clamp(World.SampleNoise(B1Top), 0.1f, 1f);
+                    var noiseB = Math.Clamp(World.SampleNoise(B1Bot), 0.1f, 1f);
 
                     ctx.DrawLine(B1Top, B2Top, lineColor.WithAlpha(a * noiseT), w);
                     ctx.DrawLine(B1Bot, B2Bot, lineColor.WithAlpha(a * noiseB), w);
