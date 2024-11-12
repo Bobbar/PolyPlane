@@ -48,6 +48,7 @@ namespace PolyPlane.Helpers
         public static float ClampRange(float value, float oldMin, float oldMax, float newMin, float newMax)
         {
             var newVal = (((value - oldMin) * (newMax - newMin)) / (oldMax - oldMin)) + newMin;
+            newVal = Math.Clamp(newVal, newMin, newMax);
 
             return newVal;
         }
