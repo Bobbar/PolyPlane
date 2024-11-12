@@ -65,7 +65,7 @@ namespace PolyPlane.Rendering
         private SmoothDouble _updateTimeSmooth = new SmoothDouble(10);
         private Stopwatch _timer = new Stopwatch();
         private GameTimer _hudMessageTimeout = new GameTimer(10f);
-        private GameTimer _missileFlashTimer = new GameTimer(0.5f, 0.5f, false);
+        private GameTimer _warningLightFlashTimer = new GameTimer(0.5f, 0.5f, true);
         private GameTimer _groundColorUpdateTimer = new GameTimer(4f, true);
         private List<EventMessage> _messageEvents = new List<EventMessage>();
         private List<PopMessage> _popMessages = new List<PopMessage>();
@@ -153,7 +153,7 @@ namespace PolyPlane.Rendering
 
             _objs.PlayerScoredEvent += PlayerScoredEvent;
 
-            _missileFlashTimer.Start();
+            _warningLightFlashTimer.Start();
 
             InitProceduralGenStuff();
             InitRenderTarget();
@@ -165,7 +165,7 @@ namespace PolyPlane.Rendering
         public void Dispose()
         {
             _hudMessageTimeout.Stop();
-            _missileFlashTimer.Stop();
+            _warningLightFlashTimer.Stop();
             _groundColorUpdateTimer.Stop();
 
             _groundClipLayer?.Dispose();
@@ -642,10 +642,7 @@ namespace PolyPlane.Rendering
         public void UpdateTimersAndAnims()
         {
             _hudMessageTimeout.Update(World.DT);
-            _missileFlashTimer.Update(World.DT);
-
-            if (!_missileFlashTimer.IsInCooldown && !_missileFlashTimer.IsRunning)
-                _missileFlashTimer.Restart();
+            _warningLightFlashTimer.Update(World.DT);
 
             _screenFlash.Update(World.DT);
             _screenShakeX.Update(World.DT);
@@ -754,26 +751,26 @@ namespace PolyPlane.Rendering
         public void DoScreenShake()
         {
             float amt = 10f;
-            _screenShakeX.Start = Utilities.Rnd.NextFloat(-amt, amt);
-            _screenShakeY.Start = Utilities.Rnd.NextFloat(-amt, amt);
+            _screenShakeX.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
+            _screenShakeY.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
 
-            _screenShakeX.Reset();
-            _screenShakeY.Reset();
+            _screenShakeX.Restart();
+            _screenShakeY.Restart();
         }
 
         public void DoScreenShake(float amt)
         {
-            _screenShakeX.Start = Utilities.Rnd.NextFloat(-amt, amt);
-            _screenShakeY.Start = Utilities.Rnd.NextFloat(-amt, amt);
+            _screenShakeX.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
+            _screenShakeY.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
 
-            _screenShakeX.Reset();
-            _screenShakeY.Reset();
+            _screenShakeX.Restart();
+            _screenShakeY.Restart();
         }
 
         public void DoScreenFlash(D2DColor color)
         {
             _screenFlashColor = color;
-            _screenFlash.Reset();
+            _screenFlash.Restart();
         }
 
         private void DrawPlaneCloudShadows(RenderContext ctx, D2DColor shadowColor)
@@ -1061,7 +1058,7 @@ namespace PolyPlane.Rendering
                         }
 
                         DrawPlanePointers(ctx, viewportsize, plane);
-                        DrawMissilePointers(ctx.Gfx, viewportsize, plane);
+                        DrawMissilePointersAndWarnings(ctx.Gfx, viewportsize, plane);
                     }
 
                     DrawHudMessage(ctx.Gfx, viewportsize);
@@ -1411,7 +1408,7 @@ namespace PolyPlane.Rendering
             ctx.Gfx.PopTransform();
         }
 
-        private void DrawMissilePointers(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
+        private void DrawMissilePointersAndWarnings(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
         {
             const float MIN_DIST = 1000f;
 
@@ -1457,20 +1454,31 @@ namespace PolyPlane.Rendering
                     gfx.DrawArrow(pos1, pos2, color, (impactFact * 30f) + 1f);
             }
 
-            if (warningMessage)
-            {
-                var rect = new D2DRect(pos - new D2DPoint(0, -200), new D2DSize(120, 30));
-                var warnColor = D2DColor.Red.WithAlpha(_missileFlashTimer.Value / _missileFlashTimer.Interval);
-                gfx.DrawRectangle(rect, warnColor);
-                gfx.DrawTextCenter("MISSILE", warnColor, DEFAULT_FONT_NAME, 30f, rect);
-            }
-
+            // Lock light.
             if (plane.HasRadarLock)
             {
                 var lockRect = new D2DRect(pos - new D2DPoint(0, -160), new D2DSize(120, 30));
                 var lockColor = D2DColor.Red.WithAlpha(0.7f);
                 gfx.DrawRectangle(lockRect, lockColor);
                 gfx.DrawTextCenter("LOCK", lockColor, DEFAULT_FONT_NAME, 30f, lockRect);
+            }
+
+            // Missile warning light.
+            if (warningMessage)
+            {
+                var rect = new D2DRect(pos - new D2DPoint(0, -200), new D2DSize(120, 30));
+                var warnColor = D2DColor.Red.WithAlpha(_warningLightFlashTimer.Value / _warningLightFlashTimer.Interval);
+                gfx.DrawRectangle(rect, warnColor);
+                gfx.DrawTextCenter("MISSILE", warnColor, DEFAULT_FONT_NAME, 30f, rect);
+            }
+
+            // Engine out light.
+            if (plane.EngineDamaged)
+            {
+                var engineOutRect = new D2DRect(pos - new D2DPoint(0, -240), new D2DSize(180, 30));
+                var engineOutColor = D2DColor.Orange.WithAlpha(_warningLightFlashTimer.Value / _warningLightFlashTimer.Interval);
+                gfx.DrawRectangle(engineOutRect, engineOutColor);
+                gfx.DrawTextCenter("ENGINE OUT", engineOutColor, DEFAULT_FONT_NAME, 30f, engineOutRect);
             }
         }
 

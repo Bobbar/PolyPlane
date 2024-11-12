@@ -1,4 +1,5 @@
 ﻿using PolyPlane.AI_Behavior;
+using PolyPlane.GameObjects.Animations;
 using PolyPlane.GameObjects.Fixtures;
 using PolyPlane.GameObjects.Guidance;
 using PolyPlane.GameObjects.Interfaces;
@@ -71,7 +72,8 @@ namespace PolyPlane.GameObjects
         public bool FiringBurst { get; set; } = false;
         public bool DroppingDecoy { get; set; } = false;
         public float GForce => _gForce;
-        public bool ThrustOn { get; set; } = false;
+        public bool ThrustOn { get; set; } = true;
+        public bool EngineDamaged { get; set; } = false;
         public float ThrustAmount
         {
             get { return _thrustAmt.Value; }
@@ -136,6 +138,7 @@ namespace PolyPlane.GameObjects
         private GameTimer _missileRegenTimer = new GameTimer(60f, true);
         private GameTimer _easePhysicsTimer = new GameTimer(5f, true);
         private GameTimer _groundDustSpawnTimer = new GameTimer(0.03f, true);
+        private FloatAnimation _engineOutSpoolDown;
 
         private bool _easePhysicsComplete = false;
 
@@ -221,7 +224,6 @@ namespace PolyPlane.GameObjects
             IsNetObject = isNetPlane;
             _isAIPlane = isAI;
             _planeColor = color;
-            ThrustOn = true;
 
             if (isAI)
             {
@@ -241,7 +243,6 @@ namespace PolyPlane.GameObjects
             IsNetObject = isNetPlane;
             _isAIPlane = isAI;
             _planeColor = color;
-            ThrustOn = true;
 
             if (isAI)
             {
@@ -319,6 +320,12 @@ namespace PolyPlane.GameObjects
 
             _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
             _easePhysicsTimer.TriggerCallback = () => _easePhysicsComplete = true;
+
+            _engineOutSpoolDown = new FloatAnimation(1f, 0f, 20f, EasingFunctions.EaseLinear, v =>
+            {
+                if (!this.IsDisabled)
+                    _thrustAmt.Set(v);
+            });
         }
 
         private void InitWings()
@@ -492,10 +499,13 @@ namespace PolyPlane.GameObjects
             }
 
             // Check for engine damage.
-            if (this.ThrustOn && !Utilities.PointInPoly(_centerOfThrust.Position, this.Polygon.Poly))
+            if (this.ThrustOn && !this.EngineDamaged && !Utilities.PointInPoly(_centerOfThrust.Position, this.Polygon.Poly))
             {
-                this.ThrustOn = false;
-                _thrustAmt.Set(0f);
+                _engineFireFlame.StartSpawning();
+                this.EngineDamaged = true;
+
+                // Spool down thrust gradually.
+                _engineOutSpoolDown.Start();
             }
 
             _gForce = _gforceAvg.Current;
@@ -518,6 +528,7 @@ namespace PolyPlane.GameObjects
             _isLockOntoTimeout.Update(dt);
             _expireTimeout.Update(dt);
             _groundDustSpawnTimer.Update(dt);
+            _engineOutSpoolDown.Update(dt);
 
             this.Radar?.Update(dt);
 
@@ -531,6 +542,9 @@ namespace PolyPlane.GameObjects
 
             if (!this.DroppingDecoy)
                 _decoyRegenTimer.Update(dt);
+
+            if (_thrustAmt.Value < 0.01f)
+                this.ThrustOn = false;
 
             this.RecordHistory();
         }
@@ -821,11 +835,6 @@ namespace PolyPlane.GameObjects
             PlayerGuideAngle = angle;
         }
 
-        public void ToggleThrust()
-        {
-            ThrustOn = !ThrustOn;
-        }
-
         public void AddWing(Wing wing, bool isControl = false)
         {
             if (isControl && _controlWing == null)
@@ -1054,16 +1063,19 @@ namespace PolyPlane.GameObjects
             IsDisabled = false;
             HasCrashed = false;
             ThrustOn = true;
+            EngineDamaged = false;
             _expireTimeout.Stop();
             _flipTimer.Restart();
             _bulletHoles.Clear();
-            _thrustAmt.Target = 1f;
             WasHeadshot = false;
             PlayerGuideAngle = 0f;
             _easePhysicsComplete = false;
             _easePhysicsTimer.Restart();
             AIRespawnReady = false;
             _engineFireFlame.StopSpawning();
+            _engineOutSpoolDown.Stop();
+            _engineOutSpoolDown.Reset();
+            _thrustAmt.Target = 1f;
 
             Wings.ForEach(w => w.Visible = true);
 

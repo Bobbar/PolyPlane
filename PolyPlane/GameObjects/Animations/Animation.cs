@@ -2,8 +2,8 @@
 {
     public abstract class Animation<T> : GameObject
     {
-        public T Start;
-        public T End;
+        public T StartValue;
+        public T EndValue;
 
         public float Duration;
         public float AnimPostition;
@@ -22,8 +22,8 @@
 
         protected Animation(T start, T end, float duration, Func<float, float> easeFunc, Action<T> setValFunc)
         {
-            Start = start;
-            End = end;
+            StartValue = start;
+            EndValue = end;
             Duration = duration;
             EaseFunc = easeFunc;
             _setVal = setValFunc;
@@ -39,9 +39,9 @@
             else
                 _elapsed += dt;
 
-            AnimPostition = _elapsed / Duration;
+            AnimPostition = Math.Clamp(_elapsed / Duration, 0f, 1f);
 
-            if (_elapsed < Duration && _elapsed >= 0f)
+            if (_elapsed <= (Duration + dt) && _elapsed >= 0f)
             {
                 var factor = EaseFunc(AnimPostition);
                 DoStep(factor);
@@ -66,13 +66,27 @@
                     IsPlaying = false;
                 }
             }
+        }
 
+        public void Start()
+        {
+            IsPlaying = true;
+        }
 
+        public void Stop()
+        {
+            IsPlaying = false;
+        }
+
+        public void Restart()
+        {
+            IsPlaying = true;
+            _elapsed = 0f;
+            AnimPostition = 0f;
         }
 
         public void Reset()
         {
-            IsPlaying = true;
             _elapsed = 0f;
             AnimPostition = 0f;
         }

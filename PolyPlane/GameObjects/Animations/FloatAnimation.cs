@@ -6,7 +6,7 @@
 
         public override void DoStep(float factor)
         {
-            var newVal = Start + (End - Start) * factor;
+            var newVal = StartValue + (EndValue - StartValue) * factor;
             _setVal(newVal);
 
         }
