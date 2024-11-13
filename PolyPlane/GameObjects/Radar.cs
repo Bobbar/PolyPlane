@@ -386,7 +386,7 @@ namespace PolyPlane.GameObjects
             if (threats.Count() == 0)
                 return nearest;
 
-            threats = threats.OrderBy(p => Utilities.ImpactTime(HostPlane, p.Obj as Missile));
+            threats = threats.OrderBy(p => Utilities.ImpactTime(HostPlane, p.Obj as GuidedMissile));
 
             var first = threats.FirstOrDefault();
 

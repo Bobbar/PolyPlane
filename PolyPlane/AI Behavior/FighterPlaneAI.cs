@@ -8,7 +8,7 @@ namespace PolyPlane.AI_Behavior
     {
         public FighterPlane Plane => _plane;
         public FighterPlane TargetPlane => _targetPlane;
-        public Missile DefendingMissile = null;
+        public GuidedMissile DefendingMissile = null;
         public AIPersonality Personality { get; set; }
 
         private FighterPlane _plane;

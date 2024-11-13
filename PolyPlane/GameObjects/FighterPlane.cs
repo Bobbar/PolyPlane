@@ -893,7 +893,7 @@ namespace PolyPlane.GameObjects
 
             if (impactor is Bullet)
                 attackPlane.BulletsHit++;
-            else if (impactor is Missile)
+            else if (impactor is GuidedMissile)
                 attackPlane.MissilesHit++;
 
             // Always change target to attacking plane?
@@ -905,7 +905,7 @@ namespace PolyPlane.GameObjects
             var angle = result.ImpactAngle;
 
             var distortAmt = BULLET_DISTORT_AMT;
-            if (impactor is Missile)
+            if (impactor is GuidedMissile)
                 distortAmt = MISSILE_DISTORT_AMT;
 
             AddBulletHole(ogPos, angle, distortAmt);
@@ -991,7 +991,7 @@ namespace PolyPlane.GameObjects
                 if (this.Health > 0)
                 {
                     var distortAmt = BULLET_DISTORT_AMT;
-                    if (impactor is Missile)
+                    if (impactor is GuidedMissile)
                         distortAmt = MISSILE_DISTORT_AMT;
 
                     var distortVec = Utilities.AngleToVectorDegrees(angle + this.Rotation, distortAmt);
@@ -1002,7 +1002,7 @@ namespace PolyPlane.GameObjects
                         result.WasHeadshot = true;
                     }
 
-                    if (impactor is Missile)
+                    if (impactor is GuidedMissile)
                     {
                         result.Type = ImpactType.Missile;
                     }
