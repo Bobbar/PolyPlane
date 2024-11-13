@@ -818,8 +818,9 @@ namespace PolyPlane.GameObjects
             // One amount is based on velocity angle, the other is based on the current rotation.
             // The velocity angle is much better at rotating quickly and accurately to the specified direction.
             // The rotation angle works better when velocities are very low and the velocity angle becomes unreliable.
-            var dirVec = Utilities.AngleToVectorDegrees(dir, SENSITIVITY);
-            var amtVelo = Utilities.RadsToDegrees(dirVec.Cross(this.Velocity.Normalized()));
+            var dirVec = Utilities.AngleToVectorDegrees(dir);
+            var dirVecVelo = dirVec * SENSITIVITY;
+            var amtVelo = Utilities.RadsToDegrees(dirVecVelo.Cross(this.Velocity.Normalized()));
             var amtRot = Utilities.RadsToDegrees(dirVec.Cross(Utilities.AngleToVectorDegrees(this.Rotation)));
             var amt = Utilities.Lerp(amtVelo, amtRot, Utilities.Factor(MIN_VELO, this.Velocity.Length()));
 
