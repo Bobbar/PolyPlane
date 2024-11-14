@@ -48,6 +48,7 @@ namespace PolyPlane.Rendering
         private D2DSolidColorBrush _redColorBrush;
         private D2DSolidColorBrush _whiteColorBrush;
         private D2DSolidColorBrush _greenYellowColorBrush;
+        private D2DBitmap? _clearBitmap = null;
 
         private bool _showInfo = false;
         private bool _showHelp = false;
@@ -259,6 +260,27 @@ namespace PolyPlane.Rendering
             _greenYellowColorBrush = _ctx.Device.CreateSolidColorBrush(D2DColor.GreenYellow);
 
             _groundBrush = _ctx.Device.CreateLinearGradientBrush(new D2DPoint(0f, 50f), new D2DPoint(0f, 4000f), [new D2DGradientStop(0.2f, AddTimeOfDayColor(_groundColorDark)), new D2DGradientStop(0.1f, AddTimeOfDayColor(_groundColorLight))]);
+
+            InitClearGradientBitmap();
+        }
+
+        private void InitClearGradientBitmap()
+        {
+            var startColor = D2DColor.Black.WithAlpha(1f);
+            var endColor = D2DColor.Black.WithAlpha(0.5f);
+
+            using (var gradGfx = _device.CreateBitmapGraphics(this.Width, this.Height))
+            using (var gradBrush = _device.CreateLinearGradientBrush(D2DPoint.Zero, new D2DPoint(0f, this.Height), [new D2DGradientStop(0f, startColor), new D2DGradientStop(1f, endColor)]))
+            {
+                gradGfx.BeginRender();
+
+                gradGfx.FillRectangle(new D2DRect(0f, 0f, this.Width, this.Height), gradBrush);
+
+                gradGfx.EndRender();
+
+                _clearBitmap?.Dispose();
+                _clearBitmap = gradGfx.GetBitmap();
+            }
         }
 
         private void ResizeGfx(bool force = false)
@@ -269,11 +291,18 @@ namespace PolyPlane.Rendering
 
             _device?.Resize();
 
-            var scaleSize = GetViewportScaled();
-            World.UpdateViewport(scaleSize);
+            ResizeViewPort();
+
+            InitClearGradientBitmap();
 
             // Resizing graphics causes spikes in FPS. Try to limit them here.
             _fpsLimiter.Wait(World.TARGET_FPS);
+        }
+
+        private void ResizeViewPort()
+        {
+            var scaleSize = GetViewportScaled();
+            World.UpdateViewport(scaleSize);
         }
 
         private Size GetViewportScaled()
@@ -413,7 +442,7 @@ namespace PolyPlane.Rendering
             var amt = ZOOM_FACTOR * World.ZoomScale;
             World.ZoomScale += amt;
 
-            ResizeGfx(force: true);
+            ResizeViewPort();
         }
 
         public void ZoomOut()
@@ -421,7 +450,7 @@ namespace PolyPlane.Rendering
             var amt = ZOOM_FACTOR * World.ZoomScale;
             World.ZoomScale -= amt;
 
-            ResizeGfx(force: true);
+            ResizeViewPort();
         }
 
         public void DoMouseWheelUp()
@@ -460,7 +489,10 @@ namespace PolyPlane.Rendering
 
             UpdateTimersAndAnims();
 
-            _gfx.BeginRender(_clearColor);
+            if (World.UseSkyGradient)
+                _gfx.BeginRender(_clearBitmap);
+            else
+                _gfx.BeginRender(_clearColor);
 
             if (viewObject != null)
             {
