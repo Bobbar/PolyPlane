@@ -299,8 +299,9 @@ namespace PolyPlane.GameObjects
 
             _missileRegenTimer.TriggerCallback = () =>
             {
-                if (NumMissiles < MAX_MISSILES)
-                    NumMissiles++;
+                if (World.MissileRegen)
+                    if (NumMissiles < MAX_MISSILES)
+                        NumMissiles++;
             };
 
             _missileRegenTimer.Start();

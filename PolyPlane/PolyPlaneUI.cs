@@ -880,6 +880,7 @@ namespace PolyPlane
                     break;
 
                 case 'k':
+                    World.MissileRegen = !World.MissileRegen;
                     break;
 
                 case 'l':

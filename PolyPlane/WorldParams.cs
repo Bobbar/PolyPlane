@@ -117,6 +117,7 @@ namespace PolyPlane
             }
         }
 
+        public static bool MissileRegen = true;
         public static bool ShowMissilesOnRadar = false;
         public static bool ShowLeadIndicators = true;
         public static bool ShowAero = false;
