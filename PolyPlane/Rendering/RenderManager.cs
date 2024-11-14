@@ -1482,7 +1482,7 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private bool MissileIsImpactThreat(FighterPlane plane, Missile missile, float minImpactTime)
+        private bool MissileIsImpactThreat(FighterPlane plane, GuidedMissile missile, float minImpactTime)
         {
             var navigationTime = Utilities.ImpactTime(plane, missile);
 

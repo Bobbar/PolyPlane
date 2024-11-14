@@ -186,7 +186,7 @@ namespace PolyPlane.GameObjects
 
                 if (explosion.Altitude <= 10f)
                 {
-                    if (explosion.Owner is Missile)
+                    if (explosion.Owner is GuidedMissile)
                     {
                         var missileRadius = Utilities.Rnd.NextFloat(23f, 27f);
                         GroundImpacts.Add(new GroundImpact(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 8f)), new D2DSize(missileRadius + 8f, missileRadius), explosion.Owner.Rotation));

@@ -55,7 +55,7 @@ namespace PolyPlane.GameObjects.Guidance
 
             // Refine the impact point when able.
             // Where will the target be when we arrive?
-            if (Missile.DistTraveled > 0)
+            if (Missile.Age > 0f)
             {
                 var targAngleDelta = targetVeloAngle - _prevTargVeloAngle;
                 _prevTargVeloAngle = targetVeloAngle;

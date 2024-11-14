@@ -188,7 +188,7 @@ namespace PolyPlane.GameObjects.Manager
             // Handle missiles hit by bullets and missiles hitting decoys.
             for (int m = 0; m < _objs.Missiles.Count; m++)
             {
-                var missile = _objs.Missiles[m] as Missile;
+                var missile = _objs.Missiles[m] as GuidedMissile;
 
                 if (missile.IsExpired)
                     continue;

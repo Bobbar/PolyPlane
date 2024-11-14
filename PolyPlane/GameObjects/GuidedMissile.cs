@@ -1,5 +1,6 @@
 ﻿using PolyPlane.GameObjects.Fixtures;
 using PolyPlane.GameObjects.Guidance;
+using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
@@ -7,11 +8,12 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class GuidedMissile : Missile
+    public class GuidedMissile : GameObjectPoly, ICollidable
     {
         public float Deflection = 0f;
         public bool FlameOn = false;
 
+        public GameObject Target { get; set; }
         public GuidanceBase Guidance => _guidance;
 
         public float CurrentFuel
@@ -126,7 +128,7 @@ namespace PolyPlane.GameObjects
             InitStuff();
         }
 
-        public GuidedMissile(GameObject player, GameObject target, GuidanceType guidance = GuidanceType.Advanced, bool useControlSurfaces = false, bool useThrustVectoring = false) : base(player.Position, player.Velocity, player.Rotation, player, target)
+        public GuidedMissile(GameObject player, GameObject target, GuidanceType guidance = GuidanceType.Advanced, bool useControlSurfaces = false, bool useThrustVectoring = false) : base(player.Position, player.Velocity, player.Rotation)
         {
             this.PlayerID = player.ID.PlayerID;
             this.GuidanceType = guidance;
