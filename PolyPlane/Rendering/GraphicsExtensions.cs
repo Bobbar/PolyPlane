@@ -9,6 +9,11 @@ namespace PolyPlane.Rendering
         public static int OnScreen = 0;
         public static int OffScreen = 0;
 
+        private static readonly D2DPoint UnitUp = -D2DPoint.UnitY;
+        private static readonly D2DPoint UnitLeft = -D2DPoint.UnitX;
+        private static readonly D2DPoint UnitDown = D2DPoint.UnitY;
+        private static readonly D2DPoint UnitRight = D2DPoint.UnitX;
+
         public static readonly D2DPoint[] TrianglePoly = new D2DPoint[]
         {
             new D2DPoint(0,-3),
@@ -53,10 +58,10 @@ namespace PolyPlane.Rendering
 
         public static void DrawCrosshair(this D2DGraphics gfx, D2DPoint pos, float weight, D2DColor color, float innerRadius, float outerRadius)
         {
-            gfx.DrawLine(pos + Utilities.AngleToVectorDegrees(270f, innerRadius), pos + Utilities.AngleToVectorDegrees(270f, outerRadius), color, weight);
-            gfx.DrawLine(pos + Utilities.AngleToVectorDegrees(180f, innerRadius), pos + Utilities.AngleToVectorDegrees(180f, outerRadius), color, weight);
-            gfx.DrawLine(pos + Utilities.AngleToVectorDegrees(90f, innerRadius), pos + Utilities.AngleToVectorDegrees(90f, outerRadius), color, weight);
-            gfx.DrawLine(pos + Utilities.AngleToVectorDegrees(0f, innerRadius), pos + Utilities.AngleToVectorDegrees(0f, outerRadius), color, weight);
+            gfx.DrawLine(pos + (UnitUp * innerRadius), pos + (UnitUp * outerRadius), color, weight);
+            gfx.DrawLine(pos + (UnitLeft * innerRadius), pos + (UnitLeft * outerRadius), color, weight);
+            gfx.DrawLine(pos + (UnitDown * innerRadius), pos + (UnitDown * outerRadius), color, weight);
+            gfx.DrawLine(pos + (UnitRight * innerRadius), pos + (UnitRight * outerRadius), color, weight);
         }
 
         public static void DrawArrowStroked(this D2DGraphics gfx, D2DPoint start, D2DPoint end, D2DColor color, float weight, D2DColor strokeColor, float strokeWeight)
