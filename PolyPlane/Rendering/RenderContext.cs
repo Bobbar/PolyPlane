@@ -24,23 +24,15 @@ namespace PolyPlane.Rendering
         }
 
         private Stack<D2DRect> _vpStack = new Stack<D2DRect>();
+        private D2DSolidColorBrush _ellipseBrush;
 
-        public RenderContext() { }
-
-        public RenderContext(D2DGraphics gfx) : this(gfx, new D2DRect())
-        {
-        }
 
         public RenderContext(D2DGraphics gfx, D2DDevice device)
         {
             Gfx = gfx;
             Device = device;
-        }
 
-        public RenderContext(D2DGraphics gfx, D2DRect viewport)
-        {
-            Gfx = gfx;
-            Viewport = viewport;
+            _ellipseBrush = device.CreateSolidColorBrush(D2DColor.Transparent);
         }
 
         public void PushViewPort(D2DRect viewport)
@@ -57,7 +49,9 @@ namespace PolyPlane.Rendering
 
         public void FillEllipse(D2DEllipse ellipse, D2DColor color)
         {
-            Gfx.FillEllipseClamped(Viewport, ellipse, color);
+            // Use cached brush for performance.
+            _ellipseBrush.Color = color;
+            FillEllipse(ellipse, _ellipseBrush);
         }
 
         public void FillEllipse(D2DEllipse ellipse, D2DBrush brush)

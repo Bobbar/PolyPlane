@@ -1467,9 +1467,8 @@ namespace PolyPlane.Rendering
                 var dist = D2DPoint.Distance(plane.Position, missile.Position);
 
                 var dir = missile.Position - plane.Position;
-                var angle = dir.Angle();
                 var color = D2DColor.Red;
-                var vec = Utilities.AngleToVectorDegrees(angle);
+                var vec = dir.Normalized();
                 var pos1 = pos + (vec * 200f);
                 var pos2 = pos1 + (vec * 20f);
                 var distFact = 1f - Utilities.Factor(dist, MIN_DIST * 10f);
@@ -1599,7 +1598,7 @@ namespace PolyPlane.Rendering
                 {
                     DrawCloud(ctx, cloud, todColor);
                 }
-            }
+            } 
         }
 
         private void DrawCloud(RenderContext ctx, Cloud cloud, D2DColor todColor)
