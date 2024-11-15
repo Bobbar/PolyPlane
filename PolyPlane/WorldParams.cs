@@ -131,7 +131,7 @@ namespace PolyPlane
         public static bool IsNetGame = false;
         public static bool IsServer = false;
         public static bool FreeCameraMode = false;
-        public static bool UseSkyGradient = true;
+        public static bool UseSkyGradient = false;
         public static bool IsClient
         {
             get { return World.IsNetGame && !World.IsServer; }

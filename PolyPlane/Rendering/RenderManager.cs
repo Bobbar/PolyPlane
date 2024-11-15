@@ -81,7 +81,7 @@ namespace PolyPlane.Rendering
         private D2DColor _hudMessageColor = D2DColor.Red;
         private D2DColor _screenFlashColor = D2DColor.Red;
 
-        private readonly D2DColor _clearColor = D2DColor.Black;
+        private readonly D2DColor _clearColor = D2DColor.Transparent;
         private readonly D2DColor _groundImpactOuterColor = new D2DColor(1f, 0.56f, 0.32f, 0.18f);
         private readonly D2DColor _groundImpactInnerColor = new D2DColor(1f, 0.35f, 0.2f, 0.1f);
         private readonly D2DColor _skyColorLight = new D2DColor(0.5f, D2DColor.SkyBlue);
