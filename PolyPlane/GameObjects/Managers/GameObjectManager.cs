@@ -19,7 +19,7 @@ namespace PolyPlane.GameObjects
         public List<GameObject> Bullets = new();
         public List<GameObject> Explosions = new();
         public List<GameObject> Debris = new();
-        public List<GameObject> Flames = new();
+        public List<GameObject> Particles = new();
         public List<GameObject> DummyObjs = new();
 
         public List<GroundImpact> GroundImpacts = new();
@@ -30,7 +30,7 @@ namespace PolyPlane.GameObjects
         public ConcurrentQueue<GameObject> NewBullets = new();
         public ConcurrentQueue<GameObject> NewMissiles = new();
         public ConcurrentQueue<FighterPlane> NewPlanes = new();
-        public ConcurrentQueue<FlamePart> NewFlames = new();
+        public ConcurrentQueue<Particle> NewParticles = new();
 
         private Dictionary<int, GameObject> _objLookup = new();
         private SpatialGrid<GameObject> _spatialGrid = new(o => o.Position, o => o.IsExpired);
@@ -39,7 +39,7 @@ namespace PolyPlane.GameObjects
         private List<GameObject> _allObjects = new();
         private List<GameObject> _expiredObjs = new();
 
-        private GameObjectPool<FlamePart> _flamePool = new(() => new FlamePart());
+        private GameObjectPool<Particle> _particlePool = new(() => new Particle());
 
         public event EventHandler<PlayerScoredEventArgs> PlayerScoredEvent;
         public event EventHandler<EventMessage> PlayerKilledEvent;
@@ -52,28 +52,28 @@ namespace PolyPlane.GameObjects
             _multiThreadNum = Environment.ProcessorCount;
         }
 
-        public FlamePart RentFlamePart()
+        public Particle RentParticle()
         {
-            var part = _flamePool.RentObject();
+            var part = _particlePool.RentObject();
             return part;
         }
 
-        public void ReturnFlamePart(FlamePart part)
+        public void ReturnParticle(Particle particle)
         {
-            part.IsExpired = true;
-            _flamePool.ReturnObject(part);
+            particle.IsExpired = true;
+            _particlePool.ReturnObject(particle);
         }
 
-        private void AddFlame(FlamePart flame)
+        private void AddParticle(Particle particle)
         {
-            Flames.Add(flame);
-            _spatialGrid.Add(flame);
+            Particles.Add(particle);
+            _spatialGrid.Add(particle);
         }
 
-        public void EnqueueFlame(FlamePart flame)
+        public void EnqueueParticle(Particle particle)
         {
             if (!World.IsServer)
-                NewFlames.Enqueue(flame);
+                NewParticles.Enqueue(particle);
         }
 
         public void EnqueueDebris(Debris debris)
@@ -222,15 +222,15 @@ namespace PolyPlane.GameObjects
             Explosions.Clear();
             Planes.Clear();
             Debris.Clear();
-            Flames.ForEach(f => f.Dispose());
-            Flames.Clear();
+            Particles.ForEach(f => f.Dispose());
+            Particles.Clear();
             DummyObjs.Clear();
             NewDecoys.Clear();
             NewDebris.Clear();
             NewBullets.Clear();
             NewMissiles.Clear();
             NewPlanes.Clear();
-            NewFlames.Clear();
+            NewParticles.Clear();
 
             _objLookup.Clear();
             _spatialGrid.Clear();
@@ -288,8 +288,7 @@ namespace PolyPlane.GameObjects
             SyncObjCollections();
 
             // Update all regular objects.
-            var allObjs = _allObjects;
-            allObjs.ForEachParallel(o => o.Update(dt), _multiThreadNum);
+            _allObjects.ForEachParallel(o => o.Update(dt), _multiThreadNum);
 
             // Update planes separately.
             // They are pretty expensive, so we want "all threads on deck"
@@ -298,9 +297,8 @@ namespace PolyPlane.GameObjects
 
             if (!World.IsNetGame || World.IsClient)
             {
-                // Update flame particles.
-                var flames = Flames;
-                flames.ForEachParallel(o => o.Update(dt), _multiThreadNum);
+                // Update particles.
+                Particles.ForEachParallel(o => o.Update(dt), _multiThreadNum);
             }
 
             // Update ground impacts.
@@ -343,7 +341,7 @@ namespace PolyPlane.GameObjects
             PruneExpired(Bullets);
             PruneExpired(Explosions, recordExpired: false);
             PruneExpired(Debris, recordExpired: false);
-            PruneExpired(Flames, recordExpired: false);
+            PruneExpired(Particles, recordExpired: false);
             PruneExpired(DummyObjs, recordExpired: false);
 
             // Prune planes.
@@ -489,11 +487,11 @@ namespace PolyPlane.GameObjects
                 }
             }
 
-            while (NewFlames.Count > 0)
+            while (NewParticles.Count > 0)
             {
-                if (NewFlames.TryDequeue(out FlamePart flame))
+                if (NewParticles.TryDequeue(out Particle particle))
                 {
-                    AddFlame(flame);
+                    AddParticle(particle);
                 }
             }
         }

@@ -10,23 +10,14 @@ namespace PolyPlane.GameObjects
     {
         public float Radius { get; set; }
 
-        public const int MAX_PARTS = 75;
-        public const float MAX_AGE = 30f;
-
-        public static readonly D2DColor DefaultFlameColor = new D2DColor(0.6f, D2DColor.Yellow);
-        public static readonly D2DColor BlackSmokeColor = new D2DColor(0.6f, D2DColor.Black);
-        public static readonly D2DColor GraySmokeColor = new D2DColor(0.6f, D2DColor.Gray);
+        private const float DEFAULT_INTERVAL = 0.4f;
 
         private FixturePoint _refPos = null;
-        private GameTimer _spawnTimer = new GameTimer(0.1f, true);
-        private float _interval = 0f;
+        private GameTimer _spawnTimer = new GameTimer(0.4f, true);
         private bool _hasFlame = true;
 
         public FlameEmitter(GameObject obj, D2DPoint offset, float radius = 10f) : base(obj.Position, obj.Velocity)
         {
-            _interval = MAX_AGE / MAX_PARTS;
-            _spawnTimer.Interval = _interval;
-
             this.Owner = obj;
 
             Radius = radius;
@@ -43,9 +34,7 @@ namespace PolyPlane.GameObjects
 
         public FlameEmitter(GameObject obj, D2DPoint offset, bool hasFlame = true) : base(obj.Position, obj.Velocity)
         {
-            _interval = MAX_AGE / MAX_PARTS;
             _hasFlame = hasFlame;
-            _spawnTimer.Interval = _interval;
 
             this.Owner = obj;
 
@@ -110,24 +99,24 @@ namespace PolyPlane.GameObjects
             if (World.IsNetGame && World.IsServer)
                 return;
 
-            _spawnTimer.Interval = _interval + Utilities.Rnd.NextFloat(-0.1f, 0.1f);
+            _spawnTimer.Interval = DEFAULT_INTERVAL + Utilities.Rnd.NextFloat(-0.1f, 0.1f);
 
             _refPos.Update(World.DT);
             D2DPoint newPos = _refPos.Position;
             D2DPoint newVelo = _refPos.Velocity;
             newVelo += Utilities.RandOPoint(10f);
 
-            var endColor = BlackSmokeColor;
+            var endColor = World.GraySmokeColor;
 
-            if (_refPos.GameObject is FighterPlane plane && !plane.IsDisabled)
-                endColor = GraySmokeColor;
+            // If we are attached to a plane, change the end color to black when disabled.
+            var rootObj = this.FindRootObject();
+            if (rootObj is FighterPlane plane && plane.IsDisabled)
+                endColor = World.BlackSmokeColor;
 
             var newRad = this.Radius + Utilities.Rnd.NextFloat(-3f, 3f);
-            var newPart = World.ObjectManager.RentFlamePart();
-            newPart.ReInit(newPos, newRad, endColor, newVelo);
-            newPart.Owner = this.Owner;
+            var startColor = World.GetRandomFlameColor();
 
-            World.ObjectManager.EnqueueFlame(newPart);
+            Particle.SpawnParticle(this.Owner, newPos, newVelo, newRad, startColor, endColor);
         }
 
         public override void Dispose()

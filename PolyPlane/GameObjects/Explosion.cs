@@ -45,11 +45,8 @@ namespace PolyPlane.GameObjects
                 var velo = Utilities.AngleToVectorDegrees(Utilities.RandomDirection(), Utilities.Rnd.NextFloat(maxRadius, maxRadius * 2f));
                 var radius = NUM_FLAME + Utilities.Rnd.NextFloat(-20f, 10f);
                 radius = Math.Clamp(radius, 8f, 100f);
-                var flame = World.ObjectManager.RentFlamePart();
-                flame.ReInit(pnt, radius, FlameEmitter.BlackSmokeColor, velo);
-                flame.Owner = this;
 
-                World.ObjectManager.EnqueueFlame(flame);
+                Particle.SpawnParticle(this, pnt, velo, radius, World.GetRandomFlameColor(), World.BlackSmokeColor);
             }
         }
 

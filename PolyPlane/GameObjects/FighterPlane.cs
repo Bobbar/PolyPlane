@@ -586,11 +586,8 @@ namespace PolyPlane.GameObjects
                 var radius = 15f * (altFact) + Utilities.Rnd.NextFloat(1f, 3f);
                 var velo = (this.Velocity + (this.Velocity * 0.4f)) + new D2DPoint(Utilities.Rnd.NextFloat(-150f, 150f), 0f);
                 var groundPos = new D2DPoint(this.Position.X - (this.Velocity.X * 0.2f) + Utilities.Rnd.NextFloat(-100f, 100f), 0f);
-                var flame = World.ObjectManager.RentFlamePart();
-                flame.ReInit(groundPos, radius, dustColor.WithAlpha(alpha), dustColor.WithAlpha(1f), velo);
-                flame.Owner = this;
 
-                World.ObjectManager.EnqueueFlame(flame);
+                Particle.SpawnParticle(this, groundPos, velo, radius, dustColor.WithAlpha(alpha), dustColor.WithAlpha(1f));
             }
         }
 
@@ -745,8 +742,7 @@ namespace PolyPlane.GameObjects
                 ctx.Gfx.PushTransform();
                 ctx.Gfx.RotateTransform(hole.Rotation, hole.Position);
 
-                ctx.Gfx.FillEllipse(new D2DEllipse(hole.Position, hole.OuterHoleSize), hole.Color);
-                ctx.Gfx.FillEllipse(new D2DEllipse(hole.Position, hole.HoleSize), D2DColor.Black);
+                hole.Render(ctx);
 
                 ctx.Gfx.PopTransform();
             }

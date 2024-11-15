@@ -164,6 +164,10 @@ namespace PolyPlane
         private static FastNoiseLite _turbulenceNoise = new FastNoiseLite();
 
         public static readonly D2DColor HudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
+        public static readonly D2DColor DefaultFlameColor = new D2DColor(0.6f, D2DColor.Yellow);
+        public static readonly D2DColor BlackSmokeColor = new D2DColor(0.6f, D2DColor.Black);
+        public static readonly D2DColor GraySmokeColor = new D2DColor(0.6f, D2DColor.Gray);
+
         public static readonly D2DPoint Gravity = new D2DPoint(0, 19.6f);
         public static readonly D2DPoint PlaneSpawnRange = new D2DPoint(-250000, 250000);
         public static readonly D2DPoint FieldXBounds = new D2DPoint(-350000, 350000);
@@ -198,6 +202,12 @@ namespace PolyPlane
         public static float TimeOfDayDir = -1f;
 
         private static float _timeOfDay = 5f;
+
+        public static D2DColor GetRandomFlameColor()
+        {
+            var newColor = new D2DColor(DefaultFlameColor.a, 1f, Utilities.Rnd.NextFloat(0f, 0.86f), DefaultFlameColor.b);
+            return newColor;
+        }
 
         public static float GetDensityAltitude(D2DPoint position)
         {

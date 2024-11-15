@@ -1,4 +1,5 @@
 ﻿using PolyPlane.Helpers;
+using PolyPlane.Rendering;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -37,6 +38,14 @@ namespace PolyPlane.GameObjects
             base.FlipY();
             _rotOffset = Utilities.ClampAngle(_rotOffset * -1f);
             this.Update(0f);
+        }
+
+        public override void Render(RenderContext ctx)
+        {
+            base.Render(ctx);
+
+            ctx.FillEllipse(new D2DEllipse(this.Position, this.OuterHoleSize), this.Color);
+            ctx.FillEllipse(new D2DEllipse(this.Position, this.HoleSize), D2DColor.Black);
         }
 
         private D2DColor GetColor()

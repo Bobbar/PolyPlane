@@ -321,6 +321,25 @@ namespace PolyPlane.GameObjects
             this.IsExpired = true;
         }
 
+        /// <summary>
+        /// Recursively finds the root object within the <see cref="GameObject.Owner"/> relationships.
+        /// </summary>
+        /// <returns></returns>
+        public GameObject FindRootObject()
+        {
+            return FindRootObject(this);
+        }
+
+        private GameObject FindRootObject(GameObject obj)
+        {
+            if (obj.Owner != null)
+                return FindRootObject(obj.Owner);
+            else if (obj.Owner == null)
+                return obj;
+
+            return null;
+        }
+
         private void InterpObject(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
         {
             var state = GetInterpState(from, to, pctElapsed);
