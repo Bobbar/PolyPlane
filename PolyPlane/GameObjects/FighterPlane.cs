@@ -660,14 +660,14 @@ namespace PolyPlane.GameObjects
             var startCenter = this.Position + Utilities.AngleToVectorDegrees(this.Rotation, 30f - (30f * speedFact));
 
             // Reference angle for beziers.
-            var angle = this.Velocity.Angle();
+            var veloNorm = this.Velocity.Normalized();
 
             // Compute the width vector and center end point.
-            var widthVec = Utilities.AngleToVectorDegrees(angle, width);
+            var widthVec = veloNorm * width;
             var endCenter = startCenter - widthVec;
 
             // Computer the height/tangent vector and top/bot points.
-            var heightVec = Utilities.AngleToVectorDegrees(angle - 90f, height);
+            var heightVec = veloNorm.Tangent() * height;
             var endTop = endCenter - heightVec;
             var endBot = endCenter + heightVec;
 

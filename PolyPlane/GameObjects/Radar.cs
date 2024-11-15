@@ -215,10 +215,10 @@ namespace PolyPlane.GameObjects
             // Calculate ground position relative to the plane.
             var groundDist = HostPlane.Position.DistanceTo(new D2DPoint(HostPlane.Position.X, 0f));
             var radDist = _radius / _maxRange * groundDist;
-            var radPos = Utilities.AngleToVectorDegrees(90f, radDist);
+            var radPos = D2DPoint.UnitY * radDist;
 
             if (groundDist > _maxRange)
-                radPos = Utilities.AngleToVectorDegrees(90f, _radius);
+                radPos = D2DPoint.UnitY * _radius;
 
             radPos += new D2DPoint(0f, _radius);
 

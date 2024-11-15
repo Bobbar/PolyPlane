@@ -86,7 +86,7 @@ namespace PolyPlane.GameObjects
             D2DPoint newVelo = _veloSmooth.Add(this.Velocity);
 
             // Start the vapor parts one frame backwards.
-            newPos -= Utilities.AngleToVectorDegrees(newVelo.Angle(), newVelo.Length() * World.DT);
+            newPos -= newVelo.Normalized() * newVelo.Length() * World.DT;
 
             float gforce = 0f;
             var veloMag = newVelo.Length();
