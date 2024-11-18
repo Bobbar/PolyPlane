@@ -77,6 +77,18 @@ namespace PolyPlane.GameObjects
             }
         }
 
+        /// <summary>
+        /// Lag amount in number of elapsed frames.
+        /// </summary>
+        public float LagAmountFrames
+        {
+            get
+            {
+                var frames = (float)this.LagAmount / World.TARGET_FRAME_TIME;
+                return frames;
+            }
+        }
+
         public float RenderScale = World.RenderScale;
         public bool Visible = true;
         public bool IsNetObject = false;
@@ -494,7 +506,7 @@ namespace PolyPlane.GameObjects
                 gfx.DrawLine(veloPnt1, veloPnt2, color, 0.5f);
             }
 
-            var lagPntStart = this.Position - (this.Velocity * (float)((this.LagAmount / 16.6f) * World.DT));
+            var lagPntStart = this.Position - (this.Velocity * (this.LagAmountFrames * World.DT));
             var lagPntEnd = this.Position;
 
             if (this.AgeMs < (this.LagAmount * 2f))

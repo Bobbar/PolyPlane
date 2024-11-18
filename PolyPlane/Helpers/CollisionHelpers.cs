@@ -149,7 +149,7 @@ namespace PolyPlane.Helpers
             {
                 if (impactorObj is Bullet && impactorObj.AgeMs < (impactorObj.LagAmount * 1f))
                 {
-                    var lagPntStart = impactorObj.Position - (impactorObj.Velocity * (float)((((impactorObj.LagAmount) / 16.6f) * World.DT)));
+                    var lagPntStart = impactorObj.Position - (impactorObj.Velocity * (impactorObj.LagAmountFrames * World.DT));
                     var lagPntEnd = impactorObj.Position;
 
                     // Check for intersection on bounding box first.

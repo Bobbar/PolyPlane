@@ -33,7 +33,11 @@ namespace PolyPlane
 
             _turbulenceNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
             _turbulenceNoise.SetFrequency(0.0025f);
+
+            TARGET_FRAME_TIME = 1000f / (float)TARGET_FPS;
         }
+
+        public static readonly float TARGET_FRAME_TIME = 16.6f;
 
         public static float SERVER_TICK_RATE
         {

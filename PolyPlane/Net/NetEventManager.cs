@@ -665,7 +665,7 @@ namespace PolyPlane.Net
             bullet.Owner = owner;
             bullet.LagAmount = World.CurrentTime() - bulletPacket.FrameTime;
             // Try to spawn the bullet ahead (extrapolate) to compensate for latency?
-            bullet.Position += bullet.Velocity * (float)(((bullet.LagAmount) / 16.6f) * World.DT);
+            bullet.Position += bullet.Velocity * (bullet.LagAmountFrames * World.DT);
 
             _objs.EnqueueBullet(bullet);
         }
