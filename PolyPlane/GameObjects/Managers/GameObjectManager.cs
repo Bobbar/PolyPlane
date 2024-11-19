@@ -133,7 +133,7 @@ namespace PolyPlane.GameObjects
                 AddObject(plane);
                 Planes.Add(plane);
 
-                plane.PlayerKilledCallback += HandlePlayerKilled;
+                plane.PlayerKilledCallback = HandlePlayerKilled;
                 plane.PlayerCrashedCallback = HandlePlayerCrashed;
 
                 if (plane.IsAI)

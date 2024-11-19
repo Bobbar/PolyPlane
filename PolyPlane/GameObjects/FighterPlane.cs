@@ -930,7 +930,11 @@ namespace PolyPlane.GameObjects
                     }
                 }
 
-                if (this.Health <= 0)
+                // TODO: How to handle this during net games?
+                // It's possible for a delayed packet to reset the
+                // Health and IsDisabled flags after a kill has been recorded,
+                // which can cause duplicate kill events.
+                if (this.Health <= 0 && !this.IsDisabled)
                 {
                     DoPlayerKilled(impactor);
                 }
