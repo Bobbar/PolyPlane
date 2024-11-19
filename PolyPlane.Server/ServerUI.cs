@@ -595,6 +595,8 @@ namespace PolyPlane.Server
 
         private void UpdateBandwidthStats()
         {
+            const float BYTES_PER_MB = 1000000f;
+
             if (!_bwTimer.IsRunning)
                 _bwTimer.Start();
 
@@ -606,8 +608,8 @@ namespace PolyPlane.Server
             _lastRec = _netMan.Host.Host.BytesReceived;
             _lastSent = _netMan.Host.Host.BytesSent;
 
-            _sentSmooth.Add((sentDiff / elap.TotalSeconds) / 100000f);
-            _recSmooth.Add((recDiff / elap.TotalSeconds) / 100000f);
+            _sentSmooth.Add((sentDiff / elap.TotalSeconds) / BYTES_PER_MB);
+            _recSmooth.Add((recDiff / elap.TotalSeconds) / BYTES_PER_MB);
             _bwTimer.Restart();
         }
 
