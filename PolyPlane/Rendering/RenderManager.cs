@@ -60,6 +60,7 @@ namespace PolyPlane.Rendering
         private float _hudScale = 1f;
         private float _renderFPS = 0;
         private float _screenFlashOpacity = 0f;
+        private float _groundColorTOD = 0f;
         private string _hudMessage = string.Empty;
 
         private SmoothDouble _renderTimeSmooth = new SmoothDouble(10);
@@ -67,7 +68,6 @@ namespace PolyPlane.Rendering
         private Stopwatch _timer = new Stopwatch();
         private GameTimer _hudMessageTimeout = new GameTimer(10f);
         private GameTimer _warningLightFlashTimer = new GameTimer(0.5f, 0.5f, true);
-        private GameTimer _groundColorUpdateTimer = new GameTimer(4f, true);
         private List<EventMessage> _messageEvents = new List<EventMessage>();
         private List<PopMessage> _popMessages = new List<PopMessage>();
 
@@ -126,6 +126,7 @@ namespace PolyPlane.Rendering
         private const int NUM_CLOUDS = 2000;
         private const int NUM_TREES = 1000;
 
+        private const float GROUND_TOD_INTERVAL = 0.1f; // Update ground brush when elapsed TOD exceeds this amount.
         private const float MAX_CLOUD_X = 400000f;
         private const float CLOUD_SCALE = 5f;
         private const float GROUND_OBJ_SCALE = 4f;
@@ -159,15 +160,13 @@ namespace PolyPlane.Rendering
             InitProceduralGenStuff();
             InitRenderTarget();
 
-            _groundColorUpdateTimer.TriggerCallback = () => UpdateGroundColor();
-            _groundColorUpdateTimer.Start();
+            _groundColorTOD = World.TimeOfDay;
         }
 
         public void Dispose()
         {
             _hudMessageTimeout.Stop();
             _warningLightFlashTimer.Stop();
-            _groundColorUpdateTimer.Stop();
 
             _groundClipLayer?.Dispose();
             _bulletLightingBrush?.Dispose();
@@ -259,8 +258,7 @@ namespace PolyPlane.Rendering
             _whiteColorBrush = _ctx.Device.CreateSolidColorBrush(D2DColor.White);
             _greenYellowColorBrush = _ctx.Device.CreateSolidColorBrush(D2DColor.GreenYellow);
 
-            _groundBrush = _ctx.Device.CreateLinearGradientBrush(new D2DPoint(0f, 50f), new D2DPoint(0f, 4000f), [new D2DGradientStop(0.2f, AddTimeOfDayColor(_groundColorDark)), new D2DGradientStop(0.1f, AddTimeOfDayColor(_groundColorLight))]);
-
+            UpdateGroundColorBrush();
             InitClearGradientBitmap();
         }
 
@@ -480,6 +478,31 @@ namespace PolyPlane.Rendering
             }
         }
 
+        public void UpdateTimersAndAnims()
+        {
+            _hudMessageTimeout.Update(World.DT);
+            _warningLightFlashTimer.Update(World.DT);
+
+            _screenFlash.Update(World.DT);
+            _screenShakeX.Update(World.DT);
+            _screenShakeY.Update(World.DT);
+
+            _contrailBox.Update(_objs.Planes, World.DT);
+
+            if (!World.IsPaused)
+            {
+                MoveClouds(World.DT);
+
+                // Check if we need to update the ground brush.
+                var todDiff = Math.Abs(World.TimeOfDay - _groundColorTOD);
+                if (todDiff > GROUND_TOD_INTERVAL)
+                {
+                    _groundColorTOD = World.TimeOfDay;
+                    UpdateGroundColorBrush();
+                }
+            }
+        }
+
         public void RenderFrame(GameObject viewObject)
         {
             InitGfx();
@@ -671,25 +694,7 @@ namespace PolyPlane.Rendering
             }
         }
 
-        public void UpdateTimersAndAnims()
-        {
-            _hudMessageTimeout.Update(World.DT);
-            _warningLightFlashTimer.Update(World.DT);
-
-            _screenFlash.Update(World.DT);
-            _screenShakeX.Update(World.DT);
-            _screenShakeY.Update(World.DT);
-
-            _contrailBox.Update(_objs.Planes, World.DT);
-
-            if (!World.IsPaused)
-            {
-                MoveClouds(World.DT);
-                _groundColorUpdateTimer.Update(World.DT);
-            }
-        }
-
-        private void UpdateGroundColor()
+        private void UpdateGroundColorBrush()
         {
             _groundBrush?.Dispose();
             _groundBrush = _ctx.Device.CreateLinearGradientBrush(new D2DPoint(0f, 50f), new D2DPoint(0f, 4000f), [new D2DGradientStop(0.2f, AddTimeOfDayColor(_groundColorDark)), new D2DGradientStop(0.1f, AddTimeOfDayColor(_groundColorLight))]);
@@ -849,7 +854,7 @@ namespace PolyPlane.Rendering
             var groundLineB = new D2DPoint(plane.Position.X + GROUND_LINE_LEN, 0f);
 
             var shadowPos = Utilities.IntersectionPoint(plane.Position, todVec, groundLineA, groundLineB);
-            
+
             // Move the shadow position down to the desired Y position.
             shadowPos += new D2DPoint(0f, Y_POS);
 
@@ -1587,18 +1592,19 @@ namespace PolyPlane.Rendering
         {
             var todColor = GetTimeOfDayColor();
             var todAngle = GetTimeOfDaySunAngle();
+            var shadowColor = Utilities.LerpColorWithAlpha(todColor, D2DColor.Black, 0.7f, 0.05f);
 
             for (int i = 0; i < _clouds.Count; i++)
             {
                 var cloud = _clouds[i];
 
-                DrawCloudShadow(ctx, cloud, todColor, todAngle);
+                DrawCloudGroundShadowAndRay(ctx, cloud, shadowColor, todAngle);
 
                 if (ctx.Viewport.Contains(cloud.Position, cloud.Radius * cloud.ScaleX * CLOUD_SCALE))
                 {
                     DrawCloud(ctx, cloud, todColor);
                 }
-            } 
+            }
         }
 
         private void DrawCloud(RenderContext ctx, Cloud cloud, D2DColor todColor)
@@ -1638,54 +1644,56 @@ namespace PolyPlane.Rendering
             return cloudShadowPos;
         }
 
-        private void DrawCloudShadow(RenderContext ctx, Cloud cloud, D2DColor todColor, float todAngle)
-        {
-            const float MAX_ALT = 8000f;
-
-            if (Utilities.PositionToAltitude(cloud.Position) > MAX_ALT)
-                return;
-
-            var shadowColor = Utilities.LerpColorWithAlpha(todColor, D2DColor.Black, 0.7f, 0.05f);
-
-            // Draw god rays.
-            DrawCloudShadowRay(ctx, cloud, shadowColor, todAngle);
-
-            var cloudShadowPos = GetCloudShadowPos(cloud.Position, todAngle);
-
-            if (!ctx.Viewport.Contains(cloudShadowPos, cloud.Radius * cloud.ScaleX * CLOUD_SCALE * 3f))
-                return;
-
-            for (int i = 0; i < cloud.Points.Length; i++)
-            {
-                var point = cloud.Points[i];
-                var dims = cloud.Dims[i];
-                var shadowPos = GetCloudShadowPos(point, todAngle);
-
-                ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(dims.width * 4f, dims.height * 0.5f)), shadowColor);
-            }
-        }
-
-        private void DrawCloudShadowRay(RenderContext ctx, Cloud cloud, D2DColor shadowColor, float todAngle)
+        private void DrawCloudGroundShadowAndRay(RenderContext ctx, Cloud cloud, D2DColor shadowColor, float todAngle)
         {
             const float MAX_ALT = 8000f;
             const float WIDTH_OFFSET = 50f;
             const float BOT_WIDTH_OFFSET = 40f;
 
             var cloudAlt = Utilities.PositionToAltitude(cloud.Position);
+
+            if (cloudAlt > MAX_ALT)
+                return;
+
             var alpha = 0.05f * Math.Clamp((1f - Utilities.FactorWithEasing(cloudAlt, MAX_ALT, EasingFunctions.EaseLinear)), 0.1f, 1f);
             var rayColor = shadowColor.WithAlpha(alpha);
 
+            // Get min/max X postions and compute width.
             var minX = cloud.Points.Min(p => p.X) - WIDTH_OFFSET;
             var maxX = cloud.Points.Max(p => p.X) + WIDTH_OFFSET;
 
+            // Build a polygon for the ray.
             var shadowRayPoly = new D2DPoint[4];
             shadowRayPoly[0] = new D2DPoint(minX, cloud.Position.Y);
             shadowRayPoly[1] = new D2DPoint(maxX, cloud.Position.Y);
             shadowRayPoly[2] = GetCloudShadowPos(new D2DPoint(maxX + BOT_WIDTH_OFFSET, cloud.Position.Y), todAngle);
             shadowRayPoly[3] = GetCloudShadowPos(new D2DPoint(minX - BOT_WIDTH_OFFSET, cloud.Position.Y), todAngle);
 
+            // Draw ray.
             if (ctx.Viewport.Contains(shadowRayPoly))
                 ctx.Gfx.DrawPolygon(shadowRayPoly, rayColor, 0f, D2DDashStyle.Solid, rayColor);
+
+            // Draw ground shadows.
+            var cloudShadowPos = GetCloudShadowPos(cloud.Position, todAngle);
+            if (ctx.Viewport.Contains(cloudShadowPos, cloud.Radius * cloud.ScaleX * CLOUD_SCALE * 3f))
+            {
+                if (World.UseSimpleCloudGroundShadows)
+                {
+                    var shadowWidth = Math.Abs(maxX - minX);
+                    ctx.FillEllipse(new D2DEllipse(cloudShadowPos, new D2DSize(shadowWidth * 0.9f, 35f)), shadowColor.WithAlpha(0.2f));
+                }
+                else
+                {
+                    for (int i = 0; i < cloud.Points.Length; i++)
+                    {
+                        var point = cloud.Points[i];
+                        var dims = cloud.Dims[i];
+                        var shadowPos = GetCloudShadowPos(point, todAngle);
+
+                        ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(dims.width * 4f, dims.height * 0.5f)), shadowColor);
+                    }
+                }
+            }
         }
 
         private void MoveClouds(float dt)
