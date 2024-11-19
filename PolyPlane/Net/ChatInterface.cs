@@ -74,7 +74,7 @@
             _currentText = _currentText.Trim();
 
             if (!string.IsNullOrEmpty(_currentText))
-                _netMan.Host.SendNewChatPacket(_currentText, _playerName);
+                _netMan.SendNewChatPacket(_currentText, _playerName);
 
             ChatIsActive = false;
             _currentText = string.Empty;
@@ -85,7 +85,7 @@
             message = message.Trim();
 
             if (!string.IsNullOrEmpty(message))
-                _netMan.Host.SendNewChatPacket(message, _playerName);
+                _netMan.SendNewChatPacket(message, _playerName);
 
             ChatIsActive = false;
             _currentText = string.Empty;

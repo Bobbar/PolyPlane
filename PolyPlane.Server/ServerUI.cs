@@ -92,7 +92,7 @@ namespace PolyPlane.Server
 
             // Periodically broadcast discovery & time sync packets.
             _discoveryTimer.TriggerCallback = () => _discovery?.BroadcastServerInfo(new DiscoveryPacket(_address, _serverName, _port));
-            _syncTimer.TriggerCallback = () => _server.SendSyncPacket();
+            _syncTimer.TriggerCallback = () => _netMan.SendSyncPacket();
 
             _multiThreadNum = Environment.ProcessorCount - 2;
 
@@ -388,7 +388,7 @@ namespace PolyPlane.Server
             if (_toggleGunsOnly)
             {
                 World.GunsOnly = GunsOnlyCheckBox.Checked;
-                _server.SendSyncPacket();
+                _netMan.SendSyncPacket();
                 _toggleGunsOnly = false;
             }
 
@@ -463,14 +463,14 @@ namespace PolyPlane.Server
             aiPlane.FireMissileCallback = (m) =>
             {
                 _objs.EnqueueMissile(m);
-                _server.SendNewMissilePacket(m);
+                _netMan.SendNewMissilePacket(m);
             };
 
 
             aiPlane.FireBulletCallback = b =>
             {
                 _objs.EnqueueBullet(b);
-                _server.SendNewBulletPacket(b);
+                _netMan.SendNewBulletPacket(b);
             };
 
             aiPlane.DropDecoyCallback = DropDecoy;
@@ -750,7 +750,7 @@ namespace PolyPlane.Server
                 return;
 
             World.DT = (float)DeltaTimeNumeric.Value;
-            _server.SendSyncPacket();
+            _netMan.SendSyncPacket();
         }
 
         private void DefaultDTButton_Click(object sender, EventArgs e)

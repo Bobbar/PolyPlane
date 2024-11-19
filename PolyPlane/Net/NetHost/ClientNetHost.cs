@@ -40,20 +40,13 @@ namespace PolyPlane.Net.NetHost
             SendPlayerDisconnectPacket(netEvent.Peer.ID);
         }
 
-        public override void HandleReceive(NetPacket netPacket)
+        public override ulong PacketLoss()
         {
-            base.HandleReceive(netPacket);
-
-            PacketReceiveQueue.Enqueue(netPacket);
+            return Peer.PacketsLost;
         }
 
-        public override void SendPacket(NetPacket netPacket)
+        public override void SendPacket(Packet packet, byte channel)
         {
-            base.SendPacket(netPacket);
-
-            var packet = CreatePacket(netPacket);
-            var channel = GetChannel(netPacket);
-
             if (Peer.State != PeerState.Connected)
             {
                 // Disconnect and stop processing packets.
@@ -62,30 +55,12 @@ namespace PolyPlane.Net.NetHost
                 return;
             }
 
-            Peer.Send((byte)channel, ref packet);
+            Peer.Send(channel, ref packet);
         }
 
-        private void RequestOtherPlanes()
+        public override Peer? GetPeer(int playerID)
         {
-            var netPacket = new BasicPacket(PacketTypes.GetOtherPlanes, new GameObjects.GameID(-1, Peer.ID));
-            EnqueuePacket(netPacket);
-        }
-
-        public void SendPlayerDisconnectPacket(uint playerID)
-        {
-            var packet = new BasicPacket(PacketTypes.PlayerDisconnect, new GameObjects.GameID(playerID));
-            EnqueuePacket(packet);
-            Host.Flush();
-        }
-
-        public override uint GetPlayerRTT(int playerID)
-        {
-            return Peer.RoundTripTime;
-        }
-
-        public override ulong PacketLoss()
-        {
-            return Peer.PacketsLost;
+            return Peer;
         }
 
         public override void Disconnect(int playerID)
@@ -94,18 +69,29 @@ namespace PolyPlane.Net.NetHost
             Host.Flush();
         }
 
-        public override Peer? GetPeer(int playerID)
+        public override uint GetPlayerRTT(int playerID)
         {
-            return Peer;
+            return Peer.RoundTripTime;
         }
 
         public override void Dispose()
         {
             Peer.DisconnectNow(0);
 
-            //Thread.Sleep(30);
-
             base.Dispose();
+        }
+
+        private void RequestOtherPlanes()
+        {
+            var netPacket = new BasicPacket(PacketTypes.GetOtherPlanes, new GameObjects.GameID(-1, Peer.ID));
+            EnqueuePacket(netPacket);
+        }
+
+        private void SendPlayerDisconnectPacket(uint playerID)
+        {
+            var packet = new BasicPacket(PacketTypes.PlayerDisconnect, new GameObjects.GameID(playerID));
+            EnqueuePacket(packet);
+            Host.Flush();
         }
     }
 }

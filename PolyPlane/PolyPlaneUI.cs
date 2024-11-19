@@ -401,7 +401,7 @@ namespace PolyPlane
                     _render.DoScreenShake(2f);
 
                 if (World.IsNetGame)
-                    _client.SendNewBulletPacket(b);
+                    _netMan.SendNewBulletPacket(b);
             };
 
             plane.FireMissileCallback = (m) =>
@@ -409,7 +409,7 @@ namespace PolyPlane
                 _objs.EnqueueMissile(m);
 
                 if (World.IsNetGame)
-                    _client.SendNewMissilePacket(m);
+                    _netMan.SendNewMissilePacket(m);
 
             };
 

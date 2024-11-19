@@ -50,11 +50,47 @@ namespace PolyPlane.Net.NetHost
             DoStop();
         }
 
-        public virtual void DoStop() { }
+        public virtual void DoStop() 
+        { }
 
-        public virtual void DoStart() { }
+        public virtual void DoStart() 
+        { }
 
-        private void PollLoop()
+
+        public virtual void HandleConnect(Event netEvent) 
+        { }
+
+        public virtual void HandleDisconnect(Event netEvent)
+        {
+            PeerDisconnectedEvent?.Invoke(this, netEvent.Peer);
+        }
+
+        public virtual void HandleTimeout(Event netEvent) 
+        { }
+
+        public virtual void HandleReceive(NetPacket netPacket)
+        {
+            PacketReceiveQueue.Enqueue(netPacket);
+        }
+
+        public void EnqueuePacket(NetPacket packet)
+        {
+            PacketSendQueue.Enqueue(packet);
+        }
+
+        public void SendPlayerDisconnectPacket(uint playerID)
+        {
+            var packet = new BasicPacket(PacketTypes.PlayerDisconnect, new GameID(playerID));
+            EnqueuePacket(packet);
+        }
+
+        public abstract ulong PacketLoss();
+        public abstract void SendPacket(Packet packet, byte channel);
+        public abstract Peer? GetPeer(int playerID);
+        public abstract void Disconnect(int playerID);
+        public abstract uint GetPlayerRTT(int playerID);
+
+        internal void PollLoop()
         {
             Event netEvent;
 
@@ -79,7 +115,7 @@ namespace PolyPlane.Net.NetHost
             }
         }
 
-        private void HandleEvent(Event netEvent)
+        internal void HandleEvent(Event netEvent)
         {
             switch (netEvent.Type)
             {
@@ -109,7 +145,7 @@ namespace PolyPlane.Net.NetHost
             }
         }
 
-        private void ProcessQueue()
+        internal void ProcessQueue()
         {
             while (PacketSendQueue.Count > 0)
             {
@@ -120,58 +156,13 @@ namespace PolyPlane.Net.NetHost
             }
         }
 
-        public void EnqueuePacket(NetPacket packet)
+        internal void SendPacket(NetPacket netPacket)
         {
-            PacketSendQueue.Enqueue(packet);
+            var packet = CreatePacket(netPacket);
+            var channel = GetChannel(netPacket);
+
+            SendPacket(packet, channel);
         }
-
-        public void SendNewBulletPacket(Bullet bullet)
-        {
-            var netPacket = new GameObjectPacket(bullet, PacketTypes.NewBullet);
-            EnqueuePacket(netPacket);
-        }
-
-        public void SendNewMissilePacket(GuidedMissile missile)
-        {
-            var netPacket = new MissilePacket(missile, PacketTypes.NewMissile);
-            EnqueuePacket(netPacket);
-        }
-
-        public void SendPlayerDisconnectPacket(uint playerID)
-        {
-            var packet = new BasicPacket(PacketTypes.PlayerDisconnect, new GameID(playerID));
-            EnqueuePacket(packet);
-        }
-
-        public void SendSyncPacket()
-        {
-            var packet = new SyncPacket(World.CurrentTime(), World.TimeOfDay, World.TimeOfDayDir, World.GunsOnly, World.DT);
-            EnqueuePacket(packet);
-        }
-
-        public void SendNewChatPacket(string message, string playerName)
-        {
-            var packet = new ChatPacket(message.Trim(), playerName);
-            EnqueuePacket(packet);
-        }
-
-        public void SendNewDecoyPacket(Decoy decoy)
-        {
-            var packet = new GameObjectPacket(decoy, PacketTypes.NewDecoy);
-            EnqueuePacket(packet);
-        }
-
-        public virtual void SendPacket(NetPacket packet) { }
-        public virtual void HandleConnect(Event netEvent) { }
-
-        public virtual void HandleDisconnect(Event netEvent)
-        {
-            PeerDisconnectedEvent?.Invoke(this, netEvent.Peer);
-        }
-
-        public virtual void HandleTimeout(Event netEvent) { }
-
-        public virtual void HandleReceive(NetPacket netPacket) { }
 
         internal NetPacket ParsePacket(Packet packet)
         {
@@ -184,9 +175,7 @@ namespace PolyPlane.Net.NetHost
             return packetObj;
         }
 
-        public abstract ulong PacketLoss();
-
-        internal int GetChannel(NetPacket netpacket)
+        internal byte GetChannel(NetPacket netpacket)
         {
             switch (netpacket.Type)
             {
@@ -239,15 +228,6 @@ namespace PolyPlane.Net.NetHost
         {
             PeerDisconnectedEvent?.Invoke(this, peer);
         }
-
-        public abstract void Disconnect(int playerID);
-
-        public virtual uint GetPlayerRTT(int playerID)
-        {
-            return 0;
-        }
-
-        public abstract Peer? GetPeer(int playerID);
 
         public virtual void Dispose()
         {

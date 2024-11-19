@@ -63,72 +63,18 @@ namespace PolyPlane.Net.NetHost
 
                     // Queue certain updates to re-broadcast ASAP.
                     PacketSendQueue.Enqueue(netPackett);
-                    PacketReceiveQueue.Enqueue(netPackett);
-
-                    break;
-
-                default:
-
-                    PacketReceiveQueue.Enqueue(netPackett);
-
                     break;
             }
-        }
-
-        public override uint GetPlayerRTT(int playerID)
-        {
-            if (_peers.TryGetValue((uint)playerID, out var peer))
-            {
-                return peer.RoundTripTime;
-            }
-
-            return 0;
-        }
-
-        /// <summary>
-        /// Broadcast to all peers.
-        /// </summary>
-        /// <param name="netPacket"></param>
-        private void BroadcastPacket(NetPacket netPacket)
-        {
-            var packet = CreatePacket(netPacket);
-            var channel = GetChannel(netPacket);
-
-            Host.Broadcast((byte)channel, ref packet);
-        }
-
-        /// <summary>
-        /// Send to all other peers except for the peer the packet originated from.
-        /// </summary>
-        /// <param name="netPacket"></param>
-        private void BroadcastToOtherPeersOnly(NetPacket netPacket)
-        {
-            var packet = CreatePacket(netPacket);
-            var channel = GetChannel(netPacket);
-
-            foreach (var peer in _peers.Values)
-            {
-                if (peer.ID != netPacket.ID.PlayerID)
-                    peer.Send((byte)channel, ref packet);
-            }
-        }
-
-        public override void SendPacket(NetPacket packet)
-        {
-            base.SendPacket(packet);
-
-            BroadcastPacket(packet);
-        }
-
-        private void SendIDPacket(Peer peer, NetPacket packet)
-        {
-            var idPacket = CreatePacket(packet);
-            peer.Send(CHANNEL_ID, ref idPacket);
         }
 
         public override ulong PacketLoss()
         {
             return 0;
+        }
+
+        public override void SendPacket(Packet packet, byte channel)
+        {
+            Host.Broadcast(channel, ref packet);
         }
 
         public override Peer? GetPeer(int playerID)
@@ -146,6 +92,37 @@ namespace PolyPlane.Net.NetHost
                 peer.DisconnectNow(0);
                 _peers.Remove((uint)playerID);
             }
+        }
+
+        public override uint GetPlayerRTT(int playerID)
+        {
+            if (_peers.TryGetValue((uint)playerID, out var peer))
+            {
+                return peer.RoundTripTime;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Send to all other peers except for the peer the packet originated from.
+        /// </summary>
+        /// <param name="netPacket"></param>
+        private void BroadcastToOtherPeersOnly(NetPacket netPacket)
+        {
+            var packet = CreatePacket(netPacket);
+            var channel = GetChannel(netPacket);
+
+            foreach (var peer in _peers.Values)
+            {
+                if (peer.ID != netPacket.ID.PlayerID)
+                    peer.Send(channel, ref packet);
+            }
+        }
+        private void SendIDPacket(Peer peer, NetPacket packet)
+        {
+            var idPacket = CreatePacket(packet);
+            peer.Send(CHANNEL_ID, ref idPacket);
         }
     }
 }

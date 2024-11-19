@@ -145,7 +145,7 @@ namespace PolyPlane.Net
                         ServerSendOtherPlanes();
                         ServerSendExistingBullets();
                         ServerSendExistingDecoys();
-                        Host.SendSyncPacket();
+                        SendSyncPacket();
                     }
 
                     PlayerJoined?.Invoke(this, playerPacket.ID.PlayerID);
@@ -444,6 +444,36 @@ namespace PolyPlane.Net
                 Host.EnqueuePacket(expiredObjPacket);
         }
 
+        public void SendNewBulletPacket(Bullet bullet)
+        {
+            var netPacket = new GameObjectPacket(bullet, PacketTypes.NewBullet);
+            Host.EnqueuePacket(netPacket);
+        }
+
+        public void SendNewMissilePacket(GuidedMissile missile)
+        {
+            var netPacket = new MissilePacket(missile, PacketTypes.NewMissile);
+            Host.EnqueuePacket(netPacket);
+        }
+
+        public void SendSyncPacket()
+        {
+            var packet = new SyncPacket(World.CurrentTime(), World.TimeOfDay, World.TimeOfDayDir, World.GunsOnly, World.DT);
+            Host.EnqueuePacket(packet);
+        }
+
+        public void SendNewChatPacket(string message, string playerName)
+        {
+            var packet = new ChatPacket(message.Trim(), playerName);
+            Host.EnqueuePacket(packet);
+        }
+
+        public void SendNewDecoyPacket(Decoy decoy)
+        {
+            var packet = new GameObjectPacket(decoy, PacketTypes.NewDecoy);
+            Host.EnqueuePacket(packet);
+        }
+
         public void ServerSendOtherPlanes()
         {
             var otherPlanesPackets = new List<NewPlayerPacket>();
@@ -518,7 +548,7 @@ namespace PolyPlane.Net
 
         public void SendNewDecoy(Decoy decoy)
         {
-            Host.SendNewDecoyPacket(decoy);
+            SendNewDecoyPacket(decoy);
         }
 
 
