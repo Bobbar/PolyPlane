@@ -51,11 +51,6 @@ namespace PolyPlane.GameObjects
         private readonly float THRUST = 2500f;
         private readonly float FUEL = 10f;
 
-        private float Inertia
-        {
-            get { return TotalMass * 20f; }
-        }
-
         private float _currentFuel = 0f;
         private float _gForce = 0f;
         private float _gForcePeak = 0f;
@@ -289,7 +284,7 @@ namespace PolyPlane.GameObjects
                         var noseTorque = GetTorque(_noseWing, noseForce);
                         var thrustTorque = GetTorque(_centerOfThrust.Position, GetThrust(thrustVector: _useThrustVectoring));
 
-                        var torqueRot = (tailTorque + bodyTorque + noseTorque + thrustTorque) / this.Inertia;
+                        var torqueRot = (tailTorque + bodyTorque + noseTorque + thrustTorque) / this.GetInertia(this.TotalMass);
                         this.RotationSpeed += torqueRot * partialDT;
                     }
                     else

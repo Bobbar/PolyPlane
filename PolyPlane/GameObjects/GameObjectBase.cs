@@ -285,6 +285,11 @@ namespace PolyPlane.GameObjects
         public virtual void FlipY()
         { }
 
+        public float GetInertia(float mass)
+        {
+            return mass * World.INERTIA_MULTI;
+        }
+
         public virtual bool ContainedBy(D2DRect rect)
         {
             return rect.Contains(this.Position);

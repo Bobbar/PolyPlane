@@ -149,17 +149,21 @@ namespace PolyPlane
         public const int DEFAULT_FPS = 60;
         public const int DEFAULT_SUB_STEPS = 6;
         public const float DEFAULT_DT = 0.0425f;
-        public static readonly float DEFAULT_SUB_DT = DEFAULT_DT / DEFAULT_SUB_STEPS;
+        public const float DEFAULT_SUB_DT = DEFAULT_DT / DEFAULT_SUB_STEPS;
+
         private static float _dt = DEFAULT_DT * ((float)DEFAULT_FPS / (float)TARGET_FPS);
         private static float _sub_dt = DEFAULT_SUB_DT * ((float)DEFAULT_FPS / (float)TARGET_FPS);
         private static int _sub_steps = DEFAULT_SUB_STEPS;
-
         private static float _zoomScale = 0.11f;
+
+        public const float INERTIA_MULTI = 20f; // Mass is multiplied by this value for interia calculations.
         public const float DEFAULT_DPI = 96f;
         public const float SENSOR_FOV = 60f; // TODO: Not sure this belongs here. Maybe make this unique based on missile/plane types and move it there.
         public const float MAX_ALTITUDE = 100000f; // Max density altitude.  (Air density drops to zero at this altitude)
         public const float MIN_TURB_ALT = 3000f; // Altitude below which turbulence is at maximum.
         public const float MAX_TURB_ALT = 20000f; // Max altitude at which turbulence decreases to zero.
+        private const float NOISE_FLOOR = -1f;
+        private const float NOISE_CEILING = 0.8f;
         private const float MIN_TURB = 0.80f;
         private const float MAX_TURB = 1f;
         private const float MAX_WIND_MAG = 100f;
@@ -230,9 +234,9 @@ namespace PolyPlane
         {
             var noiseRaw = _turbulenceNoise.GetNoise(position.X, position.Y);
 
-            // Noise comes in with the range of -0.9 to 0.9.
-            // Change it to the new range of 0 to 1.
-            var noise = Utilities.ClampRange(noiseRaw, -1f, 0.8f, 0f, 1f);
+            // Noise values come in with the range of around -0.9 to 0.9.
+            // Clamp the noise value to a new range such that -0.9 equals zero, and 0.9 equals one.
+            var noise = Utilities.ScaleToRange(noiseRaw, NOISE_FLOOR, NOISE_CEILING, 0f, 1f);
 
             return noise;
         }
@@ -247,7 +251,7 @@ namespace PolyPlane
 
             // Get noise value for the position and clamp it the desired range.
             var noiseRaw = SampleNoise(position);
-            var noise = Utilities.ClampRange(noiseRaw, 0f, 1f, MIN_TURB, MAX_TURB);
+            var noise = Utilities.ScaleToRange(noiseRaw, 0f, 1f, MIN_TURB, MAX_TURB);
 
             var turb = Utilities.Lerp(noise, 1f, turbAltFact);
 

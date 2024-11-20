@@ -25,14 +25,13 @@ namespace PolyPlane.GameObjects
         private PingObj _lockedPingObj = null;
         private PingObj _aimedAtPingObj = null;
 
-        private readonly float MIN_IMPACT_TIME = 20f; // Min time before defending.
-
         private readonly float _radarFOV = World.SENSOR_FOV * 0.25f;
-        private float _maxRange = 60000f;
-        private float _maxAge = 2f;
-        private float _radius = 150f;
-        private long _currentFrame = 0;
+        private const float MIN_IMPACT_TIME = 20f; // Min time before defending.
+        private const float _maxRange = 60000f;
+        private const float _maxAge = 2f;
+        private const float _radius = 150f;
         private const long UPDATE_FRAMES = 10; // Number of frames between updates.
+        private long _currentFrame = 0;
 
         private D2DColor _color = World.HudColor;
         private Dictionary<GameID, PingObj> _pings = new Dictionary<GameID, PingObj>();

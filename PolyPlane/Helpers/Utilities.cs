@@ -37,7 +37,7 @@ namespace PolyPlane.Helpers
         }
 
         /// <summary>
-        /// Clamps the specified value to a new range while maintaining ratio.
+        /// Scales the specified value to the specified new range while maintaining ratio.
         /// </summary>
         /// <param name="value">Original value.</param>
         /// <param name="oldMin">Old range min.</param>
@@ -45,7 +45,7 @@ namespace PolyPlane.Helpers
         /// <param name="newMin">New range min.</param>
         /// <param name="newMax">New range max.</param>
         /// <returns></returns>
-        public static float ClampRange(float value, float oldMin, float oldMax, float newMin, float newMax)
+        public static float ScaleToRange(float value, float oldMin, float oldMax, float newMin, float newMax)
         {
             var newVal = (((value - oldMin) * (newMax - newMin)) / (oldMax - oldMin)) + newMin;
             newVal = Math.Clamp(newVal, newMin, newMax);
