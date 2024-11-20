@@ -242,8 +242,6 @@ namespace PolyPlane.Helpers
             return D2DPoint.Transform(src, mat);
         }
 
-
-
         public static void ApplyTranslation(D2DPoint[] src, D2DPoint[] dst, float rotation, D2DPoint translation, float scale = 1f)
         {
             var mat = Matrix3x2.CreateScale(scale);
@@ -506,6 +504,14 @@ namespace PolyPlane.Helpers
             return baseVelo;
         }
 
+        public static float GetTorque(D2DPoint centerPosition, D2DPoint forcePosition, D2DPoint force)
+        {
+            // How is it so simple?
+            var r = forcePosition - centerPosition;
+
+            var torque = Utilities.Cross(r, force);
+            return torque;
+        }
 
         public static D2DPoint CenterOfLift(params Wing[] wings)
         {

@@ -270,27 +270,26 @@ namespace PolyPlane.GameObjects
                 {
                     // Apply aerodynamics.
                     var liftDrag = D2DPoint.Zero;
+                    var cg = GetCenterOfGravity();
 
                     if (_useControlSurfaces)
                     {
-                        var tailForce = _tailWing.GetLiftDragForce();
-                        var noseForce = _noseWing.GetLiftDragForce();
-                        var bodyForce = _rocketBody.GetLiftDragForce();
-                        liftDrag += tailForce + noseForce + bodyForce;
+                        var tailForce = _tailWing.GetForces(cg);
+                        var noseForce = _noseWing.GetForces(cg);
+                        var bodyForce = _rocketBody.GetForces(cg);
+                       
+                        liftDrag += tailForce.LiftAndDrag + noseForce.LiftAndDrag + bodyForce.LiftAndDrag;
 
                         // Compute torque and rotation result.
-                        var tailTorque = GetTorque(_tailWing, tailForce);
-                        var bodyTorque = GetTorque(_rocketBody, bodyForce);
-                        var noseTorque = GetTorque(_noseWing, noseForce);
-                        var thrustTorque = GetTorque(_centerOfThrust.Position, GetThrust(thrustVector: _useThrustVectoring));
+                        var thrustTorque = Utilities.GetTorque(cg, _centerOfThrust.Position, GetThrust(thrustVector: _useThrustVectoring));
+                        var torqueRot = (tailForce.Torque + bodyForce.Torque + noseForce.Torque + thrustTorque) / this.GetInertia(this.TotalMass);
 
-                        var torqueRot = (tailTorque + bodyTorque + noseTorque + thrustTorque) / this.GetInertia(this.TotalMass);
                         this.RotationSpeed += torqueRot * partialDT;
                     }
                     else
                     {
-                        var bodyForce = _rocketBody.GetLiftDragForce();
-                        liftDrag += bodyForce;
+                        var bodyForce = _rocketBody.GetForces(cg);
+                        liftDrag += bodyForce.LiftAndDrag;
                     }
 
 
@@ -482,20 +481,6 @@ namespace PolyPlane.GameObjects
 
             gfx.DrawLine(this.Position, this.Position + cone1, D2DColor.Red, 3f);
             gfx.DrawLine(this.Position, this.Position + cone2, D2DColor.Blue, 3f);
-        }
-
-        private float GetTorque(Wing wing, D2DPoint force)
-        {
-            return GetTorque(wing.Position, force);
-        }
-
-        private float GetTorque(D2DPoint pos, D2DPoint force)
-        {
-            // How is it so simple?
-            var r = pos - GetCenterOfGravity();
-
-            var torque = Utilities.Cross(r, force);
-            return torque;
         }
 
         private D2DPoint GetCenterOfGravity()

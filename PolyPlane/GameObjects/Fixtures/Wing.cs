@@ -120,10 +120,10 @@ namespace PolyPlane.GameObjects.Fixtures
             }
         }
 
-        public D2DPoint GetLiftDragForce()
+        public WingForces GetForces(D2DPoint centerMassPosition)
         {
             if (Velocity.Length() == 0f)
-                return D2DPoint.Zero;
+                return WingForces.Zero;
 
             // Get the current turbulence for this altitude.
             var turbulence = World.GetTurbulenceForPosition(this.Position);
@@ -182,15 +182,16 @@ namespace PolyPlane.GameObjects.Fixtures
             liftForce = Math.Clamp(liftForce, -MAX_LIFT, MAX_LIFT);
             dragForce = Math.Clamp(dragForce, -MAX_DRAG, MAX_DRAG);
 
-            // Compute the final force vectors.
+            // Compute the final force vectors and torque.
             var dragVec = -veloNorm * (float)dragForce;
             var liftVec = veloNormTan * (float)liftForce;
+            var torque = Utilities.GetTorque(centerMassPosition, this.Position, dragVec + liftVec);
 
             LiftVector = liftVec;
             DragVector = dragVec;
             AoA = aoaDegrees;
 
-            return liftVec + dragVec;
+            return new WingForces(liftVec, dragVec, torque);
         }
     }
 
@@ -268,5 +269,31 @@ namespace PolyPlane.GameObjects.Fixtures
 
         public WingParameters() { }
 
+    }
+
+    public struct WingForces
+    {
+        public D2DPoint LiftAndDrag
+        {
+            get { return Lift + Drag; } 
+        }
+
+        public D2DPoint Lift;
+        public D2DPoint Drag;
+        public float Torque;
+
+        public WingForces() { }
+
+        public WingForces(D2DPoint lift, D2DPoint drag, float torque)
+        {
+            Lift = lift; 
+            Drag = drag; 
+            Torque = torque;
+        }
+
+        public static WingForces Zero
+        {
+            get => default;
+        }
     }
 }

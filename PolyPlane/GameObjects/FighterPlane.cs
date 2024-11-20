@@ -409,18 +409,17 @@ namespace PolyPlane.GameObjects
                     // How much force a damaged wing contributes.
                     const float DAMAGED_FACTOR = 0.2f;
 
-                    var force = wing.GetLiftDragForce();
-                    var torque = GetTorque(wing, force);
+                    var forces = wing.GetForces(_centerOfMass.Position);
 
                     if (wing.Visible)
                     {
-                        wingForce += force;
-                        wingTorque += torque;
+                        wingForce += forces.LiftAndDrag;
+                        wingTorque += forces.Torque;
                     }
                     else
                     {
-                        wingForce += force * DAMAGED_FACTOR;
-                        wingTorque += torque * DAMAGED_FACTOR;
+                        wingForce += forces.LiftAndDrag * DAMAGED_FACTOR;
+                        wingTorque += forces.Torque * DAMAGED_FACTOR;
                     }
                 }
 
@@ -470,7 +469,7 @@ namespace PolyPlane.GameObjects
                         easeFact = Utilities.Factor(_easePhysicsTimer.Value, _easePhysicsTimer.Interval);
 
                     // Integrate torque, thrust and wing force.
-                    var thrustTorque = GetTorque(_centerOfThrust.Position, thrust);
+                    var thrustTorque = Utilities.GetTorque(_centerOfMass.Position, _centerOfThrust.Position, thrust);
                     var rotAmt = ((wingTorque + thrustTorque + damageTorque) * easeFact) / this.GetInertia(this.Mass);
 
                     this.RotationSpeed += rotAmt * partialDT;
@@ -971,7 +970,7 @@ namespace PolyPlane.GameObjects
             var velo = impactor.Velocity - this.Velocity;
             var force = (IMPACT_MASS * velo.Length()) / 4f;
             var forceVec = (velo.Normalized() * force);
-            var impactTq = GetTorque(impactPos, forceVec);
+            var impactTq = Utilities.GetTorque(_centerOfMass.Position, impactPos, forceVec);
 
             this.RotationSpeed += (float)(impactTq / this.GetInertia(this.Mass) * World.DT);
             this.Velocity += forceVec / this.Mass * World.DT;
@@ -1115,20 +1114,6 @@ namespace PolyPlane.GameObjects
             _thrustAmt.Target = amt;
         }
 
-        private float GetTorque(Wing wing, D2DPoint force)
-        {
-            return GetTorque(wing.Position, force);
-        }
-
-        private float GetTorque(D2DPoint pos, D2DPoint force)
-        {
-            // How is it so simple?
-            var r = pos - _centerOfMass.Position;
-
-            var torque = Utilities.Cross(r, force);
-            return torque;
-        }
-
         private void GetBulletHoleDrag(BulletHole hole, float dt, out D2DPoint force, out float torque)
         {
             const float DAMAGE_DRAG_AMT = 0.002f;
@@ -1153,7 +1138,7 @@ namespace PolyPlane.GameObjects
             var dAmt = DAMAGE_DRAG_AMT * 0.5f * hDens * hVeloMagSq;
 
             var dVec = -hVeloNorm * dAmt;
-            var dTq = GetTorque(hole.Position, dVec);
+            var dTq = Utilities.GetTorque(_centerOfMass.Position, hole.Position, dVec);
 
             dTq *= DAMAGE_TQ_FACTOR;
 
