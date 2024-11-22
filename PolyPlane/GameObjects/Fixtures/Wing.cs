@@ -160,8 +160,9 @@ namespace PolyPlane.GameObjects.Fixtures
             var aoaRads = Utilities.DegreesToRads(aoaDegrees);
 
             // Reduce velo as we approach the minimum. (Increases stall effect)
-            var veloFact = Utilities.FactorWithEasing(veloMag, MIN_VELO, EasingFunctions.EaseOutSine);
-            veloMag *= veloFact;
+            var veloFact = Utilities.FactorWithEasing((float)veloMagSq, (float)Math.Pow(MIN_VELO, 2f), EasingFunctions.EaseOutSine);
+            veloFact = Math.Clamp(veloFact, 0.05f, 1f);
+
             veloMagSq *= veloFact;
 
             // Drag force.

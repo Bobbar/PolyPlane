@@ -196,7 +196,7 @@ namespace PolyPlane.GameObjects
                     PivotPoint = new D2DPoint(-21f, 0f),
                     Position = new D2DPoint(-22f, 0f),
                     MinVelo = minVelo,
-                    ParasiticDrag = 1f,
+                    ParasiticDrag = 2f,
                     AOAFactor = 0.3f,
                     DeflectionRate = 30f,
                     MaxAOA = 50f
@@ -208,7 +208,7 @@ namespace PolyPlane.GameObjects
                     Area = 0.045f,
                     MaxLiftForce = 1000f * liftScale,
                     MinVelo = minVelo,
-                    ParasiticDrag = 1f,
+                    ParasiticDrag = 2f,
                     MaxAOA = 40f,
                     AOAFactor = 0.2f
                 });
@@ -222,7 +222,7 @@ namespace PolyPlane.GameObjects
                     MaxLiftForce = 2000f * liftScale,
                     Position = new D2DPoint(21.5f, 0f),
                     MinVelo = minVelo,
-                    ParasiticDrag = 1f,
+                    ParasiticDrag = 2f,
                     AOAFactor = 0.2f,
                     MaxAOA = 40f
                 });

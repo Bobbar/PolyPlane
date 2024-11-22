@@ -334,6 +334,7 @@ namespace PolyPlane.GameObjects
         private void InitWings()
         {
             const float DEFLECT_RATE = 55f;
+            const float MIN_VELO = 450f;
 
             // Main wing.
             AddWing(new Wing(this, new WingParameters()
@@ -346,7 +347,7 @@ namespace PolyPlane.GameObjects
                 AOAFactor = 0.6f,
                 MaxAOA = 20f,
                 Position = new D2DPoint(-2f * this.RenderScale, 0.6f * this.RenderScale),
-                MinVelo = 450f
+                MinVelo = MIN_VELO
             }));
 
             // Tail wing. (Control wing)
@@ -363,7 +364,7 @@ namespace PolyPlane.GameObjects
                 DeflectionRate = DEFLECT_RATE,
                 PivotPoint = new D2DPoint(-25f * this.RenderScale, 0.6f * this.RenderScale),
                 Position = new D2DPoint(-27.5f * this.RenderScale, 0.6f * this.RenderScale),
-                MinVelo = 450f
+                MinVelo = MIN_VELO
             }), isControl: true);
 
             // Center of mass location.
@@ -1199,7 +1200,7 @@ namespace PolyPlane.GameObjects
 
             const float thrustVectorAmt = 1f;
             const float thrustBoostAmt = 1000f;
-            const float thrustBoostMaxSpd = 200f;
+            const float thrustBoostMaxSpd = 600f;
             const float MAX_VELO = 2500f;
 
             if (thrustVector)
@@ -1214,6 +1215,7 @@ namespace PolyPlane.GameObjects
             var velo = this.Velocity.Length();
             var boostFact = Utilities.Factor(velo, thrustBoostMaxSpd);
             var maxVeloFact = 1f - Utilities.Factor(velo, MAX_VELO);
+
             thrust *= _thrustAmt.Value * ((this.Thrust + (thrustBoostAmt * boostFact)) * World.GetDensityAltitude(this.Position));
             thrust *= maxVeloFact; // Reduce thrust as we approach max velo.
 
