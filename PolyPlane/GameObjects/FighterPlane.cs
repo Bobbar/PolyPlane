@@ -334,7 +334,7 @@ namespace PolyPlane.GameObjects
         private void InitWings()
         {
             const float DEFLECT_RATE = 55f;
-            const float MIN_VELO = 450f;
+            const float MIN_VELO = 300f;
 
             // Main wing.
             AddWing(new Wing(this, new WingParameters()
@@ -1200,7 +1200,7 @@ namespace PolyPlane.GameObjects
 
             const float thrustVectorAmt = 1f;
             const float thrustBoostAmt = 1000f;
-            const float thrustBoostMaxSpd = 600f;
+            const float thrustBoostMaxSpd = 400f;
             const float MAX_VELO = 2500f;
 
             if (thrustVector)
