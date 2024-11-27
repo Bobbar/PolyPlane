@@ -444,11 +444,18 @@ namespace PolyPlane.GameObjects
                 var histPoly = new RenderPoly(this.Polygon, histPos.Position, histPos.Rotation);
 
                 // Flip plane poly to correct orientation.
+
+                // NB: This is an unsolvable problem.
+                // We have no way of knowing or predicting exactly which flip direction
+                // the original plane was in at the time of impact.
+                // So we make a best effort here and try to predict the flip direction
+                // based off of velocity angle.
                 if (this is FighterPlane)
                 {
                     var pointingRight = Utilities.ClampAngle180((histPos.Velocity.Angle() + 180f) - this.Rotation) < 0f;
+                    var isCW = histPoly.IsClockwise();
 
-                    if (!pointingRight)
+                    if (!pointingRight && isCW)
                         histPoly.FlipY();
                 }
 

@@ -192,7 +192,7 @@ namespace PolyPlane.GameObjects.Tools
         /// Credit: https://stackoverflow.com/a/1165943/8581226
         /// https://element84.com/software-engineering/web-development/determining-the-winding-of-a-polygon-given-as-a-set-of-ordered-points/
         /// </remarks>
-        private bool IsClockwise()
+        public bool IsClockwise()
         {
             float sum = 0f;
 

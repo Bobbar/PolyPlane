@@ -543,7 +543,6 @@ namespace PolyPlane.Net
             }
 
             Host.EnqueuePacket(impactPacket);
-            DoNetImpact(impactPacket);
         }
 
         public void SendNewDecoy(Decoy decoy)

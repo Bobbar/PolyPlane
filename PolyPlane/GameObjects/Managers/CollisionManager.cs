@@ -82,6 +82,7 @@ namespace PolyPlane.GameObjects.Manager
 
                                         var impactResultM = plane.GetImpactResult(missile, pos);
                                         _netMan.SendNetImpact(missile, plane, impactResultM, histState);
+                                        plane.HandleImpactResult(missile, impactResultM);
 
                                         plane.Position = ogState.Position;
                                         plane.Rotation = ogState.Rotation;
@@ -91,6 +92,7 @@ namespace PolyPlane.GameObjects.Manager
                                     {
                                         var impactResultM = plane.GetImpactResult(missile, pos);
                                         _netMan.SendNetImpact(missile, plane, impactResultM, histState);
+                                        plane.HandleImpactResult(missile, impactResultM);
                                     }
 
                                     missile.IsExpired = true;
@@ -145,6 +147,7 @@ namespace PolyPlane.GameObjects.Manager
 
                                         var impactResult = plane.GetImpactResult(bullet, pos);
                                         _netMan.SendNetImpact(bullet, plane, impactResult, histState);
+                                        plane.HandleImpactResult(bullet, impactResult);
 
                                         plane.Position = ogState.Position;
                                         plane.Rotation = ogState.Rotation;
@@ -154,6 +157,7 @@ namespace PolyPlane.GameObjects.Manager
                                     {
                                         var impactResult = plane.GetImpactResult(bullet, pos);
                                         _netMan.SendNetImpact(bullet, plane, impactResult, histState);
+                                        plane.HandleImpactResult(bullet, impactResult);
                                     }
 
 
