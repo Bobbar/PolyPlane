@@ -485,7 +485,7 @@ namespace PolyPlane.Helpers
         /// <param name="dt">Time delta.</param>
         /// <returns>A velocity vector which sums the parent object velocity with the computed angular velocity.</returns>
         /// <remarks>See: http://hyperphysics.phy-astr.gsu.edu/hbase/rotq.html</remarks>
-        public static D2DPoint AngularVelocity(GameObject parentObject, D2DPoint point, float dt)
+        public static D2DPoint AngularVelocity(GameObject parentObject, D2DPoint point)
         {
             // V = WR
             var baseVelo = parentObject.Velocity;

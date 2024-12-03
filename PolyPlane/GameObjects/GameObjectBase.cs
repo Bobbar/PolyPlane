@@ -510,7 +510,7 @@ namespace PolyPlane.GameObjects
 
             foreach (var pnt in this.Polygon.Poly)
             {
-                var aVelo = Utilities.AngularVelocity(this, pnt, dt) * dt;
+                var aVelo = Utilities.AngularVelocity(this, pnt);
                 var veloPnt1 = pnt;
                 var veloPnt2 = pnt + relVelo;
 

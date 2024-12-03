@@ -39,7 +39,7 @@ namespace PolyPlane.GameObjects
             this.Owner = plane;
 
             var velo = (Utilities.AngleToVectorDegrees(plane.Rotation, Bullet.SPEED));
-            this.Velocity = velo + Utilities.AngularVelocity(plane, plane.Gun.Position, World.SUB_DT);
+            this.Velocity = velo + Utilities.AngularVelocity(plane, plane.Gun.Position);
 
             this.Rotation = this.Velocity.Angle();
             this.Polygon.Update();
