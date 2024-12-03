@@ -1600,7 +1600,7 @@ namespace PolyPlane.Rendering
 
                 DrawCloudGroundShadowAndRay(ctx, cloud, shadowColor, todAngle);
 
-                if (ctx.Viewport.Contains(cloud.Position, cloud.Radius * cloud.ScaleX * CLOUD_SCALE))
+                if (ctx.Viewport.Contains(cloud.Position, (cloud.Radius * 2f) * cloud.ScaleX * CLOUD_SCALE))
                 {
                     DrawCloud(ctx, cloud, todColor);
                 }
