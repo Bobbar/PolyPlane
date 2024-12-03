@@ -497,7 +497,8 @@ namespace PolyPlane.Helpers
                 var dir = parentObject.Position - point;
                 var dirNorm = D2DPoint.Normalize(dir);
                 var dirNormTan = dirNorm.Tangent();
-                var W = 2f * (float)Math.PI * (parentObject.RotationSpeed * dt);
+                var W = DegreesToRads(parentObject.RotationSpeed);
+
                 return baseVelo + (dirNormTan * (R * W));
             }
 

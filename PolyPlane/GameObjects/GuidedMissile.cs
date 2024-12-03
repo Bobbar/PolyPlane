@@ -156,9 +156,9 @@ namespace PolyPlane.GameObjects
             this.RenderScale = 0.9f;
             this.RenderOrder = 2;
 
-            _centerOfThrust = new FixturePoint(this, new D2DPoint(-22, 0));
-            _warheadCenterMass = new FixturePoint(this, new D2DPoint(7f, 0));
-            _motorCenterMass = new FixturePoint(this, new D2DPoint(-11f, 0));
+            _centerOfThrust = new FixturePoint(this, new D2DPoint(-21, 0));
+            _warheadCenterMass = new FixturePoint(this, new D2DPoint(12f, 0));
+            _motorCenterMass = new FixturePoint(this, new D2DPoint(-13f, 0));
             _flamePos = new FixturePoint(this, new D2DPoint(-22f, 0));
 
             this.Polygon = new RenderPoly(this, _missilePoly, new D2DPoint(-2f, 0f));
@@ -183,8 +183,8 @@ namespace PolyPlane.GameObjects
         {
             if (_useControlSurfaces)
             {
-                const float liftScale = 0.9f;
-                const float minVelo = 600f;
+                const float liftScale = 1.2f;
+                const float minVelo = 500f;
 
                 _tailWing = new Wing(this, new WingParameters()
                 {
@@ -196,35 +196,35 @@ namespace PolyPlane.GameObjects
                     PivotPoint = new D2DPoint(-21f, 0f),
                     Position = new D2DPoint(-22f, 0f),
                     MinVelo = minVelo,
-                    ParasiticDrag = 2f,
+                    ParasiticDrag = 0.7f,
                     AOAFactor = 0.3f,
-                    DeflectionRate = 30f,
-                    MaxAOA = 50f
+                    DeflectionRate = 45f,
+                    MaxAOA = 40f
                 });
 
                 _rocketBody = new Wing(this, new WingParameters()
                 {
                     RenderLength = 0f,
-                    Area = 0.045f,
+                    Area = 0.035f,
                     MaxLiftForce = 1000f * liftScale,
                     MinVelo = minVelo,
-                    ParasiticDrag = 2f,
-                    MaxAOA = 40f,
-                    AOAFactor = 0.2f
+                    ParasiticDrag = 0.2f,
+                    MaxAOA = 30f,
+                    AOAFactor = 0.1f
                 });
 
                 _noseWing = new Wing(this, new WingParameters()
                 {
                     RenderLength = 2.5f,
                     RenderWidth = 1f,
-                    Area = 0.05f,
+                    Area = 0.08f,
                     MaxDeflection = 20f,
                     MaxLiftForce = 2000f * liftScale,
                     Position = new D2DPoint(21.5f, 0f),
                     MinVelo = minVelo,
-                    ParasiticDrag = 2f,
-                    AOAFactor = 0.2f,
-                    MaxAOA = 40f
+                    ParasiticDrag = 0.2f,
+                    AOAFactor = 0.1f,
+                    MaxAOA = 30f
                 });
             }
             else
@@ -277,7 +277,7 @@ namespace PolyPlane.GameObjects
                         var tailForce = _tailWing.GetForces(cg);
                         var noseForce = _noseWing.GetForces(cg);
                         var bodyForce = _rocketBody.GetForces(cg);
-                       
+
                         liftDrag += tailForce.LiftAndDrag + noseForce.LiftAndDrag + bodyForce.LiftAndDrag;
 
                         // Compute torque and rotation result.
@@ -311,10 +311,10 @@ namespace PolyPlane.GameObjects
                             const float MIN_DEF_SPD = 550f;//450f; // Minimum speed required for full deflection.
                             var spdFact = Utilities.Factor(this.Velocity.Length(), MIN_DEF_SPD);
 
-                            const float MAX_DEF_AOA = 25f;// Maximum AoA allowed. Reduce deflection as AoA increases.
+                            const float MAX_DEF_AOA = 30f;// Maximum AoA allowed. Reduce deflection as AoA increases.
                             var aoaFact = 1f - (Math.Abs(_rocketBody.AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 2f))));
 
-                            const float MAX_DEF_ROT_SPD = 80f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
+                            const float MAX_DEF_ROT_SPD = 100f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
                             var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 3f))));
 
                             // Ease out of SAS as fuel runs out.
@@ -363,17 +363,13 @@ namespace PolyPlane.GameObjects
 
         private float GetDeflectionAmount(float dir)
         {
-            const float MIN_VELO = 400f; // Minimum velo before using rotation based calculation.
+            var dirVec = Utilities.AngleToVectorDegrees(dir);
+            var amtRot = Utilities.RadsToDegrees(Utilities.AngleToVectorDegrees(this.Rotation).Cross(dirVec));
+            var rot = amtRot;
 
-            // Lerp between velo and rotation based deflection amounts.
-            // Rotation works better a slow speeds.
-            var amtVelo = Utilities.ClampAngle180(dir - this.Velocity.Angle());
-            var amtRot = Utilities.ClampAngle180(dir - this.Rotation);
-            var veloLen = this.Velocity.Length();
-            var veloFact = Utilities.Factor(MIN_VELO, veloLen);
-            var amt = Utilities.Lerp(amtVelo, amtRot, veloFact);
+            rot = Utilities.ClampAngle180(rot);
 
-            return amt;
+            return rot;
         }
 
         public override void NetUpdate(float dt, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)

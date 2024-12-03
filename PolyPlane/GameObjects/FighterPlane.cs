@@ -342,11 +342,11 @@ namespace PolyPlane.GameObjects
                 RenderLength = 10f * this.RenderScale,
                 RenderWidth = 3f,
                 Area = 0.5f,
-                MaxLiftForce = 10000f,
-                MaxDragForce = 17000f,
+                MaxLiftForce = 15000f,
+                MaxDragForce = 12000f,
                 AOAFactor = 0.6f,
-                MaxAOA = 20f,
-                Position = new D2DPoint(-2f * this.RenderScale, 0.6f * this.RenderScale),
+                MaxAOA = 25f,
+                Position = new D2DPoint(-5f * this.RenderScale, 0.6f * this.RenderScale),
                 MinVelo = MIN_VELO
             }));
 
@@ -357,8 +357,8 @@ namespace PolyPlane.GameObjects
                 RenderWidth = 3f,
                 Area = 0.2f,
                 MaxDeflection = 40f,
-                MaxLiftForce = 5000f,
-                MaxDragForce = 9000f,
+                MaxLiftForce = 7000f,
+                MaxDragForce = 7000f,
                 AOAFactor = 0.4f,
                 MaxAOA = 30f,
                 DeflectionRate = DEFLECT_RATE,

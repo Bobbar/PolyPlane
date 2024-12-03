@@ -159,29 +159,30 @@ namespace PolyPlane.GameObjects.Fixtures
             var aoaDegrees = Utilities.ClampAngle180(veloAngle - Rotation);
             var aoaRads = Utilities.DegreesToRads(aoaDegrees);
 
-            // Reduce velo as we approach the minimum. (Increases stall effect)
-            var veloFact = Utilities.FactorWithEasing((float)veloMagSq, (float)Math.Pow(MIN_VELO, 2f), EasingFunctions.EaseOutSine);
-            veloFact = Math.Clamp(veloFact, 0.05f, 1f);
-
-            veloMagSq *= veloFact;
+            // Max AoA factor.
+            var aoaFact = Utilities.FactorWithEasing(MAX_AOA, Math.Abs(aoaDegrees), EasingFunctions.EaseOutCirc);
 
             // Drag force.
             var coeffDrag = 1f - Math.Cos(2f * aoaRads);
             var dragForce = coeffDrag * AOA_FACT * WING_AREA * 0.5f * AIR_DENSITY * veloMagSq * VELO_FACT;
             dragForce += veloMag * WING_AREA * PARASITIC_DRAG * AIR_DENSITY;
 
-            // Factor for max AoA.
-            // Clamp AoA to always allow a little bit a of lift.
-            var aoaFact = Utilities.FactorWithEasing(MAX_AOA, Math.Abs(aoaDegrees), EasingFunctions.EaseOutSine);
-            aoaFact = Math.Clamp(aoaFact, 0.1f, 1f);
-
             // Lift force.
-            var coeffLift = Math.Sin(2f * aoaRads) * aoaFact;
+            var coeffLift = Math.Sin(2f * aoaRads);
             var liftForce = AIR_DENSITY * 0.5f * veloMagSq * WING_AREA * coeffLift;
 
+            // Reduce lift as we approach max AoA.
+            liftForce *= aoaFact;
+
+            // Reduce max lift/drag forces as we approach the minimum velo. (Increases stall effect)
+            var veloFact = Utilities.FactorWithEasing((float)veloMagSq, (float)Math.Pow(MIN_VELO, 2f), EasingFunctions.EaseOutSine);
+
+            var maxLift = MAX_LIFT * veloFact;
+            var maxDrag = MAX_DRAG * veloFact;
+
             // Clamp to max lift & drag force.
-            liftForce = Math.Clamp(liftForce, -MAX_LIFT, MAX_LIFT);
-            dragForce = Math.Clamp(dragForce, -MAX_DRAG, MAX_DRAG);
+            liftForce = Math.Clamp(liftForce, -maxLift, maxLift);
+            dragForce = Math.Clamp(dragForce, -maxDrag, maxDrag);
 
             // Compute the final force vectors and torque.
             var dragVec = -veloNorm * (float)dragForce;
