@@ -318,7 +318,7 @@ namespace PolyPlane.GameObjects
                             var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 3f))));
 
                             // Ease out of SAS as fuel runs out.
-                            var fuelFact = Utilities.FactorWithEasing(_currentFuel, FUEL, EasingFunctions.EaseOutCubic);
+                            var fuelFact = Utilities.FactorWithEasing(_currentFuel, FUEL, EasingFunctions.Out.EaseCubic);
                             nextDeflect = Utilities.Lerp(nextDeflect, nextDeflect * (aoaFact * rotSpdFact * spdFact), fuelFact);
                         }
 

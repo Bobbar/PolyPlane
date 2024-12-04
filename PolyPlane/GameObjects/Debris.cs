@@ -54,7 +54,7 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
-            var ageAlpha = 1f - Utilities.FactorWithEasing(_onGroundAge, MAX_AGE, EasingFunctions.EaseInExpo);
+            var ageAlpha = 1f - Utilities.FactorWithEasing(_onGroundAge, MAX_AGE, EasingFunctions.In.EaseExpo);
             ctx.DrawPolygon(this.Polygon, D2DColor.Black.WithAlpha(ageAlpha), 0.5f, D2DDashStyle.Solid, _color.WithAlpha(ageAlpha));
         }
 

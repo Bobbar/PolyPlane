@@ -302,13 +302,13 @@ namespace PolyPlane.GameObjects.Manager
             if (dist > effectDist)
                 return;
 
-            var forceFact = 1f - Utilities.FactorWithEasing(dist, effectDist, EasingFunctions.EaseInSine);
+            var forceFact = 1f - Utilities.FactorWithEasing(dist, effectDist, EasingFunctions.In.EaseSine);
 
             float ageFact = 1f;
 
             // Ease in impulse for particles spawned by the pusher object.
             if (particleObject.Owner != null && particleObject.Owner.Equals(pushObject))
-                ageFact = Utilities.FactorWithEasing(particleObject.Age, MIN_EFFECT_AGE, EasingFunctions.EaseInQuintic);
+                ageFact = Utilities.FactorWithEasing(particleObject.Age, MIN_EFFECT_AGE, EasingFunctions.In.EaseQuintic);
 
             var dir = (particleObject.Position - pushObject.Position);
             var dirNorm = dir.Normalized();
@@ -353,7 +353,7 @@ namespace PolyPlane.GameObjects.Manager
                     if (dist <= effectRadius)
                     {
                         // Impart an impulse on other nearby objects.
-                        var forceFact = 1f - Utilities.FactorWithEasing(dist, effectRadius, EasingFunctions.EaseOutCirc) + 0.1f;
+                        var forceFact = 1f - Utilities.FactorWithEasing(dist, effectRadius, EasingFunctions.Out.EaseCircle) + 0.1f;
 
                         var dir = (obj.Position - explosion.Position);
                         var dirNorm = dir.Normalized();

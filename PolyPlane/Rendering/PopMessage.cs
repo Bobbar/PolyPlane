@@ -35,7 +35,7 @@ namespace PolyPlane.Rendering
                 _sideDirection *= -1f;
 
             var pos = _curSideAmt / SIDE_AMT;
-            var amt = SIDE_AMT * EasingFunctions.EaseInOutBack(pos);
+            var amt = SIDE_AMT * EasingFunctions.InOut.EaseBack(pos);
             _curUpAmt += UP_RATE * dt;
 
             RenderPos = new D2DPoint(Position.X + amt, Position.Y - _curUpAmt);

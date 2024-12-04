@@ -41,7 +41,7 @@ namespace PolyPlane.GameObjects
             this.Velocity += RiseRate * dt;
 
             // Simulate the particles being blown by the wind.
-            RiseRate.X = WIND_SPEED * Utilities.FactorWithEasing(this.Age, MaxAge, EasingFunctions.EaseOutSine);
+            RiseRate.X = WIND_SPEED * Utilities.FactorWithEasing(this.Age, MaxAge, EasingFunctions.Out.EaseCircle);
 
             this.Ellipse.origin = this.Position;
 

@@ -629,7 +629,7 @@ namespace PolyPlane.GameObjects
             const int NUM_SEGS = 30;
 
             // Compute speed factor and fiddle with dimensions, positions, line weight and color alpha.
-            var speedFact = Utilities.FactorWithEasing(this.AirSpeedIndicated - MIN_VELO, MIN_VELO, EasingFunctions.EaseInSine);
+            var speedFact = Utilities.FactorWithEasing(this.AirSpeedIndicated - MIN_VELO, MIN_VELO, EasingFunctions.In.EaseSine);
             if (speedFact < 0.01f)
                 return;
 
@@ -684,7 +684,7 @@ namespace PolyPlane.GameObjects
                 var w = (lineWeight * (1f - t)) + 0.2f;
 
                 // Decrease alpha with position.
-                var a = alpha * EasingFunctions.EaseInSine(1f - t);
+                var a = alpha * EasingFunctions.In.EaseSine(1f - t);
 
                 // Color of this segment.
                 var lineColor = color.WithAlpha(a);

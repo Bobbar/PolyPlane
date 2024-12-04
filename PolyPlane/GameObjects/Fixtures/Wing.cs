@@ -160,7 +160,7 @@ namespace PolyPlane.GameObjects.Fixtures
             var aoaRads = Utilities.DegreesToRads(aoaDegrees);
 
             // Max AoA factor.
-            var aoaFact = Utilities.FactorWithEasing(MAX_AOA, Math.Abs(aoaDegrees), EasingFunctions.EaseOutCirc);
+            var aoaFact = Utilities.FactorWithEasing(MAX_AOA, Math.Abs(aoaDegrees), EasingFunctions.Out.EaseCircle);
 
             // Drag force.
             var coeffDrag = 1f - Math.Cos(2f * aoaRads);
@@ -175,7 +175,7 @@ namespace PolyPlane.GameObjects.Fixtures
             liftForce *= aoaFact;
 
             // Reduce max lift/drag forces as we approach the minimum velo. (Increases stall effect)
-            var veloFact = Utilities.FactorWithEasing((float)veloMagSq, (float)Math.Pow(MIN_VELO, 2f), EasingFunctions.EaseOutSine);
+            var veloFact = Utilities.FactorWithEasing((float)veloMagSq, (float)Math.Pow(MIN_VELO, 2f), EasingFunctions.Out.EaseSine);
 
             var maxLift = MAX_LIFT * veloFact;
             var maxDrag = MAX_DRAG * veloFact;

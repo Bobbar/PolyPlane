@@ -226,7 +226,7 @@ namespace PolyPlane
                 return AirDensity;
 
             var alt = Math.Abs(position.Y);
-            var fact = 1f - Utilities.FactorWithEasing(alt, MAX_ALTITUDE, EasingFunctions.EaseOutSine);
+            var fact = 1f - Utilities.FactorWithEasing(alt, MAX_ALTITUDE, EasingFunctions.Out.EaseSine);
 
             return AirDensity * fact;
         }
@@ -248,7 +248,7 @@ namespace PolyPlane
                 return MAX_TURB;
 
             var altOffset = Utilities.PositionToAltitude(position) - World.MIN_TURB_ALT; // Offset the altitude such that turbulence is always at max when below 3000.
-            var turbAltFact = Utilities.FactorWithEasing(altOffset, World.MAX_TURB_ALT, EasingFunctions.EaseInCirc);
+            var turbAltFact = Utilities.FactorWithEasing(altOffset, World.MAX_TURB_ALT, EasingFunctions.In.EaseCircle);
 
             // Get noise value for the position and clamp it the desired range.
             var noiseRaw = SampleNoise(position);

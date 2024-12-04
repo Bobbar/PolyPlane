@@ -54,13 +54,13 @@ namespace PolyPlane.GameObjects
         {
             base.Update(dt);
 
-            _currentRadius = MaxRadius * Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.EaseOutElastic);
-            _color.a = 1f - Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.EaseOutQuintic);
+            _currentRadius = MaxRadius * Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.Out.EaseElastic);
+            _color.a = 1f - Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.Out.EaseQuintic);
 
             if (_hasShockWave)
             {
-                _currentShockWaveRadius = MaxShockwaveRadius * Utilities.FactorWithEasing(this.Age * 1f, Duration, EasingFunctions.EaseOutCirc);
-                _showckWaveColor.a = 1f - Utilities.FactorWithEasing(this.Age * 1.5f, Duration, EasingFunctions.EaseOutExpo);
+                _currentShockWaveRadius = MaxShockwaveRadius * Utilities.FactorWithEasing(this.Age * 1f, Duration, EasingFunctions.Out.EaseCircle);
+                _showckWaveColor.a = 1f - Utilities.FactorWithEasing(this.Age * 1.5f, Duration, EasingFunctions.Out.EaseExpo);
             }
 
             if (this.Age >= Duration)

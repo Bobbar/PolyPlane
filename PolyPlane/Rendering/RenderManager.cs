@@ -240,9 +240,9 @@ namespace PolyPlane.Rendering
             var scaleSize = GetViewportScaled();
             World.UpdateViewport(scaleSize);
 
-            _screenFlash = new FloatAnimation(0.4f, 0f, 4f, EasingFunctions.EaseOutQuintic, v => _screenFlashOpacity = v);
-            _screenShakeX = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.X = v);
-            _screenShakeY = new FloatAnimation(5f, 0f, 2f, EasingFunctions.EaseOutElastic, v => _screenShakeTrans.Y = v);
+            _screenFlash = new FloatAnimation(0.4f, 0f, 4f, EasingFunctions.Out.EaseCircle, v => _screenFlashOpacity = v);
+            _screenShakeX = new FloatAnimation(5f, 0f, 2f, EasingFunctions.Out.EaseCircle, v => _screenShakeTrans.X = v);
+            _screenShakeY = new FloatAnimation(5f, 0f, 2f, EasingFunctions.Out.EaseCircle, v => _screenShakeTrans.Y = v);
 
             _textConsolas12 = _ctx.Device.CreateTextFormat(DEFAULT_FONT_NAME, 12f);
             _textConsolas15Centered = _ctx.Device.CreateTextFormat(DEFAULT_FONT_NAME, 15f, D2DFontWeight.Normal, D2DFontStyle.Normal, D2DFontStretch.Normal, DWriteTextAlignment.Center, DWriteParagraphAlignment.Center);
@@ -859,7 +859,7 @@ namespace PolyPlane.Rendering
 
             // Compute the shadow width and alpha per altitude and draw it.
             var shadowWidth = Utilities.Lerp(1f, initialWidth, Utilities.Factor(MAX_SIZE_ALT, plane.Altitude));
-            var shadowAlpha = shadowColor.a * (1f - Utilities.FactorWithEasing(plane.Altitude, MAX_SHOW_ALT, EasingFunctions.EaseInSine));
+            var shadowAlpha = shadowColor.a * (1f - Utilities.FactorWithEasing(plane.Altitude, MAX_SHOW_ALT, EasingFunctions.In.EaseSine));
 
             if (plane.Altitude <= 0f)
                 shadowWidth = initialWidth;
@@ -974,7 +974,7 @@ namespace PolyPlane.Rendering
 
                         ctx.Gfx.RotateTransform(impact.Angle, impact.Position);
 
-                        var ageAlpha = 1f - Utilities.FactorWithEasing(impact.Age, GroundImpact.MAX_AGE, EasingFunctions.EaseInExpo);
+                        var ageAlpha = 1f - Utilities.FactorWithEasing(impact.Age, GroundImpact.MAX_AGE, EasingFunctions.In.EaseExpo);
                         ctx.FillEllipse(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), _groundImpactOuterColor.WithAlpha(ageAlpha));
                         ctx.FillEllipse(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), _groundImpactInnerColor.WithAlpha(ageAlpha));
 
@@ -1356,7 +1356,7 @@ namespace PolyPlane.Rendering
                     gfx.DrawLine(start, end, World.HudColor, 1f, D2DDashStyle.Dash);
 
                 // Fade in marker text as they move towards the center.
-                var alpha = Math.Clamp(1f - Utilities.FactorWithEasing(Math.Abs(pos.Y - posY), HalfH, EasingFunctions.EaseOutSine), 0.02f, 0.4f);
+                var alpha = Math.Clamp(1f - Utilities.FactorWithEasing(Math.Abs(pos.Y - posY), HalfH, EasingFunctions.Out.EaseSine), 0.02f, 0.4f);
                 if (markerValue >= 0f)
                 {
                     var textRect = new D2DRect(start - new D2DPoint(25f, 0f), new D2DSize(60f, 30f));
@@ -1491,7 +1491,7 @@ namespace PolyPlane.Rendering
                 if (impactTime > MIN_IMPACT_TIME * 1.5f)
                     continue;
 
-                var impactFact = 1f - Utilities.FactorWithEasing(impactTime, MIN_IMPACT_TIME, EasingFunctions.EaseOutQuad);
+                var impactFact = 1f - Utilities.FactorWithEasing(impactTime, MIN_IMPACT_TIME, EasingFunctions.Out.EaseQuad);
 
                 if (!missile.MissedTarget && warningMessage)
                     gfx.DrawArrow(pos1, pos2, color, (impactFact * 30f) + 1f);

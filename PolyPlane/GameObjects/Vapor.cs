@@ -100,7 +100,7 @@ namespace PolyPlane.GameObjects
             var sVisFact = Utilities.Factor(veloMag - _visibleVelo, _visibleVelo);
             var sRadFact = Utilities.Factor(veloMag, _visibleVelo);
 
-            var gVisFact = Utilities.FactorWithEasing(gforce - (_visibleGs * 0.5f), _visibleGs, EasingFunctions.EaseInCirc);
+            var gVisFact = Utilities.FactorWithEasing(gforce - (_visibleGs * 0.5f), _visibleGs, EasingFunctions.In.EaseCircle);
             var gRadFact = Utilities.Factor(gforce, _maxGs);
 
             var radFact = sRadFact + gRadFact;
@@ -133,7 +133,7 @@ namespace PolyPlane.GameObjects
                 part.Update(dt);
 
                 var ageFact = 1f - Utilities.Factor(part.Age, MAX_AGE);
-                var radAmt = EasingFunctions.EaseOutSine(ageFact);
+                var radAmt = EasingFunctions.Out.EaseSine(ageFact);
                 var rad = (part.InitRadius * radAmt) + 0f;
 
                 part.Radius = rad;
