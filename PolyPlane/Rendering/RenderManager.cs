@@ -521,42 +521,41 @@ namespace PolyPlane.Rendering
             {
                 var viewPortSize = new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE);
                 var viewPortRect = new D2DRect(viewObject.Position, viewPortSize);
-                _ctx.Viewport = viewPortRect;
+                _ctx.PushViewPort(viewPortRect);
 
-                _gfx.PushTransform(); // Push screen shake transform.
+                // Draw sky background color.
+                DrawSky(_ctx, viewObject);
+
+                // Push screen shake transform.
+                _gfx.PushTransform(); 
                 _gfx.TranslateTransform(_screenShakeTrans.X, _screenShakeTrans.Y);
 
-                // Sky and background.
-                DrawSky(_ctx, viewObject);
+                // Draw parallax grid. 
                 DrawMovingBackground(_ctx, viewObject);
 
-                _gfx.PushTransform(); // Push scale transform.
+                // Push zoom scale transform.
+                _gfx.PushTransform(); 
                 _gfx.ScaleTransform(World.ZoomScale, World.ZoomScale);
 
-                // Draw the main player view.
+                // Draw the main player view.  (Draws all game objects, clouds, ground, lighting effects, etc)
                 DrawPlayerView(_ctx, viewObject);
 
-                if (viewObject is FighterPlane plane)
-                {
-                    if (plane.GForce > SCREEN_SHAKE_G)
-                        DoScreenShake(plane.GForce / 5f);
-                }
-
-                _gfx.PopTransform(); // Pop scale transform.
+                // Pop scale transform.
+                _gfx.PopTransform(); 
 
                 // Draw HUD.
-                var hudVPSize = new D2DSize(this.Width, this.Height);
-                DrawHud(_ctx, hudVPSize, viewObject);
+                DrawHud(_ctx, viewObject);
 
-                if (World.FreeCameraMode)
-                    DrawFreeCamPrompt(_ctx.Gfx, hudVPSize);
+                // Pop screen shake transform.
+                _gfx.PopTransform(); 
 
-                _gfx.PopTransform(); // Pop screen shake transform.
-
-                // Add overlays.
+                // Draw overlay text. (FPS, Help and Info)
                 DrawOverlays(_ctx, viewObject);
 
+                // And finally screen flash.
                 DrawScreenFlash(_gfx);
+
+                _ctx.PopViewPort();
             }
 
             _timer.Stop();
@@ -1070,8 +1069,10 @@ namespace PolyPlane.Rendering
             gfx.DrawText(plane.PlayerName, _hudColorBrush, _textConsolas30Centered, rect);
         }
 
-        private void DrawHud(RenderContext ctx, D2DSize viewportsize, GameObject viewObject)
+        private void DrawHud(RenderContext ctx, GameObject viewObject)
         {
+            var viewportsize = World.ViewPortRectUnscaled.Size;
+
             ctx.Gfx.PushTransform();
             ctx.Gfx.ScaleTransform(_hudScale, _hudScale, new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f));
 
@@ -1115,9 +1116,11 @@ namespace PolyPlane.Rendering
                 }
             }
 
-
             if (_showScore)
                 DrawScoreCard(ctx, viewportsize);
+
+            if (World.FreeCameraMode)
+                DrawFreeCamPrompt(ctx.Gfx);
 
             ctx.Gfx.PopTransform();
         }
@@ -1280,12 +1283,12 @@ namespace PolyPlane.Rendering
                 _hudMessage = string.Empty;
         }
 
-        private void DrawFreeCamPrompt(D2DGraphics gfx, D2DSize viewportsize)
+        private void DrawFreeCamPrompt(D2DGraphics gfx)
         {
             const float FONT_SIZE = 20f;
             const string MSG = "Free Camera Mode";
 
-            var pos = new D2DPoint(viewportsize.width * 0.5f, 100f);
+            var pos = new D2DPoint(World.ViewPortRectUnscaled.Size.width * 0.5f, 100f);
             var initSize = new D2DSize(600, 100);
             var size = gfx.MeasureText(MSG, DEFAULT_FONT_NAME, FONT_SIZE, initSize);
             var rect = new D2DRect(pos, size);

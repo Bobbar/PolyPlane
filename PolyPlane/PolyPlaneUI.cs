@@ -539,6 +539,13 @@ namespace PolyPlane
                 _updateTime += _timer.Elapsed;
 
                 _oneStep = false;
+
+                // Do G-Force screen shake effect.
+                if (viewObject is FighterPlane plane)
+                {
+                    if (plane.GForce > World.SCREEN_SHAKE_G)
+                        _render.DoScreenShake(plane.GForce / 4f);
+                }
             }
 
             _render.CollisionTime = _collisionTime;
