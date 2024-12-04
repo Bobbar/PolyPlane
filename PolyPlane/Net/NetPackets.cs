@@ -1,5 +1,6 @@
 ﻿using NetStack.Serialization;
 using PolyPlane.GameObjects;
+using PolyPlane.GameObjects.Manager;
 using unvell.D2DLib;
 
 
@@ -500,6 +501,7 @@ namespace PolyPlane.Net
         public bool IsDisabled;
         public bool FiringBurst;
         public bool ThrustOn;
+        public bool IsFlipped;
         public float Health; // TODO: Maybe send these stats periodically instead of on every frame.
         public int Score;
         public int Deaths;
@@ -516,6 +518,7 @@ namespace PolyPlane.Net
             Health = obj.Health;
             FiringBurst = obj.FiringBurst;
             ThrustOn = obj.ThrustOn;
+            IsFlipped = obj.Polygon.IsFlipped;
             Score = obj.Kills;
             Deaths = obj.Deaths;
         }
@@ -527,6 +530,7 @@ namespace PolyPlane.Net
             Health = obj.Health;
             FiringBurst = obj.FiringBurst;
             ThrustOn = obj.ThrustOn;
+            IsFlipped = obj.Polygon.IsFlipped;
             Score = obj.Kills;
             Deaths = obj.Deaths;
         }
@@ -538,6 +542,10 @@ namespace PolyPlane.Net
             obj.IsDisabled = IsDisabled;
             obj.FiringBurst = FiringBurst;
             obj.ThrustOn = ThrustOn;
+
+            if (obj.Polygon.IsFlipped != IsFlipped)
+                obj.FlipPoly(force: true);
+
             obj.Health = Health;
             obj.Kills = Score;
             obj.Deaths = Deaths;
@@ -551,6 +559,7 @@ namespace PolyPlane.Net
             data.AddBool(IsDisabled);
             data.AddBool(FiringBurst);
             data.AddBool(ThrustOn);
+            data.AddBool(IsFlipped);
             data.AddFloat(Health);
             data.AddInt(Score);
             data.AddInt(Deaths);
@@ -564,6 +573,7 @@ namespace PolyPlane.Net
             IsDisabled = data.ReadBool();
             FiringBurst = data.ReadBool();
             ThrustOn = data.ReadBool();
+            IsFlipped = data.ReadBool();
             Health = data.ReadFloat();
             Score = data.ReadInt();
             Deaths = data.ReadInt();
@@ -620,25 +630,25 @@ namespace PolyPlane.Net
     {
         public GameID ImpactorID;
         public D2DPoint ImpactPoint;
+        public ImpactType ImpactType;
         public float ImpactAngle;
-        public bool DoesDamage;
+        public float DamageAmount;
         public bool WasHeadshot;
-        public bool WasMissile;
 
         public ImpactPacket(BitBuffer data)
         {
             this.Deserialize(data);
         }
 
-        public ImpactPacket(GameObject targetObj, GameID impactorID, D2DPoint point, float angle, bool doesDamage, bool wasHeadshot, bool wasMissile) : base(targetObj)
+        public ImpactPacket(GameObject targetObj, GameID impactorID, D2DPoint point, float angle, float damageAmt, bool wasHeadshot, ImpactType impactType) : base(targetObj)
         {
             Type = PacketTypes.Impact;
             ImpactorID = impactorID;
             ImpactPoint = point;
             ImpactAngle = angle;
-            DoesDamage = doesDamage;
             WasHeadshot = wasHeadshot;
-            WasMissile = wasMissile;
+            DamageAmount = damageAmt;
+            ImpactType = impactType;
         }
 
         public override void Serialize(BitBuffer data)
@@ -647,10 +657,10 @@ namespace PolyPlane.Net
 
             data.AddGameID(ImpactorID);
             data.AddD2DPoint(ImpactPoint);
+            data.AddByte((byte)ImpactType);
             data.AddFloat(ImpactAngle);
-            data.AddBool(DoesDamage);
+            data.AddFloat(DamageAmount);
             data.AddBool(WasHeadshot);
-            data.AddBool(WasMissile);
         }
 
         public override void Deserialize(BitBuffer data)
@@ -659,10 +669,10 @@ namespace PolyPlane.Net
 
             ImpactorID = data.ReadGameID();
             ImpactPoint = data.ReadD2DPoint();
+            ImpactType = (ImpactType)data.ReadByte();
             ImpactAngle = data.ReadFloat();
-            DoesDamage = data.ReadBool();
+            DamageAmount = data.ReadFloat();
             WasHeadshot = data.ReadBool();
-            WasMissile = data.ReadBool();
         }
     }
 

@@ -253,7 +253,6 @@ namespace PolyPlane
                         World.IsServer = false;
 
                         _collisions = new CollisionManager();
-                        _collisions.ImpactEvent += HandleNewImpact;
 
                         _playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
                         World.ViewObject = _playerPlane;
@@ -328,21 +327,7 @@ namespace PolyPlane
                     this.Invoke(() => HandleNewImpact(sender, e));
                 else
                 {
-                    var viewPlane = World.GetViewObject();
-
-                    if (viewPlane != null)
-                    {
-                        if (e.Target.Equals(viewPlane))
-                        {
-                            _render.DoScreenFlash(D2DColor.Red);
-                            _render.DoScreenShake();
-                        }
-                        else if (e.DoesDamage && e.Impactor.Owner.Equals(viewPlane))
-                        {
-                            if (e.Target is FighterPlane targetPlane && !targetPlane.IsDisabled)
-                                _render.DoScreenFlash(D2DColor.Green);
-                        }
-                    }
+                    HandleImpactFeedback(e);
                 }
             }
             catch
@@ -350,6 +335,26 @@ namespace PolyPlane
                 // Catch object disposed exceptions.
             }
         }
+
+        private void HandleImpactFeedback(ImpactEvent impact)
+        {
+            var viewPlane = World.GetViewObject();
+
+            if (viewPlane != null)
+            {
+                if (impact.Target.Equals(viewPlane))
+                {
+                    _render.DoScreenFlash(D2DColor.Red);
+                    _render.DoScreenShake();
+                }
+                else if (impact.Attacker.Equals(viewPlane))
+                {
+                    if (impact.Target is FighterPlane targetPlane && !targetPlane.IsDisabled)
+                        _render.DoScreenFlash(D2DColor.Green);
+                }
+            }
+        }
+
 
         private void NetMan_PlayerIDReceived(object? sender, int e)
         {
@@ -365,7 +370,6 @@ namespace PolyPlane
 
         private void PolyPlaneUI_FormClosing(object sender, FormClosingEventArgs e)
         {
-            _collisions.ImpactEvent -= HandleNewImpact;
             _client?.SendPlayerDisconnectPacket((uint)_playerPlane.PlayerID);
 
             StopRender();
@@ -413,6 +417,7 @@ namespace PolyPlane
 
             };
 
+            plane.PlayerHitCallback = HandleImpactFeedback;
             plane.DropDecoyCallback = DropDecoy;
 
             return plane;

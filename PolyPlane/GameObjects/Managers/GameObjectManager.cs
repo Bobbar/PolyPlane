@@ -159,9 +159,10 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public DummyObject AddDummyObject()
+        public DummyObject AddDummyObject(GameID id)
         {
             var obj = new DummyObject();
+            obj.ID = id;
 
             if (!Contains(obj))
             {

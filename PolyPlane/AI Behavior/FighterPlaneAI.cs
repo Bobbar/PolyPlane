@@ -32,7 +32,7 @@ namespace PolyPlane.AI_Behavior
         private float MAX_MISSILE_TIME = 80f;
         private float MAX_SPEED = 1000f;
         private readonly float MAX_DECOY_DIST = 20000f; // Max distance between missile and plane before dropping decoys.
-
+        private D2DPoint _initPos = D2DPoint.Zero;
 
         public FighterPlaneAI(FighterPlane plane, AIPersonality personality)
         {
@@ -43,6 +43,8 @@ namespace PolyPlane.AI_Behavior
 
         private void InitStuff()
         {
+            _initPos = this.Plane.Position;
+
             Plane.PlayerKilledCallback += HandlePlayerKilled;
 
             Plane.ThrustOn = true;
@@ -98,6 +100,7 @@ namespace PolyPlane.AI_Behavior
                 this.Plane.ThrustOn = false;
             else
                 this.Plane.ThrustOn = true;
+
         }
 
 

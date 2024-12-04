@@ -127,6 +127,7 @@ namespace PolyPlane.GameObjects
         public Action<GuidedMissile> FireMissileCallback { get; set; }
         public Action<FighterPlane, GameObject> PlayerKilledCallback { get; set; }
         public Action<FighterPlane> PlayerCrashedCallback { get; set; }
+        public Action<ImpactEvent> PlayerHitCallback { get; set; }
 
         private Action<Decoy> _dropDecoyCallback;
         private Action<Bullet> _fireBulletCallback;
@@ -523,7 +524,9 @@ namespace PolyPlane.GameObjects
             _bulletHoles.ForEach(f => f.Update(dt));
             _vaporTrails.ForEach(v => v.Update(dt));
 
-            CheckForFlip();
+            if (!this.IsNetObject)
+                CheckForFlip();
+
             UpdateFlame();
 
             _easePhysicsTimer.Update(dt);
@@ -886,30 +889,35 @@ namespace PolyPlane.GameObjects
             _bulletHoles.Add(bulletHole);
         }
 
-        public void HandleImpactResult(GameObjectPoly impactor, PlaneImpactResult result)
+        public void HandleImpactResult(GameObject impactor, PlaneImpactResult result)
         {
             var attackPlane = impactor.Owner as FighterPlane;
-
-            if (impactor is Bullet)
-                attackPlane.BulletsHit++;
-            else if (impactor is GuidedMissile)
-                attackPlane.MissilesHit++;
 
             // Always change target to attacking plane?
             if (this.IsAI)
                 _aiBehavior.ChangeTarget(attackPlane);
 
-            // Scale the impact position back to the origin of the polygon.
-            var ogPos = Utilities.ScaleToOrigin(this, result.ImpactPoint);
-            var angle = result.ImpactAngle;
+            if (result.Type != ImpactType.Splash)
+            {
+                if (impactor is Bullet)
+                    attackPlane.BulletsHit++;
+                else if (impactor is GuidedMissile)
+                    attackPlane.MissilesHit++;
 
-            var distortAmt = BULLET_DISTORT_AMT;
-            if (impactor is GuidedMissile)
-                distortAmt = MISSILE_DISTORT_AMT;
+                // Scale the impact position back to the origin of the polygon.
+                var ogPos = Utilities.ScaleToOrigin(this, result.ImpactPoint);
+                var angle = result.ImpactAngle;
 
-            AddBulletHole(ogPos, angle, distortAmt);
+                var distortAmt = BULLET_DISTORT_AMT;
+                if (impactor is GuidedMissile)
+                    distortAmt = MISSILE_DISTORT_AMT;
 
-            if (result.DoesDamage)
+                AddBulletHole(ogPos, angle, distortAmt);
+
+                DoImpactImpulse(impactor, result.ImpactPoint);
+            }
+
+            if (result.DamageAmount > 0f)
             {
                 if (result.WasHeadshot)
                 {
@@ -920,16 +928,12 @@ namespace PolyPlane.GameObjects
                 }
                 else
                 {
+                    Health -= result.DamageAmount;
+
                     if (result.Type == ImpactType.Missile)
-                    {
-                        this.Health -= MISSILE_DAMAGE;
                         SpawnDebris(4, result.ImpactPoint, this.PlaneColor);
-                    }
-                    else
-                    {
-                        this.Health -= BULLET_DAMAGE;
+                    else if (result.Type == ImpactType.Bullet)
                         SpawnDebris(1, result.ImpactPoint, this.PlaneColor);
-                    }
                 }
 
                 // TODO: How to handle this during net games?
@@ -942,7 +946,51 @@ namespace PolyPlane.GameObjects
                 }
             }
 
-            DoImpactImpulse(impactor, result.ImpactPoint);
+            PlayerHitCallback?.Invoke(new ImpactEvent(this, attackPlane));
+
+        }
+
+        public PlaneImpactResult GetImpactResult(GameObject impactor, D2DPoint impactPos)
+        {
+            // Make sure cockpit position is up-to-date.
+            _cockpitPosition.Update(0f);
+
+            var angle = Utilities.ClampAngle((impactor.Velocity - this.Velocity).Angle() - this.Rotation);
+            var result = new PlaneImpactResult();
+            result.ImpactPoint = impactPos;
+            result.ImpactAngle = angle;
+
+            if (!IsDisabled)
+            {
+                if (this.Health > 0)
+                {
+                    var distortAmt = BULLET_DISTORT_AMT;
+                    if (impactor is GuidedMissile)
+                        distortAmt = MISSILE_DISTORT_AMT;
+
+                    var distortVec = Utilities.AngleToVectorDegrees(angle + this.Rotation, distortAmt);
+                    var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
+
+                    var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos + distortVec);
+                    if (hitCockpit)
+                    {
+                        result.WasHeadshot = true;
+                    }
+
+                    if (impactor is GuidedMissile)
+                    {
+                        result.Type = ImpactType.Missile;
+                        result.DamageAmount = MISSILE_DAMAGE;
+                    }
+                    else
+                    {
+                        result.Type = ImpactType.Bullet;
+                        result.DamageAmount = BULLET_DAMAGE;
+                    }
+                }
+            }
+
+            return result;
         }
 
         public void DoPlayerKilled(GameObject impactor)
@@ -975,48 +1023,6 @@ namespace PolyPlane.GameObjects
 
             this.RotationSpeed += (float)(impactTq / this.GetInertia(this.Mass) * World.DT);
             this.Velocity += forceVec / this.Mass * World.DT;
-        }
-
-        public PlaneImpactResult GetImpactResult(GameObject impactor, D2DPoint impactPos)
-        {
-            // Make sure cockpit position is up-to-date.
-            _cockpitPosition.Update(0f);
-
-            var angle = Utilities.ClampAngle((impactor.Velocity - this.Velocity).Angle() - this.Rotation);
-            var result = new PlaneImpactResult();
-            result.ImpactPoint = impactPos;
-            result.ImpactAngle = angle;
-
-            if (!IsDisabled)
-            {
-                result.DoesDamage = true;
-
-                if (this.Health > 0)
-                {
-                    var distortAmt = BULLET_DISTORT_AMT;
-                    if (impactor is GuidedMissile)
-                        distortAmt = MISSILE_DISTORT_AMT;
-
-                    var distortVec = Utilities.AngleToVectorDegrees(angle + this.Rotation, distortAmt);
-                    var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
-                    var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos + distortVec);
-                    if (hitCockpit)
-                    {
-                        result.WasHeadshot = true;
-                    }
-
-                    if (impactor is GuidedMissile)
-                    {
-                        result.Type = ImpactType.Missile;
-                    }
-                    else
-                    {
-                        result.Type = ImpactType.Bullet;
-                    }
-                }
-            }
-
-            return result;
         }
 
         /// <summary>
@@ -1148,7 +1154,7 @@ namespace PolyPlane.GameObjects
             return;
         }
 
-        public void FlipPoly(Direction direction)
+        private void FlipPoly(Direction direction)
         {
             if (_queuedDir != direction)
             {
@@ -1159,9 +1165,9 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private void FlipPoly()
+        public void FlipPoly(bool force = false)
         {
-            if (_currentDir == _queuedDir || this.HasCrashed || this.IsDisabled)
+            if (!force && (_currentDir == _queuedDir || this.HasCrashed || this.IsDisabled))
                 return;
 
             this.FlipY();

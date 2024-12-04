@@ -532,7 +532,9 @@ namespace PolyPlane.Net
 
         public void SendNetImpact(GameObject impactor, GameObject target, PlaneImpactResult result, GameObjectPacket histState)
         {
-            var impactPacket = new ImpactPacket(target, impactor.ID, result.ImpactPoint, result.ImpactAngle, result.DoesDamage, result.WasHeadshot, result.Type == ImpactType.Missile);
+            var impactPacket = new ImpactPacket(target, impactor.ID, result.ImpactPoint, result.ImpactAngle, result.DamageAmount, result.WasHeadshot, result.Type);
+            impactPacket.OwnerID = impactor.Owner.ID;
+
             SaveImpact(impactPacket);
 
             if (histState != null)
@@ -565,6 +567,8 @@ namespace PolyPlane.Net
                     newPlane.PlayerName = player.Name;
                     newPlane.IsNetObject = true;
                     newPlane.LagAmount = World.CurrentTime() - players.FrameTime;
+                    newPlane.PlayerHitCallback = (evt) => ImpactEvent?.Invoke(this, evt);
+
                     _objs.AddPlane(newPlane);
                 }
             }
@@ -641,12 +645,18 @@ namespace PolyPlane.Net
         {
             if (packet != null)
             {
-                var impactor = _objs.GetObjectByID(packet.ImpactorID) as GameObjectPoly;
+                var impactor = _objs.GetObjectByID(packet.ImpactorID) as GameObject;
+                var impactorOwner = _objs.GetObjectByID(packet.OwnerID) as GameObject;
 
                 if (impactor == null)
-                    return;
+                {
+                    impactor = _objs.AddDummyObject(packet.ImpactorID);
+                }
 
-                impactor.IsExpired = true;
+                impactor.Owner = impactorOwner;
+
+                if (impactor is not FighterPlane)
+                    impactor.IsExpired = true;
 
                 var target = _objs.GetObjectByID(packet.ID) as FighterPlane;
 
@@ -654,7 +664,6 @@ namespace PolyPlane.Net
                 {
                     // Move the plane to the server position, do the impact, then move it back.
                     // This is to make sure the impacts/bullet holes show up in the correct place.
-
                     var ogState = new PlanePacket(target);
 
                     target.Rotation = packet.Rotation;
@@ -662,18 +671,13 @@ namespace PolyPlane.Net
                     target.SyncFixtures();
 
                     var impactPoint = packet.ImpactPoint;
-                    var result = new PlaneImpactResult(packet.WasMissile ? ImpactType.Missile : ImpactType.Bullet, impactPoint, packet.ImpactAngle, packet.DoesDamage, packet.WasHeadshot);
+                    var result = new PlaneImpactResult(packet.ImpactType, impactPoint, packet.ImpactAngle, packet.DamageAmount, packet.WasHeadshot);
+
                     target.HandleImpactResult(impactor, result);
 
                     target.Rotation = ogState.Rotation;
                     target.Position = ogState.Position;
                     target.SyncFixtures();
-
-                    if (!IsServer)
-                    {
-                        ImpactEvent?.Invoke(this, new ImpactEvent(target, impactor, packet.DoesDamage));
-
-                    }
                 }
             }
         }
@@ -709,7 +713,7 @@ namespace PolyPlane.Net
 
                 // If the missile target doesn't exist (yet?), spawn an invisible dummy object so we can handle net updates for it.
                 if (missileTarget == null)
-                    missileTarget = _objs.AddDummyObject();
+                    missileTarget = _objs.AddDummyObject(missilePacket.TargetID);
 
                 var missile = new GuidedMissile(missileOwner, missilePacket.Position, missilePacket.Velocity, missilePacket.Rotation);
                 missile.IsNetObject = true;

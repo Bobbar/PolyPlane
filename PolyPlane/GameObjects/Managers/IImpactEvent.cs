@@ -7,15 +7,13 @@
 
     public class ImpactEvent
     {
+        public GameObject Attacker;
         public GameObject Target;
-        public GameObject Impactor;
-        public bool DoesDamage = false;
 
-        public ImpactEvent(GameObject target, GameObject impactor, bool doesDamage)
+        public ImpactEvent(GameObject target, GameObject attacker)
         {
             Target = target;
-            Impactor = impactor;
-            DoesDamage = doesDamage;
+            Attacker = attacker;
         }
     }
 }

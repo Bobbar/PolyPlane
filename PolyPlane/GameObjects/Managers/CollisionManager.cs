@@ -4,14 +4,12 @@ using PolyPlane.Net;
 
 namespace PolyPlane.GameObjects.Manager
 {
-    public class CollisionManager : IImpactEvent
+    public class CollisionManager
     {
         private GameObjectManager _objs = World.ObjectManager;
         private NetEventManager _netMan;
 
         private bool _isNetGame = true;
-
-        public event EventHandler<ImpactEvent> ImpactEvent;
 
         public CollisionManager(NetEventManager netMan)
         {
@@ -106,8 +104,6 @@ namespace PolyPlane.GameObjects.Manager
                                     {
                                         var result = plane.GetImpactResult(missile, pos);
 
-                                        ImpactEvent?.Invoke(this, new ImpactEvent(plane, missile, result.DoesDamage));
-
                                         plane.HandleImpactResult(missile, result);
 
                                         missile.Position = pos;
@@ -171,8 +167,6 @@ namespace PolyPlane.GameObjects.Manager
                                     if (!bullet.IsExpired)
                                     {
                                         var result = plane.GetImpactResult(bullet, pos);
-
-                                        ImpactEvent?.Invoke(this, new ImpactEvent(plane, bullet, result.DoesDamage));
 
                                         plane.HandleImpactResult(bullet, result);
 
@@ -341,7 +335,8 @@ namespace PolyPlane.GameObjects.Manager
 
                 foreach (var obj in nearObjs)
                 {
-                    if (obj.IsNetObject)
+                    // TODO: How do we handle net objects?
+                    if (World.IsClient && obj.IsNetObject)
                         continue;
 
                     if (obj is not IPushable)
@@ -368,18 +363,14 @@ namespace PolyPlane.GameObjects.Manager
                             if (!missile.Owner.Equals(plane) && !plane.IsDisabled)
                             {
                                 // Apply a small amount of damage to planes within the blast radius of the explosion.
-                                plane.Health -= (forceFact * DAMAGE_AMT) * World.DT;
+                                var damageAmount = (forceFact * DAMAGE_AMT) * World.DT;
 
-                                // Handle planes killed by blast.
-                                if (plane.Health <= 0 && !plane.IsDisabled)
-                                {
-                                    plane.DoPlayerKilled(missile);
-                                    ImpactEvent?.Invoke(this, new ImpactEvent(plane, missile, true));
-                                }
-                                else
-                                {
-                                    ImpactEvent?.Invoke(this, new ImpactEvent(plane, missile, true));
-                                }
+                                var impactResult = new PlaneImpactResult(ImpactType.Splash, plane.Position, 0f, damageAmount, wasHeadshot: false);
+                                plane.HandleImpactResult(missile, impactResult);
+
+                                if (World.IsNetGame && World.IsServer)
+                                    _netMan.SendNetImpact(missile, plane, impactResult, null);
+
                             }
                         }
                         else if (obj is GuidedMissile detMissile) // Detonate any other missiles within the blast radius.
