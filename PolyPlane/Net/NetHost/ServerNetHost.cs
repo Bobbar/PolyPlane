@@ -17,39 +17,53 @@ namespace PolyPlane.Net.NetHost
             Host.Create(Address, MAX_CLIENTS, MAX_CHANNELS);
         }
 
-        public override void HandleConnect(Event netEvent)
+        public override void DoStop()
         {
-            base.HandleConnect(netEvent);
+            base.DoStop();
 
-            _peers.Add(netEvent.Peer.ID, netEvent.Peer);
-
-            var idPacket = new BasicPacket(PacketTypes.SetID, new GameObjects.GameID((int)netEvent.Peer.ID, 0));
-            SendIDPacket(netEvent.Peer, idPacket);
+            foreach (var peer in _peers.Values)
+                peer.DisconnectNow(0);
         }
 
-        public override void HandleDisconnect(Event netEvent)
+        public override void HandleConnect(ref Event netEvent)
         {
-            base.HandleDisconnect(netEvent);
+            base.HandleConnect(ref netEvent);
 
-            SendPlayerDisconnectPacket(netEvent.Peer.ID);
+            var peer = netEvent.Peer;
 
-            _peers.Remove(netEvent.Peer.ID);
+            _peers.Add(peer.ID, peer);
+
+            var idPacket = new BasicPacket(PacketTypes.SetID, new GameObjects.GameID((int)peer.ID, 0));
+            SendIDPacket(peer, idPacket);
         }
 
-        public override void HandleTimeout(Event netEvent)
+        public override void HandleDisconnect(ref Event netEvent)
         {
-            base.HandleTimeout(netEvent);
+            base.HandleDisconnect(ref netEvent);
 
-            SendPlayerDisconnectPacket(netEvent.Peer.ID);
+            var peer = netEvent.Peer;
 
-            _peers.Remove(netEvent.Peer.ID);
+            SendPlayerDisconnectPacket(peer.ID);
+
+            _peers.Remove(peer.ID);
         }
 
-        public override void HandleReceive(NetPacket netPackett)
+        public override void HandleTimeout(ref Event netEvent)
         {
-            base.HandleReceive(netPackett);
+            base.HandleTimeout(ref netEvent);
 
-            switch (netPackett.Type)
+            var peer = netEvent.Peer;
+
+            SendPlayerDisconnectPacket(peer.ID);
+
+            _peers.Remove(peer.ID);
+        }
+
+        public override void HandleReceive(NetPacket netPacket)
+        {
+            base.HandleReceive(netPacket);
+
+            switch (netPacket.Type)
             {
                 case PacketTypes.PlaneUpdate
                 or PacketTypes.MissileUpdate
@@ -62,7 +76,7 @@ namespace PolyPlane.Net.NetHost
                 or PacketTypes.PlayerEvent:
 
                     // Queue certain updates to re-broadcast ASAP.
-                    PacketSendQueue.Enqueue(netPackett);
+                    PacketSendQueue.Enqueue(netPacket);
                     break;
             }
         }
@@ -72,7 +86,7 @@ namespace PolyPlane.Net.NetHost
             return 0;
         }
 
-        public override void SendPacket(Packet packet, byte channel)
+        public override void SendPacket(ref Packet packet, byte channel)
         {
             Host.Broadcast(channel, ref packet);
         }

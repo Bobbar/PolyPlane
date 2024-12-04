@@ -50,22 +50,22 @@ namespace PolyPlane.Net.NetHost
             DoStop();
         }
 
-        public virtual void DoStop() 
+        public virtual void DoStop()
         { }
 
-        public virtual void DoStart() 
+        public virtual void DoStart()
         { }
 
 
-        public virtual void HandleConnect(Event netEvent) 
+        public virtual void HandleConnect(ref Event netEvent)
         { }
 
-        public virtual void HandleDisconnect(Event netEvent)
+        public virtual void HandleDisconnect(ref Event netEvent)
         {
             PeerDisconnectedEvent?.Invoke(this, netEvent.Peer);
         }
 
-        public virtual void HandleTimeout(Event netEvent) 
+        public virtual void HandleTimeout(ref Event netEvent)
         { }
 
         public virtual void HandleReceive(NetPacket netPacket)
@@ -85,7 +85,7 @@ namespace PolyPlane.Net.NetHost
         }
 
         public abstract ulong PacketLoss();
-        public abstract void SendPacket(Packet packet, byte channel);
+        public abstract void SendPacket(ref Packet packet, byte channel);
         public abstract Peer? GetPeer(int playerID);
         public abstract void Disconnect(int playerID);
         public abstract uint GetPlayerRTT(int playerID);
@@ -108,14 +108,15 @@ namespace PolyPlane.Net.NetHost
                         polled = true;
                     }
 
-                    HandleEvent(netEvent);
+                    HandleEvent(ref netEvent);
+
                 }
 
                 ProcessQueue();
             }
         }
 
-        internal void HandleEvent(Event netEvent)
+        internal void HandleEvent(ref Event netEvent)
         {
             switch (netEvent.Type)
             {
@@ -123,24 +124,33 @@ namespace PolyPlane.Net.NetHost
                     break;
 
                 case EventType.Connect:
-                    HandleConnect(netEvent);
+
+                    HandleConnect(ref netEvent);
+
                     break;
 
                 case EventType.Disconnect:
-                    HandleDisconnect(netEvent);
+
+                    HandleDisconnect(ref netEvent);
+
                     break;
 
                 case EventType.Timeout:
-                    HandleTimeout(netEvent);
 
+                    HandleTimeout(ref netEvent);
                     PeerTimeoutEvent?.Invoke(this, netEvent.Peer);
 
                     break;
 
                 case EventType.Receive:
-                    var packet = ParsePacket(netEvent.Packet);
-                    HandleReceive(packet);
-                    netEvent.Packet.Dispose();
+
+                    var packet = netEvent.Packet;
+                    var netPacket = ParsePacket(ref packet);
+
+                    HandleReceive(netPacket);
+
+                    packet.Dispose();
+
                     break;
             }
         }
@@ -161,10 +171,10 @@ namespace PolyPlane.Net.NetHost
             var packet = CreatePacket(netPacket);
             var channel = GetChannel(netPacket);
 
-            SendPacket(packet, channel);
+            SendPacket(ref packet, channel);
         }
 
-        internal NetPacket ParsePacket(Packet packet)
+        internal NetPacket ParsePacket(ref Packet packet)
         {
             var buffer = new byte[packet.Length];
 

@@ -19,23 +19,23 @@ namespace PolyPlane.Net.NetHost
             Peer = Host.Connect(Address, MAX_CHANNELS);
         }
 
-        public override void HandleConnect(Event netEvent)
+        public override void HandleConnect(ref Event netEvent)
         {
-            base.HandleConnect(netEvent);
+            base.HandleConnect(ref netEvent);
 
             RequestOtherPlanes();
         }
 
-        public override void HandleDisconnect(Event netEvent)
+        public override void HandleDisconnect(ref Event netEvent)
         {
-            base.HandleDisconnect(netEvent);
+            base.HandleDisconnect(ref netEvent);
 
             SendPlayerDisconnectPacket(netEvent.Peer.ID);
         }
 
-        public override void HandleTimeout(Event netEvent)
+        public override void HandleTimeout(ref Event netEvent)
         {
-            base.HandleTimeout(netEvent);
+            base.HandleTimeout(ref netEvent);
 
             SendPlayerDisconnectPacket(netEvent.Peer.ID);
         }
@@ -45,7 +45,7 @@ namespace PolyPlane.Net.NetHost
             return Peer.PacketsLost;
         }
 
-        public override void SendPacket(Packet packet, byte channel)
+        public override void SendPacket(ref Packet packet, byte channel)
         {
             if (Peer.State != PeerState.Connected)
             {
