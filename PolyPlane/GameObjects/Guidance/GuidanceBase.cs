@@ -13,7 +13,8 @@ namespace PolyPlane.GameObjects.Guidance
         public GameObject Target { get; set; }
 
         private const float ARM_TIME = 3f;
-        private const float SENSOR_FOV = World.SENSOR_FOV * 0.8f;
+        private const float SENSOR_FOV = World.SENSOR_FOV * 1f;
+        private const float SENSOR_FOV_DECOY = World.SENSOR_FOV * 0.3f;
 
         private GameTimer _lostLockTimer = new GameTimer(15f);
         private GameTimer _groundScatterTimer = new GameTimer(4f);
@@ -146,7 +147,6 @@ namespace PolyPlane.GameObjects.Guidance
         protected void DoDecoySuccess()
         {
             // Test for decoy success.
-            const float MIN_DECOY_FOV = SENSOR_FOV * 0.5f;
             const float MAX_DISTANCE = 20000f; // Max distance for decoys to be considered.
 
             var decoys = World.ObjectManager.Decoys;
@@ -192,7 +192,7 @@ namespace PolyPlane.GameObjects.Guidance
                 if (decoy.Owner == this.Missile.Owner)
                     continue;
 
-                if (!missile.IsObjInFOV(decoy, MIN_DECOY_FOV))
+                if (!missile.IsObjInFOV(decoy, SENSOR_FOV_DECOY))
                     continue;
 
                 var dist = D2DPoint.Distance(decoy.Position, missile.Position);
