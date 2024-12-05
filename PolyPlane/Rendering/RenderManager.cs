@@ -1119,10 +1119,10 @@ namespace PolyPlane.Rendering
             if (_showScore)
                 DrawScoreCard(ctx, viewportsize);
 
+            ctx.Gfx.PopTransform();
+
             if (World.FreeCameraMode)
                 DrawFreeCamPrompt(ctx.Gfx);
-
-            ctx.Gfx.PopTransform();
         }
 
         private void DrawGroundWarning(RenderContext ctx, D2DSize viewportsize, FighterPlane viewPlane)
