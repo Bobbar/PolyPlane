@@ -221,10 +221,9 @@
             // 
             PlayersListBox.ContextMenuStrip = PlayerListContextMenu;
             PlayersListBox.FormattingEnabled = true;
-            PlayersListBox.ItemHeight = 15;
             PlayersListBox.Location = new Point(250, 108);
             PlayersListBox.Name = "PlayersListBox";
-            PlayersListBox.Size = new Size(313, 214);
+            PlayersListBox.Size = new Size(337, 214);
             PlayersListBox.TabIndex = 16;
             // 
             // PlayerListContextMenu
@@ -243,7 +242,6 @@
             // ChatBox
             // 
             ChatBox.FormattingEnabled = true;
-            ChatBox.ItemHeight = 15;
             ChatBox.Location = new Point(34, 349);
             ChatBox.Name = "ChatBox";
             ChatBox.Size = new Size(529, 139);

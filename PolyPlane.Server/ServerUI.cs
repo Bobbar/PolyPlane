@@ -528,6 +528,12 @@ namespace PolyPlane.Server
                         player.Latency = peer.Value.RoundTripTime.ToString();
                         _currentPlayers.ResetItem(i);
                     }
+
+                    if (peer.Value.PacketsLost.ToString() != player.PacketLoss)
+                    {
+                        player.PacketLoss = peer.Value.PacketsLost.ToString();
+                        _currentPlayers.ResetItem(i);
+                    }
                 }
             }
 

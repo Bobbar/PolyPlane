@@ -8,6 +8,7 @@ namespace PolyPlane.Server
         public string Name;
         public string IP;
         public string Latency;
+        public string PacketLoss;
         public int Score;
 
         public NetPlayer()
@@ -30,7 +31,7 @@ namespace PolyPlane.Server
 
         public override string ToString()
         {
-            return $"[{ID.PlayerID}]   Name: {Name}  IP: {IP}   Ping: {Latency}   Score: {Score}";
+            return $"[{ID.PlayerID}]   Name: {Name}  IP: {IP}  Ping: {Latency}  P-Loss: {PacketLoss}  Score: {Score}";
         }
     }
 }
