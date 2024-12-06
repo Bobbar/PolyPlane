@@ -207,7 +207,8 @@ namespace PolyPlane
 
             using (var config = new ClientServerConfigForm())
             {
-                switch (config.ShowDialog(this))
+                var dialogResult = config.ShowDialog(this);
+                switch (dialogResult)
                 {
                     case DialogResult.OK:
                         // Net game.

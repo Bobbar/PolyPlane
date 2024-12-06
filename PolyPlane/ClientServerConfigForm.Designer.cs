@@ -50,7 +50,7 @@
             // 
             // PortTextBox
             // 
-            PortTextBox.Location = new Point(309, 50);
+            PortTextBox.Location = new Point(334, 57);
             PortTextBox.Name = "PortTextBox";
             PortTextBox.Size = new Size(57, 23);
             PortTextBox.TabIndex = 0;
@@ -58,7 +58,7 @@
             // 
             // IPAddressTextBox
             // 
-            IPAddressTextBox.Location = new Point(125, 50);
+            IPAddressTextBox.Location = new Point(150, 57);
             IPAddressTextBox.Name = "IPAddressTextBox";
             IPAddressTextBox.Size = new Size(100, 23);
             IPAddressTextBox.TabIndex = 1;
@@ -67,7 +67,7 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(99, 53);
+            label1.Location = new Point(124, 60);
             label1.Name = "label1";
             label1.Size = new Size(20, 15);
             label1.TabIndex = 2;
@@ -76,7 +76,7 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(271, 53);
+            label2.Location = new Point(296, 60);
             label2.Name = "label2";
             label2.Size = new Size(32, 15);
             label2.TabIndex = 3;
@@ -84,7 +84,7 @@
             // 
             // StartClientButton
             // 
-            StartClientButton.Location = new Point(228, 170);
+            StartClientButton.Location = new Point(253, 177);
             StartClientButton.Name = "StartClientButton";
             StartClientButton.Size = new Size(75, 23);
             StartClientButton.TabIndex = 5;
@@ -96,16 +96,16 @@
             // 
             SinglePlayerButton.Location = new Point(12, 384);
             SinglePlayerButton.Name = "SinglePlayerButton";
-            SinglePlayerButton.Size = new Size(75, 23);
+            SinglePlayerButton.Size = new Size(107, 23);
             SinglePlayerButton.TabIndex = 6;
-            SinglePlayerButton.Text = "Solo";
+            SinglePlayerButton.Text = "Start Local Game";
             SinglePlayerButton.UseVisualStyleBackColor = true;
             SinglePlayerButton.Click += SinglePlayerButton_Click;
             // 
             // AIPlaneCheckBox
             // 
             AIPlaneCheckBox.AutoSize = true;
-            AIPlaneCheckBox.Location = new Point(228, 145);
+            AIPlaneCheckBox.Location = new Point(253, 152);
             AIPlaneCheckBox.Name = "AIPlaneCheckBox";
             AIPlaneCheckBox.Size = new Size(69, 19);
             AIPlaneCheckBox.TabIndex = 7;
@@ -116,8 +116,7 @@
             // ServerListBox
             // 
             ServerListBox.FormattingEnabled = true;
-            ServerListBox.ItemHeight = 15;
-            ServerListBox.Location = new Point(125, 235);
+            ServerListBox.Location = new Point(150, 242);
             ServerListBox.Name = "ServerListBox";
             ServerListBox.Size = new Size(295, 154);
             ServerListBox.TabIndex = 8;
@@ -126,7 +125,7 @@
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(125, 217);
+            label3.Location = new Point(150, 224);
             label3.Name = "label3";
             label3.Size = new Size(47, 15);
             label3.TabIndex = 9;
@@ -155,7 +154,7 @@
             // 
             // PlayerNameTextBox
             // 
-            PlayerNameTextBox.Location = new Point(205, 104);
+            PlayerNameTextBox.Location = new Point(230, 111);
             PlayerNameTextBox.MaxLength = 15;
             PlayerNameTextBox.Name = "PlayerNameTextBox";
             PlayerNameTextBox.Size = new Size(151, 23);
@@ -165,7 +164,7 @@
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(122, 107);
+            label4.Location = new Point(147, 114);
             label4.Name = "label4";
             label4.Size = new Size(77, 15);
             label4.TabIndex = 13;
@@ -225,7 +224,9 @@
             Controls.Add(label1);
             Controls.Add(IPAddressTextBox);
             Controls.Add(PortTextBox);
-            FormBorderStyle = FormBorderStyle.FixedDialog;
+            FormBorderStyle = FormBorderStyle.None;
+            MaximizeBox = false;
+            MinimizeBox = false;
             Name = "ClientServerConfigForm";
             StartPosition = FormStartPosition.CenterParent;
             Text = "Join Server";
