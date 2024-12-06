@@ -500,6 +500,8 @@ namespace PolyPlane.Rendering
                     _groundColorTOD = World.TimeOfDay;
                     UpdateGroundColorBrush();
                 }
+
+                UpdatePopMessages();
             }
         }
 
@@ -527,27 +529,27 @@ namespace PolyPlane.Rendering
                 DrawSky(_ctx, viewObject);
 
                 // Push screen shake transform.
-                _gfx.PushTransform(); 
+                _gfx.PushTransform();
                 _gfx.TranslateTransform(_screenShakeTrans.X, _screenShakeTrans.Y);
 
                 // Draw parallax grid. 
                 DrawMovingBackground(_ctx, viewObject);
 
                 // Push zoom scale transform.
-                _gfx.PushTransform(); 
+                _gfx.PushTransform();
                 _gfx.ScaleTransform(World.ZoomScale, World.ZoomScale);
 
                 // Draw the main player view.  (Draws all game objects, clouds, ground, lighting effects, etc)
                 DrawPlayerView(_ctx, viewObject);
 
                 // Pop scale transform.
-                _gfx.PopTransform(); 
+                _gfx.PopTransform();
 
                 // Draw HUD.
                 DrawHud(_ctx, viewObject);
 
                 // Pop screen shake transform.
-                _gfx.PopTransform(); 
+                _gfx.PopTransform();
 
                 // Draw overlay text. (FPS, Help and Info)
                 DrawOverlays(_ctx, viewObject);
@@ -672,6 +674,18 @@ namespace PolyPlane.Rendering
             }
         }
 
+        private void UpdatePopMessages()
+        {
+            for (int i = _popMessages.Count - 1; i >= 0; i--)
+            {
+                var msg = _popMessages[i];
+                msg.UpdatePos(World.DT);
+
+                if (!msg.Displayed)
+                    _popMessages.RemoveAt(i);
+            }
+        }
+
         private void DrawPopMessages(RenderContext ctx, D2DSize vpSize, FighterPlane viewPlane)
         {
             for (int i = 0; i < _popMessages.Count; i++)
@@ -684,12 +698,6 @@ namespace PolyPlane.Rendering
                     var color = Utilities.LerpColor(D2DColor.Red, D2DColor.Transparent, msg.Age / msg.LIFESPAN);
                     ctx.Gfx.DrawTextCenter(msg.Message, color, DEFAULT_FONT_NAME, 30f, rect);
                 }
-                else
-                {
-                    _popMessages.RemoveAt(i);
-                }
-
-                msg.UpdatePos(World.DT);
             }
         }
 
