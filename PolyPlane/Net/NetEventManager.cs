@@ -143,6 +143,7 @@ namespace PolyPlane.Net
                         }
 
                         ServerSendOtherPlanes();
+                        ServerSendExistingImpacts();
                         ServerSendExistingBullets();
                         ServerSendExistingDecoys();
                         SendSyncPacket();
@@ -173,10 +174,16 @@ namespace PolyPlane.Net
 
                     if (!IsServer)
                     {
+                        var idPacket = packet as BasicPacket;
+
                         _netIDIsSet = true;
 
-                        var newID = new GameID(packet.ID.PlayerID, PlayerPlane.ID.ObjectID);
+                        var newID = new GameID(idPacket.ID.PlayerID, PlayerPlane.ID.ObjectID);
                         _objs.ChangeObjID(PlayerPlane, newID);
+
+                        PlayerPlane.Position = idPacket.Position;
+                        PlayerPlane.SyncFixtures();
+
                         var netPacket = new NewPlayerPacket(PlayerPlane);
                         Host.EnqueuePacket(netPacket);
 
@@ -192,22 +199,13 @@ namespace PolyPlane.Net
                     break;
                 case PacketTypes.GetOtherPlanes:
 
-                    if (IsServer)
-                    {
-                        ServerSendOtherPlanes();
-                        ServerSendExistingImpacts();
-                        ServerSendExistingBullets();
-                        ServerSendExistingDecoys();
-                    }
-                    else
+                    if (!IsServer)
                     {
                         var listPacket = packet as PlayerListPacket;
-
                         DoNewPlayers(listPacket);
                     }
 
                     break;
-
                 case PacketTypes.ExpiredObjects:
                     var expiredPacket = packet as BasicListPacket;
 

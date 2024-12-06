@@ -82,6 +82,7 @@ namespace PolyPlane.Net.NetHost
         {
             var packet = new BasicPacket(PacketTypes.PlayerDisconnect, new GameID(playerID));
             EnqueuePacket(packet);
+            Host.Flush();
         }
 
         public abstract ulong PacketLoss();

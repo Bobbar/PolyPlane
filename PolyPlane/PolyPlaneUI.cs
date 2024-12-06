@@ -234,15 +234,11 @@ namespace PolyPlane
 
                         _client.PeerTimeoutEvent += Client_PeerTimeoutEvent;
                         _client.PeerDisconnectedEvent += Client_PeerDisconnectedEvent;
-
-
                         _client.Start();
 
                         InitGfx();
                         StartGameThread();
                         ResumeGame();
-
-
 
                         result = true;
                         break;
@@ -386,7 +382,7 @@ namespace PolyPlane
 
         private FighterPlane GetNewPlane(D2DColor planeColor, bool isAI = false, string playerName = "Player")
         {
-            var pos = Utilities.FindSafeSpawnPoint(_objs);
+            var pos = Utilities.FindSafeSpawnPoint();
             var plane = new FighterPlane(pos, planeColor, World.GetNextPlayerId(), isAI, false);
 
             plane.PlayerName = playerName;
@@ -426,7 +422,7 @@ namespace PolyPlane
         private void ResetAIPlane(FighterPlane plane)
         {
             plane.ThrustOn = true;
-            plane.Position = Utilities.FindSafeSpawnPoint(_objs, plane);
+            plane.Position = Utilities.FindSafeSpawnPoint();
             plane.Velocity = new D2DPoint(500f, 0f);
             plane.SyncFixtures();
             plane.RotationSpeed = 0f;
@@ -444,7 +440,7 @@ namespace PolyPlane
                 SendPlayerReset();
 
             _playerPlane.ThrustOn = true;
-            _playerPlane.Position = Utilities.FindSafeSpawnPoint(_objs, _playerPlane);
+            _playerPlane.Position = Utilities.FindSafeSpawnPoint();
 
             // Set player plane rotation to current guidance angle.
             // Allow players to choose to spawn traveling left or right.

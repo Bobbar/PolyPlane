@@ -200,6 +200,8 @@ namespace PolyPlane.Net
 
     public class BasicPacket : NetPacket
     {
+        public D2DPoint Position;
+
         public BasicPacket(PacketTypes type) : base(type) { }
 
         public BasicPacket() : base() { }
@@ -214,8 +216,29 @@ namespace PolyPlane.Net
             Type = type;
             ID = id;
         }
-    }
 
+        public BasicPacket(PacketTypes type, GameID id, D2DPoint position) : base()
+        {
+            Type = type;
+            ID = id;
+            Position = position;
+        }
+
+        public override void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+
+            data.AddD2DPoint(Position);
+
+        }
+
+        public override void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+
+            Position = data.ReadD2DPoint();
+        }
+    }
 
     public class BasicListPacket : NetPacket
     {

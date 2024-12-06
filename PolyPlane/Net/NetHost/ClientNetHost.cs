@@ -22,8 +22,6 @@ namespace PolyPlane.Net.NetHost
         public override void HandleConnect(ref Event netEvent)
         {
             base.HandleConnect(ref netEvent);
-
-            RequestOtherPlanes();
         }
 
         public override void HandleDisconnect(ref Event netEvent)
@@ -79,19 +77,6 @@ namespace PolyPlane.Net.NetHost
             Peer.DisconnectNow(0);
 
             base.Dispose();
-        }
-
-        private void RequestOtherPlanes()
-        {
-            var netPacket = new BasicPacket(PacketTypes.GetOtherPlanes, new GameObjects.GameID(-1, Peer.ID));
-            EnqueuePacket(netPacket);
-        }
-
-        private void SendPlayerDisconnectPacket(uint playerID)
-        {
-            var packet = new BasicPacket(PacketTypes.PlayerDisconnect, new GameObjects.GameID(playerID));
-            EnqueuePacket(packet);
-            Host.Flush();
         }
     }
 }

@@ -416,7 +416,7 @@ namespace PolyPlane.Server
             _netMan.SendPlaneReset(plane);
 
             plane.ThrustOn = true;
-            plane.Position = Utilities.FindSafeSpawnPoint(_objs, plane);
+            plane.Position = Utilities.FindSafeSpawnPoint();
             plane.Velocity = new D2DPoint(500f, 0f);
             plane.SyncFixtures();
             plane.RotationSpeed = 0f;
@@ -449,7 +449,7 @@ namespace PolyPlane.Server
 
         private FighterPlane GetAIPlane(AIPersonality? personality = null)
         {
-            var pos = Utilities.FindSafeSpawnPoint(_objs);
+            var pos = Utilities.FindSafeSpawnPoint();
 
             FighterPlane aiPlane;
 

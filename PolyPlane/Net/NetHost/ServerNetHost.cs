@@ -1,4 +1,5 @@
 ﻿using ENet;
+using PolyPlane.Helpers;
 
 namespace PolyPlane.Net.NetHost
 {
@@ -33,7 +34,8 @@ namespace PolyPlane.Net.NetHost
 
             _peers.Add(peer.ID, peer);
 
-            var idPacket = new BasicPacket(PacketTypes.SetID, new GameObjects.GameID((int)peer.ID, 0));
+            var spawnPosition = Utilities.FindSafeSpawnPoint();
+            var idPacket = new BasicPacket(PacketTypes.SetID, new GameObjects.GameID((int)peer.ID, 0), spawnPosition);
             SendIDPacket(peer, idPacket);
         }
 

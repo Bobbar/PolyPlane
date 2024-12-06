@@ -652,7 +652,7 @@ namespace PolyPlane.Helpers
             return D2DPoint.Transform(point, mat);
         }
 
-        public static D2DPoint FindSafeSpawnPoint(GameObjectManager objs, FighterPlane plane = null)
+        public static D2DPoint FindSafeSpawnPoint()
         {
             const float MIN_DIST = 40000f;
             const float MAX_DIST = 100000f;
@@ -671,6 +671,7 @@ namespace PolyPlane.Helpers
             }
 
             var point = new D2DPoint(Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
+            var objs = World.ObjectManager;
 
             if (objs.Planes.Count == 0)
                 return point;
