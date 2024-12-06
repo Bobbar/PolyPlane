@@ -595,7 +595,7 @@ namespace PolyPlane.Net
                 planePacket.SyncObj(netPlane);
 
                 netPlane.LagAmount = World.CurrentTime() - planePacket.FrameTime;
-                netPlane.NetUpdate(World.DT, planePacket.Position, planePacket.Velocity, planePacket.Rotation, planePacket.FrameTime);
+                netPlane.NetUpdate(planePacket.Position, planePacket.Velocity, planePacket.Rotation, planePacket.FrameTime);
             }
         }
 
@@ -633,7 +633,7 @@ namespace PolyPlane.Net
                     if (netMissileOwner != null && netMissileOwner.IsNetObject)
                     {
                         missileUpdate.SyncObj(netMissile);
-                        netMissile.NetUpdate(World.DT, missileUpdate.Position, missileUpdate.Velocity, missileUpdate.Rotation, missileUpdate.FrameTime);
+                        netMissile.NetUpdate(missileUpdate.Position, missileUpdate.Velocity, missileUpdate.Rotation, missileUpdate.FrameTime);
                     }
                 }
             }

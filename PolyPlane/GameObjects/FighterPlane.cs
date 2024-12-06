@@ -555,9 +555,9 @@ namespace PolyPlane.GameObjects
             this.RecordHistory();
         }
 
-        public override void NetUpdate(float dt, D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
+        public override void NetUpdate(D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
         {
-            base.NetUpdate(dt, position, velocity, rotation, frameTime);
+            base.NetUpdate(position, velocity, rotation, frameTime);
 
             _controlWing.Deflection = this.Deflection;
         }
