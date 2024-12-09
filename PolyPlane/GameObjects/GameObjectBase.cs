@@ -103,11 +103,10 @@ namespace PolyPlane.GameObjects
         /// <summary>
         /// Age in milliseconds.
         /// </summary>
-        public float AgeMs
+        public float AgeMs(float dt)
         {
-            get { return (this.Age / World.DT) * (1000f / 16f); }
+            return (this.Age / dt) * (1000f / 16f);
         }
-
 
         public int PlayerID
         {
@@ -189,7 +188,7 @@ namespace PolyPlane.GameObjects
 
             if (World.InterpOn && World.IsNetGame && IsNetObject && InterpBuffer != null)
             {
-                var nowMs = World.CurrentTime();
+                var nowMs = World.CurrentNetTime();
                 InterpBuffer.InterpolateState(nowMs);
             }
             else
@@ -227,7 +226,7 @@ namespace PolyPlane.GameObjects
                 this.Velocity = velocity;
             }
 
-            this.LagAmount = World.CurrentTime() - frameTime;
+            this.LagAmount = World.CurrentNetTime() - frameTime;
         }
 
         public virtual void ClampToGround(float dt)
@@ -430,11 +429,11 @@ namespace PolyPlane.GameObjects
                 histState.Position = this.Position;
                 histState.Velocity = this.Velocity;
                 histState.Rotation = this.Rotation;
-                HistoryBuffer.Enqueue(histState, World.CurrentTime());
+                HistoryBuffer.Enqueue(histState, World.CurrentNetTime());
             }
         }
 
-        public bool CollidesWithNet(GameObjectPoly obj, out D2DPoint pos, out GameObjectPacket? histState, double frameTime)
+        public bool CollidesWithNet(GameObjectPoly obj, out D2DPoint pos, out GameObjectPacket? histState, double frameTime, float dt)
         {
             var histPos = this.HistoryBuffer.GetHistoricalState(frameTime);
 
@@ -459,7 +458,7 @@ namespace PolyPlane.GameObjects
                         histPoly.FlipY();
                 }
 
-                if (CollisionHelpers.PolygonSweepCollision(obj, histPoly, histPos.Velocity, World.DT, out pos))
+                if (CollisionHelpers.PolygonSweepCollision(obj, histPoly, histPos.Velocity, dt, out pos))
                 {
                     histState = histPos;
                     return true;
@@ -467,7 +466,7 @@ namespace PolyPlane.GameObjects
             }
             else
             {
-                var normalCollide = CollidesWith(obj, out D2DPoint pos2);
+                var normalCollide = CollidesWith(obj, out D2DPoint pos2, dt);
                 pos = pos2;
                 histState = null;
                 return normalCollide;
@@ -478,61 +477,61 @@ namespace PolyPlane.GameObjects
             return false;
         }
 
-        public bool CollidesWith(GameObjectPoly obj, out D2DPoint pos)
+        public bool CollidesWith(GameObjectPoly obj, out D2DPoint pos, float dt)
         {
-            return CollisionHelpers.PolygonSweepCollision(obj, this.Polygon, this.Velocity, World.DT, out pos);
+            return CollisionHelpers.PolygonSweepCollision(obj, this.Polygon, this.Velocity, dt, out pos);
         }
 
-        public bool CollidesWith(GameObject obj, out D2DPoint pos)
+        public bool CollidesWith(GameObject obj, out D2DPoint pos, float dt)
         {
-            return CollisionHelpers.PolygonSweepCollision(obj, this.Polygon, this.Velocity, World.DT, out pos);
+            return CollisionHelpers.PolygonSweepCollision(obj, this.Polygon, this.Velocity, dt, out pos);
         }
 
-        public void DrawVeloLines(D2DGraphics gfx, D2DColor color)
-        {
-            var dt = World.DT;
+        //public void DrawVeloLines(D2DGraphics gfx, D2DColor color)
+        //{
+        //    var dt = World.DT;
 
-            var relVelo = this.Velocity * dt;
-            var relVeloHalf = relVelo * 0.5f;
+        //    var relVelo = this.Velocity * dt;
+        //    var relVeloHalf = relVelo * 0.5f;
 
-            var targAngle = 0f;
+        //    var targAngle = 0f;
 
-            if (this is Bullet || this is GuidedMissile || this is FighterPlane)
-            {
-                var nearest = World.ObjectManager.GetNear(this).Where(o => !o.ID.Equals(this.ID) && o is FighterPlane).OrderBy(o => o.Position.DistanceTo(this.Position)).FirstOrDefault();
-                if (nearest != null)
-                {
-                    relVelo = (this.Velocity - nearest.Velocity) * dt;
-                    relVeloHalf = relVelo * 0.5f;
-                    targAngle = relVelo.Angle();
-                }
-            }
+        //    if (this is Bullet || this is GuidedMissile || this is FighterPlane)
+        //    {
+        //        var nearest = World.ObjectManager.GetNear(this).Where(o => !o.ID.Equals(this.ID) && o is FighterPlane).OrderBy(o => o.Position.DistanceTo(this.Position)).FirstOrDefault();
+        //        if (nearest != null)
+        //        {
+        //            relVelo = (this.Velocity - nearest.Velocity) * dt;
+        //            relVeloHalf = relVelo * 0.5f;
+        //            targAngle = relVelo.Angle();
+        //        }
+        //    }
 
-            foreach (var pnt in this.Polygon.Poly)
-            {
-                var aVelo = Utilities.AngularVelocity(this, pnt);
-                var veloPnt1 = pnt;
-                var veloPnt2 = pnt + relVelo;
-
-
-                gfx.DrawLine(veloPnt1, veloPnt2, color, 0.5f);
-            }
-
-            var lagPntStart = this.Position - (this.Velocity * (this.LagAmountFrames * World.DT));
-            var lagPntEnd = this.Position;
-
-            if (this.AgeMs < (this.LagAmount * 2f))
-                gfx.DrawLine(lagPntStart, lagPntEnd, color);
+        //    foreach (var pnt in this.Polygon.Poly)
+        //    {
+        //        var aVelo = Utilities.AngularVelocity(this, pnt);
+        //        var veloPnt1 = pnt;
+        //        var veloPnt2 = pnt + relVelo;
 
 
-            var pnts = this.Polygon.GetPointsFacingDirection(targAngle);
+        //        gfx.DrawLine(veloPnt1, veloPnt2, color, 0.5f);
+        //    }
 
-            foreach (var pnt in pnts)
-            {
-                gfx.FillEllipseSimple(pnt, 1f, D2DColor.Blue);
-            }
+        //    var lagPntStart = this.Position - (this.Velocity * (this.LagAmountFrames * World.DT));
+        //    var lagPntEnd = this.Position;
 
-        }
+        //    if (this.AgeMs(World.DT) < (this.LagAmount * 2f))
+        //        gfx.DrawLine(lagPntStart, lagPntEnd, color);
+
+
+        //    var pnts = this.Polygon.GetPointsFacingDirection(targAngle);
+
+        //    foreach (var pnt in pnts)
+        //    {
+        //        gfx.FillEllipseSimple(pnt, 1f, D2DColor.Blue);
+        //    }
+
+        //}
 
         public virtual bool Contains(D2DPoint pnt)
         {

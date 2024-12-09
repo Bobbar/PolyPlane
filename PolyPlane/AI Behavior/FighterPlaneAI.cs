@@ -276,7 +276,7 @@ namespace PolyPlane.AI_Behavior
             }
         }
 
-        public float GetAIGuidance()
+        public float GetAIGuidance(float dt)
         {
             const float MIN_IMPACT_TIME = 7f; // Min ground impact time to consider avoiding ground.
             const float BLOCK_PITCH_DOWN_ALT = 800f; // Do not allow pitch down angles below this altitude.
@@ -382,7 +382,7 @@ namespace PolyPlane.AI_Behavior
             // Try to lead the target if we are firing a burst.
             if (_fireBurstTimer.IsRunning && TargetPlane != null)
             {
-                var aimAmt = LeadTarget(TargetPlane);
+                var aimAmt = LeadTarget(TargetPlane, dt);
                 angle = aimAmt;
             }
 
@@ -439,13 +439,13 @@ namespace PolyPlane.AI_Behavior
             return finalAngle;
         }
 
-        private float LeadTarget(GameObject target)
+        private float LeadTarget(GameObject target, float dt)
         {
             const float pValue = 5f;
 
             var los = target.Position - this.Plane.Position;
-            var navigationTime = los.Length() / (this.Plane.AirSpeedTrue * World.DT);
-            var targRelInterceptPos = los + ((target.Velocity * World.DT) * navigationTime);
+            var navigationTime = los.Length() / (this.Plane.AirSpeedTrue * dt);
+            var targRelInterceptPos = los + ((target.Velocity * dt) * navigationTime);
 
             targRelInterceptPos *= pValue;
 

@@ -26,7 +26,7 @@ namespace PolyPlane
                 _firstTurn = false;
             }
 
-            var now = World.CurrentTime();
+            var now = World.CurrentNetTime();
 
             if (_buffer.Count == 0 && _clientStartTime == -1)
                 _clientStartTime = now;

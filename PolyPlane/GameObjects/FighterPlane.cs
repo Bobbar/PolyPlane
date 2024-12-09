@@ -384,7 +384,7 @@ namespace PolyPlane.GameObjects
 
                 // Get guidance direction.
                 if (_isAIPlane)
-                    guideRot = GetAPGuidanceDirection(_aiBehavior.GetAIGuidance());
+                    guideRot = GetAPGuidanceDirection(_aiBehavior.GetAIGuidance(dt));
                 else
                     guideRot = GetAPGuidanceDirection(PlayerGuideAngle);
 
@@ -549,8 +549,8 @@ namespace PolyPlane.GameObjects
             if (!this.DroppingDecoy)
                 _decoyRegenTimer.Update(dt);
 
-            if (_thrustAmt.Value < 0.01f)
-                this.ThrustOn = false;
+            //if (_thrustAmt.Value < 0.01f)
+            //    this.ThrustOn = false;
 
             this.RecordHistory();
         }
@@ -889,7 +889,7 @@ namespace PolyPlane.GameObjects
             _bulletHoles.Add(bulletHole);
         }
 
-        public void HandleImpactResult(GameObject impactor, PlaneImpactResult result)
+        public void HandleImpactResult(GameObject impactor, PlaneImpactResult result, float dt)
         {
             var attackPlane = impactor.Owner as FighterPlane;
 
@@ -914,7 +914,7 @@ namespace PolyPlane.GameObjects
 
                 AddBulletHole(ogPos, angle, distortAmt);
 
-                DoImpactImpulse(impactor, result.ImpactPoint);
+                DoImpactImpulse(impactor, result.ImpactPoint, dt);
             }
 
             if (result.DamageAmount > 0f)
@@ -1009,7 +1009,7 @@ namespace PolyPlane.GameObjects
             PlayerKilledCallback?.Invoke(this, impactor);
         }
 
-        private void DoImpactImpulse(GameObject impactor, D2DPoint impactPos)
+        private void DoImpactImpulse(GameObject impactor, D2DPoint impactPos, float dt)
         {
             if (this.IsNetObject)
                 return;
@@ -1021,8 +1021,8 @@ namespace PolyPlane.GameObjects
             var forceVec = (velo.Normalized() * force);
             var impactTq = Utilities.GetTorque(_centerOfMass.Position, impactPos, forceVec);
 
-            this.RotationSpeed += (float)(impactTq / this.GetInertia(this.Mass) * World.DT);
-            this.Velocity += forceVec / this.Mass * World.DT;
+            this.RotationSpeed += (float)(impactTq / this.GetInertia(this.Mass) * dt);
+            this.Velocity += forceVec / this.Mass * dt;
         }
 
         /// <summary>

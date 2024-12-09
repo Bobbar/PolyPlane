@@ -30,14 +30,13 @@ namespace PolyPlane.GameObjects
         private const float _maxRange = 60000f;
         private const float _maxAge = 2f;
         private const float _radius = 150f;
-        private const long UPDATE_FRAMES = 10; // Number of frames between updates.
-        private long _currentFrame = 0;
 
         private D2DColor _color = World.HudColor;
         private Dictionary<GameID, PingObj> _pings = new Dictionary<GameID, PingObj>();
 
         private GameTimer _lockTimer = new GameTimer(2f);
         private GameTimer _lostLockTimer = new GameTimer(10f);
+        private GameTimer _updateTimer = new GameTimer(0.6f, true);
 
         private D2DLayer _groundClipLayer = null;
 
@@ -51,26 +50,16 @@ namespace PolyPlane.GameObjects
             };
 
             _lostLockTimer.TriggerCallback = () => ClearLock();
+
+            _updateTimer.TriggerCallback = DoSweeps;
+            _updateTimer.Start();
         }
 
         public void Update(float dt)
         {
             _lockTimer.Update(dt);
             _lostLockTimer.Update(dt);
-
-            // Check all sources and add pings if they are within the FOV of the current sweep.
-            if (_currentFrame % UPDATE_FRAMES == 0)
-            {
-                foreach (var missile in World.ObjectManager.Missiles)
-                    DoSweep(missile);
-
-                foreach (var plane in World.ObjectManager.Planes)
-                    DoSweep(plane);
-
-                CheckForLock();
-            }
-
-            _currentFrame++;
+            _updateTimer.Update(dt);
 
             PrunePings();
 
@@ -80,6 +69,19 @@ namespace PolyPlane.GameObjects
             }
 
             NotifyLocks();
+        }
+
+        private void DoSweeps()
+        {
+            // Check all sources and add pings if they are within the FOV of the current sweep.
+
+            foreach (var missile in World.ObjectManager.Missiles)
+                DoSweep(missile);
+
+            foreach (var plane in World.ObjectManager.Planes)
+                DoSweep(plane);
+
+            CheckForLock();
         }
 
         private void DoSweep(GameObject obj)

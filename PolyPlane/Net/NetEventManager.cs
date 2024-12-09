@@ -29,6 +29,8 @@ namespace PolyPlane.Net
         public event EventHandler<FighterPlane> PlayerRespawned;
         public event EventHandler<string> PlayerEventMessage;
 
+        private double _lastNetTime = 0;
+
         public NetEventManager(NetPlayHost host, FighterPlane playerPlane)
         {
             Host = host;
@@ -64,23 +66,30 @@ namespace PolyPlane.Net
                 ClearImpacts((int)e.ID);
         }
 
-        public void DoNetEvents()
+        public void DoNetEvents(float dt)
         {
-            _frame++;
+            double now = World.CurrentNetTime();
 
-            double now = 0;
-            double totalPacketTime = 0;
-            int numPackets = 0;
+            if (_lastNetTime == 0)
+                _lastNetTime = now;
 
-            // Send updates every other frame.
-            if (_frame % 2 == 0)
+            var elap = now - _lastNetTime;
+
+            // Send updates at an interval twice the frame time.
+            // (This will be approx 30 FPS when target FPS is set to 60)
+            if (elap >= (World.TARGET_FRAME_TIME * 2f))
             {
+                _lastNetTime = now;
+
                 SendPlaneUpdates();
                 SendMissileUpdates();
                 SendExpiredObjects();
             }
 
-            now = World.CurrentTime();
+            double totalPacketTime = 0;
+            int numPackets = 0;
+
+            now = World.CurrentNetTime();
 
             while (Host.PacketReceiveQueue.Count > 0)
             {
@@ -90,7 +99,7 @@ namespace PolyPlane.Net
                     totalPacketTime += now - netPacket.FrameTime;
                     numPackets++;
 
-                    HandleNetPacket(netPacket);
+                    HandleNetPacket(netPacket, dt);
                 }
             }
 
@@ -101,7 +110,7 @@ namespace PolyPlane.Net
             }
         }
 
-        private void HandleNetPacket(NetPacket packet)
+        private void HandleNetPacket(NetPacket packet, float dt)
         {
             switch (packet.Type)
             {
@@ -126,7 +135,7 @@ namespace PolyPlane.Net
                 case PacketTypes.Impact:
 
                     var impactPacket = packet as ImpactPacket;
-                    DoNetImpact(impactPacket);
+                    DoNetImpact(impactPacket, dt);
 
                     break;
                 case PacketTypes.NewPlayer:
@@ -155,7 +164,7 @@ namespace PolyPlane.Net
                 case PacketTypes.NewBullet:
 
                     var bulletPacket = packet as GameObjectPacket;
-                    DoNewBullet(bulletPacket);
+                    DoNewBullet(bulletPacket, dt);
 
                     break;
                 case PacketTypes.NewMissile:
@@ -291,7 +300,7 @@ namespace PolyPlane.Net
 
                     if (!IsServer)
                     {
-                        bulletList.Packets.ForEach(b => DoNewBullet(b));
+                        bulletList.Packets.ForEach(b => DoNewBullet(b, dt));
                     }
 
                     break;
@@ -456,7 +465,7 @@ namespace PolyPlane.Net
 
         public void SendSyncPacket()
         {
-            var packet = new SyncPacket(World.CurrentTime(), World.TimeOfDay, World.TimeOfDayDir, World.GunsOnly, World.DT);
+            var packet = new SyncPacket(World.CurrentNetTime(), World.TimeOfDay, World.TimeOfDayDir, World.GunsOnly, World.DT);
             Host.EnqueuePacket(packet);
         }
 
@@ -564,7 +573,7 @@ namespace PolyPlane.Net
                     var newPlane = new FighterPlane(player.Position, player.PlaneColor, player.ID, isAI: false, isNetPlane: true);
                     newPlane.PlayerName = player.Name;
                     newPlane.IsNetObject = true;
-                    newPlane.LagAmount = World.CurrentTime() - players.FrameTime;
+                    newPlane.LagAmount = World.CurrentNetTime() - players.FrameTime;
                     newPlane.PlayerHitCallback = (evt) => ImpactEvent?.Invoke(this, evt);
 
                     _objs.AddPlane(newPlane);
@@ -594,7 +603,7 @@ namespace PolyPlane.Net
             {
                 planePacket.SyncObj(netPlane);
 
-                netPlane.LagAmount = World.CurrentTime() - planePacket.FrameTime;
+                netPlane.LagAmount = World.CurrentNetTime() - planePacket.FrameTime;
                 netPlane.NetUpdate(planePacket.Position, planePacket.Velocity, planePacket.Rotation, planePacket.FrameTime);
             }
         }
@@ -639,7 +648,7 @@ namespace PolyPlane.Net
             }
         }
 
-        private void DoNetImpact(ImpactPacket packet)
+        private void DoNetImpact(ImpactPacket packet, float dt)
         {
             if (packet != null)
             {
@@ -671,7 +680,7 @@ namespace PolyPlane.Net
                     var impactPoint = packet.ImpactPoint;
                     var result = new PlaneImpactResult(packet.ImpactType, impactPoint, packet.ImpactAngle, packet.DamageAmount, packet.WasHeadshot);
 
-                    target.HandleImpactResult(impactor, result);
+                    target.HandleImpactResult(impactor, result, dt);
 
                     target.Rotation = ogState.Rotation;
                     target.Position = ogState.Position;
@@ -680,7 +689,7 @@ namespace PolyPlane.Net
             }
         }
 
-        private void DoNewBullet(GameObjectPacket bulletPacket)
+        private void DoNewBullet(GameObjectPacket bulletPacket, float dt)
         {
             var bullet = new Bullet(bulletPacket.Position, bulletPacket.Velocity, bulletPacket.Rotation);
             bullet.IsNetObject = true;
@@ -694,9 +703,9 @@ namespace PolyPlane.Net
                 return;
 
             bullet.Owner = owner;
-            bullet.LagAmount = World.CurrentTime() - bulletPacket.FrameTime;
+            bullet.LagAmount = World.CurrentNetTime() - bulletPacket.FrameTime;
             // Try to spawn the bullet ahead (extrapolate) to compensate for latency?
-            bullet.Position += bullet.Velocity * (bullet.LagAmountFrames * World.DT);
+            bullet.Position += bullet.Velocity * (bullet.LagAmountFrames * dt);
 
             _objs.EnqueueBullet(bullet);
         }
@@ -718,7 +727,7 @@ namespace PolyPlane.Net
                 missile.ID = missilePacket.ID;
                 missilePacket.SyncObj(missile);
                 missile.Target = missileTarget;
-                missile.LagAmount = World.CurrentTime() - missilePacket.FrameTime;
+                missile.LagAmount = World.CurrentNetTime() - missilePacket.FrameTime;
                 _objs.EnqueueMissile(missile);
             }
         }

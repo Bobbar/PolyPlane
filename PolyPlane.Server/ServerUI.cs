@@ -316,7 +316,7 @@ namespace PolyPlane.Server
                 _updateTime += _timer.Elapsed;
 
                 _timer.Restart();
-                _collisions.DoCollisions();
+                _collisions.DoCollisions(World.DT);
                 _timer.Stop();
                 _collisionTime += _timer.Elapsed;
 
@@ -335,7 +335,7 @@ namespace PolyPlane.Server
                 FighterPlane viewPlane = World.GetViewPlane();
                 
                 if (viewPlane != null)
-                    _render.RenderFrame(viewPlane);
+                    _render.RenderFrame(viewPlane, World.DT);
             }
 
             _timer.Stop();
@@ -343,7 +343,7 @@ namespace PolyPlane.Server
 
 
             _timer.Restart();
-            _netMan.DoNetEvents();
+            _netMan.DoNetEvents(World.DT);
             _timer.Stop();
             _netTime = _timer.Elapsed;
             _netTimeSmooth.Add((float)_netTime.TotalMilliseconds);

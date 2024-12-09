@@ -21,14 +21,14 @@ namespace PolyPlane.GameObjects.Manager
             _isNetGame = false;
         }
 
-        public void DoCollisions()
+        public void DoCollisions(float dt)
         {
             var doLocalCollisions = true;
 
             if (World.IsNetGame && World.IsClient)
                 doLocalCollisions = false;
 
-            var now = World.CurrentTime();
+            var now = World.CurrentNetTime();
 
             // Targets/AI Planes vs missiles and bullets.
             for (int r = 0; r < _objs.Planes.Count; r++)
@@ -67,7 +67,7 @@ namespace PolyPlane.GameObjects.Manager
                                 if (missileOwner.IsAI)
                                     missileLagComp = planeRTT;
 
-                                if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - missileLagComp))
+                                if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - missileLagComp, dt))
                                 {
 
                                     if (histState != null)
@@ -80,7 +80,7 @@ namespace PolyPlane.GameObjects.Manager
 
                                         var impactResultM = plane.GetImpactResult(missile, pos);
                                         _netMan.SendNetImpact(missile, plane, impactResultM, histState);
-                                        plane.HandleImpactResult(missile, impactResultM);
+                                        plane.HandleImpactResult(missile, impactResultM, dt);
 
                                         plane.Position = ogState.Position;
                                         plane.Rotation = ogState.Rotation;
@@ -90,7 +90,7 @@ namespace PolyPlane.GameObjects.Manager
                                     {
                                         var impactResultM = plane.GetImpactResult(missile, pos);
                                         _netMan.SendNetImpact(missile, plane, impactResultM, histState);
-                                        plane.HandleImpactResult(missile, impactResultM);
+                                        plane.HandleImpactResult(missile, impactResultM, dt);
                                     }
 
                                     missile.IsExpired = true;
@@ -98,13 +98,13 @@ namespace PolyPlane.GameObjects.Manager
                             }
                             else
                             {
-                                if (plane.CollidesWith(missile, out D2DPoint pos))
+                                if (plane.CollidesWith(missile, out D2DPoint pos, dt))
                                 {
                                     if (!missile.IsExpired)
                                     {
                                         var result = plane.GetImpactResult(missile, pos);
 
-                                        plane.HandleImpactResult(missile, result);
+                                        plane.HandleImpactResult(missile, result, dt);
 
                                         missile.Position = pos;
                                         missile.IsExpired = true;
@@ -131,7 +131,7 @@ namespace PolyPlane.GameObjects.Manager
                                 if (bulletOwner.IsAI)
                                     bulletLagComp = planeRTT;
 
-                                if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - bulletLagComp))
+                                if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - bulletLagComp, dt))
                                 {
                                     if (histState != null)
                                     {
@@ -143,7 +143,7 @@ namespace PolyPlane.GameObjects.Manager
 
                                         var impactResult = plane.GetImpactResult(bullet, pos);
                                         _netMan.SendNetImpact(bullet, plane, impactResult, histState);
-                                        plane.HandleImpactResult(bullet, impactResult);
+                                        plane.HandleImpactResult(bullet, impactResult, dt);
 
                                         plane.Position = ogState.Position;
                                         plane.Rotation = ogState.Rotation;
@@ -153,7 +153,7 @@ namespace PolyPlane.GameObjects.Manager
                                     {
                                         var impactResult = plane.GetImpactResult(bullet, pos);
                                         _netMan.SendNetImpact(bullet, plane, impactResult, histState);
-                                        plane.HandleImpactResult(bullet, impactResult);
+                                        plane.HandleImpactResult(bullet, impactResult, dt);
                                     }
 
 
@@ -162,13 +162,13 @@ namespace PolyPlane.GameObjects.Manager
                             }
                             else
                             {
-                                if (plane.CollidesWith(bullet, out D2DPoint pos))
+                                if (plane.CollidesWith(bullet, out D2DPoint pos, dt))
                                 {
                                     if (!bullet.IsExpired)
                                     {
                                         var result = plane.GetImpactResult(bullet, pos);
 
-                                        plane.HandleImpactResult(bullet, result);
+                                        plane.HandleImpactResult(bullet, result, dt);
 
                                         bullet.Position = pos;
                                         bullet.IsExpired = true;
@@ -179,7 +179,7 @@ namespace PolyPlane.GameObjects.Manager
                     }
 
                     // Do plane particle pushes.
-                    DoParticleImpulse(plane, obj);
+                    DoParticleImpulse(plane, obj, dt);
                 }
             }
 
@@ -205,7 +205,7 @@ namespace PolyPlane.GameObjects.Manager
                             if (bullet.Owner == missile.Owner)
                                 continue;
 
-                            if (missile.CollidesWith(bullet, out D2DPoint posb))
+                            if (missile.CollidesWith(bullet, out D2DPoint posb, dt))
                             {
                                 missile.IsExpired = true;
                                 bullet.IsExpired = true;
@@ -216,7 +216,7 @@ namespace PolyPlane.GameObjects.Manager
                             if (decoy.IsExpired)
                                 continue;
 
-                            if (missile.CollidesWith(decoy, out D2DPoint posb))
+                            if (missile.CollidesWith(decoy, out D2DPoint posb, dt))
                             {
                                 missile.IsExpired = true;
                                 decoy.IsExpired = true;
@@ -225,7 +225,7 @@ namespace PolyPlane.GameObjects.Manager
                     }
 
                     // Do missile particle pushes.
-                    DoParticleImpulse(missile, obj);
+                    DoParticleImpulse(missile, obj, dt);
                 }
             }
 
@@ -237,16 +237,16 @@ namespace PolyPlane.GameObjects.Manager
 
                 foreach (var obj in nearObjs)
                 {
-                    DoParticleImpulse(bullet, obj);
+                    DoParticleImpulse(bullet, obj, dt);
                 }
             }
 
-            HandleExplosionImpulse();
-            HandleGroundImpacts();
+            HandleExplosionImpulse(dt);
+            HandleGroundImpacts(dt);
             HandleFieldWrap();
         }
 
-        private void DoParticleImpulse(GameObject pushObject, GameObject particleObject)
+        private void DoParticleImpulse(GameObject pushObject, GameObject particleObject, float dt)
         {
             const float EFFECT_DIST_PLANE = 90f;
             const float EFFECT_DIST_MISSILE = 55f;
@@ -312,16 +312,16 @@ namespace PolyPlane.GameObjects.Manager
             if (vdiff > 0f)
             {
                 // Add some velo from the pusher object.
-                particleObject.Velocity += (((pushObject.Velocity * VELO_FACTOR) / particleObject.Mass * World.DT) * forceFact * ageFact * veloFact);
+                particleObject.Velocity += (((pushObject.Velocity * VELO_FACTOR) / particleObject.Mass * dt) * forceFact * ageFact * veloFact);
             }
 
             // Push particles away.
-            particleObject.Velocity += (forceVec / particleObject.Mass * World.DT) * ageFact * veloFact;
+            particleObject.Velocity += (forceVec / particleObject.Mass * dt) * ageFact * veloFact;
 
 
         }
 
-        private void HandleExplosionImpulse()
+        private void HandleExplosionImpulse(float dt)
         {
             const float FORCE = 50000f;
             const float DAMAGE_AMT = 25f;
@@ -353,7 +353,7 @@ namespace PolyPlane.GameObjects.Manager
                         var dir = (obj.Position - explosion.Position);
                         var dirNorm = dir.Normalized();
                         var forceVec = dirNorm * (FORCE * forceFact);
-                        obj.Velocity += forceVec / obj.Mass * World.DT;
+                        obj.Velocity += forceVec / obj.Mass * dt;
 
                         if (!obj.IsAwake)
                             obj.IsAwake = true;
@@ -363,10 +363,10 @@ namespace PolyPlane.GameObjects.Manager
                             if (!missile.Owner.Equals(plane) && !plane.IsDisabled)
                             {
                                 // Apply a small amount of damage to planes within the blast radius of the explosion.
-                                var damageAmount = (forceFact * DAMAGE_AMT) * World.DT;
+                                var damageAmount = (forceFact * DAMAGE_AMT) * dt;
 
                                 var impactResult = new PlaneImpactResult(ImpactType.Splash, plane.Position, 0f, damageAmount, wasHeadshot: false);
-                                plane.HandleImpactResult(missile, impactResult);
+                                plane.HandleImpactResult(missile, impactResult, dt);
 
                                 if (World.IsNetGame && World.IsServer)
                                     _netMan.SendNetImpact(missile, plane, impactResult, null);
@@ -381,7 +381,7 @@ namespace PolyPlane.GameObjects.Manager
             }
         }
 
-        private void HandleGroundImpacts()
+        private void HandleGroundImpacts(float dt)
         {
             // Planes.
             for (int a = 0; a < _objs.Planes.Count; a++)
@@ -401,7 +401,7 @@ namespace PolyPlane.GameObjects.Manager
                         crashDir = 180f;
 
                     // Ease the plane rotation until it is flat on the ground.
-                    plane.Rotation = EaseRotation(crashDir, plane.Rotation);
+                    plane.Rotation = EaseRotation(crashDir, plane.Rotation, dt);
                     plane.RotationSpeed = 0f;
                 }
             }
@@ -423,7 +423,7 @@ namespace PolyPlane.GameObjects.Manager
             }
         }
 
-        private float EaseRotation(float target, float current)
+        private float EaseRotation(float target, float current, float dt)
         {
             const float RATE = 120f;
             if (current == target)
@@ -431,7 +431,7 @@ namespace PolyPlane.GameObjects.Manager
 
             var diff = Utilities.ClampAngle180(target - current);
             var sign = Math.Sign(diff);
-            var amt = RATE * sign * World.DT;
+            var amt = RATE * sign * dt;
 
             if (Math.Abs(amt) > Math.Abs(diff))
                 amt = diff;

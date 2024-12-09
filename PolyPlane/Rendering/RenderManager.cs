@@ -478,20 +478,20 @@ namespace PolyPlane.Rendering
             }
         }
 
-        public void UpdateTimersAndAnims()
+        public void UpdateTimersAndAnims(float dt)
         {
-            _hudMessageTimeout.Update(World.DT);
-            _warningLightFlashTimer.Update(World.DT);
+            _hudMessageTimeout.Update(dt);
+            _warningLightFlashTimer.Update(dt);
 
-            _screenFlash.Update(World.DT);
-            _screenShakeX.Update(World.DT);
-            _screenShakeY.Update(World.DT);
+            _screenFlash.Update(dt);
+            _screenShakeX.Update(dt);
+            _screenShakeY.Update(dt);
 
-            _contrailBox.Update(_objs.Planes, World.DT);
+            _contrailBox.Update(_objs.Planes, dt);
 
             if (!World.IsPaused)
             {
-                MoveClouds(World.DT);
+                MoveClouds(dt);
 
                 // Check if we need to update the ground brush.
                 var todDiff = Math.Abs(World.TimeOfDay - _groundColorTOD);
@@ -501,18 +501,18 @@ namespace PolyPlane.Rendering
                     UpdateGroundColorBrush();
                 }
 
-                UpdatePopMessages();
+                UpdatePopMessages(dt);
             }
         }
 
-        public void RenderFrame(GameObject viewObject)
+        public void RenderFrame(GameObject viewObject, float dt)
         {
             InitGfx();
             ResizeGfx();
 
             _timer.Restart();
 
-            UpdateTimersAndAnims();
+            UpdateTimersAndAnims(dt);
 
             if (World.UseSkyGradient)
                 _gfx.BeginRender(_clearBitmap);
@@ -546,7 +546,7 @@ namespace PolyPlane.Rendering
                 _gfx.PopTransform();
 
                 // Draw HUD.
-                DrawHud(_ctx, viewObject);
+                DrawHud(_ctx, viewObject, dt);
 
                 // Pop screen shake transform.
                 _gfx.PopTransform();
@@ -674,12 +674,12 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private void UpdatePopMessages()
+        private void UpdatePopMessages(float dt)
         {
             for (int i = _popMessages.Count - 1; i >= 0; i--)
             {
                 var msg = _popMessages[i];
-                msg.UpdatePos(World.DT);
+                msg.UpdatePos(dt);
 
                 if (!msg.Displayed)
                     _popMessages.RemoveAt(i);
@@ -1077,7 +1077,7 @@ namespace PolyPlane.Rendering
             gfx.DrawText(plane.PlayerName, _hudColorBrush, _textConsolas30Centered, rect);
         }
 
-        private void DrawHud(RenderContext ctx, GameObject viewObject)
+        private void DrawHud(RenderContext ctx, GameObject viewObject, float dt)
         {
             var viewportsize = World.ViewPortRectUnscaled.Size;
 
@@ -1107,7 +1107,7 @@ namespace PolyPlane.Rendering
                             DrawGroundWarning(ctx, viewportsize, plane);
                         }
 
-                        DrawPlanePointers(ctx, viewportsize, plane);
+                        DrawPlanePointers(ctx, viewportsize, plane, dt);
                         DrawMissilePointersAndWarnings(ctx.Gfx, viewportsize, plane);
                     }
 
@@ -1376,7 +1376,7 @@ namespace PolyPlane.Rendering
             gfx.DrawText(Math.Round(value, 0).ToString(), _hudColorBrush, _textConsolas15Centered, curValueRect);
         }
 
-        private void DrawPlanePointers(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)
+        private void DrawPlanePointers(RenderContext ctx, D2DSize viewportsize, FighterPlane plane, float dt)
         {
             const float MIN_DIST = 600f;
             const float MAX_DIST = 10000f;
@@ -1409,7 +1409,7 @@ namespace PolyPlane.Rendering
                 // Draw lead indicator.
                 if (World.ShowLeadIndicators)
                 {
-                    var lead = LeadTarget(target, plane);
+                    var lead = LeadTarget(target, plane, dt);
                     var angleDiff = Utilities.AngleDiff(angle, lead);
 
                     if (Math.Abs(angleDiff) < 70f && plane.IsObjInFOV(target, 70f))
@@ -1430,13 +1430,13 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private float LeadTarget(GameObject target, FighterPlane plane)
+        private float LeadTarget(GameObject target, FighterPlane plane, float dt)
         {
             const float pValue = 10f;
 
             var los = target.Position - plane.Position;
-            var navigationTime = los.Length() / ((plane.AirSpeedTrue + Bullet.SPEED) * World.DT);
-            var targRelInterceptPos = los + ((target.Velocity * World.DT) * navigationTime);
+            var navigationTime = los.Length() / ((plane.AirSpeedTrue + Bullet.SPEED) * dt);
+            var targRelInterceptPos = los + ((target.Velocity * dt) * navigationTime);
 
             targRelInterceptPos *= pValue;
 
@@ -1800,6 +1800,7 @@ namespace PolyPlane.Rendering
 
             if (_showInfo)
             {
+                infoText += $"Dynamic DT: {World.DynamicTimeDelta}\n";
                 infoText += $"Num Objects: {numObj}\n";
                 infoText += $"On Screen: {GraphicsExtensions.OnScreen}\n";
                 infoText += $"Off Screen: {GraphicsExtensions.OffScreen}\n";

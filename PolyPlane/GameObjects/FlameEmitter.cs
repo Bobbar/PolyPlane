@@ -101,7 +101,7 @@ namespace PolyPlane.GameObjects
 
             _spawnTimer.Interval = DEFAULT_INTERVAL + Utilities.Rnd.NextFloat(-0.1f, 0.1f);
 
-            _refPos.Update(World.DT);
+            _refPos.Update(0f);
             D2DPoint newPos = _refPos.Position;
             D2DPoint newVelo = _refPos.Velocity;
             newVelo += Utilities.RandOPoint(10f);

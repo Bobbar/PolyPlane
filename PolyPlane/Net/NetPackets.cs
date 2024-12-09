@@ -14,7 +14,7 @@ namespace PolyPlane.Net
 
         public NetPacket()
         {
-            FrameTime = World.CurrentTime();
+            FrameTime = World.CurrentNetTime();
         }
 
         public NetPacket(PacketTypes type) : this()

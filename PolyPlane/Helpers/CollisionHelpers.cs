@@ -119,7 +119,7 @@ namespace PolyPlane.Helpers
             while (Utilities.PointInPoly(impactorObj.Position, targetPoly.Poly))
             {
                 movedBack = true;
-                impactorObj.Position -= impactorObj.Velocity * World.SUB_DT;
+                impactorObj.Position -= impactorObj.Velocity * dt;
 
                 // Stop if it gets close to the ground. Otherwise might butt heads with the ground clamping logic.
                 if (impactorObj.Position.Y < 5f)
@@ -129,7 +129,7 @@ namespace PolyPlane.Helpers
             // Move it back one last step then update the polygon with the new position.
             if (movedBack)
             {
-                impactorObj.Position -= impactorObj.Velocity * World.SUB_DT;
+                impactorObj.Position -= impactorObj.Velocity * dt;
                 impactorObj.Polygon.Update();
             }
 
@@ -147,9 +147,9 @@ namespace PolyPlane.Helpers
             // so we need to handle collisions for the "gap" between the real bullet/plane and the net bullet on the client.
             if (World.IsNetGame)
             {
-                if (impactorObj is Bullet && impactorObj.AgeMs < (impactorObj.LagAmount * 1f))
+                if (impactorObj is Bullet && impactorObj.AgeMs(dt) < (impactorObj.LagAmount * 1f))
                 {
-                    var lagPntStart = impactorObj.Position - (impactorObj.Velocity * (impactorObj.LagAmountFrames * World.DT));
+                    var lagPntStart = impactorObj.Position - (impactorObj.Velocity * (impactorObj.LagAmountFrames * dt));
                     var lagPntEnd = impactorObj.Position;
 
                     // Check for intersection on bounding box first.

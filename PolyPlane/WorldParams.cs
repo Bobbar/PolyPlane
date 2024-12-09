@@ -84,6 +84,28 @@ namespace PolyPlane
             }
         }
 
+        public static void SetSubDT(float dt) 
+        {
+
+            // Compute sub DT and number of sub steps.
+            var subSteps = (int)Math.Ceiling(dt / DEFAULT_SUB_DT);
+            var subStepFact = dt / DEFAULT_SUB_DT;
+
+            if (subStepFact < 1f)
+            {
+                // Compute a new sub DT once we fall below the default and only 1 sub step is possible.
+                var newSubDT = DEFAULT_SUB_DT * subStepFact;
+                _sub_dt = newSubDT;
+            }
+            else
+            {
+                // Otherwise set to default when there is more than one sub step.
+                _sub_dt = DEFAULT_SUB_DT;
+            }
+
+            _sub_steps = subSteps;
+        }
+
         public static float SUB_DT
         {
             get
@@ -121,6 +143,8 @@ namespace PolyPlane
             }
         }
 
+
+        public static bool DynamicTimeDelta = true;
         public static bool MissileRegen = true;
         public static bool ShowMissilesOnRadar = false;
         public static bool ShowLeadIndicators = true;
@@ -180,7 +204,10 @@ namespace PolyPlane
         public static readonly D2DColor GraySmokeColor = new D2DColor(0.6f, D2DColor.Gray);
 
         public static readonly D2DPoint Gravity = new D2DPoint(0, 19.6f);
-        public static readonly D2DPoint PlaneSpawnRange = new D2DPoint(-250000, 250000);
+        //public static readonly D2DPoint PlaneSpawnRange = new D2DPoint(-250000, 250000);
+
+        public static readonly D2DPoint PlaneSpawnRange = new D2DPoint(-25000, 25000);
+
         public static readonly D2DPoint FieldXBounds = new D2DPoint(-350000, 350000);
 
         public static uint CurrentObjId = 0;
@@ -303,10 +330,27 @@ namespace PolyPlane
             return Interlocked.Increment(ref CurrentPlayerId);
         }
 
-        public static long CurrentTime()
+        /// <summary>
+        /// Current time in milliseconds for net games.
+        /// </summary>
+        /// <returns></returns>
+        public static long CurrentNetTime()
         {
             var now = DateTimeOffset.Now.ToUnixTimeMilliseconds() + ServerTimeOffset;
             return (long)Math.Floor(now);
+        }
+
+        /// <summary>
+        /// Current time in milliseconds.
+        /// </summary>
+        /// <returns></returns>
+        public static double CurrentTimeMS()
+        {
+            var now = DateTimeOffset.Now.Ticks;
+
+            var time = now / (double)TimeSpan.TicksPerMillisecond;
+
+            return time;
         }
 
         public static FighterPlane GetViewPlane()

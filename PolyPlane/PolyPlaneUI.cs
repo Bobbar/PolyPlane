@@ -492,8 +492,37 @@ namespace PolyPlane
             _render = new RenderManager(RenderTarget, _netMan);
         }
 
+        //private long t_i = 0;
+        //private float td = 0f;
+        //private long t = 0;
+
+        private double t_i = 0;
+        private double _timeDiff = 0f;
+        private double _lastFrameTime = 0;
+
+        //private long _lastFrame = 0;
+        //private float adt = 0f;
+
+        //private float accum = 0f;
+
+
+
+        //private float GetDeltaTime()
+        //{
+        //    var now = DateTime.Now.Ticks;
+
+        //    if (_lastFrame == 0)
+        //        _lastFrame = now;
+
+        //    var elap = now - _lastFrame;
+
+        //    return elap / (float)TimeSpan.TicksPerMillisecond;
+        //}
+
         private void GameLoop()
         {
+            _lastFrameTime = World.CurrentTimeMS();
+
             while (!this.Disposing && !_killRender)
             {
                 AdvanceAndRender();
@@ -517,25 +546,39 @@ namespace PolyPlane
 
             var viewObject = GetViewObjectOrCamera(World.GetViewObject());
 
+            var now = World.CurrentTimeMS();
+
+            _timeDiff = now - _lastFrameTime;
+            _lastFrameTime = now;
+
+            var dt = World.DT;
+
+            if (World.DynamicTimeDelta)
+            {
+                dt = (float)(World.DT * (_timeDiff / World.TARGET_FRAME_TIME));
+            }
+
+            World.SetSubDT(dt);
+
             // Update/advance objects.
             if (!World.IsPaused || _oneStep)
             {
                 _timer.Restart();
 
                 // Update all objects.
-                _objs.Update(World.DT);
+                _objs.Update(dt);
 
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
 
                 _timer.Restart();
-                _collisions.DoCollisions();
+                _collisions.DoCollisions(dt);
                 _timer.Stop();
                 _collisionTime += _timer.Elapsed;
 
                 _timer.Restart();
 
-                World.UpdateAirDensityAndWind(World.DT);
+                World.UpdateAirDensityAndWind(dt);
 
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
@@ -550,16 +593,18 @@ namespace PolyPlane
                 }
             }
 
+
+
             _render.CollisionTime = _collisionTime;
             _render.UpdateTime = _updateTime;
 
             if (!_skipRender && !_killRender && this.WindowState != FormWindowState.Minimized)
-                _render.RenderFrame(viewObject);
+                _render.RenderFrame(viewObject, dt);
             else
                 _fpsLimiter.Wait(World.TARGET_FPS);
 
             if (World.IsNetGame)
-                _netMan.DoNetEvents();
+                _netMan.DoNetEvents(dt);
 
             DoMouseButtons();
 
@@ -949,6 +994,7 @@ namespace PolyPlane
                     break;
 
                 case 't':
+                    World.DynamicTimeDelta = !World.DynamicTimeDelta;
                     break;
 
                 case 'u':
