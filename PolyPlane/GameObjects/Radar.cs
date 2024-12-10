@@ -28,7 +28,7 @@ namespace PolyPlane.GameObjects
         private readonly float _radarFOV = World.SENSOR_FOV * 0.25f;
         private const float MIN_IMPACT_TIME = 20f; // Min time before defending.
         private const float _maxRange = 60000f;
-        private const float _maxAge = 2f;
+        private const float _maxAge = 1.4f;
         private const float _radius = 150f;
 
         private D2DColor _color = World.HudColor;
@@ -36,7 +36,7 @@ namespace PolyPlane.GameObjects
 
         private GameTimer _lockTimer = new GameTimer(2f);
         private GameTimer _lostLockTimer = new GameTimer(10f);
-        private GameTimer _updateTimer = new GameTimer(0.6f, true);
+        private GameTimer _updateTimer = new GameTimer(0.5f, true);
 
         private D2DLayer _groundClipLayer = null;
 
