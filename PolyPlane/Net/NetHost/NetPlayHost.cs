@@ -1,6 +1,6 @@
 ﻿using ENet;
-using NetStack.Threading;
 using PolyPlane.GameObjects;
+using System.Collections.Concurrent;
 
 namespace PolyPlane.Net.NetHost
 {
@@ -9,8 +9,8 @@ namespace PolyPlane.Net.NetHost
         public event EventHandler<Peer> PeerTimeoutEvent;
         public event EventHandler<Peer> PeerDisconnectedEvent;
 
-        public ConcurrentBuffer PacketSendQueue = new ConcurrentBuffer(1024);
-        public ConcurrentBuffer PacketReceiveQueue = new ConcurrentBuffer(1024);
+        public ConcurrentQueue<NetPacket> PacketSendQueue = new ConcurrentQueue<NetPacket>();
+        public ConcurrentQueue<NetPacket> PacketReceiveQueue = new ConcurrentQueue<NetPacket>();
 
         public Host Host;
         public readonly ushort Port;
@@ -165,9 +165,9 @@ namespace PolyPlane.Net.NetHost
         {
             while (PacketSendQueue.Count > 0)
             {
-                if (PacketSendQueue.TryDequeue(out object packet))
+                if (PacketSendQueue.TryDequeue(out NetPacket packet))
                 {
-                    SendPacket((NetPacket)packet);
+                    SendPacket(packet);
                 }
             }
         }

@@ -93,9 +93,9 @@ namespace PolyPlane.Net
 
             while (Host.PacketReceiveQueue.Count > 0)
             {
-                if (Host.PacketReceiveQueue.TryDequeue(out object packet))
+                if (Host.PacketReceiveQueue.TryDequeue(out NetPacket packet))
                 {
-                    var netPacket = (NetPacket)packet;
+                    var netPacket = packet;
                     totalPacketTime += now - netPacket.FrameTime;
                     numPackets++;
 
