@@ -9,19 +9,21 @@ namespace PolyPlane.Net.NetHost
         public event EventHandler<Peer> PeerTimeoutEvent;
         public event EventHandler<Peer> PeerDisconnectedEvent;
 
-        public const int MAX_CLIENTS = 30;
-        public const int MAX_CHANNELS = 7;
-        public const int CHANNEL_ID = 0;
-        public const int TIMEOUT = 0;
-
         public ConcurrentBuffer PacketSendQueue = new ConcurrentBuffer(1024);
         public ConcurrentBuffer PacketReceiveQueue = new ConcurrentBuffer(1024);
 
         public Host Host;
-        public ushort Port;
-        public Address Address;
+        public readonly ushort Port;
+        public readonly Address Address;
+
+        protected const int MAX_CLIENTS = 30;
+        protected const int MAX_CHANNELS = 7;
+        protected const int CHANNEL_ID = 0;
+        protected const int TIMEOUT = 0;
+        protected const int POLL_FPS = 1000;
 
         private Thread _pollThread;
+        private FPSLimiter _pollLimiter = new FPSLimiter();
         private bool _runLoop = true;
 
         public NetPlayHost(ushort port, string ip)
@@ -40,6 +42,7 @@ namespace PolyPlane.Net.NetHost
             DoStart();
 
             _pollThread = new Thread(PollLoop);
+            _pollThread.IsBackground = true;
             _pollThread.Start();
         }
 
@@ -86,7 +89,7 @@ namespace PolyPlane.Net.NetHost
         }
 
         public abstract ulong PacketLoss();
-        public abstract void SendPacket(ref Packet packet, byte channel);
+        protected abstract void SendPacket(ref Packet packet, byte channel);
         public abstract Peer? GetPeer(int playerID);
         public abstract void Disconnect(int playerID);
         public abstract uint GetPlayerRTT(int playerID);
@@ -94,12 +97,15 @@ namespace PolyPlane.Net.NetHost
         internal void PollLoop()
         {
             Event netEvent;
+            bool polled = false;
 
             while (_runLoop)
             {
-                bool polled = false;
+                ProcessSendQueue();
 
-                while (!polled)
+                polled = false;
+
+                while (!polled && _runLoop)
                 {
                     if (Host.CheckEvents(out netEvent) <= 0)
                     {
@@ -110,10 +116,9 @@ namespace PolyPlane.Net.NetHost
                     }
 
                     HandleEvent(ref netEvent);
-
                 }
 
-                ProcessQueue();
+                _pollLimiter.Wait(POLL_FPS);
             }
         }
 
@@ -156,7 +161,7 @@ namespace PolyPlane.Net.NetHost
             }
         }
 
-        internal void ProcessQueue()
+        private void ProcessSendQueue()
         {
             while (PacketSendQueue.Count > 0)
             {
@@ -167,7 +172,7 @@ namespace PolyPlane.Net.NetHost
             }
         }
 
-        internal void SendPacket(NetPacket netPacket)
+        private void SendPacket(NetPacket netPacket)
         {
             var packet = CreatePacket(netPacket);
             var channel = GetChannel(netPacket);
@@ -175,7 +180,7 @@ namespace PolyPlane.Net.NetHost
             SendPacket(ref packet, channel);
         }
 
-        internal NetPacket ParsePacket(ref Packet packet)
+        private NetPacket ParsePacket(ref Packet packet)
         {
             var buffer = new byte[packet.Length];
 
@@ -186,7 +191,7 @@ namespace PolyPlane.Net.NetHost
             return packetObj;
         }
 
-        internal byte GetChannel(NetPacket netpacket)
+        protected byte GetChannel(NetPacket netpacket)
         {
             switch (netpacket.Type)
             {
@@ -213,7 +218,7 @@ namespace PolyPlane.Net.NetHost
             }
         }
 
-        internal PacketFlags GetPacketFlags(NetPacket netpacket)
+        private PacketFlags GetPacketFlags(NetPacket netpacket)
         {
             switch (netpacket.Type)
             {
@@ -225,7 +230,7 @@ namespace PolyPlane.Net.NetHost
             }
         }
 
-        internal Packet CreatePacket(NetPacket netPacket)
+        protected Packet CreatePacket(NetPacket netPacket)
         {
             Packet packet = default;
             var data = Serialization.ObjectToByteArray(netPacket);
@@ -235,7 +240,7 @@ namespace PolyPlane.Net.NetHost
             return packet;
         }
 
-        internal void FireDisconnectEvent(Peer peer)
+        protected void FireDisconnectEvent(Peer peer)
         {
             PeerDisconnectedEvent?.Invoke(this, peer);
         }
@@ -243,8 +248,12 @@ namespace PolyPlane.Net.NetHost
         public virtual void Dispose()
         {
             _runLoop = false;
+
             Host?.Flush();
             Host?.Dispose();
+           
+            _pollLimiter?.Dispose();
+            
             Library.Deinitialize();
         }
     }

@@ -88,7 +88,7 @@ namespace PolyPlane.Net.NetHost
             return 0;
         }
 
-        public override void SendPacket(ref Packet packet, byte channel)
+        protected override void SendPacket(ref Packet packet, byte channel)
         {
             Host.Broadcast(channel, ref packet);
         }

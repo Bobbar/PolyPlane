@@ -27,7 +27,9 @@ namespace PolyPlane
         private bool _hasFocus = true;
         private bool _isHoldingAlt = false;
         private bool _rightMouseDown = false;
+        private bool _inStartup = false;
         private float _holdAltitude = 0f;
+        private string _title;
 
         private D2DPoint _playerPlaneSlewPos = D2DPoint.Zero;
         private D2DPoint _mousePosition = D2DPoint.Zero;
@@ -54,6 +56,8 @@ namespace PolyPlane
         public PolyPlaneUI()
         {
             InitializeComponent();
+
+            _title = this.Text;
 
             this.GotFocus += PolyPlaneUI_GotFocus;
             this.LostFocus += PolyPlaneUI_LostFocus;
@@ -203,6 +207,8 @@ namespace PolyPlane
 
         private bool DoNetGameSetup()
         {
+            _inStartup = true;
+
             bool result = false;
 
             using (var config = new ClientServerConfigForm())
@@ -270,6 +276,8 @@ namespace PolyPlane
                 }
             }
 
+            _inStartup = false;
+
             return result;
         }
 
@@ -280,10 +288,9 @@ namespace PolyPlane
         {
             World.IsNetGame = false;
             World.IsServer = false;
+            World.FreeCameraMode = false;
 
             _killRender = true;
-
-            Task.Delay(100).Wait();
 
             _objs.Clear();
 
@@ -292,21 +299,26 @@ namespace PolyPlane
             _netMan.PlayerDisconnected -= NetMan_PlayerDisconnected;
             _netMan.PlayerKicked -= NetMan_PlayerKicked;
 
-            _client.PeerTimeoutEvent -= Client_PeerTimeoutEvent;
-            _client.PeerDisconnectedEvent -= Client_PeerDisconnectedEvent;
+            if (_client != null)
+            {
+                _client?.Stop();
+                _client?.Dispose();
 
-            _client?.Stop();
-            _client?.Dispose();
-            _client = null;
+                _client.PeerTimeoutEvent -= Client_PeerTimeoutEvent;
+                _client.PeerDisconnectedEvent -= Client_PeerDisconnectedEvent;
 
-            DoNetGameSetup();
+                _client = null;
+            }
+
+            if (!_inStartup)
+                DoNetGameSetup();
         }
 
         private void Client_PeerDisconnectedEvent(object? sender, ENet.Peer e)
         {
             if (this.InvokeRequired)
             {
-                this.Invoke(() => Client_PeerDisconnectedEvent(sender, e));
+                this.BeginInvoke(() => Client_PeerDisconnectedEvent(sender, e));
             }
             else
             {
@@ -361,7 +373,7 @@ namespace PolyPlane
             }
             else
             {
-                this.Text += $" - CLIENT - ID: {e}";
+                this.Text = $"{_title} - CLIENT - ID: {e}";
             }
         }
 

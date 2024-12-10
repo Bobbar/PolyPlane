@@ -43,13 +43,14 @@ namespace PolyPlane.Net.NetHost
             return Peer.PacketsLost;
         }
 
-        public override void SendPacket(ref Packet packet, byte channel)
+        protected override void SendPacket(ref Packet packet, byte channel)
         {
             if (Peer.State != PeerState.Connected)
             {
                 // Disconnect and stop processing packets.
-                FireDisconnectEvent(Peer);
+                Disconnect(0);
                 Stop();
+                FireDisconnectEvent(Peer);
                 return;
             }
 

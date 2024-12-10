@@ -37,7 +37,10 @@ namespace PolyPlane
 
         private void ClientServerConfigForm_Disposed(object? sender, EventArgs e)
         {
+            _discovery.NewDiscoveryReceived -= Discovery_NewDiscoveryReceived;
+
             _planePreview?.Dispose();
+            _discovery?.Dispose();
         }
 
         private void ClientServerConfigForm_Load(object sender, EventArgs e)
