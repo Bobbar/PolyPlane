@@ -30,7 +30,6 @@ namespace PolyPlane
         private bool _inStartup = false;
         private float _holdAltitude = 0f;
         private double _lastFrameTime = 0;
-        private SmoothDouble _elapSmooth = new SmoothDouble(10);
         private string _title;
 
         private D2DPoint _playerPlaneSlewPos = D2DPoint.Zero;
@@ -543,7 +542,7 @@ namespace PolyPlane
             // for the next frame.
             // This should allow for more correct movement
             // when the FPS drops below the target.
-            var elapFrameTime = _elapSmooth.Add(now - _lastFrameTime);
+            var elapFrameTime = now - _lastFrameTime;
             _lastFrameTime = now;
 
             // Update/advance objects.

@@ -804,6 +804,9 @@ namespace PolyPlane.Rendering
 
         public void DoScreenShake(float amt)
         {
+            if (_screenShakeX == null || _screenShakeY == null)
+                return;
+
             _screenShakeX.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
             _screenShakeY.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
 
