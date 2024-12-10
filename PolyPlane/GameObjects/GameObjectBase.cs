@@ -487,51 +487,51 @@ namespace PolyPlane.GameObjects
             return CollisionHelpers.PolygonSweepCollision(obj, this.Polygon, this.Velocity, dt, out pos);
         }
 
-        //public void DrawVeloLines(D2DGraphics gfx, D2DColor color)
-        //{
-        //    var dt = World.DT;
+        public void DrawVeloLines(D2DGraphics gfx, D2DColor color)
+        {
+            var dt = World.DynamicDT;
 
-        //    var relVelo = this.Velocity * dt;
-        //    var relVeloHalf = relVelo * 0.5f;
+            var relVelo = this.Velocity * dt;
+            var relVeloHalf = relVelo * 0.5f;
 
-        //    var targAngle = 0f;
+            var targAngle = 0f;
 
-        //    if (this is Bullet || this is GuidedMissile || this is FighterPlane)
-        //    {
-        //        var nearest = World.ObjectManager.GetNear(this).Where(o => !o.ID.Equals(this.ID) && o is FighterPlane).OrderBy(o => o.Position.DistanceTo(this.Position)).FirstOrDefault();
-        //        if (nearest != null)
-        //        {
-        //            relVelo = (this.Velocity - nearest.Velocity) * dt;
-        //            relVeloHalf = relVelo * 0.5f;
-        //            targAngle = relVelo.Angle();
-        //        }
-        //    }
+            if (this is Bullet || this is GuidedMissile || this is FighterPlane)
+            {
+                var nearest = World.ObjectManager.GetNear(this).Where(o => !o.ID.Equals(this.ID) && o is FighterPlane).OrderBy(o => o.Position.DistanceTo(this.Position)).FirstOrDefault();
+                if (nearest != null)
+                {
+                    relVelo = (this.Velocity - nearest.Velocity) * dt;
+                    relVeloHalf = relVelo * 0.5f;
+                    targAngle = relVelo.Angle();
+                }
+            }
 
-        //    foreach (var pnt in this.Polygon.Poly)
-        //    {
-        //        var aVelo = Utilities.AngularVelocity(this, pnt);
-        //        var veloPnt1 = pnt;
-        //        var veloPnt2 = pnt + relVelo;
-
-
-        //        gfx.DrawLine(veloPnt1, veloPnt2, color, 0.5f);
-        //    }
-
-        //    var lagPntStart = this.Position - (this.Velocity * (this.LagAmountFrames * World.DT));
-        //    var lagPntEnd = this.Position;
-
-        //    if (this.AgeMs(World.DT) < (this.LagAmount * 2f))
-        //        gfx.DrawLine(lagPntStart, lagPntEnd, color);
+            foreach (var pnt in this.Polygon.Poly)
+            {
+                var aVelo = Utilities.AngularVelocity(this, pnt);
+                var veloPnt1 = pnt;
+                var veloPnt2 = pnt + relVelo;
 
 
-        //    var pnts = this.Polygon.GetPointsFacingDirection(targAngle);
+                gfx.DrawLine(veloPnt1, veloPnt2, color, 0.5f);
+            }
 
-        //    foreach (var pnt in pnts)
-        //    {
-        //        gfx.FillEllipseSimple(pnt, 1f, D2DColor.Blue);
-        //    }
+            var lagPntStart = this.Position - (this.Velocity * (this.LagAmountFrames * dt));
+            var lagPntEnd = this.Position;
 
-        //}
+            if (this.AgeMs(dt) < (this.LagAmount * 2f))
+                gfx.DrawLine(lagPntStart, lagPntEnd, color);
+
+
+            var pnts = this.Polygon.GetPointsFacingDirection(targAngle);
+
+            foreach (var pnt in pnts)
+            {
+                gfx.FillEllipseSimple(pnt, 1f, D2DColor.Blue);
+            }
+
+        }
 
         public virtual bool Contains(D2DPoint pnt)
         {

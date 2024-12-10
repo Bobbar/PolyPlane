@@ -29,6 +29,8 @@ namespace PolyPlane
         private bool _rightMouseDown = false;
         private bool _inStartup = false;
         private float _holdAltitude = 0f;
+        private double _lastFrameTime = 0;
+        private SmoothDouble _elapSmooth = new SmoothDouble(10);
         private string _title;
 
         private D2DPoint _playerPlaneSlewPos = D2DPoint.Zero;
@@ -504,33 +506,7 @@ namespace PolyPlane
             _render = new RenderManager(RenderTarget, _netMan);
         }
 
-        //private long t_i = 0;
-        //private float td = 0f;
-        //private long t = 0;
-
-        private double t_i = 0;
-        private double _timeDiff = 0f;
-        private double _lastFrameTime = 0;
-
-        //private long _lastFrame = 0;
-        //private float adt = 0f;
-
-        //private float accum = 0f;
-
-
-
-        //private float GetDeltaTime()
-        //{
-        //    var now = DateTime.Now.Ticks;
-
-        //    if (_lastFrame == 0)
-        //        _lastFrame = now;
-
-        //    var elap = now - _lastFrame;
-
-        //    return elap / (float)TimeSpan.TicksPerMillisecond;
-        //}
-
+     
         private void GameLoop()
         {
             _lastFrameTime = World.CurrentTimeMS();
@@ -542,6 +518,7 @@ namespace PolyPlane
 
             _renderExitEvent.Set();
         }
+
 
         private void AdvanceAndRender()
         {
@@ -559,22 +536,22 @@ namespace PolyPlane
             var viewObject = GetViewObjectOrCamera(World.GetViewObject());
 
             var now = World.CurrentTimeMS();
-
-            _timeDiff = now - _lastFrameTime;
-            _lastFrameTime = now;
-
             var dt = World.DT;
 
-            if (World.DynamicTimeDelta)
-            {
-                dt = (float)(World.DT * (_timeDiff / World.TARGET_FRAME_TIME));
-            }
-
-            World.SetSubDT(dt);
+            // Compute elapsed time since the last frame
+            // and use it to compute a dynamic delta time
+            // for the next frame.
+            // This should allow for more correct movement
+            // when the FPS drops below the target.
+            var elapFrameTime = _elapSmooth.Add(now - _lastFrameTime);
+            _lastFrameTime = now;
 
             // Update/advance objects.
             if (!World.IsPaused || _oneStep)
             {
+                if (World.DynamicTimeDelta)
+                    dt = World.SetDynamicDT(elapFrameTime);
+
                 _timer.Restart();
 
                 // Update all objects.
@@ -605,18 +582,16 @@ namespace PolyPlane
                 }
             }
 
-
-
             _render.CollisionTime = _collisionTime;
             _render.UpdateTime = _updateTime;
+
+            if (World.IsNetGame)
+                _netMan.DoNetEvents(dt);
 
             if (!_skipRender && !_killRender && this.WindowState != FormWindowState.Minimized)
                 _render.RenderFrame(viewObject, dt);
             else
                 _fpsLimiter.Wait(World.TARGET_FPS);
-
-            if (World.IsNetGame)
-                _netMan.DoNetEvents(dt);
 
             DoMouseButtons();
 
@@ -1006,7 +981,6 @@ namespace PolyPlane
                     break;
 
                 case 't':
-                    World.DynamicTimeDelta = !World.DynamicTimeDelta;
                     break;
 
                 case 'u':

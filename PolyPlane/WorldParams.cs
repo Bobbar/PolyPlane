@@ -50,6 +50,8 @@ namespace PolyPlane
             }
         }
 
+        public static float DynamicDT = DT;
+
         public static float DT
         {
             get
@@ -64,29 +66,32 @@ namespace PolyPlane
             {
                 _dt = Math.Clamp(value, 0.0045f, 1f);
 
-                // Compute sub DT and number of sub steps.
-                var subSteps = (int)Math.Ceiling(_dt / DEFAULT_SUB_DT);
-                var subStepFact = _dt / DEFAULT_SUB_DT;
-
-                if (subStepFact < 1f)
-                {
-                    // Compute a new sub DT once we fall below the default and only 1 sub step is possible.
-                    var newSubDT = DEFAULT_SUB_DT * subStepFact;
-                    _sub_dt = newSubDT;
-                }
-                else
-                {
-                    // Otherwise set to default when there is more than one sub step.
-                    _sub_dt = DEFAULT_SUB_DT;
-                }
-
-                _sub_steps = subSteps;
+                SetSubDT(_dt);
             }
         }
 
+        /// <summary>
+        /// Computes the dynamic delta time based on the specified elapsed frame time and sets fixed sub DT and sub steps.
+        /// </summary>
+        /// <param name="elapFrameTime"></param>
+        /// <returns>Returns the new delta time.</returns>
+        public static float SetDynamicDT(double elapFrameTime)
+        {
+            var dt = (float)(World.DT * (elapFrameTime / World.TARGET_FRAME_TIME));
+
+            DynamicDT = dt;
+
+            SetSubDT(dt);
+
+            return dt;
+        }
+
+        /// <summary>
+        /// Sets the fixed-ish sub DT and number of sub steps used for physics.
+        /// </summary>
+        /// <param name="dt"></param>
         public static void SetSubDT(float dt) 
         {
-
             // Compute sub DT and number of sub steps.
             var subSteps = (int)Math.Ceiling(dt / DEFAULT_SUB_DT);
             var subStepFact = dt / DEFAULT_SUB_DT;

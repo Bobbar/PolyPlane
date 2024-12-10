@@ -1800,7 +1800,6 @@ namespace PolyPlane.Rendering
 
             if (_showInfo)
             {
-                infoText += $"Dynamic DT: {World.DynamicTimeDelta}\n";
                 infoText += $"Num Objects: {numObj}\n";
                 infoText += $"On Screen: {GraphicsExtensions.OnScreen}\n";
                 infoText += $"Off Screen: {GraphicsExtensions.OffScreen}\n";
@@ -1812,7 +1811,7 @@ namespace PolyPlane.Rendering
 
                 infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
                 infoText += $"HUD Scale: {_hudScale}\n";
-                infoText += $"DT: {Math.Round(World.DT, 4)}\n";
+                infoText += $"DT: {Math.Round(World.DT, 4)}  ({Math.Round(World.DynamicDT, 4)}) \n";
                 infoText += $"Position: {viewObject?.Position}\n";
 
                 if (viewObject is FighterPlane plane)
