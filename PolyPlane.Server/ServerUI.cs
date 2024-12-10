@@ -43,6 +43,7 @@ namespace PolyPlane.Server
 
         private long _lastRenderTime = 0;
         private float _renderFPS = 0;
+        private double _lastFrameTime = 0;
         private FPSLimiter _fpsLimiter = new FPSLimiter();
         private uint _lastRec = 0;
         private uint _lastSent = 0;
@@ -280,6 +281,8 @@ namespace PolyPlane.Server
 
         private void GameLoop()
         {
+            _lastFrameTime = World.CurrentTimeMS();
+
             while (!this.Disposing && !_killThread)
             {
                 AdvanceServer();
@@ -304,25 +307,34 @@ namespace PolyPlane.Server
             _timer.Stop();
             _updateTime += _timer.Elapsed;
 
+            var now = World.CurrentTimeMS();
+            var dt = World.DT;
+
+            var elapFrameTime = now - _lastFrameTime;
+            _lastFrameTime = now;
+
             // Update/advance objects.
             if (!World.IsPaused)
             {
+                if (World.DynamicTimeDelta)
+                    dt = World.SetDynamicDT(elapFrameTime);
+
                 _timer.Restart();
 
                 // Update all objects.
-                _objs.Update(World.DT);
+                _objs.Update(dt);
 
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
 
                 _timer.Restart();
-                _collisions.DoCollisions(World.DT);
+                _collisions.DoCollisions(dt);
                 _timer.Stop();
                 _collisionTime += _timer.Elapsed;
 
                 _timer.Restart();
 
-                World.UpdateAirDensityAndWind(World.DT);
+                World.UpdateAirDensityAndWind(dt);
 
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
@@ -335,7 +347,7 @@ namespace PolyPlane.Server
                 FighterPlane viewPlane = World.GetViewPlane();
                 
                 if (viewPlane != null)
-                    _render.RenderFrame(viewPlane, World.DT);
+                    _render.RenderFrame(viewPlane, dt);
             }
 
             _timer.Stop();
@@ -343,13 +355,13 @@ namespace PolyPlane.Server
 
 
             _timer.Restart();
-            _netMan.DoNetEvents(World.DT);
+            _netMan.DoNetEvents(dt);
             _timer.Stop();
             _netTime = _timer.Elapsed;
             _netTimeSmooth.Add((float)_netTime.TotalMilliseconds);
 
-            _discoveryTimer.Update(World.DT);
-            _syncTimer.Update(World.DT);
+            _discoveryTimer.Update(dt);
+            _syncTimer.Update(dt);
 
             var fpsNow = DateTime.UtcNow.Ticks;
             var fps = TimeSpan.TicksPerSecond / (float)(fpsNow - _lastRenderTime);

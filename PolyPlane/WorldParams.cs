@@ -16,7 +16,6 @@ namespace PolyPlane
 
         public static int PHYSICS_SUB_STEPS => _sub_steps;
 
-        public const bool NET_UPDATE_SKIP_FRAMES = true;
         public const int TARGET_FPS = 60; // Primary FPS target. Change this to match the desired refresh rate.
         public const int NET_SERVER_FPS = 60;
         public const int NET_CLIENT_FPS = TARGET_FPS;
@@ -43,10 +42,7 @@ namespace PolyPlane
         {
             get
             {
-                if (NET_UPDATE_SKIP_FRAMES)
-                    return NET_SERVER_FPS / 2;
-                else
-                    return NET_SERVER_FPS;
+                return NET_SERVER_FPS;
             }
         }
 
@@ -90,7 +86,7 @@ namespace PolyPlane
         /// Sets the fixed-ish sub DT and number of sub steps used for physics.
         /// </summary>
         /// <param name="dt"></param>
-        public static void SetSubDT(float dt) 
+        public static void SetSubDT(float dt)
         {
             // Compute sub DT and number of sub steps.
             var subSteps = (int)Math.Ceiling(dt / DEFAULT_SUB_DT);
