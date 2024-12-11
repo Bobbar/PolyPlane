@@ -18,7 +18,6 @@ namespace PolyPlane.Net.NetHost
 
         protected const int MAX_CLIENTS = 30;
         protected const int MAX_CHANNELS = 7;
-        protected const int CHANNEL_ID = 0;
         protected const int TIMEOUT = 0;
         protected const int POLL_FPS = 1000;
 
@@ -222,8 +221,8 @@ namespace PolyPlane.Net.NetHost
         {
             switch (netpacket.Type)
             {
-                case PacketTypes.NewBullet or PacketTypes.NewMissile or PacketTypes.NewDecoy or PacketTypes.Impact:
-                    return PacketFlags.Instant;
+                //case PacketTypes.NewBullet or PacketTypes.NewMissile or PacketTypes.NewDecoy or PacketTypes.Impact:
+                //    return PacketFlags.Instant;
 
                 default:
                     return PacketFlags.Reliable;

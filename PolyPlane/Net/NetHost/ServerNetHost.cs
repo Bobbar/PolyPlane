@@ -135,10 +135,13 @@ namespace PolyPlane.Net.NetHost
                     peer.Send(channel, ref packet);
             }
         }
+
         private void SendIDPacket(Peer peer, NetPacket packet)
         {
             var idPacket = CreatePacket(packet);
-            peer.Send(CHANNEL_ID, ref idPacket);
+            var channel = GetChannel(packet);
+
+            peer.Send(channel, ref idPacket);
         }
     }
 }
