@@ -144,7 +144,7 @@ namespace PolyPlane
             }
         }
 
-
+        public static bool CloudLighting = true;
         public static bool DynamicTimeDelta = true;
         public static bool MissileRegen = true;
         public static bool ShowMissilesOnRadar = false;
@@ -154,7 +154,6 @@ namespace PolyPlane
         public static bool ShowAITags = false;
         public static bool EnableWind = false;
         public static bool EnableTurbulence = true;
-        public static bool ExpireMissilesOnMiss = false;
         public static bool BulletHoleDrag = true;
         public static bool IsPaused = false;
         public static bool IsNetGame = false;

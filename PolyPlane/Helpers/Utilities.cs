@@ -191,6 +191,20 @@ namespace PolyPlane.Helpers
             return new D2DPoint(x, y);
         }
 
+        public static D2DPoint GroundIntersectionPoint(GameObject obj, float angle)
+        {
+            const float GROUND_LINE_LEN = 50000f;
+            const float Y_OFFSET = 15f;
+
+            var groundLineA = new D2DPoint(obj.Position.X - GROUND_LINE_LEN, 0f);
+            var groundLineB = new D2DPoint(obj.Position.X + GROUND_LINE_LEN, 0f);
+
+            var intersectVector = obj.Position + AngleToVectorDegrees(angle, obj.Altitude + Y_OFFSET);
+            var groundPos = IntersectionPoint(obj.Position, intersectVector, groundLineA, groundLineB);
+
+            return groundPos;
+        }
+
         public static float PositionToAltitude(D2DPoint position)
         {
             // Up = negative on the Y axis.

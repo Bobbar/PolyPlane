@@ -88,8 +88,11 @@ namespace PolyPlane.Rendering
         private readonly D2DColor _skyColorDark = new D2DColor(0.5f, D2DColor.Black);
         private readonly D2DColor _cloudColorLight = D2DColor.WhiteSmoke;
         private readonly D2DColor _cloudColorDark = new D2DColor(1f, 0.6f, 0.6f, 0.6f);
+        private readonly D2DColor _cloudLightingColor = new D2DColor(1f, 0.98f, 0.54f);
         private readonly D2DColor _groundColorLight = new D2DColor(1f, 0f, 0.29f, 0);
         private readonly D2DColor _groundColorDark = D2DColor.DarkGreen;
+        private readonly D2DColor _groundLightColor = new D2DColor(0.85f, 0.76f, 0.14f);
+
         private readonly D2DPoint _infoPosition = new D2DPoint(20, 20);
         private readonly D2DPoint _fieldRangeX = new D2DPoint(-MAX_CLOUD_X, MAX_CLOUD_X);
         private readonly D2DPoint _cloudRangeY = new D2DPoint(-30000, -2000);
@@ -834,7 +837,6 @@ namespace PolyPlane.Rendering
             const float HEIGHT = 10f;
             const float MAX_SIZE_ALT = 500f;
             const float MAX_SHOW_ALT = 2000f;
-            const float GROUND_LINE_LEN = 50000f;
             const float Y_POS = 15f;
 
             if (plane.Altitude > MAX_SHOW_ALT)
@@ -858,12 +860,8 @@ namespace PolyPlane.Rendering
             var width = Math.Abs(lineB.X - lineA.X);
             var initialWidth = ((width) * 0.5f) + WIDTH_PADDING;
 
-            // Project a line along the ToD angle towards the ground and find the intersection point for the shadow position.
-            var todVec = plane.Position + Utilities.AngleToVectorDegrees(todAngle, plane.Altitude + Y_POS);
-            var groundLineA = new D2DPoint(plane.Position.X - GROUND_LINE_LEN, 0f);
-            var groundLineB = new D2DPoint(plane.Position.X + GROUND_LINE_LEN, 0f);
-
-            var shadowPos = Utilities.IntersectionPoint(plane.Position, todVec, groundLineA, groundLineB);
+            // Find the ground intersection point for the shadow position.
+            var shadowPos = Utilities.GroundIntersectionPoint(plane, todAngle);
 
             // Move the shadow position down to the desired Y position.
             shadowPos += new D2DPoint(0f, Y_POS);
@@ -904,6 +902,8 @@ namespace PolyPlane.Rendering
                     ctx.Gfx.TranslateTransform(bullet.Position.X * ctx.CurrentScale, bullet.Position.Y * ctx.CurrentScale);
                     ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, BULLET_LIGHT_RADIUS, _bulletLightingBrush);
                     ctx.Gfx.PopTransform();
+
+                    DrawObjectGroundLight(ctx, bullet);
                 }
                 else if (obj is GuidedMissile missile)
                 {
@@ -918,19 +918,45 @@ namespace PolyPlane.Rendering
 
                         ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, MISSILE_LIGHT_RADIUS, _missileLightingBrush);
                         ctx.Gfx.PopTransform();
+
+                        DrawObjectGroundLight(ctx, missile);
                     }
                 }
                 else if (obj is Decoy decoy)
                 {
-                    if ((decoy.CurrentFrame % 21 == 0 || decoy.CurrentFrame % 33 == 0))
+                    if ((decoy.IsFlashing()))
                     {
                         ctx.Gfx.PushTransform();
                         ctx.Gfx.TranslateTransform(decoy.Position.X * ctx.CurrentScale, decoy.Position.Y * ctx.CurrentScale);
                         ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, DECOY_LIGHT_RADIUS, _decoyLightBrush);
                         ctx.Gfx.PopTransform();
+
+                        DrawObjectGroundLight(ctx, decoy);
                     }
                 }
             }
+        }
+
+        private void DrawObjectGroundLight(RenderContext ctx, GameObject obj)
+        {
+            const float MAX_SIZE_ALT = 300f;
+            const float MAX_SHOW_ALT = 600f;
+            const float Y_POS = 25f;
+            const float MAX_WIDTH = 220f;
+            const float HEIGHT = 15f;
+
+            if (obj.Altitude > MAX_SHOW_ALT)
+                return;
+
+            var lightWidth = Utilities.Lerp(1f, MAX_WIDTH, Utilities.FactorWithEasing(MAX_SIZE_ALT, obj.Altitude, EasingFunctions.EaseLinear));
+            var lightAlpha = 0.2f * (1f - Utilities.FactorWithEasing(obj.Altitude, MAX_SHOW_ALT, EasingFunctions.In.EaseSine));
+            var lightPos = Utilities.GroundIntersectionPoint(obj, 90f);
+            lightPos += new D2DPoint(0f, Y_POS);
+
+            if (obj.Altitude <= 0f)
+                lightWidth = MAX_WIDTH;
+
+            ctx.FillEllipse(new D2DEllipse(lightPos, new D2DSize(lightWidth, HEIGHT)), _groundLightColor.WithAlpha(lightAlpha));
         }
 
         private void DrawMuzzleFlash(RenderContext ctx, FighterPlane plane)
@@ -1623,9 +1649,19 @@ namespace PolyPlane.Rendering
 
         private void DrawCloud(RenderContext ctx, Cloud cloud, D2DColor todColor)
         {
+            const float MAX_LIGHT_DIST = 100f;
+
             var color1 = _cloudColorDark;
             var color2 = _cloudColorLight;
             var points = cloud.Points;
+
+            bool doLighting = World.CloudLighting;
+
+            IEnumerable<GameObject> near = null;
+
+            // Query for nearby objects for lighting effects.
+            if (doLighting)
+                near = _objs.GetNear(cloud.Position).Where(o => o is Bullet || o is GuidedMissile || o is Decoy);
 
             // Find min/max height.
             var minY = points.Min(p => p.Y);
@@ -1644,6 +1680,28 @@ namespace PolyPlane.Rendering
 
                 // Add time of day color.
                 color = AddTimeOfDayColor(color, todColor);
+
+                // Apply cloud lighting color.
+                if (doLighting)
+                {
+                    if (near.Any())
+                    {
+                        var closestObj = near.OrderBy(o => o.Position.DistanceTo(point)).First();
+                        var closestDist = closestObj.Position.DistanceTo(point);
+
+                        if (closestObj is not Decoy || (closestObj is Decoy decoy && decoy.IsFlashing()))
+                        {
+                            var lightFact = Utilities.FactorWithEasing(MAX_LIGHT_DIST, closestDist, EasingFunctions.In.EaseSine);
+                            lightFact = Math.Clamp(lightFact, 0f, 0.6f);
+
+                            if (lightFact > 0f)
+                            {
+                                var lightColor = Utilities.LerpColor(color, _cloudLightingColor, lightFact);
+                                color = lightColor;
+                            }
+                        }
+                    }
+                }
 
                 ctx.FillEllipse(new D2DEllipse(point, dims), color);
             }

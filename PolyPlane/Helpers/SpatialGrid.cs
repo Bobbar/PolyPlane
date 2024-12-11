@@ -122,6 +122,35 @@ namespace PolyPlane.Helpers
         }
 
         /// <summary>
+        /// Get all objects within neighboring grid cells of the specified position.
+        /// </summary>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        public IEnumerable<T> GetNear(D2DPoint position)
+        {
+            GetGridIdx(position, out int idxX, out int idxY);
+
+            for (int x = -1; x <= 1; x++)
+            {
+                for (int y = -1; y <= 1; y++)
+                {
+                    var xo = idxX + x;
+                    var yo = idxY + y;
+                    var nHash = GetGridHash(xo, yo);
+
+                    if (_grid.TryGetValue(nHash, out var ns))
+                    {
+                        for (int i = 0; i < ns.Count; i++)
+                        {
+                            yield return ns[i].Item;
+                        }
+                    }
+                }
+            }
+        }
+
+
+        /// <summary>
         /// Get all objects within the specified rectangle.
         /// </summary>
         /// <param name="viewport"></param>
