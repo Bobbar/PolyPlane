@@ -28,7 +28,7 @@ namespace PolyPlane.GameObjects.Manager
             if (World.IsNetGame && World.IsClient)
                 doLocalCollisions = false;
 
-            var now = World.CurrentNetTime();
+            var now = World.CurrentNetTimeMs();
 
             // Targets/AI Planes vs missiles and bullets.
             for (int r = 0; r < _objs.Planes.Count; r++)

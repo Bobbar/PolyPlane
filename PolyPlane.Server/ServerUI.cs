@@ -281,7 +281,7 @@ namespace PolyPlane.Server
 
         private void GameLoop()
         {
-            _lastFrameTime = World.CurrentTimeMS();
+            _lastFrameTime = World.CurrentTimeMs();
 
             while (!this.Disposing && !_killThread)
             {
@@ -307,7 +307,7 @@ namespace PolyPlane.Server
             _timer.Stop();
             _updateTime += _timer.Elapsed;
 
-            var now = World.CurrentTimeMS();
+            var now = World.CurrentTimeMs();
             var dt = World.DT;
 
             var elapFrameTime = now - _lastFrameTime;

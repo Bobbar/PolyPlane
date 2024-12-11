@@ -188,7 +188,7 @@ namespace PolyPlane.GameObjects
 
             if (World.InterpOn && World.IsNetGame && IsNetObject && InterpBuffer != null)
             {
-                var nowMs = World.CurrentNetTime();
+                var nowMs = World.CurrentNetTimeMs();
                 InterpBuffer.InterpolateState(nowMs);
             }
             else
@@ -226,7 +226,7 @@ namespace PolyPlane.GameObjects
                 this.Velocity = velocity;
             }
 
-            this.LagAmount = World.CurrentNetTime() - frameTime;
+            this.LagAmount = World.CurrentNetTimeMs() - frameTime;
         }
 
         public virtual void ClampToGround(float dt)
@@ -429,7 +429,7 @@ namespace PolyPlane.GameObjects
                 histState.Position = this.Position;
                 histState.Velocity = this.Velocity;
                 histState.Rotation = this.Rotation;
-                HistoryBuffer.Enqueue(histState, World.CurrentNetTime());
+                HistoryBuffer.Enqueue(histState, World.CurrentNetTimeMs());
             }
         }
 

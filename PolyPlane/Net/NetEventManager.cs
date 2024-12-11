@@ -68,7 +68,7 @@ namespace PolyPlane.Net
 
         public void DoNetEvents(float dt)
         {
-            double now = World.CurrentNetTime();
+            double now = World.CurrentNetTimeMs();
 
             if (_lastNetTime == 0)
                 _lastNetTime = now;
@@ -89,7 +89,7 @@ namespace PolyPlane.Net
             double totalPacketTime = 0;
             int numPackets = 0;
 
-            now = World.CurrentNetTime();
+            now = World.CurrentNetTimeMs();
 
             while (Host.PacketReceiveQueue.Count > 0)
             {
@@ -465,7 +465,7 @@ namespace PolyPlane.Net
 
         public void SendSyncPacket()
         {
-            var packet = new SyncPacket(World.CurrentNetTime(), World.TimeOfDay, World.TimeOfDayDir, World.GunsOnly, World.DT);
+            var packet = new SyncPacket(World.CurrentNetTimeMs(), World.TimeOfDay, World.TimeOfDayDir, World.GunsOnly, World.DT);
             Host.EnqueuePacket(packet);
         }
 
@@ -573,7 +573,7 @@ namespace PolyPlane.Net
                     var newPlane = new FighterPlane(player.Position, player.PlaneColor, player.ID, isAI: false, isNetPlane: true);
                     newPlane.PlayerName = player.Name;
                     newPlane.IsNetObject = true;
-                    newPlane.LagAmount = World.CurrentNetTime() - players.FrameTime;
+                    newPlane.LagAmount = World.CurrentNetTimeMs() - players.FrameTime;
                     newPlane.PlayerHitCallback = (evt) => ImpactEvent?.Invoke(this, evt);
 
                     _objs.AddPlane(newPlane);
@@ -603,7 +603,7 @@ namespace PolyPlane.Net
             {
                 planePacket.SyncObj(netPlane);
 
-                netPlane.LagAmount = World.CurrentNetTime() - planePacket.FrameTime;
+                netPlane.LagAmount = World.CurrentNetTimeMs() - planePacket.FrameTime;
                 netPlane.NetUpdate(planePacket.Position, planePacket.Velocity, planePacket.Rotation, planePacket.FrameTime);
             }
         }
@@ -703,7 +703,7 @@ namespace PolyPlane.Net
                 return;
 
             bullet.Owner = owner;
-            bullet.LagAmount = World.CurrentNetTime() - bulletPacket.FrameTime;
+            bullet.LagAmount = World.CurrentNetTimeMs() - bulletPacket.FrameTime;
             // Try to spawn the bullet ahead (extrapolate) to compensate for latency?
             bullet.Position += bullet.Velocity * (bullet.LagAmountFrames * dt);
 
@@ -727,7 +727,7 @@ namespace PolyPlane.Net
                 missile.ID = missilePacket.ID;
                 missilePacket.SyncObj(missile);
                 missile.Target = missileTarget;
-                missile.LagAmount = World.CurrentNetTime() - missilePacket.FrameTime;
+                missile.LagAmount = World.CurrentNetTimeMs() - missilePacket.FrameTime;
                 _objs.EnqueueMissile(missile);
             }
         }

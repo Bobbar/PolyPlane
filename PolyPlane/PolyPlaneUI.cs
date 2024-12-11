@@ -508,7 +508,7 @@ namespace PolyPlane
      
         private void GameLoop()
         {
-            _lastFrameTime = World.CurrentTimeMS();
+            _lastFrameTime = World.CurrentTimeMs();
 
             while (!this.Disposing && !_killRender)
             {
@@ -534,7 +534,7 @@ namespace PolyPlane
 
             var viewObject = GetViewObjectOrCamera(World.GetViewObject());
 
-            var now = World.CurrentTimeMS();
+            var now = World.CurrentTimeMs();
             var dt = World.DT;
 
             // Compute elapsed time since the last frame

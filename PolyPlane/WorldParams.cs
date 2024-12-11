@@ -332,25 +332,23 @@ namespace PolyPlane
         }
 
         /// <summary>
-        /// Current time in milliseconds for net games.
+        /// Current UTC time in milliseconds for net games.
         /// </summary>
         /// <returns></returns>
-        public static long CurrentNetTime()
+        public static long CurrentNetTimeMs()
         {
             var now = DateTimeOffset.Now.ToUnixTimeMilliseconds() + ServerTimeOffset;
-            return (long)Math.Floor(now);
+            return (long)now;
         }
 
         /// <summary>
-        /// Current time in milliseconds.
+        /// Current local time in milliseconds.
         /// </summary>
         /// <returns></returns>
-        public static double CurrentTimeMS()
+        public static double CurrentTimeMs()
         {
             var now = DateTimeOffset.Now.Ticks;
-
             var time = now / (double)TimeSpan.TicksPerMillisecond;
-
             return time;
         }
 

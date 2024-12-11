@@ -27,7 +27,7 @@
 
         public T GetHistoricalState(double timestamp)
         {
-            var now = World.CurrentNetTime();
+            var now = World.CurrentNetTimeMs();
 
             for (int i = 0; i < _history.Count - 1; i++)
             {
