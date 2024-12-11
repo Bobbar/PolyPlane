@@ -11,6 +11,7 @@ namespace PolyPlane.Rendering
         public D2DGraphics Gfx;
         public D2DDevice Device;
         public D2DRect Viewport;
+        public LightMap LightMap;
 
         public float CurrentScale
         {
@@ -26,11 +27,11 @@ namespace PolyPlane.Rendering
         private Stack<D2DRect> _vpStack = new Stack<D2DRect>();
         private D2DSolidColorBrush _ellipseBrush;
 
-
         public RenderContext(D2DGraphics gfx, D2DDevice device)
         {
             Gfx = gfx;
             Device = device;
+            LightMap = new LightMap();
 
             _ellipseBrush = device.CreateSolidColorBrush(D2DColor.Transparent);
         }

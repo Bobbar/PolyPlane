@@ -67,6 +67,9 @@ namespace PolyPlane.Rendering
 
             // Add time of day color
             var trunkColor = Utilities.LerpColor(this.TrunkColor, timeOfDayColor, 0.3f);
+            
+            // Add time of day color to leafs.
+            var leafToDColor = new D2DColor(0.2f, timeOfDayColor);
             var shadowColor = GetShadowColor(timeOfDayColor);
             var leafYPos = new D2DPoint(0f, (-this.Height * scale) - this.Radius);
             var shadowLeafPos = this.Position - leafYPos;
@@ -92,6 +95,15 @@ namespace PolyPlane.Rendering
 
             ctx.Gfx.PopTransform();
 
+            // Apply lighting color.
+            if (World.CloudLighting)
+            {
+                var lightIntensity = ctx.LightMap.SampleIntensity(normalLeafPos);
+                lightIntensity = Math.Clamp(lightIntensity, 0f, 0.3f);
+
+                trunkColor = Utilities.LerpColor(trunkColor, ctx.LightMap.Colors.DefaultLightingColor, lightIntensity);
+                leafToDColor = Utilities.LerpColor(leafToDColor, ctx.LightMap.Colors.DefaultLightingColor, lightIntensity);
+            }
 
             // Draw tree.
             Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, 180f, this.Position, scale);
@@ -103,10 +115,7 @@ namespace PolyPlane.Rendering
 
             var leafEllipse = new D2DEllipse(D2DPoint.Zero, size);
             ctx.Gfx.FillEllipse(leafEllipse, _leafBrush);
-
-            // Add time of day color to leafs.
-            var todOverlay = new D2DColor(0.2f, timeOfDayColor);
-            ctx.Gfx.FillEllipse(leafEllipse, todOverlay);
+            ctx.Gfx.FillEllipse(leafEllipse, leafToDColor);
 
             ctx.Gfx.PopTransform();
         }
@@ -180,6 +189,15 @@ namespace PolyPlane.Rendering
 
             ctx.Gfx.PopTransform();
 
+            // Apply lighting color.
+            if (World.CloudLighting)
+            {
+                var lightIntensity = ctx.LightMap.SampleIntensity(this.Position);
+                lightIntensity = Math.Clamp(lightIntensity, 0f, 0.3f);
+
+                trunkColor = Utilities.LerpColor(trunkColor, ctx.LightMap.Colors.DefaultLightingColor, lightIntensity);
+                leafColor = Utilities.LerpColor(leafColor, ctx.LightMap.Colors.DefaultLightingColor, lightIntensity);
+            }
 
             // Draw tree.
             Utilities.ApplyTranslation(TopPoly, _topTrans, 180f, this.Position - new D2DPoint(0, this.Height), scale);

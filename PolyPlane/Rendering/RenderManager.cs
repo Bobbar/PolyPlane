@@ -88,7 +88,6 @@ namespace PolyPlane.Rendering
         private readonly D2DColor _skyColorDark = new D2DColor(0.5f, D2DColor.Black);
         private readonly D2DColor _cloudColorLight = D2DColor.WhiteSmoke;
         private readonly D2DColor _cloudColorDark = new D2DColor(1f, 0.6f, 0.6f, 0.6f);
-        private readonly D2DColor _cloudLightingColor = new D2DColor(1f, 0.98f, 0.54f);
         private readonly D2DColor _groundColorLight = new D2DColor(1f, 0f, 0.29f, 0);
         private readonly D2DColor _groundColorDark = D2DColor.DarkGreen;
         private readonly D2DColor _groundLightColor = new D2DColor(0.85f, 0.76f, 0.14f);
@@ -597,10 +596,17 @@ namespace PolyPlane.Rendering
             ctx.Gfx.TranslateTransform(pos.X, pos.Y);
 
             var viewPortRect = new D2DRect(viewObj.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
+            var viewPortOG = viewPortRect;
 
             const float VIEWPORT_PADDING_AMT = 1.5f;
             var inflateAmt = VIEWPORT_PADDING_AMT * zAmt;
             viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true); // Inflate slightly to prevent "pop-in".
+
+            var objsInViewport = _objs.GetInViewport(ctx.Viewport).OrderBy(o => o.RenderOrder);
+
+            // Update the light map.
+            if (World.CloudLighting)
+                ctx.LightMap.Update(viewPortOG, objsInViewport);
 
             var shadowColor = GetShadowColor();
 
@@ -613,10 +619,12 @@ namespace PolyPlane.Rendering
             _objs.MissileTrails.ForEach(o => o.Render(ctx));
             _contrailBox.Render(ctx);
 
-            var objsInViewport = _objs.GetInViewport(ctx.Viewport).Where(o => o is not Explosion).OrderBy(o => o.RenderOrder);
-
             foreach (var obj in objsInViewport)
             {
+                // Skip explosions as they require special handling for correct viewport clipping.
+                if (obj is Explosion)
+                    continue;
+
                 if (obj is FighterPlane p)
                 {
                     DrawPlaneGroundShadow(ctx, p, shadowColor);
@@ -655,6 +663,7 @@ namespace PolyPlane.Rendering
             DrawLightingEffects(ctx, objsInViewport);
 
             //DrawNoise(ctx);
+            //DrawLightMap(ctx);
 
             ctx.PopViewPort();
             ctx.Gfx.PopTransform();
@@ -676,6 +685,24 @@ namespace PolyPlane.Rendering
                 }
             }
         }
+
+        private void DrawLightMap(RenderContext ctx)
+        {
+            const float step = 20f;
+            const float size = 20f;
+
+            for (float x = ctx.Viewport.left; x <= ctx.Viewport.right; x += step)
+            {
+                for (float y = ctx.Viewport.top; y <= ctx.Viewport.bottom; y += step)
+                {
+                    var nPos = new D2DPoint(x, y);
+                    var alpha = ctx.LightMap.SampleIntensity(nPos);
+
+                    ctx.FillRectangle(new D2DRect(nPos, new D2DSize(size, size)), D2DColor.Yellow.WithAlpha(alpha));
+                }
+            }
+        }
+
 
         private void UpdatePopMessages(float dt)
         {
@@ -1649,19 +1676,9 @@ namespace PolyPlane.Rendering
 
         private void DrawCloud(RenderContext ctx, Cloud cloud, D2DColor todColor)
         {
-            const float MAX_LIGHT_DIST = 100f;
-
             var color1 = _cloudColorDark;
             var color2 = _cloudColorLight;
             var points = cloud.Points;
-
-            bool doLighting = World.CloudLighting;
-
-            IEnumerable<GameObject> near = null;
-
-            // Query for nearby objects for lighting effects.
-            if (doLighting)
-                near = _objs.GetNear(cloud.Position).Where(o => o is Bullet || o is GuidedMissile || o is Decoy);
 
             // Find min/max height.
             var minY = points.Min(p => p.Y);
@@ -1682,25 +1699,12 @@ namespace PolyPlane.Rendering
                 color = AddTimeOfDayColor(color, todColor);
 
                 // Apply cloud lighting color.
-                if (doLighting)
+                if (World.CloudLighting)
                 {
-                    if (near.Any())
-                    {
-                        var closestObj = near.OrderBy(o => o.Position.DistanceTo(point)).First();
-                        var closestDist = closestObj.Position.DistanceTo(point);
+                    var alpha = ctx.LightMap.SampleIntensity(point);
+                    var lightColor = Utilities.LerpColor(color, ctx.LightMap.Colors.DefaultLightingColor, alpha);
 
-                        if (closestObj is not Decoy || (closestObj is Decoy decoy && decoy.IsFlashing()))
-                        {
-                            var lightFact = Utilities.FactorWithEasing(MAX_LIGHT_DIST, closestDist, EasingFunctions.In.EaseSine);
-                            lightFact = Math.Clamp(lightFact, 0f, 0.6f);
-
-                            if (lightFact > 0f)
-                            {
-                                var lightColor = Utilities.LerpColor(color, _cloudLightingColor, lightFact);
-                                color = lightColor;
-                            }
-                        }
-                    }
+                    color = lightColor;
                 }
 
                 ctx.FillEllipse(new D2DEllipse(point, dims), color);

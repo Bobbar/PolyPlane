@@ -1,6 +1,7 @@
 ﻿using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
+using System.Drawing;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -53,7 +54,20 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
-            ctx.FillEllipse(Ellipse, Color);
+            var color = Color;
+
+            if (World.CloudLighting)
+            {
+                var alpha = ctx.LightMap.SampleIntensity(this.Position);
+
+                // Clamp max intensity a bit.
+                alpha = Math.Clamp(alpha, 0f, 0.4f);
+
+                var lightColor = Utilities.LerpColor(Color, ctx.LightMap.Colors.DefaultLightingColor, alpha);
+                color = lightColor;
+            }
+
+            ctx.FillEllipse(Ellipse, color);
         }
 
         public override void Dispose()
