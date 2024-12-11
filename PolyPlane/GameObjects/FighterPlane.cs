@@ -946,7 +946,7 @@ namespace PolyPlane.GameObjects
                 }
             }
 
-            PlayerHitCallback?.Invoke(new ImpactEvent(this, attackPlane));
+            PlayerHitCallback?.Invoke(new ImpactEvent(this, attackPlane, result.DamageAmount > 0f));
 
         }
 
@@ -1233,7 +1233,6 @@ namespace PolyPlane.GameObjects
             base.Dispose();
 
             _polyClipLayer?.Dispose();
-            //_bulletHoles.ForEach(b => b.Dispose());
             _bulletHoles.Clear();
             _vaporTrails.Clear();
             _engineFireFlame?.Dispose();

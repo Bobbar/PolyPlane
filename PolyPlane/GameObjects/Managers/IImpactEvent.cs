@@ -9,11 +9,13 @@
     {
         public GameObject Attacker;
         public GameObject Target;
+        public bool DidDamage = false;
 
-        public ImpactEvent(GameObject target, GameObject attacker)
+        public ImpactEvent(GameObject target, GameObject attacker, bool didDamage)
         {
             Target = target;
             Attacker = attacker;
+            DidDamage = didDamage;
         }
     }
 }

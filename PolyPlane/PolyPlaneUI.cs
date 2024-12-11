@@ -359,7 +359,7 @@ namespace PolyPlane
                 }
                 else if (impact.Attacker.Equals(viewPlane))
                 {
-                    if (impact.Target is FighterPlane targetPlane && !targetPlane.IsDisabled)
+                    if (impact.Target is FighterPlane && impact.DidDamage)
                         _render.DoScreenFlash(D2DColor.Green);
                 }
             }
