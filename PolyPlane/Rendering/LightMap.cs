@@ -91,6 +91,62 @@ namespace PolyPlane.Rendering
             return 0f;
         }
 
+        /// <summary>
+        /// Sample light intensity at the specified point and compute the new lighted color from the specified color. Uses default lighting color.
+        /// </summary>
+        /// <param name="pos">Position to sample.</param>
+        /// <param name="initColor">Initial un-lighted color.</param>
+        /// <returns></returns>
+        public D2DColor SampleColor(D2DPoint pos, D2DColor initColor)
+        {
+            return SampleColor(pos, 0f, 1f, initColor, Colors.DefaultLightingColor);
+        }
+
+        /// <summary>
+        /// Sample light intensity at the specified point and compute the new lighted color from the specified color. Uses default lighting color.
+        /// </summary>
+        /// <param name="pos">Position to sample.</param>
+        /// <param name="rangeMax">Max intensity range.</param>
+        /// <param name="initColor">Initial un-lighted color.</param>
+        /// <returns></returns>
+        public D2DColor SampleColor(D2DPoint pos, float rangeMax, D2DColor initColor)
+        {
+            return SampleColor(pos, 0f, rangeMax, initColor, Colors.DefaultLightingColor);
+        }
+
+        /// <summary>
+        /// Sample light intensity at the specified point and compute the new lighted color from the specified color. Uses default lighting color.
+        /// </summary>
+        /// <param name="pos">Position to sample.</param>
+        /// <param name="rangeMin">Min intensity range.</param>
+        /// <param name="rangeMax">Max intensity range.</param>
+        /// <param name="initColor">Initial un-lighted color.</param>
+        /// <returns></returns>
+        public D2DColor SampleColor(D2DPoint pos, float rangeMin, float rangeMax, D2DColor initColor)
+        {
+            return SampleColor(pos, rangeMin, rangeMax, initColor, Colors.DefaultLightingColor);
+        }
+
+        /// <summary>
+        /// Sample light intensity at the specified point and compute the new lighted color from the specified colors.
+        /// </summary>
+        /// <param name="pos">Position to sample.</param>
+        /// <param name="rangeMin">Min intensity range.</param>
+        /// <param name="rangeMax">Max intensity range.</param>
+        /// <param name="initColor">Initial un-lighted color.</param>
+        /// <param name="lightColor">Lighting color to be lerped in per the intensity.</param>
+        /// <returns></returns>
+        public D2DColor SampleColor(D2DPoint pos, float rangeMin, float rangeMax, D2DColor initColor, D2DColor lightColor)
+        {
+            var intensity = SampleIntensity(pos);
+
+            intensity = Utilities.ScaleToRange(intensity, 0f, 1f, rangeMin, rangeMax);
+
+            var newColor = Utilities.LerpColor(initColor, lightColor, intensity);
+
+            return newColor;
+        }
+
         private void ClearMap()
         {
             if (_map != null)

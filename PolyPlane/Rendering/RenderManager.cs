@@ -1700,12 +1700,7 @@ namespace PolyPlane.Rendering
 
                 // Apply cloud lighting color.
                 if (World.UseLightMap)
-                {
-                    var alpha = ctx.LightMap.SampleIntensity(point);
-                    var lightColor = Utilities.LerpColor(color, ctx.LightMap.Colors.DefaultLightingColor, alpha);
-
-                    color = lightColor;
-                }
+                    color = ctx.LightMap.SampleColor(point, 0.7f, color);
 
                 ctx.FillEllipse(new D2DEllipse(point, dims), color);
             }

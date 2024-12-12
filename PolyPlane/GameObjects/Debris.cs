@@ -55,7 +55,12 @@ namespace PolyPlane.GameObjects
             base.Render(ctx);
 
             var ageAlpha = 1f - Utilities.FactorWithEasing(_onGroundAge, MAX_AGE, EasingFunctions.In.EaseExpo);
-            ctx.DrawPolygon(this.Polygon, D2DColor.Black.WithAlpha(ageAlpha), 0.5f, D2DDashStyle.Solid, _color.WithAlpha(ageAlpha));
+            var color = _color.WithAlpha(ageAlpha);
+
+            if (World.UseLightMap)
+                color = ctx.LightMap.SampleColor(this.Position, 0.4f, color);
+
+            ctx.DrawPolygon(this.Polygon, D2DColor.Black.WithAlpha(ageAlpha), 0.5f, D2DDashStyle.Solid, color);
         }
 
         public override void Dispose()

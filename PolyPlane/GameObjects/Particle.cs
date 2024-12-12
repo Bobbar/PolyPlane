@@ -56,13 +56,7 @@ namespace PolyPlane.GameObjects
             var color = Color;
 
             if (World.UseLightMap)
-            {
-                var intensity = ctx.LightMap.SampleIntensity(this.Position);
-                intensity = Utilities.ScaleToRange(intensity, 0f, 1f, 0f, 0.6f);
-
-                var lightColor = Utilities.LerpColor(Color, ctx.LightMap.Colors.DefaultLightingColor, intensity);
-                color = lightColor;
-            }
+                color = ctx.LightMap.SampleColor(this.Position, 0.6f, color);
 
             ctx.FillEllipse(Ellipse, color);
         }
