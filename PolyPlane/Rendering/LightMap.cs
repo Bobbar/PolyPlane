@@ -33,14 +33,8 @@ namespace PolyPlane.Rendering
             // Filter out all but target object types.
             objs = objs.Where(o => o is Bullet || o is Decoy || o is GuidedMissile || o is Explosion);
 
-            ClearMap();
-
-            if (!objs.Any())
-                return;
-
             UpdateViewport(viewport);
-
-            var sz = _gridSize;
+            ClearMap();
 
             foreach (var obj in objs)
             {
@@ -51,30 +45,27 @@ namespace PolyPlane.Rendering
                 GetGridPos(obj.Position, out int idxX, out int idxY);
 
                 // Sample points around the objects to build a light intensity gradient.
-                if (idxX > 0f || idxX < sz.width || idxY > 0f || idxY < sz.height)
+                for (int x = -SAMPLE_NUM; x <= SAMPLE_NUM; x++)
                 {
-                    for (int x = -SAMPLE_NUM; x <= SAMPLE_NUM; x++)
+                    for (int y = -SAMPLE_NUM; y <= SAMPLE_NUM; y++)
                     {
-                        for (int y = -SAMPLE_NUM; y <= SAMPLE_NUM; y++)
+                        var xo = idxX + x;
+                        var yo = idxY + y;
+
+                        if (xo >= 0 && yo >= 0 && xo < _gridSize.width && yo < _gridSize.height)
                         {
-                            var xo = idxX + x;
-                            var yo = idxY + y;
+                            // Compute the gradient from distance to center.
+                            var nPos = new D2DPoint((xo * SIDE_LEN) + _viewport.Location.X, (yo * SIDE_LEN) + _viewport.Location.Y);
+                            var dist = obj.Position.DistanceTo(nPos);
 
-                            if (xo >= 0 && yo >= 0 && xo < sz.width && yo < sz.height)
+                            if (dist <= GRADIENT_DIST)
                             {
-                                // Compute the gradient from distance to center.
-                                var nPos = new D2DPoint((xo * SIDE_LEN) + _viewport.Location.X, (yo * SIDE_LEN) + _viewport.Location.Y);
-                                var dist = obj.Position.DistanceTo(nPos);
+                                var intensity = 1f - Utilities.FactorWithEasing(dist, GRADIENT_DIST, EasingFunctions.Out.EaseSine);
 
-                                if (dist <= GRADIENT_DIST)
-                                {
-                                    var intensity = 1f - Utilities.FactorWithEasing(dist, GRADIENT_DIST, EasingFunctions.Out.EaseSine);
+                                // Accumulate and clamp the new intensity.
+                                intensity = Math.Clamp(_map[xo, yo] + intensity, 0f, 1f);
 
-                                    // Accumulate and clamp the new intensity.
-                                    intensity = Math.Clamp(_map[xo, yo] + intensity, 0f, 1f);
-
-                                    _map[xo, yo] = intensity;
-                                }
+                                _map[xo, yo] = intensity;
                             }
                         }
                     }
@@ -96,7 +87,7 @@ namespace PolyPlane.Rendering
                 var sample = _map[idxX, idxY];
                 return sample;
             }
-
+           
             return 0f;
         }
 
@@ -122,7 +113,6 @@ namespace PolyPlane.Rendering
             _viewport = viewport;
         }
 
-
         private void GetGridPos(D2DPoint pos, out int X, out int Y)
         {
             var posOffset = pos - _viewport.Location;
@@ -136,6 +126,5 @@ namespace PolyPlane.Rendering
         {
             public readonly D2DColor DefaultLightingColor = new D2DColor(1f, 0.98f, 0.54f);
         }
-
     }
 }
