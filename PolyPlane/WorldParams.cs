@@ -1,7 +1,6 @@
 ﻿using NetStack.Quantization;
 using PolyPlane.GameObjects;
 using PolyPlane.Helpers;
-using PolyPlane.Rendering;
 using unvell.D2DLib;
 
 namespace PolyPlane
