@@ -44,8 +44,21 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
-            ctx.FillEllipse(new D2DEllipse(this.Position, this.OuterHoleSize), this.Color);
-            ctx.FillEllipse(new D2DEllipse(this.Position, this.HoleSize), D2DColor.Black);
+            var outColor = this.Color;
+            var holeColor = D2DColor.Black;
+
+            if (World.UseLightMap)
+            {
+                var intensity = ctx.LightMap.SampleIntensity(this.Position);
+
+                intensity = Utilities.ScaleToRange(intensity, 0f, 1f, 0f, 0.3f);
+
+                outColor = Utilities.LerpColor(outColor, ctx.LightMap.Colors.DefaultLightingColor, intensity);
+                holeColor = Utilities.LerpColor(holeColor, ctx.LightMap.Colors.DefaultLightingColor, intensity);
+            }
+
+            ctx.FillEllipse(new D2DEllipse(this.Position, this.OuterHoleSize), outColor);
+            ctx.FillEllipse(new D2DEllipse(this.Position, this.HoleSize), holeColor);
         }
 
         private D2DColor GetColor()

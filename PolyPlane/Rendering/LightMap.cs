@@ -80,15 +80,16 @@ namespace PolyPlane.Rendering
         /// <returns></returns>
         public float SampleIntensity(D2DPoint pos)
         {
+            float sample = 0f;
+
             GetGridPos(pos, out int idxX, out int idxY);
 
             if (idxX >= 0 && idxY >= 0 && idxX < _gridSize.width && idxY < _gridSize.height)
             {
-                var sample = _map[idxX, idxY];
-                return sample;
+                sample = _map[idxX, idxY];
             }
-           
-            return 0f;
+
+            return sample;
         }
 
         /// <summary>

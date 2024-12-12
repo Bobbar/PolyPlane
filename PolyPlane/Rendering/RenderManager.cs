@@ -688,8 +688,8 @@ namespace PolyPlane.Rendering
 
         private void DrawLightMap(RenderContext ctx)
         {
-            const float step = 20f;
-            const float size = 20f;
+            const float step = 60f;
+            const float size = 60f;
 
             for (float x = ctx.Viewport.left; x <= ctx.Viewport.right; x += step)
             {
