@@ -145,7 +145,7 @@ namespace PolyPlane
             }
         }
 
-        public static bool CloudLighting = true;
+        public static bool UseLightMap = true;
         public static bool DynamicTimeDelta = true;
         public static bool MissileRegen = true;
         public static bool ShowMissilesOnRadar = false;

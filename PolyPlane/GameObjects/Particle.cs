@@ -56,14 +56,12 @@ namespace PolyPlane.GameObjects
 
             var color = Color;
 
-            if (World.CloudLighting)
+            if (World.UseLightMap)
             {
-                var alpha = ctx.LightMap.SampleIntensity(this.Position);
+                var intensity = ctx.LightMap.SampleIntensity(this.Position);
+                intensity = Utilities.ScaleToRange(intensity, 0f, 1f, 0f, 0.6f);
 
-                // Clamp max intensity a bit.
-                alpha = Math.Clamp(alpha, 0f, 0.4f);
-
-                var lightColor = Utilities.LerpColor(Color, ctx.LightMap.Colors.DefaultLightingColor, alpha);
+                var lightColor = Utilities.LerpColor(Color, ctx.LightMap.Colors.DefaultLightingColor, intensity);
                 color = lightColor;
             }
 

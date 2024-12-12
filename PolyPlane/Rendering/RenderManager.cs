@@ -605,7 +605,7 @@ namespace PolyPlane.Rendering
             var objsInViewport = _objs.GetInViewport(ctx.Viewport).OrderBy(o => o.RenderOrder);
 
             // Update the light map.
-            if (World.CloudLighting)
+            if (World.UseLightMap)
                 ctx.LightMap.Update(viewPortOG, objsInViewport);
 
             var shadowColor = GetShadowColor();
@@ -1699,7 +1699,7 @@ namespace PolyPlane.Rendering
                 color = AddTimeOfDayColor(color, todColor);
 
                 // Apply cloud lighting color.
-                if (World.CloudLighting)
+                if (World.UseLightMap)
                 {
                     var alpha = ctx.LightMap.SampleIntensity(point);
                     var lightColor = Utilities.LerpColor(color, ctx.LightMap.Colors.DefaultLightingColor, alpha);

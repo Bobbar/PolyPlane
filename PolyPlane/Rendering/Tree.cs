@@ -96,10 +96,10 @@ namespace PolyPlane.Rendering
             ctx.Gfx.PopTransform();
 
             // Apply lighting color.
-            if (World.CloudLighting)
+            if (World.UseLightMap)
             {
                 var lightIntensity = ctx.LightMap.SampleIntensity(normalLeafPos);
-                lightIntensity = Math.Clamp(lightIntensity, 0f, 0.3f);
+                lightIntensity = Utilities.ScaleToRange(lightIntensity, 0f, 1f, 0f, 0.4f);
 
                 trunkColor = Utilities.LerpColor(trunkColor, ctx.LightMap.Colors.DefaultLightingColor, lightIntensity);
                 leafToDColor = Utilities.LerpColor(leafToDColor, ctx.LightMap.Colors.DefaultLightingColor, lightIntensity);
@@ -190,10 +190,10 @@ namespace PolyPlane.Rendering
             ctx.Gfx.PopTransform();
 
             // Apply lighting color.
-            if (World.CloudLighting)
+            if (World.UseLightMap)
             {
                 var lightIntensity = ctx.LightMap.SampleIntensity(this.Position);
-                lightIntensity = Math.Clamp(lightIntensity, 0f, 0.3f);
+                lightIntensity = Utilities.ScaleToRange(lightIntensity, 0f, 1f, 0f, 0.4f);
 
                 trunkColor = Utilities.LerpColor(trunkColor, ctx.LightMap.Colors.DefaultLightingColor, lightIntensity);
                 leafColor = Utilities.LerpColor(leafColor, ctx.LightMap.Colors.DefaultLightingColor, lightIntensity);
