@@ -73,6 +73,9 @@ namespace PolyPlane
         /// <returns>Returns the new delta time.</returns>
         public static float SetDynamicDT(double elapFrameTime)
         {
+            if (elapFrameTime > 250f)
+                elapFrameTime = 250f;
+
             var dt = (float)(World.DT * (elapFrameTime / World.TARGET_FRAME_TIME));
 
             DynamicDT = dt;
