@@ -55,10 +55,7 @@ namespace PolyPlane.GameObjects
 
             var color = Color;
 
-            if (World.UseLightMap)
-                color = ctx.LightMap.SampleColor(this.Position, 0.6f, color);
-
-            ctx.FillEllipse(Ellipse, color);
+            ctx.FillEllipseWithLighting(Ellipse, color, 0.7f);
         }
 
         public override void Dispose()

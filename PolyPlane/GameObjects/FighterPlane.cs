@@ -609,12 +609,7 @@ namespace PolyPlane.GameObjects
             if (!this.IsDisabled)
                 DrawShockwave(ctx);
 
-            var planeColor = _planeColor;
-
-            if (World.UseLightMap)
-                planeColor = ctx.LightMap.SampleColor(this.Position, 0.6f, planeColor);
-
-            ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black.WithAlpha(0.3f), 0.5f, D2DDashStyle.Solid, planeColor);
+            ctx.DrawPolygonWithLighting(this.Polygon, this.Position, D2DColor.Black.WithAlpha(0.3f), 0.5f, D2DDashStyle.Solid, _planeColor, 0.6f);
 
             DrawClippedObjects(ctx);
             _wings.ForEach(w => w.Render(ctx));

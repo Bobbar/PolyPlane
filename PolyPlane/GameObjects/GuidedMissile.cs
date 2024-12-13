@@ -8,7 +8,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class GuidedMissile : GameObjectPoly, ICollidable
+    public class GuidedMissile : GameObjectPoly, ICollidable, ILightMapContributor
     {
         public float Deflection = 0f;
         public bool FlameOn = false;
@@ -504,6 +504,23 @@ namespace PolyPlane.GameObjects
             }
 
             return thrust;
+        }
+
+        float ILightMapContributor.GetLightRadius()
+        {
+            const float LIGHT_RADIUS = 450f;
+
+            return LIGHT_RADIUS;
+        }
+
+        float ILightMapContributor.GetIntensityFactor()
+        {
+            return 1f;
+        }
+
+        bool ILightMapContributor.IsLightEnabled()
+        {
+            return this.FlameOn;
         }
     }
 }

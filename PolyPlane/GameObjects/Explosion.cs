@@ -5,7 +5,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Explosion : GameObject, ICollidable, INoGameID
+    public class Explosion : GameObject, ICollidable, INoGameID, ILightMapContributor
     {
         public float MaxRadius { get; set; } = 100f;
         public float MaxShockwaveRadius { get; set; } = 100f;
@@ -59,7 +59,7 @@ namespace PolyPlane.GameObjects
 
             if (_hasShockWave)
             {
-                _currentShockWaveRadius = MaxShockwaveRadius * Utilities.FactorWithEasing(this.Age * 1f, Duration, EasingFunctions.Out.EaseCircle);
+                _currentShockWaveRadius = MaxShockwaveRadius * Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.Out.EaseCircle);
                 _showckWaveColor.a = 1f - Utilities.FactorWithEasing(this.Age * 1.5f, Duration, EasingFunctions.Out.EaseExpo);
             }
 
@@ -92,6 +92,21 @@ namespace PolyPlane.GameObjects
         public override void Dispose()
         {
             base.Dispose();
+        }
+
+        float ILightMapContributor.GetLightRadius()
+        {
+            return _currentRadius * 8f;
+        }
+
+        float ILightMapContributor.GetIntensityFactor()
+        {
+            return 1f - Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.Out.EaseSine);
+        }
+
+        bool ILightMapContributor.IsLightEnabled()
+        {
+            return !this.IsExpired;
         }
     }
 }

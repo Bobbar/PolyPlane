@@ -596,7 +596,7 @@ namespace PolyPlane.Rendering
             ctx.Gfx.TranslateTransform(pos.X, pos.Y);
 
             var viewPortRect = new D2DRect(viewObj.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
-            var viewPortOG = viewPortRect;
+            var viewPortLightMap = viewPortRect; // Use the un-inflated viewport for the light map.
 
             const float VIEWPORT_PADDING_AMT = 1.5f;
             var inflateAmt = VIEWPORT_PADDING_AMT * zAmt;
@@ -606,7 +606,7 @@ namespace PolyPlane.Rendering
 
             // Update the light map.
             if (World.UseLightMap)
-                ctx.LightMap.Update(viewPortOG, objsInViewport);
+                ctx.LightMap.Update(viewPortLightMap, objsInViewport);
 
             var shadowColor = GetShadowColor();
 
@@ -663,7 +663,9 @@ namespace PolyPlane.Rendering
             DrawLightingEffects(ctx, objsInViewport);
 
             //DrawNoise(ctx);
-            //DrawLightMap(ctx);
+
+            if (World.DrawLightMap)
+                DrawLightMap(ctx);
 
             ctx.PopViewPort();
             ctx.Gfx.PopTransform();
@@ -1698,11 +1700,8 @@ namespace PolyPlane.Rendering
                 // Add time of day color.
                 color = AddTimeOfDayColor(color, todColor);
 
-                // Apply cloud lighting color.
-                if (World.UseLightMap)
-                    color = ctx.LightMap.SampleColor(point, 0.7f, color);
-
-                ctx.FillEllipse(new D2DEllipse(point, dims), color);
+                // Draw cloud part with lighting.
+                ctx.FillEllipseWithLighting(new D2DEllipse(point, dims), color, 0.7f);
             }
         }
 

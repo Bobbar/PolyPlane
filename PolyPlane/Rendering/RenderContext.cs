@@ -48,6 +48,24 @@ namespace PolyPlane.Rendering
             Viewport = _vpStack.Pop();
         }
 
+        public void FillEllipseWithLighting(D2DEllipse ellipse, D2DColor color, float maxIntensity)
+        {
+            FillEllipseWithLighting(ellipse, color, LightMap.Colors.DefaultLightingColor, 0f, maxIntensity);
+        }
+
+        public void FillEllipseWithLighting(D2DEllipse ellipse, D2DColor color, D2DColor lightColor, float minIntensity, float maxIntensity)
+        {
+            if (World.UseLightMap) 
+            {
+                var lightedColor = LightMap.SampleColor(ellipse.origin, color, lightColor, minIntensity, maxIntensity);
+                FillEllipse(ellipse, lightedColor);
+            }
+            else
+            {
+                FillEllipse(ellipse, color);
+            }
+        }
+
         public void FillEllipse(D2DEllipse ellipse, D2DColor color)
         {
             // Use cached brush for performance.
@@ -83,6 +101,19 @@ namespace PolyPlane.Rendering
         public void DrawPolygon(D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
         {
             Gfx.DrawPolygonClamped(Viewport, points, strokeColor, strokeWidth, dashStyle, fillColor);
+        }
+
+        public void DrawPolygonWithLighting(RenderPoly poly, D2DPoint centerPos, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor, float maxIntensity)
+        {
+            if (World.UseLightMap)
+            {
+                var lightedColor = LightMap.SampleColor(centerPos, fillColor, LightMap.Colors.DefaultLightingColor, 0, maxIntensity);
+                DrawPolygon(poly, strokeColor, strokeWidth, dashStyle, lightedColor);
+            }
+            else
+            {
+                DrawPolygon(poly, strokeColor, strokeWidth, dashStyle, fillColor);
+            }
         }
 
         public void DrawPolygon(RenderPoly poly, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)

@@ -12,7 +12,7 @@ namespace PolyPlane.Rendering
         private float[,] _map = null;
 
         const float SIDE_LEN = 60f;
-        const int SAMPLE_NUM = 6;
+        const int SAMPLE_NUM = 7;
         const float GRADIENT_DIST = 450f;
 
         private D2DRect _viewport;
@@ -31,23 +31,38 @@ namespace PolyPlane.Rendering
         public void Update(D2DRect viewport, IEnumerable<GameObject> objs)
         {
             // Filter out all but target object types.
-            objs = objs.Where(o => o is Bullet || o is Decoy || o is GuidedMissile || o is Explosion);
+            objs = objs.Where(o => o is ILightMapContributor);
 
             UpdateViewport(viewport);
             ClearMap();
 
+            var sampleNum = SAMPLE_NUM;
+            var gradDist = GRADIENT_DIST;
+            var baseIntensity = 1f;
+
             foreach (var obj in objs)
             {
-                // Some special conditions for decoys and missiles.
-                if ((obj is Decoy decoy && !decoy.IsFlashing()) || obj is GuidedMissile missile && !missile.FlameOn)
-                    continue;
+                // Query light params for contributor.
+                if (obj is ILightMapContributor lightContributor)
+                {
+                    if (lightContributor.IsLightEnabled() == false)
+                        continue;
+
+                    baseIntensity = lightContributor.GetIntensityFactor();
+
+                    // Compute the number of samples needed for the current radius.
+                    gradDist = lightContributor.GetLightRadius();
+                    sampleNum = (int)Math.Floor(gradDist / SIDE_LEN);
+                }
 
                 GetGridPos(obj.Position, out int idxX, out int idxY);
 
+                var centerPos = new D2DPoint((idxX * SIDE_LEN) + _viewport.Location.X, (idxY * SIDE_LEN) + _viewport.Location.Y);
+
                 // Sample points around the objects to build a light intensity gradient.
-                for (int x = -SAMPLE_NUM; x <= SAMPLE_NUM; x++)
+                for (int x = -sampleNum; x <= sampleNum; x++)
                 {
-                    for (int y = -SAMPLE_NUM; y <= SAMPLE_NUM; y++)
+                    for (int y = -sampleNum; y <= sampleNum; y++)
                     {
                         var xo = idxX + x;
                         var yo = idxY + y;
@@ -55,12 +70,14 @@ namespace PolyPlane.Rendering
                         if (xo >= 0 && yo >= 0 && xo < _gridSize.width && yo < _gridSize.height)
                         {
                             // Compute the gradient from distance to center.
-                            var nPos = new D2DPoint((xo * SIDE_LEN) + _viewport.Location.X, (yo * SIDE_LEN) + _viewport.Location.Y);
-                            var dist = obj.Position.DistanceTo(nPos);
+                            var gradPos = new D2DPoint((xo * SIDE_LEN) + _viewport.Location.X, (yo * SIDE_LEN) + _viewport.Location.Y);
+                            var dist = centerPos.DistanceTo(gradPos);
 
-                            if (dist <= GRADIENT_DIST)
+                            if (dist <= gradDist)
                             {
-                                var intensity = 1f - Utilities.FactorWithEasing(dist, GRADIENT_DIST, EasingFunctions.Out.EaseSine);
+                                var intensity = 1f - Utilities.FactorWithEasing(dist, gradDist, EasingFunctions.Out.EaseSine);
+
+                                intensity *= baseIntensity;
 
                                 // Accumulate and clamp the new intensity.
                                 intensity = Math.Clamp(_map[xo, yo] + intensity, 0f, 1f);
@@ -93,55 +110,19 @@ namespace PolyPlane.Rendering
         }
 
         /// <summary>
-        /// Sample light intensity at the specified point and compute the new lighted color from the specified color. Uses default lighting color.
-        /// </summary>
-        /// <param name="pos">Position to sample.</param>
-        /// <param name="initColor">Initial un-lighted color.</param>
-        /// <returns></returns>
-        public D2DColor SampleColor(D2DPoint pos, D2DColor initColor)
-        {
-            return SampleColor(pos, 0f, 1f, initColor, Colors.DefaultLightingColor);
-        }
-
-        /// <summary>
-        /// Sample light intensity at the specified point and compute the new lighted color from the specified color. Uses default lighting color.
-        /// </summary>
-        /// <param name="pos">Position to sample.</param>
-        /// <param name="rangeMax">Max intensity range.</param>
-        /// <param name="initColor">Initial un-lighted color.</param>
-        /// <returns></returns>
-        public D2DColor SampleColor(D2DPoint pos, float rangeMax, D2DColor initColor)
-        {
-            return SampleColor(pos, 0f, rangeMax, initColor, Colors.DefaultLightingColor);
-        }
-
-        /// <summary>
-        /// Sample light intensity at the specified point and compute the new lighted color from the specified color. Uses default lighting color.
-        /// </summary>
-        /// <param name="pos">Position to sample.</param>
-        /// <param name="rangeMin">Min intensity range.</param>
-        /// <param name="rangeMax">Max intensity range.</param>
-        /// <param name="initColor">Initial un-lighted color.</param>
-        /// <returns></returns>
-        public D2DColor SampleColor(D2DPoint pos, float rangeMin, float rangeMax, D2DColor initColor)
-        {
-            return SampleColor(pos, rangeMin, rangeMax, initColor, Colors.DefaultLightingColor);
-        }
-
-        /// <summary>
         /// Sample light intensity at the specified point and compute the new lighted color from the specified colors.
         /// </summary>
         /// <param name="pos">Position to sample.</param>
-        /// <param name="rangeMin">Min intensity range.</param>
-        /// <param name="rangeMax">Max intensity range.</param>
+        /// <param name="minIntensity">Min intensity range.</param>
+        /// <param name="maxIntensity">Max intensity range.</param>
         /// <param name="initColor">Initial un-lighted color.</param>
         /// <param name="lightColor">Lighting color to be lerped in per the intensity.</param>
         /// <returns></returns>
-        public D2DColor SampleColor(D2DPoint pos, float rangeMin, float rangeMax, D2DColor initColor, D2DColor lightColor)
+        public D2DColor SampleColor(D2DPoint pos, D2DColor initColor, D2DColor lightColor, float minIntensity, float maxIntensity)
         {
             var intensity = SampleIntensity(pos);
 
-            intensity = Utilities.ScaleToRange(intensity, 0f, 1f, rangeMin, rangeMax);
+            intensity = Utilities.ScaleToRange(intensity, 0f, 1f, minIntensity, maxIntensity);
 
             var newColor = Utilities.LerpColor(initColor, lightColor, intensity);
 
@@ -183,5 +164,27 @@ namespace PolyPlane.Rendering
         {
             public readonly D2DColor DefaultLightingColor = new D2DColor(1f, 0.98f, 0.54f);
         }
+    }
+
+
+    /// <summary>
+    /// Objects which contribute to the <see cref="LightMap"/> must implement this interface.
+    /// </summary>
+    public interface ILightMapContributor
+    {
+        /// <summary>
+        /// Radius of the light to contribute.
+        /// </summary>
+        float GetLightRadius();
+
+        /// <summary>
+        /// Intensity of the light to contribute in the range of 0 to 1. 
+        /// </summary>
+        float GetIntensityFactor();
+
+        /// <summary>
+        /// True if this object is currently contributing light.
+        /// </summary>
+        bool IsLightEnabled();
     }
 }

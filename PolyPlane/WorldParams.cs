@@ -144,6 +144,7 @@ namespace PolyPlane
             }
         }
 
+        public static bool DrawLightMap = false;
         public static bool UseLightMap = true;
         public static bool DynamicTimeDelta = true;
         public static bool MissileRegen = true;

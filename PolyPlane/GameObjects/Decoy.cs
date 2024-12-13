@@ -6,7 +6,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Decoy : GameObject, ICollidable
+    public class Decoy : GameObject, ICollidable, ILightMapContributor
     {
         private const float Radius = 5f;
         private const float LifeSpan = 10f;
@@ -86,6 +86,23 @@ namespace PolyPlane.GameObjects
             var isFlashFrame = _currentFrame % FLASH_FRAME1 == 0 || _currentFrame % FLASH_FRAME2 == 0;
 
             return isFlashFrame;
+        }
+
+        float ILightMapContributor.GetLightRadius()
+        {
+            const float LIGHT_RADIUS = 250f;
+
+            return LIGHT_RADIUS;
+        }
+
+        float ILightMapContributor.GetIntensityFactor()
+        {
+            return 1f;
+        }
+
+        bool ILightMapContributor.IsLightEnabled()
+        {
+            return IsFlashing();
         }
     }
 }

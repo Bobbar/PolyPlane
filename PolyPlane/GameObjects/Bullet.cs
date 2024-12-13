@@ -6,7 +6,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Bullet : GameObjectPoly, ICollidable
+    public class Bullet : GameObjectPoly, ICollidable, ILightMapContributor
     {
         public const float SPEED = 800f;
         public float Lifetime = 10f;
@@ -70,6 +70,23 @@ namespace PolyPlane.GameObjects
             base.Render(ctx);
 
             ctx.DrawPolygon(this.Polygon, D2DColor.Black, 1f, D2DDashStyle.Solid, D2DColor.Yellow);
+        }
+
+        float ILightMapContributor.GetLightRadius()
+        {
+            const float LIGHT_RADIUS = 350f;
+
+            return LIGHT_RADIUS;
+        }
+
+        float ILightMapContributor.GetIntensityFactor()
+        {
+            return 1f;
+        }
+
+        bool ILightMapContributor.IsLightEnabled()
+        {
+            return !this.IsExpired;
         }
     }
 }
