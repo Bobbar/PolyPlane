@@ -78,8 +78,8 @@ namespace PolyPlane.Rendering
             var size = new D2DSize(this.Radius, this.Radius);
 
             // Draw shadow.
-            ctx.Gfx.PushTransform();
-            ctx.Gfx.RotateTransform(shadowAngle, this.Position);
+            ctx.PushTransform();
+            ctx.RotateTransform(shadowAngle, this.Position);
 
             Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, D2DPoint.Zero, 0f, this.Position, scale, scale * 2f);
 
@@ -89,11 +89,11 @@ namespace PolyPlane.Rendering
 
             ctx.Gfx.DrawPolygon(_trunkTransPoly, shadowColor, 0f, D2DDashStyle.Solid, shadowColor);
 
-            ctx.Gfx.ScaleTransform(1f, 2f, this.Position);
+            ctx.ScaleTransform(1f, 2f, this.Position);
 
             ctx.Gfx.FillEllipse(new D2DEllipse(shadowLeafPos, size), shadowColor);
 
-            ctx.Gfx.PopTransform();
+            ctx.PopTransform();
 
             // Apply lighting color.
             if (World.UseLightMap)
@@ -110,14 +110,14 @@ namespace PolyPlane.Rendering
 
             ctx.Gfx.DrawPolygon(_trunkTransPoly, trunkColor, 0f, D2DDashStyle.Solid, trunkColor);
 
-            ctx.Gfx.PushTransform();
-            ctx.Gfx.TranslateTransform(normalLeafPos.X * ctx.CurrentScale, normalLeafPos.Y * ctx.CurrentScale);
+            ctx.PushTransform();
+            ctx.TranslateTransform(normalLeafPos * ctx.CurrentScale);
 
             var leafEllipse = new D2DEllipse(D2DPoint.Zero, size);
             ctx.Gfx.FillEllipse(leafEllipse, _leafBrush);
             ctx.Gfx.FillEllipse(leafEllipse, leafToDColor);
 
-            ctx.Gfx.PopTransform();
+            ctx.PopTransform();
         }
     }
 
@@ -171,8 +171,8 @@ namespace PolyPlane.Rendering
 
 
             // Draw shadow.
-            ctx.Gfx.PushTransform();
-            ctx.Gfx.RotateTransform(shadowAngle, this.Position);
+            ctx.PushTransform();
+            ctx.RotateTransform(shadowAngle, this.Position);
 
             Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, D2DPoint.Zero, 0f, this.Position, 1f, 2f);
 
@@ -182,17 +182,17 @@ namespace PolyPlane.Rendering
 
             ctx.DrawPolygon(_trunkTransPoly, shadowColor, 0f, D2DDashStyle.Solid, shadowColor);
 
-            ctx.Gfx.ScaleTransform(1f, 2f, this.Position);
+            ctx.ScaleTransform(1f, 2f, this.Position);
             Utilities.ApplyTranslation(TopPoly, _topTrans, 0f, shadowTopPos, scale);
 
             ctx.DrawPolygon(_topTrans, shadowColor, 0f, D2DDashStyle.Solid, shadowColor);
 
-            ctx.Gfx.PopTransform();
+            ctx.PopTransform();
 
             // Apply lighting color.
             if (World.UseLightMap)
             {
-                var lightIntensity = ctx.LightMap.SampleIntensity(this.Position);
+                var lightIntensity = ctx.LightMap.SampleIntensity(this.Position + (-D2DPoint.UnitY * (TotalHeight * 2f)));
                 lightIntensity = Utilities.ScaleToRange(lightIntensity, 0f, 1f, 0f, 0.4f);
 
                 trunkColor = Utilities.LerpColor(trunkColor, ctx.LightMap.Colors.DefaultLightingColor, lightIntensity);

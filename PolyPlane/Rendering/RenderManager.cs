@@ -531,27 +531,27 @@ namespace PolyPlane.Rendering
                 DrawSky(_ctx, viewObject);
 
                 // Push screen shake transform.
-                _gfx.PushTransform();
-                _gfx.TranslateTransform(_screenShakeTrans.X, _screenShakeTrans.Y);
+                _ctx.PushTransform();
+                _ctx.TranslateTransform(_screenShakeTrans);
 
                 // Draw parallax grid. 
                 DrawMovingBackground(_ctx, viewObject);
 
                 // Push zoom scale transform.
-                _gfx.PushTransform();
-                _gfx.ScaleTransform(World.ZoomScale, World.ZoomScale);
+                _ctx.PushTransform();
+                _ctx.ScaleTransform(World.ZoomScale);
 
                 // Draw the main player view.  (Draws all game objects, clouds, ground, lighting effects, etc)
                 DrawPlayerView(_ctx, viewObject);
 
                 // Pop scale transform.
-                _gfx.PopTransform();
+                _ctx.PopTransform();
 
                 // Draw HUD.
                 DrawHud(_ctx, viewObject, dt);
 
                 // Pop screen shake transform.
-                _gfx.PopTransform();
+                _ctx.PopTransform();
 
                 // Draw overlay text. (FPS, Help and Info)
                 DrawOverlays(_ctx, viewObject);
@@ -582,7 +582,7 @@ namespace PolyPlane.Rendering
             if (viewObj is FighterPlane plane)
                 viewPlane = plane;
 
-            ctx.Gfx.PushTransform();
+            ctx.PushTransform();
 
             var zAmt = World.ZoomScale;
             var pos = new D2DPoint(World.ViewPortSize.width * 0.5f, World.ViewPortSize.height * 0.5f);
@@ -591,9 +591,9 @@ namespace PolyPlane.Rendering
             var offset = new D2DPoint(-viewObj.Position.X, -viewObj.Position.Y);
             offset *= zAmt;
 
-            ctx.Gfx.ScaleTransform(VIEW_SCALE, VIEW_SCALE, viewObj.Position);
-            ctx.Gfx.TranslateTransform(offset.X, offset.Y);
-            ctx.Gfx.TranslateTransform(pos.X, pos.Y);
+            ctx.ScaleTransform(VIEW_SCALE, viewObj.Position);
+            ctx.TranslateTransform(offset);
+            ctx.TranslateTransform(pos);
 
             var viewPortRect = new D2DRect(viewObj.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
             var viewPortLightMap = viewPortRect; // Use the un-inflated viewport for the light map.
@@ -668,7 +668,7 @@ namespace PolyPlane.Rendering
                 DrawLightMap(ctx);
 
             ctx.PopViewPort();
-            ctx.Gfx.PopTransform();
+            ctx.PopTransform();
         }
 
         private void DrawNoise(RenderContext ctx)
@@ -922,15 +922,16 @@ namespace PolyPlane.Rendering
             if (_decoyLightBrush == null)
                 _decoyLightBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, DECOY_LIGHT_RADIUS, DECOY_LIGHT_RADIUS, new D2DGradientStop[] { new D2DGradientStop(1.4f, D2DColor.Transparent), new D2DGradientStop(0f, new D2DColor(0.3f, D2DColor.LightYellow)) });
 
+            var scale = ctx.CurrentScale;
 
             foreach (var obj in objs)
             {
                 if (obj is Bullet bullet)
                 {
-                    ctx.Gfx.PushTransform();
-                    ctx.Gfx.TranslateTransform(bullet.Position.X * ctx.CurrentScale, bullet.Position.Y * ctx.CurrentScale);
+                    ctx.PushTransform();
+                    ctx.TranslateTransform(bullet.Position * scale);
                     ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, BULLET_LIGHT_RADIUS, _bulletLightingBrush);
-                    ctx.Gfx.PopTransform();
+                    ctx.PopTransform();
 
                     DrawObjectGroundLight(ctx, bullet);
                 }
@@ -938,15 +939,15 @@ namespace PolyPlane.Rendering
                 {
                     if (missile.FlameOn && missile.CurrentFuel > 0f)
                     {
-                        ctx.Gfx.PushTransform();
-                        ctx.Gfx.TranslateTransform(missile.CenterOfThrust.X * ctx.CurrentScale, missile.CenterOfThrust.Y * ctx.CurrentScale);
+                        ctx.PushTransform();
+                        ctx.TranslateTransform(missile.CenterOfThrust * scale);
 
                         // Add a little flicker effect to missile lights.
                         var flickerScale = Utilities.Rnd.NextFloat(0.7f, 1f);
-                        ctx.Gfx.ScaleTransform(flickerScale, flickerScale);
+                        ctx.ScaleTransform(flickerScale);
 
                         ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, MISSILE_LIGHT_RADIUS, _missileLightingBrush);
-                        ctx.Gfx.PopTransform();
+                        ctx.PopTransform();
 
                         DrawObjectGroundLight(ctx, missile);
                     }
@@ -955,10 +956,10 @@ namespace PolyPlane.Rendering
                 {
                     if ((decoy.IsFlashing()))
                     {
-                        ctx.Gfx.PushTransform();
-                        ctx.Gfx.TranslateTransform(decoy.Position.X * ctx.CurrentScale, decoy.Position.Y * ctx.CurrentScale);
+                        ctx.PushTransform();
+                        ctx.TranslateTransform(decoy.Position * scale);
                         ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, DECOY_LIGHT_RADIUS, _decoyLightBrush);
-                        ctx.Gfx.PopTransform();
+                        ctx.PopTransform();
 
                         DrawObjectGroundLight(ctx, decoy);
                     }
@@ -999,10 +1000,10 @@ namespace PolyPlane.Rendering
 
             if (plane.Gun.MuzzleFlashOn)
             {
-                ctx.Gfx.PushTransform();
-                ctx.Gfx.TranslateTransform(plane.GunPosition.X * ctx.CurrentScale, plane.GunPosition.Y * ctx.CurrentScale);
+                ctx.PushTransform();
+                ctx.TranslateTransform(plane.GunPosition * ctx.CurrentScale);
                 ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, MUZZ_FLASH_RADIUS, _muzzleFlashBrush);
-                ctx.Gfx.PopTransform();
+                ctx.PopTransform();
             }
         }
 
@@ -1036,15 +1037,15 @@ namespace PolyPlane.Rendering
                 {
                     if (ctx.Viewport.Contains(impact.Position))
                     {
-                        ctx.Gfx.PushTransform();
+                        ctx.PushTransform();
 
-                        ctx.Gfx.RotateTransform(impact.Angle, impact.Position);
+                        ctx.RotateTransform(impact.Angle, impact.Position);
 
                         var ageAlpha = 1f - Utilities.FactorWithEasing(impact.Age, GroundImpact.MAX_AGE, EasingFunctions.In.EaseExpo);
                         ctx.FillEllipse(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), _groundImpactOuterColor.WithAlpha(ageAlpha));
                         ctx.FillEllipse(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), _groundImpactInnerColor.WithAlpha(ageAlpha));
 
-                        ctx.Gfx.PopTransform();
+                        ctx.PopTransform();
                     }
                 }
 
@@ -1139,8 +1140,8 @@ namespace PolyPlane.Rendering
         {
             var viewportsize = World.ViewPortRectUnscaled.Size;
 
-            ctx.Gfx.PushTransform();
-            ctx.Gfx.ScaleTransform(_hudScale, _hudScale, new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f));
+            ctx.PushTransform();
+            ctx.ScaleTransform(_hudScale, new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f));
 
             if (_showHUD)
             {
@@ -1185,7 +1186,7 @@ namespace PolyPlane.Rendering
             if (_showScore)
                 DrawScoreCard(ctx, viewportsize);
 
-            ctx.Gfx.PopTransform();
+            ctx.PopTransform();
 
             if (World.FreeCameraMode)
                 DrawFreeCamPrompt(ctx.Gfx);
@@ -1221,8 +1222,8 @@ namespace PolyPlane.Rendering
             var boxPos = new D2DPoint(370f * HudScale * scale, viewportsize.height - (220f * HudScale * scale));
             var linePos = boxPos;
 
-            ctx.Gfx.PushTransform();
-            ctx.Gfx.ScaleTransform(scale, scale, boxPos);
+            ctx.PushTransform();
+            ctx.ScaleTransform(scale, boxPos);
             ctx.Gfx.FillRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, new D2DColor(0.05f, World.HudColor));
 
             var start = 0;
@@ -1263,7 +1264,7 @@ namespace PolyPlane.Rendering
                 ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y + HEIGHT, WIDTH, lineSize.height + 5f, World.HudColor);
             }
 
-            ctx.Gfx.PopTransform();
+            ctx.PopTransform();
         }
 
         private void DrawScoreCard(RenderContext ctx, D2DSize viewportsize)
@@ -1509,13 +1510,13 @@ namespace PolyPlane.Rendering
             const float SCALE = 0.9f;
             var pos = new D2DPoint(viewportsize.width * 0.82f * HudScale * SCALE, viewportsize.height * 0.76f * HudScale * SCALE);
 
-            ctx.Gfx.PushTransform();
-            ctx.Gfx.ScaleTransform(SCALE, SCALE, pos);
-            ctx.Gfx.TranslateTransform(pos.X, pos.Y);
+            ctx.PushTransform();
+            ctx.ScaleTransform(SCALE, pos);
+            ctx.TranslateTransform(pos);
 
             plane.Radar.Render(ctx);
 
-            ctx.Gfx.PopTransform();
+            ctx.PopTransform();
         }
 
         private void DrawMissilePointersAndWarnings(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)

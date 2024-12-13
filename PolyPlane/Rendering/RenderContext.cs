@@ -8,24 +8,22 @@ namespace PolyPlane.Rendering
     /// </summary>
     public class RenderContext
     {
-        public D2DGraphics Gfx;
-        public D2DDevice Device;
+        public readonly D2DGraphics Gfx;
+        public readonly D2DDevice Device;
         public D2DRect Viewport;
-        public LightMap LightMap;
+        public readonly LightMap LightMap;
 
         public float CurrentScale
         {
             get
             {
-                if (Gfx != null)
-                    return Gfx.GetTransform().M11;
-
-                return 1f;
+                return _currentScale;
             }
         }
 
         private Stack<D2DRect> _vpStack = new Stack<D2DRect>();
         private D2DSolidColorBrush _cachedBrush;
+        private float _currentScale = 1f;
 
         public RenderContext(D2DGraphics gfx, D2DDevice device)
         {
@@ -48,6 +46,58 @@ namespace PolyPlane.Rendering
             Viewport = _vpStack.Pop();
         }
 
+        public void PushTransform()
+        {
+            Gfx.PushTransform();
+        }
+
+        public void PopTransform()
+        {
+            Gfx.PopTransform();
+            UpdateScale();
+        }
+
+        public void TranslateTransform(D2DPoint pos)
+        {
+            TranslateTransform(pos.X, pos.Y);
+        }
+
+        public void TranslateTransform(float x, float y)
+        {
+            Gfx.TranslateTransform(x, y);
+            UpdateScale();
+        }
+
+        public void ScaleTransform(float xy)
+        {
+            Gfx.ScaleTransform(xy, xy);
+            UpdateScale();
+        }
+
+        public void ScaleTransform(float xy, D2DPoint center)
+        {
+            ScaleTransform(xy, xy, center);
+        }
+
+        public void ScaleTransform(float x, float y, D2DPoint center)
+        {
+            Gfx.ScaleTransform(x, y, center);
+            UpdateScale();
+        }
+
+        public void RotateTransform(float angle, D2DPoint center)
+        {
+            Gfx.RotateTransform(angle, center);
+            UpdateScale();
+        }
+
+        private void UpdateScale()
+        {
+            var trans = Gfx.GetTransform();
+            var scaleX = (float)Math.Sqrt(trans.M11 * trans.M11 + trans.M12 * trans.M12);
+            _currentScale = scaleX;
+        }
+
         public void FillEllipseWithLighting(D2DEllipse ellipse, D2DColor color, float maxIntensity)
         {
             FillEllipseWithLighting(ellipse, color, LightMap.Colors.DefaultLightingColor, 0f, maxIntensity);
@@ -68,13 +118,17 @@ namespace PolyPlane.Rendering
 
         public void FillEllipse(D2DEllipse ellipse, D2DColor color)
         {
+            if (color.a <= 0f)
+                return;
+
             // Use cached brush for performance.
             _cachedBrush.Color = color;
 
             // Perf hack:
             // Check the final radius after scaling and switch to drawing rectangles below a certain size.
             // Drawing rectangles is much faster than ellipses.
-            var viewRad = ellipse.radiusX * this.CurrentScale;
+            var scale = this.CurrentScale;
+            var viewRad =  Math.Max(ellipse.radiusX * scale, ellipse.radiusY * scale);
             if (World.FastPrimitives && viewRad > World.FAST_PRIMITIVE_MIN_SIZE || !World.FastPrimitives)
             {
                 FillEllipse(ellipse, _cachedBrush);

@@ -745,12 +745,12 @@ namespace PolyPlane.GameObjects
                 if (!ctx.Viewport.Contains(hole.Position))
                     return;
 
-                ctx.Gfx.PushTransform();
-                ctx.Gfx.RotateTransform(hole.Rotation, hole.Position);
+                ctx.PushTransform();
+                ctx.RotateTransform(hole.Rotation, hole.Position);
 
                 hole.Render(ctx);
 
-                ctx.Gfx.PopTransform();
+                ctx.PopTransform();
             }
         }
 
@@ -759,14 +759,15 @@ namespace PolyPlane.GameObjects
             if (!ctx.Viewport.Contains(_cockpitPosition.Position))
                 return;
 
-            ctx.Gfx.PushTransform();
-            ctx.Gfx.RotateTransform(_cockpitPosition.Rotation, _cockpitPosition.Position);
+            ctx.PushTransform();
+            ctx.RotateTransform(_cockpitPosition.Rotation, _cockpitPosition.Position);
 
             var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
-            ctx.Gfx.FillEllipse(cockpitEllipse, WasHeadshot ? D2DColor.DarkRed : _cockpitColor);
-            ctx.Gfx.DrawEllipse(cockpitEllipse, D2DColor.Black, 0.5f);
 
-            ctx.Gfx.PopTransform();
+            ctx.FillEllipse(cockpitEllipse, WasHeadshot ? D2DColor.DarkRed : _cockpitColor);
+            ctx.DrawEllipse(cockpitEllipse, D2DColor.Black, 0.5f);
+
+            ctx.PopTransform();
         }
 
         private void DrawFOVCone(D2DGraphics gfx)

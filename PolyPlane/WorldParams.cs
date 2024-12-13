@@ -209,7 +209,6 @@ namespace PolyPlane
         public static readonly D2DPoint Gravity = new D2DPoint(0, 19.6f);
         public static readonly D2DPoint PlaneSpawnRange = new D2DPoint(-250000, 250000);
 
-
         public static readonly D2DPoint FieldXBounds = new D2DPoint(-350000, 350000);
 
         public static uint CurrentObjId = 0;
