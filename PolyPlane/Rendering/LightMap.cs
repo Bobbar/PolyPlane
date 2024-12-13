@@ -36,54 +36,73 @@ namespace PolyPlane.Rendering
             UpdateViewport(viewport);
             ClearMap();
 
+            foreach (var obj in objs)
+                AddObjContribution(obj);
+        }
+
+        /// <summary>
+        /// Adds/appends additional light contributions from objects without clearing the map.
+        /// </summary>
+        /// <param name="objs"></param>
+        public void AddAdditional(IEnumerable<GameObject> objs)
+        {
+            // Filter out all but target object types.
+            objs = objs.Where(o => o is ILightMapContributor);
+
+            foreach (var obj in objs)
+            {
+                if (obj.ContainedBy(_viewport))
+                    AddObjContribution(obj);
+            }
+        }
+
+        private void AddObjContribution(GameObject obj)
+        {
             var sampleNum = SAMPLE_NUM;
             var gradDist = GRADIENT_DIST;
             var baseIntensity = 1f;
 
-            foreach (var obj in objs)
+            // Query light params for contributor.
+            if (obj is ILightMapContributor lightContributor)
             {
-                // Query light params for contributor.
-                if (obj is ILightMapContributor lightContributor)
+                if (lightContributor.IsLightEnabled() == false)
+                    return;
+
+                baseIntensity = lightContributor.GetIntensityFactor();
+
+                // Compute the number of samples needed for the current radius.
+                gradDist = lightContributor.GetLightRadius();
+                sampleNum = (int)(gradDist / SIDE_LEN);
+            }
+
+            GetGridPos(obj.Position, out int idxX, out int idxY);
+
+            var centerPos = new D2DPoint((idxX * SIDE_LEN) + _viewport.Location.X, (idxY * SIDE_LEN) + _viewport.Location.Y);
+
+            // Sample points around the objects to build a light intensity gradient.
+            for (int x = -sampleNum; x <= sampleNum; x++)
+            {
+                for (int y = -sampleNum; y <= sampleNum; y++)
                 {
-                    if (lightContributor.IsLightEnabled() == false)
-                        continue;
+                    var xo = idxX + x;
+                    var yo = idxY + y;
 
-                    baseIntensity = lightContributor.GetIntensityFactor();
-
-                    // Compute the number of samples needed for the current radius.
-                    gradDist = lightContributor.GetLightRadius();
-                    sampleNum = (int)Math.Floor(gradDist / SIDE_LEN);
-                }
-
-                GetGridPos(obj.Position, out int idxX, out int idxY);
-
-                var centerPos = new D2DPoint((idxX * SIDE_LEN) + _viewport.Location.X, (idxY * SIDE_LEN) + _viewport.Location.Y);
-
-                // Sample points around the objects to build a light intensity gradient.
-                for (int x = -sampleNum; x <= sampleNum; x++)
-                {
-                    for (int y = -sampleNum; y <= sampleNum; y++)
+                    if (xo >= 0 && yo >= 0 && xo < _gridSize.width && yo < _gridSize.height)
                     {
-                        var xo = idxX + x;
-                        var yo = idxY + y;
+                        // Compute the gradient from distance to center.
+                        var gradPos = new D2DPoint((xo * SIDE_LEN) + _viewport.Location.X, (yo * SIDE_LEN) + _viewport.Location.Y);
+                        var dist = centerPos.DistanceTo(gradPos);
 
-                        if (xo >= 0 && yo >= 0 && xo < _gridSize.width && yo < _gridSize.height)
+                        if (dist <= gradDist)
                         {
-                            // Compute the gradient from distance to center.
-                            var gradPos = new D2DPoint((xo * SIDE_LEN) + _viewport.Location.X, (yo * SIDE_LEN) + _viewport.Location.Y);
-                            var dist = centerPos.DistanceTo(gradPos);
+                            var intensity = 1f - Utilities.FactorWithEasing(dist, gradDist, EasingFunctions.Out.EaseSine);
 
-                            if (dist <= gradDist)
-                            {
-                                var intensity = 1f - Utilities.FactorWithEasing(dist, gradDist, EasingFunctions.Out.EaseSine);
+                            intensity *= baseIntensity;
 
-                                intensity *= baseIntensity;
+                            // Accumulate and clamp the new intensity.
+                            intensity = Math.Clamp(_map[xo, yo] + intensity, 0f, 1f);
 
-                                // Accumulate and clamp the new intensity.
-                                intensity = Math.Clamp(_map[xo, yo] + intensity, 0f, 1f);
-
-                                _map[xo, yo] = intensity;
-                            }
+                            _map[xo, yo] = intensity;
                         }
                     }
                 }
@@ -178,7 +197,7 @@ namespace PolyPlane.Rendering
         float GetLightRadius();
 
         /// <summary>
-        /// Intensity of the light to contribute in the range of 0 to 1. 
+        /// Intensity factor of the light to contribute. 
         /// </summary>
         float GetIntensityFactor();
 

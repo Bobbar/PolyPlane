@@ -71,6 +71,9 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
+            if (!this.ContainedBy(ctx.Viewport))
+                return;
+
             if (this.Age < Duration)
             {
                 ctx.FillEllipse(new D2DEllipse(this.Position, new D2DSize(_currentRadius, _currentRadius)), _color);
@@ -96,12 +99,12 @@ namespace PolyPlane.GameObjects
 
         float ILightMapContributor.GetLightRadius()
         {
-            return _currentRadius * 8f;
+            return _currentRadius * 7f;
         }
 
         float ILightMapContributor.GetIntensityFactor()
         {
-            return 1f - Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.Out.EaseSine);
+            return 4f -  (4f * Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.Out.EaseSine));
         }
 
         bool ILightMapContributor.IsLightEnabled()

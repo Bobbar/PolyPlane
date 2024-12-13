@@ -596,17 +596,21 @@ namespace PolyPlane.Rendering
             ctx.TranslateTransform(pos);
 
             var viewPortRect = new D2DRect(viewObj.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
-            var viewPortLightMap = viewPortRect; // Use the un-inflated viewport for the light map.
 
             const float VIEWPORT_PADDING_AMT = 1.5f;
             var inflateAmt = VIEWPORT_PADDING_AMT * zAmt;
             viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true); // Inflate slightly to prevent "pop-in".
 
-            var objsInViewport = _objs.GetInViewport(ctx.Viewport).OrderBy(o => o.RenderOrder);
+            var objsInViewport = _objs.GetInViewport(ctx.Viewport).Where(o => o is not Explosion).OrderBy(o => o.RenderOrder);
 
             // Update the light map.
             if (World.UseLightMap)
-                ctx.LightMap.Update(viewPortLightMap, objsInViewport);
+            {
+                ctx.LightMap.Update(viewPortRect, objsInViewport);
+
+                // Add explosions separately as they have special viewport clipping.
+                ctx.LightMap.AddAdditional(_objs.Explosions);
+            }
 
             var shadowColor = GetShadowColor();
 
@@ -621,10 +625,6 @@ namespace PolyPlane.Rendering
 
             foreach (var obj in objsInViewport)
             {
-                // Skip explosions as they require special handling for correct viewport clipping.
-                if (obj is Explosion)
-                    continue;
-
                 if (obj is FighterPlane p)
                 {
                     DrawPlaneGroundShadow(ctx, p, shadowColor);
@@ -656,6 +656,7 @@ namespace PolyPlane.Rendering
                 }
             }
 
+            // Render explosions separate so that they can clip to the viewport correctly.
             _objs.Explosions.ForEach(e => e.Render(ctx));
 
             DrawClouds(ctx);
