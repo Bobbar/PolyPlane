@@ -144,6 +144,7 @@ namespace PolyPlane
             }
         }
 
+        public static bool FastPrimitives = true;
         public static bool DrawLightMap = false;
         public static bool UseLightMap = true;
         public static bool DynamicTimeDelta = true;
@@ -181,6 +182,7 @@ namespace PolyPlane
         private static int _sub_steps = DEFAULT_SUB_STEPS;
         private static float _zoomScale = 0.11f;
 
+        public const float FAST_PRIMITIVE_MIN_SIZE = 2f;
         public const float SCREEN_SHAKE_G = 9f; // Amount of g-force before screen shake effect.
         public const float INERTIA_MULTI = 20f; // Mass is multiplied by this value for interia calculations.
         public const float DEFAULT_DPI = 96f;

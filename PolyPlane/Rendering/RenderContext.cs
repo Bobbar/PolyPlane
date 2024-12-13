@@ -25,7 +25,7 @@ namespace PolyPlane.Rendering
         }
 
         private Stack<D2DRect> _vpStack = new Stack<D2DRect>();
-        private D2DSolidColorBrush _ellipseBrush;
+        private D2DSolidColorBrush _cachedBrush;
 
         public RenderContext(D2DGraphics gfx, D2DDevice device)
         {
@@ -33,7 +33,7 @@ namespace PolyPlane.Rendering
             Device = device;
             LightMap = new LightMap();
 
-            _ellipseBrush = device.CreateSolidColorBrush(D2DColor.Transparent);
+            _cachedBrush = device.CreateSolidColorBrush(D2DColor.Transparent);
         }
 
         public void PushViewPort(D2DRect viewport)
@@ -69,8 +69,20 @@ namespace PolyPlane.Rendering
         public void FillEllipse(D2DEllipse ellipse, D2DColor color)
         {
             // Use cached brush for performance.
-            _ellipseBrush.Color = color;
-            FillEllipse(ellipse, _ellipseBrush);
+            _cachedBrush.Color = color;
+
+            // Perf hack:
+            // Check the final radius after scaling and switch to drawing rectangles below a certain size.
+            // Drawing rectangles is much faster than ellipses.
+            var viewRad = ellipse.radiusX * this.CurrentScale;
+            if (World.FastPrimitives && viewRad > World.FAST_PRIMITIVE_MIN_SIZE || !World.FastPrimitives)
+            {
+                FillEllipse(ellipse, _cachedBrush);
+            }
+            else
+            {
+                FillRectangle(new D2DRect(ellipse.origin, new D2DSize(ellipse.radiusX * 2f, ellipse.radiusY * 2f)), _cachedBrush);
+            }
         }
 
         public void FillEllipse(D2DEllipse ellipse, D2DBrush brush)
@@ -129,6 +141,11 @@ namespace PolyPlane.Rendering
         public void FillRectangle(D2DRect rect, D2DColor color)
         {
             Gfx.FillRectangleClamped(Viewport, rect, color);
+        }
+
+        public void FillRectangle(D2DRect rect, D2DBrush brush)
+        {
+            Gfx.FillRectangleClamped(Viewport, rect, brush);
         }
 
         public void FillRectangle(float x, float y, float width, float height, D2DColor color)
