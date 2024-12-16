@@ -610,7 +610,7 @@ namespace PolyPlane.Rendering
 
                 // Add explosions separately as they have special viewport clipping.
                 ctx.LightMap.AddAdditional(_objs.Explosions);
-            }
+            } 
 
             var shadowColor = GetShadowColor();
 
@@ -1042,8 +1042,8 @@ namespace PolyPlane.Rendering
                         ctx.RotateTransform(impact.Angle, impact.Position);
 
                         var ageAlpha = 1f - Utilities.FactorWithEasing(impact.Age, GroundImpact.MAX_AGE, EasingFunctions.In.EaseExpo);
-                        ctx.FillEllipse(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), _groundImpactOuterColor.WithAlpha(ageAlpha));
-                        ctx.FillEllipse(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), _groundImpactInnerColor.WithAlpha(ageAlpha));
+                        ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), _groundImpactOuterColor.WithAlpha(ageAlpha), 0.4f);
+                        ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), _groundImpactInnerColor.WithAlpha(ageAlpha), 0.4f);
 
                         ctx.PopTransform();
                     }
