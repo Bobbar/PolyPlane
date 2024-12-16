@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects.Tools;
+using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
@@ -24,6 +25,7 @@ namespace PolyPlane.Rendering
         private Stack<D2DRect> _vpStack = new Stack<D2DRect>();
         private D2DSolidColorBrush _cachedBrush;
         private float _currentScale = 1f;
+        private float _currentLightingFactor = 1f;
 
         public RenderContext(D2DGraphics gfx, D2DDevice device)
         {
@@ -32,6 +34,14 @@ namespace PolyPlane.Rendering
             LightMap = new LightMap();
 
             _cachedBrush = device.CreateSolidColorBrush(D2DColor.Transparent);
+        }
+
+        private void ComputeLightToDFactor()
+        {
+            // Compute a TimeOfDay factor to be applied to all lighting intensity.
+            // Decrease lighting intensity during the day.
+            var factor = Math.Clamp(Utilities.FactorWithEasing(World.TimeOfDay, World.MAX_TIMEOFDAY - 5, EasingFunctions.EaseLinear), 0.5f, 1f);
+            _currentLightingFactor = factor;
         }
 
         public void PushViewPort(D2DRect viewport)
@@ -44,6 +54,23 @@ namespace PolyPlane.Rendering
         public void PopViewPort()
         {
             Viewport = _vpStack.Pop();
+        }
+
+        public void BeginRender(D2DBitmap bitmap)
+        {
+            Gfx.BeginRender(bitmap);
+            ComputeLightToDFactor();
+        }
+
+        public void BeginRender(D2DColor color)
+        {
+            Gfx.BeginRender(color);
+            ComputeLightToDFactor();
+        }
+
+        public void EndRender()
+        {
+            Gfx.EndRender();
         }
 
         public void PushTransform()
@@ -105,9 +132,9 @@ namespace PolyPlane.Rendering
 
         public void FillEllipseWithLighting(D2DEllipse ellipse, D2DColor color, float minIntensity, float maxIntensity)
         {
-            if (World.UseLightMap) 
+            if (World.UseLightMap)
             {
-                var lightedColor = LightMap.SampleColor(ellipse.origin, color, minIntensity, maxIntensity);
+                var lightedColor = LightMap.SampleColor(ellipse.origin, color, minIntensity, maxIntensity * _currentLightingFactor);
                 FillEllipse(ellipse, lightedColor);
             }
             else
@@ -128,7 +155,7 @@ namespace PolyPlane.Rendering
             // Check the final radius after scaling and switch to drawing rectangles below a certain size.
             // Drawing rectangles is much faster than ellipses.
             var scale = this.CurrentScale;
-            var viewRad =  Math.Max(ellipse.radiusX * scale, ellipse.radiusY * scale);
+            var viewRad = Math.Max(ellipse.radiusX * scale, ellipse.radiusY * scale);
             if (World.FastPrimitives && viewRad > World.FAST_PRIMITIVE_MIN_SIZE || !World.FastPrimitives)
             {
                 FillEllipse(ellipse, _cachedBrush);
@@ -171,15 +198,7 @@ namespace PolyPlane.Rendering
 
         public void DrawPolygonWithLighting(RenderPoly poly, D2DPoint centerPos, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor, float maxIntensity)
         {
-            if (World.UseLightMap)
-            {
-                var lightedColor = LightMap.SampleColor(centerPos, fillColor, 0, maxIntensity);
-                DrawPolygon(poly, strokeColor, strokeWidth, dashStyle, lightedColor);
-            }
-            else
-            {
-                DrawPolygon(poly, strokeColor, strokeWidth, dashStyle, fillColor);
-            }
+            DrawPolygonWithLighting(poly.Poly, centerPos, strokeColor, strokeWidth, dashStyle, fillColor, maxIntensity);
         }
 
         public void DrawPolygon(RenderPoly poly, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
@@ -190,6 +209,19 @@ namespace PolyPlane.Rendering
         public void DrawPolygon(D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DBrush fillBrush)
         {
             Gfx.DrawPolygonClamped(Viewport, points, strokeColor, strokeWidth, dashStyle, fillBrush);
+        }
+
+        public void DrawPolygonWithLighting(D2DPoint[] points, D2DPoint centerPos, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor, float maxIntensity)
+        {
+            if (World.UseLightMap)
+            {
+                var lightedColor = LightMap.SampleColor(centerPos, fillColor, 0, maxIntensity * _currentLightingFactor);
+                DrawPolygon(points, strokeColor, strokeWidth, dashStyle, lightedColor);
+            }
+            else
+            {
+                DrawPolygon(points, strokeColor, strokeWidth, dashStyle, fillColor);
+            }
         }
 
         public void FillRectangle(D2DRect rect, D2DColor color)

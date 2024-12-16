@@ -6,7 +6,7 @@ using System.Numerics;
 namespace PolyPlane.Rendering
 {
     /// <summary>
-    /// Provides a fast light intensity map for game objects.
+    /// Provides a fast light color and intensity map for game objects.
     /// </summary>
     public sealed class LightMap
     {
@@ -59,7 +59,7 @@ namespace PolyPlane.Rendering
         {
             var sampleNum = SAMPLE_NUM;
             var gradDist = GRADIENT_DIST;
-            var baseIntensity = 1f;
+            var intensityFactor = 1f;
             var lightColor = Vector4.Zero;
             var lightPosition = obj.Position;
 
@@ -69,7 +69,7 @@ namespace PolyPlane.Rendering
                 if (lightContributor.IsLightEnabled() == false)
                     return;
 
-                baseIntensity = lightContributor.GetIntensityFactor();
+                intensityFactor = lightContributor.GetIntensityFactor();
                 lightColor = lightContributor.GetLightColor().ToVector4();
                 lightPosition = lightContributor.GetLightPosition();
 
@@ -100,7 +100,7 @@ namespace PolyPlane.Rendering
                         {
                             var intensity = 1f - Utilities.FactorWithEasing(dist, gradDist, EasingFunctions.Out.EaseSine);
 
-                            intensity *= baseIntensity;
+                            intensity *= intensityFactor;
 
                             lightColor.X = Math.Clamp(intensity, 0f, 1f);
 
@@ -161,15 +161,18 @@ namespace PolyPlane.Rendering
             return newColor.ToD2DColor();
         }
 
-        private Vector4 Blend(Vector4 fg,  Vector4 bg)
+        private Vector4 Blend(Vector4 colorA,  Vector4 colorB)
         {
             var r = Vector4.Zero;
 
-            r.X = 1 - (1 - fg.X) * (1 - bg.X);
-            if (r.X < 1.0e-6) return r; // Fully transparent -- R,G,B not important
-            r.Y = fg.Y * fg.X / r.X + bg.Y * bg.X * (1 - fg.X) / r.X;
-            r.Z = fg.Z * fg.X / r.X + bg.Z * bg.X * (1 - fg.X) / r.X;
-            r.W = fg.W * fg.X / r.X + bg.W * bg.X * (1 - fg.X) / r.X;
+            r.X = 1f - (1f - colorA.X) * (1f - colorB.X);
+           
+            if (r.X < float.Epsilon) 
+                return r; // Fully transparent -- R,G,B not important
+
+            r.Y = colorA.Y * colorA.X / r.X + colorB.Y * colorB.X * (1f - colorA.X) / r.X;
+            r.Z = colorA.Z * colorA.X / r.X + colorB.Z * colorB.X * (1f - colorA.X) / r.X;
+            r.W = colorA.W * colorA.X / r.X + colorB.W * colorB.X * (1f - colorA.X) / r.X;
 
             return r;
         }

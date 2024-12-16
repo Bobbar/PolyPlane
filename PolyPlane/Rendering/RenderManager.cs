@@ -517,9 +517,9 @@ namespace PolyPlane.Rendering
             UpdateTimersAndAnims(dt);
 
             if (World.UseSkyGradient)
-                _gfx.BeginRender(_clearBitmap);
+                _ctx.BeginRender(_clearBitmap);
             else
-                _gfx.BeginRender(_clearColor);
+                _ctx.BeginRender(_clearColor);
 
             if (viewObject != null)
             {
@@ -565,7 +565,7 @@ namespace PolyPlane.Rendering
             _timer.Stop();
             _renderTimeSmooth.Add(_timer.Elapsed.TotalMilliseconds);
 
-            _gfx.EndRender();
+            _ctx.EndRender();
 
             var now = DateTime.UtcNow.Ticks;
             var fps = TimeSpan.TicksPerSecond / (float)(now - _lastRenderTime);

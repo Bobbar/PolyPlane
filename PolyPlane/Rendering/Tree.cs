@@ -95,28 +95,23 @@ namespace PolyPlane.Rendering
 
             ctx.PopTransform();
 
-            // Apply lighting color.
-            if (World.UseLightMap)
-            {
-                // Center of trunk pos.
-                var trunkPos = this.Position + (-D2DPoint.UnitY * (TotalHeight * 1f));
-                trunkColor = ctx.LightMap.SampleColor(trunkPos, trunkColor, 0f, 0.4f);
-                leafToDColor = ctx.LightMap.SampleColor(normalLeafPos, leafToDColor, 0f, 0.4f);
-            }
-
             // Draw tree.
             Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, 180f, this.Position, scale);
 
-            ctx.Gfx.DrawPolygon(_trunkTransPoly, trunkColor, 0f, D2DDashStyle.Solid, trunkColor);
+            var trunkPos = this.Position + (-D2DPoint.UnitY * (TotalHeight * 1f));
+            ctx.DrawPolygonWithLighting(_trunkTransPoly, trunkPos, trunkColor, 0f, D2DDashStyle.Solid, trunkColor, 0.4f);
 
             ctx.PushTransform();
             ctx.TranslateTransform(normalLeafPos * ctx.CurrentScale);
 
             var leafEllipse = new D2DEllipse(D2DPoint.Zero, size);
             ctx.Gfx.FillEllipse(leafEllipse, _leafBrush);
-            ctx.Gfx.FillEllipse(leafEllipse, leafToDColor);
 
             ctx.PopTransform();
+
+            // Add ToD color overlay.
+            leafEllipse.origin = normalLeafPos;
+            ctx.FillEllipseWithLighting(new D2DEllipse(normalLeafPos, size), leafToDColor, 0.4f);
         }
     }
 
@@ -188,21 +183,14 @@ namespace PolyPlane.Rendering
 
             ctx.PopTransform();
 
-            // Apply lighting color.
-            if (World.UseLightMap)
-            {
-                // Center position.
-                var pos = this.Position + (-D2DPoint.UnitY * (TotalHeight * 2f));
-                trunkColor = ctx.LightMap.SampleColor(pos, trunkColor, 0f, 0.4f);
-                leafColor = ctx.LightMap.SampleColor(pos, leafColor, 0f, 0.4f);
-            }
-
             // Draw tree.
             Utilities.ApplyTranslation(TopPoly, _topTrans, 180f, this.Position - new D2DPoint(0, this.Height), scale);
             Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, 180f, this.Position, 1f);
 
-            ctx.DrawPolygon(_trunkTransPoly, trunkColor, 0f, D2DDashStyle.Solid, trunkColor);
-            ctx.DrawPolygon(_topTrans, leafColor, 0f, D2DDashStyle.Solid, leafColor);
+            // Center Y position.
+            var centerPos = this.Position + (-D2DPoint.UnitY * (TotalHeight * 2f));
+            ctx.DrawPolygonWithLighting(_trunkTransPoly, centerPos, trunkColor, 0f, D2DDashStyle.Solid, trunkColor, 0.4f);
+            ctx.DrawPolygonWithLighting(_topTrans, centerPos, leafColor, 0f, D2DDashStyle.Solid, leafColor, 0.4f);
         }
     }
 }
