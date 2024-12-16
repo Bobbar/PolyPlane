@@ -18,6 +18,7 @@ namespace PolyPlane.GameObjects
 
         private D2DColor _color = new D2DColor(0.4f, D2DColor.Orange);
         private D2DColor _showckWaveColor = new D2DColor(1f, D2DColor.White);
+        private readonly D2DColor _lightMapColor = new D2DColor(1f, 1f, 0.89f, 0.34f);
 
         public Explosion(GameObject owner, float maxRadius, float duration) : base(owner.Position)
         {
@@ -99,17 +100,25 @@ namespace PolyPlane.GameObjects
 
         float ILightMapContributor.GetLightRadius()
         {
-            return _currentRadius * 7f;
+            if (this.Owner is not GuidedMissile)
+                return _currentRadius * 10f;
+            else
+                return _currentRadius * 7f;
         }
 
         float ILightMapContributor.GetIntensityFactor()
         {
-            return 4f -  (4f * Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.Out.EaseSine));
+            return 4f - (4f * Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.Out.EaseSine));
         }
 
         bool ILightMapContributor.IsLightEnabled()
         {
             return !this.IsExpired;
+        }
+
+        D2DColor ILightMapContributor.GetLightColor()
+        {
+            return _lightMapColor;
         }
     }
 }

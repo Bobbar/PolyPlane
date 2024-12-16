@@ -100,14 +100,14 @@ namespace PolyPlane.Rendering
 
         public void FillEllipseWithLighting(D2DEllipse ellipse, D2DColor color, float maxIntensity)
         {
-            FillEllipseWithLighting(ellipse, color, LightMap.Colors.DefaultLightingColor, 0f, maxIntensity);
+            FillEllipseWithLighting(ellipse, color, 0f, maxIntensity);
         }
 
-        public void FillEllipseWithLighting(D2DEllipse ellipse, D2DColor color, D2DColor lightColor, float minIntensity, float maxIntensity)
+        public void FillEllipseWithLighting(D2DEllipse ellipse, D2DColor color, float minIntensity, float maxIntensity)
         {
             if (World.UseLightMap) 
             {
-                var lightedColor = LightMap.SampleColor(ellipse.origin, color, lightColor, minIntensity, maxIntensity);
+                var lightedColor = LightMap.SampleColor(ellipse.origin, color, minIntensity, maxIntensity);
                 FillEllipse(ellipse, lightedColor);
             }
             else
@@ -173,7 +173,7 @@ namespace PolyPlane.Rendering
         {
             if (World.UseLightMap)
             {
-                var lightedColor = LightMap.SampleColor(centerPos, fillColor, LightMap.Colors.DefaultLightingColor, 0, maxIntensity);
+                var lightedColor = LightMap.SampleColor(centerPos, fillColor, 0, maxIntensity);
                 DrawPolygon(poly, strokeColor, strokeWidth, dashStyle, lightedColor);
             }
             else

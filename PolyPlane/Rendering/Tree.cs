@@ -67,7 +67,7 @@ namespace PolyPlane.Rendering
 
             // Add time of day color
             var trunkColor = Utilities.LerpColor(this.TrunkColor, timeOfDayColor, 0.3f);
-            
+
             // Add time of day color to leafs.
             var leafToDColor = new D2DColor(0.2f, timeOfDayColor);
             var shadowColor = GetShadowColor(timeOfDayColor);
@@ -98,11 +98,10 @@ namespace PolyPlane.Rendering
             // Apply lighting color.
             if (World.UseLightMap)
             {
-                var lightIntensity = ctx.LightMap.SampleIntensity(normalLeafPos);
-                lightIntensity = Utilities.ScaleToRange(lightIntensity, 0f, 1f, 0f, 0.4f);
-
-                trunkColor = Utilities.LerpColor(trunkColor, ctx.LightMap.Colors.DefaultLightingColor, lightIntensity);
-                leafToDColor = Utilities.LerpColor(leafToDColor, ctx.LightMap.Colors.DefaultLightingColor, lightIntensity);
+                // Center of trunk pos.
+                var trunkPos = this.Position + (-D2DPoint.UnitY * (TotalHeight * 1f));
+                trunkColor = ctx.LightMap.SampleColor(trunkPos, trunkColor, 0f, 0.4f);
+                leafToDColor = ctx.LightMap.SampleColor(normalLeafPos, leafToDColor, 0f, 0.4f);
             }
 
             // Draw tree.
@@ -192,11 +191,10 @@ namespace PolyPlane.Rendering
             // Apply lighting color.
             if (World.UseLightMap)
             {
-                var lightIntensity = ctx.LightMap.SampleIntensity(this.Position + (-D2DPoint.UnitY * (TotalHeight * 2f)));
-                lightIntensity = Utilities.ScaleToRange(lightIntensity, 0f, 1f, 0f, 0.4f);
-
-                trunkColor = Utilities.LerpColor(trunkColor, ctx.LightMap.Colors.DefaultLightingColor, lightIntensity);
-                leafColor = Utilities.LerpColor(leafColor, ctx.LightMap.Colors.DefaultLightingColor, lightIntensity);
+                // Center position.
+                var pos = this.Position + (-D2DPoint.UnitY * (TotalHeight * 2f));
+                trunkColor = ctx.LightMap.SampleColor(pos, trunkColor, 0f, 0.4f);
+                leafColor = ctx.LightMap.SampleColor(pos, leafColor, 0f, 0.4f);
             }
 
             // Draw tree.

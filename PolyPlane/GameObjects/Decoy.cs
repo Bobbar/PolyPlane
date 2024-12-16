@@ -90,7 +90,7 @@ namespace PolyPlane.GameObjects
 
         float ILightMapContributor.GetLightRadius()
         {
-            const float LIGHT_RADIUS = 250f;
+            const float LIGHT_RADIUS = 350f;
 
             return LIGHT_RADIUS;
         }
@@ -103,6 +103,11 @@ namespace PolyPlane.GameObjects
         bool ILightMapContributor.IsLightEnabled()
         {
             return IsFlashing();
+        }
+
+        D2DColor ILightMapContributor.GetLightColor()
+        {
+            return D2DColor.White;
         }
     }
 }

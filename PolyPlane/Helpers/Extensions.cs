@@ -1,4 +1,5 @@
-﻿using unvell.D2DLib;
+﻿using System.Numerics;
+using unvell.D2DLib;
 
 namespace PolyPlane.Helpers
 {
@@ -54,6 +55,16 @@ namespace PolyPlane.Helpers
         public static D2DPoint ToD2DPoint(this Point pnt)
         {
             return new D2DPoint(pnt.X, pnt.Y);
+        }
+
+        public static D2DColor ToD2DColor(this Vector4 vec)
+        {
+            return new D2DColor(vec.X, vec.Y, vec.Z, vec.W);
+        }
+
+        public static Vector4 ToVector4(this D2DColor color)
+        {
+            return new Vector4(color.a, color.r, color.g, color.b);
         }
 
         public static float Angle(this D2DPoint vector, bool clamp = true)

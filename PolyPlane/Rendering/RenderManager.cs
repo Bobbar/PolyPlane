@@ -699,9 +699,8 @@ namespace PolyPlane.Rendering
                 for (float y = ctx.Viewport.top; y <= ctx.Viewport.bottom; y += step)
                 {
                     var nPos = new D2DPoint(x, y);
-                    var alpha = ctx.LightMap.SampleIntensity(nPos);
-
-                    ctx.FillRectangle(new D2DRect(nPos, new D2DSize(size, size)), D2DColor.Yellow.WithAlpha(alpha));
+                    var color = ctx.LightMap.SampleMap(nPos);
+                    ctx.FillRectangle(new D2DRect(nPos, new D2DSize(size, size)), color.ToD2DColor());
                 }
             }
         }

@@ -1,6 +1,7 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.Helpers;
 using unvell.D2DLib;
+using System.Numerics;
 
 namespace PolyPlane.Rendering
 {
@@ -9,7 +10,7 @@ namespace PolyPlane.Rendering
     /// </summary>
     public sealed class LightMap
     {
-        private float[,] _map = null;
+        private Vector4[,] _map = null;
 
         const float SIDE_LEN = 60f;
         const int SAMPLE_NUM = 7;
@@ -17,8 +18,6 @@ namespace PolyPlane.Rendering
 
         private D2DRect _viewport;
         private D2DSize _gridSize;
-
-        public readonly LightColors Colors = new LightColors();
 
         public LightMap() { }
 
@@ -61,6 +60,7 @@ namespace PolyPlane.Rendering
             var sampleNum = SAMPLE_NUM;
             var gradDist = GRADIENT_DIST;
             var baseIntensity = 1f;
+            var lightColor = Vector4.Zero;
 
             // Query light params for contributor.
             if (obj is ILightMapContributor lightContributor)
@@ -69,6 +69,7 @@ namespace PolyPlane.Rendering
                     return;
 
                 baseIntensity = lightContributor.GetIntensityFactor();
+                lightColor = lightContributor.GetLightColor().ToVector4();
 
                 // Compute the number of samples needed for the current radius.
                 gradDist = lightContributor.GetLightRadius();
@@ -99,10 +100,14 @@ namespace PolyPlane.Rendering
 
                             intensity *= baseIntensity;
 
-                            // Accumulate and clamp the new intensity.
-                            intensity = Math.Clamp(_map[xo, yo] + intensity, 0f, 1f);
+                            lightColor.X = Math.Clamp(intensity, 0f, 1f);
 
-                            _map[xo, yo] = intensity;
+                            // Blend the new color.
+                            var current = _map[xo, yo];
+
+                            var next = Blend(current, lightColor);
+
+                            _map[xo, yo] = next;
                         }
                     }
                 }
@@ -110,13 +115,13 @@ namespace PolyPlane.Rendering
         }
 
         /// <summary>
-        /// Get the light intensity at the specified position.
+        /// Get the raw light color at the specified position.
         /// </summary>
         /// <param name="pos"></param>
         /// <returns></returns>
-        public float SampleIntensity(D2DPoint pos)
+        public Vector4 SampleMap(D2DPoint pos)
         {
-            float sample = 0f;
+            var sample = Vector4.Zero;
 
             GetGridPos(pos, out int idxX, out int idxY);
 
@@ -129,23 +134,42 @@ namespace PolyPlane.Rendering
         }
 
         /// <summary>
-        /// Sample light intensity at the specified point and compute the new lighted color from the specified colors.
+        /// Sample light color at the specified point and compute the new lighted color from the specified colors.
         /// </summary>
         /// <param name="pos">Position to sample.</param>
         /// <param name="minIntensity">Min intensity range.</param>
         /// <param name="maxIntensity">Max intensity range.</param>
         /// <param name="initColor">Initial un-lighted color.</param>
-        /// <param name="lightColor">Lighting color to be lerped in per the intensity.</param>
         /// <returns></returns>
-        public D2DColor SampleColor(D2DPoint pos, D2DColor initColor, D2DColor lightColor, float minIntensity, float maxIntensity)
+        public D2DColor SampleColor(D2DPoint pos, D2DColor initColor, float minIntensity, float maxIntensity)
         {
-            var intensity = SampleIntensity(pos);
+            var color = SampleMap(pos);
 
-            intensity = Utilities.ScaleToRange(intensity, 0f, 1f, minIntensity, maxIntensity);
+            // We use the alpha channel to determine the intensity.
+            // Clamp the intensity to the specified range.
+            var intensity = Utilities.ScaleToRange(color.X, 0f, 1f, minIntensity, maxIntensity);
 
-            var newColor = Utilities.LerpColor(initColor, lightColor, intensity);
+            // Set the sample color alpha to full as we don't want the sample
+            // color to effect the alpha of the initial input color.
+            color.X = 1f;
 
-            return newColor;
+            // Lerp the new color per the intensity.
+            var newColor = Vector4.Lerp(initColor.ToVector4(), color, intensity);
+            
+            return newColor.ToD2DColor();
+        }
+
+        private Vector4 Blend(Vector4 fg,  Vector4 bg)
+        {
+            var r = Vector4.Zero;
+
+            r.X = 1 - (1 - fg.X) * (1 - bg.X);
+            if (r.X < 1.0e-6) return r; // Fully transparent -- R,G,B not important
+            r.Y = fg.Y * fg.X / r.X + bg.Y * bg.X * (1 - fg.X) / r.X;
+            r.Z = fg.Z * fg.X / r.X + bg.Z * bg.X * (1 - fg.X) / r.X;
+            r.W = fg.W * fg.X / r.X + bg.W * bg.X * (1 - fg.X) / r.X;
+
+            return r;
         }
 
         private void ClearMap()
@@ -164,7 +188,7 @@ namespace PolyPlane.Rendering
             if (_gridSize.width != width || _gridSize.height != height)
             {
                 _gridSize = new D2DSize(width, height);
-                _map = new float[width, height];
+                _map = new Vector4[width, height];
             }
 
             _viewport = viewport;
@@ -176,12 +200,6 @@ namespace PolyPlane.Rendering
 
             X = (int)Math.Floor(posOffset.X / SIDE_LEN);
             Y = (int)Math.Floor(posOffset.Y / SIDE_LEN);
-        }
-
-
-        public class LightColors
-        {
-            public readonly D2DColor DefaultLightingColor = new D2DColor(1f, 0.98f, 0.54f);
         }
     }
 
@@ -195,6 +213,12 @@ namespace PolyPlane.Rendering
         /// Radius of the light to contribute.
         /// </summary>
         float GetLightRadius();
+
+        /// <summary>
+        /// Color of the light to contribute.
+        /// </summary>
+        /// <returns></returns>
+        D2DColor GetLightColor();
 
         /// <summary>
         /// Intensity factor of the light to contribute. 
