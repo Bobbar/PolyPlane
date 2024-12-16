@@ -105,6 +105,11 @@ namespace PolyPlane.GameObjects
             return IsFlashing();
         }
 
+        D2DPoint ILightMapContributor.GetLightPosition()
+        {
+            return this.Position;
+        }
+
         D2DColor ILightMapContributor.GetLightColor()
         {
             return D2DColor.White;

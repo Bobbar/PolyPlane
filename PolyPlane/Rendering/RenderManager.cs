@@ -661,7 +661,7 @@ namespace PolyPlane.Rendering
 
             DrawClouds(ctx);
             DrawPlaneCloudShadows(ctx, shadowColor);
-            DrawLightingEffects(ctx, objsInViewport);
+            DrawLightFlareEffects(ctx, objsInViewport);
 
             //DrawNoise(ctx);
 
@@ -908,7 +908,7 @@ namespace PolyPlane.Rendering
             ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(shadowWidth, HEIGHT)), shadowColor.WithAlpha(shadowAlpha));
         }
 
-        private void DrawLightingEffects(RenderContext ctx, IEnumerable<GameObject> objs)
+        private void DrawLightFlareEffects(RenderContext ctx, IEnumerable<GameObject> objs)
         {
             const float BULLET_LIGHT_RADIUS = 60f;
             if (_bulletLightingBrush == null)

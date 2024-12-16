@@ -510,8 +510,9 @@ namespace PolyPlane.GameObjects
         float ILightMapContributor.GetLightRadius()
         {
             const float LIGHT_RADIUS = 500f;
+            var flickerScale = Utilities.Rnd.NextFloat(0.5f, 1f);
 
-            return LIGHT_RADIUS;
+            return LIGHT_RADIUS * flickerScale;
         }
 
         float ILightMapContributor.GetIntensityFactor()
@@ -522,6 +523,11 @@ namespace PolyPlane.GameObjects
         bool ILightMapContributor.IsLightEnabled()
         {
             return this.FlameOn;
+        }
+
+        D2DPoint ILightMapContributor.GetLightPosition()
+        {
+            return _centerOfThrust.Position;
         }
 
         D2DColor ILightMapContributor.GetLightColor()

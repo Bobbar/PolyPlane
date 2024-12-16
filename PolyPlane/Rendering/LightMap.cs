@@ -61,6 +61,7 @@ namespace PolyPlane.Rendering
             var gradDist = GRADIENT_DIST;
             var baseIntensity = 1f;
             var lightColor = Vector4.Zero;
+            var lightPosition = obj.Position;
 
             // Query light params for contributor.
             if (obj is ILightMapContributor lightContributor)
@@ -70,13 +71,14 @@ namespace PolyPlane.Rendering
 
                 baseIntensity = lightContributor.GetIntensityFactor();
                 lightColor = lightContributor.GetLightColor().ToVector4();
+                lightPosition = lightContributor.GetLightPosition();
 
                 // Compute the number of samples needed for the current radius.
                 gradDist = lightContributor.GetLightRadius();
                 sampleNum = (int)(gradDist / SIDE_LEN);
             }
 
-            GetGridPos(obj.Position, out int idxX, out int idxY);
+            GetGridPos(lightPosition, out int idxX, out int idxY);
 
             var centerPos = new D2DPoint((idxX * SIDE_LEN) + _viewport.Location.X, (idxY * SIDE_LEN) + _viewport.Location.Y);
 
@@ -224,6 +226,12 @@ namespace PolyPlane.Rendering
         /// Intensity factor of the light to contribute. 
         /// </summary>
         float GetIntensityFactor();
+
+        /// <summary>
+        /// Position of the light to contribute.
+        /// </summary>
+        /// <returns></returns>
+        D2DPoint GetLightPosition();
 
         /// <summary>
         /// True if this object is currently contributing light.

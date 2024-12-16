@@ -116,6 +116,11 @@ namespace PolyPlane.GameObjects
             return !this.IsExpired;
         }
 
+        D2DPoint ILightMapContributor.GetLightPosition()
+        {
+            return this.Position;
+        }
+
         D2DColor ILightMapContributor.GetLightColor()
         {
             return _lightMapColor;
