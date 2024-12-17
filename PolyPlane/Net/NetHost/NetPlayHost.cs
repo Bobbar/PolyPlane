@@ -162,7 +162,7 @@ namespace PolyPlane.Net.NetHost
 
         private void ProcessSendQueue()
         {
-            while (PacketSendQueue.Count > 0)
+            while (!PacketSendQueue.IsEmpty)
             {
                 if (PacketSendQueue.TryDequeue(out NetPacket packet))
                 {

@@ -203,7 +203,14 @@ namespace PolyPlane.Server
                         netPlayer.Latency = peer.Value.RoundTripTime.ToString();
                     }
 
-                    _currentPlayers.Add(netPlayer);
+                    try
+                    {
+                        // The first new player added causes an OutOfRangeException
+                        // on the bound listbox selectindex method, for some reason...
+                        _currentPlayers.Add(netPlayer);
+                    }
+                    catch (ArgumentOutOfRangeException) 
+                    { }
 
                     var joinMsg = $"'{playerPlane.PlayerName}' has joined.";
                     AddNewEventMessage(joinMsg);
@@ -345,7 +352,7 @@ namespace PolyPlane.Server
             if (_render != null && !_stopRender)
             {
                 FighterPlane viewPlane = World.GetViewPlane();
-                
+
                 if (viewPlane != null)
                     _render.RenderFrame(viewPlane, dt);
             }

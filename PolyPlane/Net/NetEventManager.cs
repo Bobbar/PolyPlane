@@ -91,7 +91,7 @@ namespace PolyPlane.Net
 
             now = World.CurrentNetTimeMs();
 
-            while (Host.PacketReceiveQueue.Count > 0)
+            while (!Host.PacketReceiveQueue.IsEmpty)
             {
                 if (Host.PacketReceiveQueue.TryDequeue(out NetPacket packet))
                 {
