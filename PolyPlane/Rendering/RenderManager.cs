@@ -691,8 +691,7 @@ namespace PolyPlane.Rendering
 
         private void DrawLightMap(RenderContext ctx)
         {
-            const float step = 60f;
-            const float size = 60f;
+            float step = ctx.LightMap.SIDE_LEN;
 
             for (float x = ctx.Viewport.left; x <= ctx.Viewport.right; x += step)
             {
@@ -700,7 +699,7 @@ namespace PolyPlane.Rendering
                 {
                     var nPos = new D2DPoint(x, y);
                     var color = ctx.LightMap.SampleMap(nPos);
-                    ctx.FillRectangle(new D2DRect(nPos, new D2DSize(size, size)), color.ToD2DColor());
+                    ctx.FillRectangle(new D2DRect(nPos, new D2DSize(step, step)), color.ToD2DColor());
                 }
             }
         }

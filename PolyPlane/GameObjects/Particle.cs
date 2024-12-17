@@ -1,12 +1,15 @@
 ﻿using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
+using System.Numerics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Particle : GameObject, ICollidable, IPushable, INoGameID
+    public class Particle : GameObject, ICollidable, IPushable, INoGameID, ILightMapContributor
     {
+        public ParticleType Type;
+
         public D2DEllipse Ellipse = new D2DEllipse();
         public D2DColor Color { get; set; }
         public D2DColor StartColor { get; set; }
@@ -20,6 +23,8 @@ namespace PolyPlane.GameObjects
         protected const float MAX_RISE_RATE = -70f;
         protected const float WIND_SPEED = 20f; // Fake wind effect amount.
         protected const float PARTICLE_MASS = 30f;
+
+        private static readonly Vector3 Luminance = new Vector3(0.2126f, 0.7152f, 0.0722f); // For flame particle lighting amount.
 
         public Particle()
         {
@@ -65,11 +70,12 @@ namespace PolyPlane.GameObjects
             World.ObjectManager.ReturnParticle(this);
         }
 
-        public static void SpawnParticle(GameObject owner, D2DPoint pos, D2DPoint velo, float radius, D2DColor startColor, D2DColor endColor)
+        public static void SpawnParticle(GameObject owner, D2DPoint pos, D2DPoint velo, float radius, D2DColor startColor, D2DColor endColor, ParticleType type = ParticleType.Flame)
         {
             // Rent a particle and set the new properties.
             var particle = World.ObjectManager.RentParticle();
 
+            particle.Type = type;
             particle.Owner = owner;
 
             particle.MaxAge = DEFAULT_MAX_AGE + Utilities.Rnd.NextFloat(-5f, 5f);
@@ -91,5 +97,48 @@ namespace PolyPlane.GameObjects
 
             World.ObjectManager.EnqueueParticle(particle);
         }
+
+        float ILightMapContributor.GetLightRadius()
+        {
+            var flickerScale = Utilities.Rnd.NextFloat(0.5f, 1f);
+            return 300f * flickerScale;
+        }
+
+        D2DColor ILightMapContributor.GetLightColor()
+        {
+            return this.Color.WithBrightness(2.5f);
+        }
+
+        float ILightMapContributor.GetIntensityFactor()
+        {
+            return 0.3f;
+        }
+
+        D2DPoint ILightMapContributor.GetLightPosition()
+        {
+            return this.Position;
+        }
+
+        bool ILightMapContributor.IsLightEnabled()
+        {
+            const float MIN_LUM = 0.19f;
+            const float MAX_LUM = 0.4f;
+
+            if (this.Type != ParticleType.Flame)
+                return false;
+
+            // Compute and filter based on luminance.
+            var c = this.Color;
+            var cVec = new Vector3(c.r, c.g, c.b);
+            var brightness = Vector3.Dot(cVec, Luminance);
+
+            return brightness > MIN_LUM && brightness < MAX_LUM;
+        }
+    }
+
+    public enum ParticleType
+    {
+        Flame,
+        Dust
     }
 }

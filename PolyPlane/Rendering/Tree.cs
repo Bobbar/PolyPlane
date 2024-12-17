@@ -10,6 +10,7 @@ namespace PolyPlane.Rendering
         public float TotalHeight;
         public D2DColor TrunkColor;
         public D2DColor LeafColor;
+        protected const float LIGHT_INTENSITY = 0.5f;
 
         public Tree(D2DPoint position, float height, D2DColor trunkColor, D2DColor leafColor)
         {
@@ -99,7 +100,7 @@ namespace PolyPlane.Rendering
             Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, 180f, this.Position, scale);
 
             var trunkPos = this.Position + (-D2DPoint.UnitY * (TotalHeight * 1f));
-            ctx.DrawPolygonWithLighting(_trunkTransPoly, trunkPos, trunkColor, 0f, D2DDashStyle.Solid, trunkColor, 0.4f);
+            ctx.DrawPolygonWithLighting(_trunkTransPoly, trunkPos, trunkColor, 0f, D2DDashStyle.Solid, trunkColor, LIGHT_INTENSITY);
 
             ctx.PushTransform();
             ctx.TranslateTransform(normalLeafPos * ctx.CurrentScale);
@@ -111,7 +112,7 @@ namespace PolyPlane.Rendering
 
             // Add ToD color overlay.
             leafEllipse.origin = normalLeafPos;
-            ctx.FillEllipseWithLighting(new D2DEllipse(normalLeafPos, size), leafToDColor, 0.4f);
+            ctx.FillEllipseWithLighting(new D2DEllipse(normalLeafPos, size), leafToDColor, LIGHT_INTENSITY);
         }
     }
 
@@ -189,8 +190,8 @@ namespace PolyPlane.Rendering
 
             // Center Y position.
             var centerPos = this.Position + (-D2DPoint.UnitY * (TotalHeight * 2f));
-            ctx.DrawPolygonWithLighting(_trunkTransPoly, centerPos, trunkColor, 0f, D2DDashStyle.Solid, trunkColor, 0.4f);
-            ctx.DrawPolygonWithLighting(_topTrans, centerPos, leafColor, 0f, D2DDashStyle.Solid, leafColor, 0.4f);
+            ctx.DrawPolygonWithLighting(_trunkTransPoly, centerPos, trunkColor, 0f, D2DDashStyle.Solid, trunkColor, LIGHT_INTENSITY);
+            ctx.DrawPolygonWithLighting(_topTrans, centerPos, leafColor, 0f, D2DDashStyle.Solid, leafColor, LIGHT_INTENSITY);
         }
     }
 }

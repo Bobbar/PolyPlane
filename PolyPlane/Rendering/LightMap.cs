@@ -1,7 +1,7 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.Helpers;
-using unvell.D2DLib;
 using System.Numerics;
+using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
 {
@@ -12,12 +12,17 @@ namespace PolyPlane.Rendering
     {
         private Vector4[,] _map = null;
 
-        const float SIDE_LEN = 60f;
+        public float SIDE_LEN
+        {
+            get { return _sideLen; }
+        }
+
         const int SAMPLE_NUM = 7;
         const float GRADIENT_DIST = 450f;
 
         private D2DRect _viewport;
         private D2DSize _gridSize;
+        private float _sideLen = 60f;
 
         public LightMap() { }
 
@@ -80,7 +85,7 @@ namespace PolyPlane.Rendering
 
             GetGridPos(lightPosition, out int idxX, out int idxY);
 
-            var centerPos = new D2DPoint((idxX * SIDE_LEN) + _viewport.Location.X, (idxY * SIDE_LEN) + _viewport.Location.Y);
+            var centerPos = new D2DPoint(idxX * SIDE_LEN, idxY * SIDE_LEN);
 
             // Sample points around the objects to build a light intensity gradient.
             for (int x = -sampleNum; x <= sampleNum; x++)
@@ -93,7 +98,7 @@ namespace PolyPlane.Rendering
                     if (xo >= 0 && yo >= 0 && xo < _gridSize.width && yo < _gridSize.height)
                     {
                         // Compute the gradient from distance to center.
-                        var gradPos = new D2DPoint((xo * SIDE_LEN) + _viewport.Location.X, (yo * SIDE_LEN) + _viewport.Location.Y);
+                        var gradPos = new D2DPoint(xo * SIDE_LEN, yo * SIDE_LEN);
                         var dist = centerPos.DistanceTo(gradPos);
 
                         if (dist <= gradDist)
@@ -157,17 +162,17 @@ namespace PolyPlane.Rendering
 
             // Lerp the new color per the intensity.
             var newColor = Vector4.Lerp(initColor.ToVector4(), color, intensity);
-            
+
             return newColor.ToD2DColor();
         }
 
-        private Vector4 Blend(Vector4 colorA,  Vector4 colorB)
+        private Vector4 Blend(Vector4 colorA, Vector4 colorB)
         {
             var r = Vector4.Zero;
 
             r.X = 1f - (1f - colorA.X) * (1f - colorB.X);
-           
-            if (r.X < float.Epsilon) 
+
+            if (r.X < float.Epsilon)
                 return r; // Fully transparent -- R,G,B not important
 
             r.Y = colorA.Y * colorA.X / r.X + colorB.Y * colorB.X * (1f - colorA.X) / r.X;
@@ -186,6 +191,12 @@ namespace PolyPlane.Rendering
         private void UpdateViewport(D2DRect viewport)
         {
             const int PAD = 5;
+            const float MIN_LEN = 30f;
+            const float MAX_LEN = 100f;
+
+            // Dynamically change the side length with viewport scale.
+            // (Larger side length when zoomed out.)
+            _sideLen = (float)Math.Clamp(Math.Floor(World.ViewPortScaleMulti * 1.5f), MIN_LEN, MAX_LEN);
 
             var width = (int)Math.Floor(viewport.Width / SIDE_LEN) + PAD;
             var height = (int)Math.Floor(viewport.Height / SIDE_LEN) + PAD;
