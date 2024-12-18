@@ -77,7 +77,7 @@ namespace PolyPlane.Rendering
                 var color = Utilities.LerpColor(color1, color2, 1f - amt);
 
                 // Add time of day color.
-                color = ctx.AddTimeOfDayColor(color, todColor);
+                color = Utilities.LerpColor(color, todColor, 0.5f);
 
                 // Draw cloud part with lighting.
                 ctx.FillEllipseWithLighting(new D2DEllipse(point, dims), color, 0.7f);

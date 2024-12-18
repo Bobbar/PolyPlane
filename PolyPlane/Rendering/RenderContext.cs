@@ -90,11 +90,11 @@ namespace PolyPlane.Rendering
         /// <returns></returns>
         public D2DColor AddTimeOfDayColor(D2DColor color, D2DColor todColor)
         {
-            const float AMT = 0.3f;
+            const float AMT = 0.35f;
             return Utilities.LerpColor(color, todColor, AMT);
         }
 
-        
+
         /// <summary>
         /// Gets the shadow color for the current time of day.  (A darker variation of the time of day color)
         /// </summary>

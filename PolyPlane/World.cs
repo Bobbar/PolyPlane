@@ -201,7 +201,7 @@ namespace PolyPlane
         private const float MIN_TURB = 0.80f;
         private const float MAX_TURB = 1f;
         private const float MAX_WIND_MAG = 100f;
-        
+
         public const float AirDensity = 1.225f;
         public static D2DPoint Wind = D2DPoint.Zero;
 
@@ -222,8 +222,10 @@ namespace PolyPlane
 
         public static readonly D2DColor[] TimeOfDayPallet =
         [
-            new D2DColor(1f, 0f, 0f, 0f),
-            new D2DColor(1f, 0f, 0f, 0f),
+            new D2DColor(1f, 0.33f, 0.35f, 0.49f),
+            new D2DColor(1f, 0.33f, 0.35f, 0.49f),
+            new D2DColor(1f, 0.64f, 0.52f, 0.66f),
+            new D2DColor(1f, 0.64f, 0.52f, 0.66f),
             new D2DColor(1f, 1f, 0.67f, 0f),
             new D2DColor(1f, 1f, 0.47f, 0f),
             new D2DColor(1f, 1f, 0f, 0.08f),
@@ -231,9 +233,10 @@ namespace PolyPlane
             new D2DColor(1f, 0.86f, 0f, 1f),
             new D2DColor(1f, 0.64f, 0.52f, 0.66f),
             new D2DColor(1f, 0.33f, 0.35f, 0.49f),
-            new D2DColor(1f, 0.71f, 0.77f, 0.93f),
-            new D2DColor(1f, 0.91f, 0.86f, 0.89f),
             new D2DColor(1f, 0.37f, 0.4f, 0.54f),
+            new D2DColor(1f, 0.71f, 0.77f, 0.93f),
+            new D2DColor(0.5f, 0f, 0f, 0f),
+            new D2DColor(0.5f, 0f, 0f, 0f)
         ];
 
         public static uint CurrentObjId = 0;
