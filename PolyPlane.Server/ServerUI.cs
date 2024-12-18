@@ -59,7 +59,7 @@ namespace PolyPlane.Server
         private DiscoveryServer _discovery;
         private CollisionManager _collisions;
         private NetPlayHost _server;
-        private RenderManager _render = null;
+        private Renderer _render = null;
 
         private bool _queueNextViewId = false;
         private bool _queuePrevViewId = false;
@@ -649,7 +649,7 @@ namespace PolyPlane.Server
             _viewPort.Disposed += ViewPort_Disposed;
             _viewPort.Show();
 
-            _render = new RenderManager(_viewPort, _netMan);
+            _render = new Renderer(_viewPort, _netMan);
             _stopRender = false;
         }
 

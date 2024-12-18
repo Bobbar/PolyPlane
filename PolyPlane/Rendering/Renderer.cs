@@ -8,7 +8,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
 {
-    public class RenderManager : IDisposable
+    public class Renderer : IDisposable
     {
         public TimeSpan CollisionTime = TimeSpan.Zero;
         public TimeSpan UpdateTime = TimeSpan.Zero;
@@ -91,6 +91,7 @@ namespace PolyPlane.Rendering
         private readonly D2DColor _groundLightColor = new D2DColor(0.85f, 0.76f, 0.14f);
 
         private readonly D2DPoint _infoPosition = new D2DPoint(20, 20);
+        private readonly D2DSize _healthBarSize = new D2DSize(80, 20);
 
         private FloatAnimation _screenShakeX;
         private FloatAnimation _screenShakeY;
@@ -115,7 +116,7 @@ namespace PolyPlane.Rendering
         private List<Tree> _trees = new List<Tree>();
 
 
-        public RenderManager(Control renderTarget, NetEventManager netMan)
+        public Renderer(Control renderTarget, NetEventManager netMan)
         {
             _renderTarget = renderTarget;
             _netMan = netMan;
@@ -169,30 +170,6 @@ namespace PolyPlane.Rendering
             _fpsLimiter?.Dispose();
         }
 
-        private void PlayerScoredEvent(object? sender, PlayerScoredEventArgs e)
-        {
-            if (!World.FreeCameraMode)
-            {
-                var msg = "+1 Kill!";
-                var popMsg = new PopMessage() { Message = msg, Position = new D2DPoint(this.Width / 2f, this.Height * 0.40f), TargetPlayerID = e.Player.ID };
-                _popMessages.Add(popMsg);
-            }
-        }
-
-        private void PlayerKilledEvent(object? sender, EventMessage e)
-        {
-            AddNewEventMessage(e);
-        }
-
-        private void NewPlayerEvent(object? sender, FighterPlane e)
-        {
-            AddNewEventMessage($"'{e.PlayerName}' has joined.", EventType.Net);
-        }
-
-        private void NetMan_NewChatMessage(object? sender, ChatPacket e)
-        {
-            AddNewEventMessage($"{e.PlayerName}: {e.Message}", EventType.Chat);
-        }
 
         private void InitRenderTarget()
         {
@@ -255,34 +232,6 @@ namespace PolyPlane.Rendering
                 _clearBitmap?.Dispose();
                 _clearBitmap = gradGfx.GetBitmap();
             }
-        }
-
-        private void ResizeGfx(bool force = false)
-        {
-            if (!force)
-                if (World.ViewPortBaseSize.width == this.Width && World.ViewPortBaseSize.height == this.Height)
-                    return;
-
-            _device?.Resize();
-
-            ResizeViewPort();
-
-            InitClearGradientBitmap();
-
-            // Resizing graphics causes spikes in FPS. Try to limit them here.
-            _fpsLimiter.Wait(World.TARGET_FPS);
-        }
-
-        private void ResizeViewPort()
-        {
-            var scaleSize = GetViewportScaled();
-            World.UpdateViewport(scaleSize);
-        }
-
-        private Size GetViewportScaled()
-        {
-            var scaleSize = new Size((int)((float)_renderTarget.Size.Width / ((float)_currentDPI / World.DEFAULT_DPI)), (int)((float)_renderTarget.Size.Height / ((float)_currentDPI / World.DEFAULT_DPI)));
-            return scaleSize;
         }
 
         private void InitProceduralGenStuff()
@@ -384,81 +333,35 @@ namespace PolyPlane.Rendering
             }
         }
 
-        public void AddNewEventMessage(string message, EventType type)
+        private void ResizeGfx(bool force = false)
         {
-            _messageEvents.Add(new EventMessage(message, type));
-        }
+            if (!force)
+                if (World.ViewPortBaseSize.width == this.Width && World.ViewPortBaseSize.height == this.Height)
+                    return;
 
-        public void AddNewEventMessage(EventMessage msg)
-        {
-            _messageEvents.Add(msg);
-        }
-
-        public void ToggleInfo()
-        {
-            _showInfo = !_showInfo;
-        }
-
-        public void ToggleHelp()
-        {
-            _showHelp = !_showHelp;
-        }
-
-        public void ToggleScore()
-        {
-            _showScore = !_showScore;
-            _scoreScrollPos = 0;
-        }
-
-        public void ToggleHUD()
-        {
-            _showHUD = !_showHUD;
-        }
-
-        public void ZoomIn()
-        {
-            var amt = ZOOM_FACTOR * World.ZoomScale;
-            World.ZoomScale += amt;
+            _device?.Resize();
 
             ResizeViewPort();
+
+            InitClearGradientBitmap();
+
+            // Resizing graphics causes spikes in FPS. Try to limit them here.
+            _fpsLimiter.Wait(World.TARGET_FPS);
         }
 
-        public void ZoomOut()
+        private void ResizeViewPort()
         {
-            var amt = ZOOM_FACTOR * World.ZoomScale;
-            World.ZoomScale -= amt;
-
-            ResizeViewPort();
+            var scaleSize = GetViewportScaled();
+            World.UpdateViewport(scaleSize);
         }
 
-        public void DoMouseWheelUp()
+        private Size GetViewportScaled()
         {
-            if (!_showScore)
-            {
-                ZoomIn();
-            }
-            else
-            {
-                _scoreScrollPos -= 1;
-
-                if (_scoreScrollPos < 0)
-                    _scoreScrollPos = 0;
-            }
+            var scaleSize = new Size((int)((float)_renderTarget.Size.Width / ((float)_currentDPI / World.DEFAULT_DPI)), (int)((float)_renderTarget.Size.Height / ((float)_currentDPI / World.DEFAULT_DPI)));
+            return scaleSize;
         }
 
-        public void DoMouseWheelDown()
-        {
-            if (!_showScore)
-            {
-                ZoomOut();
-            }
-            else
-            {
-                _scoreScrollPos += 1;
-            }
-        }
-
-        public void UpdateTimersAndAnims(float dt)
+        private void UpdateTimersAndAnims(float dt)
         {
             _hudMessageTimeout.Update(dt);
             _warningLightFlashTimer.Update(dt);
@@ -551,10 +454,57 @@ namespace PolyPlane.Rendering
             _renderFPS = fps;
         }
 
+        private void DrawSky(RenderContext ctx, GameObject viewObject)
+        {
+            const float MAX_ALT_OFFSET = 50000f;
+
+            var plrAlt = viewObject.Altitude;
+            if (viewObject.Position.Y >= 0)
+                plrAlt = 0f;
+
+            var color1 = _skyColorLight;
+            var color2 = _skyColorDark;
+            var color = Utilities.LerpColor(color1, color2, (plrAlt / (World.MAX_ALTITUDE - MAX_ALT_OFFSET)));
+
+            // Add time of day color.
+            color = Utilities.LerpColor(color, D2DColor.Black, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY - 5f));
+            color = Utilities.LerpColor(color, ctx.AddTimeOfDayColor(color), 0.2f);
+
+            var rect = new D2DRect(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), new D2DSize(this.Width, this.Height));
+
+            ctx.Gfx.FillRectangle(rect, color);
+        }
+
+        private void DrawMovingBackground(RenderContext ctx, GameObject viewObject)
+        {
+            float spacing = 75f;
+            const float size = 4f;
+            var d2dSz = new D2DSize(size, size);
+            var color = new D2DColor(0.3f, D2DColor.Gray);
+
+            var plrPos = viewObject.Position;
+            plrPos /= World.ViewPortScaleMulti;
+
+            var roundPos = new D2DPoint((plrPos.X) % spacing, (plrPos.Y) % spacing);
+            roundPos *= 3f;
+
+            var rect = new D2DRect(0, 0, this.Width, this.Height);
+
+            for (float x = -spacing * 2f; x < this.Width + roundPos.X; x += spacing)
+            {
+                for (float y = -spacing * 2f; y < this.Height + roundPos.Y; y += spacing)
+                {
+                    var pos = new D2DPoint(x, y);
+                    pos -= roundPos;
+
+                    if (rect.Contains(pos))
+                        ctx.Gfx.FillRectangle(new D2DRect(pos, d2dSz), color);
+                }
+            }
+        }
+
         private void DrawPlayerView(RenderContext ctx, GameObject viewObj)
         {
-            var healthBarSize = new D2DSize(80, 20);
-
             FighterPlane? viewPlane = null;
 
             if (viewObj is FighterPlane plane)
@@ -614,7 +564,7 @@ namespace PolyPlane.Rendering
                     {
                         // Draw health bars for other planes.
                         if (!p.Equals(viewPlane))
-                            DrawHealthBarClamped(ctx, p, new D2DPoint(p.Position.X, p.Position.Y - 110f), healthBarSize);
+                            DrawPlaneHealthBar(ctx, p, new D2DPoint(p.Position.X, p.Position.Y - 110f));
 
                         // Draw circle around locked on plane.
                         if (viewPlane.Radar.LockedObj != null && viewPlane.Radar.LockedObj.Equals(p))
@@ -626,7 +576,7 @@ namespace PolyPlane.Rendering
                     missile.Render(ctx);
 
                     // Circle enemy missiles.
-                    if (viewPlane != null && !missile.Owner.Equals(viewPlane))
+                    if (!missile.Owner.Equals(viewPlane))
                         ctx.DrawEllipse(new D2DEllipse(missile.Position, new D2DSize(50f, 50f)), new D2DColor(0.4f, D2DColor.Red), 8f);
                 }
                 else
@@ -651,127 +601,63 @@ namespace PolyPlane.Rendering
             ctx.PopTransform();
         }
 
-        private void DrawNoise(RenderContext ctx)
+        private void DrawGround(RenderContext ctx, D2DPoint position)
         {
-            const float step = 25f;
-            const float size = 10f;
+            var groundPos = new D2DPoint(position.X, 0f);
 
-            for (float x = ctx.Viewport.left; x <= ctx.Viewport.right; x += step)
-            {
-                for (float y = ctx.Viewport.top; y <= ctx.Viewport.bottom; y += step)
-                {
-                    var nPos = new D2DPoint(x, y);
-                    var noise = World.SampleNoise(nPos);
-
-                    ctx.FillRectangle(new D2DRect(nPos, new D2DSize(size, size)), D2DColor.Black.WithAlpha(noise));
-                }
-            }
-        }
-
-        private void DrawLightMap(RenderContext ctx)
-        {
-            float step = ctx.LightMap.SIDE_LEN;
-
-            for (float x = ctx.Viewport.left; x <= ctx.Viewport.right; x += step)
-            {
-                for (float y = ctx.Viewport.top; y <= ctx.Viewport.bottom; y += step)
-                {
-                    var nPos = new D2DPoint(x, y);
-                    var color = ctx.LightMap.SampleMap(nPos);
-                    ctx.FillRectangle(new D2DRect(nPos, new D2DSize(step, step)), color.ToD2DColor());
-                }
-            }
-        }
-
-
-        private void UpdatePopMessages(float dt)
-        {
-            for (int i = _popMessages.Count - 1; i >= 0; i--)
-            {
-                var msg = _popMessages[i];
-                msg.UpdatePos(dt);
-
-                if (!msg.Displayed)
-                    _popMessages.RemoveAt(i);
-            }
-        }
-
-        private void DrawPopMessages(RenderContext ctx, D2DSize vpSize, FighterPlane viewPlane)
-        {
-            for (int i = 0; i < _popMessages.Count; i++)
-            {
-                var msg = _popMessages[i];
-
-                if (msg.Displayed && msg.TargetPlayerID.Equals(viewPlane.ID))
-                {
-                    var rect = new D2DRect(msg.RenderPos, new D2DSize(200, 50));
-                    var color = Utilities.LerpColor(D2DColor.Red, D2DColor.Transparent, msg.Age / msg.LIFESPAN);
-                    ctx.Gfx.DrawTextCenter(msg.Message, color, DEFAULT_FONT_NAME, 30f, rect);
-                }
-            }
-        }
-
-        private void UpdateGroundColorBrush(RenderContext ctx)
-        {
-            _groundBrush?.Dispose();
-            _groundBrush = _ctx.Device.CreateLinearGradientBrush(new D2DPoint(0f, 50f), new D2DPoint(0f, 4000f), [new D2DGradientStop(0.2f, ctx.AddTimeOfDayColor(_groundColorDark)), new D2DGradientStop(0.1f, ctx.AddTimeOfDayColor(_groundColorLight))]);
-        }
-
-        public void NewHudMessage(string message, D2DColor color)
-        {
-            _hudMessage = message;
-            _hudMessageColor = color;
-            _hudMessageTimeout.Restart();
-        }
-
-        public void ClearHudMessage()
-        {
-            _hudMessage = null;
-            _hudMessageTimeout.Stop();
-            _hudMessageTimeout.Reset();
-        }
-
-        private void DrawScreenFlash(D2DGraphics gfx)
-        {
-            _screenFlashColor.a = _screenFlashOpacity;
-
-            if (_screenFlashOpacity > 0.01f)
-                gfx.FillRectangle(World.ViewPortRectUnscaled, _screenFlashColor);
-        }
-
-        public void DoScreenShake()
-        {
-            float amt = 10f;
-            _screenShakeX.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
-            _screenShakeY.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
-
-            _screenShakeX.Restart();
-            _screenShakeY.Restart();
-        }
-
-        public void DoScreenShake(float amt)
-        {
-            if (_screenShakeX == null || _screenShakeY == null)
+            if (!ctx.Viewport.Contains(groundPos))
                 return;
 
-            _screenShakeX.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
-            _screenShakeY.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
+            const float HEIGHT = 500f;
+            var yPos = HEIGHT / ctx.CurrentScale;
+            groundPos += new D2DPoint(0f, yPos);
 
-            _screenShakeX.Restart();
-            _screenShakeY.Restart();
+            // Draw the ground.
+            ctx.Gfx.FillRectangle(new D2DRect(groundPos, new D2DSize(this.Width * World.ViewPortScaleMulti, (HEIGHT * 2f) / ctx.CurrentScale)), _groundBrush);
         }
 
-        public void DoScreenFlash(D2DColor color)
+        private void DrawGroundObjs(RenderContext ctx)
         {
-            _screenFlashColor = color;
-            _screenFlash.Restart();
+            var todColor = ctx.GetTimeOfDayColor();
+
+            foreach (var tree in _trees)
+            {
+                if (ctx.Viewport.Contains(tree.Position, tree.TotalHeight * GROUND_OBJ_SCALE))
+                {
+                    tree.Render(ctx, todColor, GROUND_OBJ_SCALE);
+                }
+            }
         }
 
-        private void DrawPlaneCloudShadows(RenderContext ctx, D2DColor shadowColor)
+        private void DrawGroundImpacts(RenderContext ctx)
         {
-            var color = shadowColor.WithAlpha(0.07f);
-            foreach (var plane in _objs.Planes)
-                ctx.DrawPolygon(plane.Polygon.Poly, color, 0f, D2DDashStyle.Solid, color);
+            if (_groundClipLayer == null)
+                _groundClipLayer = ctx.Device.CreateLayer();
+
+            var rect = new D2DRect(ctx.Viewport.Location.X, 0f, ctx.Viewport.Width, 4000f);
+
+            using (var clipGeo = ctx.Device.CreateRectangleGeometry(rect))
+            {
+                ctx.Gfx.PushLayer(_groundClipLayer, ctx.Viewport, clipGeo);
+
+                foreach (var impact in _objs.GroundImpacts)
+                {
+                    if (ctx.Viewport.Contains(impact.Position))
+                    {
+                        ctx.PushTransform();
+
+                        ctx.RotateTransform(impact.Angle, impact.Position);
+
+                        var ageAlpha = 1f - Utilities.FactorWithEasing(impact.Age, GroundImpact.MAX_AGE, EasingFunctions.In.EaseExpo);
+                        ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), _groundImpactOuterColor.WithAlpha(ageAlpha), 0.4f);
+                        ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), _groundImpactInnerColor.WithAlpha(ageAlpha), 0.4f);
+
+                        ctx.PopTransform();
+                    }
+                }
+
+                ctx.Gfx.PopLayer();
+            }
         }
 
         private void DrawPlaneGroundShadow(RenderContext ctx, FighterPlane plane, D2DColor shadowColor, float todAngle)
@@ -819,6 +705,69 @@ namespace PolyPlane.Rendering
                 return;
 
             ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(shadowWidth, HEIGHT)), shadowColor.WithAlpha(shadowAlpha));
+        }
+
+      
+        private void DrawMuzzleFlash(RenderContext ctx, FighterPlane plane)
+        {
+            if (!ctx.Viewport.Contains(plane.Gun.Position))
+                return;
+
+            const float MUZZ_FLASH_RADIUS = 60f;
+            if (_muzzleFlashBrush == null)
+                _muzzleFlashBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, MUZZ_FLASH_RADIUS, MUZZ_FLASH_RADIUS, new D2DGradientStop[] { new D2DGradientStop(1f, D2DColor.Transparent), new D2DGradientStop(0f, new D2DColor(0.2f, D2DColor.Orange)) });
+
+            if (plane.Gun.MuzzleFlashOn)
+            {
+                ctx.PushTransform();
+                ctx.TranslateTransform(plane.GunPosition * ctx.CurrentScale);
+                ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, MUZZ_FLASH_RADIUS, _muzzleFlashBrush);
+                ctx.PopTransform();
+            }
+        }
+
+        private void DrawPlaneHealthBar(RenderContext ctx, FighterPlane plane, D2DPoint position)
+        {
+            if (!ctx.Viewport.Contains(position))
+                return;
+
+            var size = _healthBarSize;
+            var healthPct = plane.Health / FighterPlane.MAX_HEALTH;
+
+            if (healthPct > 0f && healthPct < 0.05f)
+                healthPct = 0.05f;
+
+            ctx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), World.HudColor);
+            ctx.DrawRectangle(new D2DRect(position, size), World.HudColor);
+
+            // Draw player name.
+            if (string.IsNullOrEmpty(plane.PlayerName))
+                return;
+
+            var rect = new D2DRect(position + new D2DPoint(0, -40), new D2DSize(300, 100));
+            ctx.DrawText(plane.PlayerName, _hudColorBrush, _textConsolas30Centered, rect);
+        }
+
+       
+        private void DrawClouds(RenderContext ctx)
+        {
+            var todColor = ctx.GetTimeOfDayColor();
+            var todAngle = ctx.GetTimeOfDaySunAngle();
+            var shadowColor = Utilities.LerpColorWithAlpha(todColor, D2DColor.Black, 0.7f, 0.05f);
+
+            for (int i = 0; i < _clouds.Count; i++)
+            {
+                var cloud = _clouds[i];
+
+                cloud.Render(ctx, shadowColor, todColor, todAngle);
+            }
+        }
+
+        private void DrawPlaneCloudShadows(RenderContext ctx, D2DColor shadowColor)
+        {
+            var color = shadowColor.WithAlpha(0.07f);
+            foreach (var plane in _objs.Planes)
+                ctx.DrawPolygon(plane.Polygon.Poly, color, 0f, D2DDashStyle.Solid, color);
         }
 
         private void DrawLightFlareEffects(RenderContext ctx, IEnumerable<GameObject> objs)
@@ -902,151 +851,37 @@ namespace PolyPlane.Rendering
             ctx.FillEllipse(new D2DEllipse(lightPos, new D2DSize(lightWidth, HEIGHT)), _groundLightColor.WithAlpha(lightAlpha));
         }
 
-        private void DrawMuzzleFlash(RenderContext ctx, FighterPlane plane)
+
+        private void DrawNoise(RenderContext ctx)
         {
-            if (!ctx.Viewport.Contains(plane.Gun.Position))
-                return;
+            const float step = 25f;
+            const float size = 10f;
 
-            const float MUZZ_FLASH_RADIUS = 60f;
-            if (_muzzleFlashBrush == null)
-                _muzzleFlashBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, MUZZ_FLASH_RADIUS, MUZZ_FLASH_RADIUS, new D2DGradientStop[] { new D2DGradientStop(1f, D2DColor.Transparent), new D2DGradientStop(0f, new D2DColor(0.2f, D2DColor.Orange)) });
-
-            if (plane.Gun.MuzzleFlashOn)
+            for (float x = ctx.Viewport.left; x <= ctx.Viewport.right; x += step)
             {
-                ctx.PushTransform();
-                ctx.TranslateTransform(plane.GunPosition * ctx.CurrentScale);
-                ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, MUZZ_FLASH_RADIUS, _muzzleFlashBrush);
-                ctx.PopTransform();
-            }
-        }
-
-        private void DrawGround(RenderContext ctx, D2DPoint position)
-        {
-            var groundPos = new D2DPoint(position.X, 0f);
-
-            if (!ctx.Viewport.Contains(groundPos))
-                return;
-
-            const float HEIGHT = 500f;
-            var yPos = HEIGHT / ctx.CurrentScale;
-            groundPos += new D2DPoint(0f, yPos);
-
-            // Draw the ground.
-            ctx.Gfx.FillRectangle(new D2DRect(groundPos, new D2DSize(this.Width * World.ViewPortScaleMulti, (HEIGHT * 2f) / ctx.CurrentScale)), _groundBrush);
-        }
-
-        private void DrawGroundImpacts(RenderContext ctx)
-        {
-            if (_groundClipLayer == null)
-                _groundClipLayer = ctx.Device.CreateLayer();
-
-            var rect = new D2DRect(ctx.Viewport.Location.X, 0f, ctx.Viewport.Width, 4000f);
-
-            using (var clipGeo = ctx.Device.CreateRectangleGeometry(rect))
-            {
-                ctx.Gfx.PushLayer(_groundClipLayer, ctx.Viewport, clipGeo);
-
-                foreach (var impact in _objs.GroundImpacts)
+                for (float y = ctx.Viewport.top; y <= ctx.Viewport.bottom; y += step)
                 {
-                    if (ctx.Viewport.Contains(impact.Position))
-                    {
-                        ctx.PushTransform();
+                    var nPos = new D2DPoint(x, y);
+                    var noise = World.SampleNoise(nPos);
 
-                        ctx.RotateTransform(impact.Angle, impact.Position);
-
-                        var ageAlpha = 1f - Utilities.FactorWithEasing(impact.Age, GroundImpact.MAX_AGE, EasingFunctions.In.EaseExpo);
-                        ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), _groundImpactOuterColor.WithAlpha(ageAlpha), 0.4f);
-                        ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), _groundImpactInnerColor.WithAlpha(ageAlpha), 0.4f);
-
-                        ctx.PopTransform();
-                    }
-                }
-
-                ctx.Gfx.PopLayer();
-            }
-        }
-
-        private void DrawGroundObjs(RenderContext ctx)
-        {
-            var todColor = ctx.GetTimeOfDayColor();
-
-            foreach (var tree in _trees)
-            {
-                if (ctx.Viewport.Contains(tree.Position, tree.TotalHeight * GROUND_OBJ_SCALE))
-                {
-                    tree.Render(ctx, todColor, GROUND_OBJ_SCALE);
+                    ctx.FillRectangle(new D2DRect(nPos, new D2DSize(size, size)), D2DColor.Black.WithAlpha(noise));
                 }
             }
         }
 
-        //private void DrawHouse(RenderContext ctx, D2DPoint pos)
-        //{
-        //    var housePoly = new D2DPoint[]
-        //    {
-        //        new D2DPoint(0f, -1f),
-        //        new D2DPoint(1f, -1f),
-        //        new D2DPoint(1f, 1f),
-        //        new D2DPoint(0f, 1f),
-        //    };
-
-        //    var roofPoly = new D2DPoint[]
-        //    {
-        //        new D2DPoint(-0.2f, -1f),
-        //        new D2DPoint(0.5f, -1.8f),
-        //        new D2DPoint(1.2f, -1f),
-        //    };
-
-        //    const float SCALE = 200f;
-        //    Utilities.ApplyTranslation(housePoly, housePoly, 0f, pos, SCALE);
-        //    Utilities.ApplyTranslation(roofPoly, roofPoly, 0f, pos , SCALE);
-
-
-        //    ctx.DrawPolygon(housePoly, D2DColor.Gray, 1, D2DDashStyle.Solid, D2DColor.Gray);
-        //    ctx.DrawPolygon(roofPoly, D2DColor.Gray, 1, D2DDashStyle.Solid, D2DColor.DarkRed);
-        //}
-
-        private void DrawHealthBarClamped(RenderContext ctx, FighterPlane plane, D2DPoint position, D2DSize size)
+        private void DrawLightMap(RenderContext ctx)
         {
-            if (!ctx.Viewport.Contains(position))
-                return;
+            float step = ctx.LightMap.SIDE_LEN;
 
-            var healthPct = plane.Health / FighterPlane.MAX_HEALTH;
-
-            if (healthPct > 0f && healthPct < 0.05f)
-                healthPct = 0.05f;
-
-            ctx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), World.HudColor);
-            ctx.DrawRectangle(new D2DRect(position, size), World.HudColor);
-
-            // Draw player name.
-            if (string.IsNullOrEmpty(plane.PlayerName))
-                return;
-
-            var rect = new D2DRect(position + new D2DPoint(0, -40), new D2DSize(300, 100));
-            ctx.DrawText(plane.PlayerName, _hudColorBrush, _textConsolas30Centered, rect);
-        }
-
-        private void DrawHealthBar(D2DGraphics gfx, FighterPlane plane, D2DPoint position, D2DSize size)
-        {
-            var healthPct = plane.Health / FighterPlane.MAX_HEALTH;
-
-            if (healthPct > 0f && healthPct < 0.05f)
-                healthPct = 0.05f;
-
-            gfx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), World.HudColor);
-            gfx.DrawRectangle(new D2DRect(position, size), World.HudColor);
-
-            // Draw ammo.
-            gfx.DrawText($"MSL: {plane.NumMissiles}", _hudColorBrush, _textConsolas15Centered, new D2DRect(position + new D2DPoint(-110f, 30f), new D2DSize(50f, 20f)));
-            gfx.DrawText($"DECOY: {plane.NumDecoys}", _hudColorBrush, _textConsolas15Centered, new D2DRect(position + new D2DPoint(0, 30f), new D2DSize(80f, 20f)));
-            gfx.DrawText($"AMMO: {plane.NumBullets}", _hudColorBrush, _textConsolas15Centered, new D2DRect(position + new D2DPoint(110f, 30f), new D2DSize(70f, 20f)));
-
-            // Draw player name.
-            if (string.IsNullOrEmpty(plane.PlayerName))
-                return;
-
-            var rect = new D2DRect(position + new D2DPoint(0, -40), new D2DSize(300, 100));
-            gfx.DrawText(plane.PlayerName, _hudColorBrush, _textConsolas30Centered, rect);
+            for (float x = ctx.Viewport.left; x <= ctx.Viewport.right; x += step)
+            {
+                for (float y = ctx.Viewport.top; y <= ctx.Viewport.bottom; y += step)
+                {
+                    var nPos = new D2DPoint(x, y);
+                    var color = ctx.LightMap.SampleMap(nPos);
+                    ctx.FillRectangle(new D2DRect(nPos, new D2DSize(step, step)), color.ToD2DColor());
+                }
+            }
         }
 
         private void DrawHud(RenderContext ctx, GameObject viewObject, float dt)
@@ -1088,7 +923,7 @@ namespace PolyPlane.Rendering
 
                     var healthBarSize = new D2DSize(300, 30);
                     var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height - (viewportsize.height * 0.85f));
-                    DrawHealthBar(ctx.Gfx, plane, pos, healthBarSize);
+                    DrawHealthBarAndAmmo(ctx.Gfx, plane, pos, healthBarSize);
 
                     DrawMessageBox(ctx, viewportsize);
 
@@ -1103,177 +938,6 @@ namespace PolyPlane.Rendering
 
             if (World.FreeCameraMode)
                 DrawFreeCamPrompt(ctx.Gfx);
-        }
-
-        private void DrawGroundWarning(RenderContext ctx, D2DSize viewportsize, FighterPlane viewPlane)
-        {
-            const float WARN_TIME = 5f;
-            var pos = new D2DPoint(viewportsize.width / 2f, viewportsize.height / 2f - 100f);
-            var rect = new D2DRect(pos, new D2DSize(150, 100));
-            var impactTime = Utilities.GroundImpactTime(viewPlane);
-
-            if (impactTime > 0f && impactTime < WARN_TIME)
-                ctx.Gfx.DrawText("PULL UP!", _redColorBrush, _textConsolas30Centered, rect);
-        }
-
-        private void DrawMessageBox(RenderContext ctx, D2DSize viewportsize)
-        {
-            const float SCALE = 1f;
-            const float ACTIVE_SCALE = 1.4f;
-            const float FONT_SIZE = 10f;
-            const int MAX_LINES = 10;
-            const float WIDTH = 400f;
-            const float HEIGHT = 100f;
-
-            var lineSize = new D2DSize(WIDTH, HEIGHT / MAX_LINES);
-            var chatActive = _netMan != null && _netMan.ChatInterface.ChatIsActive;
-            var scale = SCALE;
-
-            if (chatActive)
-                scale = ACTIVE_SCALE;
-
-            var boxPos = new D2DPoint(370f * HudScale * scale, viewportsize.height - (220f * HudScale * scale));
-            var linePos = boxPos;
-
-            ctx.PushTransform();
-            ctx.ScaleTransform(scale, boxPos);
-            ctx.Gfx.FillRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, new D2DColor(0.05f, World.HudColor));
-
-            var start = 0;
-
-            if (_messageEvents.Count >= MAX_LINES)
-                start = _messageEvents.Count - MAX_LINES;
-
-            for (int i = start; i < _messageEvents.Count; i++)
-            {
-                var msg = _messageEvents[i];
-                var rect = new D2DRect(linePos, lineSize);
-                var brush = _hudColorBrushLight;
-
-                switch (msg.Type)
-                {
-                    case EventType.Chat:
-                        brush = _whiteColorBrush;
-                        break;
-                }
-
-                ctx.Gfx.DrawText(msg.Message, brush, _messageBoxFont, rect);
-                linePos += new D2DPoint(0, lineSize.height);
-            }
-
-            ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, World.HudColor);
-
-            // Draw current chat message.
-            if (chatActive)
-            {
-                var rect = new D2DRect(new D2DPoint(boxPos.X, boxPos.Y + HEIGHT + 6f), lineSize);
-                var curText = _netMan.ChatInterface.CurrentText;
-
-                if (string.IsNullOrEmpty(curText))
-                    ctx.Gfx.DrawText("Type chat message...", _hudColorBrush, _messageBoxFont, rect);
-                else
-                    ctx.Gfx.DrawText(_netMan.ChatInterface.CurrentText, _whiteColorBrush, _messageBoxFont, rect);
-
-                ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y + HEIGHT, WIDTH, lineSize.height + 5f, World.HudColor);
-            }
-
-            ctx.PopTransform();
-        }
-
-        private void DrawScoreCard(RenderContext ctx, D2DSize viewportsize)
-        {
-            var size = new D2DSize(viewportsize.width * 0.7f, viewportsize.height * 0.6f);
-            var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
-            var rect = new D2DRect(pos, size);
-            var leftPad = 130f;
-            var topPad = 60f;
-            var topLeft = new D2DPoint(rect.left + leftPad, rect.top + topPad);
-
-            // Draw background.
-            ctx.Gfx.FillRectangle(rect, new D2DColor(0.3f, World.HudColor));
-            ctx.Gfx.DrawRectangle(rect, World.HudColor, 4f);
-
-            // Title
-            var titleRect = new D2DRect(rect.left, rect.top + 10f, size.width, 30f);
-            ctx.Gfx.DrawRectangle(titleRect, World.HudColor);
-            ctx.Gfx.DrawText("SCORE", _whiteColorBrush, _textConsolas30Centered, titleRect);
-
-            // Lines
-            var lineHeight = 20f;
-            var linePosY = topLeft.Y;
-
-            var sortedPlanes = _objs.Planes.OrderByDescending(p => p.Kills).ThenBy(p => p.Deaths).ToArray();
-
-            if (_scoreScrollPos >= sortedPlanes.Length)
-                _scoreScrollPos = sortedPlanes.Length - 1;
-
-            for (int i = _scoreScrollPos; i < sortedPlanes.Length; i++)
-            {
-                var playerPlane = sortedPlanes[i];
-                var lineRect = new D2DRect(topLeft.X, linePosY, 800f, lineHeight);
-                var lineRectColumn1 = new D2DRect(topLeft.X + 200f, linePosY, 800f, lineHeight);
-                var lineRectColumn2 = new D2DRect(topLeft.X + 300f, linePosY, 800f, lineHeight);
-
-                if (linePosY < rect.bottom - lineHeight)
-                {
-                    ctx.Gfx.DrawText($"[ {playerPlane.PlayerName} ]", _whiteColorBrush, _textConsolas15, lineRect);
-                    ctx.Gfx.DrawText($"Kills: {playerPlane.Kills}", _whiteColorBrush, _textConsolas15, lineRectColumn1);
-                    ctx.Gfx.DrawText($"Deaths: {playerPlane.Deaths}", _whiteColorBrush, _textConsolas15, lineRectColumn2);
-
-                    linePosY += lineHeight;
-                }
-            }
-
-            // Draw scroll bar.
-            var scrollBarPos = new D2DPoint(rect.right - 10f, Utilities.Lerp(rect.top + lineHeight + titleRect.Height, rect.bottom, ((float)_scoreScrollPos / sortedPlanes.Length)));
-            var scrollBarRect = new D2DRect(scrollBarPos, new D2DSize(10f, 20f));
-            ctx.Gfx.FillRectangle(scrollBarRect, D2DColor.White);
-        }
-
-        private void DrawGuideIcon(D2DGraphics gfx, D2DSize viewportsize, FighterPlane viewPlane)
-        {
-            const float DIST = 300f;
-            var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
-
-            var mouseAngle = viewPlane.PlayerGuideAngle;
-            var mouseVec = Utilities.AngleToVectorDegrees(mouseAngle, DIST);
-            gfx.DrawEllipse(new D2DEllipse(pos + mouseVec, new D2DSize(5f, 5f)), World.HudColor, 2f);
-
-            var planeAngle = viewPlane.Rotation;
-            var planeVec = Utilities.AngleToVectorDegrees(planeAngle, DIST);
-            gfx.DrawCrosshair(pos + planeVec, 2f, World.HudColor, 5f, 20f);
-
-            //gfx.DrawLine(pos, pos + planeVec, World.HudColor, 1f, D2DDashStyle.Dot);
-        }
-
-        private void DrawHudMessage(D2DGraphics gfx, D2DSize viewportsize)
-        {
-            const float FONT_SIZE = 30f;
-            if (_hudMessageTimeout.IsRunning && !string.IsNullOrEmpty(_hudMessage))
-            {
-                var pos = new D2DPoint(viewportsize.width * 0.5f, 300f);
-                var initSize = new D2DSize(600, 100);
-                var size = gfx.MeasureText(_hudMessage, DEFAULT_FONT_NAME, FONT_SIZE, initSize);
-                var rect = new D2DRect(pos, size);
-
-                gfx.DrawTextCenter(_hudMessage, _hudMessageColor, DEFAULT_FONT_NAME, FONT_SIZE, rect);
-            }
-
-            if (!_hudMessageTimeout.IsRunning)
-                _hudMessage = string.Empty;
-        }
-
-        private void DrawFreeCamPrompt(D2DGraphics gfx)
-        {
-            const float FONT_SIZE = 20f;
-            const string MSG = "Free Camera Mode";
-
-            var pos = new D2DPoint(World.ViewPortRectUnscaled.Size.width * 0.5f, 100f);
-            var initSize = new D2DSize(600, 100);
-            var size = gfx.MeasureText(MSG, DEFAULT_FONT_NAME, FONT_SIZE, initSize);
-            var rect = new D2DRect(pos, size);
-
-            gfx.DrawTextCenter(MSG, D2DColor.Red, DEFAULT_FONT_NAME, FONT_SIZE, rect);
         }
 
         /// <summary>
@@ -1348,6 +1012,33 @@ namespace PolyPlane.Rendering
             gfx.DrawText(Math.Round(value, 0).ToString(), _hudColorBrush, _textConsolas15Centered, curValueRect);
         }
 
+        private void DrawGuideIcon(D2DGraphics gfx, D2DSize viewportsize, FighterPlane viewPlane)
+        {
+            const float DIST = 300f;
+            var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
+
+            var mouseAngle = viewPlane.PlayerGuideAngle;
+            var mouseVec = Utilities.AngleToVectorDegrees(mouseAngle, DIST);
+            gfx.DrawEllipse(new D2DEllipse(pos + mouseVec, new D2DSize(5f, 5f)), World.HudColor, 2f);
+
+            var planeAngle = viewPlane.Rotation;
+            var planeVec = Utilities.AngleToVectorDegrees(planeAngle, DIST);
+            gfx.DrawCrosshair(pos + planeVec, 2f, World.HudColor, 5f, 20f);
+
+            //gfx.DrawLine(pos, pos + planeVec, World.HudColor, 1f, D2DDashStyle.Dot);
+        }
+
+        private void DrawGroundWarning(RenderContext ctx, D2DSize viewportsize, FighterPlane viewPlane)
+        {
+            const float WARN_TIME = 5f;
+            var pos = new D2DPoint(viewportsize.width / 2f, viewportsize.height / 2f - 100f);
+            var rect = new D2DRect(pos, new D2DSize(150, 100));
+            var impactTime = Utilities.GroundImpactTime(viewPlane);
+
+            if (impactTime > 0f && impactTime < WARN_TIME)
+                ctx.Gfx.DrawText("PULL UP!", _redColorBrush, _textConsolas30Centered, rect);
+        }
+
         private void DrawPlanePointers(RenderContext ctx, D2DSize viewportsize, FighterPlane plane, float dt)
         {
             const float MIN_DIST = 600f;
@@ -1381,12 +1072,12 @@ namespace PolyPlane.Rendering
                 // Draw lead indicator.
                 if (World.ShowLeadIndicators)
                 {
-                    var lead = LeadTarget(target, plane, dt);
-                    var angleDiff = Utilities.AngleDiff(angle, lead);
+                    var leadAmt = GetTargetLeadAmount(target, plane, dt);
+                    var angleDiff = Utilities.AngleDiff(angle, leadAmt);
 
                     if (Math.Abs(angleDiff) < 70f && plane.IsObjInFOV(target, 70f))
                     {
-                        var leadVec = Utilities.AngleToVectorDegrees(lead);
+                        var leadVec = Utilities.AngleToVectorDegrees(leadAmt);
 
                         ctx.Gfx.DrawLine(pos + (vec * POINTER_DIST), pos + (leadVec * POINTER_DIST), color, 1f, D2DDashStyle.Dash);
                         ctx.Gfx.FillEllipseSimple(pos + (leadVec * POINTER_DIST), 3f, color);
@@ -1402,7 +1093,7 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private float LeadTarget(GameObject target, FighterPlane plane, float dt)
+        private float GetTargetLeadAmount(GameObject target, FighterPlane plane, float dt)
         {
             const float pValue = 10f;
 
@@ -1418,23 +1109,10 @@ namespace PolyPlane.Rendering
             return targetRot;
         }
 
-        private void DrawRadar(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)
-        {
-            const float SCALE = 0.9f;
-            var pos = new D2DPoint(viewportsize.width * 0.82f * HudScale * SCALE, viewportsize.height * 0.76f * HudScale * SCALE);
-
-            ctx.PushTransform();
-            ctx.ScaleTransform(SCALE, pos);
-            ctx.TranslateTransform(pos);
-
-            plane.Radar.Render(ctx);
-
-            ctx.PopTransform();
-        }
-
         private void DrawMissilePointersAndWarnings(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
         {
             const float MIN_DIST = 1000f;
+            const float MIN_IMPACT_TIME = 20f;
 
             bool warningMessage = false;
             var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
@@ -1460,13 +1138,11 @@ namespace PolyPlane.Rendering
                 var pos1 = pos + (vec * 200f);
                 var pos2 = pos1 + (vec * 20f);
                 var distFact = 1f - Utilities.Factor(dist, MIN_DIST * 10f);
+                var impactTime = Utilities.ImpactTime(plane, missile);
 
                 // Display warning if impact time is less than 10 seconds?
-                const float MIN_IMPACT_TIME = 20f;
-                if (MissileIsImpactThreat(plane, missile, MIN_IMPACT_TIME))
+                if ((impactTime > 0f && impactTime < MIN_IMPACT_TIME && missile.Target.Equals(plane) && missile.ClosingRate(plane) > 0f))
                     warningMessage = true;
-
-                var impactTime = Utilities.ImpactTime(plane, missile);
 
                 if (impactTime > MIN_IMPACT_TIME * 1.5f)
                     continue;
@@ -1505,99 +1181,209 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private bool MissileIsImpactThreat(FighterPlane plane, GuidedMissile missile, float minImpactTime)
+        private void DrawHudMessage(D2DGraphics gfx, D2DSize viewportsize)
         {
-            var navigationTime = Utilities.ImpactTime(plane, missile);
+            const float FONT_SIZE = 30f;
+            if (_hudMessageTimeout.IsRunning && !string.IsNullOrEmpty(_hudMessage))
+            {
+                var pos = new D2DPoint(viewportsize.width * 0.5f, 300f);
+                var initSize = new D2DSize(600, 100);
+                var size = gfx.MeasureText(_hudMessage, DEFAULT_FONT_NAME, FONT_SIZE, initSize);
+                var rect = new D2DRect(pos, size);
 
-            // Is it going to hit soon and is actively targeting us?
-            return (navigationTime < minImpactTime && missile.Target.Equals(plane) && missile.ClosingRate(plane) > 0f);
+                gfx.DrawTextCenter(_hudMessage, _hudMessageColor, DEFAULT_FONT_NAME, FONT_SIZE, rect);
+            }
+
+            if (!_hudMessageTimeout.IsRunning)
+                _hudMessage = string.Empty;
         }
 
+        private void DrawRadar(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)
+        {
+            const float SCALE = 0.9f;
+            var pos = new D2DPoint(viewportsize.width * 0.82f * HudScale * SCALE, viewportsize.height * 0.76f * HudScale * SCALE);
 
+            ctx.PushTransform();
+            ctx.ScaleTransform(SCALE, pos);
+            ctx.TranslateTransform(pos);
+
+            plane.Radar.Render(ctx);
+
+            ctx.PopTransform();
+        }
+
+        private void DrawHealthBarAndAmmo(D2DGraphics gfx, FighterPlane plane, D2DPoint position, D2DSize size)
+        {
+            var healthPct = plane.Health / FighterPlane.MAX_HEALTH;
+
+            if (healthPct > 0f && healthPct < 0.05f)
+                healthPct = 0.05f;
+
+            gfx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), World.HudColor);
+            gfx.DrawRectangle(new D2DRect(position, size), World.HudColor);
+
+            // Draw ammo.
+            gfx.DrawText($"MSL: {plane.NumMissiles}", _hudColorBrush, _textConsolas15Centered, new D2DRect(position + new D2DPoint(-110f, 30f), new D2DSize(50f, 20f)));
+            gfx.DrawText($"DECOY: {plane.NumDecoys}", _hudColorBrush, _textConsolas15Centered, new D2DRect(position + new D2DPoint(0, 30f), new D2DSize(80f, 20f)));
+            gfx.DrawText($"AMMO: {plane.NumBullets}", _hudColorBrush, _textConsolas15Centered, new D2DRect(position + new D2DPoint(110f, 30f), new D2DSize(70f, 20f)));
+
+            // Draw player name.
+            if (string.IsNullOrEmpty(plane.PlayerName))
+                return;
+
+            var rect = new D2DRect(position + new D2DPoint(0, -40), new D2DSize(300, 100));
+            gfx.DrawText(plane.PlayerName, _hudColorBrush, _textConsolas30Centered, rect);
+        }
+
+        private void DrawMessageBox(RenderContext ctx, D2DSize viewportsize)
+        {
+            const float SCALE = 1f;
+            const float ACTIVE_SCALE = 1.4f;
+            const float FONT_SIZE = 10f;
+            const int MAX_LINES = 10;
+            const float WIDTH = 400f;
+            const float HEIGHT = 100f;
+
+            var lineSize = new D2DSize(WIDTH, HEIGHT / MAX_LINES);
+            var chatActive = _netMan != null && _netMan.ChatInterface.ChatIsActive;
+            var scale = SCALE;
+
+            if (chatActive)
+                scale = ACTIVE_SCALE;
+
+            var boxPos = new D2DPoint(370f * HudScale * scale, viewportsize.height - (220f * HudScale * scale));
+            var linePos = boxPos;
+
+            ctx.PushTransform();
+            ctx.ScaleTransform(scale, boxPos);
+            ctx.Gfx.FillRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, new D2DColor(0.05f, World.HudColor));
+
+            var start = 0;
+
+            if (_messageEvents.Count >= MAX_LINES)
+                start = _messageEvents.Count - MAX_LINES;
+
+            for (int i = start; i < _messageEvents.Count; i++)
+            {
+                var msg = _messageEvents[i];
+                var rect = new D2DRect(linePos, lineSize);
+                var brush = _hudColorBrushLight;
+
+                switch (msg.Type)
+                {
+                    case EventType.Chat:
+                        brush = _whiteColorBrush;
+                        break;
+                }
+
+                ctx.Gfx.DrawText(msg.Message, brush, _messageBoxFont, rect);
+                linePos += new D2DPoint(0, lineSize.height);
+            }
+
+            ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, World.HudColor);
+
+            // Draw current chat message.
+            if (chatActive)
+            {
+                var rect = new D2DRect(new D2DPoint(boxPos.X, boxPos.Y + HEIGHT + 6f), lineSize);
+                var curText = _netMan.ChatInterface.CurrentText;
+
+                if (string.IsNullOrEmpty(curText))
+                    ctx.Gfx.DrawText("Type chat message...", _hudColorBrush, _messageBoxFont, rect);
+                else
+                    ctx.Gfx.DrawText(_netMan.ChatInterface.CurrentText, _whiteColorBrush, _messageBoxFont, rect);
+
+                ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y + HEIGHT, WIDTH, lineSize.height + 5f, World.HudColor);
+            }
+
+            ctx.PopTransform();
+        }
+
+        private void DrawPopMessages(RenderContext ctx, D2DSize vpSize, FighterPlane viewPlane)
+        {
+            for (int i = 0; i < _popMessages.Count; i++)
+            {
+                var msg = _popMessages[i];
+
+                if (msg.Displayed && msg.TargetPlayerID.Equals(viewPlane.ID))
+                {
+                    var rect = new D2DRect(msg.RenderPos, new D2DSize(200, 50));
+                    var color = Utilities.LerpColor(D2DColor.Red, D2DColor.Transparent, msg.Age / msg.LIFESPAN);
+                    ctx.Gfx.DrawTextCenter(msg.Message, color, DEFAULT_FONT_NAME, 30f, rect);
+                }
+            }
+        }
+
+        private void DrawScoreCard(RenderContext ctx, D2DSize viewportsize)
+        {
+            var size = new D2DSize(viewportsize.width * 0.7f, viewportsize.height * 0.6f);
+            var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
+            var rect = new D2DRect(pos, size);
+            var leftPad = 130f;
+            var topPad = 60f;
+            var topLeft = new D2DPoint(rect.left + leftPad, rect.top + topPad);
+
+            // Draw background.
+            ctx.Gfx.FillRectangle(rect, new D2DColor(0.3f, World.HudColor));
+            ctx.Gfx.DrawRectangle(rect, World.HudColor, 4f);
+
+            // Title
+            var titleRect = new D2DRect(rect.left, rect.top + 10f, size.width, 30f);
+            ctx.Gfx.DrawRectangle(titleRect, World.HudColor);
+            ctx.Gfx.DrawText("SCORE", _whiteColorBrush, _textConsolas30Centered, titleRect);
+
+            // Lines
+            var lineHeight = 20f;
+            var linePosY = topLeft.Y;
+
+            var sortedPlanes = _objs.Planes.OrderByDescending(p => p.Kills).ThenBy(p => p.Deaths).ToArray();
+
+            if (_scoreScrollPos >= sortedPlanes.Length)
+                _scoreScrollPos = sortedPlanes.Length - 1;
+
+            for (int i = _scoreScrollPos; i < sortedPlanes.Length; i++)
+            {
+                var playerPlane = sortedPlanes[i];
+                var lineRect = new D2DRect(topLeft.X, linePosY, 800f, lineHeight);
+                var lineRectColumn1 = new D2DRect(topLeft.X + 200f, linePosY, 800f, lineHeight);
+                var lineRectColumn2 = new D2DRect(topLeft.X + 300f, linePosY, 800f, lineHeight);
+
+                if (linePosY < rect.bottom - lineHeight)
+                {
+                    ctx.Gfx.DrawText($"[ {playerPlane.PlayerName} ]", _whiteColorBrush, _textConsolas15, lineRect);
+                    ctx.Gfx.DrawText($"Kills: {playerPlane.Kills}", _whiteColorBrush, _textConsolas15, lineRectColumn1);
+                    ctx.Gfx.DrawText($"Deaths: {playerPlane.Deaths}", _whiteColorBrush, _textConsolas15, lineRectColumn2);
+
+                    linePosY += lineHeight;
+                }
+            }
+
+            // Draw scroll bar.
+            var scrollBarPos = new D2DPoint(rect.right - 10f, Utilities.Lerp(rect.top + lineHeight + titleRect.Height, rect.bottom, ((float)_scoreScrollPos / sortedPlanes.Length)));
+            var scrollBarRect = new D2DRect(scrollBarPos, new D2DSize(10f, 20f));
+            ctx.Gfx.FillRectangle(scrollBarRect, D2DColor.White);
+        }
+
+        private void DrawFreeCamPrompt(D2DGraphics gfx)
+        {
+            const float FONT_SIZE = 20f;
+            const string MSG = "Free Camera Mode";
+
+            var pos = new D2DPoint(World.ViewPortRectUnscaled.Size.width * 0.5f, 100f);
+            var initSize = new D2DSize(600, 100);
+            var size = gfx.MeasureText(MSG, DEFAULT_FONT_NAME, FONT_SIZE, initSize);
+            var rect = new D2DRect(pos, size);
+
+            gfx.DrawTextCenter(MSG, D2DColor.Red, DEFAULT_FONT_NAME, FONT_SIZE, rect);
+        }
+
+    
         private void DrawOverlays(RenderContext ctx, GameObject viewObject)
         {
             DrawInfo(ctx.Gfx, _infoPosition, viewObject);
 
             if (viewObject is FighterPlane plane && plane.IsDisabled)
                 ctx.Gfx.FillRectangle(World.ViewPortRectUnscaled, new D2DColor(0.2f, D2DColor.Red));
-        }
-
-        private void DrawSky(RenderContext ctx, GameObject viewObject)
-        {
-            const float MAX_ALT_OFFSET = 50000f;
-
-            var plrAlt = viewObject.Altitude;
-            if (viewObject.Position.Y >= 0)
-                plrAlt = 0f;
-
-            var color1 = _skyColorLight;
-            var color2 = _skyColorDark;
-            var color = Utilities.LerpColor(color1, color2, (plrAlt / (World.MAX_ALTITUDE - MAX_ALT_OFFSET)));
-
-            // Add time of day color.
-            color = Utilities.LerpColor(color, D2DColor.Black, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY - 5f));
-            color = Utilities.LerpColor(color, ctx.AddTimeOfDayColor(color), 0.2f);
-
-            var rect = new D2DRect(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), new D2DSize(this.Width, this.Height));
-
-            ctx.Gfx.FillRectangle(rect, color);
-        }
-
-        private void DrawMovingBackground(RenderContext ctx, GameObject viewObject)
-        {
-            float spacing = 75f;
-            const float size = 4f;
-            var d2dSz = new D2DSize(size, size);
-            var color = new D2DColor(0.3f, D2DColor.Gray);
-
-            var plrPos = viewObject.Position;
-            plrPos /= World.ViewPortScaleMulti;
-
-            var roundPos = new D2DPoint((plrPos.X) % spacing, (plrPos.Y) % spacing);
-            roundPos *= 3f;
-
-            var rect = new D2DRect(0, 0, this.Width, this.Height);
-
-            for (float x = -spacing * 2f; x < this.Width + roundPos.X; x += spacing)
-            {
-                for (float y = -spacing * 2f; y < this.Height + roundPos.Y; y += spacing)
-                {
-                    var pos = new D2DPoint(x, y);
-                    pos -= roundPos;
-
-                    if (rect.Contains(pos))
-                        ctx.Gfx.FillRectangle(new D2DRect(pos, d2dSz), color);
-                }
-            }
-        }
-
-        private void DrawClouds(RenderContext ctx)
-        {
-            var todColor = ctx.GetTimeOfDayColor();
-            var todAngle = ctx.GetTimeOfDaySunAngle();
-            var shadowColor = Utilities.LerpColorWithAlpha(todColor, D2DColor.Black, 0.7f, 0.05f);
-
-            for (int i = 0; i < _clouds.Count; i++)
-            {
-                var cloud = _clouds[i];
-
-                cloud.Render(ctx, shadowColor, todColor, todAngle);
-            }
-        }
-
-        private void UpdateClouds(float dt)
-        {
-            const int MULTI_THREAD_NUM = 8;
-
-            ParallelHelpers.ParallelForSlim(_clouds.Count, MULTI_THREAD_NUM, (start, end) =>
-            {
-                for (int i = start; i < end; i++)
-                {
-                    var cloud = _clouds[i];
-
-                    cloud.Update(dt);
-                }
-            });
         }
 
         public void DrawInfo(D2DGraphics gfx, D2DPoint pos, GameObject viewObject)
@@ -1639,6 +1425,188 @@ namespace PolyPlane.Rendering
             }
 
             gfx.DrawText(infoText, _greenYellowColorBrush, _textConsolas12, World.ViewPortRect.Deflate(30f, 30f));
+        }
+
+        private void DrawScreenFlash(D2DGraphics gfx)
+        {
+            _screenFlashColor.a = _screenFlashOpacity;
+
+            if (_screenFlashOpacity > 0.01f)
+                gfx.FillRectangle(World.ViewPortRectUnscaled, _screenFlashColor);
+        }
+
+        private void UpdatePopMessages(float dt)
+        {
+            for (int i = _popMessages.Count - 1; i >= 0; i--)
+            {
+                var msg = _popMessages[i];
+                msg.UpdatePos(dt);
+
+                if (!msg.Displayed)
+                    _popMessages.RemoveAt(i);
+            }
+        }
+
+        private void UpdateClouds(float dt)
+        {
+            const int MULTI_THREAD_NUM = 8;
+
+            ParallelHelpers.ParallelForSlim(_clouds.Count, MULTI_THREAD_NUM, (start, end) =>
+            {
+                for (int i = start; i < end; i++)
+                {
+                    var cloud = _clouds[i];
+
+                    cloud.Update(dt);
+                }
+            });
+        }
+
+        private void UpdateGroundColorBrush(RenderContext ctx)
+        {
+            _groundBrush?.Dispose();
+            _groundBrush = _ctx.Device.CreateLinearGradientBrush(new D2DPoint(0f, 50f), new D2DPoint(0f, 4000f), [new D2DGradientStop(0.2f, ctx.AddTimeOfDayColor(_groundColorDark)), new D2DGradientStop(0.1f, ctx.AddTimeOfDayColor(_groundColorLight))]);
+        }
+
+        private void PlayerScoredEvent(object? sender, PlayerScoredEventArgs e)
+        {
+            if (!World.FreeCameraMode)
+            {
+                var msg = "+1 Kill!";
+                var popMsg = new PopMessage() { Message = msg, Position = new D2DPoint(this.Width / 2f, this.Height * 0.40f), TargetPlayerID = e.Player.ID };
+                _popMessages.Add(popMsg);
+            }
+        }
+
+        private void PlayerKilledEvent(object? sender, EventMessage e)
+        {
+            AddNewEventMessage(e);
+        }
+
+        private void NewPlayerEvent(object? sender, FighterPlane e)
+        {
+            AddNewEventMessage($"'{e.PlayerName}' has joined.", EventType.Net);
+        }
+
+        private void NetMan_NewChatMessage(object? sender, ChatPacket e)
+        {
+            AddNewEventMessage($"{e.PlayerName}: {e.Message}", EventType.Chat);
+        }
+
+        public void AddNewEventMessage(string message, EventType type)
+        {
+            _messageEvents.Add(new EventMessage(message, type));
+        }
+
+        public void AddNewEventMessage(EventMessage msg)
+        {
+            _messageEvents.Add(msg);
+        }
+
+        public void NewHudMessage(string message, D2DColor color)
+        {
+            _hudMessage = message;
+            _hudMessageColor = color;
+            _hudMessageTimeout.Restart();
+        }
+
+        public void ClearHudMessage()
+        {
+            _hudMessage = null;
+            _hudMessageTimeout.Stop();
+            _hudMessageTimeout.Reset();
+        }
+
+        public void ToggleInfo()
+        {
+            _showInfo = !_showInfo;
+        }
+
+        public void ToggleHelp()
+        {
+            _showHelp = !_showHelp;
+        }
+
+        public void ToggleScore()
+        {
+            _showScore = !_showScore;
+            _scoreScrollPos = 0;
+        }
+
+        public void ToggleHUD()
+        {
+            _showHUD = !_showHUD;
+        }
+
+        public void ZoomIn()
+        {
+            var amt = ZOOM_FACTOR * World.ZoomScale;
+            World.ZoomScale += amt;
+
+            ResizeViewPort();
+        }
+
+        public void ZoomOut()
+        {
+            var amt = ZOOM_FACTOR * World.ZoomScale;
+            World.ZoomScale -= amt;
+
+            ResizeViewPort();
+        }
+
+        public void DoMouseWheelUp()
+        {
+            if (!_showScore)
+            {
+                ZoomIn();
+            }
+            else
+            {
+                _scoreScrollPos -= 1;
+
+                if (_scoreScrollPos < 0)
+                    _scoreScrollPos = 0;
+            }
+        }
+
+        public void DoMouseWheelDown()
+        {
+            if (!_showScore)
+            {
+                ZoomOut();
+            }
+            else
+            {
+                _scoreScrollPos += 1;
+            }
+        }
+
+        public void DoScreenShake()
+        {
+            float amt = 10f;
+            _screenShakeX.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
+            _screenShakeY.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
+
+            _screenShakeX.Restart();
+            _screenShakeY.Restart();
+        }
+
+        public void DoScreenShake(float amt)
+        {
+            if (_screenShakeX == null || _screenShakeY == null)
+                return;
+
+            _screenShakeX.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
+            _screenShakeY.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
+
+            _screenShakeX.Restart();
+            _screenShakeY.Restart();
+        }
+
+        public void DoScreenFlash(D2DColor color)
+        {
+            _screenFlashColor = color;
+            _screenFlash.Restart();
         }
 
         private string GetInfo(GameObject viewObject)

@@ -48,7 +48,7 @@ namespace PolyPlane
         private NetPlayHost _client;
         private NetEventManager _netMan;
         private CollisionManager _collisions;
-        private RenderManager _render;
+        private Renderer _render;
         private FPSLimiter _fpsLimiter = new FPSLimiter();
         private SelectObjectUI? _selectObjectUI = null;
 
@@ -502,7 +502,7 @@ namespace PolyPlane
         private void InitGfx()
         {
             _render?.Dispose();
-            _render = new RenderManager(RenderTarget, _netMan);
+            _render = new Renderer(RenderTarget, _netMan);
         }
 
      
@@ -526,9 +526,6 @@ namespace PolyPlane
 
             _updateTime = TimeSpan.Zero;
             _collisionTime = TimeSpan.Zero;
-
-            GraphicsExtensions.OnScreen = 0;
-            GraphicsExtensions.OffScreen = 0;
 
             ProcessQueuedActions();
 

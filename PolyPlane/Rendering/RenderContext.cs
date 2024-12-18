@@ -121,12 +121,20 @@ namespace PolyPlane.Rendering
         {
             Gfx.BeginRender(bitmap);
             UpdateTimeOfDayLightFactor();
+
+            // Reset on-screen/off-screen object stats.
+            GraphicsExtensions.OnScreen = 0;
+            GraphicsExtensions.OffScreen = 0;
         }
 
         public void BeginRender(D2DColor color)
         {
             Gfx.BeginRender(color);
             UpdateTimeOfDayLightFactor();
+
+            // Reset on-screen/off-screen object stats.
+            GraphicsExtensions.OnScreen = 0;
+            GraphicsExtensions.OffScreen = 0;
         }
 
         public void EndRender()
