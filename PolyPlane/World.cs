@@ -193,13 +193,18 @@ namespace PolyPlane
         public const float MAX_ALTITUDE = 100000f; // Max density altitude.  (Air density drops to zero at this altitude)
         public const float MIN_TURB_ALT = 3000f; // Altitude below which turbulence is at maximum.
         public const float MAX_TURB_ALT = 20000f; // Max altitude at which turbulence decreases to zero.
+        public const float CLOUD_SCALE = 5f;
+        public const float CLOUD_MOVE_RATE = 40f;
+        public const float CLOUD_MAX_X = 400000f;
         private const float NOISE_FLOOR = -1f;
         private const float NOISE_CEILING = 0.8f;
         private const float MIN_TURB = 0.80f;
         private const float MAX_TURB = 1f;
         private const float MAX_WIND_MAG = 100f;
+        
         public const float AirDensity = 1.225f;
         public static D2DPoint Wind = D2DPoint.Zero;
+
         private static SmoothDouble _serverTimeOffsetSmooth = new SmoothDouble(10);
         private static RandomVariationVector _windVariation = new RandomVariationVector(MAX_WIND_MAG, 10f, 50f);
         private static FastNoiseLite _turbulenceNoise = new FastNoiseLite();
@@ -210,9 +215,26 @@ namespace PolyPlane
         public static readonly D2DColor GraySmokeColor = new D2DColor(0.6f, D2DColor.Gray);
 
         public static readonly D2DPoint Gravity = new D2DPoint(0, 19.6f);
+        public static readonly D2DPoint FieldPlaneXBounds = new D2DPoint(-350000, 350000);
+        public static readonly D2DPoint FieldXBounds = new D2DPoint(-400000, 400000);
+        public static readonly D2DPoint CloudRangeY = new D2DPoint(-30000, -2000);
         public static readonly D2DPoint PlaneSpawnRange = new D2DPoint(-250000, 250000);
 
-        public static readonly D2DPoint FieldXBounds = new D2DPoint(-350000, 350000);
+        public static readonly D2DColor[] TimeOfDayPallet =
+        [
+            new D2DColor(1f, 0f, 0f, 0f),
+            new D2DColor(1f, 0f, 0f, 0f),
+            new D2DColor(1f, 1f, 0.67f, 0f),
+            new D2DColor(1f, 1f, 0.47f, 0f),
+            new D2DColor(1f, 1f, 0f, 0.08f),
+            new D2DColor(1f, 1f, 0f, 0.49f),
+            new D2DColor(1f, 0.86f, 0f, 1f),
+            new D2DColor(1f, 0.64f, 0.52f, 0.66f),
+            new D2DColor(1f, 0.33f, 0.35f, 0.49f),
+            new D2DColor(1f, 0.71f, 0.77f, 0.93f),
+            new D2DColor(1f, 0.91f, 0.86f, 0.89f),
+            new D2DColor(1f, 0.37f, 0.4f, 0.54f),
+        ];
 
         public static uint CurrentObjId = 0;
         public static int CurrentPlayerId = 1000;

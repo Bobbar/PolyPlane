@@ -86,34 +86,11 @@ namespace PolyPlane.Rendering
         private readonly D2DColor _groundImpactInnerColor = new D2DColor(1f, 0.35f, 0.2f, 0.1f);
         private readonly D2DColor _skyColorLight = new D2DColor(0.5f, D2DColor.SkyBlue);
         private readonly D2DColor _skyColorDark = new D2DColor(0.5f, D2DColor.Black);
-        private readonly D2DColor _cloudColorLight = D2DColor.WhiteSmoke;
-        private readonly D2DColor _cloudColorDark = new D2DColor(1f, 0.6f, 0.6f, 0.6f);
         private readonly D2DColor _groundColorLight = new D2DColor(1f, 0f, 0.29f, 0);
         private readonly D2DColor _groundColorDark = D2DColor.DarkGreen;
         private readonly D2DColor _groundLightColor = new D2DColor(0.85f, 0.76f, 0.14f);
 
         private readonly D2DPoint _infoPosition = new D2DPoint(20, 20);
-        private readonly D2DPoint _fieldRangeX = new D2DPoint(-MAX_CLOUD_X, MAX_CLOUD_X);
-        private readonly D2DPoint _cloudRangeY = new D2DPoint(-30000, -2000);
-
-        private const double _gaussianSigma_2 = 0.035;
-        private readonly double _gaussianSigma = Math.Sqrt(2.0 * Math.PI * _gaussianSigma_2);
-
-        private readonly D2DColor[] _timeOfDayPallet =
-        [
-            new D2DColor(1f, 0f, 0f, 0f),
-            new D2DColor(1f, 0f, 0f, 0f),
-            new D2DColor(1f, 1f, 0.67f, 0f),
-            new D2DColor(1f, 1f, 0.47f, 0f),
-            new D2DColor(1f, 1f, 0f, 0.08f),
-            new D2DColor(1f, 1f, 0f, 0.49f),
-            new D2DColor(1f, 0.86f, 0f, 1f),
-            new D2DColor(1f, 0.64f, 0.52f, 0.66f),
-            new D2DColor(1f, 0.33f, 0.35f, 0.49f),
-            new D2DColor(1f, 0.71f, 0.77f, 0.93f),
-            new D2DColor(1f, 0.91f, 0.86f, 0.89f),
-            new D2DColor(1f, 0.37f, 0.4f, 0.54f),
-        ];
 
         private FloatAnimation _screenShakeX;
         private FloatAnimation _screenShakeY;
@@ -129,10 +106,7 @@ namespace PolyPlane.Rendering
         private const int NUM_TREES = 1000;
 
         private const float GROUND_TOD_INTERVAL = 0.1f; // Update ground brush when elapsed TOD exceeds this amount.
-        private const float MAX_CLOUD_X = 400000f;
-        private const float CLOUD_SCALE = 5f;
         private const float GROUND_OBJ_SCALE = 4f;
-        private const float SCREEN_SHAKE_G = 9f; // Amount of g-force before screen shake.
         private const float ZOOM_FACTOR = 0.07f; // Effects zoom in/out speed.
         private const float MESSAGEBOX_FONT_SIZE = 10f;
         private const string DEFAULT_FONT_NAME = "Consolas";
@@ -260,7 +234,7 @@ namespace PolyPlane.Rendering
             _whiteColorBrush = _ctx.Device.CreateSolidColorBrush(D2DColor.White);
             _greenYellowColorBrush = _ctx.Device.CreateSolidColorBrush(D2DColor.GreenYellow);
 
-            UpdateGroundColorBrush();
+            UpdateGroundColorBrush(_ctx);
             InitClearGradientBitmap();
         }
 
@@ -332,12 +306,15 @@ namespace PolyPlane.Rendering
             const int MIN_RADIUS = 5;
             const int MAX_RADIUS = 30;
 
+            var cloudRange = World.CloudRangeY;
+            var fieldRange = World.FieldXBounds;
+
             for (int i = 0; i < NUM_CLOUDS; i++)
             {
-                var rndPos = new D2DPoint(rnd.NextFloat(_fieldRangeX.X, _fieldRangeX.Y), rnd.NextFloat(_cloudRangeY.X, _cloudRangeY.Y));
+                var rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudRange.X, cloudRange.Y));
 
                 while (!cloudDeDup.Add(rndPos))
-                    rndPos = new D2DPoint(rnd.NextFloat(_fieldRangeX.X, _fieldRangeX.Y), rnd.NextFloat(_cloudRangeY.X, _cloudRangeY.Y));
+                    rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudRange.X, cloudRange.Y));
 
                 var rndCloud = Cloud.RandomCloud(rnd, rndPos, MIN_PNTS, MAX_PNTS, MIN_RADIUS, MAX_RADIUS);
                 _clouds.Add(rndCloud);
@@ -347,10 +324,10 @@ namespace PolyPlane.Rendering
             var cloudLayerRangeY = new D2DPoint(-2500, -2000);
             for (int i = 0; i < NUM_CLOUDS / 2; i++)
             {
-                var rndPos = new D2DPoint(rnd.NextFloat(_fieldRangeX.X, _fieldRangeX.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
+                var rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
 
                 while (!cloudDeDup.Add(rndPos))
-                    rndPos = new D2DPoint(rnd.NextFloat(_fieldRangeX.X, _fieldRangeX.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
+                    rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
 
                 var rndCloud = Cloud.RandomCloud(rnd, rndPos, MIN_PNTS, MAX_PNTS, MIN_RADIUS, MAX_RADIUS);
                 _clouds.Add(rndCloud);
@@ -368,13 +345,14 @@ namespace PolyPlane.Rendering
             var trunkColorPine = D2DColor.BurlyWood;
             var leafColorPine = D2DColor.Green;
             var minDist = rnd.NextFloat(20f, 200f);
+            var fieldRange = World.FieldXBounds;
 
             for (int i = 0; i < NUM_TREES; i++)
             {
-                var rndPos = new D2DPoint(rnd.NextFloat(_fieldRangeX.X, _fieldRangeX.Y), 0f);
+                var rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), 0f);
 
                 while (!treeDeDup.Add(rndPos) || (_trees.Count > 0 && _trees.Min(t => t.Position.DistanceTo(rndPos)) < minDist))
-                    rndPos = new D2DPoint(rnd.NextFloat(_fieldRangeX.X, _fieldRangeX.Y), 0f);
+                    rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), 0f);
 
                 var type = rnd.Next(10);
                 var height = 10f + (rnd.NextFloat(1f, 3f) * 20f);
@@ -493,14 +471,14 @@ namespace PolyPlane.Rendering
 
             if (!World.IsPaused)
             {
-                MoveClouds(dt);
+                UpdateClouds(dt);
 
                 // Check if we need to update the ground brush.
                 var todDiff = Math.Abs(World.TimeOfDay - _groundColorTOD);
                 if (todDiff > GROUND_TOD_INTERVAL)
                 {
                     _groundColorTOD = World.TimeOfDay;
-                    UpdateGroundColorBrush();
+                    UpdateGroundColorBrush(_ctx);
                 }
 
                 UpdatePopMessages(dt);
@@ -610,9 +588,10 @@ namespace PolyPlane.Rendering
 
                 // Add explosions separately as they have special viewport clipping.
                 ctx.LightMap.AddAdditional(_objs.Explosions);
-            } 
+            }
 
-            var shadowColor = GetShadowColor();
+            var shadowColor = ctx.GetShadowColor();
+            var todAngle = ctx.GetTimeOfDaySunAngle();
 
             ctx.PushViewPort(viewPortRect);
 
@@ -627,7 +606,7 @@ namespace PolyPlane.Rendering
             {
                 if (obj is FighterPlane p)
                 {
-                    DrawPlaneGroundShadow(ctx, p, shadowColor);
+                    DrawPlaneGroundShadow(ctx, p, shadowColor, todAngle);
                     p.Render(ctx);
                     DrawMuzzleFlash(ctx, p);
 
@@ -732,10 +711,10 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private void UpdateGroundColorBrush()
+        private void UpdateGroundColorBrush(RenderContext ctx)
         {
             _groundBrush?.Dispose();
-            _groundBrush = _ctx.Device.CreateLinearGradientBrush(new D2DPoint(0f, 50f), new D2DPoint(0f, 4000f), [new D2DGradientStop(0.2f, AddTimeOfDayColor(_groundColorDark)), new D2DGradientStop(0.1f, AddTimeOfDayColor(_groundColorLight))]);
+            _groundBrush = _ctx.Device.CreateLinearGradientBrush(new D2DPoint(0f, 50f), new D2DPoint(0f, 4000f), [new D2DGradientStop(0.2f, ctx.AddTimeOfDayColor(_groundColorDark)), new D2DGradientStop(0.1f, ctx.AddTimeOfDayColor(_groundColorLight))]);
         }
 
         public void NewHudMessage(string message, D2DColor color)
@@ -750,69 +729,6 @@ namespace PolyPlane.Rendering
             _hudMessage = null;
             _hudMessageTimeout.Stop();
             _hudMessageTimeout.Reset();
-        }
-
-        private D2DColor AddTimeOfDayColor(D2DColor color)
-        {
-            var todColor = GetTimeOfDayColor();
-            return AddTimeOfDayColor(color, todColor);
-        }
-
-        private D2DColor AddTimeOfDayColor(D2DColor color, D2DColor todColor)
-        {
-            return Utilities.LerpColor(color, todColor, 0.3f);
-        }
-
-        private float GetTimeOfDaySunAngle()
-        {
-            const float TOD_ANGLE_START = 45f;
-            const float TOD_ANGLE_END = 135f;
-
-            var todAngle = Utilities.Lerp(TOD_ANGLE_START, TOD_ANGLE_END, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
-
-            return todAngle;
-        }
-
-        private D2DColor GetTimeOfDayColor()
-        {
-            var todColor = InterpolateColorGaussian(_timeOfDayPallet, World.TimeOfDay, World.MAX_TIMEOFDAY);
-            return todColor;
-        }
-
-        private D2DColor GetShadowColor()
-        {
-            var shadowColor = Utilities.LerpColorWithAlpha(GetTimeOfDayColor(), D2DColor.Black, 0.7f, 0.4f);
-            return shadowColor;
-        }
-
-        private D2DColor InterpolateColorGaussian(D2DColor[] colors, float value, float maxValue)
-        {
-            var x = Math.Min(1.0f, value / maxValue);
-
-            double r = 0.0, g = 0.0, b = 0.0;
-            double total = 0.0;
-            double step = 1.0 / (double)(colors.Length - 1);
-            double mu = 0.0;
-
-            for (int i = 0; i < colors.Length; i++)
-            {
-                total += Math.Exp(-(x - mu) * (x - mu) / (2.0 * _gaussianSigma_2)) / _gaussianSigma;
-                mu += step;
-            }
-
-            mu = 0.0;
-            for (int i = 0; i < colors.Length; i++)
-            {
-                var color = colors[i];
-                double percent = Math.Exp(-(x - mu) * (x - mu) / (2.0 * _gaussianSigma_2)) / _gaussianSigma;
-                mu += step;
-
-                r += color.r * percent / total;
-                g += color.g * percent / total;
-                b += color.b * percent / total;
-            }
-
-            return new D2DColor(1f, (float)r, (float)g, (float)b);
         }
 
         private void DrawScreenFlash(D2DGraphics gfx)
@@ -858,7 +774,7 @@ namespace PolyPlane.Rendering
                 ctx.DrawPolygon(plane.Polygon.Poly, color, 0f, D2DDashStyle.Solid, color);
         }
 
-        private void DrawPlaneGroundShadow(RenderContext ctx, FighterPlane plane, D2DColor shadowColor)
+        private void DrawPlaneGroundShadow(RenderContext ctx, FighterPlane plane, D2DColor shadowColor, float todAngle)
         {
             const float WIDTH_PADDING = 20f;
             const float MAX_WIDTH = 120f;
@@ -869,8 +785,6 @@ namespace PolyPlane.Rendering
 
             if (plane.Altitude > MAX_SHOW_ALT)
                 return;
-
-            var todAngle = GetTimeOfDaySunAngle();
 
             // Two offsets. One for ToD angle offset by 90 degrees, another offset by plane rotation.
             var todAngleOffset = Utilities.ClampAngle(todAngle + 90f);
@@ -1054,7 +968,7 @@ namespace PolyPlane.Rendering
 
         private void DrawGroundObjs(RenderContext ctx)
         {
-            var todColor = GetTimeOfDayColor();
+            var todColor = ctx.GetTimeOfDayColor();
 
             foreach (var tree in _trees)
             {
@@ -1622,7 +1536,7 @@ namespace PolyPlane.Rendering
 
             // Add time of day color.
             color = Utilities.LerpColor(color, D2DColor.Black, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY - 5f));
-            color = Utilities.LerpColor(color, AddTimeOfDayColor(color), 0.2f);
+            color = Utilities.LerpColor(color, ctx.AddTimeOfDayColor(color), 0.2f);
 
             var rect = new D2DRect(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), new D2DSize(this.Width, this.Height));
 
@@ -1659,117 +1573,21 @@ namespace PolyPlane.Rendering
 
         private void DrawClouds(RenderContext ctx)
         {
-            var todColor = GetTimeOfDayColor();
-            var todAngle = GetTimeOfDaySunAngle();
+            var todColor = ctx.GetTimeOfDayColor();
+            var todAngle = ctx.GetTimeOfDaySunAngle();
             var shadowColor = Utilities.LerpColorWithAlpha(todColor, D2DColor.Black, 0.7f, 0.05f);
 
             for (int i = 0; i < _clouds.Count; i++)
             {
                 var cloud = _clouds[i];
 
-                DrawCloudGroundShadowAndRay(ctx, cloud, shadowColor, todAngle);
-
-                if (ctx.Viewport.Contains(cloud.Position, (cloud.Radius * 2f) * cloud.ScaleX * CLOUD_SCALE))
-                {
-                    DrawCloud(ctx, cloud, todColor);
-                }
+                cloud.Render(ctx, shadowColor, todColor, todAngle);
             }
         }
 
-        private void DrawCloud(RenderContext ctx, Cloud cloud, D2DColor todColor)
-        {
-            var color1 = _cloudColorDark;
-            var color2 = _cloudColorLight;
-            var points = cloud.Points;
-
-            // Find min/max height.
-            var minY = points.Min(p => p.Y);
-            var maxY = points.Max(p => p.Y);
-
-            for (int i = 0; i < points.Length; i++)
-            {
-                var point = points[i];
-                var dims = cloud.Dims[i];
-
-                // Lerp slightly darker colors to give the cloud some depth.
-
-                //Darker clouds on bottom.
-                var amt = Utilities.Factor(point.Y, minY, maxY);
-                var color = Utilities.LerpColor(color1, color2, 1f - amt);
-
-                // Add time of day color.
-                color = AddTimeOfDayColor(color, todColor);
-
-                // Draw cloud part with lighting.
-                ctx.FillEllipseWithLighting(new D2DEllipse(point, dims), color, 0.7f);
-            }
-        }
-
-        private D2DPoint GetCloudShadowPos(D2DPoint pos, float angle)
-        {
-            var cloudGroundPos = new D2DPoint(pos.X, -80f + Math.Abs(((pos.Y * 0.1f))));
-            var cloudShadowPos = cloudGroundPos + Utilities.AngleToVectorDegrees(angle, pos.DistanceTo(cloudGroundPos));
-            cloudShadowPos.Y = cloudGroundPos.Y;
-
-            return cloudShadowPos;
-        }
-
-        private void DrawCloudGroundShadowAndRay(RenderContext ctx, Cloud cloud, D2DColor shadowColor, float todAngle)
-        {
-            const float MAX_ALT = 8000f;
-            const float WIDTH_OFFSET = 50f;
-            const float BOT_WIDTH_OFFSET = 40f;
-
-            var cloudAlt = Utilities.PositionToAltitude(cloud.Position);
-
-            if (cloudAlt > MAX_ALT)
-                return;
-
-            var alpha = 0.05f * Math.Clamp((1f - Utilities.FactorWithEasing(cloudAlt, MAX_ALT, EasingFunctions.EaseLinear)), 0.1f, 1f);
-            var rayColor = shadowColor.WithAlpha(alpha);
-
-            // Get min/max X postions and compute width.
-            var minX = cloud.Points.Min(p => p.X) - WIDTH_OFFSET;
-            var maxX = cloud.Points.Max(p => p.X) + WIDTH_OFFSET;
-
-            // Build a polygon for the ray.
-            var shadowRayPoly = new D2DPoint[4];
-            shadowRayPoly[0] = new D2DPoint(minX, cloud.Position.Y);
-            shadowRayPoly[1] = new D2DPoint(maxX, cloud.Position.Y);
-            shadowRayPoly[2] = GetCloudShadowPos(new D2DPoint(maxX + BOT_WIDTH_OFFSET, cloud.Position.Y), todAngle);
-            shadowRayPoly[3] = GetCloudShadowPos(new D2DPoint(minX - BOT_WIDTH_OFFSET, cloud.Position.Y), todAngle);
-
-            // Draw ray.
-            if (ctx.Viewport.Contains(shadowRayPoly))
-                ctx.Gfx.DrawPolygon(shadowRayPoly, rayColor, 0f, D2DDashStyle.Solid, rayColor);
-
-            // Draw ground shadows.
-            var cloudShadowPos = GetCloudShadowPos(cloud.Position, todAngle);
-            if (ctx.Viewport.Contains(cloudShadowPos, cloud.Radius * cloud.ScaleX * CLOUD_SCALE * 3f))
-            {
-                if (World.UseSimpleCloudGroundShadows)
-                {
-                    var shadowWidth = Math.Abs(maxX - minX);
-                    ctx.FillEllipse(new D2DEllipse(cloudShadowPos, new D2DSize(shadowWidth * 0.9f, 35f)), shadowColor.WithAlpha(0.2f));
-                }
-                else
-                {
-                    for (int i = 0; i < cloud.Points.Length; i++)
-                    {
-                        var point = cloud.Points[i];
-                        var dims = cloud.Dims[i];
-                        var shadowPos = GetCloudShadowPos(point, todAngle);
-
-                        ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(dims.width * 4f, dims.height * 0.5f)), shadowColor);
-                    }
-                }
-            }
-        }
-
-        private void MoveClouds(float dt)
+        private void UpdateClouds(float dt)
         {
             const int MULTI_THREAD_NUM = 8;
-            const float RATE = 40f;
 
             ParallelHelpers.ParallelForSlim(_clouds.Count, MULTI_THREAD_NUM, (start, end) =>
             {
@@ -1777,27 +1595,7 @@ namespace PolyPlane.Rendering
                 {
                     var cloud = _clouds[i];
 
-                    var altFact = 30f * Utilities.Factor(Math.Abs(cloud.Position.Y), 30000f); // Higher clouds move slower?
-                    var sizeOffset = (cloud.Radius / 2f); // Smaller clouds move slightly faster?
-                    cloud.Position.X += ((RATE - altFact) - sizeOffset) * dt;
-
-                    float rotDir = 1f;
-
-                    // Fiddle rotation direction.
-                    if (cloud.Points.Length % 2 == 0)
-                        rotDir = -1f;
-
-                    cloud.Rotation = Utilities.ClampAngle(cloud.Rotation + (0.8f * rotDir) * dt);
-
-                    // Wrap clouds.
-                    if (cloud.Position.X > MAX_CLOUD_X)
-                    {
-                        cloud.Position.X = -MAX_CLOUD_X;
-                    }
-
-                    // Apply translations.
-                    Utilities.ApplyTranslation(cloud.PointsOrigin, cloud.Points, cloud.Rotation, cloud.Position, CLOUD_SCALE);
-                    Utilities.ApplyTranslation(cloud.Points, cloud.Points, cloud.Position, 0f, D2DPoint.Zero, cloud.ScaleX, cloud.ScaleY);
+                    cloud.Update(dt);
                 }
             });
         }

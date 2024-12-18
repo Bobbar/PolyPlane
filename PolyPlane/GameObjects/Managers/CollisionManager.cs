@@ -444,14 +444,14 @@ namespace PolyPlane.GameObjects.Manager
         {
             foreach (var plane in _objs.Planes)
             {
-                if (plane.Position.X > World.FieldXBounds.Y)
+                if (plane.Position.X > World.FieldPlaneXBounds.Y)
                 {
-                    plane.Position = new D2DPoint(World.FieldXBounds.X, plane.Position.Y);
+                    plane.Position = new D2DPoint(World.FieldPlaneXBounds.X, plane.Position.Y);
                     plane.SyncFixtures();
                 }
-                else if (plane.Position.X < World.FieldXBounds.X)
+                else if (plane.Position.X < World.FieldPlaneXBounds.X)
                 {
-                    plane.Position = new D2DPoint(World.FieldXBounds.Y, plane.Position.Y);
+                    plane.Position = new D2DPoint(World.FieldPlaneXBounds.Y, plane.Position.Y);
                     plane.SyncFixtures();
                 }
             }

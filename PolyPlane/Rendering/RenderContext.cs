@@ -27,6 +27,9 @@ namespace PolyPlane.Rendering
         private float _currentScale = 1f;
         private float _currentLightingFactor = 1f;
 
+        private const double GaussianSigma2 = 0.035;
+        private readonly double GaussianSigma = Math.Sqrt(2.0 * Math.PI * GaussianSigma2);
+
         public RenderContext(D2DGraphics gfx, D2DDevice device)
         {
             Gfx = gfx;
@@ -36,12 +39,70 @@ namespace PolyPlane.Rendering
             _cachedBrush = device.CreateSolidColorBrush(D2DColor.Transparent);
         }
 
-        private void ComputeLightToDFactor()
+        private void UpdateTimeOfDayLightFactor()
         {
             // Compute a TimeOfDay factor to be applied to all lighting intensity.
             // Decrease lighting intensity during the day.
             var factor = Math.Clamp(Utilities.FactorWithEasing(World.TimeOfDay, World.MAX_TIMEOFDAY - 5, EasingFunctions.EaseLinear), 0.5f, 1f);
             _currentLightingFactor = factor;
+        }
+
+        /// <summary>
+        /// Get the sun angle for the current time of day.
+        /// </summary>
+        /// <returns></returns>
+        public float GetTimeOfDaySunAngle()
+        {
+            const float TOD_ANGLE_START = 45f;
+            const float TOD_ANGLE_END = 135f;
+
+            var todAngle = Utilities.Lerp(TOD_ANGLE_START, TOD_ANGLE_END, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
+
+            return todAngle;
+        }
+
+        /// <summary>
+        /// Get the color for the current time of day from the time of day pallet.
+        /// </summary>
+        /// <returns></returns>
+        public D2DColor GetTimeOfDayColor()
+        {
+            var todColor = InterpolateColorGaussian(World.TimeOfDayPallet, World.TimeOfDay, World.MAX_TIMEOFDAY);
+            return todColor;
+        }
+
+        /// <summary>
+        /// Adds the current time of day color to the specified color.
+        /// </summary>
+        /// <param name="color"></param>
+        /// <returns></returns>
+        public D2DColor AddTimeOfDayColor(D2DColor color)
+        {
+            var todColor = GetTimeOfDayColor();
+            return AddTimeOfDayColor(color, todColor);
+        }
+
+        /// <summary>
+        /// Blend the specified color with the specified time of day color.  Used to make sure all time of day coloring is consistent.
+        /// </summary>
+        /// <param name="color"></param>
+        /// <param name="todColor"></param>
+        /// <returns></returns>
+        public D2DColor AddTimeOfDayColor(D2DColor color, D2DColor todColor)
+        {
+            const float AMT = 0.3f;
+            return Utilities.LerpColor(color, todColor, AMT);
+        }
+
+        
+        /// <summary>
+        /// Gets the shadow color for the current time of day.  (A darker variation of the time of day color)
+        /// </summary>
+        /// <returns></returns>
+        public D2DColor GetShadowColor()
+        {
+            var shadowColor = Utilities.LerpColorWithAlpha(GetTimeOfDayColor(), D2DColor.Black, 0.7f, 0.4f);
+            return shadowColor;
         }
 
         public void PushViewPort(D2DRect viewport)
@@ -59,13 +120,13 @@ namespace PolyPlane.Rendering
         public void BeginRender(D2DBitmap bitmap)
         {
             Gfx.BeginRender(bitmap);
-            ComputeLightToDFactor();
+            UpdateTimeOfDayLightFactor();
         }
 
         public void BeginRender(D2DColor color)
         {
             Gfx.BeginRender(color);
-            ComputeLightToDFactor();
+            UpdateTimeOfDayLightFactor();
         }
 
         public void EndRender()
@@ -272,6 +333,36 @@ namespace PolyPlane.Rendering
         public void DrawArrowStroked(D2DPoint start, D2DPoint end, D2DColor color, float weight, D2DColor strokeColor, float strokeWeight)
         {
             Gfx.DrawArrowStrokedClamped(Viewport, start, end, color, weight, strokeColor, strokeWeight);
+        }
+
+        private D2DColor InterpolateColorGaussian(D2DColor[] colors, float value, float maxValue)
+        {
+            var x = Math.Min(1.0f, value / maxValue);
+
+            double r = 0.0, g = 0.0, b = 0.0;
+            double total = 0.0;
+            double step = 1.0 / (double)(colors.Length - 1);
+            double mu = 0.0;
+
+            for (int i = 0; i < colors.Length; i++)
+            {
+                total += Math.Exp(-(x - mu) * (x - mu) / (2.0 * GaussianSigma2)) / GaussianSigma;
+                mu += step;
+            }
+
+            mu = 0.0;
+            for (int i = 0; i < colors.Length; i++)
+            {
+                var color = colors[i];
+                double percent = Math.Exp(-(x - mu) * (x - mu) / (2.0 * GaussianSigma2)) / GaussianSigma;
+                mu += step;
+
+                r += color.r * percent / total;
+                g += color.g * percent / total;
+                b += color.b * percent / total;
+            }
+
+            return new D2DColor(1f, (float)r, (float)g, (float)b);
         }
     }
 }
