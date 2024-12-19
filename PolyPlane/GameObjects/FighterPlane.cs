@@ -184,7 +184,7 @@ namespace PolyPlane.GameObjects
         private List<BulletHole> _bulletHoles = new List<BulletHole>();
         private List<Vapor> _vaporTrails = new List<Vapor>();
 
-        private readonly D2DPoint[] _planePoly =
+        private static readonly D2DPoint[] _planePoly =
         [
             new D2DPoint(28,0),
             new D2DPoint(25,-2),
@@ -205,7 +205,7 @@ namespace PolyPlane.GameObjects
             new D2DPoint(25,2),
         ];
 
-        private readonly D2DPoint[] _flamePoly =
+        private static readonly D2DPoint[] _flamePoly =
         [
             new D2DPoint(-8, 1),
             new D2DPoint(-10, 0),
@@ -274,7 +274,7 @@ namespace PolyPlane.GameObjects
 
             InitWings();
 
-            _centerOfThrust = new FixturePoint(this, new D2DPoint(-26.6f * this.RenderScale, 0.7f));
+            _centerOfThrust = new FixturePoint(this, new D2DPoint(-26.6f, 0.46f) * this.RenderScale);
             _flamePos = new FixturePoint(this, new D2DPoint(-41f, 0.7f));
             _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
             _gun = new Gun(this, new D2DPoint(35f, 0), FireBulletCallback);
@@ -348,7 +348,7 @@ namespace PolyPlane.GameObjects
                 MaxDragForce = 12000f,
                 AOAFactor = 0.6f,
                 MaxAOA = 25f,
-                Position = new D2DPoint(-5f * this.RenderScale, 0.6f * this.RenderScale),
+                Position = new D2DPoint(-5f, 0.6f) * this.RenderScale,
                 MinVelo = MIN_VELO
             }));
 
@@ -364,8 +364,8 @@ namespace PolyPlane.GameObjects
                 AOAFactor = 0.4f,
                 MaxAOA = 30f,
                 DeflectionRate = DEFLECT_RATE,
-                PivotPoint = new D2DPoint(-25f * this.RenderScale, 0.6f * this.RenderScale),
-                Position = new D2DPoint(-27.5f * this.RenderScale, 0.6f * this.RenderScale),
+                PivotPoint = new D2DPoint(-25f, 0.6f) * this.RenderScale,
+                Position = new D2DPoint(-27.5f, 0.6f) * this.RenderScale,
                 MinVelo = MIN_VELO
             }), isControl: true);
 
