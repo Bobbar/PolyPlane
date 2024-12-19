@@ -906,8 +906,8 @@ namespace PolyPlane.Rendering
 
             if (_showHUD)
             {
-                var speedoPos = new D2DPoint(viewportsize.width * 0.15f, viewportsize.height * 0.3f);
-                var altimeterPos = new D2DPoint(viewportsize.width * 0.85f, viewportsize.height * 0.3f);
+                var speedoPos = new D2DPoint(viewportsize.width * 0.15f, viewportsize.height * 0.33f);
+                var altimeterPos = new D2DPoint(viewportsize.width * 0.85f, viewportsize.height * 0.33f);
 
                 // Draw altimeter and speedo.
                 DrawTapeIndicator(ctx.Gfx, viewportsize, altimeterPos, viewObject.Altitude, 3000f, 175f);
