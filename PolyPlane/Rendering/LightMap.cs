@@ -26,29 +26,21 @@ namespace PolyPlane.Rendering
 
         public LightMap() { }
 
-
         /// <summary>
-        /// Updates the light map with light intensities contributed by the specified list of objects.
+        /// Clears and updates the light map to fit the specified viewport
         /// </summary>
         /// <param name="viewport"></param>
-        /// <param name="objs"></param>
-        public void Update(D2DRect viewport, IEnumerable<GameObject> objs)
+        public void Clear(D2DRect viewport)
         {
-            // Filter out all but target object types.
-            objs = objs.Where(o => o is ILightMapContributor);
-
             UpdateViewport(viewport);
             ClearMap();
-
-            foreach (var obj in objs)
-                AddObjContribution(obj);
         }
 
         /// <summary>
-        /// Adds/appends additional light contributions from objects without clearing the map.
+        /// Adds light contributions from the specified list of objects which implement <see cref="ILightMapContributor"/>.
         /// </summary>
         /// <param name="objs"></param>
-        public void AddAdditional(IEnumerable<GameObject> objs)
+        public void AddContributions(IEnumerable<GameObject> objs)
         {
             // Filter out all but target object types.
             objs = objs.Where(o => o is ILightMapContributor);

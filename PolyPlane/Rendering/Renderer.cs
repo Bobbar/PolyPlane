@@ -529,16 +529,24 @@ namespace PolyPlane.Rendering
             var inflateAmt = VIEWPORT_PADDING_AMT * zAmt;
             viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true); // Inflate slightly to prevent "pop-in".
 
-            var objsInViewport = _objs.GetInViewport(ctx.Viewport).Where(o => o is not Explosion).OrderBy(o => o.RenderOrder);
+            var objsInViewport = _objs.GetInViewport(ctx.Viewport).Where(o => o is not Explosion);
 
             // Update the light map.
             if (World.UseLightMap)
             {
-                ctx.LightMap.Update(viewPortRect, objsInViewport);
+                // Clear the map and resize as needed.
+                ctx.LightMap.Clear(viewPortRect);
+               
+                // Add objects in viewport.
+                ctx.LightMap.AddContributions(objsInViewport);
 
                 // Add explosions separately as they have special viewport clipping.
-                ctx.LightMap.AddAdditional(_objs.Explosions);
+                ctx.LightMap.AddContributions(_objs.Explosions);
             }
+
+            // Order the enumerator by render order after populating the light map.
+            // This is done to avoid the internal sorting/mapping while populating the light map.
+            objsInViewport = objsInViewport.OrderBy(o => o.RenderOrder);
 
             var shadowColor = ctx.GetShadowColor();
             var todAngle = ctx.GetTimeOfDaySunAngle();
@@ -707,7 +715,7 @@ namespace PolyPlane.Rendering
             ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(shadowWidth, HEIGHT)), shadowColor.WithAlpha(shadowAlpha));
         }
 
-      
+
         private void DrawMuzzleFlash(RenderContext ctx, FighterPlane plane)
         {
             if (!ctx.Viewport.Contains(plane.Gun.Position))
@@ -748,7 +756,7 @@ namespace PolyPlane.Rendering
             ctx.DrawText(plane.PlayerName, _hudColorBrush, _textConsolas30Centered, rect);
         }
 
-       
+
         private void DrawClouds(RenderContext ctx)
         {
             var todColor = ctx.GetTimeOfDayColor();
@@ -1377,7 +1385,7 @@ namespace PolyPlane.Rendering
             gfx.DrawTextCenter(MSG, D2DColor.Red, DEFAULT_FONT_NAME, FONT_SIZE, rect);
         }
 
-    
+
         private void DrawOverlays(RenderContext ctx, GameObject viewObject)
         {
             DrawInfo(ctx.Gfx, _infoPosition, viewObject);
