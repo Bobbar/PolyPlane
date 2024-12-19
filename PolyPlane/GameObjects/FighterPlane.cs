@@ -87,6 +87,7 @@ namespace PolyPlane.GameObjects
         public string PlayerName = "Player";
         public float PlayerGuideAngle = 0;
         public float Deflection = 0f;
+        public float DeathTime = 0;
         public int BulletsFired = 0;
         public int MissilesFired = 0;
         public int DecoysDropped = 0;
@@ -551,6 +552,9 @@ namespace PolyPlane.GameObjects
 
             //if (_thrustAmt.Value < 0.01f)
             //    this.ThrustOn = false;
+
+            if (this.IsDisabled)
+                DeathTime += dt;
 
             this.RecordHistory();
         }
@@ -1088,6 +1092,7 @@ namespace PolyPlane.GameObjects
             _engineOutSpoolDown.Stop();
             _engineOutSpoolDown.Reset();
             _thrustAmt.Target = 1f;
+            DeathTime = 0f;
 
             _wings.ForEach(w => w.Visible = true);
 

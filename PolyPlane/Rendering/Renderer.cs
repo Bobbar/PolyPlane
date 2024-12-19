@@ -89,6 +89,7 @@ namespace PolyPlane.Rendering
         private readonly D2DColor _groundColorLight = new D2DColor(1f, 0f, 0.29f, 0);
         private readonly D2DColor _groundColorDark = D2DColor.DarkGreen;
         private readonly D2DColor _groundLightColor = new D2DColor(0.85f, 0.76f, 0.14f);
+        private readonly D2DColor _deathScreenColor = new D2DColor(0.2f, D2DColor.Red);
 
         private readonly D2DPoint _infoPosition = new D2DPoint(20, 20);
         private readonly D2DSize _healthBarSize = new D2DSize(80, 20);
@@ -536,7 +537,7 @@ namespace PolyPlane.Rendering
             {
                 // Clear the map and resize as needed.
                 ctx.LightMap.Clear(viewPortRect);
-               
+
                 // Add objects in viewport.
                 ctx.LightMap.AddContributions(objsInViewport);
 
@@ -1385,13 +1386,28 @@ namespace PolyPlane.Rendering
             gfx.DrawTextCenter(MSG, D2DColor.Red, DEFAULT_FONT_NAME, FONT_SIZE, rect);
         }
 
-
         private void DrawOverlays(RenderContext ctx, GameObject viewObject)
         {
             DrawInfo(ctx.Gfx, _infoPosition, viewObject);
+            DrawDeathScreenOverlay(ctx, viewObject);
+        }
 
-            if (viewObject is FighterPlane plane && plane.IsDisabled)
-                ctx.Gfx.FillRectangle(World.ViewPortRectUnscaled, new D2DColor(0.2f, D2DColor.Red));
+        private void DrawDeathScreenOverlay(RenderContext ctx, GameObject viewObject)
+        {
+            const float DISPLAY_TIME = 30f;
+
+            if (viewObject is FighterPlane plane)
+            {
+                var now = World.CurrentTimeMs();
+
+                if (plane.DeathTime > 0 && plane.DeathTime < DISPLAY_TIME)
+                {
+                    var alpha = Math.Clamp(1f - Utilities.FactorWithEasing(plane.DeathTime, DISPLAY_TIME, EasingFunctions.Out.EaseCircle), 0f, 0.4f);
+
+                    if (alpha > 0f)
+                        ctx.Gfx.FillRectangle(World.ViewPortRectUnscaled, _deathScreenColor.WithAlpha(alpha));
+                }
+            }
         }
 
         public void DrawInfo(D2DGraphics gfx, D2DPoint pos, GameObject viewObject)
