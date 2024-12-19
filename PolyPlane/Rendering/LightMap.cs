@@ -18,7 +18,7 @@ namespace PolyPlane.Rendering
         }
 
         const int SAMPLE_NUM = 7;
-        const float GRADIENT_DIST = 450f;
+        const float GRADIENT_RADIUS = 450f;
 
         private D2DRect _viewport;
         private D2DSize _gridSize;
@@ -55,7 +55,7 @@ namespace PolyPlane.Rendering
         private void AddObjContribution(GameObject obj)
         {
             var sampleNum = SAMPLE_NUM;
-            var gradDist = GRADIENT_DIST;
+            var gradRadius = GRADIENT_RADIUS;
             var intensityFactor = 1f;
             var lightColor = Vector4.Zero;
             var lightPosition = obj.Position;
@@ -69,10 +69,10 @@ namespace PolyPlane.Rendering
                 intensityFactor = lightContributor.GetIntensityFactor();
                 lightColor = lightContributor.GetLightColor().ToVector4();
                 lightPosition = lightContributor.GetLightPosition();
+                gradRadius = lightContributor.GetLightRadius();
 
                 // Compute the number of samples needed for the current radius.
-                gradDist = lightContributor.GetLightRadius();
-                sampleNum = (int)(gradDist / SIDE_LEN);
+                sampleNum = (int)(gradRadius / SIDE_LEN);
             }
 
             GetGridPos(lightPosition, out int idxX, out int idxY);
@@ -93,9 +93,9 @@ namespace PolyPlane.Rendering
                         var gradPos = new D2DPoint(xo * SIDE_LEN, yo * SIDE_LEN);
                         var dist = centerPos.DistanceTo(gradPos);
 
-                        if (dist <= gradDist)
+                        if (dist <= gradRadius)
                         {
-                            var intensity = 1f - Utilities.FactorWithEasing(dist, gradDist, EasingFunctions.Out.EaseSine);
+                            var intensity = 1f - Utilities.FactorWithEasing(dist, gradRadius, EasingFunctions.Out.EaseSine);
 
                             intensity *= intensityFactor;
 
