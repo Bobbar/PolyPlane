@@ -526,21 +526,4 @@ namespace PolyPlane.GameObjects
         public IEnumerable<GameObject> GetNear(D2DPoint position) => _spatialGrid.GetNear(position);
         public IEnumerable<GameObject> GetInViewport(D2DRect viewport) => _spatialGrid.GetInViewport(viewport);
     }
-
-    public class GroundImpact
-    {
-        public const float MAX_AGE = 800f;
-
-        public D2DPoint Position;
-        public D2DSize Size;
-        public float Angle;
-        public float Age = 0f;
-
-        public GroundImpact(D2DPoint pos, D2DSize size, float angle)
-        {
-            Position = pos;
-            Size = size;
-            Angle = angle;
-        }
-    }
 }

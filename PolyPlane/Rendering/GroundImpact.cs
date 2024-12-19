@@ -1,0 +1,22 @@
+﻿using unvell.D2DLib;
+
+namespace PolyPlane.Rendering
+{
+    public class GroundImpact
+    {
+        public const float MAX_AGE = 1600f;
+        public const float START_FADE_AGE = MAX_AGE - (MAX_AGE * 0.125f);
+
+        public D2DPoint Position;
+        public D2DSize Size;
+        public float Angle;
+        public float Age = 0f;
+
+        public GroundImpact(D2DPoint pos, D2DSize size, float angle)
+        {
+            Position = pos;
+            Size = size;
+            Angle = angle;
+        }
+    }
+}
