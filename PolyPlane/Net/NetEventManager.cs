@@ -179,6 +179,9 @@ namespace PolyPlane.Net
             if (!this.IsServer)
                 return;
 
+            if (impactPacket.ImpactType == ImpactType.Splash)
+                return;
+
             if (_impacts.TryGetValue(impactPacket.ID.PlayerID, out var impacts))
                 impacts.Add(impactPacket);
             else
