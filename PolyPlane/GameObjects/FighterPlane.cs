@@ -207,9 +207,11 @@ namespace PolyPlane.GameObjects
 
         private static readonly D2DPoint[] _flamePoly =
         [
-            new D2DPoint(-8, 1),
+            new D2DPoint(-7.5f, 1.2f),
             new D2DPoint(-10, 0),
-            new D2DPoint(-8, -1),
+            new D2DPoint(-7.5f, -1.2f),
+            new D2DPoint(-7, 0),
+
         ];
 
         public FighterPlane(D2DPoint pos, AIPersonality personality, int playerId) : base(pos)
@@ -275,7 +277,7 @@ namespace PolyPlane.GameObjects
             InitWings();
 
             _centerOfThrust = new FixturePoint(this, new D2DPoint(-26.6f, 0.46f) * this.RenderScale);
-            _flamePos = new FixturePoint(this, new D2DPoint(-41f, 0.7f));
+            _flamePos = new FixturePoint(this, new D2DPoint(-27.3f, 0.46f) * this.RenderScale);
             _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
             _gun = new Gun(this, new D2DPoint(35f, 0), FireBulletCallback);
             _decoyDispenser = new DecoyDispenser(this, new D2DPoint(-24f, 0f));
@@ -283,8 +285,6 @@ namespace PolyPlane.GameObjects
             _engineFireFlame.Owner = this;
             _engineFireFlame.StopSpawning();
 
-            _flamePos.IsNetObject = this.IsNetObject;
-            _cockpitPosition.IsNetObject = this.IsNetObject;
 
             _expireTimeout.TriggerCallback = () =>
             {
@@ -605,7 +605,6 @@ namespace PolyPlane.GameObjects
             base.Render(ctx);
 
             _vaporTrails.ForEach(v => v.Render(ctx));
-
 
             if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
                 ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
