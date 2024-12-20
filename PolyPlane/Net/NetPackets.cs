@@ -11,6 +11,17 @@ namespace PolyPlane.Net
         public PacketTypes Type;
         public GameID ID;
         public long FrameTime;
+        public uint PeerID = uint.MaxValue;
+
+        public long Age
+        {
+            get
+            {
+                var now = World.CurrentNetTimeMs();
+                var age = now - FrameTime;
+                return age;
+            }
+        }
 
         public NetPacket()
         {
@@ -311,7 +322,7 @@ namespace PolyPlane.Net
 
         public MissileListPacket() : base()
         {
-            Type = PacketTypes.MissileUpdate;
+            Type = PacketTypes.MissileUpdateList;
         }
 
         public MissileListPacket(BitBuffer data)

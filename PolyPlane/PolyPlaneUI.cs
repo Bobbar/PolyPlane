@@ -292,6 +292,9 @@ namespace PolyPlane
 
             _killRender = true;
 
+            // Wait a moment for renderer to finish.
+            Task.Delay(200).Wait();
+
             _objs.Clear();
 
             _netMan.ImpactEvent -= HandleNewImpact;

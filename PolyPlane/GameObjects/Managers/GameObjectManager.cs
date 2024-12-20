@@ -377,9 +377,23 @@ namespace PolyPlane.GameObjects
 
         private void PruneExpired(List<GameObject> objs, bool recordExpired = true)
         {
+            const double MAX_NET_AGE = 500;
+
             for (int i = objs.Count - 1; i >= 0; i--)
             {
                 var obj = objs[i];
+
+                if (World.IsNetGame)
+                {
+                    // Check for stale net objects which don't appear to be receiving updates.
+                    // This really shouldn't happen, but it does rarely.
+                    // Perhaps if an update packet arrives after an expired packet for the same object.
+                    if (obj is GuidedMissile || obj is FighterPlane)
+                    {
+                        if (obj.IsNetObject && obj.NetAge > MAX_NET_AGE)
+                            obj.IsExpired = true;
+                    }
+                }
 
                 if (obj.IsExpired)
                 {

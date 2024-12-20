@@ -4,6 +4,7 @@
     {
         PlaneUpdate,
         PlaneListUpdate,
+        MissileUpdateList,
         MissileUpdate,
         Impact,
         NewPlayer,

@@ -2,6 +2,7 @@
 using PolyPlane.GameObjects.Manager;
 using PolyPlane.Helpers;
 using PolyPlane.Net.NetHost;
+using System.Diagnostics;
 
 namespace PolyPlane.Net
 {
@@ -16,9 +17,11 @@ namespace PolyPlane.Net
         private GameObjectManager _objs = World.ObjectManager;
         private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
         private Dictionary<int, List<ImpactPacket>> _impacts = new Dictionary<int, List<ImpactPacket>>();
+        private List<NetPacket> _deferredPackets = new List<NetPacket>();
 
-        private long _frame = 0;
         private bool _netIDIsSet = false;
+        private bool _receivedFirstSync = false;
+        private double _lastNetTime = 0;
 
         public event EventHandler<int> PlayerIDReceived;
         public event EventHandler<ImpactEvent> ImpactEvent;
@@ -29,7 +32,7 @@ namespace PolyPlane.Net
         public event EventHandler<FighterPlane> PlayerRespawned;
         public event EventHandler<string> PlayerEventMessage;
 
-        private double _lastNetTime = 0;
+        private const long MAX_DEFER_AGE = 400; // Max age allowed for deferred packets.
 
         public NetEventManager(NetPlayHost host, FighterPlane playerPlane)
         {
@@ -103,12 +106,94 @@ namespace PolyPlane.Net
                 }
             }
 
+            // Enqueue deferred packets to be handled on the next frame.
+            EnqueueDeferredPackets();
+
             if (totalPacketTime > 0f && numPackets > 0)
             {
                 var avgDelay = (totalPacketTime / (float)numPackets);
                 PacketDelay = _packetDelayAvg.Add(avgDelay);
             }
         }
+
+        /// <summary>
+        /// Adds deferred packets back into the receive queue in order to make another attempt at handling them.
+        /// </summary>
+        private void EnqueueDeferredPackets()
+        {
+            while (_deferredPackets.Count > 0)
+            {
+                Host.PacketReceiveQueue.Enqueue(_deferredPackets.First());
+                _deferredPackets.RemoveAt(0);
+            }
+        }
+
+
+        /// <summary>
+        /// Remove deferred packets with IDs matching the specified expired ID.
+        /// </summary>
+        /// <param name="expiredID"></param>
+        private void PruneExpiredDeferredPackets(GameID expiredID)
+        {
+            for (int i = _deferredPackets.Count - 1; i >= 0; i--)
+            {
+                var packet = _deferredPackets[i];
+
+                if (packet.ID.Equals(expiredID))
+                    _deferredPackets.RemoveAt(i);
+            }
+        }
+
+        /// <summary>
+        /// Queues the specified packet to be handled on the next frame.
+        /// 
+        /// For situations where we can't handle the packet due to other packets which haven't arrived.
+        /// </summary>
+        /// <param name="packet"></param>
+        private void DeferPacket(NetPacket packet)
+        {
+            if (packet.Age < MAX_DEFER_AGE)
+            {
+                _deferredPackets.Add(packet);
+            }
+            else
+            {
+                Debug.WriteLine($"Can't defer, too old!  ID: {packet.ID}  Type: {packet.Type}   Age: {packet.Age}");
+            }
+        }
+
+        /// <summary>
+        /// True if we are not the server and we have received the ID and the first sync packets from the server.
+        /// </summary>
+        /// <returns></returns>
+        private bool ClientIsReady()
+        {
+            if (IsServer)
+                return true;
+
+            return !IsServer && _netIDIsSet && _receivedFirstSync;
+        }
+
+        private void SaveImpact(ImpactPacket impactPacket)
+        {
+            if (!this.IsServer)
+                return;
+
+            if (_impacts.TryGetValue(impactPacket.ID.PlayerID, out var impacts))
+                impacts.Add(impactPacket);
+            else
+                _impacts.Add(impactPacket.ID.PlayerID, new List<ImpactPacket>() { impactPacket });
+        }
+
+        private void ClearImpacts(int playerID)
+        {
+            if (!this.IsServer)
+                return;
+
+            if (_impacts.ContainsKey(playerID))
+                _impacts.Remove(playerID);
+        }
+
 
         private void HandleNetPacket(NetPacket packet, float dt)
         {
@@ -126,10 +211,17 @@ namespace PolyPlane.Net
                     DoNetPlaneUpdate(planePacket);
 
                     break;
+                case PacketTypes.MissileUpdateList:
+
+                    var missileListPacket = packet as MissileListPacket;
+                    DoNetMissileUpdates(missileListPacket);
+
+                    break;
+
                 case PacketTypes.MissileUpdate:
 
-                    var missilePacket = packet as MissileListPacket;
-                    DoNetMissileUpdates(missilePacket);
+                    var missilePacket = packet as MissilePacket;
+                    DoNetMissileUpdate(missilePacket);
 
                     break;
                 case PacketTypes.Impact:
@@ -224,6 +316,8 @@ namespace PolyPlane.Net
 
                         if (obj != null)
                             obj.IsExpired = true;
+
+                        PruneExpiredDeferredPackets(p.ID);
                     }
 
                     break;
@@ -261,6 +355,8 @@ namespace PolyPlane.Net
                             World.TimeOfDayDir = syncPack.TimeOfDayDir;
                             World.GunsOnly = syncPack.GunsOnly;
                             World.DT = syncPack.DeltaTime;
+
+                            _receivedFirstSync = true;
                         }
                     }
                     break;
@@ -335,26 +431,6 @@ namespace PolyPlane.Net
 
                     break;
             }
-        }
-
-        private void SaveImpact(ImpactPacket impactPacket)
-        {
-            if (!this.IsServer)
-                return;
-
-            if (_impacts.TryGetValue(impactPacket.ID.PlayerID, out var impacts))
-                impacts.Add(impactPacket);
-            else
-                _impacts.Add(impactPacket.ID.PlayerID, new List<ImpactPacket>() { impactPacket });
-        }
-
-        private void ClearImpacts(int playerID)
-        {
-            if (!this.IsServer)
-                return;
-
-            if (_impacts.ContainsKey(playerID))
-                _impacts.Remove(playerID);
         }
 
         private void HandleNewImpactList(ImpactListPacket impacts)
@@ -439,7 +515,7 @@ namespace PolyPlane.Net
         {
             var expiredObjPacket = new BasicListPacket(PacketTypes.ExpiredObjects);
 
-            // Collect expried objs and remove them as we go.
+            // Collect expired objects and remove them as we go.
             var expiredObjs = _objs.ExpiredObjects();
             while (expiredObjs.Count > 0)
             {
@@ -583,8 +659,12 @@ namespace PolyPlane.Net
 
         private void DoNetPlaneUpdates(PlaneListPacket listPacket)
         {
-            if (!IsServer && !_netIDIsSet)
+            // If we are a client and our ID has been set.
+            if (!ClientIsReady())
+            {
+                DeferPacket(listPacket);
                 return;
+            }
 
             foreach (var planeUpdPacket in listPacket.Planes)
             {
@@ -594,8 +674,12 @@ namespace PolyPlane.Net
 
         private void DoNetPlaneUpdate(PlanePacket planePacket)
         {
-            if (!IsServer && !_netIDIsSet)
+            // If we are a client and our ID has been set.
+            if (!ClientIsReady())
+            {
+                DeferPacket(planePacket);
                 return;
+            }
 
             var netPlane = GetNetPlane(planePacket.ID);
 
@@ -612,39 +696,42 @@ namespace PolyPlane.Net
         {
             foreach (var missileUpdate in listPacket.Missiles)
             {
-                var netMissile = _objs.GetObjectByID(missileUpdate.ID) as GuidedMissile;
+                DoNetMissileUpdate(missileUpdate);
+            }
+        }
 
-                if (netMissile == null)
+        private void DoNetMissileUpdate(MissilePacket missilePacket)
+        {
+            var netMissile = _objs.GetObjectByID(missilePacket.ID) as GuidedMissile;
+
+            if (netMissile != null)
+            {
+                var netMissileOwner = _objs.GetObjectByID(netMissile.Owner.ID);
+
+                if (_objs.TryGetObjectByID(missilePacket.TargetID, out GameObject netMissileTarget))
                 {
-                    // If we receive an update for a non-existent missile, just go ahead and create it.
-                    DoNewMissile(missileUpdate);
-                    continue;
-                }
-
-                if (netMissile != null)
-                {
-                    var netMissileOwner = _objs.GetObjectByID(netMissile.Owner.ID);
-
-                    if (_objs.TryGetObjectByID(missileUpdate.TargetID, out GameObject netMissileTarget))
+                    if (netMissileTarget != null)
                     {
-                        if (netMissileTarget != null)
+                        if (!netMissileTarget.Equals(netMissile.Target))
                         {
-                            if (!netMissileTarget.Equals(netMissile.Target))
-                            {
-                                if (netMissile.Target != null && netMissile.Target is DummyObject)
-                                    netMissile.Target.IsExpired = true;
+                            if (netMissile.Target != null && netMissile.Target is DummyObject)
+                                netMissile.Target.IsExpired = true;
 
-                                netMissile.ChangeTarget(netMissileTarget);
-                            }
+                            netMissile.ChangeTarget(netMissileTarget);
                         }
                     }
-
-                    if (netMissileOwner != null && netMissileOwner.IsNetObject)
-                    {
-                        missileUpdate.SyncObj(netMissile);
-                        netMissile.NetUpdate(missileUpdate.Position, missileUpdate.Velocity, missileUpdate.Rotation, missileUpdate.FrameTime);
-                    }
                 }
+
+                if (netMissileOwner != null && netMissileOwner.IsNetObject)
+                {
+                    missilePacket.SyncObj(netMissile);
+                    netMissile.NetUpdate(missilePacket.Position, missilePacket.Velocity, missilePacket.Rotation, missilePacket.FrameTime);
+                }
+            }
+            else
+            {
+                // If we receive an update for a non-existent missile, just go ahead and create it.
+                DoNewMissile(missilePacket);
             }
         }
 
@@ -652,16 +739,21 @@ namespace PolyPlane.Net
         {
             if (packet != null)
             {
-                var impactor = _objs.GetObjectByID(packet.ImpactorID) as GameObject;
-                var impactorOwner = _objs.GetObjectByID(packet.OwnerID) as GameObject;
+                var impactor = _objs.GetObjectByID(packet.ImpactorID);
+                var impactorOwner = _objs.GetObjectByID(packet.OwnerID);
 
                 if (impactor == null)
                 {
+                    // If the impactor hasn't arrived yet, or has already been removed
+                    // add a dummy object in its place.
+                    // This can happen with splash damage impacts coming in from the server for
+                    // missiles which have already been expired.
                     impactor = _objs.AddDummyObject(packet.ImpactorID);
                 }
 
                 impactor.Owner = impactorOwner;
 
+                // Go ahead and expire the impactor.
                 if (impactor is not FighterPlane)
                     impactor.IsExpired = true;
 
@@ -691,19 +783,24 @@ namespace PolyPlane.Net
 
         private void DoNewBullet(GameObjectPacket bulletPacket, float dt)
         {
+            var owner = GetNetPlane(bulletPacket.OwnerID);
+
+            if (owner == null)
+            {
+                // Defer new bullets until owner is added. (Maybe)
+                DeferPacket(bulletPacket);
+                return;
+            }
+
             var bullet = new Bullet(bulletPacket.Position, bulletPacket.Velocity, bulletPacket.Rotation);
             bullet.IsNetObject = true;
             bullet.ID = bulletPacket.ID;
 
             bulletPacket.SyncObj(bullet);
-            var owner = GetNetPlane(bulletPacket.OwnerID);
-
-            // TODO: How to handle bullets that arrive before owner plane has been added?
-            if (owner == null)
-                return;
 
             bullet.Owner = owner;
             bullet.LagAmount = World.CurrentNetTimeMs() - bulletPacket.FrameTime;
+
             // Try to spawn the bullet ahead (extrapolate) to compensate for latency?
             bullet.Position += bullet.Velocity * (bullet.LagAmountFrames * dt);
 
@@ -718,7 +815,10 @@ namespace PolyPlane.Net
             {
                 var missileTarget = _objs.GetObjectByID(missilePacket.TargetID);
 
-                // If the missile target doesn't exist (yet?), spawn an invisible dummy object so we can handle net updates for it.
+                // If the missile target doesn't exist (yet?),
+                // spawn an invisible dummy object so we can handle net updates for it.
+                // This can happen if the missile is targeting a decoy
+                // which is already expired by this point.
                 if (missileTarget == null)
                     missileTarget = _objs.AddDummyObject(missilePacket.TargetID);
 
@@ -728,6 +828,7 @@ namespace PolyPlane.Net
                 missilePacket.SyncObj(missile);
                 missile.Target = missileTarget;
                 missile.LagAmount = World.CurrentNetTimeMs() - missilePacket.FrameTime;
+
                 _objs.EnqueueMissile(missile);
             }
         }
@@ -748,6 +849,10 @@ namespace PolyPlane.Net
 
                 if (IsServer)
                     Host.EnqueuePacket(decoyPacket);
+            }
+            else
+            {
+                DeferPacket(decoyPacket);
             }
         }
 

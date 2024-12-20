@@ -94,7 +94,17 @@ namespace PolyPlane.GameObjects
         public bool IsNetObject = false;
         public double LagAmount = 0;
         public float Age = 0f;
+        public double LastNetTime = 0;
 
+        public double NetAge
+        {
+            get
+            {
+                var now = World.CurrentNetTimeMs();
+                var age = now - LastNetTime;
+                return age;
+            }
+        }
         /// <summary>
         /// True if gravity and physics should be applied.
         /// </summary>
@@ -130,6 +140,9 @@ namespace PolyPlane.GameObjects
 
         public GameObject()
         {
+            if (World.IsNetGame)
+                this.LastNetTime = World.CurrentNetTimeMs();
+
             if (this is not INoGameID)
                 this.ID = new GameID(-1, World.GetNextObjectId());
 
@@ -226,7 +239,9 @@ namespace PolyPlane.GameObjects
                 this.Velocity = velocity;
             }
 
-            this.LagAmount = World.CurrentNetTimeMs() - frameTime;
+            var now = World.CurrentNetTimeMs();
+            this.LagAmount = now - frameTime;
+            this.LastNetTime = now;
         }
 
         public virtual void ClampToGround(float dt)

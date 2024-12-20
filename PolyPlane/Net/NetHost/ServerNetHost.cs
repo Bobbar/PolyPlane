@@ -68,6 +68,7 @@ namespace PolyPlane.Net.NetHost
             switch (netPacket.Type)
             {
                 case PacketTypes.PlaneUpdate
+                or PacketTypes.MissileUpdateList
                 or PacketTypes.MissileUpdate
                 or PacketTypes.ChatMessage
                 or PacketTypes.NewBullet
@@ -88,9 +89,14 @@ namespace PolyPlane.Net.NetHost
             return 0;
         }
 
-        protected override void SendPacket(ref Packet packet, byte channel)
+        protected override void SendPacket(ref Packet packet, uint peerID, byte channel)
         {
-            Host.Broadcast(channel, ref packet);
+            if (_peers.TryGetValue(peerID, out Peer peer))
+                // Broadcast and exclude the originating peer.
+                Host.Broadcast(channel, ref packet, peer);
+            else
+                // Otherwise broadcast to all peers.
+                Host.Broadcast(channel, ref packet);
         }
 
         public override Peer? GetPeer(int playerID)
@@ -118,22 +124,6 @@ namespace PolyPlane.Net.NetHost
             }
 
             return 0;
-        }
-
-        /// <summary>
-        /// Send to all other peers except for the peer the packet originated from.
-        /// </summary>
-        /// <param name="netPacket"></param>
-        private void BroadcastToOtherPeersOnly(NetPacket netPacket)
-        {
-            var packet = CreatePacket(netPacket);
-            var channel = GetChannel(netPacket);
-
-            foreach (var peer in _peers.Values)
-            {
-                if (peer.ID != netPacket.ID.PlayerID)
-                    peer.Send(channel, ref packet);
-            }
         }
 
         private void SendIDPacket(Peer peer, NetPacket packet)

@@ -17,7 +17,7 @@ namespace PolyPlane.Net.NetHost
         public readonly Address Address;
 
         protected const int MAX_CLIENTS = 30;
-        protected const int MAX_CHANNELS = 7;
+        protected const int MAX_CHANNELS = 8;
         protected const int TIMEOUT = 0;
         protected const int POLL_FPS = 1000;
 
@@ -75,7 +75,7 @@ namespace PolyPlane.Net.NetHost
             PacketReceiveQueue.Enqueue(netPacket);
         }
 
-        public void EnqueuePacket(NetPacket packet)
+        public virtual void EnqueuePacket(NetPacket packet)
         {
             PacketSendQueue.Enqueue(packet);
         }
@@ -88,7 +88,7 @@ namespace PolyPlane.Net.NetHost
         }
 
         public abstract ulong PacketLoss();
-        protected abstract void SendPacket(ref Packet packet, byte channel);
+        protected abstract void SendPacket(ref Packet packet, uint peerId, byte channel);
         public abstract Peer? GetPeer(int playerID);
         public abstract void Disconnect(int playerID);
         public abstract uint GetPlayerRTT(int playerID);
@@ -152,6 +152,8 @@ namespace PolyPlane.Net.NetHost
                     var packet = netEvent.Packet;
                     var netPacket = ParsePacket(ref packet);
 
+                    netPacket.PeerID = netEvent.Peer.ID;
+
                     HandleReceive(netPacket);
 
                     packet.Dispose();
@@ -176,7 +178,7 @@ namespace PolyPlane.Net.NetHost
             var packet = CreatePacket(netPacket);
             var channel = GetChannel(netPacket);
 
-            SendPacket(ref packet, channel);
+            SendPacket(ref packet, netPacket.PeerID, channel);
         }
 
         private NetPacket ParsePacket(ref Packet packet)
@@ -197,7 +199,7 @@ namespace PolyPlane.Net.NetHost
                 case PacketTypes.PlaneUpdate:
                     return 0;
 
-                case PacketTypes.MissileUpdate:
+                case PacketTypes.MissileUpdateList or PacketTypes.MissileUpdate:
                     return 1;
 
                 case PacketTypes.NewBullet:
@@ -212,8 +214,11 @@ namespace PolyPlane.Net.NetHost
                 case PacketTypes.ExpiredObjects:
                     return 5;
 
-                default:
+                case PacketTypes.Impact or PacketTypes.ImpactList:
                     return 6;
+
+                default:
+                    return 7;
             }
         }
 
