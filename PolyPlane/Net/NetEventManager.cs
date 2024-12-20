@@ -805,9 +805,6 @@ namespace PolyPlane.Net
                 if (impactor is not FighterPlane)
                     impactor.IsExpired = true;
 
-                //Debug.WriteLine($"Impact: {packet.ImpactorID}");
-
-
                 var target = _objs.GetObjectByID(packet.ID) as FighterPlane;
 
                 if (target != null)
@@ -881,6 +878,10 @@ namespace PolyPlane.Net
                 missile.LagAmount = World.CurrentNetTimeMs() - missilePacket.FrameTime;
 
                 _objs.EnqueueMissile(missile);
+            }
+            else
+            {
+                DeferPacket(missilePacket);
             }
         }
 
