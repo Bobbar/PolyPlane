@@ -205,12 +205,14 @@ namespace PolyPlane.Net
                     DoNetPlaneUpdates(planeListPacket);
 
                     break;
+
                 case PacketTypes.PlaneUpdate:
 
                     var planePacket = packet as PlanePacket;
                     DoNetPlaneUpdate(planePacket);
 
                     break;
+
                 case PacketTypes.MissileUpdateList:
 
                     var missileListPacket = packet as MissileListPacket;
@@ -224,13 +226,16 @@ namespace PolyPlane.Net
                     DoNetMissileUpdate(missilePacket);
 
                     break;
+
                 case PacketTypes.Impact:
 
                     var impactPacket = packet as ImpactPacket;
                     DoNetImpact(impactPacket, dt);
 
                     break;
+
                 case PacketTypes.NewPlayer:
+
                     var playerPacket = packet as NewPlayerPacket;
 
                     if (IsServer)
@@ -244,33 +249,38 @@ namespace PolyPlane.Net
                         }
 
                         ServerSendOtherPlanes();
-                        ServerSendExistingImpacts();
                         ServerSendExistingBullets();
+                        ServerSendExistingMissiles();
                         ServerSendExistingDecoys();
+                        ServerSendExistingImpacts();
                         SendSyncPacket();
                     }
 
                     PlayerJoined?.Invoke(this, playerPacket.ID.PlayerID);
 
                     break;
+
                 case PacketTypes.NewBullet:
 
                     var bulletPacket = packet as GameObjectPacket;
                     DoNewBullet(bulletPacket, dt);
 
                     break;
+
                 case PacketTypes.NewMissile:
 
                     var newMissilePacket = packet as MissilePacket;
                     DoNewMissile(newMissilePacket);
 
                     break;
+
                 case PacketTypes.NewDecoy:
 
                     var newDecoyPacket = packet as GameObjectPacket;
                     DoNewDecoy(newDecoyPacket);
 
                     break;
+
                 case PacketTypes.SetID:
 
                     if (!IsServer)
@@ -292,12 +302,14 @@ namespace PolyPlane.Net
                     }
 
                     break;
+
                 case PacketTypes.ChatMessage:
 
                     var chatPacket = packet as ChatPacket;
                     NewChatMessage?.Invoke(this, chatPacket);
 
                     break;
+
                 case PacketTypes.GetOtherPlanes:
 
                     if (!IsServer)
@@ -307,7 +319,9 @@ namespace PolyPlane.Net
                     }
 
                     break;
+
                 case PacketTypes.ExpiredObjects:
+
                     var expiredPacket = packet as BasicListPacket;
 
                     foreach (var p in expiredPacket.Packets)
@@ -323,6 +337,7 @@ namespace PolyPlane.Net
                     break;
 
                 case PacketTypes.PlayerDisconnect:
+
                     var disconnectPack = packet as BasicPacket;
                     DoPlayerDisconnected(disconnectPack.ID.PlayerID);
                     ClearImpacts(disconnectPack.ID.PlayerID);
@@ -343,7 +358,9 @@ namespace PolyPlane.Net
                     }
 
                     break;
+
                 case PacketTypes.ServerSync:
+
                     var syncPack = packet as SyncPacket;
                     if (syncPack != null)
                     {
@@ -362,6 +379,7 @@ namespace PolyPlane.Net
                     break;
 
                 case PacketTypes.KickPlayer:
+
                     var kickPacket = packet as BasicPacket;
 
                     if (!IsServer)
@@ -392,6 +410,7 @@ namespace PolyPlane.Net
                     break;
 
                 case PacketTypes.BulletList:
+
                     var bulletList = packet as GameObjectListPacket;
 
                     if (!IsServer)
@@ -401,7 +420,19 @@ namespace PolyPlane.Net
 
                     break;
 
+                case PacketTypes.MissileList:
+
+                    var missileList = packet as MissileListPacket;
+
+                    if (!IsServer)
+                    {
+                        missileList.Missiles.ForEach(DoNewMissile);
+                    }
+
+                    break;
+
                 case PacketTypes.DecoyList:
+
                     var decoyList = packet as GameObjectListPacket;
 
                     if (!IsServer)
@@ -422,6 +453,7 @@ namespace PolyPlane.Net
                     break;
 
                 case PacketTypes.PlayerEvent:
+
                     var eventPacket = packet as PlayerEventPacket;
 
                     if (eventPacket != null)
@@ -582,6 +614,19 @@ namespace PolyPlane.Net
             Host.EnqueuePacket(bulletsPacket);
         }
 
+        public void ServerSendExistingMissiles()
+        {
+            var missileListPacket = new MissileListPacket();
+            missileListPacket.Type = PacketTypes.MissileList;
+
+            foreach (var missile in _objs.Missiles)
+            {
+                missileListPacket.Missiles.Add(new MissilePacket(missile as GuidedMissile, PacketTypes.NewMissile));
+            }
+
+            Host.EnqueuePacket(missileListPacket);
+        }
+
         public void ServerSendExistingDecoys()
         {
             var decoysPacket = new GameObjectListPacket(PacketTypes.DecoyList);
@@ -730,8 +775,8 @@ namespace PolyPlane.Net
             }
             else
             {
-                // If we receive an update for a non-existent missile, just go ahead and create it.
-                DoNewMissile(missilePacket);
+                // If we receive an update for a non-existent missile, defer the update for the next frame.
+                DeferPacket(missilePacket);
             }
         }
 
@@ -756,6 +801,9 @@ namespace PolyPlane.Net
                 // Go ahead and expire the impactor.
                 if (impactor is not FighterPlane)
                     impactor.IsExpired = true;
+
+                //Debug.WriteLine($"Impact: {packet.ImpactorID}");
+
 
                 var target = _objs.GetObjectByID(packet.ID) as FighterPlane;
 

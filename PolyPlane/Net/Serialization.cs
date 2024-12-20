@@ -64,7 +64,7 @@ namespace PolyPlane.Net
                     obj = new PlayerListPacket(data);
                     break;
 
-                case PacketTypes.MissileUpdateList:
+                case PacketTypes.MissileUpdateList or PacketTypes.MissileList:
                     obj = new MissileListPacket(data);
                     break;
 
