@@ -45,7 +45,7 @@ namespace PolyPlane.GameObjects
         public float ThrustAmount
         {
             get { return _thrustAmt.Value; }
-            set { _thrustAmt.Set(value); }
+            set { _thrustAmt.SetNow(value); }
         }
 
         public int NumMissiles
@@ -329,7 +329,7 @@ namespace PolyPlane.GameObjects
             _engineOutSpoolDown = new FloatAnimation(1f, 0f, 20f, EasingFunctions.EaseLinear, v =>
             {
                 if (!this.IsDisabled)
-                    _thrustAmt.Set(v);
+                    _thrustAmt.SetNow(v);
             });
         }
 
@@ -451,7 +451,7 @@ namespace PolyPlane.GameObjects
                     damageForce *= 0.1f;
 
                     ThrustOn = false;
-                    _thrustAmt.Set(0f);
+                    _thrustAmt.SetNow(0f);
                     FiringBurst = false;
                     _engineFireFlame.StartSpawning();
                 }

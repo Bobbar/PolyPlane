@@ -313,17 +313,6 @@ namespace PolyPlane.GameObjects
             return diff <= (fov * 0.5f);
         }
 
-        public float ClosingRate(GameObject obj)
-        {
-            var nextPos1 = this.Position + this.Velocity;
-            var nextPos2 = obj.Position + obj.Velocity;
-
-            var curDist = this.Position.DistanceTo(obj.Position);
-            var nextDist = nextPos1.DistanceTo(nextPos2);
-
-            return curDist - nextDist;
-        }
-
         public bool Equals(GameObject? other)
         {
             if (other == null)

@@ -37,7 +37,22 @@
             _current += amt;
         }
 
-        public void Set(float value)
+        /// <summary>
+        /// Sets the target value and returns the current rate limited value.
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public float SetTarget(float target)
+        {
+            _target = target;
+            return _current;
+        }
+
+        /// <summary>
+        /// Sets the value instantly with no rate limit.
+        /// </summary>
+        /// <param name="value"></param>
+        public void SetNow(float value)
         {
             _current = value;
             _target = value;
@@ -79,9 +94,24 @@
             if (Math.Abs(amt) > Math.Abs(diff))
                 amt = diff;
 
-            _current += amt;
+            _current = Utilities.ClampAngle(_current + amt);
         }
 
+        /// <summary>
+        /// Sets the target value and returns the current rate limited value.
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public float SetTarget(float target)
+        {
+            _target = target;
+            return _current;
+        }
+
+        /// <summary>
+        /// Sets the value instantly with no rate limit.
+        /// </summary>
+        /// <param name="value"></param>
         public void Set(float value)
         {
             _current = value;

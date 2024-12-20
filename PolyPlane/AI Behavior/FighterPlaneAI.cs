@@ -27,6 +27,8 @@ namespace PolyPlane.AI_Behavior
         private GameTimer _dropDecoysTimer = new GameTimer(2f, 3f);
         private GameTimer _changeTargetCooldown = new GameTimer(10f);
         private GameTimer _defendMissileCooldown = new GameTimer(4f);
+        private GameTimer _dodgeMissileCooldown = new GameTimer(2.5f);
+        private RateLimiterAngle _defendAngleRate = new RateLimiterAngle(20f);
 
         private float MIN_MISSILE_TIME = 40f;
         private float MAX_MISSILE_TIME = 80f;
@@ -80,6 +82,8 @@ namespace PolyPlane.AI_Behavior
             _dropDecoysTimer.Update(dt);
             _changeTargetCooldown.Update(dt);
             _defendMissileCooldown.Update(dt);
+            _dodgeMissileCooldown.Update(dt);
+            _defendAngleRate.Update(dt);
 
             if (TargetPlane != null)
             {
@@ -351,15 +355,28 @@ namespace PolyPlane.AI_Behavior
                         defendAngle = defendAngleTwo;
                 }
 
+                // Pass the defend angle through a rate limiter
+                // to try to smooth out the movements.
+                defendAngle = _defendAngleRate.SetTarget(defendAngle);
+
                 // Try dodge when the missile gets close.
+                // Since this condition can be fleeting
+                // we start a short timer so we maintain the dodge
+                // angle for a little while after it gets triggered.
+                if (Math.Abs(impactTime) < DODGE_TIME)
+                {
+                    if (!_dodgeMissileCooldown.IsRunning)
+                        _dodgeMissileCooldown.Restart();
+                }
+
                 // Perform a rapid pitch maneuver just before the missile impacts.
-                if (impactTime < DODGE_TIME)
+                if (_dodgeMissileCooldown.IsRunning)
                 {
                     // Compute up & down tangents.
                     var defAngleTangentDown = Utilities.TangentAngle(defendAngle);
                     var defAngleTangentUp = Utilities.ReverseAngle(defAngleTangentDown);
 
-                    // Compute diffs between threat velo angle and choose the smallest.
+                    // Compute diffs between threat velo angle and choose the smallest.p
                     // Try to choose the option which will not cross paths with the incoming missile.
                     var diffDown = Utilities.AngleDiff(defAngleTangentDown, threatVeloAngle);
                     var diffUp = Utilities.AngleDiff(defAngleTangentUp, threatVeloAngle);
@@ -390,7 +407,8 @@ namespace PolyPlane.AI_Behavior
                 _gainingVelo = false;
 
             // Pitch down to gain velo.
-            if (_gainingVelo)
+            // Don't bother if we are dodging.
+            if (_gainingVelo && !_dodgeMissileCooldown.IsRunning)
                 angle = Utilities.MaintainAltitudeAngle(this.Plane, this.Plane.Altitude - 200f);
 
             // Pitch up if we about to impact with ground.

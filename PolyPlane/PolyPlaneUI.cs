@@ -51,7 +51,6 @@ namespace PolyPlane
         private Renderer _render;
         private FPSLimiter _fpsLimiter = new FPSLimiter();
         private SelectObjectUI? _selectObjectUI = null;
-
         private ConcurrentQueue<Action> _actionQueue = new ConcurrentQueue<Action>();
 
         public PolyPlaneUI()

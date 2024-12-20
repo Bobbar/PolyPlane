@@ -450,8 +450,13 @@ namespace PolyPlane.Helpers
 
         public static float ClosingRate(GameObject objA, GameObject objB)
         {
-            var veloDiff = objA.Velocity - objB.Velocity;
-            return veloDiff.Length();
+            var nextPos1 = objA.Position + objA.Velocity;
+            var nextPos2 = objB.Position + objB.Velocity;
+
+            var curDist = objA.Position.DistanceTo(objB.Position);
+            var nextDist = nextPos1.DistanceTo(nextPos2);
+
+            return curDist - nextDist;
         }
 
         public static float GroundImpactTime(GameObject obj)

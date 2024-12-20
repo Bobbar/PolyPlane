@@ -90,7 +90,7 @@ namespace PolyPlane.GameObjects.Guidance
             var rotAmt = Utilities.RadsToDegrees(aimDirection.Cross(veloNorm));
 
             // Increase rotation rate modifier as we approach the target.
-            var rotMod = 1f + (1f - Utilities.FactorWithEasing(timeToImpact, ROT_MOD_TIME, EasingFunctions.Out.EaseCircle)) * ROT_MOD_AMT;
+            var rotMod = 1f + (1f - Utilities.FactorWithEasing(Math.Abs(timeToImpact), ROT_MOD_TIME, EasingFunctions.Out.EaseCircle)) * ROT_MOD_AMT;
 
             // Offset our current rotation from our current velocity vector to compute the next rotation.
             var nextRot = missileVeloAngle + -(rotAmt * rotMod);

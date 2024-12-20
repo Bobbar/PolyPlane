@@ -1124,7 +1124,7 @@ namespace PolyPlane.Rendering
 
         private void DrawMissilePointersAndWarnings(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
         {
-            const float MIN_DIST = 1000f;
+            const float MAX_WARN_DIST = 60000f;
             const float MIN_IMPACT_TIME = 20f;
 
             bool warningMessage = false;
@@ -1145,25 +1145,29 @@ namespace PolyPlane.Rendering
 
                 var dist = D2DPoint.Distance(plane.Position, missile.Position);
 
-                var dir = missile.Position - plane.Position;
-                var color = D2DColor.Red;
-                var vec = dir.Normalized();
-                var pos1 = pos + (vec * 200f);
-                var pos2 = pos1 + (vec * 20f);
-                var distFact = 1f - Utilities.Factor(dist, MIN_DIST * 10f);
-                var impactTime = Utilities.ImpactTime(plane, missile);
-
-                // Display warning if impact time is less than 10 seconds?
-                if ((impactTime > 0f && impactTime < MIN_IMPACT_TIME && missile.Target.Equals(plane) && missile.ClosingRate(plane) > 0f))
-                    warningMessage = true;
-
-                if (impactTime > MIN_IMPACT_TIME * 1.5f)
+                if (dist > MAX_WARN_DIST)
                     continue;
 
-                var impactFact = 1f - Utilities.FactorWithEasing(impactTime, MIN_IMPACT_TIME, EasingFunctions.Out.EaseQuad);
+                // If this missile is targeting and tracking us.
+                if (missile.Target.Equals(plane) && !missile.MissedTarget)
+                    warningMessage = true;
 
-                if (!missile.MissedTarget && warningMessage)
-                    gfx.DrawArrow(pos1, pos2, color, (impactFact * 30f) + 1f);
+                var impactTime = Utilities.ImpactTime(missile, plane);
+
+                // Draw pointer when the missile is close.
+                if (warningMessage && impactTime > 0f)
+                {
+                    const float MAX_SIZE = 30f;
+
+                    var dir = missile.Position - plane.Position;
+                    var vec = dir.Normalized();
+                    var pos1 = pos + (vec * 200f);
+                    var pos2 = pos1 + (vec * 20f);
+                    var impactFact = 1f - Utilities.FactorWithEasing(impactTime, MIN_IMPACT_TIME, EasingFunctions.Out.EaseQuad);
+
+                    if (impactFact > 0f)
+                        gfx.DrawArrow(pos1, pos2, D2DColor.Red, (impactFact * MAX_SIZE) + 1f);
+                }
             }
 
             // Lock light.
