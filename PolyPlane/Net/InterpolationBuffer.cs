@@ -5,14 +5,14 @@ namespace PolyPlane
     public class InterpolationBuffer<T>
     {
         private double _clientStartTime = -1;
-        private SmoothDouble _offsetMedian = new SmoothDouble(100);
+        private SmoothDouble _offsetMedian = new SmoothDouble(20);
         private List<BufferEntry<T>> _buffer = new List<BufferEntry<T>>();
         private double _tickRate;
         private T _resetingState;
         private bool _firstTurn = true;
         private Action<T, T, double> _interpolate;
 
-        public InterpolationBuffer(T restingState, double tickRate, Action<T, T, double> interpolate)
+        public InterpolationBuffer(double tickRate, Action<T, T, double> interpolate)
         {
             _tickRate = tickRate;
             _interpolate = interpolate;

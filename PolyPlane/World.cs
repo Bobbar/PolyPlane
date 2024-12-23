@@ -37,6 +37,7 @@ namespace PolyPlane
         }
 
         public static readonly float TARGET_FRAME_TIME = 16.6f;
+        public static readonly float TARGET_FRAME_TIME_NET = TARGET_FRAME_TIME * 2f;
 
         public static float SERVER_TICK_RATE
         {

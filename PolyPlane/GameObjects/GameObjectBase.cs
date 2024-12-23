@@ -153,11 +153,11 @@ namespace PolyPlane.GameObjects
                 if (HistoryBuffer == null)
                 {
                     HistoryBuffer = new HistoricalBuffer<GameObjectPacket>();
-                    HistoryBuffer.Interpolate = (from, to, pctElap) => GetInterpState(from, to, pctElap);
+                    HistoryBuffer.Interpolate = GetInterpState;
                 }
 
                 if (InterpBuffer == null)
-                    InterpBuffer = new InterpolationBuffer<GameObjectPacket>(new GameObjectPacket(this), World.SERVER_TICK_RATE, (from, to, pctElap) => InterpObject(from, to, pctElap));
+                    InterpBuffer = new InterpolationBuffer<GameObjectPacket>(World.SERVER_TICK_RATE, InterpObject);
             }
         }
 

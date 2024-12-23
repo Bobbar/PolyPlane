@@ -78,15 +78,15 @@ namespace PolyPlane.Net
 
             var elap = now - _lastNetTime;
 
-            // Send updates at an interval twice the frame time.
+            // Send updates at an interval approx twice the frame time.
             // (This will be approx 30 FPS when target FPS is set to 60)
-            if (elap >= (World.TARGET_FRAME_TIME * 2f))
+            if (elap >= (World.TARGET_FRAME_TIME_NET))
             {
-                _lastNetTime = now;
-
                 SendPlaneUpdates();
                 SendMissileUpdates();
                 SendExpiredObjects();
+
+                _lastNetTime = World.CurrentNetTimeMs();
             }
 
             double totalPacketTime = 0;
@@ -734,8 +734,6 @@ namespace PolyPlane.Net
             if (netPlane != null)
             {
                 planePacket.SyncObj(netPlane);
-
-                netPlane.LagAmount = World.CurrentNetTimeMs() - planePacket.FrameTime;
                 netPlane.NetUpdate(planePacket.Position, planePacket.Velocity, planePacket.Rotation, planePacket.FrameTime);
             }
         }
