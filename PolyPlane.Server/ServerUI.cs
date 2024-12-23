@@ -209,7 +209,7 @@ namespace PolyPlane.Server
                         // on the bound listbox selectindex method, for some reason...
                         _currentPlayers.Add(netPlayer);
                     }
-                    catch (ArgumentOutOfRangeException) 
+                    catch (ArgumentOutOfRangeException)
                     { }
 
                     var joinMsg = $"'{playerPlane.PlayerName}' has joined.";
@@ -678,6 +678,14 @@ namespace PolyPlane.Server
                 case ']':
 
                     _queueNextViewId = true;
+                    break;
+
+                case '=' or '+':
+                    _render?.ZoomIn();
+                    break;
+
+                case '-' or '_':
+                    _render?.ZoomOut();
                     break;
             }
         }

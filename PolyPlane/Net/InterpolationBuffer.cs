@@ -5,7 +5,7 @@ namespace PolyPlane
     public class InterpolationBuffer<T>
     {
         private double _clientStartTime = -1;
-        private SmoothDouble _offsetMedian = new SmoothDouble(20);
+        private SmoothDouble _offsetMedian = new SmoothDouble(100);
         private List<BufferEntry<T>> _buffer = new List<BufferEntry<T>>();
         private double _tickRate;
         private T _resetingState;
