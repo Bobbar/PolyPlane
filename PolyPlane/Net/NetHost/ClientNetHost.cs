@@ -43,12 +43,6 @@ namespace PolyPlane.Net.NetHost
             return Peer.PacketsLost;
         }
 
-        public override void EnqueuePacket(NetPacket packet)
-        {
-            packet.PeerID = Peer.ID;
-            base.EnqueuePacket(packet);
-        }
-
         protected override void SendPacket(ref Packet packet, uint peerID, byte channel)
         {
             if (Peer.State != PeerState.Connected)

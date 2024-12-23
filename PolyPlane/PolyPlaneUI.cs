@@ -382,8 +382,6 @@ namespace PolyPlane
 
         private void PolyPlaneUI_FormClosing(object sender, FormClosingEventArgs e)
         {
-            _client?.SendPlayerDisconnectPacket((uint)_playerPlane.PlayerID);
-
             StopRender();
         }
 

@@ -233,6 +233,7 @@ namespace PolyPlane.Server
                 if (netPlayer != null)
                 {
                     _currentPlayers.Remove(netPlayer);
+                    AddNewEventMessage($"'{netPlayer.Name}' has left.");
                 }
             }
         }
@@ -249,6 +250,7 @@ namespace PolyPlane.Server
                 if (netPlayer != null)
                 {
                     _currentPlayers.Remove(netPlayer);
+                    AddNewEventMessage($"'{netPlayer.Name}' has left.");
                 }
             }
         }

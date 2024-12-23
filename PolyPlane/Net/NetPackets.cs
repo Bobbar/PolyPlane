@@ -11,6 +11,10 @@ namespace PolyPlane.Net
         public PacketTypes Type;
         public GameID ID;
         public long FrameTime;
+
+        /// <summary>
+        /// Not serialized. Used only for peer exclusions during server broadcasts.
+        /// </summary>
         public uint PeerID = uint.MaxValue;
 
         public long Age

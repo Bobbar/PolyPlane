@@ -152,7 +152,9 @@ namespace PolyPlane.Net.NetHost
                     var packet = netEvent.Packet;
                     var netPacket = ParsePacket(ref packet);
 
-                    netPacket.PeerID = netEvent.Peer.ID;
+                    // Set the peer ID only if the packet does not need bounced back.
+                    if (ShouldBounceBack(netPacket) == false)
+                        netPacket.PeerID = netEvent.Peer.ID;
 
                     HandleReceive(netPacket);
 
@@ -190,6 +192,26 @@ namespace PolyPlane.Net.NetHost
             var packetObj = Serialization.ByteArrayToObject(buffer) as NetPacket;
 
             return packetObj;
+        }
+
+        /// <summary>
+        /// True if the specified packet should be bounced back to the client/peer from which it originated.
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <returns></returns>
+        private bool ShouldBounceBack(NetPacket packet)
+        {
+            switch (packet.Type)
+            {
+                // We want these packet types to bounce back to clients/peers.
+                // For example, with chat messages, we want to know that the message made it to 
+                // the server before displaying it on the originating client.
+                case PacketTypes.ChatMessage or PacketTypes.PlayerEvent or PacketTypes.PlayerReset:
+                    return true;
+
+                default:
+                    return false;
+            }
         }
 
         protected byte GetChannel(NetPacket netpacket)
@@ -255,9 +277,9 @@ namespace PolyPlane.Net.NetHost
 
             Host?.Flush();
             Host?.Dispose();
-           
+
             _pollLimiter?.Dispose();
-            
+
             Library.Deinitialize();
         }
     }
