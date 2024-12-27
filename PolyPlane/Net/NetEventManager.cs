@@ -59,13 +59,9 @@ namespace PolyPlane.Net
 
         private void Host_PeerDisconnectedEvent(object? sender, ENet.Peer e)
         {
-            if (!IsServer)
-            {
-                var otherObjs = _objs.GetAllNetObjects();
-                foreach (var obj in otherObjs)
-                    obj.IsExpired = true;
-            }
-            else
+            DoPlayerDisconnected((int)e.ID);
+          
+            if (IsServer)
                 ClearImpacts((int)e.ID);
         }
 
