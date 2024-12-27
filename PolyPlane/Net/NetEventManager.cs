@@ -328,7 +328,10 @@ namespace PolyPlane.Net
                         var obj = _objs.GetObjectByID(p.ID);
 
                         if (obj != null)
+                        {
+                            obj.Position = p.Position;
                             obj.IsExpired = true;
+                        }
 
                         PruneExpiredDeferredPackets(p.ID);
                     }
@@ -550,7 +553,10 @@ namespace PolyPlane.Net
             var expiredObjs = _objs.ExpiredObjects();
             while (expiredObjs.Count > 0)
             {
-                expiredObjPacket.Packets.Add(new BasicPacket(PacketTypes.ExpiredObjects, expiredObjs[0].ID));
+                var obj = expiredObjs[0];
+                var packet = new BasicPacket(PacketTypes.ExpiredObjects, obj.ID, obj.Position);
+                expiredObjPacket.Packets.Add(packet);
+
                 expiredObjs.RemoveAt(0);
             }
 
@@ -663,13 +669,6 @@ namespace PolyPlane.Net
             impactPacket.OwnerID = impactor.Owner.ID;
 
             SaveImpact(impactPacket);
-
-            if (histState != null)
-            {
-                impactPacket.Position = histState.Position;
-                impactPacket.Velocity = histState.Velocity;
-                impactPacket.Rotation = histState.Rotation;
-            }
 
             Host.EnqueuePacket(impactPacket);
         }
@@ -794,6 +793,7 @@ namespace PolyPlane.Net
                 }
 
                 impactor.Owner = impactorOwner;
+                impactor.Position = packet.ImpactPoint;
 
                 // Go ahead and expire the impactor.
                 if (impactor is not FighterPlane)

@@ -115,7 +115,7 @@ namespace PolyPlane.GameObjects
         /// </summary>
         public float AgeMs(float dt)
         {
-            return (this.Age / dt) * (1000f / 16f);
+            return (this.Age / dt) * World.TARGET_FRAME_TIME;
         }
 
         public int PlayerID
@@ -217,7 +217,7 @@ namespace PolyPlane.GameObjects
 
         public virtual void NetUpdate(D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
         {
-            if (World.InterpOn)
+            if (World.InterpOn && World.IsClient)
             {
                 var newState = new GameObjectPacket(this);
                 newState.Position = position;
@@ -424,9 +424,6 @@ namespace PolyPlane.GameObjects
             if (HistoryBuffer != null && (this is FighterPlane || this is GuidedMissile))
             {
                 var histState = new GameObjectPacket(this);
-                histState.Position = this.Position;
-                histState.Velocity = this.Velocity;
-                histState.Rotation = this.Rotation;
                 HistoryBuffer.Enqueue(histState, World.CurrentNetTimeMs());
             }
         }
@@ -440,22 +437,7 @@ namespace PolyPlane.GameObjects
                 // Create a copy of the polygon and translate it to the historical position/rotation.
                 var histPoly = new RenderPoly(this.Polygon, histPos.Position, histPos.Rotation);
 
-                // Flip plane poly to correct orientation.
-
-                // NB: This is an unsolvable problem.
-                // We have no way of knowing or predicting exactly which flip direction
-                // the original plane was in at the time of impact.
-                // So we make a best effort here and try to predict the flip direction
-                // based off of velocity angle.
-                if (this is FighterPlane)
-                {
-                    var pointingRight = Utilities.ClampAngle180((histPos.Velocity.Angle() + 180f) - this.Rotation) < 0f;
-                    var isCW = histPoly.IsClockwise();
-
-                    if (!pointingRight && isCW)
-                        histPoly.FlipY();
-                }
-
+                // Check for collisions against the historical position.
                 if (CollisionHelpers.PolygonSweepCollision(obj, histPoly, histPos.Velocity, dt, out pos))
                 {
                     histState = histPos;
