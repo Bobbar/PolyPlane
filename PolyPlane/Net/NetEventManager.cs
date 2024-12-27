@@ -294,8 +294,8 @@ namespace PolyPlane.Net
                         PlayerPlane.Position = idPacket.Position;
                         PlayerPlane.SyncFixtures();
 
-                        var netPacket = new NewPlayerPacket(PlayerPlane);
-                        Host.EnqueuePacket(netPacket);
+                        var newPlayerPacket = new NewPlayerPacket(PlayerPlane);
+                        Host.EnqueuePacket(newPlayerPacket);
 
                         PlayerIDReceived?.Invoke(this, packet.ID.PlayerID);
                     }
@@ -560,32 +560,32 @@ namespace PolyPlane.Net
 
         public void SendNewBulletPacket(Bullet bullet)
         {
-            var netPacket = new GameObjectPacket(bullet, PacketTypes.NewBullet);
-            Host.EnqueuePacket(netPacket);
+            var bulletPacket = new GameObjectPacket(bullet, PacketTypes.NewBullet);
+            Host.EnqueuePacket(bulletPacket);
         }
 
         public void SendNewMissilePacket(GuidedMissile missile)
         {
-            var netPacket = new MissilePacket(missile, PacketTypes.NewMissile);
-            Host.EnqueuePacket(netPacket);
+            var missilePacket = new MissilePacket(missile, PacketTypes.NewMissile);
+            Host.EnqueuePacket(missilePacket);
         }
 
         public void SendSyncPacket()
         {
-            var packet = new SyncPacket(World.CurrentNetTimeMs(), World.TimeOfDay, World.TimeOfDayDir, World.GunsOnly, World.DT);
-            Host.EnqueuePacket(packet);
+            var syncPacket = new SyncPacket(World.CurrentNetTimeMs(), World.TimeOfDay, World.TimeOfDayDir, World.GunsOnly, World.DT);
+            Host.EnqueuePacket(syncPacket);
         }
 
         public void SendNewChatPacket(string message, string playerName)
         {
-            var packet = new ChatPacket(message.Trim(), playerName);
-            Host.EnqueuePacket(packet);
+            var chatPacket = new ChatPacket(message.Trim(), playerName);
+            Host.EnqueuePacket(chatPacket);
         }
 
         public void SendNewDecoyPacket(Decoy decoy)
         {
-            var packet = new GameObjectPacket(decoy, PacketTypes.NewDecoy);
-            Host.EnqueuePacket(packet);
+            var decoyPacket = new GameObjectPacket(decoy, PacketTypes.NewDecoy);
+            Host.EnqueuePacket(decoyPacket);
         }
 
         public void ServerSendOtherPlanes()
@@ -888,13 +888,9 @@ namespace PolyPlane.Net
                 var decoy = new Decoy(decoyOwner, decoyOwner.ExhaustPosition, decoyPacket.Velocity);
                 decoy.IsNetObject = true;
                 decoy.ID = decoyPacket.ID;
-
                 decoyPacket.SyncObj(decoy);
 
                 _objs.EnqueueDecoy(decoy);
-
-                if (IsServer)
-                    Host.EnqueuePacket(decoyPacket);
             }
             else
             {

@@ -73,6 +73,7 @@ namespace PolyPlane.Net.NetHost
                 or PacketTypes.ChatMessage
                 or PacketTypes.NewBullet
                 or PacketTypes.NewMissile
+                or PacketTypes.NewDecoy
                 or PacketTypes.Impact
                 or PacketTypes.PlayerDisconnect
                 or PacketTypes.PlayerReset
