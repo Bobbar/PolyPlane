@@ -20,7 +20,6 @@ namespace PolyPlane.GameObjects
         private float _visibleVelo = 0f;
         private float _maxGs = 0f;
         private SmoothPoint _veloSmooth = new SmoothPoint(10);
-        private bool _spawn = false;
 
         public Vapor(GameObject obj, GameObject owner, D2DPoint offset, float radius, float visibleGs, float visibleVelo, float maxGs)
         {
@@ -33,7 +32,8 @@ namespace PolyPlane.GameObjects
             _visibleVelo = visibleVelo;
             _maxGs = maxGs;
 
-            _spawnTimer.TriggerCallback = () => { _spawn = true; };
+            _spawnTimer.TriggerCallback = () => SpawnPart();
+
             _spawnTimer.Start();
         }
 
@@ -60,13 +60,6 @@ namespace PolyPlane.GameObjects
 
             if (_parts.Count == 0 && !_spawnTimer.IsRunning)
                 this.IsExpired = true;
-
-            if (_spawn)
-            {
-                _spawn = false;
-
-                SpawnPart(dt);
-            }
         }
 
         public override void Render(RenderContext ctx)
@@ -87,14 +80,14 @@ namespace PolyPlane.GameObjects
             _refPos.FlipY();
         }
 
-        private void SpawnPart(float dt)
+        private void SpawnPart()
         {
             _refPos.Update(0f);
             D2DPoint newPos = _refPos.GameObject.Position;
             D2DPoint newVelo = _veloSmooth.Add(this.Velocity);
 
             // Start the vapor parts one frame backwards.
-            newPos -= newVelo.Normalized() * newVelo.Length() * dt;
+            newPos -= newVelo.Normalized() * newVelo.Length() * World.DT;
 
             float gforce = 0f;
             var veloMag = newVelo.Length();
@@ -194,9 +187,13 @@ namespace PolyPlane.GameObjects
 
             public override void Render(RenderContext ctx)
             {
-                base.Render(ctx);
                 const float MIN_VELO = 800f;
                 const float VELO_MOVE_AMT = 40f;
+
+                base.Render(ctx);
+
+                if (this.Color.a < 0.01f)
+                    return;
 
                 // Move the ellipse backwards as velo increases.
                 var veloFact = Utilities.Factor(this.Owner.Velocity.Length() - MIN_VELO, MIN_VELO);
