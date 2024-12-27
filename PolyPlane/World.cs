@@ -19,6 +19,7 @@ namespace PolyPlane
         public const int TARGET_FPS = 60; // Primary FPS target. Change this to match the desired refresh rate.
         public const int NET_SERVER_FPS = 60;
         public const int NET_CLIENT_FPS = TARGET_FPS;
+        public const float NET_INTERP_AMOUNT = 70f; // Amount of time in milliseconds for the interpolation buffer.
 
         static World()
         {

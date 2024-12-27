@@ -131,7 +131,6 @@ namespace PolyPlane.GameObjects
         protected Random _rnd => Utilities.Rnd;
         protected InterpolationBuffer<GameObjectPacket> InterpBuffer = null;
         protected HistoricalBuffer<GameObjectPacket> HistoryBuffer = null;
-        protected SmoothPoint _posSmooth = null;
 
         protected float _rotationSpeed = 0f;
         protected float _rotation = 0f;
@@ -148,16 +147,11 @@ namespace PolyPlane.GameObjects
 
             if (World.IsNetGame && (this is FighterPlane || this is GuidedMissile))
             {
-                _posSmooth = new SmoothPoint(5);
-
                 if (HistoryBuffer == null)
-                {
-                    HistoryBuffer = new HistoricalBuffer<GameObjectPacket>();
-                    HistoryBuffer.Interpolate = GetInterpState;
-                }
+                    HistoryBuffer = new HistoricalBuffer<GameObjectPacket>(GetInterpState);
 
                 if (InterpBuffer == null)
-                    InterpBuffer = new InterpolationBuffer<GameObjectPacket>(World.SERVER_TICK_RATE, InterpObject);
+                    InterpBuffer = new InterpolationBuffer<GameObjectPacket>(World.NET_INTERP_AMOUNT, InterpObject);
             }
         }
 
@@ -364,7 +358,7 @@ namespace PolyPlane.GameObjects
         {
             var state = GetInterpState(from, to, pctElapsed);
 
-            this.Position = _posSmooth.Add(state.Position);
+            this.Position = state.Position;
             this.Velocity = state.Velocity;
             this.Rotation = state.Rotation;
         }
@@ -373,8 +367,8 @@ namespace PolyPlane.GameObjects
         {
             var state = new GameObjectPacket();
 
-            state.Position = (from.Position + (to.Position - from.Position) * (float)pctElapsed);
-            state.Velocity = (from.Velocity + (to.Velocity - from.Velocity) * (float)pctElapsed);
+            state.Position = D2DPoint.Lerp(from.Position, to.Position, (float)pctElapsed);
+            state.Velocity = D2DPoint.Lerp(from.Velocity, to.Velocity, (float)pctElapsed);
             state.Rotation = Utilities.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
 
             return state;

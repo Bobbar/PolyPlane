@@ -25,9 +25,9 @@ namespace PolyPlane.Helpers
 
         public static float LerpAngle(float value1, float value2, float amount)
         {
-            float delta = Repeat(value2 - value1, 360);
-            if (delta > 180)
-                delta -= 360;
+            float delta = Repeat(value2 - value1, 360f);
+            if (delta > 180f)
+                delta -= 360f;
 
             var ret = value1 + delta * Clamp01(amount);
 

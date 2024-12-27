@@ -4,15 +4,11 @@
     {
         private const int MAX_HIST = 50;
         private List<BufferEntry<T>> _history = new List<BufferEntry<T>>();
-        public Func<T, T, double, T> Interpolate;
-        public HistoricalBuffer()
-        {
-
-        }
+        private  Func<T, T, double, T> _interpolate;
 
         public HistoricalBuffer(Func<T, T, double, T> interpolate)
         {
-            Interpolate = interpolate;
+            _interpolate = interpolate;
         }
 
         public void Enqueue(T state, double timestamp)
@@ -37,7 +33,7 @@
                 if (entry1.UpdatedAt <= timestamp && entry2.UpdatedAt >= timestamp)
                 {
                     var pctElapsed = (timestamp - entry1.UpdatedAt) / (entry2.UpdatedAt - entry1.UpdatedAt);
-                    return Interpolate(entry1.State, entry2.State, pctElapsed);
+                    return _interpolate(entry1.State, entry2.State, pctElapsed);
                 }
             }
 
