@@ -480,13 +480,30 @@ namespace PolyPlane.Net
                     plane.Rotation = impact.Rotation;
                     plane.Velocity = impact.Velocity;
                     plane.Position = impact.Position;
+
+                    // Flip the plane poly to match the state from the impact packet.
+                    bool flipped = false;
+
+                    if (plane.Polygon.IsFlipped != impact.WasFlipped)
+                    {
+                        plane.FlipPoly(true);
+                        flipped = true;
+                    }
+
                     plane.SyncFixtures();
 
                     plane.AddImpact(impact.ImpactPoint, impact.ImpactAngle);
 
+                    if (impact.WasHeadshot)
+                        plane.WasHeadshot = true;
+
                     plane.Rotation = ogState.Rotation;
                     plane.Velocity = ogState.Velocity;
                     plane.Position = ogState.Position;
+
+                    if (flipped)
+                        plane.FlipPoly(true);
+
                     plane.SyncFixtures();
                 }
             }
@@ -665,7 +682,7 @@ namespace PolyPlane.Net
 
         public void SendNetImpact(GameObject impactor, GameObject target, PlaneImpactResult result, GameObjectPacket histState)
         {
-            var impactPacket = new ImpactPacket(target, impactor.ID, result.ImpactPoint, result.ImpactAngle, result.DamageAmount, result.WasHeadshot, result.Type);
+            var impactPacket = new ImpactPacket(target, impactor.ID, result.ImpactPoint, result.ImpactAngle, result.DamageAmount, result.WasHeadshot, result.WasFlipped, result.Type);
             impactPacket.OwnerID = impactor.Owner.ID;
 
             SaveImpact(impactPacket);
@@ -809,15 +826,27 @@ namespace PolyPlane.Net
 
                     target.Rotation = packet.Rotation;
                     target.Position = packet.Position;
+
+                    // Flip the plane poly to match the state from the impact packet.
+                    bool flipped = false;
+
+                    if (target.Polygon.IsFlipped != packet.WasFlipped)
+                    {
+                        target.FlipPoly(true);
+                        flipped = true;
+                    }
+
                     target.SyncFixtures();
 
-                    var impactPoint = packet.ImpactPoint;
-                    var result = new PlaneImpactResult(packet.ImpactType, impactPoint, packet.ImpactAngle, packet.DamageAmount, packet.WasHeadshot);
-
+                    var result = new PlaneImpactResult(packet.ImpactType, packet.ImpactPoint, packet.ImpactAngle, packet.DamageAmount, packet.WasHeadshot, packet.WasFlipped);
                     target.HandleImpactResult(impactor, result, dt);
 
                     target.Rotation = ogState.Rotation;
                     target.Position = ogState.Position;
+
+                    if (flipped)
+                        target.FlipPoly(true);
+
                     target.SyncFixtures();
                 }
             }

@@ -672,6 +672,7 @@ namespace PolyPlane.Net
         public float ImpactAngle;
         public float DamageAmount;
         public bool WasHeadshot;
+        public bool WasFlipped;
 
         public ImpactPacket(BitBuffer data)
         {
@@ -689,6 +690,18 @@ namespace PolyPlane.Net
             ImpactType = impactType;
         }
 
+        public ImpactPacket(GameObject targetObj, GameID impactorID, D2DPoint point, float angle, float damageAmt, bool wasHeadshot, bool wasFlipped, ImpactType impactType) : base(targetObj)
+        {
+            Type = PacketTypes.Impact;
+            ImpactorID = impactorID;
+            ImpactPoint = point;
+            ImpactAngle = angle;
+            WasHeadshot = wasHeadshot;
+            WasFlipped = wasFlipped;
+            DamageAmount = damageAmt;
+            ImpactType = impactType;
+        }
+
         public override void Serialize(BitBuffer data)
         {
             base.Serialize(data);
@@ -699,6 +712,7 @@ namespace PolyPlane.Net
             data.AddFloat(ImpactAngle);
             data.AddFloat(DamageAmount);
             data.AddBool(WasHeadshot);
+            data.AddBool(WasFlipped);
         }
 
         public override void Deserialize(BitBuffer data)
@@ -711,6 +725,7 @@ namespace PolyPlane.Net
             ImpactAngle = data.ReadFloat();
             DamageAmount = data.ReadFloat();
             WasHeadshot = data.ReadBool();
+            WasFlipped = data.ReadBool();
         }
     }
 

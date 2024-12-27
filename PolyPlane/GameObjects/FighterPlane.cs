@@ -964,6 +964,7 @@ namespace PolyPlane.GameObjects
             var result = new PlaneImpactResult();
             result.ImpactPoint = impactPos;
             result.ImpactAngle = angle;
+            result.WasFlipped = this.Polygon.IsFlipped;
 
             if (!IsDisabled)
             {
@@ -1197,12 +1198,6 @@ namespace PolyPlane.GameObjects
         private void CheckForFlip()
         {
             var pointingRight = Utilities.ClampAngle180(_gForceDirection - this.Rotation) < 0f;
-
-            // For net planes we don't have an accurate g-force measurement,
-            // so estimate using the current velocity angle.
-            if (this.IsNetObject)
-                pointingRight = Utilities.ClampAngle180((this.Velocity.Angle() + 180f) - this.Rotation) < 0f;
-
             FlipPoly(pointingRight ? Direction.Right : Direction.Left);
         }
 

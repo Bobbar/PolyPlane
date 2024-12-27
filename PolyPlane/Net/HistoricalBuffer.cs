@@ -23,8 +23,6 @@
 
         public T GetHistoricalState(double timestamp)
         {
-            var now = World.CurrentNetTimeMs();
-
             for (int i = 0; i < _history.Count - 1; i++)
             {
                 var entry1 = _history[i];
