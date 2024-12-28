@@ -485,35 +485,9 @@ namespace PolyPlane.GameObjects
                 // Compute g-force.
                 var totForce = (thrust / this.Mass * partialDT) + (wingForce / this.Mass * partialDT);
                 var gforce = totForce.Length() / partialDT / World.Gravity.Y;
-                _gforceAvg.Add(gforce);
+                _gForce = _gforceAvg.Add(gforce);
                 _gForceDirection = totForce.Angle();
             }
-
-            // Check for wing and engine damage.
-            // If the plane polygon gets distorted to the point
-            // that a wing attachment or engine are no longer
-            // within the polygon, we consider them damaged.
-            foreach (var wing in _wings)
-            {
-                if (wing.Visible && !Utilities.PointInPoly(wing.PivotPoint.Position, this.Polygon.Poly))
-                {
-                    wing.Visible = false;
-
-                    SpawnDebris(1, wing.Position, D2DColor.Gray);
-                }
-            }
-
-            // Check for engine damage.
-            if (this.ThrustOn && !this.EngineDamaged && !Utilities.PointInPoly(_centerOfThrust.Position, this.Polygon.Poly))
-            {
-                _engineFireFlame.StartSpawning();
-                this.EngineDamaged = true;
-
-                // Spool down thrust gradually.
-                _engineOutSpoolDown.Start();
-            }
-
-            _gForce = _gforceAvg.Current;
 
             // Update all the low frequency stuff.
             _flamePos.Update(dt);
@@ -894,6 +868,33 @@ namespace PolyPlane.GameObjects
             _bulletHoles.Add(bulletHole);
         }
 
+        private void CheckForDamageEffects()
+        {
+            // Check for wing and engine damage.
+            // If the plane polygon gets distorted to the point
+            // that a wing attachment or engine are no longer
+            // within the polygon, we consider them damaged.
+            foreach (var wing in _wings)
+            {
+                if (wing.Visible && !Utilities.PointInPoly(wing.PivotPoint.Position, this.Polygon.Poly))
+                {
+                    wing.Visible = false;
+
+                    SpawnDebris(1, wing.Position, D2DColor.Gray);
+                }
+            }
+
+            // Check for engine damage.
+            if (this.ThrustOn && !this.EngineDamaged && !Utilities.PointInPoly(_centerOfThrust.Position, this.Polygon.Poly))
+            {
+                _engineFireFlame.StartSpawning();
+                this.EngineDamaged = true;
+
+                // Spool down thrust gradually.
+                _engineOutSpoolDown.Start();
+            }
+        }
+
         public void HandleImpactResult(GameObject impactor, PlaneImpactResult result, float dt)
         {
             var attackPlane = impactor.Owner as FighterPlane;
@@ -917,8 +918,13 @@ namespace PolyPlane.GameObjects
                 if (impactor is GuidedMissile)
                     distortAmt = MISSILE_DISTORT_AMT;
 
+                // Add bullet hole and polygon distortion.
                 AddBulletHole(ogPos, angle, distortAmt);
 
+                // Check for polygon distortion related damage effects.
+                CheckForDamageEffects();
+
+                // Push and twist the plane accordingly.
                 DoImpactImpulse(impactor, result.ImpactPoint, dt);
             }
 
