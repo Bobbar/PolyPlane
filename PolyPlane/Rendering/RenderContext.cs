@@ -260,6 +260,19 @@ namespace PolyPlane.Rendering
             Gfx.DrawLineClamped(Viewport, start, end, color, weight, dashStyle, startCap, endCap);
         }
 
+        public void DrawLineWithLighting(D2DPoint start, D2DPoint end, D2DColor color, float maxIntensity, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid, D2DCapStyle startCap = D2DCapStyle.Flat, D2DCapStyle endCap = D2DCapStyle.Flat)
+        {
+            if (World.UseLightMap)
+            {
+                var lightedColor = LightMap.SampleColor((start + end) * 0.5f, color, 0f, maxIntensity * _currentLightingFactor);
+                DrawLine(start, end, lightedColor, weight, dashStyle, startCap, endCap);
+            }
+            else
+            {
+                DrawLine(start, end, color, weight, dashStyle, startCap, endCap);
+            }
+        }
+
         public void DrawPolygon(RenderPoly poly, D2DColor strokeColor, float strokeWidth, D2DColor fillColor)
         {
             DrawPolygon(poly.Poly, strokeColor, strokeWidth, D2DDashStyle.Solid, fillColor);

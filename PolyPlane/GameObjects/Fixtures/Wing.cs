@@ -82,6 +82,8 @@ namespace PolyPlane.GameObjects.Fixtures
         {
             base.Render(ctx);
 
+            const float LIGHT_INTENSITY = 0.4f;
+
             //// Draw a fixed box behind the moving wing. Helps to visualize deflection.
             //var fixedVec = Utilities.AngleToVectorDegrees(this.Rotation - this.Deflection);
             //var startB = this.Position - fixedVec * RenderLength;
@@ -100,8 +102,8 @@ namespace PolyPlane.GameObjects.Fixtures
                 var wingVec = Utilities.AngleToVectorDegrees(Rotation, _params.RenderLength);
                 var start = Position - wingVec;
                 var end = Position + wingVec;
-                ctx.DrawLine(start, end, D2DColor.Black, _params.RenderWidth + 0.5f, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
-                ctx.DrawLine(start, end, D2DColor.Gray, _params.RenderWidth, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+                ctx.DrawLineWithLighting(start, end, D2DColor.Black, LIGHT_INTENSITY, _params.RenderWidth + 0.5f, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+                ctx.DrawLineWithLighting(start, end, D2DColor.Gray, LIGHT_INTENSITY, _params.RenderWidth, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
             }
 
             if (World.ShowAero)

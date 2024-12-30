@@ -741,8 +741,8 @@ namespace PolyPlane.GameObjects
 
             var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
 
-            ctx.FillEllipse(cockpitEllipse, WasHeadshot ? D2DColor.DarkRed : _cockpitColor);
-            ctx.DrawEllipse(cockpitEllipse, D2DColor.Black, 0.5f);
+            ctx.FillEllipseWithLighting(cockpitEllipse, WasHeadshot ? D2DColor.DarkRed : _cockpitColor, maxIntensity: 0.6f);
+            ctx.DrawEllipse(cockpitEllipse, D2DColor.Black.WithAlpha(0.5f), 0.5f);
 
             ctx.PopTransform();
         }
