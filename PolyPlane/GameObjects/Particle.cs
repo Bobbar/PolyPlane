@@ -60,7 +60,7 @@ namespace PolyPlane.GameObjects
 
             var color = Color;
 
-            ctx.FillEllipseWithLighting(Ellipse, color, 0.6f);
+            ctx.FillEllipseWithLighting(Ellipse, color, maxIntensity: 0.6f);
         }
 
         public override void Dispose()

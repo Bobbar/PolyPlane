@@ -643,6 +643,8 @@ namespace PolyPlane.Rendering
             if (_groundClipLayer == null)
                 _groundClipLayer = ctx.Device.CreateLayer();
 
+            const float LIGHT_INTENSITY = 0.4f;
+
             var rect = new D2DRect(ctx.Viewport.Location.X, 0f, ctx.Viewport.Width, 4000f);
 
             using (var clipGeo = ctx.Device.CreateRectangleGeometry(rect))
@@ -662,8 +664,8 @@ namespace PolyPlane.Rendering
                         if (impact.Age >= GroundImpact.START_FADE_AGE)
                             ageAlpha = 1f - Utilities.FactorWithEasing(impact.Age - GroundImpact.START_FADE_AGE, GroundImpact.MAX_AGE - GroundImpact.START_FADE_AGE, EasingFunctions.In.EaseExpo);
 
-                        ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), _groundImpactOuterColor.WithAlpha(ageAlpha), 0.4f);
-                        ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), _groundImpactInnerColor.WithAlpha(ageAlpha), 0.4f);
+                        ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), _groundImpactOuterColor.WithAlpha(ageAlpha), LIGHT_INTENSITY);
+                        ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), _groundImpactInnerColor.WithAlpha(ageAlpha), LIGHT_INTENSITY);
 
                         ctx.PopTransform();
                     }
@@ -780,7 +782,7 @@ namespace PolyPlane.Rendering
         {
             var color = shadowColor.WithAlpha(0.07f);
             foreach (var plane in _objs.Planes)
-                ctx.DrawPolygon(plane.Polygon.Poly, color, 0f, D2DDashStyle.Solid, color);
+                ctx.FillPolygon(plane.Polygon, color);
         }
 
         private void DrawLightFlareEffects(RenderContext ctx, IEnumerable<GameObject> objs)

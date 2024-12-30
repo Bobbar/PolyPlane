@@ -11,6 +11,7 @@ namespace PolyPlane.Rendering
         public D2DColor TrunkColor;
         public D2DColor LeafColor;
         protected const float LIGHT_INTENSITY = 0.5f;
+        protected const float SHADOW_LEN_SCALE = 2f;
 
         public Tree(D2DPoint position, float height, D2DColor trunkColor, D2DColor leafColor)
         {
@@ -77,30 +78,30 @@ namespace PolyPlane.Rendering
             var normalLeafPos = this.Position + leafYPos;
             var shadowAngle = GetShadowAngle();
             var size = new D2DSize(this.Radius, this.Radius);
-
+           
             // Draw shadow.
             ctx.PushTransform();
             ctx.RotateTransform(shadowAngle, this.Position);
 
-            Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, D2DPoint.Zero, 0f, this.Position, scale, scale * 2f);
+            Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, D2DPoint.Zero, 0f, this.Position, scale, scale * SHADOW_LEN_SCALE);
 
             // Adjust the bottom two points of the shadow to line up with the bottom of the trunk.
             _trunkTransPoly[0] = Utilities.ApplyTranslation(TrunkPoly[0], -shadowAngle, this.Position, scale);
             _trunkTransPoly[1] = Utilities.ApplyTranslation(TrunkPoly[1], -shadowAngle, this.Position, scale);
 
-            ctx.Gfx.DrawPolygon(_trunkTransPoly, shadowColor, 0f, D2DDashStyle.Solid, shadowColor);
+            ctx.FillPolygon(_trunkTransPoly, shadowColor);
 
-            ctx.ScaleTransform(1f, 2f, this.Position);
+            ctx.ScaleTransform(1f, SHADOW_LEN_SCALE, this.Position);
 
-            ctx.Gfx.FillEllipse(new D2DEllipse(shadowLeafPos, size), shadowColor);
+            ctx.FillEllipse(new D2DEllipse(shadowLeafPos, size), shadowColor);
 
             ctx.PopTransform();
 
             // Draw tree.
             Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, 180f, this.Position, scale);
 
-            var trunkPos = this.Position + (-D2DPoint.UnitY * (TotalHeight * 1f));
-            ctx.DrawPolygonWithLighting(_trunkTransPoly, trunkPos, trunkColor, 0f, D2DDashStyle.Solid, trunkColor, LIGHT_INTENSITY);
+            var trunkPos = this.Position + (-D2DPoint.UnitY * TotalHeight);
+            ctx.FillPolygonWithLighting(_trunkTransPoly, trunkPos, trunkColor, LIGHT_INTENSITY);
 
             ctx.PushTransform();
             ctx.TranslateTransform(normalLeafPos * ctx.CurrentScale);
@@ -112,7 +113,7 @@ namespace PolyPlane.Rendering
 
             // Add ToD color overlay.
             leafEllipse.origin = normalLeafPos;
-            ctx.FillEllipseWithLighting(new D2DEllipse(normalLeafPos, size), leafToDColor, LIGHT_INTENSITY);
+            ctx.FillEllipseWithLighting(leafEllipse, leafToDColor, LIGHT_INTENSITY);
         }
     }
 
@@ -169,18 +170,18 @@ namespace PolyPlane.Rendering
             ctx.PushTransform();
             ctx.RotateTransform(shadowAngle, this.Position);
 
-            Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, D2DPoint.Zero, 0f, this.Position, 1f, 2f);
+            Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, D2DPoint.Zero, 0f, this.Position, 1f, SHADOW_LEN_SCALE);
 
             //Adjust the bottom two points of the shadow to line up with the bottom of the trunk.
             _trunkTransPoly[0] = Utilities.ApplyTranslation(TrunkPoly[0], -shadowAngle, this.Position, 1f);
             _trunkTransPoly[1] = Utilities.ApplyTranslation(TrunkPoly[1], -shadowAngle, this.Position, 1f);
 
-            ctx.DrawPolygon(_trunkTransPoly, shadowColor, 0f, D2DDashStyle.Solid, shadowColor);
+            ctx.FillPolygon(_trunkTransPoly, shadowColor);
 
-            ctx.ScaleTransform(1f, 2f, this.Position);
+            ctx.ScaleTransform(1f, SHADOW_LEN_SCALE, this.Position);
             Utilities.ApplyTranslation(TopPoly, _topTrans, 0f, shadowTopPos, scale);
 
-            ctx.DrawPolygon(_topTrans, shadowColor, 0f, D2DDashStyle.Solid, shadowColor);
+            ctx.FillPolygon(_topTrans, shadowColor);
 
             ctx.PopTransform();
 
@@ -190,8 +191,8 @@ namespace PolyPlane.Rendering
 
             // Center Y position.
             var centerPos = this.Position + (-D2DPoint.UnitY * (TotalHeight * 2f));
-            ctx.DrawPolygonWithLighting(_trunkTransPoly, centerPos, trunkColor, 0f, D2DDashStyle.Solid, trunkColor, LIGHT_INTENSITY);
-            ctx.DrawPolygonWithLighting(_topTrans, centerPos, leafColor, 0f, D2DDashStyle.Solid, leafColor, LIGHT_INTENSITY);
+            ctx.FillPolygonWithLighting(_trunkTransPoly, centerPos, trunkColor, LIGHT_INTENSITY);
+            ctx.FillPolygonWithLighting(_topTrans, centerPos, leafColor, LIGHT_INTENSITY);
         }
     }
 }

@@ -44,11 +44,13 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
+            const float LIGHT_INTENSITY = 0.3f;
+
             var outColor = this.Color;
             var holeColor = D2DColor.Black;
 
-            ctx.FillEllipseWithLighting(new D2DEllipse(this.Position, this.OuterHoleSize), outColor, 0.3f);
-            ctx.FillEllipseWithLighting(new D2DEllipse(this.Position, this.HoleSize), holeColor, 0.3f);
+            ctx.FillEllipseWithLighting(new D2DEllipse(this.Position, this.OuterHoleSize), outColor, LIGHT_INTENSITY);
+            ctx.FillEllipseWithLighting(new D2DEllipse(this.Position, this.HoleSize), holeColor, LIGHT_INTENSITY);
         }
 
         private D2DColor GetColor()

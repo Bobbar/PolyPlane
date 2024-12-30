@@ -260,24 +260,42 @@ namespace PolyPlane.Rendering
             Gfx.DrawLineClamped(Viewport, start, end, color, weight, dashStyle, startCap, endCap);
         }
 
+        public void DrawPolygon(RenderPoly poly, D2DColor strokeColor, float strokeWidth, D2DColor fillColor)
+        {
+            DrawPolygon(poly.Poly, strokeColor, strokeWidth, D2DDashStyle.Solid, fillColor);
+        }
+
         public void DrawPolygon(D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
         {
             Gfx.DrawPolygonClamped(Viewport, points, strokeColor, strokeWidth, dashStyle, fillColor);
         }
 
-        public void DrawPolygonWithLighting(RenderPoly poly, D2DPoint centerPos, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor, float maxIntensity)
+        public void FillPolygon(D2DPoint[] points, D2DColor fillColor)
         {
-            DrawPolygonWithLighting(poly.Poly, centerPos, strokeColor, strokeWidth, dashStyle, fillColor, maxIntensity);
+            Gfx.DrawPolygonClamped(Viewport, points, D2DColor.Transparent, 0f, D2DDashStyle.Solid, fillColor);
         }
 
-        public void DrawPolygon(RenderPoly poly, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
+        public void FillPolygon(RenderPoly poly, D2DColor fillColor)
         {
-            Gfx.DrawPolygonClamped(Viewport, poly, strokeColor, strokeWidth, dashStyle, fillColor);
+            Gfx.DrawPolygonClamped(Viewport, poly.Poly, D2DColor.Transparent, 0f, D2DDashStyle.Solid, fillColor);
         }
 
-        public void DrawPolygon(D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DBrush fillBrush)
+        public void FillPolygonWithLighting(D2DPoint[] points, D2DPoint centerPos, D2DColor fillColor, float maxIntensity)
         {
-            Gfx.DrawPolygonClamped(Viewport, points, strokeColor, strokeWidth, dashStyle, fillBrush);
+            if (World.UseLightMap)
+            {
+                var lightedColor = LightMap.SampleColor(centerPos, fillColor, 0, maxIntensity * _currentLightingFactor);
+                FillPolygon(points, lightedColor);
+            }
+            else
+            {
+                FillPolygon(points, fillColor);
+            }
+        }
+
+        public void DrawPolygonWithLighting(RenderPoly poly, D2DPoint centerPos, D2DColor strokeColor, float strokeWidth, D2DColor fillColor, float maxIntensity)
+        {
+            DrawPolygonWithLighting(poly.Poly, centerPos, strokeColor, strokeWidth, D2DDashStyle.Solid, fillColor, maxIntensity);
         }
 
         public void DrawPolygonWithLighting(D2DPoint[] points, D2DPoint centerPos, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor, float maxIntensity)

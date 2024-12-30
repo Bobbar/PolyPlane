@@ -418,10 +418,10 @@ namespace PolyPlane.GameObjects
             UpdateFlame();
 
             if (FlameOn)
-                ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
+                ctx.DrawPolygon(this.FlamePoly, _flameFillColor, 1f, _flameFillColor);
 
             var fillColor = D2DColor.White;
-            ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 0.3f, D2DDashStyle.Solid, fillColor);
+            ctx.DrawPolygon(this.Polygon, D2DColor.Black, 0.3f, fillColor);
 
             if (_useControlSurfaces)
             {
@@ -432,9 +432,9 @@ namespace PolyPlane.GameObjects
 
             if (World.ShowTracking && _guidance != null)
             {
-                ctx.FillEllipse(new D2DEllipse(_guidance.CurrentAimPoint, new D2DSize(50f, 50f)), D2DColor.LawnGreen);
-                ctx.FillEllipse(new D2DEllipse(_guidance.StableAimPoint, new D2DSize(40f, 40f)), D2DColor.Blue);
-                ctx.FillEllipse(new D2DEllipse(_guidance.ImpactPoint, new D2DSize(30f, 30f)), D2DColor.Red);
+                ctx.FillEllipseSimple(_guidance.CurrentAimPoint, 50f, D2DColor.LawnGreen);
+                ctx.FillEllipseSimple(_guidance.StableAimPoint, 40f, D2DColor.Blue);
+                ctx.FillEllipseSimple(_guidance.ImpactPoint, 30f, D2DColor.Red);
 
                 ctx.DrawLine(this.Position, _guidance.CurrentAimPoint, D2DColor.LawnGreen, 5f);
                 ctx.DrawLine(this.Position, _guidance.StableAimPoint, D2DColor.Blue, 5f);

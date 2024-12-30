@@ -71,7 +71,7 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
-            ctx.DrawPolygon(this.Polygon, D2DColor.Black, 1f, D2DDashStyle.Solid, D2DColor.Yellow);
+            ctx.DrawPolygon(this.Polygon, D2DColor.Black, 1f, D2DColor.Yellow);
         }
 
         float ILightMapContributor.GetLightRadius()

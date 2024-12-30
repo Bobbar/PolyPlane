@@ -570,7 +570,7 @@ namespace PolyPlane.GameObjects
                 var velo = (this.Velocity + (this.Velocity * 0.4f)) + new D2DPoint(Utilities.Rnd.NextFloat(-150f, 150f), 0f);
                 var groundPos = new D2DPoint(this.Position.X - (this.Velocity.X * 0.2f) + Utilities.Rnd.NextFloat(-100f, 100f), 0f);
 
-                Particle.SpawnParticle(this, groundPos, velo, radius, dustColor.WithAlpha(alpha), dustColor.WithAlpha(1f), ParticleType.Dust);
+                Particle.SpawnParticle(this, groundPos, velo, radius, dustColor.WithAlpha(alpha), dustColor, ParticleType.Dust);
             }
         }
 
@@ -581,12 +581,12 @@ namespace PolyPlane.GameObjects
             _vaporTrails.ForEach(v => v.Render(ctx));
 
             if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
-                ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
+                ctx.DrawPolygon(this.FlamePoly, _flameFillColor, 1f, _flameFillColor);
 
             if (!this.IsDisabled)
                 DrawShockwave(ctx);
 
-            ctx.DrawPolygonWithLighting(this.Polygon, this.Position, D2DColor.Black.WithAlpha(0.3f), 0.5f, D2DDashStyle.Solid, _planeColor, 0.6f);
+            ctx.DrawPolygonWithLighting(this.Polygon, this.Position, D2DColor.Black.WithAlpha(0.3f), 0.5f, _planeColor, maxIntensity: 0.6f);
 
             DrawClippedObjects(ctx);
             _wings.ForEach(w => w.Render(ctx));

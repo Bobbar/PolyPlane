@@ -19,6 +19,7 @@ namespace PolyPlane.Rendering
 
         private readonly D2DColor _cloudColorLight = D2DColor.WhiteSmoke;
         private readonly D2DColor _cloudColorDark = new D2DColor(1f, 0.6f, 0.6f, 0.6f);
+        private const float LIGHT_INTENSITY = 0.7f;
 
         public Cloud(D2DPoint position, List<D2DPoint> points, List<D2DSize> dims, float rotation)
         {
@@ -80,7 +81,7 @@ namespace PolyPlane.Rendering
                 color = Utilities.LerpColor(color, todColor, 0.5f);
 
                 // Draw cloud part with lighting.
-                ctx.FillEllipseWithLighting(new D2DEllipse(point, dims), color, 0.7f);
+                ctx.FillEllipseWithLighting(new D2DEllipse(point, dims), color, LIGHT_INTENSITY);
             }
         }
 

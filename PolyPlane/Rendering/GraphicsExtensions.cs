@@ -151,7 +151,6 @@ namespace PolyPlane.Rendering
                 OffScreen++;
         }
 
-
         public static void DrawPolygonClamped(this D2DGraphics gfx, D2DRect viewport, D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DBrush fillBrush)
         {
             if (viewport.Contains(points))
