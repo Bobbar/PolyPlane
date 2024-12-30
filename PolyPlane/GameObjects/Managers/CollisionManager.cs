@@ -336,24 +336,12 @@ namespace PolyPlane.GameObjects.Manager
                     if (World.IsClient && obj.IsNetObject)
                         continue;
 
-                    if (obj is not IPushable)
-                        continue;
-
                     var dist = explosion.Position.DistanceTo(obj.Position) + float.Epsilon;
                     var effectRadius = explosion.Radius * 1.2f;
 
                     if (dist <= effectRadius)
                     {
-                        // Impart an impulse on other nearby objects.
                         var forceFact = 1f - Utilities.FactorWithEasing(dist, effectRadius, EasingFunctions.Out.EaseCircle) + 0.1f;
-
-                        var dir = (obj.Position - explosion.Position);
-                        var dirNorm = dir.Normalized();
-                        var forceVec = dirNorm * (FORCE * forceFact);
-                        obj.Velocity += forceVec / obj.Mass * dt;
-
-                        if (!obj.IsAwake)
-                            obj.IsAwake = true;
 
                         if (obj is FighterPlane plane && explosion.Owner is GuidedMissile missile)
                         {
@@ -370,9 +358,24 @@ namespace PolyPlane.GameObjects.Manager
 
                             }
                         }
-                        else if (obj is GuidedMissile detMissile) // Detonate any other missiles within the blast radius.
+                        else if (obj is GuidedMissile detMissile)
+                        {
+                            // Detonate any other missiles within the blast radius.
                             if (!detMissile.IsExpired)
                                 detMissile.IsExpired = true;
+                        }
+
+                        // Impart an impulse on other nearby pushable objects.
+                        if (obj is IPushable)
+                        {
+                            var dir = (obj.Position - explosion.Position);
+                            var dirNorm = dir.Normalized();
+                            var forceVec = dirNorm * (FORCE * forceFact);
+                            obj.Velocity += forceVec / obj.Mass * dt;
+
+                            if (!obj.IsAwake)
+                                obj.IsAwake = true;
+                        }
                     }
                 }
             }

@@ -44,7 +44,7 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
-            const float LIGHT_INTENSITY = 0.3f;
+            const float LIGHT_INTENSITY = 0.4f;
 
             var outColor = this.Color;
             var holeColor = D2DColor.Black;
