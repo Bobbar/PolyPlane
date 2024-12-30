@@ -565,7 +565,6 @@ namespace PolyPlane.Rendering
             {
                 if (obj is FighterPlane p)
                 {
-                    DrawPlaneGroundShadow(ctx, p, shadowColor, todAngle);
                     p.Render(ctx);
                     DrawMuzzleFlash(ctx, p);
 
@@ -598,7 +597,8 @@ namespace PolyPlane.Rendering
             _objs.Explosions.ForEach(e => e.Render(ctx));
 
             DrawClouds(ctx);
-            DrawPlaneCloudShadows(ctx, shadowColor);
+            DrawPlaneCloudShadows(ctx, shadowColor, objsInViewport);
+            DrawPlaneGroundShadows(ctx, shadowColor, todAngle);
             DrawLightFlareEffects(ctx, objsInViewport);
 
             //DrawNoise(ctx);
@@ -675,54 +675,6 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private void DrawPlaneGroundShadow(RenderContext ctx, FighterPlane plane, D2DColor shadowColor, float todAngle)
-        {
-            const float WIDTH_PADDING = 20f;
-            const float MAX_WIDTH = 120f;
-            const float HEIGHT = 10f;
-            const float MAX_SIZE_ALT = 500f;
-            const float MAX_SHOW_ALT = 2000f;
-            const float Y_POS = 15f;
-
-            if (plane.Altitude > MAX_SHOW_ALT)
-                return;
-
-            // Two offsets. One for ToD angle offset by 90 degrees, another offset by plane rotation.
-            var todAngleOffset = Utilities.ClampAngle(todAngle + 90f);
-            var todRotationOffset = Utilities.ClampAngle(todAngleOffset - plane.Rotation);
-
-            // Make a line segment to represent the plane's rotation in relation to the angle of the sun.
-            var lineA = new D2DPoint(0f, 0f);
-            var lineB = new D2DPoint(MAX_WIDTH, 0f);
-
-            // Rotate the segment.
-            lineA = Utilities.ApplyTranslation(lineA, todRotationOffset, D2DPoint.Zero);
-            lineB = Utilities.ApplyTranslation(lineB, todRotationOffset, D2DPoint.Zero);
-
-            // Get the abs diff between the X coords of the line to compute the initial shadow width.
-            var width = Math.Abs(lineB.X - lineA.X);
-            var initialWidth = ((width) * 0.5f) + WIDTH_PADDING;
-
-            // Find the ground intersection point for the shadow position.
-            var shadowPos = Utilities.GroundIntersectionPoint(plane, todAngle);
-
-            // Move the shadow position down to the desired Y position.
-            shadowPos += new D2DPoint(0f, Y_POS);
-
-            // Compute the shadow width and alpha per altitude and draw it.
-            var shadowWidth = Utilities.Lerp(1f, initialWidth, Utilities.Factor(MAX_SIZE_ALT, plane.Altitude));
-            var shadowAlpha = shadowColor.a * (1f - Utilities.FactorWithEasing(plane.Altitude, MAX_SHOW_ALT, EasingFunctions.In.EaseSine));
-
-            if (plane.Altitude <= 0f)
-                shadowWidth = initialWidth;
-
-            if (shadowWidth <= 0f)
-                return;
-
-            ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(shadowWidth, HEIGHT)), shadowColor.WithAlpha(shadowAlpha));
-        }
-
-
         private void DrawMuzzleFlash(RenderContext ctx, FighterPlane plane)
         {
             if (!ctx.Viewport.Contains(plane.Gun.Position))
@@ -778,11 +730,73 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private void DrawPlaneCloudShadows(RenderContext ctx, D2DColor shadowColor)
+        private void DrawPlaneCloudShadows(RenderContext ctx, D2DColor shadowColor, IEnumerable<GameObject> objs)
         {
+            // Don't bother if we are currently zoomed way out.
+            if (World.ZoomScale < 0.03f)
+                return;
+
             var color = shadowColor.WithAlpha(0.07f);
+
+            foreach (var obj in objs)
+            {
+                if (obj is FighterPlane plane)
+                    ctx.FillPolygon(plane.Polygon, color);
+            }
+        }
+
+        private void DrawPlaneGroundShadows(RenderContext ctx, D2DColor shadowColor, float todAngle)
+        {
+            const float WIDTH_PADDING = 20f;
+            const float MAX_WIDTH = 120f;
+            const float HEIGHT = 10f;
+            const float MAX_SIZE_ALT = 500f;
+            const float MAX_SHOW_ALT = 2000f;
+            const float Y_POS = 15f;
+
             foreach (var plane in _objs.Planes)
-                ctx.FillPolygon(plane.Polygon, color);
+            {
+                if (plane.Altitude > MAX_SHOW_ALT)
+                    continue;
+
+                // Find the ground intersection point for the shadow position.
+                var shadowPos = Utilities.GroundIntersectionPoint(plane, todAngle);
+
+                // Make sure it is inside the viewport.
+                if (!ctx.Viewport.Contains(shadowPos))
+                    continue;
+
+                // Two offsets. One for ToD angle offset by 90 degrees, another offset by plane rotation.
+                var todAngleOffset = Utilities.ClampAngle(todAngle + 90f);
+                var todRotationOffset = Utilities.ClampAngle(todAngleOffset - plane.Rotation);
+
+                // Make a line segment to represent the plane's rotation in relation to the angle of the sun.
+                var lineA = new D2DPoint(0f, 0f);
+                var lineB = new D2DPoint(MAX_WIDTH, 0f);
+
+                // Rotate the segment.
+                lineA = Utilities.ApplyTranslation(lineA, todRotationOffset, D2DPoint.Zero);
+                lineB = Utilities.ApplyTranslation(lineB, todRotationOffset, D2DPoint.Zero);
+
+                // Get the abs diff between the X coords of the line to compute the initial shadow width.
+                var width = Math.Abs(lineB.X - lineA.X);
+                var initialWidth = ((width) * 0.5f) + WIDTH_PADDING;
+
+                // Move the shadow position down to the desired Y position.
+                shadowPos += new D2DPoint(0f, Y_POS);
+
+                // Compute the shadow width and alpha per altitude and draw it.
+                var shadowWidth = Utilities.Lerp(1f, initialWidth, Utilities.Factor(MAX_SIZE_ALT, plane.Altitude));
+                var shadowAlpha = shadowColor.a * (1f - Utilities.FactorWithEasing(plane.Altitude, MAX_SHOW_ALT, EasingFunctions.In.EaseSine));
+
+                if (plane.Altitude <= 0f)
+                    shadowWidth = initialWidth;
+
+                if (shadowWidth <= 0f)
+                    return;
+
+                ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(shadowWidth, HEIGHT)), shadowColor.WithAlpha(shadowAlpha));
+            }
         }
 
         private void DrawLightFlareEffects(RenderContext ctx, IEnumerable<GameObject> objs)
