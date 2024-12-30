@@ -107,7 +107,7 @@ namespace PolyPlane.GameObjects
                 ctx.FillEllipse(new D2DEllipse(endPosition, new D2DSize(50f, 50f)), _trailColor);
         }
 
-        public override bool ContainedBy(D2DRect rect)
+        public override bool IsInViewport(D2DRect rect)
         {
             if (_trailQueue.Count == 0)
                 return false;

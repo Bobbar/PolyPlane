@@ -47,7 +47,7 @@ namespace PolyPlane.Rendering
 
             foreach (var obj in objs)
             {
-                if (obj.ContainedBy(_viewport))
+                if (obj.IsInViewport(_viewport))
                     AddObjContribution(obj);
             }
         }

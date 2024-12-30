@@ -72,7 +72,7 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
-            if (!this.ContainedBy(ctx.Viewport))
+            if (!this.IsInViewport(ctx.Viewport))
                 return;
 
             if (this.Age < Duration)
@@ -85,7 +85,7 @@ namespace PolyPlane.GameObjects
 
         }
 
-        public override bool ContainedBy(D2DRect rect)
+        public override bool IsInViewport(D2DRect rect)
         {
             var ret = rect.Contains(new D2DEllipse(this.Position, new D2DSize(_currentShockWaveRadius, _currentShockWaveRadius)))
                    || rect.Contains(new D2DEllipse(this.Position, new D2DSize(_currentRadius, _currentRadius)));

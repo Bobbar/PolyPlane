@@ -1,5 +1,7 @@
 ﻿using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
+using System.Drawing;
+using System.Windows.Forms;
 using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
@@ -9,10 +11,16 @@ namespace PolyPlane.Rendering
     /// </summary>
     public class RenderContext
     {
+        /// <summary>
+        /// Reference to raw <see cref="D2DGraphics"/> without viewport clipping.
+        /// </summary>
         public readonly D2DGraphics Gfx;
         public readonly D2DDevice Device;
         public D2DRect Viewport;
         public readonly LightMap LightMap;
+
+        public static int OnScreen = 0;
+        public static int OffScreen = 0;
 
         public float CurrentScale
         {
@@ -123,8 +131,8 @@ namespace PolyPlane.Rendering
             UpdateTimeOfDayLightFactor();
 
             // Reset on-screen/off-screen object stats.
-            GraphicsExtensions.OnScreen = 0;
-            GraphicsExtensions.OffScreen = 0;
+            OnScreen = 0;
+            OffScreen = 0;
         }
 
         public void BeginRender(D2DColor color)
@@ -133,8 +141,8 @@ namespace PolyPlane.Rendering
             UpdateTimeOfDayLightFactor();
 
             // Reset on-screen/off-screen object stats.
-            GraphicsExtensions.OnScreen = 0;
-            GraphicsExtensions.OffScreen = 0;
+            OnScreen = 0;
+            OffScreen = 0;
         }
 
         public void EndRender()
@@ -237,49 +245,95 @@ namespace PolyPlane.Rendering
 
         public void FillEllipse(D2DEllipse ellipse, D2DBrush brush)
         {
-            Gfx.FillEllipseClamped(Viewport, ellipse, brush);
+            if (Viewport.Contains(ellipse))
+            {
+                Gfx.FillEllipse(ellipse, brush);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
         }
 
         public void FillEllipseSimple(D2DPoint pos, float radius, D2DColor color)
         {
-            Gfx.FillEllipseClamped(Viewport, new D2DEllipse(pos, new D2DSize(radius, radius)), color);
+            var ellipse = new D2DEllipse(pos, new D2DSize(radius, radius));
+
+            if (Viewport.Contains(ellipse))
+            {
+                Gfx.FillEllipse(ellipse, color);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
         }
 
-        public void FillEllipseSimple(D2DPoint pos, float radius, D2DBrush brush)
-        {
-            Gfx.FillEllipseClamped(Viewport, new D2DEllipse(pos, new D2DSize(radius, radius)), brush);
-        }
+        //public void FillEllipseSimple(D2DPoint pos, float radius, D2DBrush brush)
+        //{
+        //    var ellipse = new D2DEllipse(pos, new D2DSize(radius, radius));
+
+        //    if (Viewport.Contains(ellipse))
+        //    {
+        //        Gfx.FillEllipse(ellipse, brush);
+        //        OnScreen++;
+        //    }
+        //    else
+        //        OffScreen++;
+        //}
 
         public void DrawEllipse(D2DEllipse ellipse, D2DColor color, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid)
         {
-            Gfx.DrawEllipseClamped(Viewport, ellipse, color, weight, dashStyle);
+            if (Viewport.Contains(ellipse))
+            {
+                Gfx.DrawEllipse(ellipse, color, weight, dashStyle);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
         }
 
         public void DrawLine(D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid, D2DCapStyle startCap = D2DCapStyle.Flat, D2DCapStyle endCap = D2DCapStyle.Flat)
         {
-            Gfx.DrawLineClamped(Viewport, start, end, color, weight, dashStyle, startCap, endCap);
+            if (Viewport.Contains(start) || Viewport.Contains(end))
+            {
+                Gfx.DrawLine(start, end, color, weight, dashStyle, startCap, endCap);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
+        }
+
+        public void DrawPolygon(RenderPoly poly, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
+        {
+            DrawPolygon(poly.Poly, strokeColor, strokeWidth, dashStyle, fillColor);
         }
 
         public void DrawPolygon(D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
         {
-            Gfx.DrawPolygonClamped(Viewport, points, strokeColor, strokeWidth, dashStyle, fillColor);
+            if (Viewport.Contains(points))
+            {
+                Gfx.DrawPolygon(points, strokeColor, strokeWidth, dashStyle, fillColor);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
+        }
+
+        public void DrawPolygon(D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DBrush fillBrush)
+        {
+            if (Viewport.Contains(points))
+            {
+                Gfx.DrawPolygon(points, strokeColor, strokeWidth, dashStyle, fillBrush);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
         }
 
         public void DrawPolygonWithLighting(RenderPoly poly, D2DPoint centerPos, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor, float maxIntensity)
         {
             DrawPolygonWithLighting(poly.Poly, centerPos, strokeColor, strokeWidth, dashStyle, fillColor, maxIntensity);
         }
-
-        public void DrawPolygon(RenderPoly poly, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
-        {
-            Gfx.DrawPolygonClamped(Viewport, poly, strokeColor, strokeWidth, dashStyle, fillColor);
-        }
-
-        public void DrawPolygon(D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DBrush fillBrush)
-        {
-            Gfx.DrawPolygonClamped(Viewport, points, strokeColor, strokeWidth, dashStyle, fillBrush);
-        }
-
+     
         public void DrawPolygonWithLighting(D2DPoint[] points, D2DPoint centerPos, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor, float maxIntensity)
         {
             if (World.UseLightMap)
@@ -295,53 +349,124 @@ namespace PolyPlane.Rendering
 
         public void FillRectangle(D2DRect rect, D2DColor color)
         {
-            Gfx.FillRectangleClamped(Viewport, rect, color);
+            if (Viewport.Contains(rect))
+            {
+                Gfx.FillRectangle(rect, color);
+
+                OnScreen++;
+            }
+            else
+                OffScreen++;
         }
 
         public void FillRectangle(D2DRect rect, D2DBrush brush)
         {
-            Gfx.FillRectangleClamped(Viewport, rect, brush);
+            if (Viewport.Contains(rect))
+            {
+                Gfx.FillRectangle(rect, brush);
+
+                OnScreen++;
+            }
+            else
+                OffScreen++;
         }
 
         public void FillRectangle(float x, float y, float width, float height, D2DColor color)
         {
-            Gfx.FillRectangleClamped(Viewport, x, y, width, height, color);
+            var pos = new D2DPoint(x, y);
+            if (Viewport.Contains(pos))
+            {
+                Gfx.FillRectangle(x, y, width, height, color);
+
+                OnScreen++;
+            }
+            else
+                OffScreen++;
         }
 
         public void DrawTextCenter(string text, D2DColor color, string fontName, float fontSize, D2DRect rect)
         {
-            Gfx.DrawTextCenterClamped(Viewport, text, color, fontName, fontSize, rect);
+            if (Viewport.Contains(rect))
+            {
+                Gfx.DrawTextCenter(text, color, fontName, fontSize, rect);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
+
+            //Gfx.DrawTextCenterClamped(Viewport, text, color, fontName, fontSize, rect);
         }
 
         public void DrawRectangle(D2DRect rect, D2DColor color, float strokeWidth = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid)
         {
-            Gfx.DrawRectangleClamped(Viewport, rect, color, strokeWidth, dashStyle);
+            if (Viewport.Contains(rect))
+            {
+                Gfx.DrawRectangle(rect, color, strokeWidth, dashStyle);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
+
+            //Gfx.DrawRectangleClamped(Viewport, rect, color, strokeWidth, dashStyle);
         }
 
         public void DrawText(string text, D2DColor color, string fontName, float fontSize, D2DRect rect, DWriteTextAlignment halign = DWriteTextAlignment.Leading, DWriteParagraphAlignment valign = DWriteParagraphAlignment.Near)
         {
-            Gfx.DrawTextClamped(Viewport, text, color, fontName, fontSize, rect, halign, valign);
+            if (Viewport.Contains(rect))
+            {
+                Gfx.DrawText(text, color, fontName, fontSize, rect, halign, valign);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
+
+            //Gfx.DrawTextClamped(Viewport, text, color, fontName, fontSize, rect, halign, valign);
         }
 
         public void DrawText(string text, D2DColor color, string fontName, float fontSize, float x, float y, DWriteTextAlignment halign = DWriteTextAlignment.Leading, DWriteParagraphAlignment valign = DWriteParagraphAlignment.Near)
         {
-            Gfx.DrawTextClamped(Viewport, text, color, fontName, fontSize, new D2DRect(x, y, 99999f, 99999f), halign, valign);
+            DrawText(text, color, fontName, fontSize, new D2DRect(x, y, 99999f, 99999f), halign, valign);
+
+            //Gfx.DrawTextClamped(Viewport, text, color, fontName, fontSize, new D2DRect(x, y, 99999f, 99999f), halign, valign);
         }
 
         public void DrawText(string text, D2DBrush brush, D2DTextFormat format, D2DRect rect)
         {
-            Gfx.DrawTextClamped(Viewport, text, brush, format, rect);
+            if (Viewport.Contains(rect))
+            {
+                Gfx.DrawText(text, brush, format, rect);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
+
+            //Gfx.DrawTextClamped(Viewport, text, brush, format, rect);
         }
 
         public void DrawArrow(D2DPoint start, D2DPoint end, D2DColor color, float weight, float arrowLen = 10f)
         {
-            Gfx.DrawArrowClamped(Viewport, start, end, color, weight, arrowLen);
+            if (Viewport.Contains(start) || Viewport.Contains(end))
+            {
+                Gfx.DrawArrow(start, end, color, weight, arrowLen);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
+
+            //Gfx.DrawArrowClamped(Viewport, start, end, color, weight, arrowLen);
         }
 
-        public void DrawArrowStroked(D2DPoint start, D2DPoint end, D2DColor color, float weight, D2DColor strokeColor, float strokeWeight)
+        public void DrawCrosshair(D2DPoint pos, float weight, D2DColor color, float innerRadius, float outerRadius)
         {
-            Gfx.DrawArrowStrokedClamped(Viewport, start, end, color, weight, strokeColor, strokeWeight);
+            if (Viewport.Contains(pos))
+            {
+                Gfx.DrawCrosshair(pos, weight, color, innerRadius, outerRadius);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
         }
+
 
         private D2DColor InterpolateColorGaussian(D2DColor[] colors, float value, float maxValue)
         {
