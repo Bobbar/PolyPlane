@@ -314,7 +314,10 @@ namespace PolyPlane
             }
 
             if (!_inStartup)
-                DoNetGameSetup();
+            {
+               if (!DoNetGameSetup())
+                    this.Close();
+            }
         }
 
         private void Client_PeerDisconnectedEvent(object? sender, ENet.Peer e)
