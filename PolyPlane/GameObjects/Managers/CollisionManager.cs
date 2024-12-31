@@ -306,6 +306,9 @@ namespace PolyPlane.GameObjects.Manager
             var forceVec = dirNorm * (FORCE * forceFact);
             var vdiff = (pushObject.Velocity - particleObject.Velocity).Length();
 
+            // Wake sleeping particles.
+            particleObject.IsAwake = true;
+
             if (vdiff > 0f)
             {
                 // Add some velo from the pusher object.
@@ -314,8 +317,6 @@ namespace PolyPlane.GameObjects.Manager
 
             // Push particles away.
             particleObject.Velocity += (forceVec / particleObject.Mass * dt) * ageFact * veloFact;
-
-
         }
 
         private void HandleExplosionImpulse(float dt)
