@@ -2,10 +2,10 @@
 {
     public class MinMax
     {
-        public float MinX;
-        public float MinY;
-        public float MaxX;
-        public float MaxY;
+        public float MinX = float.MaxValue;
+        public float MinY = float.MaxValue;
+        public float MaxX = float.MinValue;
+        public float MaxY = float.MinValue;
 
         public float Width
         {
@@ -37,6 +37,17 @@
             MinY = minY;
             MaxX = maxX;
             MaxY = maxY;
+        }
+
+        public void Update(D2DPoint[] points)
+        {
+            for (int i = points.Length - 1; i >= 0; i--)
+                Update(points[i]);
+        }
+
+        public void Update(D2DPoint point)
+        {
+            Update(point.X, point.Y);
         }
 
         public void Update(float x, float y)

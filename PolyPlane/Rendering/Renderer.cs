@@ -375,7 +375,7 @@ namespace PolyPlane.Rendering
 
             if (!World.IsPaused)
             {
-                UpdateClouds(dt);
+                UpdateClouds(dt); 
 
                 // Check if we need to update the ground brush.
                 var todDiff = Math.Abs(World.TimeOfDay - _groundColorTOD);
@@ -397,6 +397,10 @@ namespace PolyPlane.Rendering
             _timer.Restart();
 
             UpdateTimersAndAnims(dt);
+
+            _timer.Stop();
+            UpdateTime += _timer.Elapsed;
+            _timer.Restart();
 
             if (World.UseSkyGradient)
                 _ctx.BeginRender(_clearBitmap);
@@ -727,7 +731,7 @@ namespace PolyPlane.Rendering
                 var cloud = _clouds[i];
 
                 cloud.Render(ctx, shadowColor, todColor, todAngle);
-            }
+            } 
         }
 
         private void DrawPlaneCloudShadows(RenderContext ctx, D2DColor shadowColor, IEnumerable<GameObject> objs)
@@ -1497,7 +1501,7 @@ namespace PolyPlane.Rendering
 
         private void UpdateClouds(float dt)
         {
-            const int MULTI_THREAD_NUM = 8;
+            const int MULTI_THREAD_NUM = 10;
 
             ParallelHelpers.ParallelForSlim(_clouds.Count, MULTI_THREAD_NUM, (start, end) =>
             {

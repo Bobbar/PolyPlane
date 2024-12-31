@@ -17,6 +17,8 @@ namespace PolyPlane.Rendering
         public float ScaleY = 1f;
         public float RotationDirection = 1f;
 
+        private MinMax _translatedDims = new MinMax();
+        private static D2DPoint[] _shadowRayPoly = new D2DPoint[4];
         private readonly D2DColor _cloudColorLight = D2DColor.WhiteSmoke;
         private readonly D2DColor _cloudColorDark = new D2DColor(1f, 0.6f, 0.6f, 0.6f);
         private const float LIGHT_INTENSITY = 0.7f;
@@ -54,6 +56,10 @@ namespace PolyPlane.Rendering
             // Apply translations.
             Utilities.ApplyTranslation(this.PointsOrigin, this.Points, this.Rotation, this.Position, World.CLOUD_SCALE);
             Utilities.ApplyTranslation(this.Points, this.Points, this.Position, 0f, D2DPoint.Zero, this.ScaleX, this.ScaleY);
+
+            // Update translated dimensions for rendering purposes.
+            _translatedDims.Reset();
+            _translatedDims.Update(this.Points);
         }
 
         private void DrawCloud(RenderContext ctx, D2DColor todColor)
@@ -63,8 +69,8 @@ namespace PolyPlane.Rendering
             var points = this.Points;
 
             // Find min/max height.
-            var minY = points.Min(p => p.Y);
-            var maxY = points.Max(p => p.Y);
+            var minY = _translatedDims.MinY;
+            var maxY = _translatedDims.MaxY;
 
             for (int i = 0; i < points.Length; i++)
             {
@@ -91,36 +97,45 @@ namespace PolyPlane.Rendering
             const float WIDTH_OFFSET = 50f;
             const float BOT_WIDTH_OFFSET = 40f;
 
+            // Don't even try if the viewport is above the shadows and rays.
+            if (ctx.Viewport.bottom * -1f > MAX_ALT)
+                return;
+
             var cloudAlt = Utilities.PositionToAltitude(this.Position);
 
             if (cloudAlt > MAX_ALT)
                 return;
 
-            var alpha = 0.05f * Math.Clamp((1f - Utilities.FactorWithEasing(cloudAlt, MAX_ALT, EasingFunctions.EaseLinear)), 0.1f, 1f);
-            var rayColor = shadowColor.WithAlpha(alpha);
+            // Get min/max X positions and compute widths and offsets.
+            var minX = _translatedDims.MinX - WIDTH_OFFSET;
+            var maxX = _translatedDims.MaxX + WIDTH_OFFSET;
+            var width = Math.Abs(maxX - minX);
+            var widthHalf = width * 0.5f;
+            var widthOffset = new D2DPoint(widthHalf + BOT_WIDTH_OFFSET, 0f);
 
-            // Get min/max X postions and compute width.
-            var minX = this.Points.Min(p => p.X) - WIDTH_OFFSET;
-            var maxX = this.Points.Max(p => p.X) + WIDTH_OFFSET;
+            // Get the initial ground position.
+            var cloudShadowPos = GetCloudShadowPos(this.Position, todAngle);
 
             // Build a polygon for the ray.
-            var shadowRayPoly = new D2DPoint[4];
-            shadowRayPoly[0] = new D2DPoint(minX, this.Position.Y);
-            shadowRayPoly[1] = new D2DPoint(maxX, this.Position.Y);
-            shadowRayPoly[2] = GetCloudShadowPos(new D2DPoint(maxX + BOT_WIDTH_OFFSET, this.Position.Y), todAngle);
-            shadowRayPoly[3] = GetCloudShadowPos(new D2DPoint(minX - BOT_WIDTH_OFFSET, this.Position.Y), todAngle);
+            _shadowRayPoly[0] = new D2DPoint(minX, this.Position.Y);
+            _shadowRayPoly[1] = new D2DPoint(maxX, this.Position.Y);
+            _shadowRayPoly[2] = cloudShadowPos + widthOffset;
+            _shadowRayPoly[3] = cloudShadowPos - widthOffset;
 
             // Draw ray.
-            if (ctx.Viewport.Contains(shadowRayPoly))
-                ctx.Gfx.DrawPolygon(shadowRayPoly, rayColor, 0f, D2DDashStyle.Solid, rayColor);
+            if (ctx.Viewport.Contains(_shadowRayPoly))
+            {
+                var alpha = 0.05f * Math.Clamp((1f - Utilities.FactorWithEasing(cloudAlt, MAX_ALT, EasingFunctions.EaseLinear)), 0.1f, 1f);
+                var rayColor = shadowColor.WithAlpha(alpha);
+                ctx.FillPolygon(_shadowRayPoly, rayColor);
+            }
 
             // Draw ground shadows.
-            var cloudShadowPos = GetCloudShadowPos(this.Position, todAngle);
             if (ctx.Viewport.Contains(cloudShadowPos, this.Radius * this.ScaleX * World.CLOUD_SCALE * 3f))
             {
                 if (World.UseSimpleCloudGroundShadows)
                 {
-                    var shadowWidth = Math.Abs(maxX - minX);
+                    var shadowWidth = width;
                     ctx.FillEllipse(new D2DEllipse(cloudShadowPos, new D2DSize(shadowWidth * 0.9f, 35f)), shadowColor.WithAlpha(0.2f));
                 }
                 else
