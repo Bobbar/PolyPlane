@@ -95,7 +95,7 @@ namespace PolyPlane.Rendering
 
                         if (dist <= gradRadius)
                         {
-                            var intensity = 1f - Utilities.FactorWithEasing(dist, gradRadius, EasingFunctions.Out.EaseSine);
+                            var intensity = 1f - Utilities.FactorWithEasing(dist, gradRadius, EasingFunctions.Out.EaseQuad);
 
                             intensity *= intensityFactor;
 
