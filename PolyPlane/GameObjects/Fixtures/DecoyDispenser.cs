@@ -3,20 +3,16 @@ using PolyPlane.GameObjects.Tools;
 
 namespace PolyPlane.GameObjects.Fixtures
 {
-    public sealed class DecoyDispenser : GameObject, INoGameID
+    public sealed class DecoyDispenser : FixturePoint, INoGameID
     {
         public Action<Decoy> DropDecoyCallback;
 
-        private FixturePoint _attachPoint;
         private GameTimer _decoyTimer = new GameTimer(0.25f, true);
         private FighterPlane _plane;
 
-        public DecoyDispenser(FighterPlane plane, D2DPoint position)
+        public DecoyDispenser(FighterPlane plane, D2DPoint position) : base(plane, position)
         {
             _plane = plane;
-
-            _attachPoint = new FixturePoint(plane, position);
-            this.Position = _attachPoint.Position;
 
             _decoyTimer.StartCallback = DropDecoy;
             _decoyTimer.TriggerCallback = DropDecoy;
@@ -27,7 +23,6 @@ namespace PolyPlane.GameObjects.Fixtures
             base.Update(dt);
 
             _decoyTimer.Update(dt);
-            _attachPoint.Update(dt);
 
             if (_plane.DroppingDecoy && !_decoyTimer.IsRunning)
             {
@@ -37,8 +32,6 @@ namespace PolyPlane.GameObjects.Fixtures
             {
                 _decoyTimer.Stop();
             }
-
-            this.Position = _attachPoint.Position;
         }
 
         private void DropDecoy()
@@ -49,9 +42,7 @@ namespace PolyPlane.GameObjects.Fixtures
             if (_plane.IsDisabled)
                 return;
 
-            _attachPoint.Update(0f);
-
-            var decoy = new Decoy(_plane, _attachPoint.Position);
+            var decoy = new Decoy(_plane, this.Position);
 
             _plane.DecoysDropped++;
             _plane.NumDecoys--;

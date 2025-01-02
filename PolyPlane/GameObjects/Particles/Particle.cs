@@ -4,7 +4,7 @@ using PolyPlane.Rendering;
 using System.Numerics;
 using unvell.D2DLib;
 
-namespace PolyPlane.GameObjects
+namespace PolyPlane.GameObjects.Particles
 {
     public class Particle : GameObject, ICollidable, IPushable, INoGameID, ILightMapContributor
     {
@@ -29,29 +29,29 @@ namespace PolyPlane.GameObjects
         public Particle()
         {
             Ellipse = new D2DEllipse();
-            this.RenderOrder = 0;
-            this.Mass = PARTICLE_MASS;
+            RenderOrder = 0;
+            Mass = PARTICLE_MASS;
         }
 
         public override void Update(float dt)
         {
             base.Update(dt);
 
-            var ageFactFade = 1f - Utilities.Factor(this.Age, MaxAge);
-            var ageFactSmoke = Utilities.Factor(this.Age, MaxAge * 3f);
+            var ageFactFade = 1f - Utilities.Factor(Age, MaxAge);
+            var ageFactSmoke = Utilities.Factor(Age, MaxAge * 3f);
             var alpha = StartColor.a * ageFactFade;
 
-            this.Color = Utilities.LerpColorWithAlpha(this.Color, this.EndColor, ageFactSmoke, alpha);
-            this.Velocity += -this.Velocity * 0.8f * dt;
-            this.Velocity += RiseRate * dt;
+            Color = Utilities.LerpColorWithAlpha(Color, EndColor, ageFactSmoke, alpha);
+            Velocity += -Velocity * 0.8f * dt;
+            Velocity += RiseRate * dt;
 
             // Simulate the particles being blown by the wind.
-            RiseRate.X = WIND_SPEED * Utilities.FactorWithEasing(this.Age, MaxAge, EasingFunctions.Out.EaseQuad);
+            RiseRate.X = WIND_SPEED * Utilities.FactorWithEasing(Age, MaxAge, EasingFunctions.Out.EaseQuad);
 
-            this.Ellipse.origin = this.Position;
+            Ellipse.origin = Position;
 
-            if (this.Age > MaxAge)
-                this.IsExpired = true;
+            if (Age > MaxAge)
+                IsExpired = true;
         }
 
         public override void Render(RenderContext ctx)
@@ -106,7 +106,7 @@ namespace PolyPlane.GameObjects
 
         D2DColor ILightMapContributor.GetLightColor()
         {
-            return this.Color.WithBrightness(2.5f);
+            return Color.WithBrightness(2.5f);
         }
 
         float ILightMapContributor.GetIntensityFactor()
@@ -116,7 +116,7 @@ namespace PolyPlane.GameObjects
 
         D2DPoint ILightMapContributor.GetLightPosition()
         {
-            return this.Position;
+            return Position;
         }
 
         bool ILightMapContributor.IsLightEnabled()
@@ -124,11 +124,11 @@ namespace PolyPlane.GameObjects
             const float MIN_LUM = 0.19f;
             const float MAX_LUM = 0.4f;
 
-            if (this.Type != ParticleType.Flame)
+            if (Type != ParticleType.Flame)
                 return false;
 
             // Compute and filter based on luminance.
-            var c = this.Color;
+            var c = Color;
             var cVec = new Vector3(c.r, c.g, c.b);
             var brightness = Vector3.Dot(cVec, Luminance);
 

@@ -83,7 +83,7 @@ namespace PolyPlane.GameObjects
         private void SpawnPart()
         {
             _refPos.Update(0f);
-            D2DPoint newPos = _refPos.GameObject.Position;
+            D2DPoint newPos = _refPos.Owner.Position;
             D2DPoint newVelo = _veloSmooth.Add(this.Velocity);
 
             // Start the vapor parts one frame backwards.

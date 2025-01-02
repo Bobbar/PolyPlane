@@ -5,25 +5,23 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects.Fixtures
 {
-    public sealed class Gun : GameObject, INoGameID
+    public sealed class Gun : FixturePoint, INoGameID
     {
         public Action<Bullet> FireBulletCallback;
         public bool MuzzleFlashOn = false;
 
-        private FixturePoint _attachPoint;
         private GunSmoke _smoke;
         private FighterPlane _ownerPlane;
         private GameTimer _burstTimer = new GameTimer(0.25f, true);
         private GameTimer _muzzleFlashTimer = new GameTimer(0.16f);
 
-        public Gun(FighterPlane plane, D2DPoint position, Action<Bullet> fireBulletCallback) : base(plane)
+        public Gun(FighterPlane plane, D2DPoint position, Action<Bullet> fireBulletCallback) : base(plane, position)
         {
             IsNetObject = plane.IsNetObject;
             _ownerPlane = plane;
             FireBulletCallback = fireBulletCallback;
 
-            _attachPoint = new FixturePoint(plane, position);
-            _smoke = new GunSmoke(_attachPoint, D2DPoint.Zero, 8f, new D2DColor(0.7f, D2DColor.BurlyWood));
+            _smoke = new GunSmoke(this, D2DPoint.Zero, 8f, new D2DColor(0.7f, D2DColor.BurlyWood));
 
             _burstTimer.StartCallback = FireBullet;
             _burstTimer.TriggerCallback = FireBullet;
@@ -38,11 +36,7 @@ namespace PolyPlane.GameObjects.Fixtures
 
             _burstTimer.Update(dt);
             _muzzleFlashTimer.Update(dt);
-            _attachPoint.Update(dt);
             _smoke.Update(dt);
-
-            Position = _attachPoint.Position;
-            Rotation = _attachPoint.Rotation;
 
             if (_ownerPlane.FiringBurst && _ownerPlane.NumBullets > 0 && _ownerPlane.IsDisabled == false)
             {
@@ -64,12 +58,6 @@ namespace PolyPlane.GameObjects.Fixtures
             _smoke.Render(ctx);
         }
 
-        public override void FlipY()
-        {
-            base.FlipY();
-            _attachPoint.FlipY();
-        }
-
         private void FireBullet()
         {
             if (_ownerPlane.IsDisabled)
@@ -80,11 +68,6 @@ namespace PolyPlane.GameObjects.Fixtures
 
             if (_ownerPlane.IsNetObject)
                 return;
-
-            // Make sure fixture point is synced at the time of firing.
-            _attachPoint.Update(0f);
-            Rotation = _attachPoint.Rotation;
-            Position = _attachPoint.Position;
 
             var bullet = new Bullet(_ownerPlane);
 

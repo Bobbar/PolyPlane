@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.GameObjects.Particles;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
@@ -26,8 +27,7 @@ namespace PolyPlane.GameObjects
             this.Velocity = velo * 0.7f;
             this.Velocity += Utilities.RandOPoint(100f);
 
-            _flame = new FlameEmitter(this, D2DPoint.Zero, 3f);
-            _flame.Owner = this.Owner;
+            _flame = new FlameEmitter(this, D2DPoint.Zero, 2f, 4f);
         }
 
         public override void Update(float dt)

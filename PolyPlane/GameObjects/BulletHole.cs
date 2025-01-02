@@ -1,4 +1,5 @@
-﻿using PolyPlane.Helpers;
+﻿using PolyPlane.GameObjects.Particles;
+using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
@@ -20,7 +21,7 @@ namespace PolyPlane.GameObjects
         private const float MAX_HOLE_SZ = 6f;
         private float _rotOffset = 0f;
 
-        public BulletHole(GameObject obj, D2DPoint offset, float angle, bool hasFlame = true) : base(obj, offset, hasFlame)
+        public BulletHole(GameObject obj, D2DPoint offset, float angle, bool hasFlame = true) : base(obj, offset, 4f, 15f)
         {
             // Fudge the hole size to ensure it's elongated in the Y direction.
             HoleSize = new D2DSize(Utilities.Rnd.NextFloat(MIN_HOLE_SZ + 2, MAX_HOLE_SZ + 2), Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ - 3));
@@ -37,7 +38,6 @@ namespace PolyPlane.GameObjects
         {
             base.FlipY();
             _rotOffset = Utilities.ClampAngle(_rotOffset * -1f);
-            this.Update(0f);
         }
 
         public override void Render(RenderContext ctx)

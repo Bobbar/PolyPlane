@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.GameObjects.Particles;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using System.Collections.Concurrent;

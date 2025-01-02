@@ -1,13 +1,10 @@
 ﻿using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.Helpers;
-using PolyPlane.Rendering;
-using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects.Fixtures
 {
     public class FixturePoint : GameObject, INoGameID
     {
-        public GameObject GameObject { get; private set; }
         public D2DPoint ReferencePosition { get; private set; }
 
         private bool _copyRotation = true;
@@ -23,13 +20,23 @@ namespace PolyPlane.GameObjects.Fixtures
             this.RenderScale = gameObject.RenderScale;
             _copyRotation = copyRotation;
 
-            GameObject = gameObject;
             ReferencePosition = referencePosition;
 
             if (_copyRotation)
-                Rotation = GameObject.Rotation;
+                Rotation = this.Owner.Rotation;
 
-            this.Update(0f);
+            SyncWithOwner();
+        }
+
+        private void SyncWithOwner()
+        {
+            if (_copyRotation)
+                Rotation = this.Owner.Rotation;
+
+            Position = Utilities.ApplyTranslation(ReferencePosition, this.Owner.Rotation, this.Owner.Position, this.RenderScale);
+            Velocity = this.Owner.Velocity;
+
+            this.IsExpired = this.Owner.IsExpired;
         }
 
         public override void FlipY()
@@ -41,21 +48,7 @@ namespace PolyPlane.GameObjects.Fixtures
 
         public override void Update(float dt)
         {
-            if (_copyRotation)
-                Rotation = GameObject.Rotation;
-
-            Position = Utilities.ApplyTranslation(ReferencePosition, GameObject.Rotation, GameObject.Position, this.RenderScale);
-            Velocity = GameObject.Velocity;
-
-            this.IsExpired = GameObject.IsExpired;
+            SyncWithOwner();
         }
-
-        public override void Render(RenderContext ctx)
-        {
-            base.Render(ctx);
-
-            ctx.FillEllipse(new D2DEllipse(Position, new D2DSize(3f, 3f)), D2DColor.Red);
-        }
-
     }
 }
