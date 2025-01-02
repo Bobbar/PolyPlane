@@ -375,7 +375,7 @@ namespace PolyPlane.Rendering
 
             if (!World.IsPaused)
             {
-                UpdateClouds(dt); 
+                UpdateClouds(dt);
 
                 // Check if we need to update the ground brush.
                 var todDiff = Math.Abs(World.TimeOfDay - _groundColorTOD);
@@ -559,8 +559,9 @@ namespace PolyPlane.Rendering
             ctx.PushViewPort(viewPortRect);
 
             DrawGround(ctx, viewObj.Position);
-            DrawGroundObjs(ctx);
             DrawGroundImpacts(ctx);
+            DrawGroundObjs(ctx);
+            DrawPlaneGroundShadows(ctx, shadowColor, todAngle);
 
             _objs.MissileTrails.ForEach(o => o.Render(ctx));
             _contrailBox.Render(ctx);
@@ -588,7 +589,7 @@ namespace PolyPlane.Rendering
                     missile.Render(ctx);
 
                     // Circle enemy missiles.
-                    if (!missile.Owner.Equals(viewPlane))
+                    if (!World.FreeCameraMode && !viewObj.Equals(missile) && !missile.Owner.Equals(viewPlane))
                         ctx.DrawEllipse(new D2DEllipse(missile.Position, new D2DSize(50f, 50f)), new D2DColor(0.4f, D2DColor.Red), 8f);
                 }
                 else
@@ -602,10 +603,10 @@ namespace PolyPlane.Rendering
 
             DrawClouds(ctx);
             DrawPlaneCloudShadows(ctx, shadowColor, objsInViewport);
-            DrawPlaneGroundShadows(ctx, shadowColor, todAngle);
             DrawLightFlareEffects(ctx, objsInViewport);
 
-            //DrawNoise(ctx);
+            if (World.DrawNoiseMap)
+                DrawNoise(ctx);
 
             if (World.DrawLightMap)
                 DrawLightMap(ctx);
@@ -731,7 +732,7 @@ namespace PolyPlane.Rendering
                 var cloud = _clouds[i];
 
                 cloud.Render(ctx, shadowColor, todColor, todAngle);
-            } 
+            }
         }
 
         private void DrawPlaneCloudShadows(RenderContext ctx, D2DColor shadowColor, IEnumerable<GameObject> objs)
