@@ -444,11 +444,13 @@ namespace PolyPlane.GameObjects
                 // Apply disabled effects.
                 if (IsDisabled)
                 {
-                    wingForce *= 0.1f;
-                    wingTorque *= 0.1f;
+                    const float DISABLED_FACTOR = 0.1f;
 
-                    damageTorque *= 0.1f;
-                    damageForce *= 0.1f;
+                    wingForce *= DISABLED_FACTOR;
+                    wingTorque *= DISABLED_FACTOR;
+
+                    damageTorque *= DISABLED_FACTOR;
+                    damageForce *= DISABLED_FACTOR;
 
                     ThrustOn = false;
                     _thrustAmt.SetNow(0f);
@@ -842,6 +844,8 @@ namespace PolyPlane.GameObjects
             _centerOfThrust.Update(0f);
             _centerOfMass.Update(0f);
             _cockpitPosition.Update(0f);
+            _engineFireFlame.Update(0f);
+            _decoyDispenser.Update(0f);
             _gun.Update(0f);
             this._wings.ForEach(w => w.Update(0f));
         }
