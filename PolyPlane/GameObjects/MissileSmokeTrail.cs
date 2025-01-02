@@ -6,70 +6,54 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class SmokeTrail : GameObject, INoGameID
+    public class MissileSmokeTrail : GameObject, INoGameID
     {
         private const int TRAIL_LEN = 400;
         private readonly float TRAIL_DIST = 40f;
-        private Queue<D2DPoint> _trailQueue = new Queue<D2DPoint>();
-        private GameObject _gameObject;
+        private const float TIMEOUT = 80f;
         private const float ALPHA = 0.3f;
-        private D2DColor _trailColor = new D2DColor(0.3f, D2DColor.WhiteSmoke);
-        private const float TIMEOUT = 40f;
-        private GameTimer _timeOut = new GameTimer(TIMEOUT);
-        private Func<GameObject, D2DPoint> _posSelector;
-        private D2DPoint _prevPos = D2DPoint.Zero;
-        private float _lineWeight = 2f;
-        private bool _trailEnabled = true;
+        private const float LINE_WEIGHT = 2f;
 
-        public SmokeTrail(GameObject obj, Func<GameObject, D2DPoint> positionSelector, float lineWeight) : base(obj)
+        private Queue<D2DPoint> _trailQueue = new Queue<D2DPoint>();
+        private GuidedMissile _parentMissile;
+        private D2DColor _trailColor = new D2DColor(0.3f, D2DColor.WhiteSmoke);
+        private GameTimer _timeOut = new GameTimer(TIMEOUT);
+        private D2DPoint _prevPos = D2DPoint.Zero;
+        private bool _trailEnabled = false;
+
+        public MissileSmokeTrail(GuidedMissile missile) : base(missile)
         {
-            _gameObject = obj;
+            _parentMissile = missile;
             _timeOut.TriggerCallback = () => this.IsExpired = true;
-            _posSelector = positionSelector;
-            _lineWeight = lineWeight;
         }
 
         public override void Update(float dt)
         {
             _timeOut.Update(dt);
 
-            if (_gameObject.IsExpired)
+            if (!_timeOut.IsRunning && (_parentMissile.IsExpired || (_parentMissile.IsActivated && !_parentMissile.FlameOn)))
             {
                 _timeOut.Start();
                 _trailColor.a = ALPHA * (1f - Utilities.Factor(_timeOut.Value, TIMEOUT));
-                return;
             }
 
-            if (_gameObject is GuidedMissile missile)
+            _trailEnabled = _parentMissile.FlameOn;
+
+            if (_trailEnabled)
             {
-                _trailEnabled = missile.FlameOn;
-            }
-            else
-            {
-                _trailEnabled = true;
-            }
+                var dist = this.Position.DistanceTo(_prevPos);
+                if (dist >= TRAIL_DIST)
+                {
+                    _trailQueue.Enqueue(_parentMissile.Position);
 
-            var dist = this.Position.DistanceTo(_prevPos);
+                    if (_trailQueue.Count == TRAIL_LEN)
+                        _trailQueue.Dequeue();
 
-            if (dist >= TRAIL_DIST && _trailEnabled)
-            {
-                if (_posSelector != null)
-                    _trailQueue.Enqueue(_posSelector.Invoke(_gameObject));
-                else
-                    _trailQueue.Enqueue(_gameObject.Position);
-
-                if (_trailQueue.Count == TRAIL_LEN)
-                    _trailQueue.Dequeue();
-
-                _prevPos = this.Position;
+                    _prevPos = this.Position;
+                }
             }
 
-            this.Position = _gameObject.Position;
-        }
-
-        public void Clear()
-        {
-            _trailQueue.Clear();
+            this.Position = _parentMissile.Position;
         }
 
         public override void Render(RenderContext ctx)
@@ -86,24 +70,21 @@ namespace PolyPlane.GameObjects
 
                 var color = _trailColor;
 
-                ctx.DrawLine(lastPos, nextPos, color, _lineWeight);
+                ctx.DrawLine(lastPos, nextPos, color, LINE_WEIGHT);
 
                 lastPos = nextPos;
             }
 
             // Draw connecting line between last trail segment and the source position.
-            var endPosition = _gameObject.Position;
-
-            if (_posSelector != null)
-                endPosition = _posSelector.Invoke(_gameObject);
+            var endPosition = _parentMissile.Position;
 
             if (_trailQueue.Count > 1 && _trailEnabled)
-                ctx.DrawLine(lastPos, endPosition, _trailColor, _lineWeight);
+                ctx.DrawLine(lastPos, endPosition, _trailColor, LINE_WEIGHT);
 
             if (_trailQueue.Count > 0 && _trailQueue.Count < TRAIL_LEN - 1)
                 ctx.FillEllipse(new D2DEllipse(_trailQueue.First(), new D2DSize(50f, 50f)), _trailColor);
 
-            if (_gameObject.IsExpired && _trailEnabled)
+            if (_parentMissile.IsExpired && _trailEnabled)
                 ctx.FillEllipse(new D2DEllipse(endPosition, new D2DSize(50f, 50f)), _trailColor);
         }
 

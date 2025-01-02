@@ -10,10 +10,10 @@ namespace PolyPlane.Rendering
     public sealed class ContrailBox
     {
         private const float MIN_ALT = 20000f;
-        private const float MAX_SEG_AGE = 60f;
+        private const float MAX_SEG_AGE = 120f;
         private const float ALPHA = 0.3f;
         private const float MIN_DIST = 40f;
-        private const float MAX_ALPHA_ALT = 3000f;
+        private const float MAX_ALPHA_ALT = 6000f;
         private const float TRAIL_WEIGHT = 8f;
 
         private Dictionary<GameID, PlaneTag> _currentPlanes = new();

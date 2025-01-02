@@ -44,7 +44,8 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private bool IsActivated = false;
+        public bool IsActivated = false;
+
         private readonly float THURST_VECTOR_AMT = 1f;
         private readonly float LIFESPAN = 100f;
         private readonly float BURN_RATE = 0.85f;

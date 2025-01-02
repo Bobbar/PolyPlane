@@ -111,12 +111,7 @@ namespace PolyPlane.GameObjects
                 AddObject(missile);
                 Missiles.Add(missile);
 
-                var trail = new SmokeTrail(missile, o =>
-                {
-                    var m = o as GuidedMissile;
-                    return m.CenterOfThrust;
-                }, lineWeight: 2f);
-
+                var trail = new MissileSmokeTrail(missile);
                 MissileTrails.Add(trail);
             }
         }
