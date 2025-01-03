@@ -22,6 +22,7 @@ namespace PolyPlane.Rendering
         private readonly D2DColor _cloudColorLight = D2DColor.WhiteSmoke;
         private readonly D2DColor _cloudColorDark = new D2DColor(1f, 0.6f, 0.6f, 0.6f);
         private const float LIGHT_INTENSITY = 0.7f;
+        private const float MAX_SHADOW_ALT = 8000f;
 
         public Cloud(D2DPoint position, List<D2DPoint> points, List<D2DSize> dims, float rotation)
         {
@@ -93,17 +94,16 @@ namespace PolyPlane.Rendering
 
         private void DrawCloudGroundShadowAndRay(RenderContext ctx, D2DColor shadowColor, float todAngle)
         {
-            const float MAX_ALT = 8000f;
             const float WIDTH_OFFSET = 50f;
             const float BOT_WIDTH_OFFSET = 40f;
 
             // Don't even try if the viewport is above the shadows and rays.
-            if (ctx.Viewport.bottom * -1f > MAX_ALT)
+            if (ctx.Viewport.bottom * -1f > MAX_SHADOW_ALT)
                 return;
 
             var cloudAlt = Utilities.PositionToAltitude(this.Position);
 
-            if (cloudAlt > MAX_ALT)
+            if (cloudAlt > MAX_SHADOW_ALT)
                 return;
 
             // Get min/max X positions and compute widths and offsets.
@@ -125,7 +125,7 @@ namespace PolyPlane.Rendering
             // Draw ray.
             if (ctx.Viewport.Contains(_shadowRayPoly))
             {
-                var alpha = 0.05f * Math.Clamp((1f - Utilities.FactorWithEasing(cloudAlt, MAX_ALT, EasingFunctions.EaseLinear)), 0.1f, 1f);
+                var alpha = 0.05f * Math.Clamp((1f - Utilities.FactorWithEasing(cloudAlt, MAX_SHADOW_ALT, EasingFunctions.EaseLinear)), 0.1f, 1f);
                 var rayColor = shadowColor.WithAlpha(alpha);
                 ctx.FillPolygon(_shadowRayPoly, rayColor);
             }
@@ -154,7 +154,14 @@ namespace PolyPlane.Rendering
 
         private D2DPoint GetCloudShadowPos(D2DPoint pos, float angle)
         {
-            var cloudGroundPos = new D2DPoint(pos.X, -80f + Math.Abs(((pos.Y * 0.1f))));
+            const float MIN_CLOUD_ALT = 2000f;
+
+            // Rescale the altitude to a smaller range below the ground level.
+            // Higher clouds will produce a lower shadow.
+            var alt = Utilities.PositionToAltitude(pos);
+            var yPos = Utilities.ScaleToRange(alt, MIN_CLOUD_ALT, MAX_SHADOW_ALT, 120f, 720f);
+
+            var cloudGroundPos = new D2DPoint(pos.X, yPos);
             var cloudShadowPos = cloudGroundPos + Utilities.AngleToVectorDegrees(angle, pos.DistanceTo(cloudGroundPos));
             cloudShadowPos.Y = cloudGroundPos.Y;
 
