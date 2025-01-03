@@ -31,12 +31,11 @@ namespace PolyPlane.GameObjects
         {
             _timeOut.Update(dt);
 
+            // Start to fade out if missile is expired or the engine has burned out.
             if (!_timeOut.IsRunning && (_parentMissile.IsExpired || (_parentMissile.IsActivated && !_parentMissile.FlameOn)))
-            {
                 _timeOut.Start();
-                _trailColor.a = ALPHA * (1f - Utilities.Factor(_timeOut.Value, TIMEOUT));
-            }
 
+            _trailColor.a = ALPHA * (1f - Utilities.Factor(_timeOut.Value, TIMEOUT));
             _trailEnabled = _parentMissile.FlameOn;
 
             if (_trailEnabled)
