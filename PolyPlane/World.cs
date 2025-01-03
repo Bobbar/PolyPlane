@@ -95,20 +95,8 @@ namespace PolyPlane
         {
             // Compute sub DT and number of sub steps.
             var subSteps = (int)Math.Ceiling(dt / DEFAULT_SUB_DT);
-            var subStepFact = dt / DEFAULT_SUB_DT;
 
-            if (subStepFact < 1f)
-            {
-                // Compute a new sub DT once we fall below the default and only 1 sub step is possible.
-                var newSubDT = DEFAULT_SUB_DT * subStepFact;
-                _sub_dt = newSubDT;
-            }
-            else
-            {
-                // Otherwise set to default when there is more than one sub step.
-                _sub_dt = DEFAULT_SUB_DT;
-            }
-
+            _sub_dt = dt / subSteps;
             _sub_steps = subSteps;
         }
 
