@@ -75,9 +75,12 @@ namespace PolyPlane.GameObjects
         {
             // Check all sources and add pings if they are within the FOV of the current sweep.
 
-            foreach (var missile in World.ObjectManager.Missiles)
-                DoSweep(missile);
-
+            if (World.ShowMissilesOnRadar)
+            {
+                foreach (var missile in World.ObjectManager.Missiles)
+                    DoSweep(missile);
+            }
+            
             foreach (var plane in World.ObjectManager.Planes)
                 DoSweep(plane);
 
@@ -103,9 +106,7 @@ namespace PolyPlane.GameObjects
             if (dist > _maxRange)
                 radPos = D2DPoint.Zero - Utilities.AngleToVectorDegrees(angle, _radius);
 
-            var pObj = new PingObj(obj, radPos);
-
-            AddOrRefresh(pObj);
+            AddOrRefresh(obj, radPos);
         }
 
         public void Render(RenderContext ctx)
@@ -406,12 +407,12 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private void AddOrRefresh(PingObj pingObj)
+        private void AddOrRefresh(GameObject obj, D2DPoint radarPos)
         {
-            if (_pings.TryGetValue(pingObj.Obj.ID, out var ping))
-                ping.Refresh(pingObj.RadarPos);
+            if (_pings.TryGetValue(obj.ID, out var ping))
+                ping.Refresh(radarPos);
             else
-                _pings.Add(pingObj.Obj.ID, pingObj);
+                _pings.Add(obj.ID, new PingObj(obj, radarPos));
         }
 
 
