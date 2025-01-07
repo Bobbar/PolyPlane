@@ -123,7 +123,7 @@ namespace PolyPlane.GameObjects.Manager
                             if (bullet.Owner.Equals(plane))
                                 continue;
 
-
+                          
                             if (_isNetGame)
                             {
                                 var bulletLagComp = (bullet.LagAmount / 2f) + (plane.LagAmount / 2f);
@@ -199,7 +199,7 @@ namespace PolyPlane.GameObjects.Manager
                             if (bullet.IsExpired)
                                 continue;
 
-                            if (bullet.Owner == missile.Owner)
+                            if (bullet.Owner.Equals(missile.Owner))
                                 continue;
 
                             if (missile.CollidesWith(bullet, out D2DPoint posb, dt))

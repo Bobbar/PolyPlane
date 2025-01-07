@@ -189,7 +189,7 @@ namespace PolyPlane.GameObjects.Guidance
                 if (decoy.IsExpired)
                     continue;
 
-                if (decoy.Owner == this.Missile.Owner)
+                if (decoy.Owner.Equals(this.Missile.Owner))
                     continue;
 
                 if (!missile.IsObjInFOV(decoy, SENSOR_FOV_DECOY))
