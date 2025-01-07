@@ -5,7 +5,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.Net
 {
-    public static class SerializeExtenstions
+    public static class SerializeExtensions
     {
         public static void AddD2DPoint(this BitBuffer data, D2DPoint point)
         {
