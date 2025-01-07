@@ -19,6 +19,7 @@ namespace PolyPlane.Rendering
         private FighterPlane _plane;
         private const float VIEW_SCALE = 1f;
         private float _angle = 0f;
+        private readonly D2DPoint _planePosition = new D2DPoint(0f, -100f);
 
         public PlanePreview(Control target, D2DColor planeColor)
         {
@@ -27,7 +28,7 @@ namespace PolyPlane.Rendering
             InitGfx();
 
             PlaneColor = planeColor;
-            _plane = new FighterPlane(new D2DPoint(0, -20f), PlaneColor, -1, isAI: false, isNetPlane: true);
+            _plane = new FighterPlane(_planePosition, PlaneColor, -1, isAI: false, isNetPlane: true);
             World.ObjectManager.Clear();
             _renderThread = new Thread(RenderLoop);
             _renderThread.Start();
@@ -44,10 +45,10 @@ namespace PolyPlane.Rendering
             {
                 _gfx.BeginRender(_clearColor);
                 _gfx.PushTransform();
-                _gfx.TranslateTransform(0f, 90f);
+                _gfx.TranslateTransform(100f, 200f);
 
                 _plane.PlaneColor = PlaneColor;
-                _plane.Position = center;
+                _plane.Position = _planePosition;
                 _angle = Utilities.ClampAngle(_angle + 1f);
                 _plane.Rotation = _angle;
                 _plane.Velocity = D2DPoint.Zero;
