@@ -15,6 +15,7 @@ namespace PolyPlane.Helpers
     public sealed class SpatialGrid<T>(Func<T, D2DPoint> positionSelector, Func<T, bool> isExpiredSelector, int sideLen = 9)
     {
         private Dictionary<int, List<Entry>> _grid = new Dictionary<int, List<Entry>>();
+        private GameObjectPool<Entry> _entryPool = new GameObjectPool<Entry>(() => new Entry());
         private List<Entry> _movedObjects = new List<Entry>();
         private List<Entry> _allObjects = new List<Entry>();
 
@@ -52,6 +53,7 @@ namespace PolyPlane.Helpers
                     {
                         // Just remove expired objects.
                         entries.RemoveAt(i);
+                        _entryPool.ReturnObject(entry);
                     }
                     else
                     {
@@ -60,6 +62,7 @@ namespace PolyPlane.Helpers
                         if (newHash != curHash)
                         {
                             entries.RemoveAt(i);
+                            _entryPool.ReturnObject(entry);
                             _movedObjects.Add(entry);
                         }
                     }
@@ -208,7 +211,8 @@ namespace PolyPlane.Helpers
 
         private void AddInternal(int hash, T obj)
         {
-            var entry = new Entry(hash, obj);
+            var entry = _entryPool.RentObject();
+            entry.ReInit(hash, obj);
 
             if (_grid.TryGetValue(hash, out var objs))
                 objs.Add(entry);
@@ -246,7 +250,9 @@ namespace PolyPlane.Helpers
             public int NextHash;
             public T Item;
 
-            public Entry(int curHash, T item)
+            public Entry() { }
+
+            public void ReInit(int curHash, T item)
             {
                 NextHash = curHash;
                 Item = item;
