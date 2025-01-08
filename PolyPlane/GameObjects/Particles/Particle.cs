@@ -15,7 +15,22 @@ namespace PolyPlane.GameObjects.Particles
         public D2DColor StartColor { get; set; }
         public D2DColor EndColor { get; set; }
 
-        protected float MaxAge = 1f;
+        public float Radius
+        {
+            get
+            {
+                return Ellipse.radiusX;
+            }
+
+            set
+            {
+                Ellipse.radiusX = value;
+                Ellipse.radiusY = value;
+            }
+        }
+
+        public float MaxAge = 1f;
+        public float InitRadius = 0f;
         protected D2DPoint RiseRate;
 
         protected const float DEFAULT_MAX_AGE = 30f;
@@ -37,18 +52,48 @@ namespace PolyPlane.GameObjects.Particles
         {
             base.Update(dt);
 
-            var ageFactFade = 1f - Utilities.Factor(Age, MaxAge);
-            var ageFactSmoke = Utilities.Factor(Age, MaxAge * 3f);
-            var alpha = StartColor.a * ageFactFade;
+            switch (this.Type)
+            {
+                case ParticleType.Flame or ParticleType.Dust:
 
-            Color = Utilities.LerpColorWithAlpha(Color, EndColor, ageFactSmoke, alpha);
-            Velocity += -Velocity * 0.8f * dt;
-            Velocity += RiseRate * dt;
+                    var ageFactFade = 1f - Utilities.Factor(Age, MaxAge);
+                    var ageFactSmoke = Utilities.Factor(Age, MaxAge * 3f);
+                    var alpha = StartColor.a * ageFactFade;
 
-            // Simulate the particles being blown by the wind.
-            RiseRate.X = WIND_SPEED * Utilities.FactorWithEasing(Age, MaxAge, EasingFunctions.Out.EaseQuad);
+                    Color = Utilities.LerpColorWithAlpha(Color, EndColor, ageFactSmoke, alpha);
+                    Velocity += -Velocity * 0.8f * dt;
+                    Velocity += RiseRate * dt;
 
-            Ellipse.origin = Position;
+                    // Simulate the particles being blown by the wind.
+                    RiseRate.X = WIND_SPEED * Utilities.FactorWithEasing(Age, MaxAge, EasingFunctions.Out.EaseQuad);
+
+                    Ellipse.origin = Position;
+
+                    break;
+
+                case ParticleType.Smoke or ParticleType.Vapor:
+
+                    float dtFact = 2f;
+
+                    if (Type == ParticleType.Smoke)
+                        dtFact = 3f;
+
+                    Velocity += -Velocity * (dt * dtFact);
+
+                    Ellipse.origin = Position;
+
+                    var ageFact = 1f - Utilities.Factor(Age, MaxAge);
+                    var radAmt = EasingFunctions.Out.EaseSine(ageFact);
+                    var rad = (InitRadius * radAmt);
+
+                    var alphaSmoke = StartColor.a * ageFact;
+
+                    Color = new D2DColor(alphaSmoke, StartColor);
+
+                    Radius = rad;
+
+                    break;
+            }
 
             if (Age > MaxAge)
                 IsExpired = true;
@@ -58,9 +103,34 @@ namespace PolyPlane.GameObjects.Particles
         {
             base.Render(ctx);
 
-            var color = Color;
+            switch (this.Type)
+            {
+                case ParticleType.Flame or ParticleType.Dust:
 
-            ctx.FillEllipseWithLighting(Ellipse, color, maxIntensity: 0.6f);
+                    var color = Color;
+
+                    ctx.FillEllipseWithLighting(Ellipse, color, maxIntensity: 0.6f);
+
+                    break;
+
+                case ParticleType.Vapor:
+
+                    const float MIN_VELO = 800f;
+                    const float VELO_MOVE_AMT = 40f;
+
+                    // Move the ellipse backwards as velo increases.
+                    var veloFact = Utilities.Factor(this.Owner.Velocity.Length() - MIN_VELO, MIN_VELO);
+                    var ellip = new D2DEllipse(Ellipse.origin - Utilities.AngleToVectorDegrees(this.Owner.Rotation, VELO_MOVE_AMT * veloFact), new D2DSize(Ellipse.radiusX, Ellipse.radiusY));
+                    ctx.FillEllipse(ellip, Color);
+
+                    break;
+
+                case ParticleType.Smoke:
+
+                    ctx.FillEllipse(Ellipse, Color);
+
+                    break;
+            }
         }
 
         public override void Dispose()
@@ -70,10 +140,12 @@ namespace PolyPlane.GameObjects.Particles
             World.ObjectManager.ReturnParticle(this);
         }
 
-        public static void SpawnParticle(GameObject owner, D2DPoint pos, D2DPoint velo, float radius, D2DColor startColor, D2DColor endColor, ParticleType type = ParticleType.Flame)
+        public static Particle SpawnParticle(GameObject owner, D2DPoint pos, D2DPoint velo, float radius, D2DColor startColor, D2DColor endColor, ParticleType type = ParticleType.Flame)
         {
             // Rent a particle and set the new properties.
             var particle = World.ObjectManager.RentParticle();
+
+            particle.RenderOrder = 0;
 
             particle.Type = type;
             particle.Owner = owner;
@@ -95,7 +167,10 @@ namespace PolyPlane.GameObjects.Particles
             particle.Position = particle.Ellipse.origin;
             particle.Velocity = velo;
 
+            //World.ObjectManager.AddParticle(particle);
             World.ObjectManager.EnqueueParticle(particle);
+
+            return particle;
         }
 
         float ILightMapContributor.GetLightRadius()
@@ -139,6 +214,8 @@ namespace PolyPlane.GameObjects.Particles
     public enum ParticleType
     {
         Flame,
-        Dust
+        Dust,
+        Smoke,
+        Vapor
     }
 }

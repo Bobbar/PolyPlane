@@ -183,7 +183,7 @@ namespace PolyPlane.GameObjects
         private FlameEmitter _engineFireFlame;
 
         private List<BulletHole> _bulletHoles = new List<BulletHole>();
-        private List<Vapor> _vaporTrails = new List<Vapor>();
+        private List<VaporEmitter> _vaporTrails = new List<VaporEmitter>();
 
         private static readonly D2DPoint[] _planePoly =
         [
@@ -579,8 +579,6 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
-            _vaporTrails.ForEach(v => v.Render(ctx));
-
             if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
                 ctx.DrawPolygon(this.FlamePoly, _flameFillColor, 1f, _flameFillColor);
 
@@ -591,7 +589,6 @@ namespace PolyPlane.GameObjects
 
             DrawClippedObjects(ctx);
             _wings.ForEach(w => w.Render(ctx));
-            _gun.Render(ctx);
 
 
             //foreach (var b in _bulletHoles)
@@ -827,7 +824,7 @@ namespace PolyPlane.GameObjects
             const float VAPOR_TRAIL_VELO = 1000f; // Velocity before vapor trail is visible.
             const float MAX_GS = 15f; // Gs for max vapor trail intensity.
 
-            _vaporTrails.Add(new Vapor(wing, this, D2DPoint.Zero, 8f, VAPOR_TRAIL_GS, VAPOR_TRAIL_VELO, MAX_GS));
+            _vaporTrails.Add(new VaporEmitter(wing, this, D2DPoint.Zero, 8f, VAPOR_TRAIL_GS, VAPOR_TRAIL_VELO, MAX_GS));
 
             _wings.Add(wing);
         }

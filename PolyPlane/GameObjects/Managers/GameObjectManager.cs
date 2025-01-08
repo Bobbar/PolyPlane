@@ -33,6 +33,7 @@ namespace PolyPlane.GameObjects
         public ConcurrentQueue<FighterPlane> NewPlanes = new();
         public ConcurrentQueue<Particle> NewParticles = new();
 
+
         private Dictionary<int, GameObject> _objLookup = new();
         private SpatialGrid<GameObject> _spatialGrid = new(o => o.Position, o => o.IsExpired);
 
@@ -79,7 +80,8 @@ namespace PolyPlane.GameObjects
 
         public void EnqueueDebris(Debris debris)
         {
-            NewDebris.Enqueue(debris);
+            if (!World.IsServer)
+                NewDebris.Enqueue(debris);
         }
 
         private void AddDebris(Debris debris)
@@ -228,6 +230,7 @@ namespace PolyPlane.GameObjects
             NewMissiles.Clear();
             NewPlanes.Clear();
             NewParticles.Clear();
+
 
             _objLookup.Clear();
             _spatialGrid.Clear();
