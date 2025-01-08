@@ -182,7 +182,7 @@ namespace PolyPlane.Helpers
 
             var delta = A1 * B2 - A2 + B1;
 
-            if (delta == 0f)
+            if (Math.Abs(delta) <= float.Epsilon)
                 return D2DPoint.Zero;
 
             var x = (B2 * C1 - B1 * C2) / delta;
@@ -200,6 +200,20 @@ namespace PolyPlane.Helpers
             var groundLineB = new D2DPoint(obj.Position.X + GROUND_LINE_LEN, 0f);
 
             var intersectVector = obj.Position + AngleToVectorDegrees(angle, obj.Altitude + Y_OFFSET);
+            var groundPos = IntersectionPoint(obj.Position, intersectVector, groundLineA, groundLineB);
+
+            return groundPos;
+        }
+
+        public static D2DPoint GroundIntersectionPoint(GameObject obj)
+        {
+            const float GROUND_LINE_LEN = 50000f;
+            const float Y_OFFSET = 0f;
+
+            var groundLineA = new D2DPoint(obj.Position.X - GROUND_LINE_LEN, 0f);
+            var groundLineB = new D2DPoint(obj.Position.X + GROUND_LINE_LEN, 0f);
+
+            var intersectVector = obj.Position + (obj.Velocity * World.DynamicDT);
             var groundPos = IntersectionPoint(obj.Position, intersectVector, groundLineA, groundLineB);
 
             return groundPos;

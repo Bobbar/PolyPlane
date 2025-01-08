@@ -412,15 +412,31 @@ namespace PolyPlane.GameObjects.Manager
             {
                 foreach (var bullet in _objs.Bullets)
                 {
-                    if (bullet.Altitude <= 1f && !bullet.IsExpired)
-                        bullet.IsExpired = true;
+                    if (!bullet.IsExpired && bullet.Altitude <= 0f)
+                    {
+                        var groundImpactPos = Utilities.GroundIntersectionPoint(bullet);
+
+                        if (groundImpactPos != D2DPoint.Zero)
+                        {
+                            bullet.Position = groundImpactPos;
+                            bullet.IsExpired = true;
+                        }
+                    }
                 }
             }
 
             foreach (var missile in _objs.Missiles)
             {
-                if (missile.Altitude <= 1f && !missile.IsExpired)
-                    missile.IsExpired = true;
+                if (!missile.IsExpired && missile.Altitude <= 0f)
+                {
+                    var groundImpactPos = Utilities.GroundIntersectionPoint(missile);
+
+                    if (groundImpactPos != D2DPoint.Zero)
+                    {
+                        missile.Position = groundImpactPos;
+                        missile.IsExpired = true;
+                    }
+                }
             }
         }
 

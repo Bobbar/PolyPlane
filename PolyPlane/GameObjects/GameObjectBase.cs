@@ -273,7 +273,7 @@ namespace PolyPlane.GameObjects
             else
             {
                 // Let explosions spawn below ground.
-                if (this is Explosion)
+                if (this is Explosion || this is Bullet || this is GuidedMissile)
                     return;
 
                 // Clamp all other objects to ground level.
