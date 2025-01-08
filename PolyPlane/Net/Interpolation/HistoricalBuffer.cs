@@ -1,10 +1,10 @@
-﻿namespace PolyPlane.Net
+﻿namespace PolyPlane.Net.Interpolation
 {
     public class HistoricalBuffer<T>
     {
-        private const int MAX_HIST = 50;
+        private const int MAX_HIST = 20;
         private List<BufferEntry<T>> _history = new List<BufferEntry<T>>();
-        private  Func<T, T, double, T> _interpolate;
+        private Func<T, T, double, T> _interpolate;
 
         public HistoricalBuffer(Func<T, T, double, T> interpolate)
         {

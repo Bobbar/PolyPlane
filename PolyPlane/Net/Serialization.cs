@@ -11,7 +11,7 @@ namespace PolyPlane.Net
         public static BitBuffer GetBitBuffer()
         {
             if (bitBuffer == null)
-                bitBuffer = new BitBuffer(1024);
+                bitBuffer = new BitBuffer(256);
 
             return bitBuffer;
         }

@@ -2,6 +2,7 @@
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Net;
+using PolyPlane.Net.Interpolation;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
@@ -217,7 +218,7 @@ namespace PolyPlane.GameObjects
 
         public virtual void NetUpdate(D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
         {
-            if (World.InterpOn && World.IsClient)
+            if (World.InterpOn)
             {
                 var newState = new GameObjectPacket(this);
                 newState.Position = position;

@@ -73,9 +73,8 @@ namespace PolyPlane.Net
             this.Deserialize(data);
         }
 
-        public ChatPacket(string message, string playerName) : base()
+        public ChatPacket(string message, string playerName) : base(PacketTypes.ChatMessage)
         {
-            Type = PacketTypes.ChatMessage;
             Message = message;
             PlayerName = playerName;
         }
@@ -101,10 +100,9 @@ namespace PolyPlane.Net
     {
         public string Message;
 
-        public PlayerEventPacket(string message)
+        public PlayerEventPacket(string message) : base(PacketTypes.PlayerEvent)
         {
             Message = message;
-            Type = PacketTypes.PlayerEvent;
         }
 
         public PlayerEventPacket(BitBuffer data)
@@ -138,9 +136,8 @@ namespace PolyPlane.Net
             this.Deserialize(data);
         }
 
-        public DiscoveryPacket(string ip, string name, int port) : base()
+        public DiscoveryPacket(string ip, string name, int port) : base(PacketTypes.Discovery)
         {
-            Type = PacketTypes.Discovery;
             IP = ip;
             Name = name;
             Port = port;
@@ -179,9 +176,8 @@ namespace PolyPlane.Net
             this.Deserialize(data);
         }
 
-        public SyncPacket(long serverTime, float timeOfDay, float timeOfDayDir, bool gunsOnly, float deltaTime) : base()
+        public SyncPacket(long serverTime, float timeOfDay, float timeOfDayDir, bool gunsOnly, float deltaTime) : base(PacketTypes.ServerSync)
         {
-            Type = PacketTypes.ServerSync;
             ServerTime = serverTime;
             TimeOfDay = timeOfDay;
             TimeOfDayDir = timeOfDayDir;
@@ -217,25 +213,17 @@ namespace PolyPlane.Net
     {
         public D2DPoint Position;
 
-        public BasicPacket(PacketTypes type) : base(type) { }
-
         public BasicPacket() : base() { }
+        public BasicPacket(PacketTypes type) : base(type) { }
+        public BasicPacket(PacketTypes type, GameID id) : base(type, id) { }
 
         public BasicPacket(BitBuffer data)
         {
             this.Deserialize(data);
         }
 
-        public BasicPacket(PacketTypes type, GameID id) : base()
+        public BasicPacket(PacketTypes type, GameID id, D2DPoint position) : base(type, id)
         {
-            Type = type;
-            ID = id;
-        }
-
-        public BasicPacket(PacketTypes type, GameID id, D2DPoint position) : base()
-        {
-            Type = type;
-            ID = id;
             Position = position;
         }
 
@@ -244,7 +232,6 @@ namespace PolyPlane.Net
             base.Serialize(data);
 
             data.AddD2DPoint(Position);
-
         }
 
         public override void Deserialize(BitBuffer data)
@@ -290,10 +277,7 @@ namespace PolyPlane.Net
     {
         public List<PlanePacket> Planes = new List<PlanePacket>();
 
-        public PlaneListPacket() : base()
-        {
-            Type = PacketTypes.PlaneListUpdate;
-        }
+        public PlaneListPacket() : base(PacketTypes.PlaneListUpdate) { }
 
         public PlaneListPacket(BitBuffer data)
         {
@@ -324,10 +308,7 @@ namespace PolyPlane.Net
     {
         public List<MissilePacket> Missiles = new List<MissilePacket>();
 
-        public MissileListPacket() : base()
-        {
-            Type = PacketTypes.MissileUpdateList;
-        }
+        public MissileListPacket(PacketTypes type) : base(type) { }
 
         public MissileListPacket(BitBuffer data)
         {
@@ -364,9 +345,8 @@ namespace PolyPlane.Net
             this.Deserialize(data);
         }
 
-        public NewPlayerPacket(FighterPlane plane) : base()
+        public NewPlayerPacket(FighterPlane plane) : base(PacketTypes.NewPlayer)
         {
-            Type = PacketTypes.NewPlayer;
             Name = plane.PlayerName;
             PlaneColor = plane.PlaneColor;
             Position = plane.Position;
@@ -396,14 +376,11 @@ namespace PolyPlane.Net
     {
         public List<NewPlayerPacket> Players = new List<NewPlayerPacket>();
 
+        public PlayerListPacket(PacketTypes type) : base(type) { }
+
         public PlayerListPacket(BitBuffer data)
         {
             this.Deserialize(data);
-        }
-
-        public PlayerListPacket(PacketTypes type, List<NewPlayerPacket> players) : base(type)
-        {
-            Players = players;
         }
 
         public override void Serialize(BitBuffer data)
@@ -431,6 +408,8 @@ namespace PolyPlane.Net
         public D2DPoint Position;
         public D2DPoint Velocity;
         public float Rotation;
+
+        public GameObjectPacket(PacketTypes type) : base(type) { }
 
         public GameObjectPacket() : base() { }
 
@@ -500,13 +479,6 @@ namespace PolyPlane.Net
         public List<GameObjectPacket> Packets = new List<GameObjectPacket>();
 
         public GameObjectListPacket(PacketTypes type) : base(type) { }
-
-        public GameObjectListPacket() : base() { }
-
-        public GameObjectListPacket(List<GameObjectPacket> packets)
-        {
-            Packets = packets;
-        }
 
         public GameObjectListPacket(BitBuffer data)
         {
@@ -679,17 +651,6 @@ namespace PolyPlane.Net
             this.Deserialize(data);
         }
 
-        public ImpactPacket(GameObject targetObj, GameID impactorID, D2DPoint point, float angle, float damageAmt, bool wasHeadshot, ImpactType impactType) : base(targetObj)
-        {
-            Type = PacketTypes.Impact;
-            ImpactorID = impactorID;
-            ImpactPoint = point;
-            ImpactAngle = angle;
-            WasHeadshot = wasHeadshot;
-            DamageAmount = damageAmt;
-            ImpactType = impactType;
-        }
-
         public ImpactPacket(GameObject targetObj, GameID impactorID, D2DPoint point, float angle, float damageAmt, bool wasHeadshot, bool wasFlipped, ImpactType impactType) : base(targetObj)
         {
             Type = PacketTypes.Impact;
@@ -733,10 +694,7 @@ namespace PolyPlane.Net
     {
         public List<ImpactPacket> Impacts = new List<ImpactPacket>();
 
-        public ImpactListPacket() : base()
-        {
-            Type = PacketTypes.ImpactList;
-        }
+        public ImpactListPacket() : base(PacketTypes.ImpactList) { }
 
         public ImpactListPacket(BitBuffer data)
         {

@@ -1,6 +1,6 @@
 ﻿using PolyPlane.Helpers;
 
-namespace PolyPlane
+namespace PolyPlane.Net.Interpolation
 {
     public class InterpolationBuffer<T>
     {
@@ -32,7 +32,7 @@ namespace PolyPlane
                 _clientStartTime = now;
 
             var offset = _offsetMedian.Add(now - updatedAt);
-            var roundedOffset = (offset / (_tickRate / 2d)) * (_tickRate / 2d);
+            var roundedOffset = offset / (_tickRate / 2d) * (_tickRate / 2d);
             var newState = new BufferEntry<T>(state, updatedAt + roundedOffset + _tickRate);
 
             _buffer.Add(newState);
@@ -67,7 +67,7 @@ namespace PolyPlane
                 }
             }
 
-            Interp(new BufferEntry<T>(_resetingState, (_clientStartTime == -1 ? now : _clientStartTime)), _buffer[0], now);
+            Interp(new BufferEntry<T>(_resetingState, _clientStartTime == -1 ? now : _clientStartTime), _buffer[0], now);
         }
 
         private void Interp(BufferEntry<T> from, BufferEntry<T> to, double now)
@@ -75,18 +75,5 @@ namespace PolyPlane
             var pctElapsed = (now - from.UpdatedAt) / (to.UpdatedAt - from.UpdatedAt);
             _interpolate(from.State, to.State, pctElapsed);
         }
-    }
-
-    public class BufferEntry<T>
-    {
-        public T State;
-        public double UpdatedAt;
-
-        public BufferEntry(T state, double updatedAt)
-        {
-            this.State = state;
-            this.UpdatedAt = updatedAt;
-        }
-
     }
 }

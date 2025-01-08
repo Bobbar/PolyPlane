@@ -643,7 +643,7 @@ namespace PolyPlane.Helpers
             return tagText;
         }
 
-        public static AIPersonality GetRandomPersonalities(int num)
+        public static AIPersonality GetRandomPersonalities(int num, bool allowCowardly = true)
         {
             AIPersonality personality = AIPersonality.Normal;
 
@@ -652,6 +652,12 @@ namespace PolyPlane.Helpers
             while (nAdded < num)
             {
                 var rndPers = RandomEnum<AIPersonality>();
+
+                if (!allowCowardly)
+                {
+                    while (rndPers == AIPersonality.Cowardly)
+                        rndPers = RandomEnum<AIPersonality>();
+                }
 
                 if (!personality.HasFlag(rndPers))
                 {
