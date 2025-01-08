@@ -336,19 +336,7 @@ namespace PolyPlane
         {
             if (this.Disposing || this.IsDisposed || _render == null || _killRender == true) return;
 
-            try
-            {
-                if (this.InvokeRequired && !this.Disposing)
-                    this.Invoke(() => HandleNewImpact(sender, e));
-                else
-                {
-                    HandleImpactFeedback(e);
-                }
-            }
-            catch
-            {
-                // Catch object disposed exceptions.
-            }
+            HandleImpactFeedback(e);
         }
 
         private void HandleImpactFeedback(ImpactEvent impact)
@@ -395,7 +383,6 @@ namespace PolyPlane
             _render?.Dispose();
             _fpsLimiter?.Dispose();
         }
-
 
         private FighterPlane GetNewPlane(D2DColor planeColor, bool isAI = false, string playerName = "Player")
         {
