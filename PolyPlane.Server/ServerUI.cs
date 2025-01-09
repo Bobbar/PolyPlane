@@ -614,7 +614,6 @@ namespace PolyPlane.Server
             infoText += $"MB Rec/s: {Math.Round(_recSmooth.Current, 2)}\n";
             infoText += $"MB Sent/s: {Math.Round(_sentSmooth.Current, 2)}\n";
             infoText += $"DT: {Math.Round(World.DT, 4)}\n";
-            infoText += $"Interp: {World.InterpOn.ToString()}\n";
             infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
 
             return infoText;
@@ -714,11 +713,6 @@ namespace PolyPlane.Server
                 _aiPersonality = personality;
                 _spawnAIPlane = true;
             }
-        }
-
-        private void InterpCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            World.InterpOn = InterpCheckBox.Checked;
         }
 
         private void ShowViewPortButton_Click(object sender, EventArgs e)

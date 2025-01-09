@@ -32,7 +32,6 @@
             PauseButton = new Button();
             SpawnAIPlaneButton = new Button();
             InfoLabel = new Label();
-            InterpCheckBox = new CheckBox();
             AddressTextBox = new TextBox();
             PortTextBox = new TextBox();
             label1 = new Label();
@@ -93,20 +92,6 @@
             InfoLabel.Size = new Size(190, 306);
             InfoLabel.TabIndex = 2;
             InfoLabel.Text = "Info";
-            // 
-            // InterpCheckBox
-            // 
-            InterpCheckBox.AutoSize = true;
-            InterpCheckBox.Checked = true;
-            InterpCheckBox.CheckState = CheckState.Checked;
-            InterpCheckBox.Location = new Point(629, 462);
-            InterpCheckBox.Name = "InterpCheckBox";
-            InterpCheckBox.Size = new Size(76, 19);
-            InterpCheckBox.TabIndex = 3;
-            InterpCheckBox.Text = "Interp On";
-            InterpCheckBox.UseVisualStyleBackColor = true;
-            InterpCheckBox.Visible = false;
-            InterpCheckBox.CheckedChanged += InterpCheckBox_CheckedChanged;
             // 
             // AddressTextBox
             // 
@@ -387,7 +372,6 @@
             Controls.Add(label1);
             Controls.Add(PortTextBox);
             Controls.Add(AddressTextBox);
-            Controls.Add(InterpCheckBox);
             Controls.Add(InfoLabel);
             Controls.Add(SpawnAIPlaneButton);
             Controls.Add(PauseButton);
@@ -407,7 +391,6 @@
         private Button PauseButton;
         private Button SpawnAIPlaneButton;
         private Label InfoLabel;
-        private CheckBox InterpCheckBox;
         private TextBox AddressTextBox;
         private TextBox PortTextBox;
         private Label label1;

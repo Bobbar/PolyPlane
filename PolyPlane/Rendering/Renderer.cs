@@ -1700,7 +1700,6 @@ namespace PolyPlane.Rendering
                     infoText += $"Headshots: {plane.Headshots}\n";
                 }
 
-                infoText += $"Interp: {World.InterpOn.ToString()}\n";
                 infoText += $"GunsOnly: {World.GunsOnly.ToString()}\n";
                 infoText += $"MissilesOnRadar: {World.ShowMissilesOnRadar.ToString()}\n";
                 infoText += $"Missile Regen: {World.MissileRegen.ToString()}\n";

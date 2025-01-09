@@ -135,7 +135,7 @@ namespace PolyPlane.GameObjects
         private List<GameObject> _attachments = null;
         private List<GameObject> _attachmentsHighFreq = null;
         private List<GameTimer> _timers = null;
-
+       
         protected float _rotationSpeed = 0f;
         protected float _rotation = 0f;
         protected float _verticalSpeed = 0f;
@@ -222,7 +222,7 @@ namespace PolyPlane.GameObjects
         /// <returns></returns>
         public GameTimer AddTimer(float interval, bool autoRestart = false)
         {
-           return AddTimer(interval, 0f, autoRestart);
+            return AddTimer(interval, 0f, autoRestart);
         }
 
 
@@ -292,8 +292,14 @@ namespace PolyPlane.GameObjects
 
             DoUpdate(dt);
 
-            UpdateAttachements(dt);
             UpdateTimers(dt);
+            UpdateAttachements(dt);
+
+            // Hack: Net objects need this because their position updates are buffered
+            // and only interpolated within DoUpdate. We need to make sure attachments
+            // like wings are synced after the interpolated position is applied.
+            if (this.IsNetObject)
+                UpdateHighFreqAttachements(0f);
         }
 
         private void AdvancePositionAndRotation(float dt)
@@ -326,14 +332,13 @@ namespace PolyPlane.GameObjects
             if (this.IsExpired)
                 return;
 
-            if (World.InterpOn && World.IsNetGame && IsNetObject && InterpBuffer != null)
+            if (World.IsNetGame && IsNetObject && InterpBuffer != null)
             {
                 var nowMs = World.CurrentNetTimeMs();
                 InterpBuffer.InterpolateState(nowMs);
             }
             else
             {
-
                 if (this.IsAwake)
                 {
                     if (!_hasPhysicsUpdate)
@@ -350,21 +355,12 @@ namespace PolyPlane.GameObjects
 
         public virtual void NetUpdate(D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
         {
-            if (World.InterpOn)
-            {
-                var newState = new GameObjectPacket(this);
-                newState.Position = position;
-                newState.Velocity = velocity;
-                newState.Rotation = rotation;
+            var newState = new GameObjectPacket(this);
+            newState.Position = position;
+            newState.Velocity = velocity;
+            newState.Rotation = rotation;
 
-                InterpBuffer.Enqueue(newState, frameTime);
-            }
-            else
-            {
-                this.Position = position;
-                this.Rotation = rotation;
-                this.Velocity = velocity;
-            }
+            InterpBuffer.Enqueue(newState, frameTime);
 
             var now = World.CurrentNetTimeMs();
             this.LagAmount = now - frameTime;

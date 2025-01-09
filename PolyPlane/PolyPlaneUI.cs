@@ -873,7 +873,6 @@ namespace PolyPlane
                     break;
 
                 case 'd':
-                    World.InterpOn = !World.InterpOn;
                     break;
 
                 case 'e':

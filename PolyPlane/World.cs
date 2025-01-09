@@ -12,7 +12,6 @@ namespace PolyPlane
         public static BoundedRange[] WorldBounds = new BoundedRange[2];
         public static BoundedRange[] VeloBounds = new BoundedRange[2];
 
-        public static bool InterpOn = true;
 
         public static int PHYSICS_SUB_STEPS => _sub_steps;
 
