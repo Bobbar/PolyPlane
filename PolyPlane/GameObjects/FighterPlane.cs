@@ -142,14 +142,14 @@ namespace PolyPlane.GameObjects
         private Direction _queuedDir = Direction.Right;
         private bool _isAIPlane = false;
 
-        private GameTimer _flipTimer = new GameTimer(2f);
-        private GameTimer _expireTimeout = new GameTimer(40f);
-        private GameTimer _isLockOntoTimeout = new GameTimer(3f);
-        private GameTimer _bulletRegenTimer = new GameTimer(0.2f, true);
-        private GameTimer _decoyRegenTimer = new GameTimer(0.6f, true);
-        private GameTimer _missileRegenTimer = new GameTimer(60f, true);
-        private GameTimer _easePhysicsTimer = new GameTimer(5f, true);
-        private GameTimer _groundDustSpawnTimer = new GameTimer(0.03f, true);
+        private GameTimer _flipTimer;
+        private GameTimer _expireTimeout;
+        private GameTimer _isLockOntoTimeout;
+        private GameTimer _bulletRegenTimer;
+        private GameTimer _decoyRegenTimer;
+        private GameTimer _missileRegenTimer;
+        private GameTimer _easePhysicsTimer;
+        private GameTimer _groundDustSpawnTimer;
         private FloatAnimation _engineOutSpoolDown;
 
         private bool _easePhysicsComplete = false;
@@ -183,7 +183,6 @@ namespace PolyPlane.GameObjects
         private FlameEmitter _engineFireFlame;
 
         private List<BulletHole> _bulletHoles = new List<BulletHole>();
-        private List<VaporEmitter> _vaporTrails = new List<VaporEmitter>();
 
         private static readonly D2DPoint[] _planePoly =
         [
@@ -278,12 +277,28 @@ namespace PolyPlane.GameObjects
             InitWings();
 
             var centerOfThrustPos = new D2DPoint(-26.6f, 0.46f) * this.RenderScale;
-            _centerOfThrust = new FixturePoint(this, centerOfThrustPos);
-            _engineFireFlame = new FlameEmitter(this, centerOfThrustPos, 7f, 13f, false);
-            _flamePos = new FixturePoint(this, new D2DPoint(-27.3f, 0.46f) * this.RenderScale);
-            _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
-            _gun = new Gun(this, new D2DPoint(35f, 0), FireBulletCallback);
-            _decoyDispenser = new DecoyDispenser(this, new D2DPoint(-24f, 0f));
+
+            _centerOfThrust = AddAttachment(new FixturePoint(this, centerOfThrustPos), highFrequency: true);
+            _engineFireFlame = AddAttachment(new FlameEmitter(this, centerOfThrustPos, 7f, 13f, false));
+            _flamePos = AddAttachment(new FixturePoint(this, new D2DPoint(-27.3f, 0.46f) * this.RenderScale));
+            _cockpitPosition = AddAttachment(new FixturePoint(this, new D2DPoint(19.5f, -5f)));
+            _gun = AddAttachment(new Gun(this, new D2DPoint(35f, 0), FireBulletCallback));
+            _decoyDispenser = AddAttachment(new DecoyDispenser(this, new D2DPoint(-24f, 0f)));
+
+            _engineOutSpoolDown = AddAttachment(new FloatAnimation(1f, 0f, 20f, EasingFunctions.EaseLinear, v =>
+            {
+                if (!this.IsDisabled)
+                    _thrustAmt.SetNow(v);
+            }));
+
+            _flipTimer = AddTimer(2f);
+            _expireTimeout = AddTimer(40f);
+            _isLockOntoTimeout = AddTimer(3f);
+            _bulletRegenTimer = AddTimer(0.2f, true);
+            _decoyRegenTimer = AddTimer(0.6f, true);
+            _missileRegenTimer = AddTimer(60f, true);
+            _easePhysicsTimer = AddTimer(5f, true);
+            _groundDustSpawnTimer = AddTimer(0.03f, true);
 
             _expireTimeout.TriggerCallback = () =>
             {
@@ -295,7 +310,7 @@ namespace PolyPlane.GameObjects
 
             _bulletRegenTimer.TriggerCallback = () =>
             {
-                if (NumBullets < MAX_BULLETS)
+                if (!this.FiringBurst && NumBullets < MAX_BULLETS)
                     NumBullets++;
             };
 
@@ -311,7 +326,7 @@ namespace PolyPlane.GameObjects
 
             _decoyRegenTimer.TriggerCallback = () =>
             {
-                if (NumDecoys < MAX_DECOYS)
+                if (!this.DroppingDecoy && NumDecoys < MAX_DECOYS)
                     NumDecoys++;
             };
 
@@ -324,12 +339,6 @@ namespace PolyPlane.GameObjects
 
             _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
             _easePhysicsTimer.TriggerCallback = () => _easePhysicsComplete = true;
-
-            _engineOutSpoolDown = new FloatAnimation(1f, 0f, 20f, EasingFunctions.EaseLinear, v =>
-            {
-                if (!this.IsDisabled)
-                    _thrustAmt.SetNow(v);
-            });
         }
 
         private void InitWings()
@@ -369,7 +378,7 @@ namespace PolyPlane.GameObjects
             }), isControl: true);
 
             // Center of mass location.
-            _centerOfMass = new FixturePoint(this, new D2DPoint(-5f, 0f));
+            _centerOfMass = AddAttachment(new FixturePoint(this, new D2DPoint(-5f, 0f)), highFrequency: true);
         }
 
         public override void DoPhysicsUpdate(float dt)
@@ -396,11 +405,6 @@ namespace PolyPlane.GameObjects
                 else
                     _controlWing.Deflection = _damageDeflection;
             }
-
-            // Update
-            _wings.ForEach(w => w.Update(dt));
-            _centerOfThrust.Update(dt);
-            _centerOfMass.Update(dt);
 
             // Wing force and torque.
             foreach (var wing in _wings)
@@ -490,41 +494,17 @@ namespace PolyPlane.GameObjects
         public override void DoUpdate(float dt)
         {
             base.DoUpdate(dt);
-           
+
             // Update all the low frequency stuff.
-            _flamePos.Update(dt);
-            _cockpitPosition.Update(dt);
             _thrustAmt.Update(dt);
-            _gun.Update(dt);
-            _decoyDispenser.Update(dt);
-            _engineFireFlame.Update(dt);
-            _bulletHoles.ForEach(f => f.Update(dt));
-            _vaporTrails.ForEach(v => v.Update(dt));
 
             if (!this.IsNetObject)
                 CheckForFlip();
-
-            UpdateFlame();
-
-            _easePhysicsTimer.Update(dt);
-            _flipTimer.Update(dt);
-            _isLockOntoTimeout.Update(dt);
-            _expireTimeout.Update(dt);
-            _groundDustSpawnTimer.Update(dt);
-            _engineOutSpoolDown.Update(dt);
 
             this.Radar?.Update(dt);
 
             if (_aiBehavior != null)
                 _aiBehavior.Update(dt);
-
-            if (!this.FiringBurst)
-                _bulletRegenTimer.Update(dt);
-
-            _missileRegenTimer.Update(dt);
-
-            if (!this.DroppingDecoy)
-                _decoyRegenTimer.Update(dt);
 
             if (this.IsDisabled)
                 DeathTime += dt;
@@ -576,7 +556,11 @@ namespace PolyPlane.GameObjects
             base.Render(ctx);
 
             if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
+            {
+                UpdateFlame();
+
                 ctx.DrawPolygon(this.FlamePoly, _flameFillColor, 1f, _flameFillColor);
+            }
 
             if (!this.IsDisabled)
                 DrawShockwave(ctx);
@@ -776,7 +760,7 @@ namespace PolyPlane.GameObjects
                 return;
             }
 
-            var missile = new GuidedMissile(this, target, GuidanceType.Advanced, useControlSurfaces: true, useThrustVectoring: true);
+            var missile = new GuidedMissile(this, target, GuidanceType.Advanced);
 
             FireMissileCallback(missile);
 
@@ -820,7 +804,9 @@ namespace PolyPlane.GameObjects
             const float VAPOR_TRAIL_VELO = 1000f; // Velocity before vapor trail is visible.
             const float MAX_GS = 15f; // Gs for max vapor trail intensity.
 
-            _vaporTrails.Add(new VaporEmitter(wing, this, D2DPoint.Zero, 8f, VAPOR_TRAIL_GS, VAPOR_TRAIL_VELO, MAX_GS));
+            wing.AddAttachment(new VaporEmitter(wing, this, D2DPoint.Zero, 8f, VAPOR_TRAIL_GS, VAPOR_TRAIL_VELO, MAX_GS));
+
+            AddAttachment(wing, highFrequency: true);
 
             _wings.Add(wing);
         }
@@ -859,7 +845,7 @@ namespace PolyPlane.GameObjects
 
             this.Polygon.Update();
 
-            var bulletHole = new BulletHole(this, pos + distortVec, angle);
+            var bulletHole = AddAttachment(new BulletHole(this, pos + distortVec, angle));
             bulletHole.IsNetObject = this.IsNetObject;
             _bulletHoles.Add(bulletHole);
         }
@@ -1084,6 +1070,7 @@ namespace PolyPlane.GameObjects
             EngineDamaged = false;
             _expireTimeout.Stop();
             _flipTimer.Restart();
+            _bulletHoles.ForEach(b => b.Dispose());
             _bulletHoles.Clear();
             WasHeadshot = false;
             PlayerGuideAngle = 0f;
@@ -1181,16 +1168,6 @@ namespace PolyPlane.GameObjects
 
             this.FlipY();
 
-            _wings.ForEach(w => w.FlipY());
-            _wings.ForEach(w => w.Update(World.SUB_DT));
-            _vaporTrails.ForEach(v => v.FlipY());
-            _flamePos.FlipY();
-            _bulletHoles.ForEach(f => f.FlipY());
-            _cockpitPosition.FlipY();
-            _gun.FlipY();
-            _centerOfThrust.FlipY();
-            _centerOfMass.FlipY();
-
             if (_currentDir == Direction.Right)
                 _currentDir = Direction.Left;
             else if (_currentDir == Direction.Left)
@@ -1236,8 +1213,8 @@ namespace PolyPlane.GameObjects
             base.Dispose();
 
             _polyClipLayer?.Dispose();
+            _bulletHoles.ForEach(b => b.Dispose());
             _bulletHoles.Clear();
-            _vaporTrails.Clear();
             _engineFireFlame?.Dispose();
         }
     }

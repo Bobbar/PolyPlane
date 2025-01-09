@@ -132,6 +132,9 @@ namespace PolyPlane.GameObjects
         protected Random _rnd => Utilities.Rnd;
         protected InterpolationBuffer<GameObjectPacket> InterpBuffer = null;
         protected HistoricalBuffer<GameObjectPacket> HistoryBuffer = null;
+        private List<GameObject> _attachments = null;
+        private List<GameObject> _attachmentsHighFreq = null;
+        private List<GameTimer> _timers = null;
 
         protected float _rotationSpeed = 0f;
         protected float _rotation = 0f;
@@ -191,6 +194,77 @@ namespace PolyPlane.GameObjects
             RotationSpeed = rotationSpeed;
         }
 
+        /// <summary>
+        /// Add a <see cref="GameTimer"/> which will be automatically updated within the <see cref="Update(float)"/> method.
+        /// </summary>
+        /// <param name="interval"></param>
+        /// <param name="cooldown"></param>
+        /// <param name="autoRestart"></param>
+        /// <returns></returns>
+        public GameTimer AddTimer(float interval, float cooldown = 0f, bool autoRestart = false)
+        {
+            var timer = new GameTimer(interval, cooldown, autoRestart);
+
+            if (_timers == null)
+                _timers = new List<GameTimer>();
+
+            _timers.Add(timer);
+
+            return timer;
+        }
+
+
+        /// <summary>
+        /// Add a <see cref="GameTimer"/> which will be automatically updated within the <see cref="Update(float)"/> method.
+        /// </summary>
+        /// <param name="interval"></param>
+        /// <param name="autoRestart"></param>
+        /// <returns></returns>
+        public GameTimer AddTimer(float interval, bool autoRestart = false)
+        {
+           return AddTimer(interval, 0f, autoRestart);
+        }
+
+
+        /// <summary>
+        /// Add a <see cref="GameTimer"/> which will be automatically updated within the <see cref="Update(float)"/> method.
+        /// </summary>
+        /// <param name="interval"></param>
+        /// <returns></returns>
+        public GameTimer AddTimer(float interval)
+        {
+            return AddTimer(interval, 0f, false);
+        }
+
+        /// <summary>
+        /// Add an attached game object which will be automatically updated when this objects <see cref="Update(float)"/> method is called.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="attachedObject">GameObject to attach.</param>
+        /// <param name="highFrequency">True if this object will be updated within the <see cref="DoPhysicsUpdate(float)"/> method.  Otherwise it will be updated within <see cref="DoUpdate(float)"/>. </param>
+        /// <returns></returns>
+        public T AddAttachment<T>(T attachedObject, bool highFrequency = false) where T : GameObject
+        {
+            if (highFrequency)
+            {
+                if (_attachmentsHighFreq == null)
+                    _attachmentsHighFreq = new List<GameObject>();
+
+                _attachmentsHighFreq.Add(attachedObject);
+
+                return attachedObject;
+            }
+            else
+            {
+                if (_attachments == null)
+                    _attachments = new List<GameObject>();
+
+                _attachments.Add(attachedObject);
+
+                return attachedObject;
+            }
+        }
+
         private bool ImplementsPhysicsUpdate()
         {
             var type = this.GetType();
@@ -210,11 +284,16 @@ namespace PolyPlane.GameObjects
                 {
                     var partialDT = World.SUB_DT;
 
-                    this.DoPhysicsUpdate(partialDT);
+                    DoPhysicsUpdate(partialDT);
+
+                    UpdateHighFreqAttachements(partialDT);
                 }
             }
 
-            this.DoUpdate(dt);
+            DoUpdate(dt);
+
+            UpdateAttachements(dt);
+            UpdateTimers(dt);
         }
 
         private void AdvancePositionAndRotation(float dt)
@@ -292,6 +371,55 @@ namespace PolyPlane.GameObjects
             this.LastNetTime = now;
         }
 
+        private void UpdateHighFreqAttachements(float dt)
+        {
+            if (_attachmentsHighFreq == null)
+                return;
+
+            for (int i = _attachmentsHighFreq.Count - 1; i >= 0; i--)
+            {
+                var attachment = _attachmentsHighFreq[i];
+
+                if (attachment.IsExpired)
+                    _attachmentsHighFreq.RemoveAt(i);
+                else
+                    attachment.Update(dt);
+            }
+        }
+
+        private void UpdateAttachements(float dt)
+        {
+            if (_attachments == null)
+                return;
+
+            for (int i = _attachments.Count - 1; i >= 0; i--)
+            {
+                var attachment = _attachments[i];
+
+                if (attachment.IsExpired)
+                    _attachments.RemoveAt(i);
+                else
+                    attachment.Update(dt);
+            }
+        }
+
+        private void UpdateTimers(float dt)
+        {
+            if (_timers == null)
+                return;
+
+            _timers.ForEach(timer => timer.Update(dt));
+        }
+
+        private void FlipAttachments()
+        {
+            if (_attachments != null)
+                _attachments.ForEach(a => a.FlipY());
+
+            if (_attachmentsHighFreq != null)
+                _attachmentsHighFreq.ForEach(a => a.FlipY());
+        }
+
         public virtual void ClampToGround(float dt)
         {
             if (this is Debris)
@@ -345,7 +473,9 @@ namespace PolyPlane.GameObjects
         }
 
         public virtual void FlipY()
-        { }
+        {
+            FlipAttachments();
+        }
 
         public float GetInertia(float mass)
         {
