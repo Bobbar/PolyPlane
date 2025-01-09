@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.GameObjects.Particles;
 using PolyPlane.Helpers;
 using PolyPlane.Net;
 
@@ -262,6 +263,16 @@ namespace PolyPlane.GameObjects.Manager
 
             if (particleObject is not IPushable)
                 return;
+
+            // Don't push certain particle types.
+            if (particleObject is Particle particle)
+            {
+                switch (particle.Type)
+                {
+                    case ParticleType.Vapor or ParticleType.Smoke:
+                        return;
+                }
+            }
 
             // Don't push planes.
             if (particleObject is FighterPlane)

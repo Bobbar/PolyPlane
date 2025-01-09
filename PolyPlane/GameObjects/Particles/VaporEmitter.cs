@@ -11,8 +11,8 @@ namespace PolyPlane.GameObjects.Particles
         private GameTimer _spawnTimer = new GameTimer(0.05f, true);
         private float _radius = 5f;
         private D2DColor _vaporColor = new D2DColor(0.3f, D2DColor.White);
-        private const int MAX_PARTS = 30;
-        private const float MAX_AGE = 1.5f;
+        private const int MAX_PARTS = 40;
+        private const float MAX_AGE = 3f;
         private float _visibleGs = 0f;
         private float _visibleVelo = 0f;
         private float _maxGs = 0f;
@@ -51,11 +51,6 @@ namespace PolyPlane.GameObjects.Particles
             }
         }
 
-        public override void FlipY()
-        {
-            base.FlipY();
-        }
-
         private void SpawnPart()
         {
             base.Update(0f);
@@ -74,15 +69,15 @@ namespace PolyPlane.GameObjects.Particles
 
             var sVisFact = Utilities.Factor(veloMag - _visibleVelo, _visibleVelo);
             var gVisFact = Utilities.FactorWithEasing(gforce - _visibleGs * 0.5f, _visibleGs, EasingFunctions.In.EaseCircle);
+            var visFact = sVisFact + gVisFact;
 
-            if (sVisFact > 0f || gVisFact > 0f)
+            // Only spawn if the particle will actually be visible.
+            if (visFact >= 0.02f)
             {
                 var sRadFact = Utilities.Factor(veloMag, _visibleVelo);
                 var gRadFact = Utilities.Factor(gforce, _maxGs);
 
                 var radFact = sRadFact + gRadFact;
-                var visFact = sVisFact + gVisFact;
-
                 var newRad = _radius + Utilities.Rnd.NextFloat(-2f, 2f) + radFact * 20f;
 
                 var newColor = _vaporColor;

@@ -83,7 +83,7 @@ namespace PolyPlane.GameObjects.Particles
                     Ellipse.origin = Position;
 
                     var ageFact = 1f - Utilities.Factor(Age, MaxAge);
-                    var radAmt = EasingFunctions.Out.EaseSine(ageFact);
+                    var radAmt = EasingFunctions.Out.EaseQuintic(ageFact);
                     var rad = (InitRadius * radAmt);
 
                     var alphaSmoke = StartColor.a * ageFact;
