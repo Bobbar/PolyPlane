@@ -9,7 +9,7 @@ namespace PolyPlane.GameObjects.Particles
     {
         private const float DEFAULT_INTERVAL = 0.4f;
 
-        private GameTimer _spawnTimer = new GameTimer(DEFAULT_INTERVAL, true);
+        private GameTimer _spawnTimer;
         private ParticleType _particleType = ParticleType.Flame;
 
         private float _minRadius = 1f;
@@ -20,6 +20,8 @@ namespace PolyPlane.GameObjects.Particles
             _particleType = particleType;
             _minRadius = minRadius;
             _maxRadius = maxRadius;
+
+            _spawnTimer = AddTimer(DEFAULT_INTERVAL, true);
 
             _spawnTimer.TriggerCallback = SpawnParticle;
             _spawnTimer.StartCallback = SpawnParticle;
@@ -34,8 +36,6 @@ namespace PolyPlane.GameObjects.Particles
         public override void DoUpdate(float dt)
         {
             base.DoUpdate(dt);
-
-            _spawnTimer.Update(dt);
 
             if (Owner != null && Owner.IsExpired)
                 _spawnTimer.Stop();

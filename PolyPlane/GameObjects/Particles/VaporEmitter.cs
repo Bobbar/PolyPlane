@@ -8,7 +8,7 @@ namespace PolyPlane.GameObjects.Particles
 {
     public class VaporEmitter : FixturePoint, INoGameID
     {
-        private GameTimer _spawnTimer = new GameTimer(0.05f, true);
+        private GameTimer _spawnTimer;
         private float _radius = 5f;
         private D2DColor _vaporColor = new D2DColor(0.3f, D2DColor.White);
         private const int MAX_PARTS = 40;
@@ -21,6 +21,8 @@ namespace PolyPlane.GameObjects.Particles
 
         public VaporEmitter(GameObject obj, GameObject owner, D2DPoint offset, float radius, float visibleGs, float visibleVelo, float maxGs) : base(obj, offset)
         {
+            _spawnTimer = AddTimer(0.05f, true);
+
             _spawnTimer.Interval = MAX_AGE / MAX_PARTS;
 
             _parentObject = owner;
@@ -37,8 +39,6 @@ namespace PolyPlane.GameObjects.Particles
         public override void DoUpdate(float dt)
         {
             base.DoUpdate(dt);
-
-            _spawnTimer.Update(dt);
 
             if (_parentObject.IsExpired)
                 _spawnTimer.Stop();

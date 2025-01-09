@@ -20,6 +20,7 @@ namespace PolyPlane.GameObjects
             this.RenderOrder = 3;
             this.Owner = owner;
             _color = color;
+
             this.Polygon = new RenderPoly(this, RandomPoly(8, 12));
 
             this.RotationSpeed = Utilities.Rnd.NextFloat(-200f, 200f);
@@ -27,13 +28,12 @@ namespace PolyPlane.GameObjects
             this.Velocity = velo * 0.7f;
             this.Velocity += Utilities.RandOPoint(100f);
 
-            _flame = new FlameEmitter(this, D2DPoint.Zero, 2f, 4f);
+            _flame = AddAttachment(new FlameEmitter(this, D2DPoint.Zero, 2f, 4f));
         }
 
         public override void DoUpdate(float dt)
         {
             base.DoUpdate(dt);
-            _flame.Update(dt);
 
             if (this.IsAwake)
                 this.Velocity += (World.Gravity * 1f) * dt;

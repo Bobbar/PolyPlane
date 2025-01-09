@@ -13,8 +13,8 @@ namespace PolyPlane.GameObjects.Fixtures
 
         private GunSmokeEmitter _smoke;
         private FighterPlane _ownerPlane;
-        private GameTimer _burstTimer = new GameTimer(0.25f, true);
-        private GameTimer _muzzleFlashTimer = new GameTimer(0.16f);
+        private GameTimer _burstTimer;
+        private GameTimer _muzzleFlashTimer;
 
         public Gun(FighterPlane plane, D2DPoint position, Action<Bullet> fireBulletCallback) : base(plane, position)
         {
@@ -22,7 +22,10 @@ namespace PolyPlane.GameObjects.Fixtures
             _ownerPlane = plane;
             FireBulletCallback = fireBulletCallback;
 
-            _smoke = new GunSmokeEmitter(this, D2DPoint.Zero, new D2DColor(0.7f, D2DColor.BurlyWood));
+            _smoke = AddAttachment(new GunSmokeEmitter(this, D2DPoint.Zero, new D2DColor(0.7f, D2DColor.BurlyWood)));
+
+            _burstTimer = AddTimer(0.25f, true);
+            _muzzleFlashTimer = AddTimer(0.16f);
 
             _burstTimer.StartCallback = FireBullet;
             _burstTimer.TriggerCallback = FireBullet;
@@ -35,17 +38,14 @@ namespace PolyPlane.GameObjects.Fixtures
         {
             base.DoUpdate(dt);
 
-            _burstTimer.Update(dt);
-            _muzzleFlashTimer.Update(dt);
-
             if (_ownerPlane.FiringBurst && _ownerPlane.NumBullets > 0 && _ownerPlane.IsDisabled == false)
             {
                 _smoke.Visible = true;
-                _smoke.Update(dt);
                 _burstTimer.Start();
             }
             else
             {
+                _smoke.Visible = false;
                 _burstTimer.Stop();
                 _burstTimer.Reset();
             }

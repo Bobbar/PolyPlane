@@ -48,6 +48,8 @@ namespace PolyPlane.GameObjects.Fixtures
 
         public override void DoUpdate(float dt)
         {
+            base.DoUpdate(dt);
+
             SyncWithOwner();
         }
     }

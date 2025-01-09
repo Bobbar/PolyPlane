@@ -7,12 +7,14 @@ namespace PolyPlane.GameObjects.Fixtures
     {
         public Action<Decoy> DropDecoyCallback;
 
-        private GameTimer _decoyTimer = new GameTimer(0.25f, true);
+        private GameTimer _decoyTimer;
         private FighterPlane _plane;
 
         public DecoyDispenser(FighterPlane plane, D2DPoint position) : base(plane, position)
         {
             _plane = plane;
+
+            _decoyTimer = AddTimer(0.25f, true);
 
             _decoyTimer.StartCallback = DropDecoy;
             _decoyTimer.TriggerCallback = DropDecoy;
@@ -21,8 +23,6 @@ namespace PolyPlane.GameObjects.Fixtures
         public override void DoUpdate(float dt)
         {
             base.DoUpdate(dt);
-
-            _decoyTimer.Update(dt);
 
             if (_plane.DroppingDecoy && !_decoyTimer.IsRunning)
             {
