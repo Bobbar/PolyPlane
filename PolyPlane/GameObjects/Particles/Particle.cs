@@ -48,9 +48,9 @@ namespace PolyPlane.GameObjects.Particles
             Mass = PARTICLE_MASS;
         }
 
-        public override void Update(float dt)
+        public override void DoUpdate(float dt)
         {
-            base.Update(dt);
+            base.DoUpdate(dt);
 
             switch (this.Type)
             {

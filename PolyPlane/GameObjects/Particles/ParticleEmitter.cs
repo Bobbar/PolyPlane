@@ -31,9 +31,10 @@ namespace PolyPlane.GameObjects.Particles
         public abstract D2DColor GetStartColor();
         public abstract D2DColor GetEndColor();
 
-        public override void Update(float dt)
+        public override void DoUpdate(float dt)
         {
-            base.Update(dt);
+            base.DoUpdate(dt);
+
             _spawnTimer.Update(dt);
 
             if (Owner != null && Owner.IsExpired)

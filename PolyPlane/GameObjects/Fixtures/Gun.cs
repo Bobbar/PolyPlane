@@ -31,9 +31,9 @@ namespace PolyPlane.GameObjects.Fixtures
             _muzzleFlashTimer.TriggerCallback = () => { MuzzleFlashOn = false; };
         }
 
-        public override void Update(float dt)
+        public override void DoUpdate(float dt)
         {
-            base.Update(dt);
+            base.DoUpdate(dt);
 
             _burstTimer.Update(dt);
             _muzzleFlashTimer.Update(dt);

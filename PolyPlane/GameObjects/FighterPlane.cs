@@ -372,124 +372,125 @@ namespace PolyPlane.GameObjects
             _centerOfMass = new FixturePoint(this, new D2DPoint(-5f, 0f));
         }
 
-        public override void Update(float dt)
+        public override void DoPhysicsUpdate(float dt)
         {
-            for (int i = 0; i < World.PHYSICS_SUB_STEPS; i++)
+            base.DoPhysicsUpdate(dt);
+
+            var wingForce = D2DPoint.Zero;
+            var wingTorque = 0f;
+            var guideRot = this.Rotation;
+
+            // Get guidance direction.
+            if (_isAIPlane)
+                guideRot = GetAPGuidanceDirection(_aiBehavior.GetAIGuidance(dt));
+            else
+                guideRot = GetAPGuidanceDirection(PlayerGuideAngle);
+
+            // Deflection direction.
+            var deflection = Utilities.ClampAngle180(guideRot);
+
+            if (!this.IsNetObject)
             {
-                var partialDT = World.SUB_DT;
-
-                var wingForce = D2DPoint.Zero;
-                var wingTorque = 0f;
-                var guideRot = this.Rotation;
-
-                // Get guidance direction.
-                if (_isAIPlane)
-                    guideRot = GetAPGuidanceDirection(_aiBehavior.GetAIGuidance(dt));
+                if (!this.IsDisabled)
+                    _controlWing.Deflection = deflection;
                 else
-                    guideRot = GetAPGuidanceDirection(PlayerGuideAngle);
-
-                // Deflection direction.
-                var deflection = Utilities.ClampAngle180(guideRot);
-
-                if (!this.IsNetObject)
-                {
-                    if (!this.IsDisabled)
-                        _controlWing.Deflection = deflection;
-                    else
-                        _controlWing.Deflection = _damageDeflection;
-                }
-
-                // Update
-                base.Update(partialDT);
-                _wings.ForEach(w => w.Update(partialDT));
-                _centerOfThrust.Update(partialDT);
-                _centerOfMass.Update(partialDT);
-
-                // Wing force and torque.
-                foreach (var wing in _wings)
-                {
-                    // How much force a damaged wing contributes.
-                    const float DAMAGED_FACTOR = 0.2f;
-
-                    var forces = wing.GetForces(_centerOfMass.Position);
-
-                    if (wing.Visible)
-                    {
-                        wingForce += forces.LiftAndDrag;
-                        wingTorque += forces.Torque;
-                    }
-                    else
-                    {
-                        wingForce += forces.LiftAndDrag * DAMAGED_FACTOR;
-                        wingTorque += forces.Torque * DAMAGED_FACTOR;
-                    }
-                }
-
-                // Apply small amount of drag and torque for bullet holes.
-                // Decreases handling and max speed with damage.
-                float damageTorque = 0f;
-                D2DPoint damageForce = D2DPoint.Zero;
-
-                if (World.BulletHoleDrag)
-                {
-                    foreach (var hole in _bulletHoles)
-                    {
-                        GetBulletHoleDrag(hole, partialDT, out D2DPoint dVec, out float dTq);
-                        damageTorque += dTq;
-                        damageForce += dVec;
-                    }
-                }
-
-                // Apply disabled effects.
-                if (IsDisabled)
-                {
-                    const float DISABLED_FACTOR = 0.1f;
-
-                    wingForce *= DISABLED_FACTOR;
-                    wingTorque *= DISABLED_FACTOR;
-
-                    damageTorque *= DISABLED_FACTOR;
-                    damageForce *= DISABLED_FACTOR;
-
-                    ThrustOn = false;
-                    _thrustAmt.SetNow(0f);
-                    FiringBurst = false;
-                    _engineFireFlame.StartSpawning();
-                }
-
-                var thrust = GetThrust(true);
-
-                if (!this.IsNetObject)
-                {
-                    Deflection = _controlWing.Deflection;
-
-                    // Ease in physics.
-                    var easeFact = 1f;
-
-                    if (!_easePhysicsComplete)
-                        _easePhysicsTimer.Start();
-
-                    if (!_easePhysicsComplete && _easePhysicsTimer.IsRunning)
-                        easeFact = Utilities.Factor(_easePhysicsTimer.Value, _easePhysicsTimer.Interval);
-
-                    // Integrate torque, thrust and wing force.
-                    var thrustTorque = Utilities.GetTorque(_centerOfMass.Position, _centerOfThrust.Position, thrust);
-                    var rotAmt = ((wingTorque + thrustTorque + damageTorque) * easeFact) / this.GetInertia(this.Mass);
-
-                    this.RotationSpeed += rotAmt * partialDT;
-                    this.Velocity += (thrust * easeFact) / this.Mass * partialDT;
-                    this.Velocity += (wingForce * easeFact) / this.Mass * partialDT;
-                    this.Velocity += (damageForce * easeFact) / this.Mass * partialDT;
-                    this.Velocity += (World.Gravity * partialDT);
-                }
-
-                // Compute g-force.
-                var totForce = (thrust / this.Mass * partialDT) + (wingForce / this.Mass * partialDT);
-                var gforce = totForce.Length() / partialDT / World.Gravity.Y;
-                _gForce = _gforceAvg.Add(gforce);
-                _gForceDirection = totForce.Angle();
+                    _controlWing.Deflection = _damageDeflection;
             }
 
+            // Update
+            _wings.ForEach(w => w.Update(dt));
+            _centerOfThrust.Update(dt);
+            _centerOfMass.Update(dt);
+
+            // Wing force and torque.
+            foreach (var wing in _wings)
+            {
+                // How much force a damaged wing contributes.
+                const float DAMAGED_FACTOR = 0.2f;
+
+                var forces = wing.GetForces(_centerOfMass.Position);
+
+                if (wing.Visible)
+                {
+                    wingForce += forces.LiftAndDrag;
+                    wingTorque += forces.Torque;
+                }
+                else
+                {
+                    wingForce += forces.LiftAndDrag * DAMAGED_FACTOR;
+                    wingTorque += forces.Torque * DAMAGED_FACTOR;
+                }
+            }
+
+            // Apply small amount of drag and torque for bullet holes.
+            // Decreases handling and max speed with damage.
+            float damageTorque = 0f;
+            D2DPoint damageForce = D2DPoint.Zero;
+
+            if (World.BulletHoleDrag)
+            {
+                foreach (var hole in _bulletHoles)
+                {
+                    GetBulletHoleDrag(hole, dt, out D2DPoint dVec, out float dTq);
+                    damageTorque += dTq;
+                    damageForce += dVec;
+                }
+            }
+
+            // Apply disabled effects.
+            if (IsDisabled)
+            {
+                const float DISABLED_FACTOR = 0.1f;
+
+                wingForce *= DISABLED_FACTOR;
+                wingTorque *= DISABLED_FACTOR;
+
+                damageTorque *= DISABLED_FACTOR;
+                damageForce *= DISABLED_FACTOR;
+
+                ThrustOn = false;
+                _thrustAmt.SetNow(0f);
+                FiringBurst = false;
+                _engineFireFlame.StartSpawning();
+            }
+
+            var thrust = GetThrust(true);
+
+            if (!this.IsNetObject)
+            {
+                Deflection = _controlWing.Deflection;
+
+                // Ease in physics.
+                var easeFact = 1f;
+
+                if (!_easePhysicsComplete)
+                    _easePhysicsTimer.Start();
+
+                if (!_easePhysicsComplete && _easePhysicsTimer.IsRunning)
+                    easeFact = Utilities.Factor(_easePhysicsTimer.Value, _easePhysicsTimer.Interval);
+
+                // Integrate torque, thrust and wing force.
+                var thrustTorque = Utilities.GetTorque(_centerOfMass.Position, _centerOfThrust.Position, thrust);
+                var rotAmt = ((wingTorque + thrustTorque + damageTorque) * easeFact) / this.GetInertia(this.Mass);
+
+                this.RotationSpeed += rotAmt * dt;
+                this.Velocity += (thrust * easeFact) / this.Mass * dt;
+                this.Velocity += (wingForce * easeFact) / this.Mass * dt;
+                this.Velocity += (damageForce * easeFact) / this.Mass * dt;
+                this.Velocity += (World.Gravity * dt);
+            }
+
+            // Compute g-force.
+            var totForce = (thrust / this.Mass * dt) + (wingForce / this.Mass * dt);
+            var gforce = totForce.Length() / dt / World.Gravity.Y;
+            _gForce = _gforceAvg.Add(gforce);
+            _gForceDirection = totForce.Angle();
+        }
+
+        public override void DoUpdate(float dt)
+        {
+            base.DoUpdate(dt);
+           
             // Update all the low frequency stuff.
             _flamePos.Update(dt);
             _cockpitPosition.Update(dt);
@@ -525,13 +526,8 @@ namespace PolyPlane.GameObjects
             if (!this.DroppingDecoy)
                 _decoyRegenTimer.Update(dt);
 
-            //if (_thrustAmt.Value < 0.01f)
-            //    this.ThrustOn = false;
-
             if (this.IsDisabled)
                 DeathTime += dt;
-
-            this.RecordHistory();
         }
 
         public override void NetUpdate(D2DPoint position, D2DPoint velocity, float rotation, double frameTime)

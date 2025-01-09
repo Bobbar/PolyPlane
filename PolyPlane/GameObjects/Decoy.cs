@@ -57,9 +57,10 @@ namespace PolyPlane.GameObjects
             _flashAnimation.Loop = true;
         }
 
-        public override void Update(float dt)
+        public override void DoUpdate(float dt)
         {
-            base.Update(dt);
+            base.DoUpdate(dt);
+
             _flashAnimation.Update(dt);
 
             this.Velocity += -this.Velocity * (dt * 0.6f);

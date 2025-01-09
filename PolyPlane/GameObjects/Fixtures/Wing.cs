@@ -53,10 +53,10 @@ namespace PolyPlane.GameObjects.Fixtures
             if (_params.MaxDragForce == 0f)
                 _params.MaxDragForce = _params.MaxLiftForce;
 
-            this.Update(0f);
+            this.DoUpdate(0f);
         }
 
-        public override void Update(float dt)
+        public override void DoUpdate(float dt)
         {
             PivotPoint.Rotation = _parentObject.Rotation + Deflection;
 

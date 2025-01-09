@@ -30,9 +30,9 @@ namespace PolyPlane.GameObjects
             _flame = new FlameEmitter(this, D2DPoint.Zero, 2f, 4f);
         }
 
-        public override void Update(float dt)
+        public override void DoUpdate(float dt)
         {
-            base.Update(dt);
+            base.DoUpdate(dt);
             _flame.Update(dt);
 
             if (this.IsAwake)

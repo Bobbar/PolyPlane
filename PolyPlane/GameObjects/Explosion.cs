@@ -52,9 +52,9 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public override void Update(float dt)
+        public override void DoUpdate(float dt)
         {
-            base.Update(dt);
+            base.DoUpdate(dt);
 
             _currentRadius = MaxRadius * Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.Out.EaseElastic);
             _color.a = 1f - Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.Out.EaseQuintic);

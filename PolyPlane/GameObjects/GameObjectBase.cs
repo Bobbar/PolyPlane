@@ -138,6 +138,8 @@ namespace PolyPlane.GameObjects
         protected float _verticalSpeed = 0f;
         protected float _prevAlt = 0f;
 
+        private bool _hasPhysicsUpdate = false;
+
         public GameObject()
         {
             if (World.IsNetGame)
@@ -154,6 +156,8 @@ namespace PolyPlane.GameObjects
                 if (InterpBuffer == null)
                     InterpBuffer = new InterpolationBuffer<GameObjectPacket>(World.NET_INTERP_AMOUNT, InterpObject);
             }
+
+            _hasPhysicsUpdate = ImplementsPhysicsUpdate();
         }
 
         public GameObject(GameObject owner) : this()
@@ -187,7 +191,56 @@ namespace PolyPlane.GameObjects
             RotationSpeed = rotationSpeed;
         }
 
+        private bool ImplementsPhysicsUpdate()
+        {
+            var type = this.GetType();
+            var phyiscsMethod = type.GetMethod(nameof(this.DoPhysicsUpdate));
+
+            if (phyiscsMethod.DeclaringType == typeof(GameObject))
+                return false;
+            else
+                return true;
+        }
+
         public virtual void Update(float dt)
+        {
+            if (_hasPhysicsUpdate)
+            {
+                for (int i = 0; i < World.PHYSICS_SUB_STEPS; i++)
+                {
+                    var partialDT = World.SUB_DT;
+
+                    this.DoPhysicsUpdate(partialDT);
+                }
+            }
+
+            this.DoUpdate(dt);
+        }
+
+        private void AdvancePositionAndRotation(float dt)
+        {
+            Position += Velocity * dt;
+            Rotation += RotationSpeed * dt;
+        }
+
+        /// <summary>
+        /// This method is called with <see cref="World.SUB_DT"/> and <see cref="World.PHYSICS_SUB_STEPS"/> number of turns on every frame prior the <see cref="DoUpdate(float)"/> method. 
+        /// 
+        /// Override this method to implement high frequency physics.
+        /// </summary>
+        /// <param name="dt"></param>
+        public virtual void DoPhysicsUpdate(float dt)
+        {
+            AdvancePositionAndRotation(dt);
+        }
+
+        /// <summary>
+        /// This method is called every frame prior to rendering.
+        /// 
+        /// Override this method to implement regular, low frequency updates.
+        /// </summary>
+        /// <param name="dt"></param>
+        public virtual void DoUpdate(float dt)
         {
             Age += dt;
 
@@ -201,11 +254,11 @@ namespace PolyPlane.GameObjects
             }
             else
             {
+
                 if (this.IsAwake)
                 {
-                    Position += Velocity * dt;
-
-                    Rotation += RotationSpeed * dt;
+                    if (!_hasPhysicsUpdate)
+                        AdvancePositionAndRotation(dt);
 
                     var altDiff = this.Altitude - _prevAlt;
                     _verticalSpeed = altDiff / dt;
@@ -397,10 +450,16 @@ namespace PolyPlane.GameObjects
         {
         }
 
-
         public override void Update(float dt)
         {
             base.Update(dt);
+
+            this.RecordHistory();
+        }
+
+        public override void DoUpdate(float dt)
+        {
+            base.DoUpdate(dt);
 
             if (Polygon != null)
                 Polygon.Update();

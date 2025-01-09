@@ -23,9 +23,10 @@ namespace PolyPlane.GameObjects.Particles
             _spawnTimer.Start();
         }
 
-        public override void Update(float dt)
+        public override void DoUpdate(float dt)
         {
-            base.Update(dt);
+            base.DoUpdate(dt);
+
             _spawnTimer.Update(dt);
 
             if (Owner != null && Owner.IsExpired)
@@ -44,7 +45,7 @@ namespace PolyPlane.GameObjects.Particles
             if (!Visible)
                 return;
 
-            base.Update(0f);
+            base.DoUpdate(0f);
 
             D2DPoint newPos = Position;
             D2DPoint newVelo = Velocity;

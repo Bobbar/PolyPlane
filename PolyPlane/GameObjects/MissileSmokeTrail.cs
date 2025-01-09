@@ -27,7 +27,7 @@ namespace PolyPlane.GameObjects
             _timeOut.TriggerCallback = () => this.IsExpired = true;
         }
 
-        public override void Update(float dt)
+        public override void DoUpdate(float dt)
         {
             _timeOut.Update(dt);
 

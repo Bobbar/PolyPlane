@@ -18,9 +18,9 @@ namespace PolyPlane.GameObjects.Fixtures
             _decoyTimer.TriggerCallback = DropDecoy;
         }
 
-        public override void Update(float dt)
+        public override void DoUpdate(float dt)
         {
-            base.Update(dt);
+            base.DoUpdate(dt);
 
             _decoyTimer.Update(dt);
 

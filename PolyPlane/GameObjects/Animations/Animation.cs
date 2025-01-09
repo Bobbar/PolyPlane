@@ -29,7 +29,7 @@
             _setVal = setValFunc;
         }
 
-        public override void Update(float dt)
+        public override void DoUpdate(float dt)
         {
             if (!IsPlaying)
                 return;
