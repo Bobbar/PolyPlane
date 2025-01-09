@@ -3,7 +3,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
 {
-    public abstract class Tree
+    public abstract class Tree : IDisposable
     {
         public D2DPoint Position;
         public float Height;
@@ -34,6 +34,9 @@ namespace PolyPlane.Rendering
             var shadowAngle = Utilities.Lerp(-40f, 40f, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
             return shadowAngle;
         }
+
+        public virtual void Dispose() { }
+       
     }
 
     public class NormalTree : Tree
@@ -114,6 +117,13 @@ namespace PolyPlane.Rendering
             // Add ToD color overlay.
             leafEllipse.origin = normalLeafPos;
             ctx.FillEllipseWithLighting(leafEllipse, leafToDColor, LIGHT_INTENSITY);
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+
+            _leafBrush?.Dispose();
         }
     }
 

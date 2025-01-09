@@ -167,6 +167,9 @@ namespace PolyPlane.Rendering
             _whiteColorBrush?.Dispose();
             _greenYellowColorBrush?.Dispose();
 
+            _clearBitmap?.Dispose();
+            _trees.ForEach(t => t.Dispose());
+
             _device?.Dispose();
             _fpsLimiter?.Dispose();
         }

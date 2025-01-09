@@ -48,7 +48,7 @@ namespace PolyPlane
         private NetPlayHost _client;
         private NetEventManager _netMan;
         private CollisionManager _collisions;
-        private Renderer _render;
+        private Renderer _render = null;
         private FPSLimiter _fpsLimiter = new FPSLimiter();
         private SelectObjectUI? _selectObjectUI = null;
         private ConcurrentQueue<Action> _actionQueue = new ConcurrentQueue<Action>();
@@ -247,6 +247,8 @@ namespace PolyPlane
                         StartGameThread();
                         ResumeGame();
 
+                        _render?.ClearHudMessage();
+
                         result = true;
                         break;
 
@@ -264,6 +266,8 @@ namespace PolyPlane
                         InitGfx();
                         StartGameThread();
                         ResumeGame();
+
+                        _render?.ClearHudMessage();
 
                         result = true;
 
@@ -491,11 +495,10 @@ namespace PolyPlane
 
         private void InitGfx()
         {
-            _render?.Dispose();
-            _render = new Renderer(RenderTarget, _netMan);
+            if (_render == null)
+                _render = new Renderer(RenderTarget, _netMan);
         }
 
-     
         private void GameLoop()
         {
             _lastFrameTime = World.CurrentTimeMs();
