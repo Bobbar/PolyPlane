@@ -50,6 +50,7 @@ namespace PolyPlane.GameObjects
         public Bullet(D2DPoint pos, D2DPoint velo, float rotation) : this()
         {
             this.IsExpired = false;
+            this.IsNetObject = true;
             this.Age = 0f;
 
             this.Position = pos;

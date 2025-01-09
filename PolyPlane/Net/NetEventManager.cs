@@ -949,7 +949,6 @@ namespace PolyPlane.Net
             }
 
             var bullet = new Bullet(bulletPacket.Position, bulletPacket.Velocity, bulletPacket.Rotation);
-            bullet.IsNetObject = true;
             bullet.ID = bulletPacket.ID;
 
             bulletPacket.SyncObj(bullet);
@@ -979,7 +978,6 @@ namespace PolyPlane.Net
                     missileTarget = _objs.AddDummyObject(missilePacket.TargetID);
 
                 var missile = new GuidedMissile(missileOwner, missilePacket.Position, missilePacket.Velocity, missilePacket.Rotation);
-                missile.IsNetObject = true;
                 missile.ID = missilePacket.ID;
                 missilePacket.SyncObj(missile);
                 missile.Target = missileTarget;

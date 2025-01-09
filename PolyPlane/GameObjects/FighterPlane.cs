@@ -398,7 +398,7 @@ namespace PolyPlane.GameObjects
             // Deflection direction.
             var deflection = Utilities.ClampAngle180(guideRot);
 
-            if (!this.IsNetObject)
+            if (!IsNetObject)
             {
                 if (!this.IsDisabled)
                     _controlWing.Deflection = deflection;
@@ -431,7 +431,7 @@ namespace PolyPlane.GameObjects
             float damageTorque = 0f;
             D2DPoint damageForce = D2DPoint.Zero;
 
-            if (World.BulletHoleDrag)
+            if (!IsNetObject && World.BulletHoleDrag)
             {
                 foreach (var hole in _bulletHoles)
                 {
@@ -460,7 +460,7 @@ namespace PolyPlane.GameObjects
 
             var thrust = GetThrust(true);
 
-            if (!this.IsNetObject)
+            if (!IsNetObject)
             {
                 Deflection = _controlWing.Deflection;
 
