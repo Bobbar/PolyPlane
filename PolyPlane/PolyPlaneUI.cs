@@ -96,7 +96,7 @@ namespace PolyPlane
             var resetAction = new Action(() =>
             {
                 if (World.ViewObject.Equals(_playerPlane))
-                    ResetPlane();
+                    ResetPlayerPlane();
             });
 
             EnqueueAction(resetAction);
@@ -428,6 +428,12 @@ namespace PolyPlane
 
         private void ResetAIPlane(FighterPlane plane)
         {
+            if (plane.Equals(_playerPlane))
+            {
+                ResetPlayerPlane();
+                return;
+            }
+
             plane.ThrustOn = true;
             plane.Position = Utilities.FindSafeSpawnPoint();
             plane.Velocity = new D2DPoint(World.PlaneSpawnVelo, 0f);
@@ -438,7 +444,7 @@ namespace PolyPlane
             plane.SyncFixtures();
         }
 
-        private void ResetPlane()
+        private void ResetPlayerPlane()
         {
             if (World.IsNetGame && !_canRespawn)
                 return;
