@@ -8,17 +8,15 @@ namespace PolyPlane
     public static class World
     {
         public static readonly GameObjectManager ObjectManager;
-
+     
         public static BoundedRange[] WorldBounds = new BoundedRange[2];
         public static BoundedRange[] VeloBounds = new BoundedRange[2];
 
+        private static SmoothDouble _serverTimeOffsetSmooth = new SmoothDouble(10);
+        private static FastNoiseLite _turbulenceNoise = new FastNoiseLite();
 
         public static int PHYSICS_SUB_STEPS => _sub_steps;
 
-        public const int TARGET_FPS = 60; // Primary FPS target. Change this to match the desired refresh rate.
-        public const int NET_SERVER_FPS = 60;
-        public const int NET_CLIENT_FPS = TARGET_FPS;
-        public const float NET_INTERP_AMOUNT = 70f; // Amount of time in milliseconds for the interpolation buffer.
 
         static World()
         {
@@ -31,7 +29,7 @@ namespace PolyPlane
             VeloBounds[1] = new BoundedRange(-5000f, 5000f, 0.05f);
 
             _turbulenceNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
-            _turbulenceNoise.SetFrequency(0.0025f);
+            _turbulenceNoise.SetFrequency(NOISE_FREQUENCY);
 
             TARGET_FRAME_TIME = 1000f / (float)TARGET_FPS;
         }
@@ -147,7 +145,6 @@ namespace PolyPlane
         public static bool ShowAero = false;
         public static bool ShowTracking = false;
         public static bool ShowAITags = false;
-        public static bool EnableWind = false;
         public static bool EnableTurbulence = true;
         public static bool BulletHoleDrag = true;
         public static bool IsPaused = false;
@@ -175,6 +172,11 @@ namespace PolyPlane
         private static int _sub_steps = DEFAULT_SUB_STEPS;
         private static float _zoomScale = 0.11f;
 
+        public const int TARGET_FPS = 60; // Primary FPS target. Change this to match the desired refresh rate.
+        public const int NET_SERVER_FPS = 60;
+        public const int NET_CLIENT_FPS = TARGET_FPS;
+        public const float NET_INTERP_AMOUNT = 70f; // Amount of time in milliseconds for the interpolation buffer.
+
         public const float FAST_PRIMITIVE_MIN_SIZE = 2f;
         public const float SCREEN_SHAKE_G = 9f; // Amount of g-force before screen shake effect.
         public const float INERTIA_MULTI = 20f; // Mass is multiplied by this value for interia calculations.
@@ -186,18 +188,12 @@ namespace PolyPlane
         public const float CLOUD_SCALE = 5f;
         public const float CLOUD_MOVE_RATE = 40f;
         public const float CLOUD_MAX_X = 400000f;
+        public const float MAX_AIR_DENSITY = 1.225f;
         private const float NOISE_FLOOR = -1f;
         private const float NOISE_CEILING = 0.8f;
+        private const float NOISE_FREQUENCY = 0.0025f;
         private const float MIN_TURB = 0.80f;
         private const float MAX_TURB = 1f;
-        private const float MAX_WIND_MAG = 100f;
-
-        public const float AirDensity = 1.225f;
-        public static D2DPoint Wind = D2DPoint.Zero;
-
-        private static SmoothDouble _serverTimeOffsetSmooth = new SmoothDouble(10);
-        private static RandomVariationVector _windVariation = new RandomVariationVector(MAX_WIND_MAG, 10f, 50f);
-        private static FastNoiseLite _turbulenceNoise = new FastNoiseLite();
 
         public static readonly D2DColor HudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
         public static readonly D2DColor DefaultFlameColor = new D2DColor(0.6f, D2DColor.Yellow);
@@ -208,7 +204,8 @@ namespace PolyPlane
         public static readonly D2DPoint FieldPlaneXBounds = new D2DPoint(-350000, 350000);
         public static readonly D2DPoint FieldXBounds = new D2DPoint(-400000, 400000);
         public static readonly D2DPoint CloudRangeY = new D2DPoint(-30000, -2000);
-        public static readonly D2DPoint PlaneSpawnRange = new D2DPoint(-25000, 25000);
+        public static readonly D2DPoint PlaneSpawnRange = new D2DPoint(-250000, 250000);
+        public static readonly D2DPoint PlaneSpawnVelo = new D2DPoint(500f, 0f);
 
         public static readonly D2DColor[] TimeOfDayPallet =
         [
@@ -265,15 +262,12 @@ namespace PolyPlane
             return newColor;
         }
 
-        public static float GetDensityAltitude(D2DPoint position)
+        public static float GetAltitudeDensity(D2DPoint position)
         {
-            if (position.Y > 0f)
-                return AirDensity;
-
-            var alt = Math.Abs(position.Y);
+            var alt = Utilities.PositionToAltitude(position);
             var fact = 1f - Utilities.FactorWithEasing(alt, MAX_ALTITUDE, EasingFunctions.Out.EaseSine);
 
-            return AirDensity * fact;
+            return MAX_AIR_DENSITY * fact;
         }
 
         public static float SampleNoise(D2DPoint position)
@@ -312,18 +306,8 @@ namespace PolyPlane
             ViewPortRectUnscaled = new D2DRect(0, 0, viewPortSize.Width, viewPortSize.Height);
         }
 
-        public static void UpdateAirDensityAndWind(float dt)
+        public static void Update(float dt)
         {
-            if (EnableWind)
-            {
-                _windVariation.Update(dt);
-                Wind = _windVariation.Value;
-            }
-            else
-            {
-                Wind = D2DPoint.Zero;
-            }
-
             UpdateTOD(dt);
         }
 

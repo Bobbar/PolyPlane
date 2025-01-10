@@ -222,7 +222,7 @@ namespace PolyPlane.Helpers
         public static float PositionToAltitude(D2DPoint position)
         {
             // Up = negative on the Y axis.
-            return position.Y * -1f;
+            return Math.Clamp(position.Y * -1f, 0f, float.MaxValue);
         }
 
         public static float Cross(D2DPoint vector1, D2DPoint vector2)

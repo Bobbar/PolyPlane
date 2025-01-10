@@ -56,15 +56,17 @@ namespace PolyPlane.Rendering
         private bool _showHUD = true;
         private int _scoreScrollPos = 0;
         private int _currentDPI = 96;
-        private long _lastRenderTime = 0;
+        private double _lastRenderTime = 0;
         private float _hudScale = 1f;
-        private float _renderFPS = 0;
+        private double _renderFPS = 0;
         private float _screenFlashOpacity = 0f;
         private float _groundColorTOD = 0f;
         private string _hudMessage = string.Empty;
 
         private SmoothDouble _renderTimeSmooth = new SmoothDouble(10);
         private SmoothDouble _updateTimeSmooth = new SmoothDouble(10);
+        private SmoothDouble _fpsSmooth = new SmoothDouble(10);
+
         private Stopwatch _timer = new Stopwatch();
         private GameTimer _hudMessageTimeout = new GameTimer(10f);
         private GameTimer _warningLightFlashTimer = new GameTimer(0.5f, 0.5f, true);
@@ -456,9 +458,10 @@ namespace PolyPlane.Rendering
 
             _ctx.EndRender();
 
-            var now = DateTime.UtcNow.Ticks;
-            var fps = TimeSpan.TicksPerSecond / (float)(now - _lastRenderTime);
+            var now = World.CurrentTimeMs();
+            var elap = now - _lastRenderTime;
             _lastRenderTime = now;
+            var fps = 1000 / elap;
             _renderFPS = fps;
         }
 
@@ -1670,17 +1673,17 @@ namespace PolyPlane.Rendering
             string infoText = string.Empty;
 
             var numObj = _objs.TotalObjects;
-            infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";
-
-            if (_netMan != null)
-            {
-                infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
-                infoText += $"Latency: {_netMan.Host.GetPlayerRTT(0)}\n";
-                infoText += $"Packet Loss: {_netMan.Host.PacketLoss()}\n";
-            }
+            infoText += $"FPS: {Math.Round(_fpsSmooth.Add(_renderFPS), 0)}\n";
 
             if (_showInfo)
             {
+                if (_netMan != null)
+                {
+                    infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
+                    infoText += $"Latency: {_netMan.Host.GetPlayerRTT(0)}\n";
+                    infoText += $"Packet Loss: {_netMan.Host.PacketLoss()}\n";
+                }
+
                 infoText += $"Num Objects: {numObj}\n";
                 infoText += $"On Screen: {GraphicsExtensions.OnScreen}\n";
                 infoText += $"Off Screen: {GraphicsExtensions.OffScreen}\n";
@@ -1691,7 +1694,6 @@ namespace PolyPlane.Rendering
                 infoText += $"Total ms: {Math.Round(UpdateTime.TotalMilliseconds + CollisionTime.TotalMilliseconds + _renderTimeSmooth.Current, 2)}\n";
 
                 infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
-                infoText += $"HUD Scale: {_hudScale}\n";
                 infoText += $"DT: {Math.Round(World.DT, 4)}  ({Math.Round(World.DynamicDT, 4)}) \n";
                 infoText += $"Position: {viewObject?.Position}\n";
 
@@ -1707,8 +1709,6 @@ namespace PolyPlane.Rendering
                 infoText += $"MissilesOnRadar: {World.ShowMissilesOnRadar.ToString()}\n";
                 infoText += $"Missile Regen: {World.MissileRegen.ToString()}\n";
                 infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
-                infoText += $"VP: {this.Width}, {this.Height}\n";
-                infoText += $"DPI: {this._renderTarget.DeviceDpi}\n";
                 infoText += $"TimeOffset: {World.ServerTimeOffset}\n";
 
 

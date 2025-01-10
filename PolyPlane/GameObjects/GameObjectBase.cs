@@ -49,7 +49,7 @@ namespace PolyPlane.GameObjects
         {
             get
             {
-                var dens = World.GetDensityAltitude(this.Position);
+                var dens = World.GetAltitudeDensity(this.Position);
                 return this.Velocity.Length() * dens;
             }
         }

@@ -137,12 +137,11 @@ namespace PolyPlane.GameObjects.Fixtures
             float MAX_LIFT = _params.MaxLiftForce; // Max lift force allowed.
             float MAX_DRAG = _params.MaxDragForce; // Max drag force allowed.
             float MAX_AOA = _params.MaxAOA; // Max AoA allowed before lift force reduces. (Stall)
-            float AIR_DENSITY = World.GetDensityAltitude(Position);
+            float AIR_DENSITY = World.GetAltitudeDensity(Position);
             float PARASITIC_DRAG = _params.ParasiticDrag;
             float MIN_VELO = _params.MinVelo;
 
             var velo = Velocity;
-            velo += -World.Wind;
 
             // Add turbulence factor.
             velo *= turbulence;

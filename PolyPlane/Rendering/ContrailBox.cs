@@ -162,7 +162,7 @@ namespace PolyPlane.Rendering
         /// <returns></returns>
         private bool IsNotInSpace(FighterPlane plane)
         {
-            return World.GetDensityAltitude(plane.ExhaustPosition) > 0.01f;
+            return World.GetAltitudeDensity(plane.ExhaustPosition) > 0.01f;
         }
 
         /// <summary>

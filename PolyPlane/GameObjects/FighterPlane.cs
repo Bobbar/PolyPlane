@@ -1122,7 +1122,7 @@ namespace PolyPlane.GameObjects
             const float DAMAGE_DRAG_AMT = 0.002f;
             const float DAMAGE_TQ_FACTOR = 2f;
 
-            var hDens = World.GetDensityAltitude(hole.Position);
+            var hDens = World.GetAltitudeDensity(hole.Position);
             var hVelo = Utilities.AngularVelocity(this, hole.Position);
 
             if (hVelo.Length() == 0f)
@@ -1202,7 +1202,7 @@ namespace PolyPlane.GameObjects
             var boostFact = Utilities.Factor(velo, thrustBoostMaxSpd);
             var maxVeloFact = 1f - Utilities.Factor(velo, MAX_VELO);
 
-            thrust *= _thrustAmt.Value * ((this.Thrust + (thrustBoostAmt * boostFact)) * World.GetDensityAltitude(this.Position));
+            thrust *= _thrustAmt.Value * ((this.Thrust + (thrustBoostAmt * boostFact)) * World.GetAltitudeDensity(this.Position));
             thrust *= maxVeloFact; // Reduce thrust as we approach max velo.
 
             return thrust;

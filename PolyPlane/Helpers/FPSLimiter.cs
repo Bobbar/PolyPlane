@@ -17,41 +17,33 @@ namespace PolyPlane
             long targetFrameTime = ticksPerSecond / targetFPS;
             long waitTime = 0;
 
-            if (_fpsTimer.IsRunning)
+            long elapTime = _fpsTimer.Elapsed.Ticks;
+
+            if (elapTime < targetFrameTime)
             {
-                long elapTime = _fpsTimer.Elapsed.Ticks;
-
-                if (elapTime < targetFrameTime)
+                // # High accuracy, low CPU usage. #
+                waitTime = (long)(targetFrameTime - elapTime);
+                if (waitTime > 0)
                 {
-                    // # High accuracy, low CPU usage. #
-                    waitTime = (long)(targetFrameTime - elapTime);
-                    if (waitTime > 0)
-                    {
-                        _waitTimer.Wait(waitTime, false);
-                    }
-
-                    // # Most accurate, highest CPU usage. #
-                    //while (_fpsTimer.Elapsed.Ticks < targetFrameTime && !_loopTask.IsCompleted)
-                    //{
-                    //	Thread.SpinWait(10000);
-                    //}
-                    //elapTime = _fpsTimer.Elapsed.Ticks;
-
-                    // # Less accurate, less CPU usage. #
-                    //waitTime = (long)(targetFrameTime - elapTime);
-                    //if (waitTime > 0)
-                    //{
-                    //	Thread.Sleep(new TimeSpan(waitTime));
-                    //}
+                    _waitTimer.Wait(waitTime, false);
                 }
 
-                _fpsTimer.Restart();
+                // # Most accurate, highest CPU usage. #
+                //while (_fpsTimer.Elapsed.Ticks < targetFrameTime)
+                //{
+                //    Thread.SpinWait(10000);
+                //}
+                //elapTime = _fpsTimer.Elapsed.Ticks;
+
+                // # Less accurate, less CPU usage. #
+                //waitTime = (long)(targetFrameTime - elapTime);
+                //if (waitTime > 0)
+                //{
+                //	Thread.Sleep(new TimeSpan(waitTime));
+                //}
             }
-            else
-            {
-                _fpsTimer.Start();
-                return;
-            }
+
+            _fpsTimer.Restart();
         }
 
         public void Dispose()

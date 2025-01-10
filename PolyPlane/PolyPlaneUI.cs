@@ -319,7 +319,7 @@ namespace PolyPlane
 
             if (!_inStartup)
             {
-               if (!DoNetGameSetup())
+                if (!DoNetGameSetup())
                     this.Close();
             }
         }
@@ -399,7 +399,7 @@ namespace PolyPlane
                 plane.PlayerName += $" [{Utilities.GetPersonalityTag(plane.Personality)}]";
 
             plane.ThrustOn = true;
-            plane.Velocity = new D2DPoint(500f, 0f);
+            plane.Velocity = World.PlaneSpawnVelo;
 
             plane.FireBulletCallback = b =>
             {
@@ -431,12 +431,12 @@ namespace PolyPlane
         {
             plane.ThrustOn = true;
             plane.Position = Utilities.FindSafeSpawnPoint();
-            plane.Velocity = new D2DPoint(500f, 0f);
-            plane.SyncFixtures();
+            plane.Velocity = World.PlaneSpawnVelo;
             plane.RotationSpeed = 0f;
             plane.Rotation = 0f;
             plane.IsDisabled = false;
             plane.FixPlane();
+            plane.SyncFixtures();
         }
 
         private void ResetPlane()
@@ -514,54 +514,62 @@ namespace PolyPlane
 
         private void AdvanceAndRender()
         {
+            var dt = World.DT;
+
             if (_killRender)
                 return;
 
             _updateTime = TimeSpan.Zero;
             _collisionTime = TimeSpan.Zero;
 
+            // Process any queued actions.
             ProcessQueuedActions();
 
-            var viewObject = GetViewObjectOrCamera(World.GetViewObject());
+            // Poll mouse buttons and position.
+            DoMouseButtons();
 
-            var now = World.CurrentTimeMs();
-            var dt = World.DT;
+            // Get the current view object.
+            var viewObject = GetViewObjectOrCamera(World.GetViewObject());
 
             // Compute elapsed time since the last frame
             // and use it to compute a dynamic delta time
             // for the next frame.
             // This should allow for more correct movement
             // when the FPS drops below the target.
-            var elapFrameTime = now - _lastFrameTime;
-            _lastFrameTime = now;
+            if (World.DynamicTimeDelta)
+            {
+                var now = World.CurrentTimeMs();
+
+                var elapFrameTime = now - _lastFrameTime;
+                _lastFrameTime = now;
+
+                dt = World.SetDynamicDT(elapFrameTime);
+            }
+
+            // Process net events during net games.
+            if (World.IsNetGame)
+                _netMan.DoNetEvents(dt);
 
             // Update/advance objects.
             if (!World.IsPaused || _oneStep)
             {
-                if (World.DynamicTimeDelta)
-                    dt = World.SetDynamicDT(elapFrameTime);
-
+                // Do collisions.
                 _timer.Restart();
 
-                // Update all objects.
-                _objs.Update(dt);
-
-                _timer.Stop();
-                _updateTime += _timer.Elapsed;
-
-                _timer.Restart();
                 _collisions.DoCollisions(dt);
+
                 _timer.Stop();
                 _collisionTime += _timer.Elapsed;
 
+                // Update all objects and world.
                 _timer.Restart();
 
-                World.UpdateAirDensityAndWind(dt);
+                _objs.Update(dt);
+
+                World.Update(dt);
 
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
-
-                _oneStep = false;
 
                 // Do G-Force screen shake effect.
                 if (viewObject is FighterPlane plane)
@@ -569,20 +577,21 @@ namespace PolyPlane
                     if (plane.GForce > World.SCREEN_SHAKE_G)
                         _render.DoScreenShake(plane.GForce / 4f);
                 }
+
+                _oneStep = false;
             }
 
+            // Update the collision and update times for stats overlay.
             _render.CollisionTime = _collisionTime;
             _render.UpdateTime = _updateTime;
 
-            if (World.IsNetGame)
-                _netMan.DoNetEvents(dt);
-
+            // Render the frame.
+            // Or hit the FPS limiter if window is minimized or we're skipping rendering.
             if (!_skipRender && !_killRender && this.WindowState != FormWindowState.Minimized)
                 _render.RenderFrame(viewObject, dt);
             else
                 _fpsLimiter.Wait(World.TARGET_FPS);
 
-            DoMouseButtons();
 
             if (_slewEnable)
             {
@@ -590,16 +599,11 @@ namespace PolyPlane
                 _playerPlane.RotationSpeed = 0f;
                 _playerPlane.Position = _playerPlaneSlewPos;
                 _playerPlane.Velocity = D2DPoint.Zero;
-                _playerPlane.Update(0f);
+                _playerPlane.SyncFixtures();
             }
 
             if (_playerPlane.HasCrashed)
-            {
                 EnableRespawn();
-
-                if (_playerPlane.IsAI && _playerPlane.AIRespawnReady)
-                    ResetPlane();
-            }
 
             // Hold current altitude while player is typeing.
             if ((_netMan != null && _netMan.ChatInterface.ChatIsActive) || _isHoldingAlt)
@@ -618,10 +622,15 @@ namespace PolyPlane
             HandleAIPlaneRespawn();
         }
 
+        /// <summary>
+        /// Returns the specified object if it is not null and not expired.
+        /// 
+        /// Otherwise enable free camera and return a dummy object at the last known position to keep the view active.
+        /// </summary>
+        /// <param name="viewObject"></param>
+        /// <returns></returns>
         private GameObject GetViewObjectOrCamera(GameObject viewObject)
         {
-            // Returns the specified object if it is not null and not expired.
-            // Otherwise enable free camera and return a dummy object at the last known position to keep the view active.
             GameObject viewObj = null;
 
             if (viewObject != null)
@@ -731,7 +740,7 @@ namespace PolyPlane
 
         private float GetPlayerGuidanceAngle()
         {
-            // Poll current mouse position and apply offsets and scaling.
+            // Scale the mouse position for the current view scale.
             var mousePos = _mousePosition;
             var scaledPos = mousePos * World.ViewPortScaleMulti;
 
@@ -739,7 +748,7 @@ namespace PolyPlane
             var center = new D2DPoint(World.ViewPortSize.width * 0.5f, World.ViewPortSize.height * 0.5f);
             center /= World.DEFAULT_DPI / (float)this.DeviceDpi; // Scale for DPI.
 
-            // Compute angle from center and update guidance.
+            // Compute angle from center.
             var angle = scaledPos.AngleTo(center);
 
             return angle;

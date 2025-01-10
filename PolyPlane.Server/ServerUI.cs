@@ -34,15 +34,12 @@ namespace PolyPlane.Server
 
         private Stopwatch _timer = new Stopwatch();
         private TimeSpan _renderTime = new TimeSpan();
-        private TimeSpan _updateTime = new TimeSpan();
-        private TimeSpan _collisionTime = new TimeSpan();
-        private TimeSpan _netTime = new TimeSpan();
-        private SmoothFloat _updateTimeSmooth = new SmoothFloat(50);
-        private SmoothFloat _collisionTimeSmooth = new SmoothFloat(50);
-        private SmoothFloat _netTimeSmooth = new SmoothFloat(50);
+        private SmoothDouble _updateTimeSmooth = new SmoothDouble(10);
+        private SmoothDouble _collisionTimeSmooth = new SmoothDouble(10);
+        private SmoothDouble _netTimeSmooth = new SmoothDouble(10);
+        private SmoothDouble _fpsSmooth = new SmoothDouble(10);
 
-        private long _lastRenderTime = 0;
-        private float _renderFPS = 0;
+        private double _renderFPS = 0;
         private double _lastFrameTime = 0;
         private FPSLimiter _fpsLimiter = new FPSLimiter();
         private uint _lastRec = 0;
@@ -306,76 +303,117 @@ namespace PolyPlane.Server
 
         private void AdvanceServer()
         {
-            _updateTime = TimeSpan.Zero;
-            _collisionTime = TimeSpan.Zero;
-            _renderTime = TimeSpan.Zero;
-            _netTime = TimeSpan.Zero;
-
-            _timer.Restart();
-            ProcessObjQueue();
-            _timer.Stop();
-            _updateTime += _timer.Elapsed;
-
-            var now = World.CurrentTimeMs();
             var dt = World.DT;
+            var now = World.CurrentTimeMs();
 
+            // Compute time elapsed since last frame.
             var elapFrameTime = now - _lastFrameTime;
             _lastFrameTime = now;
+
+            // Compute current FPS.
+            var fps = 1000 / elapFrameTime;
+            _renderFPS = fps;
+
+            ProcessQueuedActions();
+
+            if (World.DynamicTimeDelta)
+                dt = World.SetDynamicDT(elapFrameTime);
+
+            // Process net events.
+            _timer.Restart();
+
+            _netMan.DoNetEvents(dt);
+
+            _timer.Stop();
+            _netTimeSmooth.Add((float)_timer.Elapsed.TotalMilliseconds);
 
             // Update/advance objects.
             if (!World.IsPaused)
             {
-                if (World.DynamicTimeDelta)
-                    dt = World.SetDynamicDT(elapFrameTime);
-
+                // Do collisions.
                 _timer.Restart();
 
-                // Update all objects.
+                _collisions.DoCollisions(dt);
+
+                _timer.Stop();
+                _collisionTimeSmooth.Add((float)_timer.Elapsed.TotalMilliseconds);
+
+                // Update all objects and world.
+                _timer.Restart();
+
                 _objs.Update(dt);
 
-                _timer.Stop();
-                _updateTime += _timer.Elapsed;
-
-                _timer.Restart();
-                _collisions.DoCollisions(dt);
-                _timer.Stop();
-                _collisionTime += _timer.Elapsed;
-
-                _timer.Restart();
-
-                World.UpdateAirDensityAndWind(dt);
+                World.Update(dt);
 
                 _timer.Stop();
-                _updateTime += _timer.Elapsed;
+                _updateTimeSmooth.Add((float)_timer.Elapsed.TotalMilliseconds);
             }
 
-            _timer.Restart();
+            // Render if spectate viewport is active.
+            _renderTime = TimeSpan.Zero;
 
             if (_render != null && !_stopRender)
             {
+                _timer.Restart();
+
                 FighterPlane viewPlane = World.GetViewPlane();
 
                 if (viewPlane != null)
                     _render.RenderFrame(viewPlane, dt);
+
+                _timer.Stop();
+                _renderTime = _timer.Elapsed;
             }
-
-            _timer.Stop();
-            _renderTime = _timer.Elapsed;
-
-
-            _timer.Restart();
-            _netMan.DoNetEvents(dt);
-            _timer.Stop();
-            _netTime = _timer.Elapsed;
-            _netTimeSmooth.Add((float)_netTime.TotalMilliseconds);
 
             _discoveryTimer.Update(dt);
             _syncTimer.Update(dt);
+           
+            HandleAIPlaneRespawn();
 
-            var fpsNow = DateTime.UtcNow.Ticks;
-            var fps = TimeSpan.TicksPerSecond / (float)(fpsNow - _lastRenderTime);
-            _lastRenderTime = fpsNow;
-            _renderFPS = fps;
+            _fpsLimiter.Wait(World.NET_SERVER_FPS);
+        }
+
+        private void HandleAIPlaneRespawn()
+        {
+            if (!World.RespawnAIPlanes)
+                return;
+
+            foreach (var plane in _objs.Planes)
+            {
+                if (plane.IsAI && plane.HasCrashed && plane.AIRespawnReady)
+                {
+                    ResetPlane(plane);
+                }
+            }
+        }
+
+        private void ResetPlane(FighterPlane plane)
+        {
+            _netMan.SendPlaneReset(plane);
+
+            plane.ThrustOn = true;
+            plane.Position = Utilities.FindSafeSpawnPoint();
+            plane.Velocity = World.PlaneSpawnVelo;
+            plane.RotationSpeed = 0f;
+            plane.Rotation = 0f;
+            plane.IsDisabled = false;
+            plane.FixPlane();
+            plane.SyncFixtures();
+        }
+
+        private void ProcessQueuedActions()
+        {
+            if (_queueNextViewId)
+            {
+                World.NextViewPlane();
+                _queueNextViewId = false;
+            }
+
+            if (_queuePrevViewId)
+            {
+                World.PrevViewPlane();
+                _queuePrevViewId = false;
+            }
 
             if (this._pauseRequested)
             {
@@ -412,54 +450,6 @@ namespace PolyPlane.Server
                 _netMan.SendSyncPacket();
                 _toggleGunsOnly = false;
             }
-
-            HandleAIPlaneRespawn();
-
-            _fpsLimiter.Wait(World.NET_SERVER_FPS);
-        }
-
-        private void HandleAIPlaneRespawn()
-        {
-            if (!World.RespawnAIPlanes)
-                return;
-
-            foreach (var plane in _objs.Planes)
-            {
-                if (plane.IsAI && plane.HasCrashed && plane.AIRespawnReady)
-                {
-                    ResetPlane(plane);
-                }
-            }
-        }
-
-        private void ResetPlane(FighterPlane plane)
-        {
-            _netMan.SendPlaneReset(plane);
-
-            plane.ThrustOn = true;
-            plane.Position = Utilities.FindSafeSpawnPoint();
-            plane.Velocity = new D2DPoint(500f, 0f);
-            plane.SyncFixtures();
-            plane.RotationSpeed = 0f;
-            plane.Rotation = 0f;
-            plane.IsDisabled = false;
-            plane.FixPlane();
-        }
-
-        private void ProcessObjQueue()
-        {
-            if (_queueNextViewId)
-            {
-                World.NextViewPlane();
-                _queueNextViewId = false;
-            }
-
-            if (_queuePrevViewId)
-            {
-                World.PrevViewPlane();
-                _queuePrevViewId = false;
-            }
-
         }
 
         private void DropDecoy(Decoy decoy)
@@ -496,7 +486,7 @@ namespace PolyPlane.Server
 
             aiPlane.DropDecoyCallback = DropDecoy;
 
-            aiPlane.Velocity = new D2DPoint(400f, 0f);
+            aiPlane.Velocity = World.PlaneSpawnVelo;
 
             return aiPlane;
         }
@@ -599,22 +589,21 @@ namespace PolyPlane.Server
             infoText += $"Planes: {_objs.Planes.Count}\n";
             infoText += $"Clients: {_server.Host.PeersCount}\n";
 
-            infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";
-            infoText += $"Update ms: {_updateTimeSmooth.Add((float)Math.Round(_updateTime.TotalMilliseconds, 2))}\n";
-            infoText += $"Collision ms: {_collisionTimeSmooth.Add((float)Math.Round(_collisionTime.TotalMilliseconds, 2))}\n";
-            infoText += $"Net ms: {_netTimeSmooth.Add((float)Math.Round(_collisionTime.TotalMilliseconds, 2))}\n";
+            infoText += $"FPS: {Math.Round(_fpsSmooth.Add(_renderFPS), 0)}\n";
+            infoText += $"Update ms: {Math.Round(_updateTimeSmooth.Current, 2)}\n";
+            infoText += $"Collision ms: {Math.Round(_collisionTimeSmooth.Current, 2)}\n";
+            infoText += $"Net ms: {Math.Round(_netTimeSmooth.Current, 2)}\n";
 
             if (_viewPort != null)
                 infoText += $"Render ms: {Math.Round(_renderTime.TotalMilliseconds, 2)}\n";
 
             infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
-
             infoText += $"Bytes Rec: {_netMan.Host.Host.BytesReceived}\n";
             infoText += $"Bytes Sent: {_netMan.Host.Host.BytesSent}\n";
             infoText += $"MB Rec/s: {Math.Round(_recSmooth.Current, 2)}\n";
             infoText += $"MB Sent/s: {Math.Round(_sentSmooth.Current, 2)}\n";
             infoText += $"DT: {Math.Round(World.DT, 4)}\n";
-            infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
+            infoText += $"TimeOfDay: {Math.Round(World.TimeOfDay, 2)}\n";
 
             return infoText;
         }
