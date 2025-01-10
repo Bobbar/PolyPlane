@@ -393,7 +393,7 @@ namespace PolyPlane.Server
 
             plane.ThrustOn = true;
             plane.Position = Utilities.FindSafeSpawnPoint();
-            plane.Velocity = World.PlaneSpawnVelo;
+            plane.Velocity = new D2DPoint(World.PlaneSpawnVelo, 0f);
             plane.RotationSpeed = 0f;
             plane.Rotation = 0f;
             plane.IsDisabled = false;
@@ -486,7 +486,7 @@ namespace PolyPlane.Server
 
             aiPlane.DropDecoyCallback = DropDecoy;
 
-            aiPlane.Velocity = World.PlaneSpawnVelo;
+            aiPlane.Velocity = new D2DPoint(World.PlaneSpawnVelo, 0f);
 
             return aiPlane;
         }

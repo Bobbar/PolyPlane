@@ -398,7 +398,7 @@ namespace PolyPlane
                 plane.PlayerName += $" [{Utilities.GetPersonalityTag(plane.Personality)}]";
 
             plane.ThrustOn = true;
-            plane.Velocity = World.PlaneSpawnVelo;
+            plane.Velocity = new D2DPoint(World.PlaneSpawnVelo, 0f);
 
             plane.FireBulletCallback = b =>
             {
@@ -430,7 +430,7 @@ namespace PolyPlane
         {
             plane.ThrustOn = true;
             plane.Position = Utilities.FindSafeSpawnPoint();
-            plane.Velocity = World.PlaneSpawnVelo;
+            plane.Velocity = new D2DPoint(World.PlaneSpawnVelo, 0f);
             plane.RotationSpeed = 0f;
             plane.Rotation = 0f;
             plane.IsDisabled = false;
@@ -458,7 +458,7 @@ namespace PolyPlane
             else
                 _playerPlane.Rotation = 180f;
 
-            _playerPlane.Velocity = Utilities.AngleToVectorDegrees(_playerPlane.Rotation, 500f);
+            _playerPlane.Velocity = Utilities.AngleToVectorDegrees(_playerPlane.Rotation, World.PlaneSpawnVelo);
 
             _playerPlane.RotationSpeed = 0f;
             _playerPlane.IsDisabled = false;
