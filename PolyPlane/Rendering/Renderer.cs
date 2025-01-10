@@ -1673,7 +1673,7 @@ namespace PolyPlane.Rendering
             string infoText = string.Empty;
 
             var numObj = _objs.TotalObjects;
-            infoText += $"FPS: {Math.Round(_fpsSmooth.Add(_renderFPS), 0)}\n";
+            infoText += $"FPS: {Math.Round(_fpsSmooth.Add(_renderFPS), 1)}\n";
 
             if (_showInfo)
             {
