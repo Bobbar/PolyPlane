@@ -370,7 +370,10 @@ namespace PolyPlane.Net
                         if (!IsServer)
                         {
                             var now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                            
                             World.ServerTimeOffset = syncPack.ServerTime - now;
+                            World.ServerTimeOffset += syncPack.Age;
+
                             World.TimeOfDay = syncPack.TimeOfDay;
                             World.TimeOfDayDir = syncPack.TimeOfDayDir;
                             World.GunsOnly = syncPack.GunsOnly;

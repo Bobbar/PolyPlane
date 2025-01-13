@@ -62,15 +62,14 @@ namespace PolyPlane.GameObjects.Manager
 
                             if (_isNetGame)
                             {
-                                var missileLagComp = missile.LagAmount / 2f;
+                                var missileLagComp = (long)(missile.LagAmount + World.NET_INTERP_AMOUNT);
 
                                 // Don't compensate as much for AI planes?
-                                if (missileOwner.IsAI)
-                                    missileLagComp = planeRTT;
+                                if (plane.IsNetObject)
+                                    missileLagComp /= 2;
 
                                 if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - missileLagComp, dt))
                                 {
-
                                     if (histState != null)
                                     {
                                         var ogState = new GameObjectPacket(plane);
@@ -124,10 +123,9 @@ namespace PolyPlane.GameObjects.Manager
                             if (bullet.Owner.Equals(plane))
                                 continue;
 
-                          
                             if (_isNetGame)
                             {
-                                var bulletLagComp = (bullet.LagAmount / 2f) + (plane.LagAmount / 2f);
+                                var bulletLagComp = (long)bullet.LagAmount;
 
                                 if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - bulletLagComp, dt))
                                 {

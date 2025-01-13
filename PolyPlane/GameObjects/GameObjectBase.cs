@@ -332,7 +332,7 @@ namespace PolyPlane.GameObjects
             if (this.IsExpired)
                 return;
 
-            if (World.IsNetGame && IsNetObject && InterpBuffer != null)
+            if (World.IsNetGame && IsNetObject && InterpBuffer != null && !World.IsServer)
             {
                 var nowMs = World.CurrentNetTimeMs();
                 InterpBuffer.InterpolateState(nowMs);
@@ -355,13 +355,23 @@ namespace PolyPlane.GameObjects
 
         public virtual void NetUpdate(D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
         {
-            var newState = new GameObjectPacket(this);
-            newState.Position = position;
-            newState.Velocity = velocity;
-            newState.Rotation = rotation;
+            // Don't interp on server.
+            if (!World.IsServer)
+            {
+                var newState = new GameObjectPacket(this);
+                newState.Position = position;
+                newState.Velocity = velocity;
+                newState.Rotation = rotation;
 
-            InterpBuffer.Enqueue(newState, frameTime);
-
+                InterpBuffer.Enqueue(newState, frameTime);
+            }
+            else
+            {
+                this.Position = position;
+                this.Velocity = velocity;
+                this.Rotation = rotation;
+            }
+          
             var now = World.CurrentNetTimeMs();
             this.LagAmount = now - frameTime;
             this.LastNetTime = now;
