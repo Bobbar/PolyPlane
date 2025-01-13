@@ -2,7 +2,9 @@
 {
     public class HistoricalBuffer<T>
     {
-        private const int MAX_HIST = 25;
+        // Max allowed historical data in milliseconds.
+        private const long MAX_HIST_TIME = 400;
+
         private List<BufferEntry<T>> _history = new List<BufferEntry<T>>();
         private Func<T, T, double, T> _interpolate;
 
@@ -17,7 +19,9 @@
 
             _history.Add(entry);
 
-            if (_history.Count > MAX_HIST)
+            // Prune old entries.
+            var now = World.CurrentNetTimeMs();
+            while (now - _history.First().UpdatedAt > MAX_HIST_TIME)
                 _history.RemoveAt(0);
         }
 

@@ -8,7 +8,7 @@ namespace PolyPlane
     public static class World
     {
         public static readonly GameObjectManager ObjectManager;
-     
+
         public static BoundedRange[] WorldBounds = new BoundedRange[2];
         public static BoundedRange[] VeloBounds = new BoundedRange[2];
 
@@ -34,16 +34,9 @@ namespace PolyPlane
             TARGET_FRAME_TIME = 1000f / (float)TARGET_FPS;
         }
 
-        public static readonly float TARGET_FRAME_TIME = 16.6f;
+        public static float TARGET_FRAME_TIME = 16.6f;
         public static readonly float TARGET_FRAME_TIME_NET = TARGET_FRAME_TIME * 2f;
-
-        public static float SERVER_TICK_RATE
-        {
-            get
-            {
-                return NET_SERVER_FPS;
-            }
-        }
+        public const float DEFAULT_FRAME_TIME = 1000f / 60f;
 
         public static float DynamicDT = DT;
 
@@ -51,10 +44,7 @@ namespace PolyPlane
         {
             get
             {
-                if (World.IsServer)
-                    return _dt / (NET_SERVER_FPS / NET_CLIENT_FPS);
-                else
-                    return _dt;
+                return _dt;
             }
 
             set
@@ -75,7 +65,7 @@ namespace PolyPlane
             if (elapFrameTime > 250f)
                 elapFrameTime = 250f;
 
-            var dt = (float)(World.DT * (elapFrameTime / World.TARGET_FRAME_TIME));
+            var dt = (float)(World.DT * (elapFrameTime / World.DEFAULT_FRAME_TIME));
 
             DynamicDT = dt;
 
@@ -173,7 +163,7 @@ namespace PolyPlane
         private static float _zoomScale = 0.11f;
 
         public const int TARGET_FPS = 60; // Primary FPS target. Change this to match the desired refresh rate.
-        public const int NET_SERVER_FPS = 60;
+        public const int NET_SERVER_FPS = 120;
         public const int NET_CLIENT_FPS = TARGET_FPS;
         public const float NET_INTERP_AMOUNT = 70f; // Amount of time in milliseconds for the interpolation buffer.
 
@@ -308,6 +298,9 @@ namespace PolyPlane
 
         public static void Update(float dt)
         {
+            if (IsServer)
+                TARGET_FRAME_TIME = 1000f / NET_SERVER_FPS;
+
             UpdateTOD(dt);
         }
 
