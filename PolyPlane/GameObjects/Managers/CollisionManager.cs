@@ -125,7 +125,7 @@ namespace PolyPlane.GameObjects.Manager
 
                             if (_isNetGame)
                             {
-                                var bulletLagComp = (long)bullet.LagAmount;
+                                var bulletLagComp = (long)bullet.Owner.LagAmount;
 
                                 if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - bulletLagComp, dt))
                                 {
