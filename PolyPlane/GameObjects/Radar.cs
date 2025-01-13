@@ -75,12 +75,9 @@ namespace PolyPlane.GameObjects
         {
             // Check all sources and add pings if they are within the FOV of the current sweep.
 
-            if (World.ShowMissilesOnRadar)
-            {
-                foreach (var missile in World.ObjectManager.Missiles)
-                    DoSweep(missile);
-            }
-            
+            foreach (var missile in World.ObjectManager.Missiles)
+                DoSweep(missile);
+
             foreach (var plane in World.ObjectManager.Planes)
                 DoSweep(plane);
 
