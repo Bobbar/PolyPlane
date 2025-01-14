@@ -23,7 +23,7 @@ namespace PolyPlane.Server
         private Thread _gameThread;
 
         private GameTimer _discoveryTimer = new GameTimer(2f, true);
-        private GameTimer _syncTimer = new GameTimer(6f, true);
+        private GameTimer _syncTimer = new GameTimer(3f, true);
 
         private ManualResetEventSlim _pauseRenderEvent = new ManualResetEventSlim(true);
 

@@ -371,7 +371,10 @@ namespace PolyPlane.Net
                         {
                             var now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
-                            World.ServerTimeOffset = syncPack.ServerTime - now;
+                            // Compute server time offset.
+                            var rtt = Host.GetPlayerRTT(PlayerPlane.PlayerID);
+                            World.ServerTimeOffset = (syncPack.ServerTime + rtt) - now;
+
                             World.TimeOfDay = syncPack.TimeOfDay;
                             World.TimeOfDayDir = syncPack.TimeOfDayDir;
                             World.GunsOnly = syncPack.GunsOnly;
