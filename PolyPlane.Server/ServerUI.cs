@@ -7,6 +7,7 @@ using PolyPlane.Net;
 using PolyPlane.Net.Discovery;
 using PolyPlane.Net.NetHost;
 using PolyPlane.Rendering;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
 
@@ -15,17 +16,11 @@ namespace PolyPlane.Server
 {
     public partial class ServerUI : Form
     {
-        private bool _pauseRequested = false;
-        private bool _spawnAIPlane = false;
-        private bool _spawnRandomAIPlane = false;
-        private bool _clearAIPlanes = false;
         private bool _stopRender = false;
         private bool _killThread = false;
-        private bool _toggleGunsOnly = false;
 
         private AIPersonality _aiPersonality = AIPersonality.Normal;
         private Thread _gameThread;
-        private int _multiThreadNum = 4;
 
         private GameTimer _discoveryTimer = new GameTimer(2f, true);
         private GameTimer _syncTimer = new GameTimer(6f, true);
@@ -58,8 +53,7 @@ namespace PolyPlane.Server
         private NetPlayHost _server;
         private Renderer _render = null;
 
-        private bool _queueNextViewId = false;
-        private bool _queuePrevViewId = false;
+        private ConcurrentQueue<Action> _actionQueue = new ConcurrentQueue<Action>();
         private BindingList<NetPlayer> _currentPlayers = new BindingList<NetPlayer>();
 
         private Form _viewPort = null;
@@ -92,9 +86,6 @@ namespace PolyPlane.Server
             _discoveryTimer.TriggerCallback = () => _discovery?.BroadcastServerInfo(new DiscoveryPacket(_address, _serverName, _port));
             _syncTimer.TriggerCallback = () => _netMan.SendSyncPacket();
 
-            _multiThreadNum = Environment.ProcessorCount - 2;
-
-
             AITypeComboBox.Items.Clear();
             AITypeComboBox.DataSource = Enum.GetValues<AIPersonality>();
 
@@ -107,6 +98,11 @@ namespace PolyPlane.Server
 
             TimeOfDaySlider.Maximum = (int)World.MAX_TIMEOFDAY;
             DeltaTimeNumeric.Value = (decimal)World.DT;
+        }
+
+        private void EnqueueAction(Action action)
+        {
+            _actionQueue.Enqueue(action);
         }
 
         private void StartServerButton_Click(object sender, EventArgs e)
@@ -367,7 +363,7 @@ namespace PolyPlane.Server
 
             _discoveryTimer.Update(dt);
             _syncTimer.Update(dt);
-           
+
             HandleAIPlaneRespawn();
 
             _fpsLimiter.Wait(World.NET_SERVER_FPS);
@@ -403,52 +399,10 @@ namespace PolyPlane.Server
 
         private void ProcessQueuedActions()
         {
-            if (_queueNextViewId)
+            while (_actionQueue.Count > 0)
             {
-                World.NextViewPlane();
-                _queueNextViewId = false;
-            }
-
-            if (_queuePrevViewId)
-            {
-                World.PrevViewPlane();
-                _queuePrevViewId = false;
-            }
-
-            if (this._pauseRequested)
-            {
-                if (!World.IsPaused)
-                    World.IsPaused = true;
-                else
-                    World.IsPaused = false;
-
-                this._pauseRequested = false;
-            }
-
-            if (this._spawnAIPlane)
-            {
-                SpawnAIPlane(_aiPersonality);
-                this._spawnAIPlane = false;
-            }
-
-
-            if (this._spawnRandomAIPlane)
-            {
-                SpawnAIPlane();
-                this._spawnRandomAIPlane = false;
-            }
-
-            if (_clearAIPlanes)
-            {
-                _clearAIPlanes = false;
-                RemoveAIPlanes();
-            }
-
-            if (_toggleGunsOnly)
-            {
-                World.GunsOnly = GunsOnlyCheckBox.Checked;
-                _netMan.SendSyncPacket();
-                _toggleGunsOnly = false;
+                if (_actionQueue.TryDequeue(out var action))
+                    action();
             }
         }
 
@@ -467,7 +421,7 @@ namespace PolyPlane.Server
             if (personality.HasValue)
                 aiPlane = new FighterPlane(pos, personality.Value, World.GetNextPlayerId());
             else
-                aiPlane = new FighterPlane(pos, Utilities.RandomEnum<AIPersonality>(), World.GetNextPlayerId());
+                aiPlane = new FighterPlane(pos, Utilities.GetRandomPersonalities(2), World.GetNextPlayerId());
 
             aiPlane.PlayerName = "(BOT) " + Utilities.GetRandomName();
 
@@ -630,44 +584,58 @@ namespace PolyPlane.Server
 
         private void InitViewPort()
         {
-            if (_viewPort != null)
-                return;
+            if (_viewPort == null || (_viewPort != null && _viewPort.IsDisposed))
+            {
+                _viewPort = new Form();
+                _viewPort.Size = new Size(1346, 814);
+                _viewPort.KeyPress += ViewPort_KeyPress;
+                _viewPort.FormClosing += ViewPort_FormClosing;
+                _viewPort.MouseWheel += ViewPort_MouseWheel;
 
-            _viewPort = new Form();
-            _viewPort.Size = new Size(1346, 814);
-            _viewPort.KeyPress += ViewPort_KeyPress;
-            _viewPort.Disposed += ViewPort_Disposed;
+                _render = new Renderer(_viewPort, _netMan);
+            }
+
+            _viewPort.WindowState = FormWindowState.Normal;
             _viewPort.Show();
+            _viewPort.BringToFront();
 
-            _render = new Renderer(_viewPort, _netMan);
             _stopRender = false;
         }
 
-        private void ViewPort_Disposed(object? sender, EventArgs e)
+        private void ViewPort_MouseWheel(object? sender, MouseEventArgs e)
         {
-            // TODO: Figure out why we get no output after the first time the viewport is closed and reopened.
+            if (e.Delta > 0)
+            {
+                _render?.DoMouseWheelUp();
+            }
+            else
+            {
+                _render?.DoMouseWheelDown();
+            }
+        }
+
+        private void ViewPort_FormClosing(object? sender, FormClosingEventArgs e)
+        {
+            e.Cancel = true;
+
+            _viewPort.WindowState = FormWindowState.Minimized;
+
             _stopRender = true;
-            _render?.Dispose();
-            _render = null;
-            _viewPort.KeyPress -= ViewPort_KeyPress;
-            _viewPort.Disposed -= ViewPort_Disposed;
-            _viewPort = null;
+
+            _gameThread.Join(100);
         }
 
         private void ViewPort_KeyPress(object? sender, KeyPressEventArgs e)
         {
             switch (e.KeyChar)
             {
-
                 case '[':
-                    _queuePrevViewId = true;
-
+                    EnqueueAction(() => World.PrevViewPlane());
                     break;
                 case ']':
 
-                    _queueNextViewId = true;
+                    EnqueueAction(() => World.NextViewPlane());
                     break;
-
                 case '=' or '+':
                     _render?.ZoomIn();
                     break;
@@ -689,7 +657,7 @@ namespace PolyPlane.Server
 
         private void PauseButton_Click(object sender, EventArgs e)
         {
-            _pauseRequested = true;
+            EnqueueAction(() => World.IsPaused = !World.IsPaused);
         }
 
         private void SpawnAIPlaneButton_Click(object sender, EventArgs e)
@@ -700,7 +668,8 @@ namespace PolyPlane.Server
             {
                 var personality = (AIPersonality)selected;
                 _aiPersonality = personality;
-                _spawnAIPlane = true;
+
+                EnqueueAction(() => SpawnAIPlane(_aiPersonality));
             }
         }
 
@@ -711,12 +680,12 @@ namespace PolyPlane.Server
 
         private void SpawnRandomAIButton_Click(object sender, EventArgs e)
         {
-            _spawnRandomAIPlane = true;
+            EnqueueAction(SpawnAIPlane);
         }
 
         private void RemoveAIPlanesButton_Click(object sender, EventArgs e)
         {
-            _clearAIPlanes = true;
+            EnqueueAction(RemoveAIPlanes);
         }
 
         private void kickToolStripMenuItem_Click(object sender, EventArgs e)
@@ -759,7 +728,13 @@ namespace PolyPlane.Server
 
         private void GunsOnlyCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            _toggleGunsOnly = true;
+            var toggleGuns = new Action(() => 
+            {
+                World.GunsOnly = GunsOnlyCheckBox.Checked;
+                _netMan.SendSyncPacket();
+            });
+
+            EnqueueAction(toggleGuns);
         }
 
         private void DeltaTimeNumeric_ValueChanged(object sender, EventArgs e)

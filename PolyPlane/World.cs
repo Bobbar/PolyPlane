@@ -410,6 +410,9 @@ namespace PolyPlane
                 }
             }
 
+            if (nextId == -1 && ObjectManager.Planes.Count > 0)
+                nextId = ObjectManager.Planes.First().PlayerID;
+
             return nextId;
         }
 
@@ -432,6 +435,9 @@ namespace PolyPlane
                     nextId = ObjectManager.Planes.Last().ID.PlayerID;
                 }
             }
+
+            if (nextId == -1 && ObjectManager.Planes.Count > 0)
+                nextId = ObjectManager.Planes.First().PlayerID;
 
             return nextId;
         }
