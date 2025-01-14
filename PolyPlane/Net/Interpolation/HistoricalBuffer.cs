@@ -17,11 +17,22 @@
         {
             var entry = new BufferEntry<T>(state, timestamp);
 
-            _history.Add(entry);
+            if (_history.Count > 0)
+            {
+                // Only add if the entry is newer than the previous.
+                if (entry.UpdatedAt > _history.Last().UpdatedAt)
+                {
+                    _history.Add(entry);
+                }
+            }
+            else
+            {
+                _history.Add(entry);
+            }
 
             // Prune old entries.
             var now = World.CurrentNetTimeMs();
-            while (now - _history.First().UpdatedAt > MAX_HIST_TIME)
+            while (_history.Count > 0 && now - _history.First().UpdatedAt > MAX_HIST_TIME)
                 _history.RemoveAt(0);
         }
 
