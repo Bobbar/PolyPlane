@@ -91,7 +91,7 @@ namespace PolyPlane.Net
 
             now = World.CurrentNetTimeMs();
 
-            while (!Host.PacketReceiveQueue.IsEmpty)
+            while (Host.PacketReceiveQueue.Count > 0)
             {
                 if (Host.PacketReceiveQueue.TryDequeue(out NetPacket packet))
                 {
@@ -370,10 +370,8 @@ namespace PolyPlane.Net
                         if (!IsServer)
                         {
                             var now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                            
-                            World.ServerTimeOffset = syncPack.ServerTime - now;
-                            World.ServerTimeOffset += syncPack.Age;
 
+                            World.ServerTimeOffset = syncPack.ServerTime - now;
                             World.TimeOfDay = syncPack.TimeOfDay;
                             World.TimeOfDayDir = syncPack.TimeOfDayDir;
                             World.GunsOnly = syncPack.GunsOnly;
