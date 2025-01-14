@@ -1351,8 +1351,8 @@ namespace PolyPlane.Rendering
 
                 if (msg.Displayed && msg.TargetPlayerID.Equals(viewPlane.ID))
                 {
-                    var rect = new D2DRect(msg.RenderPos, new D2DSize(200, 50));
                     var color = Utilities.LerpColor(D2DColor.Red, D2DColor.Transparent, msg.Age / msg.LIFESPAN);
+                    var rect = new D2DRect(msg.RenderPos, new D2DSize(600, 50));
                     ctx.Gfx.DrawTextCenter(msg.Message, color, DEFAULT_FONT_NAME, 30f, rect);
                 }
             }
@@ -1531,9 +1531,22 @@ namespace PolyPlane.Rendering
         {
             if (!World.FreeCameraMode)
             {
-                var msg = "+1 Kill!";
-                var popMsg = new PopMessage() { Message = msg, Position = new D2DPoint(this.Width / 2f, this.Height * 0.40f), TargetPlayerID = e.Player.ID };
-                _popMessages.Add(popMsg);
+                var startPos = new D2DPoint(this.Width / 2f, this.Height * 0.40f);
+               
+                // Message for scoring player.
+                string msg = string.Empty;
+
+                if (e.Target.WasHeadshot)
+                    msg = $"Headshot {e.Target.PlayerName}!";
+                else
+                    msg = $"Destroyed {e.Target.PlayerName}!";
+
+                var scoringPlayerMsg = new PopMessage(msg, startPos, e.Player.ID);
+                _popMessages.Add(scoringPlayerMsg);
+
+                // Message for destroyed player.
+                var killedPlayerMsg = new PopMessage($"Destroyed by {e.Player.PlayerName}", startPos, e.Target.ID);
+                _popMessages.Add(killedPlayerMsg);
             }
         }
 

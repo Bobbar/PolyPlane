@@ -12,7 +12,7 @@ namespace PolyPlane.Rendering
         public bool Displayed = true;
         public GameID TargetPlayerID;
 
-        public readonly float LIFESPAN = 10f;
+        public readonly float LIFESPAN = 20f;
 
         private readonly float UP_RATE = 50f;
         private readonly float SIDE_RATE = 10f;
@@ -22,8 +22,12 @@ namespace PolyPlane.Rendering
         private float _curUpAmt = 0f;
         private float _sideDirection = 1f;
 
-        public PopMessage()
+        public PopMessage(string message, D2DPoint position, GameID targetPlayerID)
         {
+            Message = message;
+            Position = position;
+            TargetPlayerID = targetPlayerID;
+
             _curSideAmt = Utilities.Rnd.NextFloat(-SIDE_AMT * 0.5f, SIDE_AMT * 0.5f);
         }
 
