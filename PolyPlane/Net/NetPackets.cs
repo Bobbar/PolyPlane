@@ -402,6 +402,119 @@ namespace PolyPlane.Net
         }
     }
 
+    public class PlayerScoredPacket : NetPacket
+    {
+        public GameID VictimID;
+        public ImpactType ImpactType;
+        public int Score;
+        public int Deaths;
+        public bool WasHeadshot => (ImpactType & ImpactType.Headshot) == ImpactType.Headshot;
+
+        public PlayerScoredPacket(GameID scoringPlaneID, GameID victimPlaneID, int score, int deaths, ImpactType impactType) : base(PacketTypes.ScoreEvent, scoringPlaneID)
+        {
+            VictimID = victimPlaneID;
+            ImpactType = impactType;
+            Score = score;
+            Deaths = deaths;
+        }
+
+        public PlayerScoredPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
+
+        public override void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+
+            data.AddGameID(VictimID);
+            data.AddByte((byte)ImpactType);
+            data.AddInt(Score);
+            data.AddInt(Deaths);
+        }
+
+        public override void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+
+            VictimID = data.ReadGameID();
+            ImpactType = (ImpactType)data.ReadByte();
+            Score = data.ReadInt();
+            Deaths = data.ReadInt();
+        }
+    }
+
+    public class PlaneStatusPacket : NetPacket
+    {
+        public bool IsDisabled;
+        public float Health;
+        public int Score;
+        public int Deaths;
+
+        public PlaneStatusPacket(FighterPlane plane) : base(PacketTypes.PlaneStatus, plane.ID)
+        {
+            IsDisabled = plane.IsDisabled;
+            Health = plane.Health;
+            Score = plane.Kills;
+            Deaths = plane.Deaths;
+        }
+
+        public PlaneStatusPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
+
+        public override void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+
+            data.AddBool(IsDisabled);
+            data.AddFloat(Health);
+            data.AddInt(Score);
+            data.AddInt(Deaths);
+        }
+
+        public override void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+
+            IsDisabled = data.ReadBool();
+            Health = data.ReadFloat();
+            Score = data.ReadInt();
+            Deaths = data.ReadInt();
+        }
+    }
+
+    public class PlaneStatusListPacket : NetPacket
+    {
+        public List<PlaneStatusPacket> Planes = new List<PlaneStatusPacket>();
+
+        public PlaneStatusListPacket() : base(PacketTypes.PlaneStatusList) { }
+
+        public PlaneStatusListPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
+
+        public override void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+
+            data.AddInt(Planes.Count);
+            foreach (var packet in Planes)
+                packet.Serialize(data);
+        }
+
+        public override void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+
+            var len = data.ReadInt();
+            for (int i = 0; i < len; i++)
+                Planes.Add(new PlaneStatusPacket(data));
+        }
+    }
+
     public class GameObjectPacket : NetPacket
     {
         public GameID OwnerID;
@@ -508,13 +621,9 @@ namespace PolyPlane.Net
     public class PlanePacket : GameObjectPacket
     {
         public float Deflection;
-        public bool IsDisabled;
         public bool FiringBurst;
         public bool ThrustOn;
         public bool IsFlipped;
-        public float Health; // TODO: Maybe send these stats periodically instead of on every frame.
-        public int Score;
-        public int Deaths;
 
         public PlanePacket(BitBuffer data)
         {
@@ -524,41 +633,28 @@ namespace PolyPlane.Net
         public PlanePacket(FighterPlane obj) : base(obj)
         {
             Deflection = obj.Deflection;
-            IsDisabled = obj.IsDisabled;
-            Health = obj.Health;
             FiringBurst = obj.FiringBurst;
             ThrustOn = obj.ThrustOn;
             IsFlipped = obj.Polygon.IsFlipped;
-            Score = obj.Kills;
-            Deaths = obj.Deaths;
         }
 
         public PlanePacket(FighterPlane obj, PacketTypes type) : base(obj, type)
         {
             Deflection = obj.Deflection;
-            IsDisabled = obj.IsDisabled;
-            Health = obj.Health;
             FiringBurst = obj.FiringBurst;
             ThrustOn = obj.ThrustOn;
             IsFlipped = obj.Polygon.IsFlipped;
-            Score = obj.Kills;
-            Deaths = obj.Deaths;
         }
 
         public virtual void SyncObj(FighterPlane obj)
         {
             base.SyncObj(obj);
             obj.Deflection = Deflection;
-            obj.IsDisabled = IsDisabled;
             obj.FiringBurst = FiringBurst;
             obj.ThrustOn = ThrustOn;
 
             if (obj.Polygon.IsFlipped != IsFlipped)
                 obj.FlipPoly(force: true);
-
-            obj.Health = Health;
-            obj.Kills = Score;
-            obj.Deaths = Deaths;
         }
 
         public override void Serialize(BitBuffer data)
@@ -566,13 +662,9 @@ namespace PolyPlane.Net
             base.Serialize(data);
 
             data.AddFloat(Deflection);
-            data.AddBool(IsDisabled);
             data.AddBool(FiringBurst);
             data.AddBool(ThrustOn);
             data.AddBool(IsFlipped);
-            data.AddFloat(Health);
-            data.AddInt(Score);
-            data.AddInt(Deaths);
         }
 
         public override void Deserialize(BitBuffer data)
@@ -580,13 +672,9 @@ namespace PolyPlane.Net
             base.Deserialize(data);
 
             Deflection = data.ReadFloat();
-            IsDisabled = data.ReadBool();
             FiringBurst = data.ReadBool();
             ThrustOn = data.ReadBool();
             IsFlipped = data.ReadBool();
-            Health = data.ReadFloat();
-            Score = data.ReadInt();
-            Deaths = data.ReadInt();
         }
     }
 
@@ -643,7 +731,8 @@ namespace PolyPlane.Net
         public ImpactType ImpactType;
         public float ImpactAngle;
         public float DamageAmount;
-        public bool WasHeadshot;
+        public float NewHealth;
+        public bool WasHeadshot => (ImpactType & ImpactType.Headshot) == ImpactType.Headshot;
         public bool WasFlipped;
 
         public ImpactPacket(BitBuffer data)
@@ -651,15 +740,15 @@ namespace PolyPlane.Net
             this.Deserialize(data);
         }
 
-        public ImpactPacket(GameObject targetObj, GameID impactorID, D2DPoint point, float angle, float damageAmt, bool wasHeadshot, bool wasFlipped, ImpactType impactType) : base(targetObj)
+        public ImpactPacket(GameObject targetObj, GameID impactorID, D2DPoint point, float angle, float damageAmt, float newHealth, bool wasHeadshot, bool wasFlipped, ImpactType impactType) : base(targetObj)
         {
             Type = PacketTypes.Impact;
             ImpactorID = impactorID;
             ImpactPoint = point;
             ImpactAngle = angle;
-            WasHeadshot = wasHeadshot;
             WasFlipped = wasFlipped;
             DamageAmount = damageAmt;
+            NewHealth = newHealth;
             ImpactType = impactType;
         }
 
@@ -672,7 +761,7 @@ namespace PolyPlane.Net
             data.AddByte((byte)ImpactType);
             data.AddFloat(ImpactAngle);
             data.AddFloat(DamageAmount);
-            data.AddBool(WasHeadshot);
+            data.AddFloat(NewHealth);
             data.AddBool(WasFlipped);
         }
 
@@ -685,7 +774,7 @@ namespace PolyPlane.Net
             ImpactType = (ImpactType)data.ReadByte();
             ImpactAngle = data.ReadFloat();
             DamageAmount = data.ReadFloat();
-            WasHeadshot = data.ReadBool();
+            NewHealth = data.ReadFloat();
             WasFlipped = data.ReadBool();
         }
     }

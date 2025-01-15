@@ -20,11 +20,13 @@ namespace PolyPlane.Rendering
     {
         public FighterPlane Player;
         public FighterPlane Target;
+        public bool WasHeadshot;
 
-        public PlayerScoredEventArgs(FighterPlane player, FighterPlane target)
+        public PlayerScoredEventArgs(FighterPlane player, FighterPlane target, bool wasHeadshot )
         {
             Player = player;
             Target = target;
+            WasHeadshot = wasHeadshot;
         }
     }
 

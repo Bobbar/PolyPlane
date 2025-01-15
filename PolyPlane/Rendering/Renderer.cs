@@ -132,8 +132,13 @@ namespace PolyPlane.Rendering
                 _objs.PlayerKilledEvent += PlayerKilledEvent;
                 _objs.NewPlayerEvent += NewPlayerEvent;
             }
+            else
+            {
+                netMan.PlayerScoredEvent += PlayerScoredEvent;
+            }
 
             _objs.PlayerScoredEvent += PlayerScoredEvent;
+           
 
             _warningLightFlashTimer.Start();
 
@@ -1433,9 +1438,7 @@ namespace PolyPlane.Rendering
 
             if (viewObject is FighterPlane plane)
             {
-                var now = World.CurrentTimeMs();
-
-                if (plane.DeathTime > 0 && plane.DeathTime < DISPLAY_TIME)
+                if (plane.IsDisabled && plane.DeathTime > 0 && plane.DeathTime < DISPLAY_TIME)
                 {
                     var alpha = Math.Clamp(1f - Utilities.FactorWithEasing(plane.DeathTime, DISPLAY_TIME, EasingFunctions.Out.EaseCircle), 0f, 0.4f);
 
@@ -1536,7 +1539,7 @@ namespace PolyPlane.Rendering
                 // Message for scoring player.
                 string msg = string.Empty;
 
-                if (e.Target.WasHeadshot)
+                if (e.WasHeadshot)
                     msg = $"Headshot {e.Target.PlayerName}!";
                 else
                     msg = $"Destroyed {e.Target.PlayerName}!";
@@ -1692,9 +1695,11 @@ namespace PolyPlane.Rendering
             {
                 if (_netMan != null)
                 {
-                    infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
                     infoText += $"Latency: {_netMan.Host.GetPlayerRTT(0)}\n";
+                    infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
                     infoText += $"Packet Loss: {_netMan.Host.PacketLoss()}\n";
+                    infoText += $"Packets Deferred: {_netMan.NumDeferredPackets}\n";
+                    infoText += $"Packets Expired: {_netMan.NumExpiredPackets}\n\n";
                 }
 
                 infoText += $"Num Objects: {numObj}\n";

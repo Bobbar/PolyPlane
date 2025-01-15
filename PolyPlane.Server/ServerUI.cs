@@ -442,6 +442,8 @@ namespace PolyPlane.Server
 
             aiPlane.Velocity = new D2DPoint(World.PlaneSpawnVelo, 0f);
 
+            aiPlane.PlayerKilledCallback += _netMan.HandlePlayerKilled;
+
             return aiPlane;
         }
 

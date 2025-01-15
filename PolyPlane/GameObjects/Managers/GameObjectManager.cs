@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.GameObjects.Manager;
 using PolyPlane.GameObjects.Particles;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
@@ -10,7 +11,7 @@ namespace PolyPlane.GameObjects
     /// <summary>
     /// Handles collections for all game objects and provides fast lookups and nearest neighbor searching.
     /// </summary>
-    public class GameObjectManager
+    public class GameObjectManager : IPlayerScoredEvent
     {
         public int TotalObjects = 0;
 
@@ -131,8 +132,8 @@ namespace PolyPlane.GameObjects
                 AddObject(plane);
                 Planes.Add(plane);
 
-                plane.PlayerKilledCallback = HandlePlayerKilled;
-                plane.PlayerCrashedCallback = HandlePlayerCrashed;
+                plane.PlayerKilledCallback += HandlePlayerKilled;
+                plane.PlayerCrashedCallback += HandlePlayerCrashed;
 
                 if (plane.IsAI)
                     NewPlayerEvent?.Invoke(this, plane);
@@ -438,19 +439,21 @@ namespace PolyPlane.GameObjects
                 _spatialGrid.Add(obj);
         }
 
-        private void HandlePlayerKilled(FighterPlane plane, GameObject impactor)
+        private void HandlePlayerKilled(PlayerKilledEventArgs killedEvent)
         {
-            var impactorPlayer = impactor.Owner as FighterPlane;
+            var attackPlane = killedEvent.AttackPlane;
+            var killedPlane = killedEvent.KilledPlane;
 
-            if (impactorPlayer == null)
+            if (attackPlane == null)
                 return;
 
-            PlayerScoredEvent?.Invoke(this, new PlayerScoredEventArgs(impactorPlayer, plane));
-
+            if (!World.IsNetGame)
+                PlayerScoredEvent?.Invoke(this, new PlayerScoredEventArgs(attackPlane, killedPlane, killedPlane.WasHeadshot));
 
             if (!World.IsClient)
             {
-                PlayerKilledEvent?.Invoke(this, new EventMessage($"'{impactorPlayer.PlayerName}' {(plane.WasHeadshot ? "headshot" : "destroyed")} '{plane.PlayerName}' with {(impactor is Bullet ? "bullets." : "a missile.")}", EventType.Kill));
+                var wasBullet = (killedEvent.ImpactType & ImpactType.Bullet) == ImpactType.Bullet;
+                PlayerKilledEvent?.Invoke(this, new EventMessage($"'{attackPlane.PlayerName}' {(killedPlane.WasHeadshot ? "headshot" : "destroyed")} '{killedPlane.PlayerName}' with {(wasBullet ? "bullets." : "a missile.")}", EventType.Kill));
             }
         }
 

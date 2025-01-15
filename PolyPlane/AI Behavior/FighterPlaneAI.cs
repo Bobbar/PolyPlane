@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects;
+using PolyPlane.GameObjects.Manager;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 
@@ -103,7 +104,6 @@ namespace PolyPlane.AI_Behavior
                 this.Plane.ThrustOn = true;
         }
 
-
         private void ConfigPersonality()
         {
             var types = Enum.GetValues(typeof(AIPersonality));
@@ -150,10 +150,9 @@ namespace PolyPlane.AI_Behavior
             }
         }
 
-        private void HandlePlayerKilled(FighterPlane plane, GameObject impactor)
+        private void HandlePlayerKilled(PlayerKilledEventArgs killedEvent)
         {
-            if (impactor.Owner is FighterPlane attackerPlane)
-                _killedByPlane = attackerPlane;
+            _killedByPlane = killedEvent.AttackPlane;
         }
 
         private void ConsiderNewTarget()

@@ -127,7 +127,7 @@ namespace PolyPlane.GameObjects
         }
 
         public Action<GuidedMissile> FireMissileCallback { get; set; }
-        public Action<FighterPlane, GameObject> PlayerKilledCallback { get; set; }
+        public Action<PlayerKilledEventArgs> PlayerKilledCallback { get; set; }
         public Action<FighterPlane> PlayerCrashedCallback { get; set; }
         public Action<ImpactEvent> PlayerHitCallback { get; set; }
 
@@ -508,6 +508,9 @@ namespace PolyPlane.GameObjects
 
             if (this.IsDisabled)
                 DeathTime += dt;
+
+            if (!this.IsDisabled && !this.EngineDamaged)
+                _engineFireFlame.StopSpawning();
         }
 
         public override void NetUpdate(D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
@@ -515,6 +518,8 @@ namespace PolyPlane.GameObjects
             base.NetUpdate(position, velocity, rotation, frameTime);
 
             _controlWing.Deflection = this.Deflection;
+
+            SyncFixtures();
         }
 
         private void UpdateFlame()
@@ -877,8 +882,9 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public void HandleImpactResult(GameObject impactor, PlaneImpactResult result, float dt)
+        public void HandleImpactResult(PlaneImpactResult result, float dt)
         {
+            var impactor = result.ImpactorObject;
             var attackPlane = impactor.Owner as FighterPlane;
 
             // Always change target to attacking plane?
@@ -929,13 +935,11 @@ namespace PolyPlane.GameObjects
                         SpawnDebris(1, result.ImpactPoint, this.PlaneColor);
                 }
 
-                // TODO: How to handle this during net games?
-                // It's possible for a delayed packet to reset the
-                // Health and IsDisabled flags after a kill has been recorded,
-                // which can cause duplicate kill events.
                 if (this.Health <= 0 && !this.IsDisabled)
                 {
-                    DoPlayerKilled(impactor);
+                    // Only do this for local games or from the server during net play.
+                    if (!World.IsNetGame || (World.IsNetGame && World.IsServer))
+                        DoPlayerKilled(attackPlane, result.Type);
                 }
             }
 
@@ -950,6 +954,8 @@ namespace PolyPlane.GameObjects
 
             var angle = Utilities.ClampAngle((impactor.Velocity - this.Velocity).Angle() - this.Rotation);
             var result = new PlaneImpactResult();
+            result.TargetPlane = this;
+            result.ImpactorObject = impactor;
             result.ImpactPoint = impactPos;
             result.ImpactAngle = angle;
             result.WasFlipped = this.Polygon.IsFlipped;
@@ -968,26 +974,32 @@ namespace PolyPlane.GameObjects
                     var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos + distortVec);
                     if (hitCockpit)
                     {
-                        result.WasHeadshot = true;
+                        result.Type |= ImpactType.Headshot;
                     }
 
                     if (impactor is GuidedMissile)
                     {
-                        result.Type = ImpactType.Missile;
+                        result.Type |= ImpactType.Missile;
                         result.DamageAmount = MISSILE_DAMAGE;
                     }
                     else
                     {
-                        result.Type = ImpactType.Bullet;
+                        result.Type |= ImpactType.Bullet;
                         result.DamageAmount = BULLET_DAMAGE;
                     }
+
+                    result.NewHealth = this.Health - result.DamageAmount;
+
+                    if (result.WasHeadshot)
+                        result.NewHealth = 0;
+
                 }
             }
 
             return result;
         }
 
-        public void DoPlayerKilled(GameObject impactor)
+        public void DoPlayerKilled(FighterPlane attackPlane, ImpactType impactType)
         {
             if (IsDisabled)
                 return;
@@ -995,12 +1007,14 @@ namespace PolyPlane.GameObjects
             IsDisabled = true;
             _damageDeflection = _controlWing.Deflection;
 
-            if (impactor.Owner is FighterPlane attackPlane)
+            if (!World.IsClient)
+            {
                 attackPlane.Kills++;
+                Deaths++;
+            }
 
-            Deaths++;
-
-            PlayerKilledCallback?.Invoke(this, impactor);
+            var killedEvent = new PlayerKilledEventArgs(this, attackPlane, impactType);
+            PlayerKilledCallback?.Invoke(killedEvent);
         }
 
         private void DoImpactImpulse(GameObject impactor, D2DPoint impactPos, float dt)

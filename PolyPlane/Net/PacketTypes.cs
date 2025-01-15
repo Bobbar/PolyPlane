@@ -3,6 +3,8 @@
     public enum PacketTypes
     {
         PlaneUpdate,
+        PlaneStatusList,
+        PlaneStatus,
         PlaneListUpdate,
         MissileUpdateList,
         MissileUpdate,
@@ -24,7 +26,7 @@
         ImpactList,
         BulletList,
         DecoyList,
-        PlayerEvent
-
+        PlayerEvent,
+        ScoreEvent
     }
 }

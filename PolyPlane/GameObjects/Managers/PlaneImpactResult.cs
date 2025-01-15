@@ -2,12 +2,15 @@
 {
     public class PlaneImpactResult
     {
+        public FighterPlane TargetPlane;
+        public GameObject ImpactorObject;
         public ImpactType Type;
         public D2DPoint ImpactPoint;
         public float ImpactAngle;
-        public bool WasHeadshot = false;
+        public bool WasHeadshot => (Type & ImpactType.Headshot) == ImpactType.Headshot;
         public bool WasFlipped;
         public float DamageAmount = 0f;
+        public float NewHealth = 0f;
 
         public PlaneImpactResult() { }
 
@@ -17,7 +20,9 @@
             ImpactPoint = impactPoint;
             ImpactAngle = impactAngle;
             DamageAmount = damageAmount;
-            WasHeadshot = wasHeadshot;
+
+            if (wasHeadshot)
+                Type |= ImpactType.Headshot;
         }
 
         public PlaneImpactResult(ImpactType type, D2DPoint impactPoint, float impactAngle, float damageAmount, bool wasHeadshot, bool wasFlipped)
@@ -26,15 +31,33 @@
             ImpactPoint = impactPoint;
             ImpactAngle = impactAngle;
             DamageAmount = damageAmount;
-            WasHeadshot = wasHeadshot;
             WasFlipped = wasFlipped;
+
+            if (wasHeadshot)
+                Type |= ImpactType.Headshot;
         }
     }
 
+    public class PlayerKilledEventArgs
+    {
+        public FighterPlane KilledPlane;
+        public FighterPlane AttackPlane;
+        public ImpactType ImpactType;
+
+        public PlayerKilledEventArgs(FighterPlane killedPlane, FighterPlane attackPlane, ImpactType impactType)
+        {
+            KilledPlane = killedPlane;
+            AttackPlane = attackPlane;
+            ImpactType = impactType;
+        }
+    }
+
+    [Flags]
     public enum ImpactType
     {
-        Bullet,
-        Missile,
-        Splash
+        Bullet = 1,
+        Missile = 2,
+        Splash = 4,
+        Headshot = 8
     }
 }

@@ -9,8 +9,8 @@ namespace PolyPlane.Net.NetHost
         public event EventHandler<Peer> PeerTimeoutEvent;
         public event EventHandler<Peer> PeerDisconnectedEvent;
 
-        public RingBuffer<NetPacket> PacketSendQueue = new RingBuffer<NetPacket>(256);
-        public RingBuffer<NetPacket> PacketReceiveQueue = new RingBuffer<NetPacket>(256);
+        public RingBuffer<NetPacket> PacketSendQueue = new RingBuffer<NetPacket>(512);
+        public RingBuffer<NetPacket> PacketReceiveQueue = new RingBuffer<NetPacket>(512);
 
         public Host Host;
         public readonly ushort Port;

@@ -79,8 +79,8 @@ namespace PolyPlane.GameObjects.Manager
                                         plane.SyncFixtures();
 
                                         var impactResultM = plane.GetImpactResult(missile, pos);
-                                        _netMan.SendNetImpact(missile, plane, impactResultM, histState);
-                                        plane.HandleImpactResult(missile, impactResultM, dt);
+                                        plane.HandleImpactResult(impactResultM, dt);
+                                        _netMan.SendNetImpact(impactResultM);
 
                                         plane.Position = ogState.Position;
                                         plane.Rotation = ogState.Rotation;
@@ -89,8 +89,8 @@ namespace PolyPlane.GameObjects.Manager
                                     else
                                     {
                                         var impactResultM = plane.GetImpactResult(missile, pos);
-                                        _netMan.SendNetImpact(missile, plane, impactResultM, histState);
-                                        plane.HandleImpactResult(missile, impactResultM, dt);
+                                        plane.HandleImpactResult(impactResultM, dt);
+                                        _netMan.SendNetImpact(impactResultM);
                                     }
 
                                     missile.IsExpired = true;
@@ -104,7 +104,7 @@ namespace PolyPlane.GameObjects.Manager
                                     {
                                         var result = plane.GetImpactResult(missile, pos);
 
-                                        plane.HandleImpactResult(missile, result, dt);
+                                        plane.HandleImpactResult(result, dt);
 
                                         missile.Position = pos;
                                         missile.IsExpired = true;
@@ -138,8 +138,8 @@ namespace PolyPlane.GameObjects.Manager
                                         plane.SyncFixtures();
 
                                         var impactResult = plane.GetImpactResult(bullet, pos);
-                                        _netMan.SendNetImpact(bullet, plane, impactResult, histState);
-                                        plane.HandleImpactResult(bullet, impactResult, dt);
+                                        plane.HandleImpactResult(impactResult, dt);
+                                        _netMan.SendNetImpact(impactResult);
 
                                         plane.Position = ogState.Position;
                                         plane.Rotation = ogState.Rotation;
@@ -148,8 +148,8 @@ namespace PolyPlane.GameObjects.Manager
                                     else
                                     {
                                         var impactResult = plane.GetImpactResult(bullet, pos);
-                                        _netMan.SendNetImpact(bullet, plane, impactResult, histState);
-                                        plane.HandleImpactResult(bullet, impactResult, dt);
+                                        plane.HandleImpactResult(impactResult, dt);
+                                        _netMan.SendNetImpact(impactResult);
                                     }
 
 
@@ -164,7 +164,7 @@ namespace PolyPlane.GameObjects.Manager
                                     {
                                         var result = plane.GetImpactResult(bullet, pos);
 
-                                        plane.HandleImpactResult(bullet, result, dt);
+                                        plane.HandleImpactResult(result, dt);
 
                                         bullet.Position = pos;
                                         bullet.IsExpired = true;
@@ -361,10 +361,13 @@ namespace PolyPlane.GameObjects.Manager
                                 var damageAmount = (forceFact * DAMAGE_AMT) * dt;
 
                                 var impactResult = new PlaneImpactResult(ImpactType.Splash, plane.Position, 0f, damageAmount, wasHeadshot: false);
-                                plane.HandleImpactResult(missile, impactResult, dt);
+                                impactResult.TargetPlane = plane;
+                                impactResult.ImpactorObject = missile;
+
+                                plane.HandleImpactResult(impactResult, dt);
 
                                 if (World.IsNetGame && World.IsServer)
-                                    _netMan.SendNetImpact(missile, plane, impactResult, null);
+                                    _netMan.SendNetImpact(impactResult);
 
                             }
                         }

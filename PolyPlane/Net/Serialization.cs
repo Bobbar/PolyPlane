@@ -116,6 +116,18 @@ namespace PolyPlane.Net
                     obj = new PlayerEventPacket(data);
                     break;
 
+                case PacketTypes.ScoreEvent:
+                    obj = new PlayerScoredPacket(data);
+                    break;
+
+                case PacketTypes.PlaneStatusList:
+                    obj = new PlaneStatusListPacket(data);
+                    break;
+
+                case PacketTypes.PlaneStatus:
+                    obj = new PlaneStatusPacket(data);
+                    break;
+
             }
 
             data.Clear();
