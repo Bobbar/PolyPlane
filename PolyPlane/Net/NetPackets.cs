@@ -591,7 +591,7 @@ namespace PolyPlane.Net
         }
     }
 
-    public class GameObjectListPacket : BasicPacket
+    public class GameObjectListPacket : NetPacket
     {
         public List<GameObjectPacket> Packets = new List<GameObjectPacket>();
 
@@ -621,6 +621,35 @@ namespace PolyPlane.Net
         }
     }
 
+    public class ImpactListPacket : NetPacket
+    {
+        public List<ImpactPacket> Impacts = new List<ImpactPacket>();
+
+        public ImpactListPacket() : base(PacketTypes.ImpactList) { }
+
+        public ImpactListPacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
+
+        public override void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+
+            data.AddInt(Impacts.Count);
+            foreach (var packet in Impacts)
+                packet.Serialize(data);
+        }
+
+        public override void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+
+            var len = data.ReadInt();
+            for (int i = 0; i < len; i++)
+                Impacts.Add(new ImpactPacket(data));
+        }
+    }
 
     public class PlanePacket : GameObjectPacket
     {
@@ -780,36 +809,6 @@ namespace PolyPlane.Net
             DamageAmount = data.ReadFloat();
             NewHealth = data.ReadFloat();
             WasFlipped = data.ReadBool();
-        }
-    }
-
-    public class ImpactListPacket : GameObjectPacket
-    {
-        public List<ImpactPacket> Impacts = new List<ImpactPacket>();
-
-        public ImpactListPacket() : base(PacketTypes.ImpactList) { }
-
-        public ImpactListPacket(BitBuffer data)
-        {
-            this.Deserialize(data);
-        }
-
-        public override void Serialize(BitBuffer data)
-        {
-            base.Serialize(data);
-
-            data.AddInt(Impacts.Count);
-            foreach (var packet in Impacts)
-                packet.Serialize(data);
-        }
-
-        public override void Deserialize(BitBuffer data)
-        {
-            base.Deserialize(data);
-
-            var len = data.ReadInt();
-            for (int i = 0; i < len; i++)
-                Impacts.Add(new ImpactPacket(data));
         }
     }
 }

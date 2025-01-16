@@ -891,6 +891,10 @@ namespace PolyPlane.Net
 
                     plane.SyncFixtures();
                 }
+                else
+                {
+                    DeferPacket(impact);
+                }
             }
         }
 
