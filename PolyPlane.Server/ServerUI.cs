@@ -659,7 +659,13 @@ namespace PolyPlane.Server
 
         private void PauseButton_Click(object sender, EventArgs e)
         {
-            EnqueueAction(() => World.IsPaused = !World.IsPaused);
+            var pauseAction = new Action(() => 
+            {
+                World.IsPaused = !World.IsPaused;
+                _netMan.SendSyncPacket();
+            });
+
+            EnqueueAction(pauseAction);
         }
 
         private void SpawnAIPlaneButton_Click(object sender, EventArgs e)

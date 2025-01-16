@@ -169,6 +169,7 @@ namespace PolyPlane.Net
         public float TimeOfDay;
         public float TimeOfDayDir;
         public bool GunsOnly;
+        public bool IsPaused;
         public float DeltaTime;
 
         public SyncPacket(BitBuffer data)
@@ -176,12 +177,13 @@ namespace PolyPlane.Net
             this.Deserialize(data);
         }
 
-        public SyncPacket(long serverTime, float timeOfDay, float timeOfDayDir, bool gunsOnly, float deltaTime) : base(PacketTypes.ServerSync)
+        public SyncPacket(long serverTime, float timeOfDay, float timeOfDayDir, bool gunsOnly, bool isPaused, float deltaTime) : base(PacketTypes.ServerSync)
         {
             ServerTime = serverTime;
             TimeOfDay = timeOfDay;
             TimeOfDayDir = timeOfDayDir;
             GunsOnly = gunsOnly;
+            IsPaused = isPaused;
             DeltaTime = deltaTime;
         }
 
@@ -193,6 +195,7 @@ namespace PolyPlane.Net
             data.AddFloat(TimeOfDay);
             data.AddFloat(TimeOfDayDir);
             data.AddBool(GunsOnly);
+            data.AddBool(IsPaused);
             data.AddFloat(DeltaTime);
         }
 
@@ -204,6 +207,7 @@ namespace PolyPlane.Net
             TimeOfDay = data.ReadFloat();
             TimeOfDayDir = data.ReadFloat();
             GunsOnly = data.ReadBool();
+            IsPaused = data.ReadBool();
             DeltaTime = data.ReadFloat();
         }
     }
