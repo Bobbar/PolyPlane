@@ -354,7 +354,7 @@ namespace PolyPlane.GameObjects
                 Area = 0.5f,
                 MaxLiftForce = 15000f,
                 MaxDragForce = 12000f,
-                AOAFactor = 0.6f,
+                DragFactor = 0.3f,
                 MaxAOA = 25f,
                 Position = new D2DPoint(-5f, 0.6f) * this.RenderScale,
                 MinVelo = MIN_VELO
@@ -369,7 +369,7 @@ namespace PolyPlane.GameObjects
                 MaxDeflection = 40f,
                 MaxLiftForce = 7000f,
                 MaxDragForce = 7000f,
-                AOAFactor = 0.4f,
+                DragFactor = 0.2f,
                 MaxAOA = 30f,
                 DeflectionRate = DEFLECT_RATE,
                 PivotPoint = new D2DPoint(-25f, 0.6f) * this.RenderScale,

@@ -131,8 +131,7 @@ namespace PolyPlane.GameObjects.Fixtures
             var turbulence = World.GetTurbulenceForPosition(this.Position);
 
             // Wing & air parameters.
-            float AOA_FACT = _params.AOAFactor; // How much AoA effects drag.
-            float VELO_FACT = _params.VeloFactor; // How much velocity effects drag.
+            float DRAG_FACT = _params.DragFactor; // How much AoA effects drag.
             float WING_AREA = _params.Area; // Area of the wing. Effects lift & drag forces.
             float MAX_LIFT = _params.MaxLiftForce; // Max lift force allowed.
             float MAX_DRAG = _params.MaxDragForce; // Max drag force allowed.
@@ -165,7 +164,7 @@ namespace PolyPlane.GameObjects.Fixtures
 
             // Drag force.
             var coeffDrag = 1f - Math.Cos(2f * aoaRads);
-            var dragForce = coeffDrag * AOA_FACT * WING_AREA * 0.5f * AIR_DENSITY * veloMagSq * VELO_FACT;
+            var dragForce = coeffDrag * DRAG_FACT * WING_AREA * 0.5f * AIR_DENSITY * veloMagSq;
             dragForce += veloMag * WING_AREA * PARASITIC_DRAG * AIR_DENSITY;
 
             // Lift force.
@@ -256,14 +255,9 @@ namespace PolyPlane.GameObjects.Fixtures
         public float MaxAOA = 30f;
 
         /// <summary>
-        /// How much AoA effects drag.
+        /// How much AoA and velo effects drag.
         /// </summary>
-        public float AOAFactor = 0.5f;
-
-        /// <summary>
-        /// How much velocity effects drag.
-        /// </summary>
-        public float VeloFactor = 0.5f;
+        public float DragFactor = 0.25f;
 
         /// <summary>
         /// Additional drag applied regardless of AoA.

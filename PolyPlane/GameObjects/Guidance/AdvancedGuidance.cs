@@ -21,13 +21,10 @@ namespace PolyPlane.GameObjects.Guidance
         public override float GetGuidanceDirection(float dt)
         {
             // Tweakables
-            const float MAX_ROT_RATE = 1f; // Max rotation rate.
-            const float MIN_ROT_RATE = 0.5f; // Min rotation rate.
-            const float ROT_MOD_TIME = 4f; // Impact time to begin increasing rotation rate. (Get more aggro the closer we get)
-            const float ROT_MOD_AMT = 0.8f; // Max amount to increase rot rate per above time.
+            const float ROT_MOD_TIME = 5f; // Impact time to begin increasing rotation rate. (Get more aggro the closer we get)
+            const float ROT_MOD_AMT = 1.2f; // Max amount to increase rot rate per above time.
             const float IMPACT_POINT_DELTA_THRESH = 10f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
             const float MIN_CLOSE_RATE = 0.05f; // Min closing rate required to aim at predicted impact point.
-            const float MIN_GUIDE_DIST = 200f; // Distance in which guidance is ignored and we aim directly at the target.
 
             var targetPosition = GetTargetPosition();
             var targetVelo = this.Target.Velocity;
@@ -90,13 +87,13 @@ namespace PolyPlane.GameObjects.Guidance
             var rotAmt = Utilities.RadsToDegrees(aimDirection.Cross(veloNorm));
 
             // Increase rotation rate modifier as we approach the target.
-            var rotMod = 1f + (1f - Utilities.FactorWithEasing(Math.Abs(timeToImpact), ROT_MOD_TIME, EasingFunctions.Out.EaseCircle)) * ROT_MOD_AMT;
+            var rotMod = 1f;
+
+            if (timeToImpact > 0)
+                rotMod = 1f + (1f - Utilities.FactorWithEasing(timeToImpact, ROT_MOD_TIME, EasingFunctions.Out.EaseCircle)) * ROT_MOD_AMT;
 
             // Offset our current rotation from our current velocity vector to compute the next rotation.
             var nextRot = missileVeloAngle + -(rotAmt * rotMod);
-
-            if (targDist < MIN_GUIDE_DIST)
-                nextRot = (targetPosition - this.Missile.Position).Angle();
 
             // Tracking info.
             ImpactPoint = impactPnt; // Red
