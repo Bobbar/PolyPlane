@@ -43,7 +43,7 @@ namespace PolyPlane.GameObjects
                 var dist = this.Position.DistanceTo(_prevPos);
                 if (dist >= TRAIL_DIST)
                 {
-                    _trailQueue.Enqueue(_parentMissile.Position);
+                    _trailQueue.Enqueue(_parentMissile.CenterOfThrust);
 
                     if (_trailQueue.Count == TRAIL_LEN)
                         _trailQueue.Dequeue();
@@ -52,7 +52,7 @@ namespace PolyPlane.GameObjects
                 }
             }
 
-            this.Position = _parentMissile.Position;
+            this.Position = _parentMissile.CenterOfThrust;
         }
 
         public override void Render(RenderContext ctx)
@@ -75,7 +75,7 @@ namespace PolyPlane.GameObjects
             }
 
             // Draw connecting line between last trail segment and the source position.
-            var endPosition = _parentMissile.Position;
+            var endPosition = _parentMissile.CenterOfThrust;
 
             if (_trailQueue.Count > 1 && _trailEnabled)
                 ctx.DrawLine(lastPos, endPosition, _trailColor, LINE_WEIGHT);
