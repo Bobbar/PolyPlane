@@ -132,6 +132,9 @@ namespace PolyPlane.Net
 
             data.Clear();
 
+            if (obj == null)
+                throw new Exception($"Failed to parse packet of type: {type}");
+
             return obj;
         }
 

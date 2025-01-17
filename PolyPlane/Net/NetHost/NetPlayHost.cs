@@ -1,6 +1,5 @@
 ﻿using ENet;
 using PolyPlane.GameObjects;
-using System.Collections.Concurrent;
 
 namespace PolyPlane.Net.NetHost
 {
@@ -150,13 +149,15 @@ namespace PolyPlane.Net.NetHost
                 case EventType.Receive:
 
                     var packet = netEvent.Packet;
-                    var netPacket = ParsePacket(ref packet);
+                    
+                    if (TryParsePacket(ref packet, out NetPacket netPacket))
+                    {
+                        // Set the peer ID only if the packet does not need bounced back.
+                        if (ShouldBounceBack(netPacket) == false)
+                            netPacket.PeerID = netEvent.Peer.ID;
 
-                    // Set the peer ID only if the packet does not need bounced back.
-                    if (ShouldBounceBack(netPacket) == false)
-                        netPacket.PeerID = netEvent.Peer.ID;
-
-                    HandleReceive(netPacket);
+                        HandleReceive(netPacket);
+                    }
 
                     packet.Dispose();
 
@@ -183,15 +184,24 @@ namespace PolyPlane.Net.NetHost
             SendPacket(ref packet, netPacket.PeerID, channel);
         }
 
-        private NetPacket ParsePacket(ref Packet packet)
+        private bool TryParsePacket(ref Packet packet, out NetPacket netPacket)
         {
-            var buffer = new byte[packet.Length];
+            try
+            {
+                var buffer = new byte[packet.Length];
 
-            packet.CopyTo(buffer);
+                packet.CopyTo(buffer);
 
-            var packetObj = Serialization.ByteArrayToObject(buffer) as NetPacket;
+                var packetObj = Serialization.ByteArrayToObject(buffer) as NetPacket;
 
-            return packetObj;
+                netPacket = packetObj;
+                return true;
+            }
+            catch
+            {
+                netPacket = null;
+                return false;
+            }
         }
 
         /// <summary>
