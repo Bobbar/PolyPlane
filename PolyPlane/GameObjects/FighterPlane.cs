@@ -451,11 +451,6 @@ namespace PolyPlane.GameObjects
 
                 damageTorque *= DISABLED_FACTOR;
                 damageForce *= DISABLED_FACTOR;
-
-                ThrustOn = false;
-                _thrustAmt.SetNow(0f);
-                FiringBurst = false;
-                _engineFireFlame.StartSpawning();
             }
 
             var thrust = GetThrust(true);
@@ -1005,6 +1000,13 @@ namespace PolyPlane.GameObjects
                 return;
 
             IsDisabled = true;
+            DeathTime = World.DT;
+
+            ThrustOn = false;
+            _thrustAmt.SetNow(0f);
+            FiringBurst = false;
+            _engineFireFlame.StartSpawning();
+
             _damageDeflection = _controlWing.Deflection;
 
             if (!World.IsClient)

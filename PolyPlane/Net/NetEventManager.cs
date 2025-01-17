@@ -806,7 +806,13 @@ namespace PolyPlane.Net
 
             if (plane != null)
             {
-                plane.IsDisabled = statusPacket.IsDisabled;
+                if (statusPacket.IsDisabled && !plane.IsDisabled)
+                {
+                    // Try to avoid disabling a healthy plane.
+                    if (plane.DeathTime > 0)
+                        plane.IsDisabled = true;
+                }
+
                 plane.Health = statusPacket.Health;
                 plane.Kills = statusPacket.Score;
                 plane.Deaths = statusPacket.Deaths;
