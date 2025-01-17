@@ -1,4 +1,6 @@
-﻿namespace PolyPlane.GameObjects.Manager
+﻿using PolyPlane.Net;
+
+namespace PolyPlane.GameObjects.Manager
 {
     public class PlaneImpactResult
     {
@@ -6,6 +8,7 @@
         public GameObject ImpactorObject;
         public ImpactType Type;
         public D2DPoint ImpactPoint;
+        public D2DPoint ImpactPointOrigin;
         public float ImpactAngle;
         public bool WasHeadshot => (Type & ImpactType.Headshot) == ImpactType.Headshot;
         public bool WasFlipped;
@@ -25,15 +28,16 @@
                 Type |= ImpactType.Headshot;
         }
 
-        public PlaneImpactResult(ImpactType type, D2DPoint impactPoint, float impactAngle, float damageAmount, bool wasHeadshot, bool wasFlipped)
+        public PlaneImpactResult(ImpactPacket impactPacket)
         {
-            Type = type;
-            ImpactPoint = impactPoint;
-            ImpactAngle = impactAngle;
-            DamageAmount = damageAmount;
-            WasFlipped = wasFlipped;
+            Type = impactPacket.ImpactType;
+            ImpactPoint = impactPacket.ImpactPoint;
+            ImpactPointOrigin = impactPacket.ImpactPointOrigin;
+            ImpactAngle = impactPacket.ImpactAngle;
+            DamageAmount = impactPacket.DamageAmount;
+            WasFlipped = impactPacket.WasFlipped;
 
-            if (wasHeadshot)
+            if (impactPacket.WasHeadshot)
                 Type |= ImpactType.Headshot;
         }
     }

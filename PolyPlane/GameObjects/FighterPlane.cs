@@ -893,8 +893,6 @@ namespace PolyPlane.GameObjects
                 else if (impactor is GuidedMissile)
                     attackPlane.MissilesHit++;
 
-                // Scale the impact position back to the origin of the polygon.
-                var ogPos = Utilities.ScaleToOrigin(this, result.ImpactPoint);
                 var angle = result.ImpactAngle;
 
                 var distortAmt = BULLET_DISTORT_AMT;
@@ -902,7 +900,7 @@ namespace PolyPlane.GameObjects
                     distortAmt = MISSILE_DISTORT_AMT;
 
                 // Add bullet hole and polygon distortion.
-                AddBulletHole(ogPos, angle, distortAmt);
+                AddBulletHole(result.ImpactPointOrigin, angle, distortAmt);
 
                 // Check for polygon distortion related damage effects.
                 CheckForDamageEffects();
@@ -951,6 +949,7 @@ namespace PolyPlane.GameObjects
             var result = new PlaneImpactResult();
             result.TargetPlane = this;
             result.ImpactorObject = impactor;
+            result.ImpactPointOrigin = Utilities.ScaleToOrigin(this, impactPos);
             result.ImpactPoint = impactPos;
             result.ImpactAngle = angle;
             result.WasFlipped = this.Polygon.IsFlipped;

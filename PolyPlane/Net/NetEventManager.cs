@@ -773,7 +773,7 @@ namespace PolyPlane.Net
             var impactor = result.ImpactorObject;
             var target = result.TargetPlane;
 
-            var impactPacket = new ImpactPacket(target, impactor.ID, result.ImpactPoint, result.ImpactAngle, result.DamageAmount, result.NewHealth, result.WasHeadshot, result.WasFlipped, result.Type);
+            var impactPacket = new ImpactPacket(target, impactor.ID, result);
             impactPacket.OwnerID = impactor.Owner.ID;
 
             SaveImpact(impactPacket);
@@ -1045,7 +1045,7 @@ namespace PolyPlane.Net
 
                     target.SyncFixtures();
 
-                    var result = new PlaneImpactResult(packet.ImpactType, packet.ImpactPoint, packet.ImpactAngle, packet.DamageAmount, packet.WasHeadshot, packet.WasFlipped);
+                    var result = new PlaneImpactResult(packet);
                     result.TargetPlane = target;
                     result.ImpactorObject = impactor;
 

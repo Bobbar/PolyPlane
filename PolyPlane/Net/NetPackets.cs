@@ -761,6 +761,10 @@ namespace PolyPlane.Net
     {
         public GameID ImpactorID;
         public D2DPoint ImpactPoint;
+        /// <summary>
+        /// Scaled impact point. For bullet hole location.
+        /// </summary>
+        public D2DPoint ImpactPointOrigin;
         public ImpactType ImpactType;
         public float ImpactAngle;
         public float DamageAmount;
@@ -773,16 +777,17 @@ namespace PolyPlane.Net
             this.Deserialize(data);
         }
 
-        public ImpactPacket(GameObject targetObj, GameID impactorID, D2DPoint point, float angle, float damageAmt, float newHealth, bool wasHeadshot, bool wasFlipped, ImpactType impactType) : base(targetObj)
+        public ImpactPacket(GameObject targetObj, GameID impactorID, PlaneImpactResult result) : base(targetObj)
         {
             Type = PacketTypes.Impact;
             ImpactorID = impactorID;
-            ImpactPoint = point;
-            ImpactAngle = angle;
-            WasFlipped = wasFlipped;
-            DamageAmount = damageAmt;
-            NewHealth = newHealth;
-            ImpactType = impactType;
+            ImpactPoint = result.ImpactPoint;
+            ImpactPointOrigin = result.ImpactPointOrigin;
+            ImpactAngle = result.ImpactAngle;
+            WasFlipped = result.WasFlipped;
+            DamageAmount = result.DamageAmount;
+            NewHealth = result.NewHealth;
+            ImpactType = result.Type;
         }
 
         public override void Serialize(BitBuffer data)
@@ -791,6 +796,7 @@ namespace PolyPlane.Net
 
             data.AddGameID(ImpactorID);
             data.AddD2DPoint(ImpactPoint);
+            data.AddD2DPoint(ImpactPointOrigin);
             data.AddByte((byte)ImpactType);
             data.AddFloat(ImpactAngle);
             data.AddFloat(DamageAmount);
@@ -804,6 +810,7 @@ namespace PolyPlane.Net
 
             ImpactorID = data.ReadGameID();
             ImpactPoint = data.ReadD2DPoint();
+            ImpactPointOrigin = data.ReadD2DPoint();
             ImpactType = (ImpactType)data.ReadByte();
             ImpactAngle = data.ReadFloat();
             DamageAmount = data.ReadFloat();
