@@ -625,7 +625,7 @@ namespace PolyPlane.Net
     {
         public List<ImpactPacket> Impacts = new List<ImpactPacket>();
 
-        public ImpactListPacket() : base(PacketTypes.ImpactList) { }
+        public ImpactListPacket(GameID destID) : base(PacketTypes.ImpactList, destID) { }
 
         public ImpactListPacket(BitBuffer data)
         {

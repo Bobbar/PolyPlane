@@ -62,6 +62,9 @@ namespace PolyPlane.GameObjects.Manager
         Bullet = 1,
         Missile = 2,
         Splash = 4,
-        Headshot = 8
+        Headshot = 8,
+        DamagedEngine = 16,
+        DamagedTailWing = 32,
+        DamagedMainWing = 64
     }
 }

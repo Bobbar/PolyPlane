@@ -257,11 +257,12 @@ namespace PolyPlane.Net
                             _objs.AddPlane(newPlane);
                         }
 
+                        // Begin streaming out the current game state to the new player.
                         ServerSendOtherPlanes();
                         ServerSendExistingBullets();
                         ServerSendExistingMissiles();
                         ServerSendExistingDecoys();
-                        ServerSendExistingImpacts();
+                        ServerSendExistingImpacts(playerPacket.ID);
                         SendSyncPacket();
                     }
 
@@ -421,7 +422,7 @@ namespace PolyPlane.Net
 
                         if (impactsPacket != null)
                         {
-                            HandleNewImpactList(impactsPacket);
+                            HandleNewImpactList(impactsPacket, dt);
                         }
                     }
                     break;
@@ -503,7 +504,7 @@ namespace PolyPlane.Net
             }
         }
 
-       
+
         private void SendPlaneUpdates()
         {
             if (IsServer)
@@ -737,9 +738,9 @@ namespace PolyPlane.Net
                 Host.EnqueuePacket(decoysPacket);
         }
 
-        public void ServerSendExistingImpacts()
+        public void ServerSendExistingImpacts(GameID destID)
         {
-            var impactsPacket = new ImpactListPacket();
+            var impactsPacket = new ImpactListPacket(destID);
 
             foreach (var impactList in _impacts.Values)
             {
@@ -752,7 +753,7 @@ namespace PolyPlane.Net
                     {
                         Host.EnqueuePacket(impactsPacket);
 
-                        impactsPacket = new ImpactListPacket();
+                        impactsPacket = new ImpactListPacket(destID);
                     }
                 }
             }
@@ -806,13 +807,7 @@ namespace PolyPlane.Net
 
             if (plane != null)
             {
-                if (statusPacket.IsDisabled && !plane.IsDisabled)
-                {
-                    // Try to avoid disabling a healthy plane.
-                    if (plane.DeathTime > 0)
-                        plane.IsDisabled = true;
-                }
-
+                plane.IsDisabled = statusPacket.IsDisabled;
                 plane.Health = statusPacket.Health;
                 plane.Kills = statusPacket.Score;
                 plane.Deaths = statusPacket.Deaths;
@@ -825,7 +820,7 @@ namespace PolyPlane.Net
 
         private void DoPlayerScored(PlayerScoredPacket scorePacket)
         {
-            if (scorePacket == null) 
+            if (scorePacket == null)
                 return;
 
             var scorePlane = _objs.GetPlaneByPlayerID(scorePacket.ID.PlayerID);
@@ -858,52 +853,19 @@ namespace PolyPlane.Net
             }
         }
 
-        private void HandleNewImpactList(ImpactListPacket impacts)
+        private void HandleNewImpactList(ImpactListPacket impacts, float dt)
         {
+            var destID = impacts.ID;
+
+            // Make sure this was intended for us.
+            if (destID.PlayerID != PlayerPlane.PlayerID)
+                return;
+
             foreach (var impact in impacts.Impacts)
             {
-                var plane = _objs.GetPlaneByPlayerID(impact.ID.PlayerID);
-
-                if (plane != null)
-                {
-                    var ogState = new PlanePacket(plane);
-
-                    plane.Rotation = impact.Rotation;
-                    plane.Velocity = impact.Velocity;
-                    plane.Position = impact.Position;
-
-                    // Flip the plane poly to match the state from the impact packet.
-                    bool flipped = false;
-
-                    if (plane.Polygon.IsFlipped != impact.WasFlipped)
-                    {
-                        plane.FlipPoly(true);
-                        flipped = true;
-                    }
-
-                    plane.SyncFixtures();
-
-                    plane.AddImpact(impact.ImpactPoint, impact.ImpactAngle);
-
-                    if (impact.WasHeadshot)
-                        plane.WasHeadshot = true;
-
-                    plane.Rotation = ogState.Rotation;
-                    plane.Velocity = ogState.Velocity;
-                    plane.Position = ogState.Position;
-
-                    if (flipped)
-                        plane.FlipPoly(true);
-
-                    plane.SyncFixtures();
-                }
-                else
-                {
-                    DeferPacket(impact);
-                }
+                DoNetImpact(impact, dt);
             }
         }
-
 
         private void DoNewPlayers(PlayerListPacket players)
         {

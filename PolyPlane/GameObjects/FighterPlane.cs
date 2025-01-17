@@ -555,7 +555,7 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
-            if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
+            if (!IsDisabled && _thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
             {
                 UpdateFlame();
 
@@ -830,44 +830,65 @@ namespace PolyPlane.GameObjects
 
         public void AddBulletHole(D2DPoint pos, float angle, float distortAmt = 3f)
         {
-            // Find the closest poly point to the impact and distort the polygon.
-            // Adds a "dent" basically.
             var distortVec = Utilities.AngleToVectorDegrees(angle, distortAmt);
-            var closestIdx = this.Polygon.ClosestIdx(pos);
-
-            // Distort the closest point and the two surrounding points.
-            var prevIdx = Utilities.WrapIndex(closestIdx - 1, this.Polygon.Poly.Length);
-            var nextIdx = Utilities.WrapIndex(closestIdx + 1, this.Polygon.Poly.Length);
-
-            this.Polygon.SourcePoly[prevIdx] += distortVec * 0.6f;
-            this.Polygon.SourcePoly[closestIdx] += distortVec;
-            this.Polygon.SourcePoly[nextIdx] += distortVec * 0.6f;
-
-            this.Polygon.Update();
+          
+            DistortPolygon(this.Polygon, pos, distortVec);
 
             var bulletHole = AddAttachment(new BulletHole(this, pos + distortVec, angle));
             bulletHole.IsNetObject = this.IsNetObject;
             _bulletHoles.Add(bulletHole);
         }
 
-        private void CheckForDamageEffects()
+        private void DistortPolygon(RenderPoly poly, D2DPoint pos, D2DPoint distortVec)
         {
-            // Check for wing and engine damage.
-            // If the plane polygon gets distorted to the point
-            // that a wing attachment or engine are no longer
-            // within the polygon, we consider them damaged.
-            foreach (var wing in _wings)
-            {
-                if (wing.Visible && !Utilities.PointInPoly(wing.PivotPoint.Position, this.Polygon.Poly))
-                {
-                    wing.Visible = false;
+            // Find the closest poly point to the impact and distort the polygon.
+            var closestIdx = this.Polygon.ClosestIdx(pos);
 
-                    SpawnDebris(1, wing.Position, D2DColor.Gray);
-                }
-            }
+            // Distort the closest point and the two surrounding points.
+            var prevIdx = Utilities.WrapIndex(closestIdx - 1, poly.Poly.Length);
+            var nextIdx = Utilities.WrapIndex(closestIdx + 1, poly.Poly.Length);
+
+            poly.SourcePoly[prevIdx] += distortVec * 0.6f;
+            poly.SourcePoly[closestIdx] += distortVec;
+            poly.SourcePoly[nextIdx] += distortVec * 0.6f;
+
+            poly.Update();
+        }
+
+        private void AddPolyDamageEffectsResult(RenderPoly poly, PlaneImpactResult result)
+        {
+            var mainWing = _wings.First();
+            var tailWing = _wings.Last();
+
+            if (mainWing.Visible && !Utilities.PointInPoly(mainWing.PivotPoint.Position, poly.Poly))
+                result.Type |= ImpactType.DamagedMainWing;
+
+            if (tailWing.Visible && !Utilities.PointInPoly(tailWing.PivotPoint.Position, poly.Poly))
+                result.Type |= ImpactType.DamagedTailWing;
 
             // Check for engine damage.
             if (this.ThrustOn && !this.EngineDamaged && !Utilities.PointInPoly(_centerOfThrust.Position, this.Polygon.Poly))
+                result.Type |= ImpactType.DamagedEngine;
+        }
+
+        private void ApplyPolyDamageEffects(PlaneImpactResult result)
+        {
+            var mainWing = _wings.First();
+            var tailWing = _wings.Last();
+
+            if (mainWing.Visible && (result.Type & ImpactType.DamagedMainWing) == ImpactType.DamagedMainWing)
+            {
+                mainWing.Visible = false;
+                SpawnDebris(1, mainWing.Position, D2DColor.Gray);
+            }
+
+            if (tailWing.Visible && (result.Type & ImpactType.DamagedTailWing) == ImpactType.DamagedTailWing)
+            {
+                tailWing.Visible = false;
+                SpawnDebris(1, tailWing.Position, D2DColor.Gray);
+            }
+
+            if (this.ThrustOn && !this.EngineDamaged && (result.Type & ImpactType.DamagedEngine) == ImpactType.DamagedEngine)
             {
                 _engineFireFlame.StartSpawning();
                 this.EngineDamaged = true;
@@ -902,8 +923,8 @@ namespace PolyPlane.GameObjects
                 // Add bullet hole and polygon distortion.
                 AddBulletHole(result.ImpactPointOrigin, angle, distortAmt);
 
-                // Check for polygon distortion related damage effects.
-                CheckForDamageEffects();
+                // Apply polygon distortion related damage effects.
+                ApplyPolyDamageEffects(result);
 
                 // Push and twist the plane accordingly.
                 DoImpactImpulse(impactor, result.ImpactPoint, dt);
@@ -937,7 +958,6 @@ namespace PolyPlane.GameObjects
             }
 
             PlayerHitCallback?.Invoke(new ImpactEvent(this, attackPlane, result.DamageAmount > 0f));
-
         }
 
         public PlaneImpactResult GetImpactResult(GameObject impactor, D2DPoint impactPos)
@@ -971,6 +991,12 @@ namespace PolyPlane.GameObjects
                         result.Type |= ImpactType.Headshot;
                     }
 
+                    // Copy the polygon and check for distortion related damage effects.
+                    var polyCopy = new RenderPoly(this.Polygon, this.Position, this.Rotation);
+                    DistortPolygon(polyCopy, result.ImpactPointOrigin, distortVec);
+
+                    AddPolyDamageEffectsResult(polyCopy, result);
+
                     if (impactor is GuidedMissile)
                     {
                         result.Type |= ImpactType.Missile;
@@ -986,7 +1012,6 @@ namespace PolyPlane.GameObjects
 
                     if (result.WasHeadshot)
                         result.NewHealth = 0;
-
                 }
             }
 
