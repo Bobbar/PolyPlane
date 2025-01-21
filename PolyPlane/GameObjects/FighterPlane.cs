@@ -513,8 +513,6 @@ namespace PolyPlane.GameObjects
             base.NetUpdate(position, velocity, rotation, frameTime);
 
             _controlWing.Deflection = this.Deflection;
-
-            SyncFixtures();
         }
 
         private void UpdateFlame()
@@ -811,23 +809,6 @@ namespace PolyPlane.GameObjects
             _wings.Add(wing);
         }
 
-        /// <summary>
-        /// Update FixturePoint objects to move them to the current position.
-        /// </summary>
-        public void SyncFixtures()
-        {
-            this.Polygon.Update();
-            _flamePos.Update(0f);
-            _bulletHoles.ForEach(f => f.Update(0f));
-            _centerOfThrust.Update(0f);
-            _centerOfMass.Update(0f);
-            _cockpitPosition.Update(0f);
-            _engineFireFlame.Update(0f);
-            _decoyDispenser.Update(0f);
-            _gun.Update(0f);
-            this._wings.ForEach(w => w.Update(0f));
-        }
-
         public void AddBulletHole(D2DPoint pos, float angle, float distortAmt = 3f)
         {
             var distortVec = Utilities.AngleToVectorDegrees(angle, distortAmt);
@@ -962,9 +943,6 @@ namespace PolyPlane.GameObjects
 
         public PlaneImpactResult GetImpactResult(GameObject impactor, D2DPoint impactPos)
         {
-            // Make sure cockpit position is up-to-date.
-            _cockpitPosition.Update(0f);
-
             var angle = Utilities.ClampAngle((impactor.Velocity - this.Velocity).Angle() - this.Rotation);
             var result = new PlaneImpactResult();
             result.TargetPlane = this;
@@ -1136,7 +1114,7 @@ namespace PolyPlane.GameObjects
             if (IsAI)
                 _aiBehavior.ClearTarget();
 
-            this.SyncFixtures();
+            this.UpdateAllAttachments(0f);
         }
 
         public void MoveThrottle(bool up)

@@ -74,17 +74,13 @@ namespace PolyPlane.GameObjects.Manager
                                     {
                                         var ogState = new GameObjectPacket(plane);
 
-                                        plane.Position = histState.Position;
-                                        plane.Rotation = histState.Rotation;
-                                        plane.SyncFixtures();
+                                        plane.SetPosition(histState.Position, histState.Rotation);
 
                                         var impactResultM = plane.GetImpactResult(missile, pos);
                                         plane.HandleImpactResult(impactResultM, dt);
                                         _netMan.SendNetImpact(impactResultM);
 
-                                        plane.Position = ogState.Position;
-                                        plane.Rotation = ogState.Rotation;
-                                        plane.SyncFixtures();
+                                        plane.SetPosition(ogState.Position, ogState.Rotation);
                                     }
                                     else
                                     {
@@ -133,17 +129,13 @@ namespace PolyPlane.GameObjects.Manager
                                     {
                                         var ogState = new GameObjectPacket(plane);
 
-                                        plane.Position = histState.Position;
-                                        plane.Rotation = histState.Rotation;
-                                        plane.SyncFixtures();
+                                        plane.SetPosition(histState.Position, histState.Rotation);
 
                                         var impactResult = plane.GetImpactResult(bullet, pos);
                                         plane.HandleImpactResult(impactResult, dt);
                                         _netMan.SendNetImpact(impactResult);
 
-                                        plane.Position = ogState.Position;
-                                        plane.Rotation = ogState.Rotation;
-                                        plane.SyncFixtures();
+                                        plane.SetPosition(ogState.Position, ogState.Rotation);
                                     }
                                     else
                                     {
@@ -472,13 +464,11 @@ namespace PolyPlane.GameObjects.Manager
             {
                 if (plane.Position.X > World.FieldPlaneXBounds.Y)
                 {
-                    plane.Position = new D2DPoint(World.FieldPlaneXBounds.X, plane.Position.Y);
-                    plane.SyncFixtures();
+                    plane.SetPosition(new D2DPoint(World.FieldPlaneXBounds.X, plane.Position.Y));
                 }
                 else if (plane.Position.X < World.FieldPlaneXBounds.X)
                 {
-                    plane.Position = new D2DPoint(World.FieldPlaneXBounds.Y, plane.Position.Y);
-                    plane.SyncFixtures();
+                    plane.SetPosition(new D2DPoint(World.FieldPlaneXBounds.Y, plane.Position.Y));
                 }
             }
         }

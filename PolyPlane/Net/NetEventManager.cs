@@ -302,8 +302,7 @@ namespace PolyPlane.Net
                         var newID = new GameID(idPacket.ID.PlayerID, PlayerPlane.ID.ObjectID);
                         _objs.ChangeObjID(PlayerPlane, newID);
 
-                        PlayerPlane.Position = idPacket.Position;
-                        PlayerPlane.SyncFixtures();
+                        PlayerPlane.SetPosition(idPacket.Position);
 
                         var newPlayerPacket = new NewPlayerPacket(PlayerPlane);
                         Host.EnqueuePacket(newPlayerPacket);
@@ -1001,19 +1000,16 @@ namespace PolyPlane.Net
                     // This is to make sure the impacts/bullet holes show up in the correct place.
                     var ogState = new PlanePacket(target);
 
-                    target.Rotation = packet.Rotation;
-                    target.Position = packet.Position;
+                    target.SetPosition(packet.Position, packet.Rotation);
 
                     // Flip the plane poly to match the state from the impact packet.
                     bool flipped = false;
 
                     if (target.Polygon.IsFlipped != packet.WasFlipped)
                     {
-                        target.FlipPoly(true);
+                        target.FlipY();
                         flipped = true;
                     }
-
-                    target.SyncFixtures();
 
                     var result = new PlaneImpactResult(packet);
                     result.TargetPlane = target;
@@ -1021,13 +1017,10 @@ namespace PolyPlane.Net
 
                     target.HandleImpactResult(result, dt);
 
-                    target.Rotation = ogState.Rotation;
-                    target.Position = ogState.Position;
+                    target.SetPosition(ogState.Position, ogState.Rotation);
 
                     if (flipped)
-                        target.FlipPoly(true);
-
-                    target.SyncFixtures();
+                        target.FlipY();
                 }
             }
         }

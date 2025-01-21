@@ -435,13 +435,11 @@ namespace PolyPlane
             }
 
             plane.ThrustOn = true;
-            plane.Position = Utilities.FindSafeSpawnPoint();
             plane.Velocity = new D2DPoint(World.PlaneSpawnVelo, 0f);
             plane.RotationSpeed = 0f;
-            plane.Rotation = 0f;
             plane.IsDisabled = false;
             plane.FixPlane();
-            plane.SyncFixtures();
+            plane.SetPosition(Utilities.FindSafeSpawnPoint(), 0f);
         }
 
         private void ResetPlayerPlane()
@@ -586,11 +584,9 @@ namespace PolyPlane
 
             if (_slewEnable)
             {
-                _playerPlane.Rotation = _playerPlane.PlayerGuideAngle;
+                _playerPlane.SetPosition(_playerPlaneSlewPos, _playerPlane.PlayerGuideAngle);
                 _playerPlane.RotationSpeed = 0f;
-                _playerPlane.Position = _playerPlaneSlewPos;
                 _playerPlane.Velocity = D2DPoint.Zero;
-                _playerPlane.SyncFixtures();
             }
 
             if (_playerPlane.HasCrashed)

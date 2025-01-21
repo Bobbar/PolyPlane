@@ -385,13 +385,11 @@ namespace PolyPlane.Server
             _netMan.SendPlaneReset(plane);
 
             plane.ThrustOn = true;
-            plane.Position = Utilities.FindSafeSpawnPoint();
             plane.Velocity = new D2DPoint(World.PlaneSpawnVelo, 0f);
             plane.RotationSpeed = 0f;
-            plane.Rotation = 0f;
             plane.IsDisabled = false;
             plane.FixPlane();
-            plane.SyncFixtures();
+            plane.SetPosition(Utilities.FindSafeSpawnPoint(), 0f);
         }
 
         private void ProcessQueuedActions()

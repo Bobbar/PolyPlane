@@ -195,6 +195,27 @@ namespace PolyPlane.GameObjects
         }
 
         /// <summary>
+        /// Updates the position of this object to the specified position and syncs any attachments.
+        /// </summary>
+        /// <param name="position"></param>
+        public void SetPosition(D2DPoint position)
+        {
+            SetPosition(position, this.Rotation);
+        }
+
+        /// <summary>
+        /// Updates the position and rotation of this object to the specified position/rotation and syncs any attachments.
+        /// </summary>
+        /// <param name="position"></param>
+        public void SetPosition(D2DPoint position, float rotation)
+        {
+            this.Position = position;
+            this.Rotation = rotation;
+
+            UpdateAllAttachments(0f);
+        }
+
+        /// <summary>
         /// Add a <see cref="GameTimer"/> which will be automatically updated within the <see cref="Update(float)"/> method.
         /// </summary>
         /// <param name="interval"></param>
@@ -286,20 +307,20 @@ namespace PolyPlane.GameObjects
 
                     DoPhysicsUpdate(partialDT);
 
-                    UpdateHighFreqAttachements(partialDT);
+                    UpdateHighFreqAttachments(partialDT);
                 }
             }
 
             DoUpdate(dt);
 
             UpdateTimers(dt);
-            UpdateAttachements(dt);
+            UpdateAttachments(dt);
 
             // Hack: Net objects need this because their position updates are buffered
             // and only interpolated within DoUpdate. We need to make sure attachments
             // like wings are synced after the interpolated position is applied.
             if (this.IsNetObject)
-                UpdateHighFreqAttachements(0f);
+                UpdateHighFreqAttachments(0f);
         }
 
         private void AdvancePositionAndRotation(float dt)
@@ -367,9 +388,8 @@ namespace PolyPlane.GameObjects
             }
             else
             {
-                this.Position = position;
                 this.Velocity = velocity;
-                this.Rotation = rotation;
+                this.SetPosition(position, rotation);
             }
           
             var now = World.CurrentNetTimeMs();
@@ -377,7 +397,7 @@ namespace PolyPlane.GameObjects
             this.LastNetTime = now;
         }
 
-        private void UpdateHighFreqAttachements(float dt)
+        private void UpdateHighFreqAttachments(float dt)
         {
             if (_attachmentsHighFreq == null)
                 return;
@@ -393,7 +413,7 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private void UpdateAttachements(float dt)
+        private void UpdateAttachments(float dt)
         {
             if (_attachments == null)
                 return;
@@ -407,6 +427,12 @@ namespace PolyPlane.GameObjects
                 else
                     attachment.Update(dt);
             }
+        }
+
+        public virtual void UpdateAllAttachments(float dt)
+        {
+            UpdateHighFreqAttachments(dt);
+            UpdateAttachments(dt);
         }
 
         private void UpdateTimers(float dt)
@@ -548,9 +574,8 @@ namespace PolyPlane.GameObjects
         {
             var state = GetInterpState(from, to, pctElapsed);
 
-            this.Position = state.Position;
             this.Velocity = state.Velocity;
-            this.Rotation = state.Rotation;
+            this.SetPosition(state.Position, state.Rotation);
         }
 
         private GameObjectPacket GetInterpState(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
@@ -596,6 +621,14 @@ namespace PolyPlane.GameObjects
         public override void DoUpdate(float dt)
         {
             base.DoUpdate(dt);
+
+            if (Polygon != null)
+                Polygon.Update();
+        }
+
+        public override void UpdateAllAttachments(float dt)
+        {
+            base.UpdateAllAttachments(dt);
 
             if (Polygon != null)
                 Polygon.Update();
