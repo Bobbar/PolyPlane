@@ -97,7 +97,7 @@ namespace PolyPlane.Server
             ChatMessageTextBox.MaxLength = ChatInterface.MAX_CHARS;
 
             TimeOfDaySlider.Maximum = (int)World.MAX_TIMEOFDAY;
-            DeltaTimeNumeric.Value = (decimal)World.DT;
+            DeltaTimeNumeric.Value = (decimal)World.TargetDT;
         }
 
         private void EnqueueAction(Action action)
@@ -299,7 +299,9 @@ namespace PolyPlane.Server
 
         private void AdvanceServer()
         {
-            var dt = World.DT;
+            World.Update();
+
+            var dt = World.CurrentDT;
             var now = World.CurrentTimeMs();
 
             // Compute time elapsed since last frame.
@@ -311,9 +313,6 @@ namespace PolyPlane.Server
             _renderFPS = fps;
 
             ProcessQueuedActions();
-
-            if (World.DynamicTimeDelta)
-                dt = World.SetDynamicDT(elapFrameTime);
 
             // Process net events.
             _timer.Restart();
@@ -338,8 +337,6 @@ namespace PolyPlane.Server
                 _timer.Restart();
 
                 _objs.Update(dt);
-
-                World.Update(dt);
 
                 _timer.Stop();
                 _updateTimeSmooth.Add((float)_timer.Elapsed.TotalMilliseconds);
@@ -558,7 +555,7 @@ namespace PolyPlane.Server
             infoText += $"Bytes Sent: {_netMan.Host.Host.BytesSent}\n";
             infoText += $"MB Rec/s: {Math.Round(_recSmooth.Current, 2)}\n";
             infoText += $"MB Sent/s: {Math.Round(_sentSmooth.Current, 2)}\n";
-            infoText += $"DT: {Math.Round(World.DT, 4)}\n";
+            infoText += $"DT: {Math.Round(World.TargetDT, 4)}\n";
             infoText += $"TimeOfDay: {Math.Round(World.TimeOfDay, 2)}\n";
 
             return infoText;
@@ -644,6 +641,10 @@ namespace PolyPlane.Server
 
                 case '-' or '_':
                     _render?.ZoomOut();
+                    break;
+
+                case 'o':
+                    _render.ToggleInfo();
                     break;
             }
         }
@@ -750,14 +751,14 @@ namespace PolyPlane.Server
             if (_server == null)
                 return;
 
-            World.DT = (float)DeltaTimeNumeric.Value;
+            World.TargetDT = (float)DeltaTimeNumeric.Value;
             _netMan.SendSyncPacket();
         }
 
         private void DefaultDTButton_Click(object sender, EventArgs e)
         {
-            World.DT = World.DEFAULT_DT;
-            DeltaTimeNumeric.Value = (decimal)World.DT;
+            World.TargetDT = World.DEFAULT_DT;
+            DeltaTimeNumeric.Value = (decimal)World.TargetDT;
         }
     }
 }

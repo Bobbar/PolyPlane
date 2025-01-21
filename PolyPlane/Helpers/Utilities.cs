@@ -213,7 +213,7 @@ namespace PolyPlane.Helpers
             var groundLineA = new D2DPoint(obj.Position.X - GROUND_LINE_LEN, 0f);
             var groundLineB = new D2DPoint(obj.Position.X + GROUND_LINE_LEN, 0f);
 
-            var intersectVector = obj.Position + (obj.Velocity * World.DynamicDT);
+            var intersectVector = obj.Position + (obj.Velocity * World.CurrentDT);
             var groundPos = IntersectionPoint(obj.Position, intersectVector, groundLineA, groundLineB);
 
             return groundPos;

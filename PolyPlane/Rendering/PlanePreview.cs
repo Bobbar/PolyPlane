@@ -52,7 +52,7 @@ namespace PolyPlane.Rendering
                 _angle = Utilities.ClampAngle(_angle + 1f);
                 _plane.Rotation = _angle;
                 _plane.Velocity = D2DPoint.Zero;
-                _plane.Update(World.DT);
+                _plane.Update(World.TargetDT);
                 _plane.Render(_ctx);
 
                 _gfx.PopTransform();

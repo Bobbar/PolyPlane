@@ -1712,7 +1712,7 @@ namespace PolyPlane.Rendering
                 infoText += $"Total ms: {Math.Round(UpdateTime.TotalMilliseconds + CollisionTime.TotalMilliseconds + _renderTimeSmooth.Current, 2)}\n";
 
                 infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
-                infoText += $"DT: {Math.Round(World.DT, 4)}  ({Math.Round(World.DynamicDT, 4)}) \n";
+                infoText += $"DT: {Math.Round(World.TargetDT, 4)}  ({Math.Round(World.CurrentDT, 4)}) \n";
                 infoText += $"Position: {viewObject?.Position}\n";
 
                 if (viewObject is FighterPlane plane)

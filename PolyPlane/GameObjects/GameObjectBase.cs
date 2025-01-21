@@ -85,7 +85,7 @@ namespace PolyPlane.GameObjects
         {
             get
             {
-                var frames = (float)this.LagAmount / World.TARGET_FRAME_TIME;
+                var frames = (float)this.LagAmount / World.LAST_FRAME_TIME;
                 return frames;
             }
         }
@@ -116,7 +116,7 @@ namespace PolyPlane.GameObjects
         /// </summary>
         public float AgeMs(float dt)
         {
-            return (this.Age / dt) * World.TARGET_FRAME_TIME;
+            return (this.Age / dt) * World.LAST_FRAME_TIME;
         }
 
         public int PlayerID
@@ -665,7 +665,7 @@ namespace PolyPlane.GameObjects
 
         public void DrawVeloLines(D2DGraphics gfx, D2DColor color)
         {
-            var dt = World.DynamicDT;
+            var dt = World.CurrentDT;
 
             var relVelo = this.Velocity * dt;
             var relVeloHalf = relVelo * 0.5f;

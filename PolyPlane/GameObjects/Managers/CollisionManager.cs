@@ -420,19 +420,16 @@ namespace PolyPlane.GameObjects.Manager
             }
 
             // Bullets & missiles.
-            if (!World.IsNetGame || World.IsClient)
+            foreach (var bullet in _objs.Bullets)
             {
-                foreach (var bullet in _objs.Bullets)
+                if (!bullet.IsExpired && bullet.Altitude <= 0f)
                 {
-                    if (!bullet.IsExpired && bullet.Altitude <= 0f)
-                    {
-                        var groundImpactPos = Utilities.GroundIntersectionPoint(bullet);
+                    var groundImpactPos = Utilities.GroundIntersectionPoint(bullet);
 
-                        if (groundImpactPos != D2DPoint.Zero)
-                        {
-                            bullet.Position = groundImpactPos;
-                            bullet.IsExpired = true;
-                        }
+                    if (groundImpactPos != D2DPoint.Zero)
+                    {
+                        bullet.Position = groundImpactPos;
+                        bullet.IsExpired = true;
                     }
                 }
             }

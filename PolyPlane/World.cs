@@ -34,13 +34,14 @@ namespace PolyPlane
             TARGET_FRAME_TIME = 1000f / (float)TARGET_FPS;
         }
 
+        public static float LAST_FRAME_TIME = 16.6f;
         public static float TARGET_FRAME_TIME = 16.6f;
         public static readonly float TARGET_FRAME_TIME_NET = TARGET_FRAME_TIME * 2f;
         public const float DEFAULT_FRAME_TIME = 1000f / 60f;
 
-        public static float DynamicDT = DT;
+        public static float CurrentDT = TargetDT;
 
-        public static float DT
+        public static float TargetDT
         {
             get
             {
@@ -65,9 +66,9 @@ namespace PolyPlane
             if (elapFrameTime > 250f)
                 elapFrameTime = 250f;
 
-            var dt = (float)(World.DT * (elapFrameTime / World.DEFAULT_FRAME_TIME));
+            var dt = (float)(World.TargetDT * (elapFrameTime / World.DEFAULT_FRAME_TIME));
 
-            DynamicDT = dt;
+            CurrentDT = dt;
 
             SetSubDT(dt);
 
@@ -128,7 +129,6 @@ namespace PolyPlane
         public static bool DrawLightMap = false;
         public static bool DrawNoiseMap = false;
         public static bool UseLightMap = true;
-        public static bool DynamicTimeDelta = true;
         public static bool MissileRegen = true;
         public static bool ShowMissilesOnRadar = false;
         public static bool ShowLeadIndicators = true;
@@ -171,7 +171,7 @@ namespace PolyPlane
         private static float _zoomScale = 0.11f;
 
         public const int TARGET_FPS = 60; // Primary FPS target. Change this to match the desired refresh rate.
-        public const int NET_SERVER_FPS = 120;
+        public const int NET_SERVER_FPS = 240;
         public const int NET_CLIENT_FPS = TARGET_FPS;
         public const float NET_INTERP_AMOUNT = 70f; // Amount of time in milliseconds for the interpolation buffer.
 
@@ -226,6 +226,8 @@ namespace PolyPlane
 
         public static uint CurrentObjId = 0;
         public static int CurrentPlayerId = 1000;
+
+        private static double _lastFrameTime = 0;
 
         private static GameID ViewObjectID;
         public static GameObject ViewObject;
@@ -304,10 +306,21 @@ namespace PolyPlane
             ViewPortRectUnscaled = new D2DRect(0, 0, viewPortSize.Width, viewPortSize.Height);
         }
 
-        public static void Update(float dt)
+        public static void Update()
         {
-            if (IsServer)
-                TARGET_FRAME_TIME = 1000f / NET_SERVER_FPS;
+            // Compute elapsed time since the last frame
+            // and use it to compute a dynamic delta time
+            // for the next frame.
+            // This should allow for more correct movement
+            // when the FPS drops below the target.
+            var now = CurrentTimeMs();
+
+            var elapFrameTime = now - _lastFrameTime;
+            _lastFrameTime = now;
+
+            var dt = SetDynamicDT(elapFrameTime);
+
+            LAST_FRAME_TIME = (float)elapFrameTime;
 
             UpdateTOD(dt);
         }

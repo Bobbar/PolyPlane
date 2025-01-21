@@ -1024,7 +1024,7 @@ namespace PolyPlane.GameObjects
                 return;
 
             IsDisabled = true;
-            DeathTime = World.DT;
+            DeathTime = World.TargetDT;
 
             ThrustOn = false;
             _thrustAmt.SetNow(0f);

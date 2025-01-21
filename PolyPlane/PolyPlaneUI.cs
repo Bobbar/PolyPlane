@@ -519,7 +519,9 @@ namespace PolyPlane
 
         private void AdvanceAndRender()
         {
-            var dt = World.DT;
+            World.Update();
+
+            var dt = World.CurrentDT;
 
             if (_killRender)
                 return;
@@ -536,20 +538,6 @@ namespace PolyPlane
             // Get the current view object.
             var viewObject = GetViewObjectOrCamera(World.GetViewObject());
 
-            // Compute elapsed time since the last frame
-            // and use it to compute a dynamic delta time
-            // for the next frame.
-            // This should allow for more correct movement
-            // when the FPS drops below the target.
-            if (World.DynamicTimeDelta)
-            {
-                var now = World.CurrentTimeMs();
-
-                var elapFrameTime = now - _lastFrameTime;
-                _lastFrameTime = now;
-
-                dt = World.SetDynamicDT(elapFrameTime);
-            }
 
             // Process net events during net games.
             if (World.IsNetGame)
@@ -570,8 +558,6 @@ namespace PolyPlane
                 _timer.Restart();
 
                 _objs.Update(dt);
-
-                World.Update(dt);
 
                 _timer.Stop();
                 _updateTime += _timer.Elapsed;
@@ -1078,14 +1064,14 @@ namespace PolyPlane
                     case Keys.Oemplus:
 
                         if (!World.IsNetGame)
-                            World.DT += 0.002f;
+                            World.TargetDT += 0.002f;
 
                         break;
 
                     case Keys.OemMinus:
 
                         if (!World.IsNetGame)
-                            World.DT -= 0.002f;
+                            World.TargetDT -= 0.002f;
 
                         break;
                 }
