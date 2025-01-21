@@ -1094,6 +1094,7 @@ namespace PolyPlane.GameObjects
 
             HasCrashed = true;
             IsDisabled = true;
+            ThrustOn = false;
             _flipTimer.Stop();
             Health = 0;
         }

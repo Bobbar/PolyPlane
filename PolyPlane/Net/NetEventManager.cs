@@ -334,18 +334,7 @@ namespace PolyPlane.Net
 
                     var expiredPacket = packet as BasicListPacket;
 
-                    foreach (var p in expiredPacket.Packets)
-                    {
-                        var obj = _objs.GetObjectByID(p.ID);
-
-                        if (obj != null)
-                        {
-                            obj.Position = p.Position;
-                            obj.IsExpired = true;
-                        }
-
-                        PruneExpiredDeferredPackets(p.ID);
-                    }
+                    DoExpiredObjects(expiredPacket);
 
                     break;
 
@@ -789,6 +778,25 @@ namespace PolyPlane.Net
 
 
         // Net updates.
+
+        private void DoExpiredObjects(BasicListPacket expiredObjectsPacket)
+        {
+            if (expiredObjectsPacket == null)
+                return;
+
+            foreach (var p in expiredObjectsPacket.Packets)
+            {
+                var obj = _objs.GetObjectByID(p.ID);
+
+                if (obj != null)
+                {
+                    obj.Position = p.Position;
+                    obj.IsExpired = true;
+                }
+
+                PruneExpiredDeferredPackets(p.ID);
+            }
+        }
 
         private void DoPlaneStatusListUpdate(PlaneStatusListPacket statusListPacket)
         {

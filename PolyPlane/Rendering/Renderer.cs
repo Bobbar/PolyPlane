@@ -1721,6 +1721,9 @@ namespace PolyPlane.Rendering
                     infoText += $"Bullets (Fired/Hit): ({plane.BulletsFired} / {plane.BulletsHit}) \n";
                     infoText += $"Missiles (Fired/Hit): ({plane.MissilesFired} / {plane.MissilesHit}) \n";
                     infoText += $"Headshots: {plane.Headshots}\n";
+                    infoText += $"IsDisabled: {plane.IsDisabled}\n";
+                    infoText += $"HasCrashed: {plane.HasCrashed}\n";
+                    infoText += $"ThrustOn: {plane.ThrustOn}\n";
                 }
 
                 infoText += $"GunsOnly: {World.GunsOnly.ToString()}\n";

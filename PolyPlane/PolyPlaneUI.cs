@@ -353,7 +353,7 @@ namespace PolyPlane
                     _render.DoScreenFlash(D2DColor.Red);
                     _render.DoScreenShake();
                 }
-                else if (impact.Attacker.Equals(viewPlane))
+                else if (impact.Attacker != null && impact.Attacker.Equals(viewPlane))
                 {
                     if (impact.Target is FighterPlane && impact.DidDamage)
                         _render.DoScreenFlash(D2DColor.Green);

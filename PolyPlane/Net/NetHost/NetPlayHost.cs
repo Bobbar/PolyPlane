@@ -228,29 +228,26 @@ namespace PolyPlane.Net.NetHost
         {
             switch (netpacket.Type)
             {
-                case PacketTypes.PlaneUpdate:
+                case PacketTypes.PlaneUpdate or PacketTypes.PlaneListUpdate or PacketTypes.PlaneStatus or PacketTypes.PlaneStatusList:
                     return 0;
 
-                case PacketTypes.MissileUpdateList or PacketTypes.MissileUpdate:
+                case PacketTypes.NewMissile or PacketTypes.MissileUpdateList or PacketTypes.MissileUpdate:
                     return 1;
 
                 case PacketTypes.NewBullet:
                     return 2;
 
-                case PacketTypes.NewMissile:
+                case PacketTypes.NewDecoy:
                     return 3;
 
-                case PacketTypes.NewDecoy:
+                case PacketTypes.ExpiredObjects:
                     return 4;
 
-                case PacketTypes.ExpiredObjects:
+                case PacketTypes.Impact or PacketTypes.ImpactList:
                     return 5;
 
-                case PacketTypes.Impact or PacketTypes.ImpactList:
-                    return 6;
-
                 default:
-                    return 7;
+                    return 6;
             }
         }
 

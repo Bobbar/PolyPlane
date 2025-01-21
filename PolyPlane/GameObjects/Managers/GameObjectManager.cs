@@ -459,7 +459,8 @@ namespace PolyPlane.GameObjects
 
         private void HandlePlayerCrashed(FighterPlane plane)
         {
-            PlayerKilledEvent?.Invoke(this, new EventMessage($"'{plane.PlayerName}' crashed into the ground...", EventType.Kill));
+            if (!World.IsClient)
+                PlayerKilledEvent?.Invoke(this, new EventMessage($"'{plane.PlayerName}' crashed into the ground...", EventType.Kill));
         }
 
         private void SyncObjQueues()
