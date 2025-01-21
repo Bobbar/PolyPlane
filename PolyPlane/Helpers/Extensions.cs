@@ -62,6 +62,11 @@ namespace PolyPlane.Helpers
             return new D2DColor(vec.X, vec.Y, vec.Z, vec.W);
         }
 
+        public static Color ToGDIColor(this D2DColor color)
+        {
+            return Color.FromArgb((int)(255f * color.a), (int)(255f * color.r), (int)(255f * color.g), (int)(255f * color.b));
+        }
+
         public static Vector4 ToVector4(this D2DColor color)
         {
             return new Vector4(color.a, color.r, color.g, color.b);

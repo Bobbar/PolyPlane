@@ -192,7 +192,8 @@ namespace PolyPlane
         private const float MIN_TURB = 0.80f;
         private const float MAX_TURB = 1f;
 
-        public static readonly D2DColor HudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
+        public static readonly D2DColor DefaultHudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
+        public static D2DColor HudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
         public static readonly D2DColor DefaultFlameColor = new D2DColor(0.6f, D2DColor.Yellow);
         public static readonly D2DColor BlackSmokeColor = new D2DColor(0.6f, D2DColor.Black);
         public static readonly D2DColor GraySmokeColor = new D2DColor(0.6f, D2DColor.Gray);

@@ -45,7 +45,13 @@
             ChooseColorButton = new Button();
             PlaneColorDialog = new ColorDialog();
             RandomColorButton = new Button();
+            label5 = new Label();
+            HudColorPreviewLabel = new Label();
+            HudColorAlphaNumeric = new NumericUpDown();
+            label6 = new Label();
+            DefaultHubColorButton = new Button();
             ((System.ComponentModel.ISupportInitialize)PlanePreviewBox).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)HudColorAlphaNumeric).BeginInit();
             SuspendLayout();
             // 
             // PortTextBox
@@ -173,7 +179,7 @@
             // PlanePreviewBox
             // 
             PlanePreviewBox.BorderStyle = BorderStyle.FixedSingle;
-            PlanePreviewBox.Location = new Point(487, 89);
+            PlanePreviewBox.Location = new Point(502, 54);
             PlanePreviewBox.Name = "PlanePreviewBox";
             PlanePreviewBox.Size = new Size(200, 200);
             PlanePreviewBox.TabIndex = 14;
@@ -181,7 +187,7 @@
             // 
             // ChooseColorButton
             // 
-            ChooseColorButton.Location = new Point(612, 310);
+            ChooseColorButton.Location = new Point(627, 260);
             ChooseColorButton.Name = "ChooseColorButton";
             ChooseColorButton.Size = new Size(75, 40);
             ChooseColorButton.TabIndex = 15;
@@ -195,7 +201,7 @@
             // 
             // RandomColorButton
             // 
-            RandomColorButton.Location = new Point(487, 310);
+            RandomColorButton.Location = new Point(502, 260);
             RandomColorButton.Name = "RandomColorButton";
             RandomColorButton.Size = new Size(75, 40);
             RandomColorButton.TabIndex = 16;
@@ -203,11 +209,65 @@
             RandomColorButton.UseVisualStyleBackColor = true;
             RandomColorButton.Click += RandomColorButton_Click;
             // 
+            // label5
+            // 
+            label5.AutoSize = true;
+            label5.Location = new Point(513, 318);
+            label5.Name = "label5";
+            label5.Size = new Size(68, 15);
+            label5.TabIndex = 17;
+            label5.Text = "Hud Color: ";
+            // 
+            // HudColorPreviewLabel
+            // 
+            HudColorPreviewLabel.BorderStyle = BorderStyle.FixedSingle;
+            HudColorPreviewLabel.Cursor = Cursors.Hand;
+            HudColorPreviewLabel.Location = new Point(590, 313);
+            HudColorPreviewLabel.Name = "HudColorPreviewLabel";
+            HudColorPreviewLabel.Size = new Size(98, 25);
+            HudColorPreviewLabel.TabIndex = 18;
+            HudColorPreviewLabel.Click += HudColorPreviewLabel_Click;
+            // 
+            // HudColorAlphaNumeric
+            // 
+            HudColorAlphaNumeric.DecimalPlaces = 1;
+            HudColorAlphaNumeric.Increment = new decimal(new int[] { 5, 0, 0, 131072 });
+            HudColorAlphaNumeric.Location = new Point(590, 341);
+            HudColorAlphaNumeric.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+            HudColorAlphaNumeric.Name = "HudColorAlphaNumeric";
+            HudColorAlphaNumeric.Size = new Size(45, 23);
+            HudColorAlphaNumeric.TabIndex = 19;
+            HudColorAlphaNumeric.ValueChanged += HudColorAlphaNumeric_ValueChanged;
+            // 
+            // label6
+            // 
+            label6.AutoSize = true;
+            label6.Location = new Point(513, 341);
+            label6.Name = "label6";
+            label6.Size = new Size(44, 15);
+            label6.TabIndex = 20;
+            label6.Text = "Alpha: ";
+            // 
+            // DefaultHubColorButton
+            // 
+            DefaultHubColorButton.Location = new Point(697, 315);
+            DefaultHubColorButton.Name = "DefaultHubColorButton";
+            DefaultHubColorButton.Size = new Size(54, 23);
+            DefaultHubColorButton.TabIndex = 21;
+            DefaultHubColorButton.Text = "Default";
+            DefaultHubColorButton.UseVisualStyleBackColor = true;
+            DefaultHubColorButton.Click += DefaultHubColorButton_Click;
+            // 
             // ClientServerConfigForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(772, 419);
+            Controls.Add(DefaultHubColorButton);
+            Controls.Add(label6);
+            Controls.Add(HudColorAlphaNumeric);
+            Controls.Add(HudColorPreviewLabel);
+            Controls.Add(label5);
             Controls.Add(RandomColorButton);
             Controls.Add(ChooseColorButton);
             Controls.Add(PlanePreviewBox);
@@ -233,6 +293,7 @@
             FormClosing += ClientServerConfigForm_FormClosing;
             Load += ClientServerConfigForm_Load;
             ((System.ComponentModel.ISupportInitialize)PlanePreviewBox).EndInit();
+            ((System.ComponentModel.ISupportInitialize)HudColorAlphaNumeric).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -256,5 +317,10 @@
         private Button ChooseColorButton;
         private ColorDialog PlaneColorDialog;
         private Button RandomColorButton;
+        private Label label5;
+        private Label HudColorPreviewLabel;
+        private NumericUpDown HudColorAlphaNumeric;
+        private Label label6;
+        private Button DefaultHubColorButton;
     }
 }

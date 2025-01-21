@@ -1009,7 +1009,7 @@ namespace PolyPlane.Rendering
             var lowestVal = (startValue - HalfH) - markerRange;
 
             gfx.DrawRectangle(rect, World.HudColor);
-            gfx.DrawLine(new D2DPoint(pos.X - HalfW, pos.Y), new D2DPoint(pos.X + HalfW, pos.Y), D2DColor.GreenYellow, 1f, D2DDashStyle.Solid);
+            gfx.DrawLine(new D2DPoint(pos.X - HalfW, pos.Y), new D2DPoint(pos.X + HalfW, pos.Y), World.HudColor.WithAlpha(1f), 1f, D2DDashStyle.Solid);
 
             if (highestVal <= minValue || lowestVal <= minValue)
             {

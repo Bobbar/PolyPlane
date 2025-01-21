@@ -55,6 +55,9 @@ namespace PolyPlane.Rendering
                 _plane.Update(World.TargetDT);
                 _plane.Render(_ctx);
 
+                // Draw a crosshair to preview HUD color.
+                _gfx.DrawCrosshair(_planePosition, 5f, World.HudColor, 8f, 30f);
+
                 _gfx.PopTransform();
                 _gfx.EndRender();
             }
