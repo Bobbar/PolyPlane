@@ -68,9 +68,9 @@ namespace PolyPlane.Helpers
             return D2DPoint.Lerp(a, b, amount);
         }
 
-        public static float Factor(float value1, float value2)
+        public static float Factor(float value, float maxValue)
         {
-            return Math.Clamp(value1 / value2, 0f, 1f);
+            return Math.Clamp(value / maxValue, 0f, 1f);
         }
 
         public static float FactorWithEasing(float value1, float value2, Func<float, float> easeFunc)

@@ -5,7 +5,7 @@ using unvell.D2DLib;
 namespace PolyPlane.Rendering
 {
     /// <summary>
-    /// Provides overloads of common graphics methods which include automagic viewport clamping for performance.
+    /// Provides overloads of common graphics methods which include automagic viewport clipping for performance.
     /// </summary>
     public class RenderContext
     {
@@ -237,27 +237,27 @@ namespace PolyPlane.Rendering
 
         public void FillEllipse(D2DEllipse ellipse, D2DBrush brush)
         {
-            Gfx.FillEllipseClamped(Viewport, ellipse, brush);
+            Gfx.FillEllipseClipped(Viewport, ellipse, brush);
         }
 
         public void FillEllipseSimple(D2DPoint pos, float radius, D2DColor color)
         {
-            Gfx.FillEllipseClamped(Viewport, new D2DEllipse(pos, new D2DSize(radius, radius)), color);
+            Gfx.FillEllipseClipped(Viewport, new D2DEllipse(pos, new D2DSize(radius, radius)), color);
         }
 
         public void FillEllipseSimple(D2DPoint pos, float radius, D2DBrush brush)
         {
-            Gfx.FillEllipseClamped(Viewport, new D2DEllipse(pos, new D2DSize(radius, radius)), brush);
+            Gfx.FillEllipseClipped(Viewport, new D2DEllipse(pos, new D2DSize(radius, radius)), brush);
         }
 
         public void DrawEllipse(D2DEllipse ellipse, D2DColor color, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid)
         {
-            Gfx.DrawEllipseClamped(Viewport, ellipse, color, weight, dashStyle);
+            Gfx.DrawEllipseClipped(Viewport, ellipse, color, weight, dashStyle);
         }
 
         public void DrawLine(D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid, D2DCapStyle startCap = D2DCapStyle.Flat, D2DCapStyle endCap = D2DCapStyle.Flat)
         {
-            Gfx.DrawLineClamped(Viewport, start, end, color, weight, dashStyle, startCap, endCap);
+            Gfx.DrawLineClipped(Viewport, start, end, color, weight, dashStyle, startCap, endCap);
         }
 
         public void DrawLineWithLighting(D2DPoint start, D2DPoint end, D2DColor color, float maxIntensity, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid, D2DCapStyle startCap = D2DCapStyle.Flat, D2DCapStyle endCap = D2DCapStyle.Flat)
@@ -280,17 +280,17 @@ namespace PolyPlane.Rendering
 
         public void DrawPolygon(D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
         {
-            Gfx.DrawPolygonClamped(Viewport, points, strokeColor, strokeWidth, dashStyle, fillColor);
+            Gfx.DrawPolygonClipped(Viewport, points, strokeColor, strokeWidth, dashStyle, fillColor);
         }
 
         public void FillPolygon(D2DPoint[] points, D2DColor fillColor)
         {
-            Gfx.DrawPolygonClamped(Viewport, points, D2DColor.Transparent, 0f, D2DDashStyle.Solid, fillColor);
+            Gfx.DrawPolygonClipped(Viewport, points, D2DColor.Transparent, 0f, D2DDashStyle.Solid, fillColor);
         }
 
         public void FillPolygon(RenderPoly poly, D2DColor fillColor)
         {
-            Gfx.DrawPolygonClamped(Viewport, poly.Poly, D2DColor.Transparent, 0f, D2DDashStyle.Solid, fillColor);
+            Gfx.DrawPolygonClipped(Viewport, poly.Poly, D2DColor.Transparent, 0f, D2DDashStyle.Solid, fillColor);
         }
 
         public void FillPolygonWithLighting(D2DPoint[] points, D2DPoint centerPos, D2DColor fillColor, float maxIntensity)
@@ -326,52 +326,57 @@ namespace PolyPlane.Rendering
 
         public void FillRectangle(D2DRect rect, D2DColor color)
         {
-            Gfx.FillRectangleClamped(Viewport, rect, color);
+            Gfx.FillRectangleClipped(Viewport, rect, color);
         }
 
         public void FillRectangle(D2DRect rect, D2DBrush brush)
         {
-            Gfx.FillRectangleClamped(Viewport, rect, brush);
+            Gfx.FillRectangleClipped(Viewport, rect, brush);
         }
 
         public void FillRectangle(float x, float y, float width, float height, D2DColor color)
         {
-            Gfx.FillRectangleClamped(Viewport, x, y, width, height, color);
+            Gfx.FillRectangleClipped(Viewport, x, y, width, height, color);
         }
 
         public void DrawTextCenter(string text, D2DColor color, string fontName, float fontSize, D2DRect rect)
         {
-            Gfx.DrawTextCenterClamped(Viewport, text, color, fontName, fontSize, rect);
+            Gfx.DrawTextCenterClipped(Viewport, text, color, fontName, fontSize, rect);
         }
 
         public void DrawRectangle(D2DRect rect, D2DColor color, float strokeWidth = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid)
         {
-            Gfx.DrawRectangleClamped(Viewport, rect, color, strokeWidth, dashStyle);
+            Gfx.DrawRectangleClipped(Viewport, rect, color, strokeWidth, dashStyle);
         }
 
         public void DrawText(string text, D2DColor color, string fontName, float fontSize, D2DRect rect, DWriteTextAlignment halign = DWriteTextAlignment.Leading, DWriteParagraphAlignment valign = DWriteParagraphAlignment.Near)
         {
-            Gfx.DrawTextClamped(Viewport, text, color, fontName, fontSize, rect, halign, valign);
+            Gfx.DrawTextClipped(Viewport, text, color, fontName, fontSize, rect, halign, valign);
         }
 
         public void DrawText(string text, D2DColor color, string fontName, float fontSize, float x, float y, DWriteTextAlignment halign = DWriteTextAlignment.Leading, DWriteParagraphAlignment valign = DWriteParagraphAlignment.Near)
         {
-            Gfx.DrawTextClamped(Viewport, text, color, fontName, fontSize, new D2DRect(x, y, 99999f, 99999f), halign, valign);
+            Gfx.DrawTextClipped(Viewport, text, color, fontName, fontSize, new D2DRect(x, y, 99999f, 99999f), halign, valign);
         }
 
         public void DrawText(string text, D2DBrush brush, D2DTextFormat format, D2DRect rect)
         {
-            Gfx.DrawTextClamped(Viewport, text, brush, format, rect);
+            Gfx.DrawTextClipped(Viewport, text, brush, format, rect);
         }
 
         public void DrawArrow(D2DPoint start, D2DPoint end, D2DColor color, float weight, float arrowLen = 10f)
         {
-            Gfx.DrawArrowClamped(Viewport, start, end, color, weight, arrowLen);
+            Gfx.DrawArrowClipped(Viewport, start, end, color, weight, arrowLen);
         }
 
         public void DrawArrowStroked(D2DPoint start, D2DPoint end, D2DColor color, float weight, D2DColor strokeColor, float strokeWeight)
         {
-            Gfx.DrawArrowStrokedClamped(Viewport, start, end, color, weight, strokeColor, strokeWeight);
+            Gfx.DrawArrowStrokedClipped(Viewport, start, end, color, weight, strokeColor, strokeWeight);
+        }
+
+        public void DrawProgressBar(D2DPoint position, D2DSize size, D2DColor borderColor, D2DColor fillColor, float percent)
+        {
+            Gfx.DrawProgressBarClipped(Viewport, position, size, borderColor, fillColor, percent);
         }
 
         private D2DColor InterpolateColorGaussian(D2DColor[] colors, float value, float maxValue)

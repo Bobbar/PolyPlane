@@ -60,6 +60,7 @@ namespace PolyPlane.Rendering
         private float _hudScale = 1f;
         private double _renderFPS = 0;
         private float _screenFlashOpacity = 0f;
+        private float _warnLightFlashAmount = 1f;
         private float _groundColorTOD = 0f;
         private string _hudMessage = string.Empty;
 
@@ -69,7 +70,6 @@ namespace PolyPlane.Rendering
 
         private Stopwatch _timer = new Stopwatch();
         private GameTimer _hudMessageTimeout = new GameTimer(10f);
-        private GameTimer _warningLightFlashTimer = new GameTimer(0.5f, 0.5f, true);
         private List<EventMessage> _messageEvents = new List<EventMessage>();
         private List<PopMessage> _popMessages = new List<PopMessage>();
 
@@ -99,6 +99,7 @@ namespace PolyPlane.Rendering
         private FloatAnimation _screenShakeX;
         private FloatAnimation _screenShakeY;
         private FloatAnimation _screenFlash;
+        private FloatAnimation _warnLightFlash;
 
         private int Width => (int)(_renderTarget.Width / (_renderTarget.DeviceDpi / DEFAULT_DPI));
         private int Height => (int)(_renderTarget.Height / (_renderTarget.DeviceDpi / DEFAULT_DPI));
@@ -138,9 +139,7 @@ namespace PolyPlane.Rendering
             }
 
             _objs.PlayerScoredEvent += PlayerScoredEvent;
-           
 
-            _warningLightFlashTimer.Start();
 
             InitProceduralGenStuff();
             InitRenderTarget();
@@ -151,7 +150,6 @@ namespace PolyPlane.Rendering
         public void Dispose()
         {
             _hudMessageTimeout.Stop();
-            _warningLightFlashTimer.Stop();
 
             _groundClipLayer?.Dispose();
             _bulletLightingBrush?.Dispose();
@@ -207,6 +205,11 @@ namespace PolyPlane.Rendering
             _screenFlash = new FloatAnimation(0.4f, 0f, 4f, EasingFunctions.Out.EaseCircle, v => _screenFlashOpacity = v);
             _screenShakeX = new FloatAnimation(5f, 0f, 2f, EasingFunctions.Out.EaseCircle, v => _screenShakeTrans.X = v);
             _screenShakeY = new FloatAnimation(5f, 0f, 2f, EasingFunctions.Out.EaseCircle, v => _screenShakeTrans.Y = v);
+
+            _warnLightFlash = new FloatAnimation(0f, 1f, 0.3f, EasingFunctions.EaseLinear, v => _warnLightFlashAmount = v);
+            _warnLightFlash.Loop = true;
+            _warnLightFlash.ReverseOnLoop = true;
+            _warnLightFlash.Start();
 
             _textConsolas12 = _ctx.Device.CreateTextFormat(DEFAULT_FONT_NAME, 12f);
             _textConsolas15Centered = _ctx.Device.CreateTextFormat(DEFAULT_FONT_NAME, 15f, D2DFontWeight.Normal, D2DFontStyle.Normal, D2DFontStretch.Normal, DWriteTextAlignment.Center, DWriteParagraphAlignment.Center);
@@ -375,11 +378,11 @@ namespace PolyPlane.Rendering
         private void UpdateTimersAndAnims(float dt)
         {
             _hudMessageTimeout.Update(dt);
-            _warningLightFlashTimer.Update(dt);
 
             _screenFlash.Update(dt);
             _screenShakeX.Update(dt);
             _screenShakeY.Update(dt);
+            _warnLightFlash.Update(World.DEFAULT_DT);
 
             _contrailBox.Update(_objs.Planes, dt);
 
@@ -720,8 +723,7 @@ namespace PolyPlane.Rendering
             if (healthPct > 0f && healthPct < 0.05f)
                 healthPct = 0.05f;
 
-            ctx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), World.HudColor);
-            ctx.DrawRectangle(new D2DRect(position, size), World.HudColor);
+            ctx.DrawProgressBar(position, size, World.HudColor, World.HudColor, healthPct);
 
             // Draw player name.
             if (string.IsNullOrEmpty(plane.PlayerName))
@@ -1202,6 +1204,9 @@ namespace PolyPlane.Rendering
                 }
             }
 
+            var flashScale = Utilities.ScaleToRange(_warnLightFlashAmount, 0f, 1f, 0.98f, 1.1f);
+            var flashAlpha = Utilities.ScaleToRange(_warnLightFlashAmount, 0f, 1f, 0.5f, 1f);
+
             // Lock light.
             if (plane.HasRadarLock)
             {
@@ -1214,19 +1219,33 @@ namespace PolyPlane.Rendering
             // Missile warning light.
             if (warningMessage)
             {
-                var rect = new D2DRect(pos - new D2DPoint(0, -200), new D2DSize(120, 30));
-                var warnColor = D2DColor.Red.WithAlpha(_warningLightFlashTimer.Value / _warningLightFlashTimer.Interval);
-                gfx.DrawRectangle(rect, warnColor);
-                gfx.DrawTextCenter("MISSILE", warnColor, DEFAULT_FONT_NAME, 30f, rect);
+                var missileWarnPos = pos - new D2DPoint(0, -200);
+
+                gfx.PushTransform();
+                gfx.ScaleTransform(flashScale, flashScale, missileWarnPos);
+
+                var missileWarnRect = new D2DRect(missileWarnPos, new D2DSize(120, 30));
+                var warnColor = D2DColor.Red.WithAlpha(flashAlpha);
+                gfx.DrawRectangle(missileWarnRect, warnColor);
+                gfx.DrawTextCenter("MISSILE", warnColor, DEFAULT_FONT_NAME, 30f, missileWarnRect);
+
+                gfx.PopTransform();
             }
 
             // Engine out light.
             if (plane.EngineDamaged)
             {
-                var engineOutRect = new D2DRect(pos - new D2DPoint(0, -240), new D2DSize(180, 30));
-                var engineOutColor = D2DColor.Orange.WithAlpha(_warningLightFlashTimer.Value / _warningLightFlashTimer.Interval);
+                var engineOutPos = pos - new D2DPoint(0, -240);
+
+                gfx.PushTransform();
+                gfx.ScaleTransform(flashScale, flashScale, engineOutPos);
+
+                var engineOutRect = new D2DRect(engineOutPos, new D2DSize(180, 30));
+                var engineOutColor = D2DColor.Orange.WithAlpha(flashAlpha);
                 gfx.DrawRectangle(engineOutRect, engineOutColor);
                 gfx.DrawTextCenter("ENGINE OUT", engineOutColor, DEFAULT_FONT_NAME, 30f, engineOutRect);
+
+                gfx.PopTransform();
             }
         }
 
@@ -1268,13 +1287,18 @@ namespace PolyPlane.Rendering
             if (healthPct > 0f && healthPct < 0.05f)
                 healthPct = 0.05f;
 
-            gfx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), World.HudColor);
-            gfx.DrawRectangle(new D2DRect(position, size), World.HudColor);
+            gfx.DrawProgressBar(position, size, World.HudColor, World.HudColor, healthPct);
 
-            // Draw ammo.
-            gfx.DrawText($"MSL: {plane.NumMissiles}", _hudColorBrush, _textConsolas15Centered, new D2DRect(position + new D2DPoint(-110f, 30f), new D2DSize(50f, 20f)));
-            gfx.DrawText($"DECOY: {plane.NumDecoys}", _hudColorBrush, _textConsolas15Centered, new D2DRect(position + new D2DPoint(0, 30f), new D2DSize(80f, 20f)));
-            gfx.DrawText($"AMMO: {plane.NumBullets}", _hudColorBrush, _textConsolas15Centered, new D2DRect(position + new D2DPoint(110f, 30f), new D2DSize(70f, 20f)));
+            // Draw loadout stats labels.
+            var labelSize = new D2DSize(120f, 30f);
+            var missilePos = position + new D2DPoint(-110f, 30f);
+            DrawLabeledValue(gfx, missilePos, labelSize, D2DColor.Red, 1, plane.NumMissiles, "MSL");
+
+            var decoyPos = position + new D2DPoint(0, 30f);
+            DrawLabeledValue(gfx, decoyPos, labelSize, D2DColor.Red, 5, plane.NumDecoys, "DECOY");
+
+            var ammoPos = position + new D2DPoint(110f, 30f);
+            DrawLabeledValue(gfx, ammoPos, labelSize, D2DColor.Red, 10, plane.NumBullets, "AMMO");
 
             // Draw player name.
             if (string.IsNullOrEmpty(plane.PlayerName))
@@ -1282,6 +1306,27 @@ namespace PolyPlane.Rendering
 
             var rect = new D2DRect(position + new D2DPoint(0, -40), new D2DSize(300, 100));
             gfx.DrawText(plane.PlayerName, _hudColorBrush, _textConsolas30Centered, rect);
+        }
+
+        private void DrawLabeledValue(D2DGraphics gfx, D2DPoint position, D2DSize size, D2DColor warnColor, float warnValue, float value, string label)
+        {
+            var flashScale = Utilities.ScaleToRange(_warnLightFlashAmount, 0f, 1f, 0.95f, 1.05f);
+
+            var labelPos = position;
+            var labelRect = new D2DRect(labelPos, size);
+            var labelText = $"{label}: {value}";
+
+            if (value <= warnValue)
+            {
+                gfx.PushTransform();
+                gfx.ScaleTransform(flashScale, flashScale, labelPos);
+                gfx.DrawTextCenter(labelText, warnColor, DEFAULT_FONT_NAME, 15f * flashScale, labelRect);
+                gfx.PopTransform();
+            }
+            else
+            {
+                gfx.DrawText(labelText, _hudColorBrush, _textConsolas15Centered, labelRect);
+            }
         }
 
         private void DrawMessageBox(RenderContext ctx, D2DSize viewportsize)
@@ -1535,7 +1580,7 @@ namespace PolyPlane.Rendering
             if (!World.FreeCameraMode)
             {
                 var startPos = new D2DPoint(this.Width / 2f, this.Height * 0.40f);
-               
+
                 // Message for scoring player.
                 string msg = string.Empty;
 

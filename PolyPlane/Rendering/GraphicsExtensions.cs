@@ -43,7 +43,7 @@ namespace PolyPlane.Rendering
             gfx.DrawLine(end, end + arrow2 * arrowLen, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
         }
 
-        public static void DrawArrowClamped(this D2DGraphics gfx, D2DRect viewport, D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f, float arrowLen = 10f)
+        public static void DrawArrowClipped(this D2DGraphics gfx, D2DRect viewport, D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f, float arrowLen = 10f)
         {
             const float ARROW_ANGLE = 140f;
 
@@ -51,9 +51,9 @@ namespace PolyPlane.Rendering
             var arrow1 = Utilities.AngleToVectorDegrees(angle + ARROW_ANGLE);
             var arrow2 = Utilities.AngleToVectorDegrees(angle - ARROW_ANGLE);
 
-            gfx.DrawLineClamped(viewport, start, end, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
-            gfx.DrawLineClamped(viewport, end, end + arrow1 * arrowLen, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
-            gfx.DrawLineClamped(viewport, end, end + arrow2 * arrowLen, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+            gfx.DrawLineClipped(viewport, start, end, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+            gfx.DrawLineClipped(viewport, end, end + arrow1 * arrowLen, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+            gfx.DrawLineClipped(viewport, end, end + arrow2 * arrowLen, color, weight, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
         }
 
         public static void DrawCrosshair(this D2DGraphics gfx, D2DPoint pos, float weight, D2DColor color, float innerRadius, float outerRadius)
@@ -70,10 +70,10 @@ namespace PolyPlane.Rendering
             gfx.DrawArrow(start, end, color, weight);
         }
 
-        public static void DrawArrowStrokedClamped(this D2DGraphics gfx, D2DRect viewport, D2DPoint start, D2DPoint end, D2DColor color, float weight, D2DColor strokeColor, float strokeWeight)
+        public static void DrawArrowStrokedClipped(this D2DGraphics gfx, D2DRect viewport, D2DPoint start, D2DPoint end, D2DColor color, float weight, D2DColor strokeColor, float strokeWeight)
         {
-            gfx.DrawArrowClamped(viewport, start, end, strokeColor, weight + strokeWeight);
-            gfx.DrawArrowClamped(viewport, start, end, color, weight);
+            gfx.DrawArrowClipped(viewport, start, end, strokeColor, weight + strokeWeight);
+            gfx.DrawArrowClipped(viewport, start, end, color, weight);
 
 
             //if (viewport.Contains(start) || viewport.Contains(end))
@@ -81,6 +81,29 @@ namespace PolyPlane.Rendering
             //    gfx.DrawArrow(start, end, strokeColor, weight + strokeWeight);
             //    gfx.DrawArrow(start, end, color, weight);
             //}
+        }
+
+        public static void DrawProgressBarClipped(this D2DGraphics gfx, D2DRect viewport, D2DPoint position, D2DSize size, D2DColor borderColor, D2DColor fillColor, float percent)
+        {
+            if (viewport.Contains(new D2DRect(position, size)))
+            {
+                DrawProgressBar(gfx, position, size, borderColor, fillColor, percent);
+                OnScreen++;
+            }
+            else
+                OffScreen++;
+        }
+
+        public static void DrawProgressBar(this D2DGraphics gfx, D2DPoint position, D2DSize size, D2DColor borderColor, D2DColor fillColor, float percent)
+        {
+            gfx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * percent, size.height), fillColor);
+            gfx.DrawRectangle(new D2DRect(position, size), borderColor);
+        }
+
+        public static void DrawProgressBar(this D2DGraphics gfx, D2DPoint position, D2DSize size, D2DColor borderColor, D2DColor fillColor, float maxValue, float value)
+        {
+            var percent = Utilities.Factor(value, maxValue);
+            DrawProgressBar(gfx, position, size, borderColor, fillColor, percent);
         }
 
 
@@ -94,7 +117,7 @@ namespace PolyPlane.Rendering
             gfx.FillEllipse(new D2DEllipse(pos, new D2DSize(radius, radius)), brush);
         }
 
-        public static void FillEllipseClamped(this D2DGraphics gfx, D2DRect viewport, D2DEllipse ellipse, D2DColor color)
+        public static void FillEllipseClipped(this D2DGraphics gfx, D2DRect viewport, D2DEllipse ellipse, D2DColor color)
         {
             if (viewport.Contains(ellipse))
             {
@@ -106,7 +129,7 @@ namespace PolyPlane.Rendering
 
         }
 
-        public static void FillEllipseClamped(this D2DGraphics gfx, D2DRect viewport, D2DEllipse ellipse, D2DBrush brush)
+        public static void FillEllipseClipped(this D2DGraphics gfx, D2DRect viewport, D2DEllipse ellipse, D2DBrush brush)
         {
             if (viewport.Contains(ellipse))
             {
@@ -118,7 +141,7 @@ namespace PolyPlane.Rendering
 
         }
 
-        public static void DrawLineClamped(this D2DGraphics gfx, D2DRect viewport, D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid, D2DCapStyle startCap = D2DCapStyle.Flat, D2DCapStyle endCap = D2DCapStyle.Flat)
+        public static void DrawLineClipped(this D2DGraphics gfx, D2DRect viewport, D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid, D2DCapStyle startCap = D2DCapStyle.Flat, D2DCapStyle endCap = D2DCapStyle.Flat)
         {
             if (viewport.Contains(start) || viewport.Contains(end))
             {
@@ -129,7 +152,7 @@ namespace PolyPlane.Rendering
                 OffScreen++;
         }
 
-        public static void DrawPolygonClamped(this D2DGraphics gfx, D2DRect viewport, D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
+        public static void DrawPolygonClipped(this D2DGraphics gfx, D2DRect viewport, D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
         {
             if (viewport.Contains(points))
             {
@@ -140,7 +163,7 @@ namespace PolyPlane.Rendering
                 OffScreen++;
         }
 
-        public static void DrawPolygonClamped(this D2DGraphics gfx, D2DRect viewport, RenderPoly poly, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
+        public static void DrawPolygonClipped(this D2DGraphics gfx, D2DRect viewport, RenderPoly poly, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
         {
             if (viewport.Contains(poly.Position))
             {
@@ -151,7 +174,7 @@ namespace PolyPlane.Rendering
                 OffScreen++;
         }
 
-        public static void DrawPolygonClamped(this D2DGraphics gfx, D2DRect viewport, D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DBrush fillBrush)
+        public static void DrawPolygonClipped(this D2DGraphics gfx, D2DRect viewport, D2DPoint[] points, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DBrush fillBrush)
         {
             if (viewport.Contains(points))
             {
@@ -162,7 +185,7 @@ namespace PolyPlane.Rendering
                 OffScreen++;
         }
 
-        public static void FillRectangleClamped(this D2DGraphics gfx, D2DRect viewport, D2DRect rect, D2DColor color)
+        public static void FillRectangleClipped(this D2DGraphics gfx, D2DRect viewport, D2DRect rect, D2DColor color)
         {
             if (viewport.Contains(rect))
             {
@@ -174,7 +197,7 @@ namespace PolyPlane.Rendering
                 OffScreen++;
         }
 
-        public static void FillRectangleClamped(this D2DGraphics gfx, D2DRect viewport, D2DRect rect, D2DBrush brush)
+        public static void FillRectangleClipped(this D2DGraphics gfx, D2DRect viewport, D2DRect rect, D2DBrush brush)
         {
             if (viewport.Contains(rect))
             {
@@ -186,7 +209,7 @@ namespace PolyPlane.Rendering
                 OffScreen++;
         }
 
-        public static void FillRectangleClamped(this D2DGraphics gfx, D2DRect viewport, float x, float y, float width, float height, D2DColor color)
+        public static void FillRectangleClipped(this D2DGraphics gfx, D2DRect viewport, float x, float y, float width, float height, D2DColor color)
         {
             var pos = new D2DPoint(x, y);
             if (viewport.Contains(pos))
@@ -199,7 +222,7 @@ namespace PolyPlane.Rendering
                 OffScreen++;
         }
 
-        public static void DrawTextCenterClamped(this D2DGraphics gfx, D2DRect viewport, string text, D2DColor color, string fontName, float fontSize, D2DRect rect)
+        public static void DrawTextCenterClipped(this D2DGraphics gfx, D2DRect viewport, string text, D2DColor color, string fontName, float fontSize, D2DRect rect)
         {
             if (viewport.Contains(rect))
             {
@@ -210,7 +233,7 @@ namespace PolyPlane.Rendering
                 OffScreen++;
         }
 
-        public static void DrawRectangleClamped(this D2DGraphics gfx, D2DRect viewport, D2DRect rect, D2DColor color, float strokeWidth = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid)
+        public static void DrawRectangleClipped(this D2DGraphics gfx, D2DRect viewport, D2DRect rect, D2DColor color, float strokeWidth = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid)
         {
             if (viewport.Contains(rect))
             {
@@ -221,7 +244,7 @@ namespace PolyPlane.Rendering
                 OffScreen++;
         }
 
-        public static void DrawTextClamped(this D2DGraphics gfx, D2DRect viewport, string text, D2DColor color, string fontName, float fontSize, D2DRect rect, DWriteTextAlignment halign = DWriteTextAlignment.Leading, DWriteParagraphAlignment valign = DWriteParagraphAlignment.Near)
+        public static void DrawTextClipped(this D2DGraphics gfx, D2DRect viewport, string text, D2DColor color, string fontName, float fontSize, D2DRect rect, DWriteTextAlignment halign = DWriteTextAlignment.Leading, DWriteParagraphAlignment valign = DWriteParagraphAlignment.Near)
         {
             if (viewport.Contains(rect))
             {
@@ -232,7 +255,7 @@ namespace PolyPlane.Rendering
                 OffScreen++;
         }
 
-        public static void DrawTextClamped(this D2DGraphics gfx, D2DRect viewport, string text, D2DBrush brush, D2DTextFormat format, D2DRect rect)
+        public static void DrawTextClipped(this D2DGraphics gfx, D2DRect viewport, string text, D2DBrush brush, D2DTextFormat format, D2DRect rect)
         {
             if (viewport.Contains(rect))
             {
@@ -243,7 +266,7 @@ namespace PolyPlane.Rendering
                 OffScreen++;
         }
 
-        public static void DrawEllipseClamped(this D2DGraphics gfx, D2DRect viewport, D2DEllipse ellipse, D2DColor color, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid)
+        public static void DrawEllipseClipped(this D2DGraphics gfx, D2DRect viewport, D2DEllipse ellipse, D2DColor color, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid)
         {
             if (viewport.Contains(ellipse))
             {
