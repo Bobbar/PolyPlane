@@ -89,7 +89,7 @@ namespace PolyPlane.GameObjects
         public override bool ContainedBy(D2DRect rect)
         {
             var ret = rect.Contains(new D2DEllipse(this.Position, new D2DSize(_currentShockWaveRadius, _currentShockWaveRadius)))
-                   || rect.Contains(new D2DEllipse(this.Position, new D2DSize(_currentRadius, _currentRadius)));
+                   || rect.Contains(new D2DEllipse(this.Position, new D2DSize(_currentRadius * 10f, _currentRadius * 10f)));
 
             return ret;
         }
