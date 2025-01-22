@@ -317,7 +317,7 @@ namespace PolyPlane.Server
             // Process net events.
             _timer.Restart();
 
-            _netMan.DoNetEvents(dt);
+            _netMan.HandleNetEvents(dt);
 
             _timer.Stop();
             _netTimeSmooth.Add((float)_timer.Elapsed.TotalMilliseconds);

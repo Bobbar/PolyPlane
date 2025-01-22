@@ -539,7 +539,7 @@ namespace PolyPlane
 
             // Process net events during net games.
             if (World.IsNetGame)
-                _netMan.DoNetEvents(dt);
+                _netMan.HandleNetEvents(dt);
 
             // Update/advance objects.
             if (!World.IsPaused || _oneStep)
