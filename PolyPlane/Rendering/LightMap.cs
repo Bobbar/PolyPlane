@@ -167,9 +167,12 @@ namespace PolyPlane.Rendering
             if (r.X < float.Epsilon)
                 return r; // Fully transparent -- R,G,B not important
 
-            r.Y = colorA.Y * colorA.X / r.X + colorB.Y * colorB.X * (1f - colorA.X) / r.X;
-            r.Z = colorA.Z * colorA.X / r.X + colorB.Z * colorB.X * (1f - colorA.X) / r.X;
-            r.W = colorA.W * colorA.X / r.X + colorB.W * colorB.X * (1f - colorA.X) / r.X;
+            var alphaFact = colorA.X / r.X;
+            var alphaFactInvert = (1f - colorA.X) / r.X;
+
+            r.Y = colorA.Y * alphaFact + colorB.Y * colorB.X * alphaFactInvert;
+            r.Z = colorA.Z * alphaFact + colorB.Z * colorB.X * alphaFactInvert;
+            r.W = colorA.W * alphaFact + colorB.W * colorB.X * alphaFactInvert;
 
             return r;
         }
