@@ -275,7 +275,6 @@
             TimeOfDaySlider.Size = new Size(212, 45);
             TimeOfDaySlider.TabIndex = 22;
             TimeOfDaySlider.Scroll += TimeOfDaySlider_Scroll;
-            TimeOfDaySlider.ValueChanged += TimeOfDaySlider_ValueChanged;
             // 
             // TimeOfDayLabel
             // 

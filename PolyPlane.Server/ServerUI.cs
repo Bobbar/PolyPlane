@@ -261,6 +261,14 @@ namespace PolyPlane.Server
             }
         }
 
+        private void SendChatMessage(string message)
+        {
+            _netMan.ChatInterface.SendMessage(message);
+            ChatMessageTextBox.Text = string.Empty;
+
+            AddNewEventMessage($"Server: {message}");
+        }
+
         private void ServerUI_Disposed(object? sender, EventArgs e)
         {
             _killThread = true;
@@ -702,29 +710,23 @@ namespace PolyPlane.Server
 
         private void SentChatButton_Click(object sender, EventArgs e)
         {
-            _netMan.ChatInterface.SendMessage(ChatMessageTextBox.Text);
-            ChatMessageTextBox.Text = string.Empty;
+            SendChatMessage(ChatMessageTextBox.Text);
         }
 
         private void ChatMessageTextBox_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == (char)Keys.Enter)
             {
-                _netMan.ChatInterface.SendMessage(ChatMessageTextBox.Text);
-                ChatMessageTextBox.Text = string.Empty;
+                SendChatMessage(ChatMessageTextBox.Text);
             }
         }
 
         private void TimeOfDaySlider_Scroll(object sender, EventArgs e)
         {
             World.TimeOfDay = TimeOfDaySlider.Value;
+            _netMan.SendSyncPacket();
         }
-
-        private void TimeOfDaySlider_ValueChanged(object sender, EventArgs e)
-        {
-
-        }
-
+      
         private void EnableDiscoveryCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             if (EnableDiscoveryCheckBox.Checked)
