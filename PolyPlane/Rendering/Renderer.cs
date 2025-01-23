@@ -1332,25 +1332,29 @@ namespace PolyPlane.Rendering
         private void DrawMessageBox(RenderContext ctx, D2DSize viewportsize)
         {
             const float SCALE = 1f;
-            const float ACTIVE_SCALE = 1.4f;
-            const float FONT_SIZE = 10f;
-            const int MAX_LINES = 10;
+            const float ACTIVE_SCALE = 1.8f;
+            const float LEFT_PAD = 10f;
+            const int MAX_LINES = 15;
             const float WIDTH = 400f;
-            const float HEIGHT = 100f;
+            const float HEIGHT = 150f;
 
             var lineSize = new D2DSize(WIDTH, HEIGHT / MAX_LINES);
             var chatActive = _netMan != null && _netMan.ChatInterface.ChatIsActive;
             var scale = SCALE;
 
-            if (chatActive)
-                scale = ACTIVE_SCALE;
+            var boxPos = new D2DPoint(350f * HudScale * scale, viewportsize.height - (240f * HudScale * scale));
 
-            var boxPos = new D2DPoint(370f * HudScale * scale, viewportsize.height - (220f * HudScale * scale));
-            var linePos = boxPos;
+            if (chatActive)
+            {
+                scale = ACTIVE_SCALE;
+                boxPos = new D2DPoint((viewportsize.width * 0.5f), (viewportsize.height * 0.5f) - (HEIGHT * 0.5f));
+            }
+
+            var linePos = new D2DPoint(boxPos.X + LEFT_PAD, boxPos.Y);
 
             ctx.PushTransform();
             ctx.ScaleTransform(scale, boxPos);
-            ctx.Gfx.FillRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, new D2DColor(0.05f, World.HudColor));
+            ctx.Gfx.FillRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, new D2DColor(0.05f, World.HudColor));
 
             var start = 0;
 
@@ -1374,12 +1378,12 @@ namespace PolyPlane.Rendering
                 linePos += new D2DPoint(0, lineSize.height);
             }
 
-            ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, World.HudColor);
+            ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, World.HudColor);
 
             // Draw current chat message.
             if (chatActive)
             {
-                var rect = new D2DRect(new D2DPoint(boxPos.X, boxPos.Y + HEIGHT + 6f), lineSize);
+                var rect = new D2DRect(new D2DPoint(boxPos.X + LEFT_PAD, boxPos.Y + HEIGHT + 6f), lineSize);
                 var curText = _netMan.ChatInterface.CurrentText;
 
                 if (string.IsNullOrEmpty(curText))
@@ -1387,7 +1391,7 @@ namespace PolyPlane.Rendering
                 else
                     ctx.Gfx.DrawText(_netMan.ChatInterface.CurrentText, _whiteColorBrush, _messageBoxFont, rect);
 
-                ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y + HEIGHT, WIDTH, lineSize.height + 5f, World.HudColor);
+                ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y + HEIGHT, WIDTH, lineSize.height + 5f, World.HudColor);
             }
 
             ctx.PopTransform();

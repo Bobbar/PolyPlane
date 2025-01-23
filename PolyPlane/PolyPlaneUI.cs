@@ -1079,7 +1079,7 @@ namespace PolyPlane
             if (e.KeyData.HasFlag(Keys.Enter) && e.KeyData.HasFlag(Keys.Alt))
                 ToggleFullscreen();
 
-            if (e.KeyData == Keys.Escape && _isFullScreen)
+            if (e.KeyData == Keys.Escape && _isFullScreen && (_netMan != null && !_netMan.ChatInterface.ChatIsActive))
                 ToggleFullscreen();
         }
 
