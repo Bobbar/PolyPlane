@@ -168,11 +168,11 @@ namespace PolyPlane.Rendering
                 return r; // Fully transparent -- R,G,B not important
 
             var alphaFact = colorA.X / r.X;
-            var alphaFactInvert = (1f - colorA.X) / r.X;
+            var alphaFactInvert = 1f - alphaFact;
 
-            r.Y = colorA.Y * alphaFact + colorB.Y * colorB.X * alphaFactInvert;
-            r.Z = colorA.Z * alphaFact + colorB.Z * colorB.X * alphaFactInvert;
-            r.W = colorA.W * alphaFact + colorB.W * colorB.X * alphaFactInvert;
+            r.Y = colorA.Y * alphaFact + colorB.Y * alphaFactInvert;
+            r.Z = colorA.Z * alphaFact + colorB.Z * alphaFactInvert;
+            r.W = colorA.W * alphaFact + colorB.W * alphaFactInvert;
 
             return r;
         }
