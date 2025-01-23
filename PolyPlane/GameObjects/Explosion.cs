@@ -102,7 +102,7 @@ namespace PolyPlane.GameObjects
         float ILightMapContributor.GetLightRadius()
         {
             if (this.Owner is not GuidedMissile)
-                return _currentRadius * 10f;
+                return _currentRadius * 12f;
             else
                 return _currentRadius * 7f;
         }

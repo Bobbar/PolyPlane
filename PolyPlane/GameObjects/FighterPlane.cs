@@ -343,7 +343,7 @@ namespace PolyPlane.GameObjects
 
         private void InitWings()
         {
-            const float DEFLECT_RATE = 55f;
+            const float DEFLECT_RATE = 45f;
             const float MIN_VELO = 300f;
 
             // Main wing.

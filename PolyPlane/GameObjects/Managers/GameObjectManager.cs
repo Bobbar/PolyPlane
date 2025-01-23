@@ -208,7 +208,7 @@ namespace PolyPlane.GameObjects
 
         private void AddBulletExplosion(Bullet bullet)
         {
-            var explosion = new Explosion(bullet, 50f, 0.5f);
+            var explosion = new Explosion(bullet, 50f, 1.5f);
             AddExplosion(explosion);
         }
 
