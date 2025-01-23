@@ -16,7 +16,6 @@ namespace PolyPlane.GameObjects.Particles
         private float _visibleGs = 0f;
         private float _visibleVelo = 0f;
         private float _maxGs = 0f;
-        private SmoothPoint _veloSmooth = new SmoothPoint(10);
         private GameObject _parentObject = null;
 
         public VaporEmitter(GameObject obj, GameObject owner, D2DPoint offset, float radius, float visibleGs, float visibleVelo, float maxGs) : base(obj, offset)
@@ -54,10 +53,8 @@ namespace PolyPlane.GameObjects.Particles
 
         private void SpawnPart()
         {
-            base.DoUpdate(0f);
-
             D2DPoint newPos = Position;
-            D2DPoint newVelo = _veloSmooth.Add(Velocity);
+            D2DPoint newVelo = Velocity;
 
             float gforce = 0f;
             var veloMag = newVelo.Length();
