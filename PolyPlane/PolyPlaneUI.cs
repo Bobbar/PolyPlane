@@ -241,11 +241,12 @@ namespace PolyPlane
 
                         _client.PeerTimeoutEvent += Client_PeerTimeoutEvent;
                         _client.PeerDisconnectedEvent += Client_PeerDisconnectedEvent;
-                        _client.Start();
 
                         InitGfx();
                         StartGameThread();
                         ResumeGame();
+
+                        _client.Start();
 
                         _render?.ClearHudMessage();
 

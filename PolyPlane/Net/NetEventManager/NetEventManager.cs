@@ -371,7 +371,8 @@ namespace PolyPlane.Net
 
                             // Compute server time offset.
                             var rtt = Host.GetPlayerRTT(PlayerPlane.PlayerID);
-                            World.ServerTimeOffset = (syncPack.ServerTime + (rtt / 2)) - now;
+                            var transitOffset = (rtt / 2d) + (World.LAST_FRAME_TIME / 2d);
+                            World.ServerTimeOffset = (syncPack.ServerTime + transitOffset) - now;
 
                             World.TimeOfDay = syncPack.TimeOfDay;
                             World.TimeOfDayDir = syncPack.TimeOfDayDir;

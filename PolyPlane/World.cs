@@ -315,6 +315,9 @@ namespace PolyPlane
             // when the FPS drops below the target.
             var now = CurrentTimeMs();
 
+            if (_lastFrameTime == 0)
+                _lastFrameTime = now;
+
             var elapFrameTime = now - _lastFrameTime;
             _lastFrameTime = now;
 
