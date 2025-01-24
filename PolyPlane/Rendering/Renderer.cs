@@ -1744,7 +1744,7 @@ namespace PolyPlane.Rendering
             {
                 if (_netMan != null)
                 {
-                    infoText += $"Latency: {_netMan.Host.GetPlayerRTT(0)}\n";
+                    infoText += $"Latency: {Math.Round(_netMan.Host.GetPlayerRTT(0), 2)}\n";
                     infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
                     infoText += $"Packet Loss: {_netMan.Host.PacketLoss()}\n";
                     infoText += $"Packets Deferred: {_netMan.NumDeferredPackets}\n";
@@ -1779,7 +1779,7 @@ namespace PolyPlane.Rendering
                 infoText += $"MissilesOnRadar: {World.ShowMissilesOnRadar.ToString()}\n";
                 infoText += $"Missile Regen: {World.MissileRegen.ToString()}\n";
                 infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
-                infoText += $"TimeOffset: {World.ServerTimeOffset}\n";
+                infoText += $"TimeOffset: {Math.Round(World.ServerTimeOffset, 2)}\n";
 
 
             }

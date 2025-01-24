@@ -23,7 +23,6 @@ namespace PolyPlane.Server
         private Thread _gameThread;
 
         private GameTimer _discoveryTimer = new GameTimer(2f, true);
-        private GameTimer _syncTimer = new GameTimer(3f, true);
 
         private ManualResetEventSlim _pauseRenderEvent = new ManualResetEventSlim(true);
 
@@ -82,9 +81,8 @@ namespace PolyPlane.Server
             _updateTimer.Tick += UpdateTimer_Tick;
             _updateTimer.Interval = 32;
 
-            // Periodically broadcast discovery & time sync packets.
+            // Periodically broadcast discovery packets.
             _discoveryTimer.TriggerCallback = () => _discovery?.BroadcastServerInfo(new DiscoveryPacket(_address, _serverName, _port));
-            _syncTimer.TriggerCallback = () => _netMan.SendSyncPacket();
 
             AITypeComboBox.Items.Clear();
             AITypeComboBox.DataSource = Enum.GetValues<AIPersonality>();
@@ -134,8 +132,6 @@ namespace PolyPlane.Server
 
                 if (EnableDiscoveryCheckBox.Checked)
                     _discoveryTimer.Start();
-
-                _syncTimer.Start();
 
                 StartGameThread();
                 _updateTimer.Start();
@@ -317,7 +313,7 @@ namespace PolyPlane.Server
             _lastFrameTime = now;
 
             // Compute current FPS.
-            var fps = 1000 / elapFrameTime;
+            var fps = 1000d / elapFrameTime;
             _renderFPS = fps;
 
             ProcessQueuedActions();
@@ -367,7 +363,6 @@ namespace PolyPlane.Server
             }
 
             _discoveryTimer.Update(dt);
-            _syncTimer.Update(dt);
 
             HandleAIPlaneRespawn();
 

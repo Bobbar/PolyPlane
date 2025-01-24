@@ -1,10 +1,13 @@
 ﻿using ENet;
+using PolyPlane.Helpers;
 
 namespace PolyPlane.Net.NetHost
 {
     public class ClientNetHost : NetPlayHost
     {
         public Peer Peer;
+
+        private SmoothDouble _rttSmooth = new SmoothDouble(30);
 
         public ClientNetHost(ushort port, string ip) : base(port, ip)
         { }
@@ -68,9 +71,9 @@ namespace PolyPlane.Net.NetHost
             Host.Flush();
         }
 
-        public override uint GetPlayerRTT(int playerID)
+        public override double GetPlayerRTT(int playerID)
         {
-            return Peer.RoundTripTime;
+            return _rttSmooth.Add(Peer.RoundTripTime);
         }
 
         public override void Dispose()

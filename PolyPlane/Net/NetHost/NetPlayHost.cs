@@ -90,7 +90,7 @@ namespace PolyPlane.Net.NetHost
         protected abstract void SendPacket(ref Packet packet, uint peerId, byte channel);
         public abstract Peer? GetPeer(int playerID);
         public abstract void Disconnect(int playerID);
-        public abstract uint GetPlayerRTT(int playerID);
+        public abstract double GetPlayerRTT(int playerID);
 
         internal void PollLoop()
         {
@@ -255,8 +255,8 @@ namespace PolyPlane.Net.NetHost
         {
             switch (netpacket.Type)
             {
-                //case PacketTypes.NewBullet or PacketTypes.NewMissile or PacketTypes.NewDecoy or PacketTypes.Impact:
-                //    return PacketFlags.Instant;
+                case PacketTypes.ServerSync:
+                    return PacketFlags.Instant;
 
                 default:
                     return PacketFlags.Reliable;

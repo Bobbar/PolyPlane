@@ -117,7 +117,7 @@ namespace PolyPlane.Net.NetHost
             }
         }
 
-        public override uint GetPlayerRTT(int playerID)
+        public override double GetPlayerRTT(int playerID)
         {
             if (_peers.TryGetValue((uint)playerID, out var peer))
             {

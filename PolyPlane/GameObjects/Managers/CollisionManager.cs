@@ -39,11 +39,6 @@ namespace PolyPlane.GameObjects.Manager
                 if (plane == null)
                     continue;
 
-                uint planeRTT = 0;
-
-                if (_isNetGame)
-                    planeRTT = _netMan.Host.GetPlayerRTT(plane.PlayerID);
-
                 var nearObjs = _objs.GetNear(plane);
 
                 foreach (var obj in nearObjs)

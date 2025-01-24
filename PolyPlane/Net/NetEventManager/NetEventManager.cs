@@ -88,6 +88,9 @@ namespace PolyPlane.Net
                 SendMissileUpdates();
                 SendExpiredObjects();
 
+                if (IsServer)
+                    SendSyncPacket();
+
                 _lastNetTime = World.CurrentNetTimeMs();
             }
 
