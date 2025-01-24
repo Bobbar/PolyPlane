@@ -26,21 +26,24 @@ namespace PolyPlane.Server
 
         private ManualResetEventSlim _pauseRenderEvent = new ManualResetEventSlim(true);
 
+        private Stopwatch _bwTimer = new Stopwatch();
         private Stopwatch _timer = new Stopwatch();
         private TimeSpan _renderTime = new TimeSpan();
         private SmoothDouble _updateTimeSmooth = new SmoothDouble(10);
         private SmoothDouble _collisionTimeSmooth = new SmoothDouble(10);
         private SmoothDouble _netTimeSmooth = new SmoothDouble(10);
         private SmoothDouble _fpsSmooth = new SmoothDouble(10);
+        private SmoothDouble _sentBytesSmooth = new SmoothDouble(50);
+        private SmoothDouble _recBytesSmooth = new SmoothDouble(50);
+        private SmoothDouble _sentPacketsSmooth = new SmoothDouble(50);
+        private SmoothDouble _recPacketsSmooth = new SmoothDouble(50);
 
         private double _renderFPS = 0;
         private double _lastFrameTime = 0;
-        private FPSLimiter _fpsLimiter = new FPSLimiter();
-        private uint _lastRec = 0;
-        private uint _lastSent = 0;
-        private Stopwatch _bwTimer = new Stopwatch();
-        private SmoothDouble _sentSmooth = new SmoothDouble(50);
-        private SmoothDouble _recSmooth = new SmoothDouble(50);
+        private uint _lastRecBytes = 0;
+        private uint _lastSentBytes = 0;
+        private uint _lastRecPackets = 0;
+        private uint _lastSentPackets = 0;
 
         private string _address;
         private string _serverName;
@@ -51,6 +54,7 @@ namespace PolyPlane.Server
         private CollisionManager _collisions;
         private NetPlayHost _server;
         private Renderer _render = null;
+        private FPSLimiter _fpsLimiter = new FPSLimiter();
 
         private ConcurrentQueue<Action> _actionQueue = new ConcurrentQueue<Action>();
         private BindingList<NetPlayer> _currentPlayers = new BindingList<NetPlayer>();
@@ -552,10 +556,10 @@ namespace PolyPlane.Server
                 infoText += $"Render ms: {Math.Round(_renderTime.TotalMilliseconds, 2)}\n";
 
             infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
-            infoText += $"Bytes Rec: {_netMan.Host.Host.BytesReceived}\n";
-            infoText += $"Bytes Sent: {_netMan.Host.Host.BytesSent}\n";
-            infoText += $"MB Rec/s: {Math.Round(_recSmooth.Current, 2)}\n";
-            infoText += $"MB Sent/s: {Math.Round(_sentSmooth.Current, 2)}\n";
+            infoText += $"Packets Rec/s: {Math.Round(_recPacketsSmooth.Current, 2)}\n";
+            infoText += $"Packets Sent/s: {Math.Round(_sentPacketsSmooth.Current, 2)}\n";
+            infoText += $"MB Rec/s: {Math.Round(_recBytesSmooth.Current, 3)}\n";
+            infoText += $"MB Sent/s: {Math.Round(_sentBytesSmooth.Current, 3)}\n";
             infoText += $"DT: {Math.Round(World.TargetDT, 4)}\n";
             infoText += $"TimeOfDay: {Math.Round(World.TimeOfDay, 2)}\n";
 
@@ -571,14 +575,22 @@ namespace PolyPlane.Server
 
             _bwTimer.Stop();
             var elap = _bwTimer.Elapsed;
-            var recDiff = _netMan.Host.Host.BytesReceived - _lastRec;
-            var sentDiff = _netMan.Host.Host.BytesSent - _lastSent;
+            var recBytesDiff = _netMan.Host.Host.BytesReceived - _lastRecBytes;
+            var sentBytesDiff = _netMan.Host.Host.BytesSent - _lastSentBytes;
 
-            _lastRec = _netMan.Host.Host.BytesReceived;
-            _lastSent = _netMan.Host.Host.BytesSent;
+            var recPacketsDiff = _netMan.Host.Host.PacketsReceived - _lastRecPackets;
+            var sentPacketsDiff = _netMan.Host.Host.PacketsSent - _lastSentPackets;
 
-            _sentSmooth.Add((sentDiff / elap.TotalSeconds) / BYTES_PER_MB);
-            _recSmooth.Add((recDiff / elap.TotalSeconds) / BYTES_PER_MB);
+            _lastRecBytes = _netMan.Host.Host.BytesReceived;
+            _lastSentBytes = _netMan.Host.Host.BytesSent;
+            _lastRecPackets = _netMan.Host.Host.PacketsReceived;
+            _lastSentPackets = _netMan.Host.Host.PacketsSent;
+
+            _recPacketsSmooth.Add(recPacketsDiff / elap.TotalSeconds);
+            _sentPacketsSmooth.Add(sentPacketsDiff / elap.TotalSeconds);
+
+            _recBytesSmooth.Add((recBytesDiff / elap.TotalSeconds) / BYTES_PER_MB);
+            _sentBytesSmooth.Add((sentBytesDiff / elap.TotalSeconds) / BYTES_PER_MB);
             _bwTimer.Restart();
         }
 
