@@ -434,8 +434,8 @@ namespace PolyPlane.GameObjects
                 _objLookup.Add(hash, obj);
             }
 
-            // Add collidable objects to spatial lookup.
-            if (obj is ICollidable)
+            // Add objects to spatial lookup as needed.
+            if (obj.HasFlag(GameObjectFlags.SpatialGrid))
                 _spatialGrid.Add(obj);
         }
 

@@ -6,7 +6,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Explosion : GameObject, ICollidable, INoGameID, ILightMapContributor
+    public class Explosion : GameObject, INoGameID, ILightMapContributor
     {
         public float MaxRadius { get; set; } = 100f;
         public float MaxShockwaveRadius { get; set; } = 100f;
@@ -23,6 +23,7 @@ namespace PolyPlane.GameObjects
 
         public Explosion(GameObject owner, float maxRadius, float duration) : base(owner.Position)
         {
+            this.Flags = GameObjectFlags.SpatialGrid;
             this.Owner = owner;
             this.MaxRadius = maxRadius;
             this.MaxShockwaveRadius = maxRadius * 6f;

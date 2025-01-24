@@ -127,6 +127,8 @@ namespace PolyPlane.GameObjects
 
         public GameObject Owner { get; set; }
 
+        public GameObjectFlags Flags { get; set; }
+
         public bool IsExpired = false;
 
         protected Random _rnd => Utilities.Rnd;
@@ -192,6 +194,16 @@ namespace PolyPlane.GameObjects
             Velocity = velo;
             Rotation = rotation;
             RotationSpeed = rotationSpeed;
+        }
+
+        /// <summary>
+        /// Returns true if this object has the specified flag.
+        /// </summary>
+        /// <param name="flag"></param>
+        /// <returns></returns>
+        public bool HasFlag(GameObjectFlags flag)
+        {
+            return (this.Flags & flag) == flag;
         }
 
         /// <summary>
@@ -454,7 +466,7 @@ namespace PolyPlane.GameObjects
 
         public virtual void ClampToGround(float dt)
         {
-            if (this is Debris)
+            if (HasFlag(GameObjectFlags.BounceOffGround))
             {
                 // Let some objects bounce.
                 if (this.Altitude <= 0f)
@@ -466,8 +478,8 @@ namespace PolyPlane.GameObjects
                     if (veloMag > (gravMag * 0.25f) && this.IsAwake)
                     {
                         // Bounce.
-                        this.Velocity = new D2DPoint(this.Velocity.X * 0.7f, -this.Velocity.Y * 0.3f);
                         this.Position = new D2DPoint(this.Position.X, 0f);
+                        this.Velocity = new D2DPoint(this.Velocity.X * 0.7f, -this.Velocity.Y * 0.3f);
 
                         // Set rotation speed to horizonal velocity to give a rolling effect.
                         var w = this.Velocity.X;
@@ -475,20 +487,23 @@ namespace PolyPlane.GameObjects
                     }
                     else
                     {
-                        // Go to sleep.
-                        this.Velocity = D2DPoint.Zero;
-                        this.Position = new D2DPoint(this.Position.X, 0f);
-                        this.RotationSpeed = 0f;
-                        this.IsAwake = false;
+                        if (HasFlag(GameObjectFlags.CanSleep))
+                        {
+                            // Go to sleep.
+                            this.Velocity = D2DPoint.Zero;
+                            this.Position = new D2DPoint(this.Position.X, 0f);
+                            this.RotationSpeed = 0f;
+                            this.IsAwake = false;
+                        }
+                        else
+                        {
+                            this.Position = new D2DPoint(this.Position.X, 0f);
+                        }
                     }
                 }
             }
-            else
+            else if (HasFlag(GameObjectFlags.ClampToGround))
             {
-                // Let explosions spawn below ground.
-                if (this is Explosion || this is Bullet || this is GuidedMissile)
-                    return;
-
                 // Clamp all other objects to ground level.
                 if (this.Altitude <= 0f)
                 {

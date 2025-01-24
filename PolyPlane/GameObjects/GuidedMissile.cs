@@ -1,6 +1,5 @@
 ﻿using PolyPlane.GameObjects.Fixtures;
 using PolyPlane.GameObjects.Guidance;
-using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
@@ -8,7 +7,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class GuidedMissile : GameObjectPoly, ICollidable, ILightMapContributor
+    public class GuidedMissile : GameObjectPoly, ILightMapContributor
     {
         public float Deflection = 0f;
         public bool FlameOn = false;
@@ -147,6 +146,7 @@ namespace PolyPlane.GameObjects
 
         private void InitStuff()
         {
+            this.Flags = GameObjectFlags.SpatialGrid;
             this.Mass = 22.5f;
             this.RenderScale = 0.9f;
             this.RenderOrder = 2;

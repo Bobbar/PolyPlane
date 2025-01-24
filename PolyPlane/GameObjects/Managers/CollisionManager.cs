@@ -242,7 +242,7 @@ namespace PolyPlane.GameObjects.Manager
             if (particleObject.IsNetObject)
                 return;
 
-            if (particleObject is not IPushable)
+            if (!particleObject.HasFlag(GameObjectFlags.Pushable))
                 return;
 
             // Don't push certain particle types.
@@ -362,7 +362,7 @@ namespace PolyPlane.GameObjects.Manager
                         }
 
                         // Impart an impulse on other nearby pushable objects.
-                        if (obj is IPushable)
+                        if (obj.HasFlag(GameObjectFlags.Pushable))
                         {
                             var dir = (obj.Position - explosion.Position);
                             var dirNorm = dir.Normalized();

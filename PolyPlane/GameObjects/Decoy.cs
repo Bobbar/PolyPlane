@@ -6,7 +6,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Decoy : GameObject, ICollidable, ILightMapContributor
+    public class Decoy : GameObject, ILightMapContributor
     {
         private const float Radius = 5f;
         private const float LifeSpan = 10f;
@@ -48,6 +48,7 @@ namespace PolyPlane.GameObjects
 
         private void InitStuff()
         {
+            this.Flags = GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround;
             this.Mass = 50f;
             this.RenderOrder = 1;
 

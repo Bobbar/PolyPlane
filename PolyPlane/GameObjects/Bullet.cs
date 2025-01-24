@@ -6,7 +6,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Bullet : GameObjectPoly, ICollidable, ILightMapContributor
+    public class Bullet : GameObjectPoly, ILightMapContributor
     {
         public const float SPEED = 800f;
         public float Lifetime = 10f;
@@ -28,6 +28,7 @@ namespace PolyPlane.GameObjects
         {
             this.Polygon = new RenderPoly(this, _poly);
             this.RenderOrder = 4;
+            this.Flags = GameObjectFlags.SpatialGrid;
         }
 
         public Bullet(FighterPlane plane) : this()

@@ -6,7 +6,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects.Particles
 {
-    public class Particle : GameObject, ICollidable, IPushable, INoGameID, ILightMapContributor
+    public class Particle : GameObject, INoGameID, ILightMapContributor
     {
         public ParticleType Type;
 
@@ -46,6 +46,7 @@ namespace PolyPlane.GameObjects.Particles
             Ellipse = new D2DEllipse();
             RenderOrder = 0;
             Mass = PARTICLE_MASS;
+            Flags = GameObjectFlags.SpatialGrid | GameObjectFlags.Pushable | GameObjectFlags.BounceOffGround;
         }
 
         public override void DoUpdate(float dt)

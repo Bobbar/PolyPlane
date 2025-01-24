@@ -7,7 +7,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Debris : GameObjectPoly, ICollidable, IPushable, INoGameID
+    public class Debris : GameObjectPoly, INoGameID
     {
         private D2DColor _color;
         private FlameEmitter _flame;
@@ -16,6 +16,7 @@ namespace PolyPlane.GameObjects
 
         public Debris(GameObject owner, D2DPoint pos, D2DPoint velo, D2DColor color) : base(pos, velo)
         {
+            this.Flags = GameObjectFlags.Pushable | GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround | GameObjectFlags.CanSleep;
             this.Mass = 40f;
             this.RenderOrder = 3;
             this.Owner = owner;

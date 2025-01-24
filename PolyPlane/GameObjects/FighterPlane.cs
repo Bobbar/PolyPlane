@@ -2,7 +2,6 @@
 using PolyPlane.GameObjects.Animations;
 using PolyPlane.GameObjects.Fixtures;
 using PolyPlane.GameObjects.Guidance;
-using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.GameObjects.Manager;
 using PolyPlane.GameObjects.Particles;
 using PolyPlane.GameObjects.Tools;
@@ -12,7 +11,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class FighterPlane : GameObjectPoly, ICollidable, IPushable
+    public class FighterPlane : GameObjectPoly
     {
         public Gun Gun => _gun;
         public bool IsAI => _isAIPlane;
@@ -265,6 +264,7 @@ namespace PolyPlane.GameObjects
 
         private void InitStuff()
         {
+            this.Flags = GameObjectFlags.ClampToGround | GameObjectFlags.SpatialGrid | GameObjectFlags.Pushable;
             this.Radar = new Radar(this);
 
             this.Mass = 90f;
