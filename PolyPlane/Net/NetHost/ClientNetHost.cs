@@ -48,7 +48,7 @@ namespace PolyPlane.Net.NetHost
 
         protected override void SendPacket(ref Packet packet, uint peerID, byte channel)
         {
-            if (Peer.State != PeerState.Connected)
+            if (Peer.State != PeerState.Connected && Peer.State != PeerState.Connecting)
             {
                 // Disconnect and stop processing packets.
                 Disconnect(0);

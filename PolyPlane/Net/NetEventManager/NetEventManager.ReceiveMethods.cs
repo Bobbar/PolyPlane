@@ -205,6 +205,13 @@ namespace PolyPlane.Net
                 var impactor = _objs.GetObjectByID(packet.ImpactorID);
                 var impactorOwner = _objs.GetObjectByID(packet.OwnerID);
 
+                if (impactorOwner == null)
+                {
+                    // Defer if owner not present yet.
+                    DeferPacket(packet);
+                    return;
+                }
+
                 if (impactor == null)
                 {
                     // If the impactor hasn't arrived yet, or has already been removed
