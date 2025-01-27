@@ -138,7 +138,7 @@ namespace PolyPlane.Net
 
         public void SendSyncPacket()
         {
-            var syncPacket = new SyncPacket(World.CurrentNetTimeMs(), World.TimeOfDay, World.TimeOfDayDir, World.GunsOnly, World.IsPaused, World.TargetDT);
+            var syncPacket = new SyncPacket(World.CurrentNetTimeTicks(), World.TimeOfDay, World.TimeOfDayDir, World.GunsOnly, World.IsPaused, World.TargetDT);
             Host.EnqueuePacket(syncPacket);
         }
 

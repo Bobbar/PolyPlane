@@ -29,7 +29,6 @@ namespace PolyPlane
         private bool _rightMouseDown = false;
         private bool _inStartup = false;
         private float _holdAltitude = 0f;
-        private double _lastFrameTime = 0;
         private string _title;
 
         private D2DPoint _playerPlaneSlewPos = D2DPoint.Zero;
@@ -505,8 +504,6 @@ namespace PolyPlane
 
         private void GameLoop()
         {
-            _lastFrameTime = World.CurrentTimeMs();
-
             while (!this.Disposing && !_killRender)
             {
                 AdvanceAndRender();

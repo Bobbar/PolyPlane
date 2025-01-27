@@ -114,7 +114,7 @@ namespace PolyPlane.Net
                     var newPlane = new FighterPlane(player.Position, player.PlaneColor, player.ID, isAI: false, isNetPlane: true);
                     newPlane.PlayerName = player.Name;
                     newPlane.IsNetObject = true;
-                    newPlane.LagAmount = World.CurrentNetTimeMs() - players.FrameTime;
+                    newPlane.LagAmount = player.Age;
                     newPlane.PlayerHitCallback = (evt) => ImpactEvent?.Invoke(this, evt);
 
                     _objs.AddPlane(newPlane);
@@ -271,7 +271,7 @@ namespace PolyPlane.Net
             bulletPacket.SyncObj(bullet);
 
             bullet.Owner = owner;
-            bullet.LagAmount = World.CurrentNetTimeMs() - bulletPacket.FrameTime;
+            bullet.LagAmount = bulletPacket.Age;
 
             // Try to spawn the bullet ahead (extrapolate) to compensate for latency?
             bullet.Position += bullet.Velocity * (bullet.LagAmountFrames * dt);
@@ -298,7 +298,7 @@ namespace PolyPlane.Net
                 missile.ID = missilePacket.ID;
                 missilePacket.SyncObj(missile);
                 missile.Target = missileTarget;
-                missile.LagAmount = World.CurrentNetTimeMs() - missilePacket.FrameTime;
+                missile.LagAmount = missilePacket.Age;
 
                 _objs.EnqueueMissile(missile);
             }

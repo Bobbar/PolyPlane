@@ -18,7 +18,7 @@ namespace PolyPlane.Net.Interpolation
             _interpolate = interpolate;
         }
 
-        public void Enqueue(T state, double updatedAt)
+        public void Enqueue(T state, long updatedAt)
         {
             if (_firstTurn)
             {
@@ -26,7 +26,7 @@ namespace PolyPlane.Net.Interpolation
                 _firstTurn = false;
             }
 
-            var now = World.CurrentNetTimeMs();
+            var now = World.CurrentNetTimeTicks();
 
             if (_buffer.Count == 0 && _clientStartTime == -1)
                 _clientStartTime = now;
@@ -38,7 +38,7 @@ namespace PolyPlane.Net.Interpolation
             _buffer.Add(newState);
         }
 
-        public void InterpolateState(double now)
+        public void InterpolateState(long now)
         {
             if (_buffer.Count == 0)
             {

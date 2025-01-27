@@ -25,7 +25,7 @@ namespace PolyPlane.Net
 
         private bool _netIDIsSet = false;
         private bool _receivedFirstSync = false;
-        private double _lastNetTime = 0;
+        private long _lastNetTime = 0;
 
         public event EventHandler<int> PlayerIDReceived;
         public event EventHandler<ImpactEvent> ImpactEvent;
@@ -47,6 +47,8 @@ namespace PolyPlane.Net
             IsServer = false;
             ChatInterface = new ChatInterface(this, playerPlane.PlayerName);
             AttachEvents();
+
+            _lastNetTime = World.CurrentNetTimeTicks();
         }
 
         public NetEventManager(NetPlayHost host)
@@ -56,6 +58,8 @@ namespace PolyPlane.Net
             IsServer = true;
             ChatInterface = new ChatInterface(this, "Server");
             AttachEvents();
+
+            _lastNetTime = World.CurrentNetTimeTicks();
         }
 
         private void AttachEvents()
@@ -73,12 +77,8 @@ namespace PolyPlane.Net
 
         public void HandleNetEvents(float dt)
         {
-            var now = World.CurrentNetTimeMs();
-
-            if (_lastNetTime == 0)
-                _lastNetTime = now;
-
-            var elap = now - _lastNetTime;
+            var now = World.CurrentNetTimeTicks();
+            var elap = TimeSpan.FromTicks(now - _lastNetTime).TotalMilliseconds;
 
             // Send updates at an interval approx twice the frame time.
             // (This will be approx 30 FPS when target FPS is set to 60)
@@ -91,13 +91,13 @@ namespace PolyPlane.Net
                 if (IsServer)
                     SendSyncPacket();
 
-                _lastNetTime = World.CurrentNetTimeMs();
+                _lastNetTime = World.CurrentNetTimeTicks();
             }
 
-            double totalPacketTime = 0;
+            long totalPacketTime = 0;
             int numPackets = 0;
 
-            now = World.CurrentNetTimeMs();
+            now = World.CurrentNetTimeTicks();
 
             while (Host.PacketReceiveQueue.Count > 0)
             {
@@ -116,7 +116,7 @@ namespace PolyPlane.Net
 
             if (totalPacketTime > 0f && numPackets > 0)
             {
-                var avgDelay = (totalPacketTime / (float)numPackets);
+                var avgDelay = TimeSpan.FromTicks((long)(totalPacketTime / (float)numPackets)).TotalMilliseconds;
                 PacketDelay = _packetDelayAvg.Add(avgDelay);
             }
         }
@@ -370,12 +370,15 @@ namespace PolyPlane.Net
                     {
                         if (!IsServer)
                         {
-                            var now = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                            var now = World.CurrentTimeTicks();
 
                             // Compute server time offset.
                             var rtt = Host.GetPlayerRTT(PlayerPlane.PlayerID);
-                            var transitOffset = (rtt / 2d) + (World.LAST_FRAME_TIME / 2d);
-                            World.ServerTimeOffset = (syncPack.ServerTime + transitOffset) - now;
+                            var rttTicks = TimeSpan.FromMilliseconds(rtt).Ticks;
+                            var frameDelay = now - _lastNetTime;
+                            var transitOffset = (rttTicks / 2d) + (frameDelay / 2d);
+
+                            World.ServerTimeOffset = (syncPack.ServerTime + (long)transitOffset) - now;
 
                             World.TimeOfDay = syncPack.TimeOfDay;
                             World.TimeOfDayDir = syncPack.TimeOfDayDir;

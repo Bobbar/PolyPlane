@@ -325,7 +325,7 @@ namespace PolyPlane.GameObjects
             return rot;
         }
 
-        public override void NetUpdate(D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
+        public override void NetUpdate(D2DPoint position, D2DPoint velocity, float rotation, long frameTime)
         {
             base.NetUpdate(position, velocity, rotation, frameTime);
 

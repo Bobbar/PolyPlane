@@ -17,19 +17,19 @@ namespace PolyPlane.Net
         /// </summary>
         public uint PeerID = uint.MaxValue;
 
-        public long Age
+        public double Age
         {
             get
             {
-                var now = World.CurrentNetTimeMs();
-                var age = now - FrameTime;
+                var now = World.CurrentNetTimeTicks();
+                var age = TimeSpan.FromTicks(now - FrameTime).TotalMilliseconds;
                 return age;
             }
         }
 
         public NetPacket()
         {
-            FrameTime = World.CurrentNetTimeMs();
+            FrameTime = World.CurrentNetTimeTicks();
         }
 
         public NetPacket(PacketTypes type) : this()

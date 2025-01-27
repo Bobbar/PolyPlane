@@ -469,7 +469,7 @@ namespace PolyPlane.Rendering
             var now = World.CurrentTimeMs();
             var elap = now - _lastRenderTime;
             _lastRenderTime = now;
-            var fps = 1000 / elap;
+            var fps = 1000d / elap;
             _renderFPS = fps;
         }
 
@@ -1779,7 +1779,7 @@ namespace PolyPlane.Rendering
                 infoText += $"MissilesOnRadar: {World.ShowMissilesOnRadar.ToString()}\n";
                 infoText += $"Missile Regen: {World.MissileRegen.ToString()}\n";
                 infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
-                infoText += $"TimeOffset: {Math.Round(World.ServerTimeOffset, 2)}\n";
+                infoText += $"TimeOffset: {Math.Round(TimeSpan.FromTicks((long)World.ServerTimeOffset).TotalMilliseconds, 2)}\n";
 
 
             }

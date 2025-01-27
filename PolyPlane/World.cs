@@ -34,7 +34,7 @@ namespace PolyPlane
             TARGET_FRAME_TIME = 1000f / (float)TARGET_FPS;
         }
 
-        public static float LAST_FRAME_TIME = 16.6f;
+        public static double LAST_FRAME_TIME = 16.6d;
         public static float TARGET_FRAME_TIME = 16.6f;
         public static readonly float TARGET_FRAME_TIME_NET = TARGET_FRAME_TIME * 2f;
         public const float DEFAULT_FRAME_TIME = 1000f / 60f;
@@ -227,7 +227,7 @@ namespace PolyPlane
         public static uint CurrentObjId = 0;
         public static int CurrentPlayerId = 1000;
 
-        private static double _lastFrameTime = 0;
+        private static long _lastFrameTimeTicks = 0;
 
         private static GameID ViewObjectID;
         public static GameObject ViewObject;
@@ -313,17 +313,19 @@ namespace PolyPlane
             // for the next frame.
             // This should allow for more correct movement
             // when the FPS drops below the target.
-            var now = CurrentTimeMs();
+            var nowTicks = CurrentTimeTicks();
 
-            if (_lastFrameTime == 0)
-                _lastFrameTime = now;
+            if (_lastFrameTimeTicks == 0)
+                _lastFrameTimeTicks = nowTicks;
 
-            var elapFrameTime = now - _lastFrameTime;
-            _lastFrameTime = now;
+            var elapFrameTimeTicks = nowTicks - _lastFrameTimeTicks;
+            _lastFrameTimeTicks = nowTicks;
 
-            var dt = SetDynamicDT(elapFrameTime);
+            var elapFramTimeMs = TimeSpan.FromTicks(elapFrameTimeTicks).TotalMilliseconds;
 
-            LAST_FRAME_TIME = (float)elapFrameTime;
+            var dt = SetDynamicDT(elapFramTimeMs);
+
+            LAST_FRAME_TIME = elapFramTimeMs;
 
             UpdateTOD(dt);
         }
@@ -351,23 +353,50 @@ namespace PolyPlane
 
         /// <summary>
         /// Current UTC time in milliseconds for net games.
+        /// 
+        /// Includes computed server time offset.
         /// </summary>
         /// <returns></returns>
-        public static long CurrentNetTimeMs()
+        public static double CurrentNetTimeMs()
         {
-            var now = DateTimeOffset.Now.ToUnixTimeMilliseconds() + ServerTimeOffset;
-            return (long)now;
+            var nowTicks = CurrentNetTimeTicks();
+            return TimeSpan.FromTicks(nowTicks).TotalMilliseconds;
         }
 
         /// <summary>
-        /// Current local time in milliseconds.
+        /// Current UTC time in ticks for net games.
+        /// 
+        /// Includes computed server time offset.
+        /// </summary>
+        /// <returns></returns>
+        public static long CurrentNetTimeTicks()
+        {
+            var now = CurrentTimeTicks();
+            var time = now + ServerTimeOffset;
+
+            return (long)time;
+        }
+
+        /// <summary>
+        /// Current UTC time in milliseconds.
         /// </summary>
         /// <returns></returns>
         public static double CurrentTimeMs()
         {
-            var now = DateTimeOffset.Now.Ticks;
+            var now = CurrentTimeTicks();
             var time = now / (double)TimeSpan.TicksPerMillisecond;
+
             return time;
+        }
+
+        /// <summary>
+        /// Current UTC time in ticks.
+        /// </summary>
+        /// <returns></returns>
+        public static long CurrentTimeTicks()
+        {
+            var now = DateTimeOffset.UtcNow.Ticks;
+            return now;
         }
 
         public static FighterPlane GetViewPlane()

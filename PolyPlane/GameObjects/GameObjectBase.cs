@@ -77,7 +77,7 @@ namespace PolyPlane.GameObjects
                     _rotationSpeed = value;
             }
         }
-
+        
         /// <summary>
         /// Lag amount in number of elapsed frames.
         /// </summary>
@@ -85,7 +85,7 @@ namespace PolyPlane.GameObjects
         {
             get
             {
-                var frames = (float)this.LagAmount / World.LAST_FRAME_TIME;
+                var frames = (float)this.LagAmount / (float)World.LAST_FRAME_TIME;
                 return frames;
             }
         }
@@ -95,15 +95,16 @@ namespace PolyPlane.GameObjects
         public bool IsNetObject = false;
         public double LagAmount = 0;
         public float Age = 0f;
-        public double LastNetTime = 0;
+        public long LastNetTime = 0;
 
         public double NetAge
         {
             get
             {
-                var now = World.CurrentNetTimeMs();
+                var now = World.CurrentNetTimeTicks();
                 var age = now - LastNetTime;
-                return age;
+                var ageMs = TimeSpan.FromTicks(age).TotalMilliseconds;
+                return ageMs;
             }
         }
         /// <summary>
@@ -114,7 +115,7 @@ namespace PolyPlane.GameObjects
         /// <summary>
         /// Age in milliseconds.
         /// </summary>
-        public float AgeMs(float dt)
+        public double AgeMs(float dt)
         {
             return (this.Age / dt) * World.LAST_FRAME_TIME;
         }
@@ -148,7 +149,7 @@ namespace PolyPlane.GameObjects
         public GameObject()
         {
             if (World.IsNetGame)
-                this.LastNetTime = World.CurrentNetTimeMs();
+                this.LastNetTime = World.CurrentNetTimeTicks();
 
             if (this is not INoGameID)
                 this.ID = new GameID(-1, World.GetNextObjectId());
@@ -159,7 +160,7 @@ namespace PolyPlane.GameObjects
                     HistoryBuffer = new HistoricalBuffer<GameObjectPacket>(GetInterpState);
 
                 if (InterpBuffer == null)
-                    InterpBuffer = new InterpolationBuffer<GameObjectPacket>(World.NET_INTERP_AMOUNT, InterpObject);
+                    InterpBuffer = new InterpolationBuffer<GameObjectPacket>(TimeSpan.FromMilliseconds(World.NET_INTERP_AMOUNT).Ticks, InterpObject);
             }
 
             _hasPhysicsUpdate = ImplementsPhysicsUpdate();
@@ -367,8 +368,8 @@ namespace PolyPlane.GameObjects
 
             if (World.IsNetGame && IsNetObject && InterpBuffer != null && !World.IsServer)
             {
-                var nowMs = World.CurrentNetTimeMs();
-                InterpBuffer.InterpolateState(nowMs);
+                var now = World.CurrentNetTimeTicks();
+                InterpBuffer.InterpolateState(now);
             }
             else
             {
@@ -386,7 +387,7 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public virtual void NetUpdate(D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
+        public virtual void NetUpdate(D2DPoint position, D2DPoint velocity, float rotation, long frameTime)
         {
             // Don't interp on server.
             if (!World.IsServer)
@@ -404,8 +405,8 @@ namespace PolyPlane.GameObjects
                 this.SetPosition(position, rotation);
             }
           
-            var now = World.CurrentNetTimeMs();
-            this.LagAmount = now - frameTime;
+            var now = World.CurrentNetTimeTicks();
+            this.LagAmount = TimeSpan.FromTicks(now - frameTime).TotalMilliseconds;
             this.LastNetTime = now;
         }
 
