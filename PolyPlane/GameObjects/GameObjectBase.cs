@@ -330,13 +330,7 @@ namespace PolyPlane.GameObjects
             DoUpdate(dt);
 
             UpdateTimers(dt);
-            UpdateAttachments(dt);
-
-            // Hack: Net objects need this because their position updates are buffered
-            // and only interpolated within DoUpdate. We need to make sure attachments
-            // like wings are synced after the interpolated position is applied.
-            if (this.IsNetObject)
-                UpdatePhysicsAttachments(0f);
+            UpdateAllAttachments(dt);
         }
 
         private void AdvancePositionAndRotation(float dt)
