@@ -24,7 +24,7 @@ namespace PolyPlane.Rendering
             }
         }
 
-        public NetEventManager NetManager 
+        public NetEventManager NetManager
         {
             get { return _netMan; }
             set { _netMan = value; }
@@ -505,7 +505,13 @@ namespace PolyPlane.Rendering
             float spacing = 75f;
             const float size = 4f;
             var d2dSz = new D2DSize(size, size);
-            var color = new D2DColor(0.3f, D2DColor.Gray);
+
+            // Fade out with zoom level.
+            var alphaFact = 1f - Utilities.Factor(World.ViewPortScaleMulti, 35f);
+            var color = new D2DColor(0.3f * alphaFact, D2DColor.Gray);
+
+            if (alphaFact < 0.05f)
+                return;
 
             var plrPos = viewObject.Position;
             plrPos /= World.ViewPortScaleMulti;
@@ -538,15 +544,12 @@ namespace PolyPlane.Rendering
             ctx.PushTransform();
 
             var zAmt = World.ZoomScale;
-            var pos = new D2DPoint(World.ViewPortSize.width * 0.5f, World.ViewPortSize.height * 0.5f);
-            pos *= zAmt;
-
-            var offset = new D2DPoint(-viewObj.Position.X, -viewObj.Position.Y);
-            offset *= zAmt;
+            var center = new D2DPoint(World.ViewPortBaseSize.width * 0.5f, World.ViewPortBaseSize.height * 0.5f);
+            var viewObjOffset = new D2DPoint(-viewObj.Position.X, -viewObj.Position.Y) * zAmt;
 
             ctx.ScaleTransform(VIEW_SCALE, viewObj.Position);
-            ctx.TranslateTransform(offset);
-            ctx.TranslateTransform(pos);
+            ctx.TranslateTransform(viewObjOffset);
+            ctx.TranslateTransform(center);
 
             var viewPortRect = new D2DRect(viewObj.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
 
