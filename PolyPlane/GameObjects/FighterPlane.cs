@@ -278,7 +278,7 @@ namespace PolyPlane.GameObjects
 
             var centerOfThrustPos = new D2DPoint(-26.6f, 0.46f) * this.RenderScale;
 
-            _centerOfThrust = AddAttachment(new FixturePoint(this, centerOfThrustPos), highFrequency: true);
+            _centerOfThrust = AddAttachment(new FixturePoint(this, centerOfThrustPos), highFrequencyPhysics: true);
             _engineFireFlame = AddAttachment(new FlameEmitter(this, centerOfThrustPos, 7f, 13f, false));
             _flamePos = AddAttachment(new FixturePoint(this, new D2DPoint(-27.3f, 0.46f) * this.RenderScale));
             _cockpitPosition = AddAttachment(new FixturePoint(this, new D2DPoint(19.5f, -5f)));
@@ -378,7 +378,7 @@ namespace PolyPlane.GameObjects
             }), isControl: true);
 
             // Center of mass location.
-            _centerOfMass = AddAttachment(new FixturePoint(this, new D2DPoint(-5f, 0f)), highFrequency: true);
+            _centerOfMass = AddAttachment(new FixturePoint(this, new D2DPoint(-5f, 0f)), highFrequencyPhysics: true);
         }
 
         public override void DoPhysicsUpdate(float dt)
@@ -804,7 +804,7 @@ namespace PolyPlane.GameObjects
 
             wing.AddAttachment(new VaporEmitter(wing, this, D2DPoint.Zero, 8f, VAPOR_TRAIL_GS, VAPOR_TRAIL_VELO, MAX_GS));
 
-            AddAttachment(wing, highFrequency: true);
+            AddAttachment(wing, highFrequencyPhysics: true);
 
             _wings.Add(wing);
         }

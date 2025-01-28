@@ -17,6 +17,9 @@ namespace PolyPlane.Net
         /// </summary>
         public uint PeerID = uint.MaxValue;
 
+        /// <summary>
+        /// Milliseconds elapsed between now and when this packet was created.
+        /// </summary>
         public double Age
         {
             get

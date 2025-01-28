@@ -10,11 +10,7 @@ namespace PolyPlane.GameObjects
 {
     public abstract class GameObject : IEquatable<GameObject>, IDisposable, IFlippable
     {
-        private const float MAX_ROT_SPD = 3000f;
-
         public GameID ID { get; set; } = new GameID();
-
-        public int RenderOrder = 99;
 
         public D2DPoint Position { get; set; }
 
@@ -77,7 +73,12 @@ namespace PolyPlane.GameObjects
                     _rotationSpeed = value;
             }
         }
-        
+
+        /// <summary>
+        /// Lag amount in milliseconds of the most recent net update.
+        /// </summary>
+        public double LagAmount = 0;
+
         /// <summary>
         /// Lag amount in number of elapsed frames.
         /// </summary>
@@ -90,27 +91,19 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public float RenderScale = World.RenderScale;
-        public bool Visible = true;
-        public bool IsNetObject = false;
-        public double LagAmount = 0;
-        public float Age = 0f;
-        public long LastNetTime = 0;
-
+        /// <summary>
+        /// Milliseconds elapsed between now and the last net update.
+        /// </summary>
         public double NetAge
         {
             get
             {
                 var now = World.CurrentNetTimeTicks();
-                var age = now - LastNetTime;
+                var age = now - _lastNetTime;
                 var ageMs = TimeSpan.FromTicks(age).TotalMilliseconds;
                 return ageMs;
             }
         }
-        /// <summary>
-        /// True if gravity and physics should be applied.
-        /// </summary>
-        public bool IsAwake = true;
 
         /// <summary>
         /// Age in milliseconds.
@@ -130,26 +123,38 @@ namespace PolyPlane.GameObjects
 
         public GameObjectFlags Flags { get; set; }
 
+        /// <summary>
+        /// True if gravity and physics should be applied.
+        /// </summary>
+        public bool IsAwake = true;
         public bool IsExpired = false;
+        public float RenderScale = World.RenderScale;
+        public int RenderOrder = 99;
+        public bool Visible = true;
+        public bool IsNetObject = false;
+        public float Age = 0f;
 
         protected Random _rnd => Utilities.Rnd;
         protected InterpolationBuffer<GameObjectPacket> InterpBuffer = null;
         protected HistoricalBuffer<GameObjectPacket> HistoryBuffer = null;
         private List<GameObject> _attachments = null;
-        private List<GameObject> _attachmentsHighFreq = null;
+        private List<GameObject> _attachmentsPhyics = null;
         private List<GameTimer> _timers = null;
        
         protected float _rotationSpeed = 0f;
         protected float _rotation = 0f;
         protected float _verticalSpeed = 0f;
         protected float _prevAlt = 0f;
+        protected long _lastNetTime = 0;
 
         private bool _hasPhysicsUpdate = false;
+
+        private const float MAX_ROT_SPD = 3000f;
 
         public GameObject()
         {
             if (World.IsNetGame)
-                this.LastNetTime = World.CurrentNetTimeTicks();
+                this._lastNetTime = World.CurrentNetTimeTicks();
 
             if (this is not INoGameID)
                 this.ID = new GameID(-1, World.GetNextObjectId());
@@ -247,7 +252,6 @@ namespace PolyPlane.GameObjects
             return timer;
         }
 
-
         /// <summary>
         /// Add a <see cref="GameTimer"/> which will be automatically updated within the <see cref="Update(float)"/> method.
         /// </summary>
@@ -258,7 +262,6 @@ namespace PolyPlane.GameObjects
         {
             return AddTimer(interval, 0f, autoRestart);
         }
-
 
         /// <summary>
         /// Add a <see cref="GameTimer"/> which will be automatically updated within the <see cref="Update(float)"/> method.
@@ -275,16 +278,16 @@ namespace PolyPlane.GameObjects
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="attachedObject">GameObject to attach.</param>
-        /// <param name="highFrequency">True if this object will be updated within the <see cref="DoPhysicsUpdate(float)"/> method.  Otherwise it will be updated within <see cref="DoUpdate(float)"/>. </param>
+        /// <param name="highFrequencyPhysics">True if this object will be updated within the <see cref="DoPhysicsUpdate(float)"/> method.  Otherwise it will be updated within <see cref="DoUpdate(float)"/>. </param>
         /// <returns></returns>
-        public T AddAttachment<T>(T attachedObject, bool highFrequency = false) where T : GameObject
+        public T AddAttachment<T>(T attachedObject, bool highFrequencyPhysics = false) where T : GameObject
         {
-            if (highFrequency)
+            if (highFrequencyPhysics)
             {
-                if (_attachmentsHighFreq == null)
-                    _attachmentsHighFreq = new List<GameObject>();
+                if (_attachmentsPhyics == null)
+                    _attachmentsPhyics = new List<GameObject>();
 
-                _attachmentsHighFreq.Add(attachedObject);
+                _attachmentsPhyics.Add(attachedObject);
 
                 return attachedObject;
             }
@@ -320,7 +323,7 @@ namespace PolyPlane.GameObjects
 
                     DoPhysicsUpdate(partialDT);
 
-                    UpdateHighFreqAttachments(partialDT);
+                    UpdatePhysicsAttachments(partialDT);
                 }
             }
 
@@ -333,7 +336,7 @@ namespace PolyPlane.GameObjects
             // and only interpolated within DoUpdate. We need to make sure attachments
             // like wings are synced after the interpolated position is applied.
             if (this.IsNetObject)
-                UpdateHighFreqAttachments(0f);
+                UpdatePhysicsAttachments(0f);
         }
 
         private void AdvancePositionAndRotation(float dt)
@@ -407,20 +410,20 @@ namespace PolyPlane.GameObjects
           
             var now = World.CurrentNetTimeTicks();
             this.LagAmount = TimeSpan.FromTicks(now - frameTime).TotalMilliseconds;
-            this.LastNetTime = now;
+            this._lastNetTime = now;
         }
 
-        private void UpdateHighFreqAttachments(float dt)
+        private void UpdatePhysicsAttachments(float dt)
         {
-            if (_attachmentsHighFreq == null)
+            if (_attachmentsPhyics == null)
                 return;
 
-            for (int i = _attachmentsHighFreq.Count - 1; i >= 0; i--)
+            for (int i = _attachmentsPhyics.Count - 1; i >= 0; i--)
             {
-                var attachment = _attachmentsHighFreq[i];
+                var attachment = _attachmentsPhyics[i];
 
                 if (attachment.IsExpired)
-                    _attachmentsHighFreq.RemoveAt(i);
+                    _attachmentsPhyics.RemoveAt(i);
                 else
                     attachment.Update(dt);
             }
@@ -444,7 +447,7 @@ namespace PolyPlane.GameObjects
 
         public virtual void UpdateAllAttachments(float dt)
         {
-            UpdateHighFreqAttachments(dt);
+            UpdatePhysicsAttachments(dt);
             UpdateAttachments(dt);
         }
 
@@ -461,8 +464,8 @@ namespace PolyPlane.GameObjects
             if (_attachments != null)
                 _attachments.ForEach(a => a.FlipY());
 
-            if (_attachmentsHighFreq != null)
-                _attachmentsHighFreq.ForEach(a => a.FlipY());
+            if (_attachmentsPhyics != null)
+                _attachmentsPhyics.ForEach(a => a.FlipY());
         }
 
         public virtual void ClampToGround(float dt)

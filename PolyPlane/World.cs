@@ -321,11 +321,11 @@ namespace PolyPlane
             var elapFrameTimeTicks = nowTicks - _lastFrameTimeTicks;
             _lastFrameTimeTicks = nowTicks;
 
-            var elapFramTimeMs = TimeSpan.FromTicks(elapFrameTimeTicks).TotalMilliseconds;
+            var elapFrameTimeMs = TimeSpan.FromTicks(elapFrameTimeTicks).TotalMilliseconds;
 
-            var dt = SetDynamicDT(elapFramTimeMs);
+            var dt = SetDynamicDT(elapFrameTimeMs);
 
-            LAST_FRAME_TIME = elapFramTimeMs;
+            LAST_FRAME_TIME = elapFrameTimeMs;
 
             UpdateTOD(dt);
         }
