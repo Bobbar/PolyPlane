@@ -146,6 +146,7 @@ namespace PolyPlane
 
         private void ClientServerConfigForm_FormClosing(object sender, FormClosingEventArgs e)
         {
+            _planePreview?.Dispose();
             _discovery?.StopListen();
             _discovery?.Dispose();
         }
