@@ -241,13 +241,13 @@ namespace PolyPlane
                         _client.PeerTimeoutEvent += Client_PeerTimeoutEvent;
                         _client.PeerDisconnectedEvent += Client_PeerDisconnectedEvent;
 
-                        InitRenderer(_netMan);
-                        StartGameThread();
-                        ResumeGame();
-
                         _inStartup = false;
 
                         _client.Start();
+
+                        InitRenderer(_netMan);
+                        StartGameThread();
+                        ResumeGame();
 
                         _render?.ClearHudMessage();
 

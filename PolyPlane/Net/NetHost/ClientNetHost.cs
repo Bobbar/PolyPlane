@@ -8,8 +8,6 @@ namespace PolyPlane.Net.NetHost
         public Peer Peer;
 
         private SmoothDouble _rttSmooth = new SmoothDouble(30);
-        private double _startTime = 0;
-
         private const double CONNECT_TIMEOUT = 1000;
 
         public ClientNetHost(ushort port, string ip) : base(port, ip)
@@ -24,7 +22,7 @@ namespace PolyPlane.Net.NetHost
 
             Peer = Host.Connect(Address, MAX_CHANNELS);
 
-            _startTime = World.CurrentTimeMs();
+            WaitForConnect();
         }
 
         public override void HandleConnect(ref Event netEvent)
@@ -53,23 +51,6 @@ namespace PolyPlane.Net.NetHost
 
         protected override void SendPacket(ref Packet packet, uint peerID, byte channel)
         {
-            // Wait for peer to connect.
-            while (Peer.State == PeerState.Connecting)
-            {
-                Thread.Sleep(100);
-
-                var elap = World.CurrentTimeMs() - _startTime;
-
-                if (elap > CONNECT_TIMEOUT)
-                {
-                    // Unable to connect to server.
-                    DisconnectClient();
-                    return;
-                }
-
-                Host.Service(10, out Event e);
-            }
-
             // Disconnect peer in an invalid state.
             if (Peer.State != PeerState.Connected && Peer.State != PeerState.Connecting)
             {
@@ -85,6 +66,26 @@ namespace PolyPlane.Net.NetHost
             Stop();
             Disconnect(0);
             FireDisconnectEvent(Peer);
+        }
+
+        private void WaitForConnect()
+        {
+            // Wait for peer to connect.
+            var startTime = World.CurrentTimeMs();
+            while (Peer.State == PeerState.Connecting)
+            {
+                var elap = World.CurrentTimeMs() - startTime;
+
+                if (elap > CONNECT_TIMEOUT)
+                {
+                    // Unable to connect to server.
+                    // Reset peer to trigger disconnect.
+                    Peer.Reset();
+                    return;
+                }
+
+                Host.Service(100, out Event e);
+            }
         }
 
         public override Peer? GetPeer(int playerID)
