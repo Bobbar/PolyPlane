@@ -95,26 +95,13 @@ namespace PolyPlane.Net.NetHost
         internal void PollLoop()
         {
             Event netEvent;
-            bool polled = false;
 
             while (_runLoop)
             {
                 ProcessSendQueue();
 
-                polled = false;
-
-                while (!polled && _runLoop)
-                {
-                    if (Host.CheckEvents(out netEvent) <= 0)
-                    {
-                        if (Host.Service(TIMEOUT, out netEvent) <= 0)
-                            break;
-
-                        polled = true;
-                    }
-
+                while (Host.Service(TIMEOUT, out netEvent) > 0)
                     HandleEvent(ref netEvent);
-                }
 
                 _pollLimiter.Wait(POLL_FPS);
             }
@@ -149,7 +136,7 @@ namespace PolyPlane.Net.NetHost
                 case EventType.Receive:
 
                     var packet = netEvent.Packet;
-                    
+
                     if (TryParsePacket(ref packet, out NetPacket netPacket))
                     {
                         // Set the peer ID only if the packet does not need bounced back.
@@ -282,10 +269,10 @@ namespace PolyPlane.Net.NetHost
         {
             _runLoop = false;
 
+            _pollThread.Join(100);
+
             Host?.Flush();
             Host?.Dispose();
-
-            _pollLimiter?.Dispose();
 
             Library.Deinitialize();
         }
