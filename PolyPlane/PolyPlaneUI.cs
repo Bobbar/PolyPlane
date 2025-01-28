@@ -241,9 +241,11 @@ namespace PolyPlane
                         _client.PeerTimeoutEvent += Client_PeerTimeoutEvent;
                         _client.PeerDisconnectedEvent += Client_PeerDisconnectedEvent;
 
-                        InitGfx();
+                        InitRenderer(_netMan);
                         StartGameThread();
                         ResumeGame();
+
+                        _inStartup = false;
 
                         _client.Start();
 
@@ -263,7 +265,7 @@ namespace PolyPlane
                         World.ViewObject = _playerPlane;
                         _objs.AddPlane(_playerPlane);
 
-                        InitGfx();
+                        InitRenderer(null);
                         StartGameThread();
                         ResumeGame();
 
@@ -300,14 +302,18 @@ namespace PolyPlane
 
             _objs.Clear();
 
-            _netMan.ImpactEvent -= HandleNewImpact;
-            _netMan.PlayerIDReceived -= NetMan_PlayerIDReceived;
-            _netMan.PlayerDisconnected -= NetMan_PlayerDisconnected;
-            _netMan.PlayerKicked -= NetMan_PlayerKicked;
+            if (_netMan != null)
+            {
+                _netMan.ImpactEvent -= HandleNewImpact;
+                _netMan.PlayerIDReceived -= NetMan_PlayerIDReceived;
+                _netMan.PlayerDisconnected -= NetMan_PlayerDisconnected;
+                _netMan.PlayerKicked -= NetMan_PlayerKicked;
+                _netMan = null;
+            }
+          
 
             if (_client != null)
             {
-                _client?.Stop();
                 _client?.Dispose();
 
                 _client.PeerTimeoutEvent -= Client_PeerTimeoutEvent;
@@ -496,10 +502,12 @@ namespace PolyPlane
             _gameThread.Start();
         }
 
-        private void InitGfx()
+        private void InitRenderer(NetEventManager netMan)
         {
             if (_render == null)
-                _render = new Renderer(RenderTarget, _netMan);
+                _render = new Renderer(RenderTarget, netMan);
+
+            _render.NetManager = netMan;
         }
 
         private void GameLoop()

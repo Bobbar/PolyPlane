@@ -100,7 +100,7 @@ namespace PolyPlane.Net.NetHost
             {
                 ProcessSendQueue();
 
-                while (Host.Service(TIMEOUT, out netEvent) > 0)
+                while (_runLoop && Host.Service(TIMEOUT, out netEvent) > 0)
                     HandleEvent(ref netEvent);
 
                 _pollLimiter.Wait(POLL_FPS);
@@ -269,7 +269,7 @@ namespace PolyPlane.Net.NetHost
         {
             _runLoop = false;
 
-            _pollThread.Join(100);
+            _pollThread?.Join(100);
 
             Host?.Flush();
             Host?.Dispose();

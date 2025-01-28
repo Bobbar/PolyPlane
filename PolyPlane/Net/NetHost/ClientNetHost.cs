@@ -8,6 +8,9 @@ namespace PolyPlane.Net.NetHost
         public Peer Peer;
 
         private SmoothDouble _rttSmooth = new SmoothDouble(30);
+        private double _startTime = 0;
+
+        private const double CONNECT_TIMEOUT = 1000;
 
         public ClientNetHost(ushort port, string ip) : base(port, ip)
         { }
@@ -20,6 +23,8 @@ namespace PolyPlane.Net.NetHost
             Host.Create();
 
             Peer = Host.Connect(Address, MAX_CHANNELS);
+
+            _startTime = World.CurrentTimeMs();
         }
 
         public override void HandleConnect(ref Event netEvent)
@@ -48,16 +53,38 @@ namespace PolyPlane.Net.NetHost
 
         protected override void SendPacket(ref Packet packet, uint peerID, byte channel)
         {
+            // Wait for peer to connect.
+            while (Peer.State == PeerState.Connecting)
+            {
+                Thread.Sleep(100);
+
+                var elap = World.CurrentTimeMs() - _startTime;
+
+                if (elap > CONNECT_TIMEOUT)
+                {
+                    // Unable to connect to server.
+                    DisconnectClient();
+                    return;
+                }
+
+                Host.Service(10, out Event e);
+            }
+
+            // Disconnect peer in an invalid state.
             if (Peer.State != PeerState.Connected && Peer.State != PeerState.Connecting)
             {
-                // Disconnect and stop processing packets.
-                Disconnect(0);
-                Stop();
-                FireDisconnectEvent(Peer);
+                DisconnectClient();
                 return;
             }
 
             Peer.Send(channel, ref packet);
+        }
+
+        private void DisconnectClient()
+        {
+            Stop();
+            Disconnect(0);
+            FireDisconnectEvent(Peer);
         }
 
         public override Peer? GetPeer(int playerID)
@@ -67,7 +94,9 @@ namespace PolyPlane.Net.NetHost
 
         public override void Disconnect(int playerID)
         {
-            Peer.DisconnectNow(0);
+            if (Peer.State == PeerState.Connected)
+                Peer.DisconnectNow(0);
+
             Host.Flush();
         }
 

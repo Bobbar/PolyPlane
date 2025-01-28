@@ -24,6 +24,12 @@ namespace PolyPlane.Rendering
             }
         }
 
+        public NetEventManager NetManager 
+        {
+            get { return _netMan; }
+            set { _netMan = value; }
+        }
+
         private D2DDevice _device;
         private D2DGraphics _gfx = null;
         private RenderContext _ctx;
@@ -1742,7 +1748,7 @@ namespace PolyPlane.Rendering
 
             if (_showInfo)
             {
-                if (_netMan != null)
+                if (World.IsNetGame && _netMan != null)
                 {
                     infoText += $"Latency: {Math.Round(_netMan.Host.GetPlayerRTT(0), 2)}\n";
                     infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
