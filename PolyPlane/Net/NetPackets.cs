@@ -660,37 +660,49 @@ namespace PolyPlane.Net
         public bool FiringBurst;
         public bool ThrustOn;
         public bool IsFlipped;
+        public int NumMissiles;
+        public int NumBullets;
+        public int NumDecoys;
 
         public PlanePacket(BitBuffer data)
         {
             this.Deserialize(data);
         }
 
-        public PlanePacket(FighterPlane obj) : base(obj)
+        public PlanePacket(FighterPlane plane) : base(plane)
         {
-            Deflection = obj.Deflection;
-            FiringBurst = obj.FiringBurst;
-            ThrustOn = obj.ThrustOn;
-            IsFlipped = obj.Polygon.IsFlipped;
+            Deflection = plane.Deflection;
+            FiringBurst = plane.FiringBurst;
+            ThrustOn = plane.ThrustOn;
+            IsFlipped = plane.Polygon.IsFlipped;
+            NumMissiles = plane.NumMissiles;
+            NumBullets = plane.NumBullets;
+            NumDecoys = plane.NumDecoys;
         }
 
-        public PlanePacket(FighterPlane obj, PacketTypes type) : base(obj, type)
+        public PlanePacket(FighterPlane plane, PacketTypes type) : base(plane, type)
         {
-            Deflection = obj.Deflection;
-            FiringBurst = obj.FiringBurst;
-            ThrustOn = obj.ThrustOn;
-            IsFlipped = obj.Polygon.IsFlipped;
+            Deflection = plane.Deflection;
+            FiringBurst = plane.FiringBurst;
+            ThrustOn = plane.ThrustOn;
+            IsFlipped = plane.Polygon.IsFlipped;
+            NumMissiles = plane.NumMissiles;
+            NumBullets = plane.NumBullets;
+            NumDecoys = plane.NumDecoys;
         }
 
-        public virtual void SyncObj(FighterPlane obj)
+        public virtual void SyncObj(FighterPlane plane)
         {
-            base.SyncObj(obj);
-            obj.Deflection = Deflection;
-            obj.FiringBurst = FiringBurst;
-            obj.ThrustOn = ThrustOn;
+            base.SyncObj(plane);
+            plane.Deflection = Deflection;
+            plane.FiringBurst = FiringBurst;
+            plane.ThrustOn = ThrustOn;
+            plane.NumMissiles = NumMissiles;
+            plane.NumBullets = NumBullets;
+            plane.NumDecoys = NumDecoys;
 
-            if (obj.Polygon.IsFlipped != IsFlipped)
-                obj.FlipPoly(force: true);
+            if (plane.Polygon.IsFlipped != IsFlipped)
+                plane.FlipPoly(force: true);
         }
 
         public override void Serialize(BitBuffer data)
@@ -701,6 +713,9 @@ namespace PolyPlane.Net
             data.AddBool(FiringBurst);
             data.AddBool(ThrustOn);
             data.AddBool(IsFlipped);
+            data.AddByte((byte)NumMissiles);
+            data.AddByte((byte)NumBullets);
+            data.AddByte((byte)NumDecoys);
         }
 
         public override void Deserialize(BitBuffer data)
@@ -711,6 +726,9 @@ namespace PolyPlane.Net
             FiringBurst = data.ReadBool();
             ThrustOn = data.ReadBool();
             IsFlipped = data.ReadBool();
+            NumMissiles = data.ReadByte();
+            NumBullets = data.ReadByte();
+            NumDecoys = data.ReadByte();
         }
     }
 

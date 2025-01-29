@@ -310,23 +310,22 @@ namespace PolyPlane.GameObjects
 
             _bulletRegenTimer.TriggerCallback = () =>
             {
-                if (!this.FiringBurst && NumBullets < MAX_BULLETS)
+                if (!this.IsNetObject && !this.FiringBurst && NumBullets < MAX_BULLETS)
                     NumBullets++;
             };
 
 
             _missileRegenTimer.TriggerCallback = () =>
             {
-                if (World.MissileRegen)
+                if (!this.IsNetObject && World.MissileRegen)
                     if (NumMissiles < MAX_MISSILES)
                         NumMissiles++;
             };
 
-            _missileRegenTimer.Start();
 
             _decoyRegenTimer.TriggerCallback = () =>
             {
-                if (!this.DroppingDecoy && NumDecoys < MAX_DECOYS)
+                if (!this.IsNetObject && !this.DroppingDecoy && NumDecoys < MAX_DECOYS)
                     NumDecoys++;
             };
 
@@ -334,6 +333,7 @@ namespace PolyPlane.GameObjects
 
             _groundDustSpawnTimer.Start();
             _bulletRegenTimer.Start();
+            _missileRegenTimer.Start();
             _decoyRegenTimer.Start();
             _easePhysicsTimer.Start();
 
@@ -1007,6 +1007,7 @@ namespace PolyPlane.GameObjects
             ThrustOn = false;
             _thrustAmt.SetNow(0f);
             FiringBurst = false;
+            DroppingDecoy = false;
             _engineFireFlame.StartSpawning();
 
             _damageDeflection = _controlWing.Deflection;
