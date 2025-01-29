@@ -48,7 +48,7 @@ namespace PolyPlane.Net
             ChatInterface = new ChatInterface(this, playerPlane.PlayerName);
             AttachEvents();
 
-            _lastNetTime = World.CurrentNetTimeTicks();
+            _lastNetTime = World.CurrentTimeTicks();
         }
 
         public NetEventManager(NetPlayHost host)
@@ -59,7 +59,7 @@ namespace PolyPlane.Net
             ChatInterface = new ChatInterface(this, "Server");
             AttachEvents();
 
-            _lastNetTime = World.CurrentNetTimeTicks();
+            _lastNetTime = World.CurrentTimeTicks();
         }
 
         private void AttachEvents()
@@ -77,7 +77,7 @@ namespace PolyPlane.Net
 
         public void HandleNetEvents(float dt)
         {
-            var now = World.CurrentNetTimeTicks();
+            var now = World.CurrentTimeTicks();
             var elap = TimeSpan.FromTicks(now - _lastNetTime).TotalMilliseconds;
 
             // Send updates at an interval approx twice the frame time.
@@ -91,20 +91,20 @@ namespace PolyPlane.Net
                 if (IsServer)
                     SendSyncPacket();
 
-                _lastNetTime = World.CurrentNetTimeTicks();
+                _lastNetTime = World.CurrentTimeTicks();
             }
 
             long totalPacketTime = 0;
             int numPackets = 0;
 
-            now = World.CurrentNetTimeTicks();
+            var netNow = World.CurrentNetTimeTicks();
 
             while (Host.PacketReceiveQueue.Count > 0)
             {
                 if (Host.PacketReceiveQueue.TryDequeue(out NetPacket packet))
                 {
                     var netPacket = packet;
-                    totalPacketTime += now - netPacket.FrameTime;
+                    totalPacketTime += netNow - netPacket.FrameTime;
                     numPackets++;
 
                     HandleNetPacket(netPacket, dt);
