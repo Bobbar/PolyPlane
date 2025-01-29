@@ -495,9 +495,7 @@ namespace PolyPlane.Rendering
             color = Utilities.LerpColor(color, D2DColor.Black, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY - 5f));
             color = Utilities.LerpColor(color, ctx.AddTimeOfDayColor(color), 0.2f);
 
-            var rect = new D2DRect(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), new D2DSize(this.Width, this.Height));
-
-            ctx.Gfx.FillRectangle(rect, color);
+            ctx.Gfx.FillRectangle(World.ViewPortRectUnscaled, color);
         }
 
         private void DrawMovingBackground(RenderContext ctx, GameObject viewObject)
@@ -650,7 +648,8 @@ namespace PolyPlane.Rendering
             groundPos += new D2DPoint(0f, yPos);
 
             // Draw the ground.
-            ctx.Gfx.FillRectangle(new D2DRect(groundPos, new D2DSize(this.Width * World.ViewPortScaleMulti, (HEIGHT * 2f) / ctx.CurrentScale)), _groundBrush);
+            var rect = new D2DRect(groundPos, new D2DSize(World.ViewPortSize.width, (HEIGHT * 2f) / ctx.CurrentScale));
+            ctx.Gfx.FillRectangle(rect, _groundBrush);
         }
 
         private void DrawGroundObjs(RenderContext ctx)
