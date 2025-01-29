@@ -12,7 +12,7 @@ namespace PolyPlane
         public static BoundedRange[] WorldBounds = new BoundedRange[2];
         public static BoundedRange[] VeloBounds = new BoundedRange[2];
 
-        private static SmoothDouble _serverTimeOffsetSmooth = new SmoothDouble(30);
+        private static SmoothDouble _serverTimeOffsetSmooth = new SmoothDouble(60);
         private static FastNoiseLite _turbulenceNoise = new FastNoiseLite();
 
         public static int PHYSICS_SUB_STEPS => _sub_steps;
