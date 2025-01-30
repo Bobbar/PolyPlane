@@ -243,9 +243,10 @@ namespace PolyPlane
 
                         _inStartup = false;
 
-                        _client.Start();
-
                         InitRenderer(_netMan);
+
+                        _client.Start();
+                       
                         StartGameThread();
                         ResumeGame();
 
