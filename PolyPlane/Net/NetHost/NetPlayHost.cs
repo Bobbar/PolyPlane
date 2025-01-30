@@ -194,13 +194,17 @@ namespace PolyPlane.Net.NetHost
                 or PacketTypes.NewBullet
                 or PacketTypes.NewDecoy
                 or PacketTypes.NewMissile:
+
                     return SendType.ToAllExcept;
 
                 case PacketTypes.SyncRequest
-                or PacketTypes.SyncResponse:
+                or PacketTypes.SyncResponse
+                or PacketTypes.ImpactList:
+
                     return SendType.ToOnly;
 
                 default:
+
                     return SendType.ToAll;
             }
         }

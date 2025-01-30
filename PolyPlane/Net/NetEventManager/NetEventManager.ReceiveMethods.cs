@@ -91,12 +91,6 @@ namespace PolyPlane.Net
 
         private void HandleNewImpactList(ImpactListPacket impacts, float dt)
         {
-            var destID = impacts.ID;
-
-            // Make sure this was intended for us.
-            if (destID.PlayerID != PlayerPlane.PlayerID)
-                return;
-
             foreach (var impact in impacts.Impacts)
             {
                 HandleNetImpact(impact, dt);

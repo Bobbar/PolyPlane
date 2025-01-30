@@ -265,6 +265,7 @@ namespace PolyPlane.Net
                     // Batch the list packet as needed.
                     if (impactsPacket.Impacts.Count >= LIST_PACKET_BATCH_COUNT)
                     {
+                        impactsPacket.PeerID = (uint)destID.PlayerID;
                         Host.EnqueuePacket(impactsPacket);
 
                         impactsPacket = new ImpactListPacket(destID);
@@ -273,7 +274,10 @@ namespace PolyPlane.Net
             }
 
             if (impactsPacket.Impacts.Count > 0)
+            {
+                impactsPacket.PeerID = (uint)destID.PlayerID;
                 Host.EnqueuePacket(impactsPacket);
+            }
         }
 
         public void SendPlaneReset(FighterPlane plane)
