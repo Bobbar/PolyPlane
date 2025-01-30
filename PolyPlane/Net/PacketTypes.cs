@@ -20,13 +20,15 @@
         ExpiredObjects,
         PlayerDisconnect,
         PlayerReset,
-        ServerSync,
+        SyncResponse,
+        SyncRequest,
         Discovery,
         KickPlayer,
         ImpactList,
         BulletList,
         DecoyList,
         PlayerEvent,
-        ScoreEvent
+        ScoreEvent,
+        GameStateUpdate
     }
 }

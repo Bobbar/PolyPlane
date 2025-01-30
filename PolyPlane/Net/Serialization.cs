@@ -96,7 +96,7 @@ namespace PolyPlane.Net
                     obj = new BasicListPacket(data);
                     break;
 
-                case PacketTypes.ServerSync:
+                case PacketTypes.SyncResponse or PacketTypes.SyncRequest:
                     obj = new SyncPacket(data);
                     break;
 
@@ -126,6 +126,10 @@ namespace PolyPlane.Net
 
                 case PacketTypes.PlaneStatus:
                     obj = new PlaneStatusPacket(data);
+                    break;
+
+                case PacketTypes.GameStateUpdate:
+                    obj = new GameStatePacket(data);
                     break;
 
             }

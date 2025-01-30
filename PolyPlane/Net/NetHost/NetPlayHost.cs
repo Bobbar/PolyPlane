@@ -242,7 +242,7 @@ namespace PolyPlane.Net.NetHost
         {
             switch (netpacket.Type)
             {
-                case PacketTypes.ServerSync:
+                case PacketTypes.SyncResponse or PacketTypes.SyncRequest:
                     return PacketFlags.Instant;
 
                 default:

@@ -168,21 +168,55 @@ namespace PolyPlane.Net
 
     public class SyncPacket : NetPacket
     {
-        public long ServerTime;
-        public float TimeOfDay;
-        public float TimeOfDayDir;
-        public bool GunsOnly;
-        public bool IsPaused;
-        public float DeltaTime;
+        public long ClientTime;
 
         public SyncPacket(BitBuffer data)
         {
             this.Deserialize(data);
         }
 
-        public SyncPacket(long serverTime, float timeOfDay, float timeOfDayDir, bool gunsOnly, bool isPaused, float deltaTime) : base(PacketTypes.ServerSync)
+        public SyncPacket(long clientTime, bool isResponse) : base()
         {
-            ServerTime = serverTime;
+            ClientTime = clientTime;
+
+            if (isResponse)
+                Type = PacketTypes.SyncResponse;
+            else
+                Type = PacketTypes.SyncRequest;
+        }
+
+
+        public override void Serialize(BitBuffer data)
+        {
+            base.Serialize(data);
+
+            data.AddLong(ClientTime);
+        }
+
+        public override void Deserialize(BitBuffer data)
+        {
+            base.Deserialize(data);
+
+            ClientTime = data.ReadLong();
+        }
+    }
+
+
+    public class GameStatePacket : NetPacket
+    {
+        public float TimeOfDay;
+        public float TimeOfDayDir;
+        public bool GunsOnly;
+        public bool IsPaused;
+        public float DeltaTime;
+
+        public GameStatePacket(BitBuffer data)
+        {
+            this.Deserialize(data);
+        }
+
+        public GameStatePacket(float timeOfDay, float timeOfDayDir, bool gunsOnly, bool isPaused, float deltaTime) : base(PacketTypes.GameStateUpdate)
+        {
             TimeOfDay = timeOfDay;
             TimeOfDayDir = timeOfDayDir;
             GunsOnly = gunsOnly;
@@ -194,7 +228,6 @@ namespace PolyPlane.Net
         {
             base.Serialize(data);
 
-            data.AddLong(ServerTime);
             data.AddFloat(TimeOfDay);
             data.AddFloat(TimeOfDayDir);
             data.AddBool(GunsOnly);
@@ -206,7 +239,6 @@ namespace PolyPlane.Net
         {
             base.Deserialize(data);
 
-            ServerTime = data.ReadLong();
             TimeOfDay = data.ReadFloat();
             TimeOfDayDir = data.ReadFloat();
             GunsOnly = data.ReadBool();

@@ -136,10 +136,22 @@ namespace PolyPlane.Net
             Host.EnqueuePacket(missilePacket);
         }
 
-        public void SendSyncPacket()
+        public void ClientSendSyncRequest()
         {
-            var syncPacket = new SyncPacket(World.CurrentNetTimeTicks(), World.TimeOfDay, World.TimeOfDayDir, World.GunsOnly, World.IsPaused, World.TargetDT);
+            var syncPacket = new SyncPacket(World.CurrentTimeTicks(), isResponse: false);
             Host.EnqueuePacket(syncPacket);
+        }
+
+        public void ServerSendSyncResponse(SyncPacket requestPacket)
+        {
+            var syncResponse = new SyncPacket(requestPacket.ClientTime, isResponse: true);
+            Host.EnqueuePacket(syncResponse);
+        }
+
+        public void ServerSendGameState()
+        {
+            var gameStatePacket = new GameStatePacket(World.TimeOfDay, World.TimeOfDayDir, World.GunsOnly, World.IsPaused, World.TargetDT);
+            Host.EnqueuePacket(gameStatePacket);
         }
 
         public void SendNewChatPacket(string message, string playerName)

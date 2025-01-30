@@ -20,12 +20,16 @@ namespace PolyPlane.Net
 
         private GameObjectManager _objs = World.ObjectManager;
         private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
+        private SmoothDouble _rttSmooth = new SmoothDouble(10);
+        private SmoothDouble _frameDelaySmooth = new SmoothDouble(10);
+
         private Dictionary<int, List<ImpactPacket>> _impacts = new Dictionary<int, List<ImpactPacket>>();
         private List<NetPacket> _deferredPackets = new List<NetPacket>();
 
         private bool _netIDIsSet = false;
         private bool _receivedFirstSync = false;
         private long _lastNetTime = 0;
+        private long _netFrames = 0;
 
         public event EventHandler<int> PlayerIDReceived;
         public event EventHandler<ImpactEvent> ImpactEvent;
@@ -39,6 +43,8 @@ namespace PolyPlane.Net
 
         private const long MAX_DEFER_AGE = 400; // Max age allowed for deferred packets.
         private const int LIST_PACKET_BATCH_COUNT = 30; // Max list packet count before batching into multiple packets.
+        private const int SYNC_FRAMES = 2; // Clients send sync requests every other net frame.
+        private const int GAME_STATE_FRAMES = 4; // Server sends game state updates every 4 net frames.
 
         public NetEventManager(NetPlayHost host, FighterPlane playerPlane)
         {
@@ -88,10 +94,20 @@ namespace PolyPlane.Net
                 SendMissileUpdates();
                 SendExpiredObjects();
 
-                if (IsServer)
-                    SendSyncPacket();
+                // Do periodic updates as needed.
+                if (!IsServer)
+                {
+                    if (_netFrames % SYNC_FRAMES == 0)
+                        ClientSendSyncRequest();
+                }
+                else
+                {
+                    if (_netFrames % GAME_STATE_FRAMES == 0)
+                        ServerSendGameState();
+                }
 
                 _lastNetTime = World.CurrentTimeTicks();
+                _netFrames++;
             }
 
             long totalPacketTime = 0;
@@ -266,7 +282,7 @@ namespace PolyPlane.Net
                         ServerSendExistingMissiles();
                         ServerSendExistingDecoys();
                         ServerSendExistingImpacts(playerPacket.ID);
-                        SendSyncPacket();
+                        ServerSendGameState();
                     }
 
                     PlayerJoined?.Invoke(this, playerPacket.ID.PlayerID);
@@ -311,6 +327,8 @@ namespace PolyPlane.Net
                         Host.EnqueuePacket(newPlayerPacket);
 
                         PlayerIDReceived?.Invoke(this, packet.ID.PlayerID);
+
+                        ClientSendSyncRequest();
                     }
 
                     break;
@@ -363,7 +381,18 @@ namespace PolyPlane.Net
 
                     break;
 
-                case PacketTypes.ServerSync:
+                case PacketTypes.SyncRequest:
+                    var syncRequestPacket = packet as SyncPacket;
+
+                    if (IsServer)
+                    {
+                        // Respond back with the original client time attached.
+                        ServerSendSyncResponse(syncRequestPacket);
+                    }
+
+                    break;
+
+                case PacketTypes.SyncResponse:
 
                     var syncPack = packet as SyncPacket;
                     if (syncPack != null)
@@ -371,24 +400,50 @@ namespace PolyPlane.Net
                         if (!IsServer)
                         {
                             // Compute server time offset.
+                            // Remarks: This math was determined by trial and error.
+                            // My testing shows that this strategy will keep the 
+                            // client & server clocks synced to within less than 6 milliseconds.
+                            // So for client/server instances running on the same device,
+                            // the server time offset should remain as close to zero as possible.
+                            // Not including the frame delay results in a mismatch of about 1 frame (16ms).
                             var now = World.CurrentTimeTicks();
-                            var rtt = Host.GetPlayerRTT(PlayerPlane.PlayerID);
-                            var rttTicks = TimeSpan.FromMilliseconds(rtt).Ticks;
-                            var frameDelay = TimeSpan.FromMilliseconds(World.LAST_FRAME_TIME).Ticks;
-                            var transitOffset = (rttTicks / 2d) + (frameDelay / 2d);
-                            var serverOffset = (syncPack.ServerTime + transitOffset) - now;
+                            var frameDelay = _frameDelaySmooth.Add(TimeSpan.FromMilliseconds(World.LAST_FRAME_TIME).Ticks);
+                            var frameDelayHalf = frameDelay / 2d;
+
+                            // Difference between now and when we originally sent the request.
+                            var initialRTT = now - syncPack.ClientTime;
+
+                            // Fudge the RTT with the frame delay.
+                            var fudgedRTT = _rttSmooth.Add(initialRTT - frameDelayHalf);
+                           
+                            // Add the frame delay to the one-way transit delay.
+                            var transitOffset = (fudgedRTT / 2d) + frameDelayHalf;
+
+                            // Offset the server time by the transit delay and compute the next offset.
+                            var serverOffset = (syncPack.FrameTime + transitOffset) - now;
 
                             World.ServerTimeOffset = serverOffset;
-
-                            World.TimeOfDay = syncPack.TimeOfDay;
-                            World.TimeOfDayDir = syncPack.TimeOfDayDir;
-                            World.GunsOnly = syncPack.GunsOnly;
-                            World.TargetDT = syncPack.DeltaTime;
-                            World.IsPaused = syncPack.IsPaused;
 
                             _receivedFirstSync = true;
                         }
                     }
+                    break;
+
+                case PacketTypes.GameStateUpdate:
+                    var gameStatePacket = packet as GameStatePacket;
+
+                    if (!IsServer)
+                    {
+                        if (gameStatePacket != null)
+                        {
+                            World.TimeOfDay = gameStatePacket.TimeOfDay;
+                            World.TimeOfDayDir = gameStatePacket.TimeOfDayDir;
+                            World.GunsOnly = gameStatePacket.GunsOnly;
+                            World.TargetDT = gameStatePacket.DeltaTime;
+                            World.IsPaused = gameStatePacket.IsPaused;
+                        }
+                    }
+
                     break;
 
                 case PacketTypes.KickPlayer:

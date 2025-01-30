@@ -676,7 +676,7 @@ namespace PolyPlane.Server
             var pauseAction = new Action(() => 
             {
                 World.IsPaused = !World.IsPaused;
-                _netMan.SendSyncPacket();
+                _netMan.ServerSendGameState();
             });
 
             EnqueueAction(pauseAction);
@@ -731,7 +731,7 @@ namespace PolyPlane.Server
         private void TimeOfDaySlider_Scroll(object sender, EventArgs e)
         {
             World.TimeOfDay = TimeOfDaySlider.Value;
-            _netMan.SendSyncPacket();
+            _netMan.ServerSendGameState();
         }
       
         private void EnableDiscoveryCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -747,7 +747,7 @@ namespace PolyPlane.Server
             var toggleGuns = new Action(() => 
             {
                 World.GunsOnly = GunsOnlyCheckBox.Checked;
-                _netMan.SendSyncPacket();
+                _netMan.ServerSendGameState();
             });
 
             EnqueueAction(toggleGuns);
@@ -759,7 +759,7 @@ namespace PolyPlane.Server
                 return;
 
             World.TargetDT = (float)DeltaTimeNumeric.Value;
-            _netMan.SendSyncPacket();
+            _netMan.ServerSendGameState();
         }
 
         private void DefaultDTButton_Click(object sender, EventArgs e)
