@@ -16,11 +16,10 @@ namespace PolyPlane.GameObjects.Fixtures
         private GameTimer _burstTimer;
         private GameTimer _muzzleFlashTimer;
 
-        public Gun(FighterPlane plane, D2DPoint position, Action<Bullet> fireBulletCallback) : base(plane, position)
+        public Gun(FighterPlane plane, D2DPoint position) : base(plane, position)
         {
             IsNetObject = plane.IsNetObject;
             _ownerPlane = plane;
-            FireBulletCallback = fireBulletCallback;
 
             _smoke = AddAttachment(new GunSmokeEmitter(this, D2DPoint.Zero, new D2DColor(0.7f, D2DColor.BurlyWood)));
 

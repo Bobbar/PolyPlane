@@ -106,21 +106,19 @@ namespace PolyPlane.GameObjects
 
         public Action<Bullet> FireBulletCallback
         {
-            get { return _fireBulletCallback; }
+            get { return _gun.FireBulletCallback; }
             set
             {
-                _fireBulletCallback = value;
                 _gun.FireBulletCallback = value;
             }
         }
 
         public Action<Decoy> DropDecoyCallback
         {
-            get { return _dropDecoyCallback; }
+            get { return _decoyDispenser.DropDecoyCallback; }
 
             set
             {
-                _dropDecoyCallback = value;
                 _decoyDispenser.DropDecoyCallback = value;
             }
         }
@@ -129,9 +127,6 @@ namespace PolyPlane.GameObjects
         public Action<PlayerKilledEventArgs> PlayerKilledCallback { get; set; }
         public Action<FighterPlane> PlayerCrashedCallback { get; set; }
         public Action<ImpactEvent> PlayerHitCallback { get; set; }
-
-        private Action<Decoy> _dropDecoyCallback;
-        private Action<Bullet> _fireBulletCallback;
 
         private IAIBehavior _aiBehavior;
         private List<Wing> _wings = new List<Wing>();
@@ -282,7 +277,7 @@ namespace PolyPlane.GameObjects
             _engineFireFlame = AddAttachment(new FlameEmitter(this, centerOfThrustPos, 7f, 13f, false));
             _flamePos = AddAttachment(new FixturePoint(this, new D2DPoint(-27.3f, 0.46f) * this.RenderScale));
             _cockpitPosition = AddAttachment(new FixturePoint(this, new D2DPoint(19.5f, -5f)));
-            _gun = AddAttachment(new Gun(this, new D2DPoint(35f, 0), FireBulletCallback));
+            _gun = AddAttachment(new Gun(this, new D2DPoint(35f, 0)));
             _decoyDispenser = AddAttachment(new DecoyDispenser(this, new D2DPoint(-24f, 0f)));
 
             _engineOutSpoolDown = AddAttachment(new FloatAnimation(1f, 0f, 20f, EasingFunctions.EaseLinear, v =>
