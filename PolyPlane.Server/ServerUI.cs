@@ -128,6 +128,7 @@ namespace PolyPlane.Server
                 _netMan.PlayerRespawned += NetMan_PlayerRespawned;
                 _netMan.NewChatMessage += NetMan_NewChatMessage;
                 _netMan.PlayerEventMessage += NetMan_PlayerEventMessage;
+                _server.PeerTimeoutEvent += Server_PeerTimeoutEvent;
 
                 _objs.PlayerKilledEvent += PlayerKilledEvent;
                 _objs.NewPlayerEvent += NewPlayerEvent;
@@ -144,6 +145,29 @@ namespace PolyPlane.Server
                 PortTextBox.Enabled = false;
                 StartServerButton.Enabled = false;
                 ServerNameTextBox.Enabled = false;
+            }
+        }
+
+        private void PlayerDisconnected(int playerID)
+        {
+            var netPlayer = _currentPlayers.Where(p => p.ID.PlayerID == playerID).FirstOrDefault();
+            if (netPlayer != null)
+            {
+                _currentPlayers.Remove(netPlayer);
+                AddNewEventMessage($"'{netPlayer.Name}' has left.");
+                _netMan.ClearImpacts(playerID);
+            }
+        }
+
+        private void Server_PeerTimeoutEvent(object? sender, ENet.Peer e)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(() => Server_PeerTimeoutEvent(sender, e));
+            }
+            else
+            {
+                PlayerDisconnected((int)e.ID);
             }
         }
 
@@ -222,12 +246,7 @@ namespace PolyPlane.Server
             }
             else
             {
-                var netPlayer = _currentPlayers.Where(p => p.ID.PlayerID == e).FirstOrDefault();
-                if (netPlayer != null)
-                {
-                    _currentPlayers.Remove(netPlayer);
-                    AddNewEventMessage($"'{netPlayer.Name}' has left.");
-                }
+                PlayerDisconnected(e);
             }
         }
 
@@ -239,12 +258,7 @@ namespace PolyPlane.Server
             }
             else
             {
-                var netPlayer = _currentPlayers.Where(p => p.ID.PlayerID == e.ID).FirstOrDefault();
-                if (netPlayer != null)
-                {
-                    _currentPlayers.Remove(netPlayer);
-                    AddNewEventMessage($"'{netPlayer.Name}' has left.");
-                }
+                PlayerDisconnected((int)e.ID);
             }
         }
 
@@ -673,7 +687,7 @@ namespace PolyPlane.Server
 
         private void PauseButton_Click(object sender, EventArgs e)
         {
-            var pauseAction = new Action(() => 
+            var pauseAction = new Action(() =>
             {
                 World.IsPaused = !World.IsPaused;
                 _netMan.ServerSendGameState();
@@ -733,7 +747,7 @@ namespace PolyPlane.Server
             World.TimeOfDay = TimeOfDaySlider.Value;
             _netMan.ServerSendGameState();
         }
-      
+
         private void EnableDiscoveryCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             if (EnableDiscoveryCheckBox.Checked)
@@ -744,7 +758,7 @@ namespace PolyPlane.Server
 
         private void GunsOnlyCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            var toggleGuns = new Action(() => 
+            var toggleGuns = new Action(() =>
             {
                 World.GunsOnly = GunsOnlyCheckBox.Checked;
                 _netMan.ServerSendGameState();

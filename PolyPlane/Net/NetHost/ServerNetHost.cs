@@ -6,6 +6,7 @@ namespace PolyPlane.Net.NetHost
     public class ServerNetHost : NetPlayHost
     {
         private Dictionary<uint, Peer> _peers = new Dictionary<uint, Peer>();
+        private const int PEER_TIMEOUT = 10000;
 
         public ServerNetHost(ushort port, string ip) : base(port, ip)
         { }
@@ -31,6 +32,8 @@ namespace PolyPlane.Net.NetHost
             base.HandleConnect(ref netEvent);
 
             var peer = netEvent.Peer;
+
+            peer.Timeout(PEER_TIMEOUT, PEER_TIMEOUT, PEER_TIMEOUT + 1000);
 
             _peers.Add(peer.ID, peer);
 

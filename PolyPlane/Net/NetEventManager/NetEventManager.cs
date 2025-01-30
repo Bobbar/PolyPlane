@@ -211,7 +211,7 @@ namespace PolyPlane.Net
                 _impacts.Add(impactPacket.ID.PlayerID, new List<ImpactPacket>() { impactPacket });
         }
 
-        private void ClearImpacts(int playerID)
+        public void ClearImpacts(int playerID)
         {
             if (!this.IsServer)
                 return;
