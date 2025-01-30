@@ -93,14 +93,38 @@ namespace PolyPlane.Net.NetHost
             return 0;
         }
 
-        protected override void SendPacket(ref Packet packet, uint peerID, byte channel)
+        protected override void SendPacket(NetPacket netPacket)
         {
-            if (_peers.TryGetValue(peerID, out Peer peer))
-                // Broadcast and exclude the originating peer.
-                Host.Broadcast(channel, ref packet, peer);
-            else
-                // Otherwise broadcast to all peers.
-                Host.Broadcast(channel, ref packet);
+            var packet = CreatePacket(netPacket);
+            var channel = GetChannel(netPacket);
+            var sendType = GetSendType(netPacket);
+
+            // Send the packet per the required send type.
+            switch (sendType)
+            {
+                case SendType.ToAll:
+
+                    Host.Broadcast(channel, ref packet);
+                 
+                    break;
+
+                case SendType.ToAllExcept:
+                  
+                    if (_peers.TryGetValue(netPacket.PeerID, out Peer excludePeer))
+                        Host.Broadcast(channel, ref packet, excludePeer);
+                    else
+                        // Go ahead and broadcast to all if the peer ID is not found.
+                        Host.Broadcast(channel, ref packet);
+
+                    break;
+
+                case SendType.ToOnly:
+
+                    if (_peers.TryGetValue(netPacket.PeerID, out Peer includePeer))
+                        includePeer.Send(channel, ref packet);
+
+                    break;
+            }
         }
 
         public override Peer? GetPeer(int playerID)

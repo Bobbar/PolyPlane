@@ -11,10 +11,6 @@ namespace PolyPlane.Net
         public PacketTypes Type;
         public GameID ID;
         public long FrameTime;
-
-        /// <summary>
-        /// Not serialized. Used only for peer exclusions during server broadcasts.
-        /// </summary>
         public uint PeerID = uint.MaxValue;
 
         /// <summary>
@@ -55,6 +51,7 @@ namespace PolyPlane.Net
             data.AddByte((byte)Type);
             data.AddGameID(ID);
             data.AddLong(FrameTime);
+            data.AddUInt(PeerID);
         }
 
         public virtual void Deserialize(BitBuffer data)
@@ -62,6 +59,7 @@ namespace PolyPlane.Net
             Type = (PacketTypes)data.ReadByte();
             ID = data.ReadGameID();
             FrameTime = data.ReadLong();
+            PeerID = data.ReadUInt();
         }
     }
 

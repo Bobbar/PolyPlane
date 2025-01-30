@@ -7,6 +7,8 @@ namespace PolyPlane.Net.NetHost
     {
         public Peer Peer;
 
+        public uint PeerID = uint.MaxValue;
+
         private SmoothDouble _rttSmooth = new SmoothDouble(30);
         private const double CONNECT_TIMEOUT = 1000;
 
@@ -44,13 +46,29 @@ namespace PolyPlane.Net.NetHost
             SendPlayerDisconnectPacket(netEvent.Peer.ID);
         }
 
+        public override void HandleReceive(NetPacket netPacket)
+        {
+            base.HandleReceive(netPacket);
+
+            // Set the peer ID sent from the server.
+            // This should be the first packet we receive.
+            if (netPacket.Type == PacketTypes.SetID)
+                PeerID = (uint)netPacket.ID.PlayerID;
+        }
+
         public override ulong PacketLoss()
         {
             return Peer.PacketsLost;
         }
 
-        protected override void SendPacket(ref Packet packet, uint peerID, byte channel)
+        protected override void SendPacket(NetPacket netPacket)
         {
+            // Always add our peer ID.
+            netPacket.PeerID = PeerID;
+
+            var packet = CreatePacket(netPacket);
+            var channel = GetChannel(netPacket);
+
             // Disconnect peer in an invalid state.
             if (Peer.State != PeerState.Connected && Peer.State != PeerState.Connecting)
             {

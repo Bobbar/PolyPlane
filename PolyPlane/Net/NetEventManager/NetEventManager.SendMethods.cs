@@ -145,6 +145,8 @@ namespace PolyPlane.Net
         public void ServerSendSyncResponse(SyncPacket requestPacket)
         {
             var syncResponse = new SyncPacket(requestPacket.ClientTime, isResponse: true);
+            syncResponse.PeerID = requestPacket.PeerID;
+
             Host.EnqueuePacket(syncResponse);
         }
 

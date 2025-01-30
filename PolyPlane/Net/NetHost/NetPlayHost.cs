@@ -87,7 +87,7 @@ namespace PolyPlane.Net.NetHost
         }
 
         public abstract ulong PacketLoss();
-        protected abstract void SendPacket(ref Packet packet, uint peerId, byte channel);
+        protected abstract void SendPacket(NetPacket netPacket);
         public abstract Peer? GetPeer(int playerID);
         public abstract void Disconnect(int playerID);
         public abstract double GetPlayerRTT(int playerID);
@@ -139,10 +139,6 @@ namespace PolyPlane.Net.NetHost
 
                     if (TryParsePacket(ref packet, out NetPacket netPacket))
                     {
-                        // Set the peer ID only if the packet does not need bounced back.
-                        if (ShouldBounceBack(netPacket) == false)
-                            netPacket.PeerID = netEvent.Peer.ID;
-
                         HandleReceive(netPacket);
                     }
 
@@ -161,14 +157,6 @@ namespace PolyPlane.Net.NetHost
                     SendPacket(packet);
                 }
             }
-        }
-
-        private void SendPacket(NetPacket netPacket)
-        {
-            var packet = CreatePacket(netPacket);
-            var channel = GetChannel(netPacket);
-
-            SendPacket(ref packet, netPacket.PeerID, channel);
         }
 
         private bool TryParsePacket(ref Packet packet, out NetPacket netPacket)
@@ -192,22 +180,28 @@ namespace PolyPlane.Net.NetHost
         }
 
         /// <summary>
-        /// True if the specified packet should be bounced back to the client/peer from which it originated.
+        /// Get the send strategy for this packet type.
         /// </summary>
         /// <param name="packet"></param>
         /// <returns></returns>
-        private bool ShouldBounceBack(NetPacket packet)
+        protected SendType GetSendType(NetPacket packet)
         {
             switch (packet.Type)
             {
-                // We want these packet types to bounce back to clients/peers.
-                // For example, with chat messages, we want to know that the message made it to 
-                // the server before displaying it on the originating client.
-                case PacketTypes.ChatMessage or PacketTypes.PlayerEvent or PacketTypes.PlayerReset:
-                    return true;
+                case PacketTypes.PlaneUpdate
+                or PacketTypes.MissileUpdateList
+                or PacketTypes.MissileUpdate
+                or PacketTypes.NewBullet
+                or PacketTypes.NewDecoy
+                or PacketTypes.NewMissile:
+                    return SendType.ToAllExcept;
+
+                case PacketTypes.SyncRequest
+                or PacketTypes.SyncResponse:
+                    return SendType.ToOnly;
 
                 default:
-                    return false;
+                    return SendType.ToAll;
             }
         }
 
