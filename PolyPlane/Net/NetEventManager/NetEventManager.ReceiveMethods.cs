@@ -342,5 +342,72 @@ namespace PolyPlane.Net
                     obj.IsExpired = true;
             }
         }
+
+        private void ClientHandleSyncResponse(SyncPacket syncPacket)
+        {
+            // Compute server time offset.
+            // Remarks: This math was determined by trial and error.
+            // My testing shows that this strategy will keep the 
+            // client & server clocks synced to within less than 6 milliseconds.
+            // So for client/server instances running on the same device,
+            // the server time offset should remain as close to zero as possible.
+            // Not including the frame delay results in a mismatch of about 1 frame (16ms).
+            var now = World.CurrentTimeTicks();
+            var frameDelay = _frameDelaySmooth.Add(TimeSpan.FromMilliseconds(World.LAST_FRAME_TIME).Ticks);
+            var frameDelayHalf = frameDelay / 2d;
+
+            // Difference between now and when we originally sent the request.
+            var initialRTT = now - syncPacket.ClientTime;
+
+            // Fudge the RTT with the frame delay.
+            var fudgedRTT = _rttSmooth.Add(initialRTT - frameDelayHalf);
+
+            // Add the frame delay to the one-way transit delay.
+            var transitOffset = (fudgedRTT / 2d) + frameDelayHalf;
+
+            // Offset the server time by the transit delay and compute the next offset.
+            var serverOffset = (syncPacket.FrameTime + transitOffset) - now;
+
+            // Compute an offset delta.
+            var delta = _offsetDeltaSmooth.Add(_serverTimeOffsetSmooth.Current - serverOffset);
+            var deltaMs = TimeSpan.FromTicks((long)delta).TotalMilliseconds;
+
+            int minAttempts = 3;
+
+            // Do a few more attempts for new clients.
+            if (!_initialOffsetSet)
+                minAttempts = 10;
+
+            // Stop the sync cycle once the deviation between offsets calms down,
+            // or if we make too many attempts to zero in on the true server time.
+            if ((_syncCount > minAttempts && Math.Abs(deltaMs) <= SYNC_MAX_DELTA) || _syncCount >= SYNC_MAX_ATTEMPTS)
+            {
+                var newOffset = _serverTimeOffsetSmooth.Current;
+
+                // Set the new offset if we are confident in the result.
+                if ((_syncCount <= SYNC_MAX_ATTEMPTS && Math.Abs(deltaMs) <= SYNC_MAX_DELTA) || _initialOffsetSet == false)
+                {
+                    World.ServerTimeOffset = newOffset;
+                    _initialOffsetSet = true;
+                }
+
+                _syncingServerTime = false;
+                _syncCount = 0;
+                _frameDelaySmooth.Clear();
+                _rttSmooth.Clear();
+                _serverTimeOffsetSmooth.Clear();
+                _offsetDeltaSmooth.Clear();
+            }
+            else
+            {
+
+                // Accumulate the computed offsets.
+                _serverTimeOffsetSmooth.Add(serverOffset);
+            }
+
+            _syncCount++;
+            _lastSyncTime = now;
+            _receivedFirstSync = true;
+        }
     }
 }

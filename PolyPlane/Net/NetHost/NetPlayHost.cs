@@ -201,8 +201,11 @@ namespace PolyPlane.Net.NetHost
                 case PacketTypes.Impact or PacketTypes.ImpactList:
                     return 5;
 
-                default:
+                case PacketTypes.SyncRequest or PacketTypes.SyncRequest:
                     return 6;
+
+                default:
+                    return 7;
             }
         }
 

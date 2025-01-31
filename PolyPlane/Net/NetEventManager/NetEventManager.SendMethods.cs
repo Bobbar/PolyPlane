@@ -161,6 +161,20 @@ namespace PolyPlane.Net
             Host.EnqueuePacket(gameStatePacket);
         }
 
+        public void ServerSendPeerSyncRequests()
+        {
+            foreach (var peerID in _peersNeedingSync)
+            {
+                var syncReq = new SyncPacket(0, isResponse: false);
+                syncReq.SendType = SendType.ToOnly;
+                syncReq.PeerID = peerID;
+
+                Host.EnqueuePacket(syncReq);
+            }
+
+            _peersNeedingSync.Clear();
+        }
+
         public void SendNewChatPacket(string message, string playerName)
         {
             var chatPacket = new ChatPacket(message.Trim(), playerName);

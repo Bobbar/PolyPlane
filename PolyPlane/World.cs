@@ -12,7 +12,6 @@ namespace PolyPlane
         public static BoundedRange[] WorldBounds = new BoundedRange[2];
         public static BoundedRange[] VeloBounds = new BoundedRange[2];
 
-        private static SmoothDouble _serverTimeOffsetSmooth = new SmoothDouble(30);
         private static FastNoiseLite _turbulenceNoise = new FastNoiseLite();
 
         public static int PHYSICS_SUB_STEPS => _sub_steps;
@@ -232,11 +231,7 @@ namespace PolyPlane
         private static GameID ViewObjectID;
         public static GameObject ViewObject;
 
-        public static double ServerTimeOffset
-        {
-            get { return _serverTimeOffsetSmooth.Current; }
-            set { _serverTimeOffsetSmooth.Add(value); }
-        }
+        public static double ServerTimeOffset = 0;
 
         public const float MAX_TIMEOFDAY = 24f;
         public const float TOD_RATE = 0.02f;

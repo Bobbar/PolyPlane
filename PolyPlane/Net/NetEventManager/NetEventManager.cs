@@ -4,7 +4,6 @@ using PolyPlane.GameObjects.Manager;
 using PolyPlane.Helpers;
 using PolyPlane.Net.NetHost;
 using PolyPlane.Rendering;
-using System.Diagnostics;
 
 namespace PolyPlane.Net
 {
@@ -22,12 +21,19 @@ namespace PolyPlane.Net
         private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
         private SmoothDouble _rttSmooth = new SmoothDouble(10);
         private SmoothDouble _frameDelaySmooth = new SmoothDouble(10);
+        private SmoothDouble _offsetDeltaSmooth = new SmoothDouble(10);
+        private SmoothDouble _serverTimeOffsetSmooth = new SmoothDouble(10);
 
         private Dictionary<int, List<ImpactPacket>> _impacts = new Dictionary<int, List<ImpactPacket>>();
         private List<NetPacket> _deferredPackets = new List<NetPacket>();
+        private HashSet<uint> _peersNeedingSync = new HashSet<uint>();
 
         private bool _netIDIsSet = false;
         private bool _receivedFirstSync = false;
+        private bool _initialOffsetSet = false;
+        private bool _syncingServerTime = true;
+        private int _syncCount = 0;
+        private long _lastSyncTime = 0;
         private long _lastNetTime = 0;
         private long _netFrames = 0;
 
@@ -43,8 +49,13 @@ namespace PolyPlane.Net
 
         private const long MAX_DEFER_AGE = 400; // Max age allowed for deferred packets.
         private const int LIST_PACKET_BATCH_COUNT = 30; // Max list packet count before batching into multiple packets.
-        private const int SYNC_FRAMES = 2; // Clients send sync requests every other net frame.
         private const int GAME_STATE_FRAMES = 4; // Server sends game state updates every 4 net frames.
+        private const int PEER_SYNC_REQ_FRAMES = 10; // Server sends peer sync requests every 10 frames.
+
+        private const int SYNC_FRAMES = 3; // Clients send sync requests every other net frame.
+        private const int SYNC_MAX_ATTEMPTS = 40; // Max number of attempts to find true server time.
+        private const float SYNC_INTERVAL = 15f; // Interval in seconds to start another sync cycle.
+        private const float SYNC_MAX_DELTA = 0.5f; // Server time offset delta must be less than this to accept the current offset.
 
         public NetEventManager(NetPlayHost host, FighterPlane playerPlane)
         {
@@ -98,12 +109,23 @@ namespace PolyPlane.Net
                 if (!IsServer)
                 {
                     if (_netFrames % SYNC_FRAMES == 0)
-                        ClientSendSyncRequest();
+                    {
+                        if (!_syncingServerTime && TimeSpan.FromTicks(now - _lastSyncTime).TotalSeconds > SYNC_INTERVAL)
+                            _syncingServerTime = true;
+
+                        if (_syncingServerTime)
+                            ClientSendSyncRequest();
+                    }
                 }
                 else
                 {
+                    // Send game state to all peers.
                     if (_netFrames % GAME_STATE_FRAMES == 0)
                         ServerSendGameState();
+
+                    // Send sync requests to out-of-sync peers.
+                    if (_netFrames % PEER_SYNC_REQ_FRAMES == 0)
+                        ServerSendPeerSyncRequests();
                 }
 
                 _lastNetTime = World.CurrentTimeTicks();
@@ -117,11 +139,19 @@ namespace PolyPlane.Net
 
             while (Host.PacketReceiveQueue.Count > 0)
             {
-                if (Host.PacketReceiveQueue.TryDequeue(out NetPacket packet))
+                if (Host.PacketReceiveQueue.TryDequeue(out NetPacket netPacket))
                 {
-                    var netPacket = packet;
-                    totalPacketTime += netNow - netPacket.FrameTime;
+                    var delay = netNow - netPacket.FrameTime;
+                    totalPacketTime += delay;
                     numPackets++;
+
+                    // Record IDs for peers who are sending packets from the future.
+                    // Sync requests will be sent later.
+                    if (IsServer)
+                    {
+                        if (delay < 0)
+                            _peersNeedingSync.Add(netPacket.PeerID);
+                    }
 
                     HandleNetPacket(netPacket, dt);
                 }
@@ -389,6 +419,11 @@ namespace PolyPlane.Net
                         // Respond back with the original client time attached.
                         ServerSendSyncResponse(syncRequestPacket);
                     }
+                    else
+                    {
+                       // Server has requested that we run a sync.
+                        _syncingServerTime = true;
+                    }
 
                     break;
 
@@ -399,32 +434,7 @@ namespace PolyPlane.Net
                     {
                         if (!IsServer)
                         {
-                            // Compute server time offset.
-                            // Remarks: This math was determined by trial and error.
-                            // My testing shows that this strategy will keep the 
-                            // client & server clocks synced to within less than 6 milliseconds.
-                            // So for client/server instances running on the same device,
-                            // the server time offset should remain as close to zero as possible.
-                            // Not including the frame delay results in a mismatch of about 1 frame (16ms).
-                            var now = World.CurrentTimeTicks();
-                            var frameDelay = _frameDelaySmooth.Add(TimeSpan.FromMilliseconds(World.LAST_FRAME_TIME).Ticks);
-                            var frameDelayHalf = frameDelay / 2d;
-
-                            // Difference between now and when we originally sent the request.
-                            var initialRTT = now - syncPack.ClientTime;
-
-                            // Fudge the RTT with the frame delay.
-                            var fudgedRTT = _rttSmooth.Add(initialRTT - frameDelayHalf);
-                           
-                            // Add the frame delay to the one-way transit delay.
-                            var transitOffset = (fudgedRTT / 2d) + frameDelayHalf;
-
-                            // Offset the server time by the transit delay and compute the next offset.
-                            var serverOffset = (syncPack.FrameTime + transitOffset) - now;
-
-                            World.ServerTimeOffset = serverOffset;
-
-                            _receivedFirstSync = true;
+                            ClientHandleSyncResponse(syncPack);
                         }
                     }
                     break;
