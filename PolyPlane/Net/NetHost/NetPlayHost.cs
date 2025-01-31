@@ -179,36 +179,6 @@ namespace PolyPlane.Net.NetHost
             }
         }
 
-        /// <summary>
-        /// Get the send strategy for this packet type.
-        /// </summary>
-        /// <param name="packet"></param>
-        /// <returns></returns>
-        protected SendType GetSendType(NetPacket packet)
-        {
-            switch (packet.Type)
-            {
-                case PacketTypes.PlaneUpdate
-                or PacketTypes.MissileUpdateList
-                or PacketTypes.MissileUpdate
-                or PacketTypes.NewBullet
-                or PacketTypes.NewDecoy
-                or PacketTypes.NewMissile:
-
-                    return SendType.ToAllExcept;
-
-                case PacketTypes.SyncRequest
-                or PacketTypes.SyncResponse
-                or PacketTypes.ImpactList:
-
-                    return SendType.ToOnly;
-
-                default:
-
-                    return SendType.ToAll;
-            }
-        }
-
         protected byte GetChannel(NetPacket netpacket)
         {
             switch (netpacket.Type)

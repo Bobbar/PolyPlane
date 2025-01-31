@@ -39,6 +39,9 @@ namespace PolyPlane.Net.NetHost
 
             var spawnPosition = Utilities.FindSafeSpawnPoint();
             var idPacket = new BasicPacket(PacketTypes.SetID, new GameObjects.GameID((int)peer.ID, 0), spawnPosition);
+            idPacket.SendType = SendType.ToOnly;
+            idPacket.PeerID = peer.ID;
+
             SendIDPacket(peer, idPacket);
         }
 
@@ -97,10 +100,9 @@ namespace PolyPlane.Net.NetHost
         {
             var packet = CreatePacket(netPacket);
             var channel = GetChannel(netPacket);
-            var sendType = GetSendType(netPacket);
 
             // Send the packet per the required send type.
-            switch (sendType)
+            switch (netPacket.SendType)
             {
                 case SendType.ToAll:
 

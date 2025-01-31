@@ -278,9 +278,9 @@ namespace PolyPlane.Net
 
                         // Begin streaming out the current game state to the new player.
                         ServerSendOtherPlanes();
-                        ServerSendExistingBullets();
-                        ServerSendExistingMissiles();
-                        ServerSendExistingDecoys();
+                        ServerSendExistingBullets(playerPacket.ID);
+                        ServerSendExistingMissiles(playerPacket.ID);
+                        ServerSendExistingDecoys(playerPacket.ID);
                         ServerSendExistingImpacts(playerPacket.ID);
                         ServerSendGameState();
                     }

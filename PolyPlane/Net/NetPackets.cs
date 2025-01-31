@@ -9,6 +9,7 @@ namespace PolyPlane.Net
     public abstract class NetPacket
     {
         public PacketTypes Type;
+        public SendType SendType;
         public GameID ID;
         public long FrameTime;
         public uint PeerID = uint.MaxValue;
@@ -29,11 +30,18 @@ namespace PolyPlane.Net
         public NetPacket()
         {
             FrameTime = World.CurrentNetTimeTicks();
+            SendType = SendType.ToAll;
         }
 
         public NetPacket(PacketTypes type) : this()
         {
             Type = type;
+        }
+
+        public NetPacket(PacketTypes type, SendType sendType) : this()
+        {
+            Type = type;
+            SendType = sendType;
         }
 
         public NetPacket(GameID id) : this()
@@ -49,6 +57,7 @@ namespace PolyPlane.Net
         public virtual void Serialize(BitBuffer data)
         {
             data.AddByte((byte)Type);
+            data.AddByte((byte)SendType);
             data.AddGameID(ID);
             data.AddLong(FrameTime);
             data.AddUInt(PeerID);
@@ -57,6 +66,7 @@ namespace PolyPlane.Net
         public virtual void Deserialize(BitBuffer data)
         {
             Type = (PacketTypes)data.ReadByte();
+            SendType = (SendType)data.ReadByte();
             ID = data.ReadGameID();
             FrameTime = data.ReadLong();
             PeerID = data.ReadUInt();
@@ -74,7 +84,7 @@ namespace PolyPlane.Net
             this.Deserialize(data);
         }
 
-        public ChatPacket(string message, string playerName) : base(PacketTypes.ChatMessage)
+        public ChatPacket(string message, string playerName) : base(PacketTypes.ChatMessage, SendType.ToAll)
         {
             Message = message;
             PlayerName = playerName;
@@ -101,7 +111,7 @@ namespace PolyPlane.Net
     {
         public string Message;
 
-        public PlayerEventPacket(string message) : base(PacketTypes.PlayerEvent)
+        public PlayerEventPacket(string message) : base(PacketTypes.PlayerEvent, SendType.ToAll)
         {
             Message = message;
         }
@@ -137,7 +147,7 @@ namespace PolyPlane.Net
             this.Deserialize(data);
         }
 
-        public DiscoveryPacket(string ip, string name, int port) : base(PacketTypes.Discovery)
+        public DiscoveryPacket(string ip, string name, int port) : base(PacketTypes.Discovery, SendType.ToAll)
         {
             IP = ip;
             Name = name;
@@ -181,6 +191,8 @@ namespace PolyPlane.Net
                 Type = PacketTypes.SyncResponse;
             else
                 Type = PacketTypes.SyncRequest;
+
+            SendType = SendType.ToOnly;
         }
 
 
@@ -213,7 +225,7 @@ namespace PolyPlane.Net
             this.Deserialize(data);
         }
 
-        public GameStatePacket(float timeOfDay, float timeOfDayDir, bool gunsOnly, bool isPaused, float deltaTime) : base(PacketTypes.GameStateUpdate)
+        public GameStatePacket(float timeOfDay, float timeOfDayDir, bool gunsOnly, bool isPaused, float deltaTime) : base(PacketTypes.GameStateUpdate, SendType.ToAll)
         {
             TimeOfDay = timeOfDay;
             TimeOfDayDir = timeOfDayDir;
@@ -250,14 +262,13 @@ namespace PolyPlane.Net
     {
         public D2DPoint Position;
 
-        public BasicPacket() : base() { }
-        public BasicPacket(PacketTypes type) : base(type) { }
-        public BasicPacket(PacketTypes type, GameID id) : base(type, id) { }
 
         public BasicPacket(BitBuffer data)
         {
             this.Deserialize(data);
         }
+
+        public BasicPacket(PacketTypes type, GameID id) : base(type, id) { }
 
         public BasicPacket(PacketTypes type, GameID id, D2DPoint position) : base(type, id)
         {
