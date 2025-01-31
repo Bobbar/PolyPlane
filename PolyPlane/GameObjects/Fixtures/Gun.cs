@@ -64,17 +64,18 @@ namespace PolyPlane.GameObjects.Fixtures
 
             if (_ownerPlane.NumBullets <= 0)
                 return;
-
-            if (_ownerPlane.IsNetObject)
-                return;
-
-            var bullet = new Bullet(_ownerPlane);
-
-            FireBulletCallback(bullet);
-            _ownerPlane.BulletsFired++;
-            _ownerPlane.NumBullets--;
+         
             _smoke.AddPuff();
             _muzzleFlashTimer.Restart();
+
+            // Don't actually fire a bullet for net planes.
+            if (!_ownerPlane.IsNetObject)
+            {
+                var bullet = new Bullet(_ownerPlane);
+                FireBulletCallback(bullet);
+                _ownerPlane.BulletsFired++;
+                _ownerPlane.NumBullets--;
+            }
         }
     }
 }
