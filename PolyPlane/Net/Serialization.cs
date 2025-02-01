@@ -20,6 +20,8 @@ namespace PolyPlane.Net
     public static class Serialization
     {
         public const bool EnableCompression = true;
+        public static PacketPool PacketPool = new PacketPool();
+
 
         public static byte[] ObjectToByteArray(NetPacket obj)
         {
@@ -53,83 +55,125 @@ namespace PolyPlane.Net
             switch (type)
             {
                 case PacketTypes.PlaneListUpdate:
-                    obj = new PlaneListPacket(data);
+                    //var plu = PacketPool.RentPacket(() => new PlanePacket(data));
+                    //obj = plu;
+
+                    obj = PacketPool.RentPacket(() => new PlaneListPacket(data));
+                    //obj = new PlaneListPacket(data);
                     break;
 
                 case PacketTypes.PlaneUpdate:
-                    obj = new PlanePacket(data);
+                    //obj = new PlanePacket(data);
+                    obj = PacketPool.RentPacket(() => new PlanePacket(data));
+
                     break;
 
                 case PacketTypes.GetOtherPlanes:
-                    obj = new PlayerListPacket(data);
+                    //obj = new PlayerListPacket(data);
+                    obj = PacketPool.RentPacket(() => new PlayerListPacket(data));
+
                     break;
 
                 case PacketTypes.MissileUpdateList or PacketTypes.MissileList:
-                    obj = new MissileListPacket(data);
+                    //obj = new MissileListPacket(data);
+                    obj = PacketPool.RentPacket(() => new MissileListPacket(data));
+
                     break;
 
                 case PacketTypes.Impact:
-                    obj = new ImpactPacket(data);
+                    //obj = new ImpactPacket(data);
+                    obj = PacketPool.RentPacket(() => new ImpactPacket(data));
+
                     break;
 
                 case PacketTypes.NewPlayer:
-                    obj = new NewPlayerPacket(data);
+                    //obj = new NewPlayerPacket(data);
+                    obj = PacketPool.RentPacket(() => new NewPlayerPacket(data));
+
                     break;
 
                 case PacketTypes.NewMissile or PacketTypes.MissileUpdate:
-                    obj = new MissilePacket(data);
+                    //obj = new MissilePacket(data);
+                    obj = PacketPool.RentPacket(() => new MissilePacket(data));
+
                     break;
 
                 case PacketTypes.NewDecoy or PacketTypes.NewBullet:
-                    obj = new GameObjectPacket(data);
+                    //obj = new GameObjectPacket(data);
+                    obj = PacketPool.RentPacket(() => new GameObjectPacket(data));
+
                     break;
 
                 case PacketTypes.SetID or PacketTypes.PlayerDisconnect or PacketTypes.PlayerReset or PacketTypes.KickPlayer:
-                    obj = new BasicPacket(data);
+                    //obj = new BasicPacket(data);
+                    obj = PacketPool.RentPacket(() => new BasicPacket(data));
+
                     break;
 
                 case PacketTypes.ChatMessage:
-                    obj = new ChatPacket(data);
+                    //obj = new ChatPacket(data);
+                    obj = PacketPool.RentPacket(() => new ChatPacket(data));
+
                     break;
 
                 case PacketTypes.ExpiredObjects:
-                    obj = new BasicListPacket(data);
+                    //obj = new BasicListPacket(data);
+                    obj = PacketPool.RentPacket(() => new BasicListPacket(data));
+
                     break;
 
                 case PacketTypes.SyncResponse or PacketTypes.SyncRequest:
-                    obj = new SyncPacket(data);
+                    //obj = new SyncPacket(data);
+                    obj = PacketPool.RentPacket(() => new SyncPacket(data));
+
                     break;
 
                 case PacketTypes.Discovery:
-                    obj = new DiscoveryPacket(data);
+                    //obj = new DiscoveryPacket(data);
+                    obj = PacketPool.RentPacket(() => new DiscoveryPacket(data));
+
                     break;
 
                 case PacketTypes.ImpactList:
-                    obj = new ImpactListPacket(data);
+                    //obj = new ImpactListPacket(data);
+                    obj = PacketPool.RentPacket(() => new ImpactListPacket(data));
+
                     break;
 
                 case PacketTypes.BulletList or PacketTypes.DecoyList:
-                    obj = new GameObjectListPacket(data);
+                    //obj = new GameObjectListPacket(data);
+                    obj = PacketPool.RentPacket(() => new GameObjectListPacket(data));
+
                     break;
 
                 case PacketTypes.PlayerEvent:
-                    obj = new PlayerEventPacket(data);
+                    //obj = new PlayerEventPacket(data);
+                    obj = PacketPool.RentPacket(() => new PlayerEventPacket(data));
+
                     break;
 
                 case PacketTypes.ScoreEvent:
-                    obj = new PlayerScoredPacket(data);
+                    //obj = new PlayerScoredPacket(data);
+                    obj = PacketPool.RentPacket(() => new PlayerScoredPacket(data));
+
                     break;
 
                 case PacketTypes.PlaneStatusList:
-                    obj = new PlaneStatusListPacket(data);
+                    //obj = new PlaneStatusListPacket(data);
+                    obj = PacketPool.RentPacket(() => new PlaneStatusListPacket(data));
+
                     break;
 
                 case PacketTypes.PlaneStatus:
-                    obj = new PlaneStatusPacket(data);
+                    //obj = new PlaneStatusPacket(data);
+                    obj = PacketPool.RentPacket(() => new PlaneStatusPacket(data));
+
                     break;
 
                 case PacketTypes.GameStateUpdate:
-                    obj = new GameStatePacket(data);
+                    //obj = new GameStatePacket(data);
+                    obj = PacketPool.RentPacket(() => new GameStatePacket(data));
+
                     break;
 
             }

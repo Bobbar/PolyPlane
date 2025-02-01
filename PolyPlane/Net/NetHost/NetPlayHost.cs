@@ -11,6 +11,15 @@ namespace PolyPlane.Net.NetHost
         public RingBuffer<NetPacket> PacketSendQueue = new RingBuffer<NetPacket>(512);
         public RingBuffer<NetPacket> PacketReceiveQueue = new RingBuffer<NetPacket>(512);
 
+        public uint PacketsReceived => Host.PacketsReceived;
+        public uint PacketsSent => Host.PacketsSent;
+
+        public uint PacketsReceived2 = 0;
+        public uint PacketsSent2 = 0;
+
+        public uint BytesReceived => Host.BytesReceived;
+        public uint BytesSent => Host.BytesSent;
+
         public Host Host;
         public readonly ushort Port;
         public readonly Address Address;
@@ -140,6 +149,8 @@ namespace PolyPlane.Net.NetHost
                     if (TryParsePacket(ref packet, out NetPacket netPacket))
                     {
                         HandleReceive(netPacket);
+                        PacketsReceived2++;
+
                     }
 
                     packet.Dispose();
@@ -155,6 +166,10 @@ namespace PolyPlane.Net.NetHost
                 if (PacketSendQueue.TryDequeue(out NetPacket packet))
                 {
                     SendPacket(packet);
+
+                    Serialization.PacketPool.ReturnPacket(packet);
+
+                    PacketsSent2++;
                 }
             }
         }

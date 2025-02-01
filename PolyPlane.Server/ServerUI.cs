@@ -38,12 +38,18 @@ namespace PolyPlane.Server
         private SmoothDouble _sentPacketsSmooth = new SmoothDouble(50);
         private SmoothDouble _recPacketsSmooth = new SmoothDouble(50);
 
+        private SmoothDouble _sentPacketsSmooth2 = new SmoothDouble(50);
+        private SmoothDouble _recPacketsSmooth2 = new SmoothDouble(50);
+
         private double _renderFPS = 0;
         private double _lastFrameTime = 0;
         private uint _lastRecBytes = 0;
         private uint _lastSentBytes = 0;
         private uint _lastRecPackets = 0;
         private uint _lastSentPackets = 0;
+
+        private uint _lastRecPackets2 = 0;
+        private uint _lastSentPackets2 = 0;
 
         private string _address;
         private string _serverName;
@@ -574,7 +580,11 @@ namespace PolyPlane.Server
 
             infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
             infoText += $"Packets Rec/s: {Math.Round(_recPacketsSmooth.Current, 2)}\n";
+            infoText += $"Packets Rec2/s: {Math.Round(_recPacketsSmooth2.Current, 2)}\n";
+
             infoText += $"Packets Sent/s: {Math.Round(_sentPacketsSmooth.Current, 2)}\n";
+            infoText += $"Packets Sent2/s: {Math.Round(_sentPacketsSmooth2.Current, 2)}\n";
+
             infoText += $"MB Rec/s: {Math.Round(_recBytesSmooth.Current, 3)}\n";
             infoText += $"MB Sent/s: {Math.Round(_sentBytesSmooth.Current, 3)}\n";
             infoText += $"DT: {Math.Round(World.TargetDT, 4)}\n";
@@ -592,16 +602,25 @@ namespace PolyPlane.Server
 
             _bwTimer.Stop();
             var elap = _bwTimer.Elapsed;
-            var recBytesDiff = _netMan.Host.Host.BytesReceived - _lastRecBytes;
-            var sentBytesDiff = _netMan.Host.Host.BytesSent - _lastSentBytes;
+            var recBytesDiff = _netMan.Host.BytesReceived - _lastRecBytes;
+            var sentBytesDiff = _netMan.Host.BytesSent - _lastSentBytes;
 
-            var recPacketsDiff = _netMan.Host.Host.PacketsReceived - _lastRecPackets;
-            var sentPacketsDiff = _netMan.Host.Host.PacketsSent - _lastSentPackets;
+            var recPacketsDiff = _netMan.Host.PacketsReceived - _lastRecPackets;
+            var sentPacketsDiff = _netMan.Host.PacketsSent - _lastSentPackets;
 
-            _lastRecBytes = _netMan.Host.Host.BytesReceived;
-            _lastSentBytes = _netMan.Host.Host.BytesSent;
-            _lastRecPackets = _netMan.Host.Host.PacketsReceived;
-            _lastSentPackets = _netMan.Host.Host.PacketsSent;
+            var recPacketsDiff2 = _netMan.Host.PacketsReceived2 - _lastRecPackets2;
+            var sentPacketsDiff2 = _netMan.Host.PacketsSent2 - _lastSentPackets2;
+
+            _lastRecBytes = _netMan.Host.BytesReceived;
+            _lastSentBytes = _netMan.Host.BytesSent;
+            _lastRecPackets = _netMan.Host.PacketsReceived;
+            _lastSentPackets = _netMan.Host.PacketsSent;
+
+            _lastRecPackets2 = _netMan.Host.PacketsReceived2;
+            _lastSentPackets2 = _netMan.Host.PacketsSent2;
+
+            _recPacketsSmooth2.Add(recPacketsDiff2 / elap.TotalSeconds);
+            _sentPacketsSmooth2.Add(sentPacketsDiff2 / elap.TotalSeconds);
 
             _recPacketsSmooth.Add(recPacketsDiff / elap.TotalSeconds);
             _sentPacketsSmooth.Add(sentPacketsDiff / elap.TotalSeconds);
