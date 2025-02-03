@@ -158,7 +158,7 @@ namespace PolyPlane.Net
             }
 
             // Enqueue deferred packets to be handled on the next frame.
-            EnqueueDeferredPackets();
+            HandleDeferredPackets(dt);
 
             if (totalPacketTime > 0f && numPackets > 0)
             {
@@ -168,14 +168,21 @@ namespace PolyPlane.Net
         }
 
         /// <summary>
-        /// Adds deferred packets back into the receive queue in order to make another attempt at handling them.
+        /// Attempt to handle deferred packets.
         /// </summary>
-        private void EnqueueDeferredPackets()
+        /// <param name="dt"></param>
+        private void HandleDeferredPackets(float dt)
         {
-            while (_deferredPackets.Count > 0)
+            if (_deferredPackets.Count == 0)
+                return;
+
+            var deferredCopy = new List<NetPacket>(_deferredPackets);
+            _deferredPackets.Clear();
+
+            while (deferredCopy.Count > 0)
             {
-                Host.PacketReceiveQueue.Enqueue(_deferredPackets.First());
-                _deferredPackets.RemoveAt(0);
+                HandleNetPacket(deferredCopy.First(), dt);
+                deferredCopy.RemoveAt(0);
             }
         }
 
@@ -421,7 +428,7 @@ namespace PolyPlane.Net
                     }
                     else
                     {
-                       // Server has requested that we run a sync.
+                        // Server has requested that we run a sync.
                         _syncingServerTime = true;
                     }
 
