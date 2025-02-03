@@ -28,8 +28,8 @@ namespace PolyPlane.Net
                     // Batch the list packet as needed.
                     if (planeListPacket.Planes.Count >= LIST_PACKET_BATCH_COUNT || planeStatusListPacket.Planes.Count >= LIST_PACKET_BATCH_COUNT)
                     {
-                        Host.EnqueuePacket(planeListPacket);
-                        Host.EnqueuePacket(planeStatusListPacket);
+                        Host.EnqueuePacket(planeListPacket, SendType.ToAll);
+                        Host.EnqueuePacket(planeStatusListPacket, SendType.ToAll);
 
                         planeListPacket = new PlaneListPacket();
                         planeStatusListPacket = new PlaneStatusListPacket();
@@ -37,17 +37,15 @@ namespace PolyPlane.Net
                 }
 
                 if (planeListPacket.Planes.Count > 0)
-                    Host.EnqueuePacket(planeListPacket);
+                    Host.EnqueuePacket(planeListPacket, SendType.ToAll);
 
                 if (planeStatusListPacket.Planes.Count > 0)
-                    Host.EnqueuePacket(planeStatusListPacket);
+                    Host.EnqueuePacket(planeStatusListPacket, SendType.ToAll);
             }
             else
             {
                 var planePacket = new PlanePacket(PlayerPlane, PacketTypes.PlaneUpdate);
-                planePacket.SendType = SendType.ToAllExcept;
-
-                Host.EnqueuePacket(planePacket);
+                Host.EnqueuePacket(planePacket, SendType.ToAllExcept, PlayerPlane.PlayerID);
             }
         }
 
@@ -69,16 +67,17 @@ namespace PolyPlane.Net
                     // Batch the list packet as needed.
                     if (missileListPacket.Missiles.Count >= LIST_PACKET_BATCH_COUNT)
                     {
-                        Host.EnqueuePacket(missileListPacket);
+                        Host.EnqueuePacket(missileListPacket, SendType.ToAll);
 
                         missileListPacket = new MissileListPacket(PacketTypes.MissileUpdateList);
                     }
                 }
+
+                if (missileListPacket.Missiles.Count > 0)
+                    Host.EnqueuePacket(missileListPacket, SendType.ToAll);
             }
             else
             {
-                missileListPacket.SendType = SendType.ToAllExcept;
-
                 // Filter out all other missiles except the ones we control.
                 var missiles = _objs.Missiles.Where(m => m.PlayerID == PlayerPlane.PlayerID);
 
@@ -90,16 +89,15 @@ namespace PolyPlane.Net
                     // Batch the list packet as needed.
                     if (missileListPacket.Missiles.Count >= LIST_PACKET_BATCH_COUNT)
                     {
-                        Host.EnqueuePacket(missileListPacket);
+                        Host.EnqueuePacket(missileListPacket, SendType.ToAllExcept, PlayerPlane.PlayerID);
 
                         missileListPacket = new MissileListPacket(PacketTypes.MissileUpdateList);
-                        missileListPacket.SendType = SendType.ToAllExcept;
                     }
                 }
-            }
 
-            if (missileListPacket.Missiles.Count > 0)
-                Host.EnqueuePacket(missileListPacket);
+                if (missileListPacket.Missiles.Count > 0)
+                    Host.EnqueuePacket(missileListPacket, SendType.ToAllExcept, PlayerPlane.PlayerID);
+            }
         }
 
         private void SendExpiredObjects()
@@ -132,13 +130,13 @@ namespace PolyPlane.Net
         public void SendNewBulletPacket(Bullet bullet)
         {
             var bulletPacket = new GameObjectPacket(bullet, PacketTypes.NewBullet);
-            Host.EnqueuePacket(bulletPacket);
+            Host.EnqueuePacket(bulletPacket, SendType.ToAllExcept, bullet.PlayerID);
         }
 
         public void SendNewMissilePacket(GuidedMissile missile)
         {
             var missilePacket = new MissilePacket(missile, PacketTypes.NewMissile);
-            Host.EnqueuePacket(missilePacket);
+            Host.EnqueuePacket(missilePacket, SendType.ToAllExcept, missile.PlayerID);
         }
 
         public void ClientSendSyncRequest()
@@ -152,7 +150,7 @@ namespace PolyPlane.Net
             var syncResponse = new SyncPacket(requestPacket.ClientTime, isResponse: true);
             syncResponse.PeerID = requestPacket.PeerID;
 
-            Host.EnqueuePacket(syncResponse);
+            Host.EnqueuePacket(syncResponse, SendType.ToOnly, requestPacket.PeerID);
         }
 
         public void ServerSendGameState()
@@ -166,10 +164,7 @@ namespace PolyPlane.Net
             foreach (var peerID in _peersNeedingSync)
             {
                 var syncReq = new SyncPacket(0, isResponse: false);
-                syncReq.SendType = SendType.ToOnly;
-                syncReq.PeerID = peerID;
-
-                Host.EnqueuePacket(syncReq);
+                Host.EnqueuePacket(syncReq, SendType.ToOnly, peerID);
             }
 
             _peersNeedingSync.Clear();
@@ -184,7 +179,7 @@ namespace PolyPlane.Net
         public void SendNewDecoyPacket(Decoy decoy)
         {
             var decoyPacket = new GameObjectPacket(decoy, PacketTypes.NewDecoy);
-            Host.EnqueuePacket(decoyPacket);
+            Host.EnqueuePacket(decoyPacket, SendType.ToAllExcept, decoy.PlayerID);
         }
 
         public void ServerSendOtherPlanes()
@@ -211,8 +206,6 @@ namespace PolyPlane.Net
         public void ServerSendExistingBullets(GameID destID)
         {
             var bulletsPacket = new GameObjectListPacket(PacketTypes.BulletList);
-            bulletsPacket.SendType = SendType.ToOnly;
-            bulletsPacket.PeerID = (uint)destID.PlayerID;
 
             foreach (var bullet in _objs.Bullets)
             {
@@ -221,23 +214,19 @@ namespace PolyPlane.Net
                 // Batch the list packet as needed.
                 if (bulletsPacket.Packets.Count >= LIST_PACKET_BATCH_COUNT)
                 {
-                    Host.EnqueuePacket(bulletsPacket);
+                    Host.EnqueuePacket(bulletsPacket, SendType.ToOnly, destID.PlayerID);
 
                     bulletsPacket = new GameObjectListPacket(PacketTypes.BulletList);
-                    bulletsPacket.SendType = SendType.ToOnly;
-                    bulletsPacket.PeerID = (uint)destID.PlayerID;
                 }
             }
 
             if (bulletsPacket.Packets.Count > 0)
-                Host.EnqueuePacket(bulletsPacket);
+                Host.EnqueuePacket(bulletsPacket, SendType.ToOnly, destID.PlayerID);
         }
 
         public void ServerSendExistingMissiles(GameID destID)
         {
             var missileListPacket = new MissileListPacket(PacketTypes.MissileList);
-            missileListPacket.SendType = SendType.ToOnly;
-            missileListPacket.PeerID = (uint)destID.PlayerID;
 
             foreach (var missile in _objs.Missiles)
             {
@@ -246,23 +235,19 @@ namespace PolyPlane.Net
                 // Batch the list packet as needed.
                 if (missileListPacket.Missiles.Count >= LIST_PACKET_BATCH_COUNT)
                 {
-                    Host.EnqueuePacket(missileListPacket);
+                    Host.EnqueuePacket(missileListPacket, SendType.ToOnly, destID.PlayerID);
 
                     missileListPacket = new MissileListPacket(PacketTypes.MissileList);
-                    missileListPacket.SendType = SendType.ToOnly;
-                    missileListPacket.PeerID = (uint)destID.PlayerID;
                 }
             }
 
             if (missileListPacket.Missiles.Count > 0)
-                Host.EnqueuePacket(missileListPacket);
+                Host.EnqueuePacket(missileListPacket, SendType.ToOnly, destID.PlayerID);
         }
 
         public void ServerSendExistingDecoys(GameID destID)
         {
             var decoysPacket = new GameObjectListPacket(PacketTypes.DecoyList);
-            decoysPacket.SendType = SendType.ToOnly;
-            decoysPacket.PeerID = (uint)destID.PlayerID;
 
             foreach (var decoy in _objs.Decoys)
             {
@@ -271,23 +256,19 @@ namespace PolyPlane.Net
                 // Batch the list packet as needed.
                 if (decoysPacket.Packets.Count >= LIST_PACKET_BATCH_COUNT)
                 {
-                    Host.EnqueuePacket(decoysPacket);
+                    Host.EnqueuePacket(decoysPacket, SendType.ToOnly, destID.PlayerID);
 
                     decoysPacket = new GameObjectListPacket(PacketTypes.DecoyList);
-                    decoysPacket.SendType = SendType.ToOnly;
-                    decoysPacket.PeerID = (uint)destID.PlayerID;
                 }
             }
 
             if (decoysPacket.Packets.Count > 0)
-                Host.EnqueuePacket(decoysPacket);
+                Host.EnqueuePacket(decoysPacket, SendType.ToOnly, destID.PlayerID);
         }
 
         public void ServerSendExistingImpacts(GameID destID)
         {
             var impactsPacket = new ImpactListPacket(destID);
-            impactsPacket.SendType = SendType.ToOnly;
-            impactsPacket.PeerID = (uint)destID.PlayerID;
 
             foreach (var impactList in _impacts.Values)
             {
@@ -298,17 +279,15 @@ namespace PolyPlane.Net
                     // Batch the list packet as needed.
                     if (impactsPacket.Impacts.Count >= LIST_PACKET_BATCH_COUNT)
                     {
-                        Host.EnqueuePacket(impactsPacket);
+                        Host.EnqueuePacket(impactsPacket, SendType.ToOnly, destID.PlayerID);
 
                         impactsPacket = new ImpactListPacket(destID);
-                        impactsPacket.SendType = SendType.ToOnly;
-                        impactsPacket.PeerID = (uint)destID.PlayerID;
                     }
                 }
             }
 
             if (impactsPacket.Impacts.Count > 0)
-                Host.EnqueuePacket(impactsPacket);
+                Host.EnqueuePacket(impactsPacket, SendType.ToOnly, destID.PlayerID);
         }
 
         public void SendPlaneReset(FighterPlane plane)

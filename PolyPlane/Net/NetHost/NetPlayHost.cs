@@ -74,8 +74,23 @@ namespace PolyPlane.Net.NetHost
             PacketReceiveQueue.Enqueue(netPacket);
         }
 
-        public virtual void EnqueuePacket(NetPacket packet)
+        public void EnqueuePacket(NetPacket packet, SendType sendType, int peerID)
         {
+            packet.SendType = sendType;
+            packet.PeerID = (uint)peerID;
+            PacketSendQueue.Enqueue(packet);
+        }
+
+        public void EnqueuePacket(NetPacket packet, SendType sendType, uint peerID)
+        {
+            packet.SendType = sendType;
+            packet.PeerID = peerID;
+            PacketSendQueue.Enqueue(packet);
+
+        }
+        public void EnqueuePacket(NetPacket packet, SendType sendType = SendType.ToAll)
+        {
+            packet.SendType = sendType;
             PacketSendQueue.Enqueue(packet);
         }
 

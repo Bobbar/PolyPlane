@@ -546,10 +546,8 @@ namespace PolyPlane.Server
                 playerPlane.IsExpired = true;
 
             var kickPacket = new BasicPacket(PacketTypes.KickPlayer, player.ID);
-            kickPacket.SendType = SendType.ToOnly;
-            kickPacket.PeerID = (uint)player.ID.PlayerID;
 
-            _server.EnqueuePacket(kickPacket);
+            _server.EnqueuePacket(kickPacket, SendType.ToAll);
         }
 
         private string GetInfo()
