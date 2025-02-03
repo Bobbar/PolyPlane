@@ -138,13 +138,12 @@ namespace PolyPlane.Rendering
             {
                 _objs.PlayerKilledEvent += PlayerKilledEvent;
                 _objs.NewPlayerEvent += NewPlayerEvent;
+                _objs.PlayerScoredEvent += PlayerScoredEvent;
             }
             else
             {
                 netMan.PlayerScoredEvent += PlayerScoredEvent;
             }
-
-            _objs.PlayerScoredEvent += PlayerScoredEvent;
 
 
             InitProceduralGenStuff();

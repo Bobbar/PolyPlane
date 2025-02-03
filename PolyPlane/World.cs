@@ -322,7 +322,8 @@ namespace PolyPlane
 
             LAST_FRAME_TIME = elapFrameTimeMs;
 
-            UpdateTOD(dt);
+            if (!IsPaused)
+                UpdateTOD(dt);
         }
 
         private static void UpdateTOD(float dt)

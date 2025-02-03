@@ -447,8 +447,7 @@ namespace PolyPlane.GameObjects
             if (attackPlane == null)
                 return;
 
-            if (!World.IsNetGame)
-                PlayerScoredEvent?.Invoke(this, new PlayerScoredEventArgs(attackPlane, killedPlane, killedPlane.WasHeadshot));
+            PlayerScoredEvent?.Invoke(this, new PlayerScoredEventArgs(attackPlane, killedPlane, killedPlane.WasHeadshot));
 
             if (!World.IsClient)
             {
