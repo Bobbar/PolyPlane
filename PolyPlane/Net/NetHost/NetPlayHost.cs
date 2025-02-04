@@ -17,7 +17,7 @@ namespace PolyPlane.Net.NetHost
         public uint PeersCount => Host.PeersCount;
         
         protected const int MAX_CLIENTS = 30;
-        protected const int MAX_CHANNELS = 8;
+        protected const int MAX_CHANNELS = 9;
         protected const int TIMEOUT = 0;
         protected const int POLL_FPS = 1000;
 
@@ -197,29 +197,32 @@ namespace PolyPlane.Net.NetHost
         {
             switch (netpacket.Type)
             {
-                case PacketTypes.PlaneUpdate or PacketTypes.PlaneListUpdate or PacketTypes.PlaneStatus or PacketTypes.PlaneStatusList:
+                case PacketTypes.PlaneUpdate or PacketTypes.PlaneListUpdate:
                     return 0;
 
-                case PacketTypes.NewMissile or PacketTypes.MissileUpdateList or PacketTypes.MissileUpdate:
+                case PacketTypes.PlaneStatus or PacketTypes.PlaneStatusList:
                     return 1;
 
-                case PacketTypes.NewBullet:
+                case PacketTypes.NewMissile or PacketTypes.MissileUpdateList or PacketTypes.MissileUpdate:
                     return 2;
 
-                case PacketTypes.NewDecoy:
+                case PacketTypes.NewBullet:
                     return 3;
 
-                case PacketTypes.ExpiredObjects:
+                case PacketTypes.NewDecoy:
                     return 4;
 
-                case PacketTypes.Impact or PacketTypes.ImpactList:
+                case PacketTypes.ExpiredObjects:
                     return 5;
 
-                case PacketTypes.SyncRequest or PacketTypes.SyncResponse:
+                case PacketTypes.Impact or PacketTypes.ImpactList:
                     return 6;
 
-                default:
+                case PacketTypes.SyncRequest or PacketTypes.SyncResponse:
                     return 7;
+
+                default:
+                    return 8;
             }
         }
 
