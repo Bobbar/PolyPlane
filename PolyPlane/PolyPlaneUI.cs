@@ -296,6 +296,7 @@ namespace PolyPlane
             World.IsNetGame = false;
             World.IsServer = false;
             World.FreeCameraMode = false;
+            World.ServerTimeOffset = 0;
 
             _killRender = true;
 

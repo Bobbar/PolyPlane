@@ -613,6 +613,9 @@ namespace PolyPlane.Server
 
         private void InitViewPort()
         {
+            if (_objs.Planes.Count == 0)
+                return;
+
             if (_viewPort == null || (_viewPort != null && _viewPort.IsDisposed))
             {
                 _viewPort = new Form();
