@@ -1785,7 +1785,7 @@ namespace PolyPlane.Rendering
                 infoText += $"GunsOnly: {World.GunsOnly.ToString()}\n";
                 infoText += $"MissilesOnRadar: {World.ShowMissilesOnRadar.ToString()}\n";
                 infoText += $"Missile Regen: {World.MissileRegen.ToString()}\n";
-                infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
+                infoText += $"TimeOfDay: {Math.Round(World.TimeOfDay, 1)}\n";
                 infoText += $"TimeOffset: {Math.Round(TimeSpan.FromTicks((long)World.ServerTimeOffset).TotalMilliseconds, 2)}\n";
 
 
