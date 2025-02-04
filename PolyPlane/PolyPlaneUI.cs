@@ -338,6 +338,7 @@ namespace PolyPlane
             }
             else
             {
+                _netMan?.SendPlayerDisconnectPacket(e.ID);
                 ResetGame();
             }
         }

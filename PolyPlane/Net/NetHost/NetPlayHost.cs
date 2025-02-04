@@ -1,5 +1,4 @@
 ﻿using ENet;
-using PolyPlane.GameObjects;
 
 namespace PolyPlane.Net.NetHost
 {
@@ -11,14 +10,20 @@ namespace PolyPlane.Net.NetHost
         public RingBuffer<NetPacket> PacketSendQueue = new RingBuffer<NetPacket>(512);
         public RingBuffer<NetPacket> PacketReceiveQueue = new RingBuffer<NetPacket>(512);
 
-        public Host Host;
-        public readonly ushort Port;
-        public readonly Address Address;
-
+        public uint BytesReceived => Host.BytesReceived;
+        public uint BytesSent => Host.BytesSent;
+        public uint PacketsSent => Host.PacketsSent;
+        public uint PacketsReceived => Host.PacketsReceived;
+        public uint PeersCount => Host.PeersCount;
+        
         protected const int MAX_CLIENTS = 30;
         protected const int MAX_CHANNELS = 8;
         protected const int TIMEOUT = 0;
         protected const int POLL_FPS = 1000;
+
+        protected Host Host;
+        protected readonly ushort Port;
+        protected readonly Address Address;
 
         private Thread _pollThread;
         private FPSLimiter _pollLimiter = new FPSLimiter();
@@ -94,12 +99,6 @@ namespace PolyPlane.Net.NetHost
             PacketSendQueue.Enqueue(packet);
         }
 
-        public void SendPlayerDisconnectPacket(uint playerID)
-        {
-            var packet = new BasicPacket(PacketTypes.PlayerDisconnect, new GameID(playerID));
-            EnqueuePacket(packet);
-            Host.Flush();
-        }
 
         public abstract ulong PacketLoss();
         protected abstract void SendPacket(NetPacket netPacket);

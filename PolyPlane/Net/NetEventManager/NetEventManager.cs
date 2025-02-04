@@ -471,7 +471,7 @@ namespace PolyPlane.Net
                     {
                         if (kickPacket.ID.Equals(PlayerPlane.ID))
                         {
-                            Host.SendPlayerDisconnectPacket((uint)kickPacket.ID.PlayerID);
+                            SendPlayerDisconnectPacket((uint)kickPacket.ID.PlayerID);
                             Host.Disconnect(kickPacket.ID.PlayerID);
                         }
                     }

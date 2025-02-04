@@ -28,25 +28,6 @@ namespace PolyPlane.Net.NetHost
             WaitForConnect();
         }
 
-        public override void HandleConnect(ref Event netEvent)
-        {
-            base.HandleConnect(ref netEvent);
-        }
-
-        public override void HandleDisconnect(ref Event netEvent)
-        {
-            base.HandleDisconnect(ref netEvent);
-
-            SendPlayerDisconnectPacket(netEvent.Peer.ID);
-        }
-
-        public override void HandleTimeout(ref Event netEvent)
-        {
-            base.HandleTimeout(ref netEvent);
-
-            SendPlayerDisconnectPacket(netEvent.Peer.ID);
-        }
-
         public override void HandleReceive(NetPacket netPacket)
         {
             base.HandleReceive(netPacket);

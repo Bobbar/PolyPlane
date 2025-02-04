@@ -314,5 +314,11 @@ namespace PolyPlane.Net
         {
             SendNewDecoyPacket(decoy);
         }
+
+        public void SendPlayerDisconnectPacket(uint playerID)
+        {
+            var packet = new BasicPacket(PacketTypes.PlayerDisconnect, new GameID(playerID));
+            Host.EnqueuePacket(packet);
+        }
     }
 }

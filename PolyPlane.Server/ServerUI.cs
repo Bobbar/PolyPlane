@@ -150,6 +150,8 @@ namespace PolyPlane.Server
 
         private void PlayerDisconnected(int playerID)
         {
+            _netMan.SendPlayerDisconnectPacket((uint)playerID);
+
             var netPlayer = _currentPlayers.Where(p => p.ID.PlayerID == playerID).FirstOrDefault();
             if (netPlayer != null)
             {
@@ -560,7 +562,7 @@ namespace PolyPlane.Server
             var numObj = _objs.TotalObjects;
             infoText += $"Num Objects: {numObj}\n";
             infoText += $"Planes: {_objs.Planes.Count}\n";
-            infoText += $"Clients: {_server.Host.PeersCount}\n";
+            infoText += $"Clients: {_server.PeersCount}\n";
 
             infoText += $"FPS: {Math.Round(_fpsSmooth.Add(_renderFPS), 0)}\n";
             infoText += $"Update ms: {Math.Round(_updateTimeSmooth.Current, 2)}\n";
@@ -590,16 +592,16 @@ namespace PolyPlane.Server
 
             _bwTimer.Stop();
             var elap = _bwTimer.Elapsed;
-            var recBytesDiff = _netMan.Host.Host.BytesReceived - _lastRecBytes;
-            var sentBytesDiff = _netMan.Host.Host.BytesSent - _lastSentBytes;
+            var recBytesDiff = _netMan.Host.BytesReceived - _lastRecBytes;
+            var sentBytesDiff = _netMan.Host.BytesSent - _lastSentBytes;
 
-            var recPacketsDiff = _netMan.Host.Host.PacketsReceived - _lastRecPackets;
-            var sentPacketsDiff = _netMan.Host.Host.PacketsSent - _lastSentPackets;
+            var recPacketsDiff = _netMan.Host.PacketsReceived - _lastRecPackets;
+            var sentPacketsDiff = _netMan.Host.PacketsSent - _lastSentPackets;
 
-            _lastRecBytes = _netMan.Host.Host.BytesReceived;
-            _lastSentBytes = _netMan.Host.Host.BytesSent;
-            _lastRecPackets = _netMan.Host.Host.PacketsReceived;
-            _lastSentPackets = _netMan.Host.Host.PacketsSent;
+            _lastRecBytes = _netMan.Host.BytesReceived;
+            _lastSentBytes = _netMan.Host.BytesSent;
+            _lastRecPackets = _netMan.Host.PacketsReceived;
+            _lastSentPackets = _netMan.Host.PacketsSent;
 
             _recPacketsSmooth.Add(recPacketsDiff / elap.TotalSeconds);
             _sentPacketsSmooth.Add(sentPacketsDiff / elap.TotalSeconds);
