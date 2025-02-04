@@ -314,12 +314,12 @@ namespace PolyPlane.Net
                         }
 
                         // Begin streaming out the current game state to the new player.
+                        ServerSendGameState();
                         ServerSendOtherPlanes();
                         ServerSendExistingBullets(playerPacket.ID);
                         ServerSendExistingMissiles(playerPacket.ID);
                         ServerSendExistingDecoys(playerPacket.ID);
                         ServerSendExistingImpacts(playerPacket.ID);
-                        ServerSendGameState();
                     }
 
                     PlayerJoined?.Invoke(this, playerPacket.ID.PlayerID);
