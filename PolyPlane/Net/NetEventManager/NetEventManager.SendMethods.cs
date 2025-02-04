@@ -130,13 +130,31 @@ namespace PolyPlane.Net
         public void SendNewBulletPacket(Bullet bullet)
         {
             var bulletPacket = new GameObjectPacket(bullet, PacketTypes.NewBullet);
-            Host.EnqueuePacket(bulletPacket, SendType.ToAllExcept, bullet.PlayerID);
+
+            if (IsServer)
+                Host.EnqueuePacket(bulletPacket);
+            else
+                Host.EnqueuePacket(bulletPacket, SendType.ToAllExcept, bullet.PlayerID);
         }
 
         public void SendNewMissilePacket(GuidedMissile missile)
         {
             var missilePacket = new MissilePacket(missile, PacketTypes.NewMissile);
-            Host.EnqueuePacket(missilePacket, SendType.ToAllExcept, missile.PlayerID);
+
+            if (IsServer)
+                Host.EnqueuePacket(missilePacket);
+            else
+                Host.EnqueuePacket(missilePacket, SendType.ToAllExcept, missile.PlayerID);
+        }
+
+        public void SendNewDecoyPacket(Decoy decoy)
+        {
+            var decoyPacket = new GameObjectPacket(decoy, PacketTypes.NewDecoy);
+
+            if (IsServer)
+                Host.EnqueuePacket(decoyPacket);
+            else
+                Host.EnqueuePacket(decoyPacket, SendType.ToAllExcept, decoy.PlayerID);
         }
 
         public void ClientSendSyncRequest()
@@ -174,12 +192,6 @@ namespace PolyPlane.Net
         {
             var chatPacket = new ChatPacket(message.Trim(), playerName);
             Host.EnqueuePacket(chatPacket);
-        }
-
-        public void SendNewDecoyPacket(Decoy decoy)
-        {
-            var decoyPacket = new GameObjectPacket(decoy, PacketTypes.NewDecoy);
-            Host.EnqueuePacket(decoyPacket, SendType.ToAllExcept, decoy.PlayerID);
         }
 
         public void ServerSendOtherPlanes()
@@ -308,11 +320,6 @@ namespace PolyPlane.Net
             SaveImpact(impactPacket);
 
             Host.EnqueuePacket(impactPacket);
-        }
-
-        public void SendNewDecoy(Decoy decoy)
-        {
-            SendNewDecoyPacket(decoy);
         }
 
         public void SendPlayerDisconnectPacket(uint playerID)

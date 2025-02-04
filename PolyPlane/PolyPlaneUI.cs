@@ -786,7 +786,7 @@ namespace PolyPlane
             _objs.EnqueueDecoy(decoy);
 
             if (World.IsNetGame)
-                _netMan.SendNewDecoy(decoy);
+                _netMan.SendNewDecoyPacket(decoy);
         }
 
         private void PauseGame()

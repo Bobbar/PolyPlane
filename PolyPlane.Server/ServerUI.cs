@@ -427,7 +427,7 @@ namespace PolyPlane.Server
         private void DropDecoy(Decoy decoy)
         {
             _objs.EnqueueDecoy(decoy);
-            _netMan.SendNewDecoy(decoy);
+            _netMan.SendNewDecoyPacket(decoy);
         }
 
         private FighterPlane GetAIPlane(AIPersonality? personality = null)
