@@ -205,7 +205,7 @@ namespace PolyPlane.Helpers
             return groundPos;
         }
 
-        public static D2DPoint GroundIntersectionPoint(GameObject obj)
+        public static D2DPoint GroundCollisionPoint(GameObject obj)
         {
             const float GROUND_LINE_LEN = 50000f;
             const float Y_OFFSET = 0f;
@@ -213,8 +213,14 @@ namespace PolyPlane.Helpers
             var groundLineA = new D2DPoint(obj.Position.X - GROUND_LINE_LEN, 0f);
             var groundLineB = new D2DPoint(obj.Position.X + GROUND_LINE_LEN, 0f);
 
+            // Intersect current and previous positions.
             var intersectVector = obj.Position + (obj.Velocity * World.CurrentDT);
-            var groundPos = IntersectionPoint(obj.Position, intersectVector, groundLineA, groundLineB);
+            var intersectVectorPrev = obj.Position - (obj.Velocity * World.CurrentDT);
+
+            var groundPos = D2DPoint.Zero;
+
+            if (!CollisionHelpers.IsIntersecting(obj.Position, intersectVector, groundLineA, groundLineB, out groundPos))
+                CollisionHelpers.IsIntersecting(obj.Position, intersectVectorPrev, groundLineA, groundLineB, out groundPos);
 
             return groundPos;
         }
