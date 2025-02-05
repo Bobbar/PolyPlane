@@ -128,6 +128,17 @@ namespace PolyPlane
         private void AIPlaneCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             IsAI = AIPlaneCheckBox.Checked;
+
+            if (IsAI)
+            {
+                PlayerNameTextBox.Text = "(BOT) " + Utilities.GetRandomName();
+                PlayerNameTextBox.ReadOnly = true;
+            }
+            else
+            {
+                PlayerNameTextBox.Text = "Player";
+                PlayerNameTextBox.ReadOnly = false;
+            }
         }
 
         private void ServerListBox_SelectedValueChanged(object sender, EventArgs e)
