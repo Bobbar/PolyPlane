@@ -346,33 +346,27 @@ namespace PolyPlane.Net
         private void ClientHandleSyncResponse(SyncPacket syncPacket)
         {
             // Compute server time offset.
-            // Remarks: This math was determined by trial and error.
-            // My testing shows that this strategy will keep the 
-            // client & server clocks synced to within less than 6 milliseconds.
-            // So for client/server instances running on the same device,
-            // the server time offset should remain as close to zero as possible.
-            // Not including the frame delay results in a mismatch of about 1 frame (16ms).
-            var now = World.CurrentTimeTicks();
-            var frameDelay = _frameDelaySmooth.Add(TimeSpan.FromMilliseconds(World.LAST_FRAME_TIME).Ticks);
-            var frameDelayHalf = frameDelay / 2d;
+            // Loosely based off of the NTP algo.
+            // https://en.wikipedia.org/wiki/Network_Time_Protocol
 
-            // Difference between now and when we originally sent the request.
-            var initialRTT = now - syncPacket.ClientTime;
+            var t0 = syncPacket.ClientTime;
+            var t1 = syncPacket.ServerTime;
+            var t2 = syncPacket.FrameTime;
+            var t3 = World.CurrentTimeTicks();
 
-            // Fudge the RTT with the frame delay.
-            var fudgedRTT = _rttSmooth.Add(initialRTT - frameDelayHalf);
+            // Compute the time difference and smooth it.
+            var theta = ((t1 - t0) + (t2 - t3)) / 2d;
+            var thetaSmooth = _thetaSmooth.Add(theta);
 
-            // Add the frame delay to the one-way transit delay.
-            var transitOffset = (fudgedRTT / 2d) + frameDelayHalf;
-
-            // Offset the server time by the transit delay and compute the next offset.
-            var serverOffset = (syncPacket.FrameTime + transitOffset) - now;
+            // Add the server frame delay to the offset.
+            var serverFrameTimeTicks = TimeSpan.FromMilliseconds(World.SERVER_FRAME_TIME).Ticks;
+            var serverOffset = thetaSmooth + serverFrameTimeTicks;
 
             // Compute an offset delta.
-            var delta = _offsetDeltaSmooth.Add(_serverTimeOffsetSmooth.Current - serverOffset);
-            var deltaMs = TimeSpan.FromTicks((long)delta).TotalMilliseconds;
+            var offsetDelta = _offsetDeltaSmooth.Add(_serverTimeOffsetSmooth.Current - serverOffset);
+            var offsetDeltaMs = TimeSpan.FromTicks((long)offsetDelta).TotalMilliseconds;
 
-            int minAttempts = 3;
+            int minAttempts = 5;
 
             // Do a few more attempts for new clients.
             if (!_initialOffsetSet)
@@ -380,12 +374,12 @@ namespace PolyPlane.Net
 
             // Stop the sync cycle once the deviation between offsets calms down,
             // or if we make too many attempts to zero in on the true server time.
-            if ((_syncCount > minAttempts && Math.Abs(deltaMs) <= SYNC_MAX_DELTA) || _syncCount >= SYNC_MAX_ATTEMPTS)
+            if ((_syncCount > minAttempts && Math.Abs(offsetDeltaMs) <= SYNC_MAX_DELTA) || _syncCount >= SYNC_MAX_ATTEMPTS)
             {
                 var newOffset = _serverTimeOffsetSmooth.Current;
 
                 // Set the new offset if we are confident in the result.
-                if ((_syncCount <= SYNC_MAX_ATTEMPTS && Math.Abs(deltaMs) <= SYNC_MAX_DELTA) || _initialOffsetSet == false)
+                if ((_syncCount <= SYNC_MAX_ATTEMPTS && Math.Abs(offsetDeltaMs) <= SYNC_MAX_DELTA) || _initialOffsetSet == false)
                 {
                     World.ServerTimeOffset = newOffset;
                     _initialOffsetSet = true;
@@ -393,20 +387,18 @@ namespace PolyPlane.Net
 
                 _syncingServerTime = false;
                 _syncCount = 0;
-                _frameDelaySmooth.Clear();
-                _rttSmooth.Clear();
                 _serverTimeOffsetSmooth.Clear();
                 _offsetDeltaSmooth.Clear();
+                _thetaSmooth.Clear();
             }
             else
             {
-
                 // Accumulate the computed offsets.
                 _serverTimeOffsetSmooth.Add(serverOffset);
             }
 
             _syncCount++;
-            _lastSyncTime = now;
+            _lastSyncTime = t3;
             _receivedFirstSync = true;
         }
     }

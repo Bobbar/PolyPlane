@@ -92,6 +92,10 @@ namespace PolyPlane.Net.NetHost
 
         protected override void SendPacket(NetPacket netPacket)
         {
+            // Make sure sync resposes have the most current time possible.
+            if (netPacket.Type == PacketTypes.SyncResponse)
+                netPacket.FrameTime = World.CurrentNetTimeTicks();
+
             var packet = CreatePacket(netPacket);
             var channel = GetChannel(netPacket);
 

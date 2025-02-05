@@ -19,10 +19,9 @@ namespace PolyPlane.Net
 
         private GameObjectManager _objs = World.ObjectManager;
         private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
-        private SmoothDouble _rttSmooth = new SmoothDouble(10);
-        private SmoothDouble _frameDelaySmooth = new SmoothDouble(10);
         private SmoothDouble _offsetDeltaSmooth = new SmoothDouble(10);
         private SmoothDouble _serverTimeOffsetSmooth = new SmoothDouble(10);
+        private SmoothDouble _thetaSmooth = new SmoothDouble(10);
 
         private Dictionary<int, List<ImpactPacket>> _impacts = new Dictionary<int, List<ImpactPacket>>();
         private List<NetPacket> _deferredPackets = new List<NetPacket>();

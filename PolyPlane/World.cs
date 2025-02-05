@@ -37,7 +37,7 @@ namespace PolyPlane
         public static float TARGET_FRAME_TIME = 16.6f;
         public static readonly float TARGET_FRAME_TIME_NET = TARGET_FRAME_TIME * 2f;
         public const float DEFAULT_FRAME_TIME = 1000f / 60f;
-
+        public const double SERVER_FRAME_TIME = 1000d / NET_SERVER_FPS;
         public static float CurrentDT = TargetDT;
 
         public static float TargetDT

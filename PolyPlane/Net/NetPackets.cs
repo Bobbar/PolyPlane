@@ -177,6 +177,7 @@ namespace PolyPlane.Net
     public class SyncPacket : NetPacket
     {
         public long ClientTime;
+        public long ServerTime;
 
         public SyncPacket(BitBuffer data)
         {
@@ -201,6 +202,7 @@ namespace PolyPlane.Net
             base.Serialize(data);
 
             data.AddLong(ClientTime);
+            data.AddLong(ServerTime);
         }
 
         public override void Deserialize(BitBuffer data)
@@ -208,6 +210,7 @@ namespace PolyPlane.Net
             base.Deserialize(data);
 
             ClientTime = data.ReadLong();
+            ServerTime = data.ReadLong();
         }
     }
 
