@@ -155,6 +155,15 @@ namespace PolyPlane.Server
             var netPlayer = _currentPlayers.Where(p => p.ID.PlayerID == playerID).FirstOrDefault();
             if (netPlayer != null)
             {
+                EnqueueAction(() =>
+                {
+                    var plane = _objs.GetPlaneByPlayerID(playerID);
+
+                    if (plane != null)
+                        plane.IsExpired = true;
+
+                });
+
                 _currentPlayers.Remove(netPlayer);
                 AddNewEventMessage($"'{netPlayer.Name}' has left.");
                 _netMan.ClearImpacts(playerID);
