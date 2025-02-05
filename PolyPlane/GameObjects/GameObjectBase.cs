@@ -330,7 +330,7 @@ namespace PolyPlane.GameObjects
             DoUpdate(dt);
 
             UpdateTimers(dt);
-            UpdateAllAttachments(dt);
+            UpdateAttachments(dt);
         }
 
         private void AdvancePositionAndRotation(float dt)
@@ -367,6 +367,9 @@ namespace PolyPlane.GameObjects
             {
                 var now = World.CurrentNetTimeTicks();
                 InterpBuffer.InterpolateState(now);
+
+                // Update physics attachments (like wings) after interpolating a new state.
+                UpdatePhysicsAttachments(0f);
             }
             else
             {
