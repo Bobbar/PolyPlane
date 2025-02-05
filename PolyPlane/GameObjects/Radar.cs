@@ -125,7 +125,13 @@ namespace PolyPlane.GameObjects
                     if (plane.IsDisabled)
                         gfx.DrawEllipse(new D2DEllipse(p.RadarPos, new D2DSize(4f, 4f)), pColor);
                     else
+                    {
+                        // Draw direction line.
+                        gfx.DrawLine(p.RadarPos, p.RadarPos + Utilities.AngleToVectorDegrees(p.Obj.Velocity.Angle(), 7f), pColor);
+
                         gfx.FillRectangle(new D2DRect(p.RadarPos, new D2DSize(6f, 6f)), pColor);
+                    }
+
                 }
 
                 if (World.ShowMissilesOnRadar)
@@ -277,6 +283,7 @@ namespace PolyPlane.GameObjects
 
             if (HostPlane.IsDisabled)
             {
+                _aimedAtPingObj = null;
                 ClearLock();
                 return;
             }
