@@ -21,8 +21,9 @@ namespace PolyPlane.GameObjects.Guidance
         public override float GetGuidanceDirection(float dt)
         {
             // Tweakables
-            const float ROT_MOD_TIME = 5f; // Impact time to begin increasing rotation rate. (Get more aggro the closer we get)
-            const float ROT_MOD_AMT = 1.2f; // Max amount to increase rot rate per above time.
+            const float ROT_MOD_TIME = 10f; // Impact time to begin increasing rotation rate. (Get more aggro the closer we get)
+            const float ROT_MOD_AMT = 0.8f; // Max amount to increase rot rate per above time.
+            const float ROT_AMT_FACTOR = 1.2f; // Effects sensitivity and how much rotation is computed. (Higher value == more rotatation for a given aim direction)
             const float IMPACT_POINT_DELTA_THRESH = 10f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
             const float MIN_CLOSE_RATE = 0.05f; // Min closing rate required to aim at predicted impact point.
 
@@ -84,7 +85,7 @@ namespace PolyPlane.GameObjects.Guidance
 
             // Compute rotation amount.
             var veloNorm = D2DPoint.Normalize(this.Missile.Velocity);
-            var rotAmt = Utilities.RadsToDegrees(aimDirection.Cross(veloNorm));
+            var rotAmt = Utilities.RadsToDegrees(aimDirection.Cross(veloNorm * ROT_AMT_FACTOR));
 
             // Increase rotation rate modifier as we approach the target.
             var rotMod = 1f;

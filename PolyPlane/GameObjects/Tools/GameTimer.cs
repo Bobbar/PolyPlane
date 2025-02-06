@@ -21,6 +21,8 @@
         public bool AutoRestart { get; set; } = false;
         public float Value => _current;
 
+        public float Position => Math.Clamp(_current / _interval, 0f, 1f);
+
         public Action StartCallback { get; set; }
         public Action CoolDownEndCallback { get; set; }
         public Action TriggerCallback { get; set; }

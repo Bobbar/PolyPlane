@@ -45,15 +45,17 @@ namespace PolyPlane.GameObjects
 
         public bool IsActivated = false;
 
-        private readonly float THURST_VECTOR_AMT = 1f;
-        private readonly float LIFESPAN = 100f;
-        private readonly float BURN_RATE = 0.85f;
-        private readonly float THRUST = 2500f;
-        private readonly float FUEL = 10f;
+        private const float THURST_VECTOR_AMT = 1f;
+        private const float LIFESPAN = 100f;
+        private const float BURN_RATE = 0.85f;
+        private const float THRUST = 2500f;
+        private const float FUEL = 10f;
+        private const float DEFLECTION_RATE = 45f;
 
         private float _currentFuel = 0f;
         private float _gForce = 0f;
         private float _gForcePeak = 0f;
+        private float _initRotation = 0f;
         private float _guideRotation = 0f;
 
         private RenderPoly FlamePoly;
@@ -71,6 +73,7 @@ namespace PolyPlane.GameObjects
         private FixturePoint _motorCenterMass;
         private FixturePoint _flamePos;
         private GameTimer _igniteCooldown;
+        private GameTimer _easeGuidanceTimer;
 
         private const float LEN = 7f;
 
@@ -151,6 +154,8 @@ namespace PolyPlane.GameObjects
             this.RenderScale = 0.9f;
             this.RenderOrder = 2;
 
+            _initRotation = this.Rotation;
+
             _centerOfThrust = AddAttachment(new FixturePoint(this, new D2DPoint(-21, 0)), true);
             _warheadCenterMass = AddAttachment(new FixturePoint(this, new D2DPoint(12f, 0)), true);
             _motorCenterMass = AddAttachment(new FixturePoint(this, new D2DPoint(-13f, 0)), true);
@@ -161,10 +166,14 @@ namespace PolyPlane.GameObjects
 
             InitWings();
 
+            _easeGuidanceTimer = AddTimer(3f);
+
             _igniteCooldown = AddTimer(1f);
 
             _igniteCooldown.TriggerCallback = () =>
             {
+                _easeGuidanceTimer.Restart();
+
                 IsActivated = true;
                 FlameOn = true;
 
@@ -193,7 +202,7 @@ namespace PolyPlane.GameObjects
                 MinVelo = minVelo,
                 ParasiticDrag = 0.7f,
                 DragFactor = 0.8f,
-                DeflectionRate = 45f,
+                DeflectionRate = DEFLECTION_RATE,
                 MaxAOA = 40f
             });
 
@@ -254,6 +263,13 @@ namespace PolyPlane.GameObjects
 
                 const float TAIL_AUTH = 1f;
                 const float NOSE_AUTH = 0f;
+
+                // Hold initial rotation until activated.
+                // Otherwise ease in the guidance rotation.
+                if (!this.IsActivated)
+                    _guideRotation = _initRotation;
+                else
+                    _guideRotation = Utilities.LerpAngle(_initRotation, _guideRotation, _easeGuidanceTimer.Position);
 
                 // Compute deflection.
                 var nextDeflect = GetDeflectionAmount(_guideRotation);
