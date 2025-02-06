@@ -51,6 +51,7 @@ namespace PolyPlane
         private FPSLimiter _fpsLimiter = new FPSLimiter();
         private SelectObjectUI? _selectObjectUI = null;
         private ConcurrentQueue<Action> _actionQueue = new ConcurrentQueue<Action>();
+        private bool _hasLaunchOptions = false;
 
         public PolyPlaneUI()
         {
@@ -62,6 +63,9 @@ namespace PolyPlane
             this.LostFocus += PolyPlaneUI_LostFocus;
             this.Disposed += PolyPlaneUI_Disposed;
             this.MouseWheel += PolyPlaneUI_MouseWheel;
+
+            if (World.LaunchOptions != null)
+                _hasLaunchOptions = true;
         }
 
         /// <summary>
@@ -217,60 +221,67 @@ namespace PolyPlane
                 {
                     case DialogResult.OK:
                         // Net game.
-                        World.IsNetGame = true;
-                        World.IsServer = false;
 
-                        _playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
-                        World.ViewObject = _playerPlane;
-                        _objs.AddPlane(_playerPlane);
 
-                        _client = new ClientNetHost(config.Port, config.ServerIPAddress);
-                        _netMan = new NetEventManager(_client, _playerPlane);
-                        _collisions = new CollisionManager(_netMan);
+                        DoNetGameStart(config.Port, config.ServerIPAddress, config.PlaneColor, config.IsAI, config.PlayerName);
 
-                        _netMan.ImpactEvent += HandleNewImpact;
-                        _netMan.PlayerIDReceived += NetMan_PlayerIDReceived;
-                        _netMan.PlayerDisconnected += NetMan_PlayerDisconnected;
-                        _netMan.PlayerKicked += NetMan_PlayerKicked;
-                        _netMan.PlayerRespawned += NetMan_PlayerRespawned;
-                        _netMan.PlayerEventMessage += NetMan_PlayerEventMessage;
-                        _netMan.PlayerJoined += NetMan_PlayerJoined;
+                        //World.IsNetGame = true;
+                        //World.IsServer = false;
 
-                        _objs.PlayerKilledEvent += Objs_PlayerKilledEvent;
+                        //_playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
+                        //World.ViewObject = _playerPlane;
+                        //_objs.AddPlane(_playerPlane);
 
-                        _client.PeerTimeoutEvent += Client_PeerTimeoutEvent;
-                        _client.PeerDisconnectedEvent += Client_PeerDisconnectedEvent;
+                        //_client = new ClientNetHost(config.Port, config.ServerIPAddress);
+                        //_netMan = new NetEventManager(_client, _playerPlane);
+                        //_collisions = new CollisionManager(_netMan);
 
-                        _inStartup = false;
+                        //_netMan.ImpactEvent += HandleNewImpact;
+                        //_netMan.PlayerIDReceived += NetMan_PlayerIDReceived;
+                        //_netMan.PlayerDisconnected += NetMan_PlayerDisconnected;
+                        //_netMan.PlayerKicked += NetMan_PlayerKicked;
+                        //_netMan.PlayerRespawned += NetMan_PlayerRespawned;
+                        //_netMan.PlayerEventMessage += NetMan_PlayerEventMessage;
+                        //_netMan.PlayerJoined += NetMan_PlayerJoined;
 
-                        InitRenderer(_netMan);
+                        //_objs.PlayerKilledEvent += Objs_PlayerKilledEvent;
 
-                        _client.Start();
-                       
-                        StartGameThread();
-                        ResumeGame();
+                        //_client.PeerTimeoutEvent += Client_PeerTimeoutEvent;
+                        //_client.PeerDisconnectedEvent += Client_PeerDisconnectedEvent;
 
-                        _render?.ClearHudMessage();
+                        //_inStartup = false;
+
+                        //InitRenderer(_netMan);
+
+                        //_client.Start();
+
+                        //StartGameThread();
+                        //ResumeGame();
+
+                        //_render?.ClearHudMessage();
 
                         result = true;
                         break;
 
                     case DialogResult.Cancel:
                         // Solo game.
-                        World.IsNetGame = false;
-                        World.IsServer = false;
 
-                        _collisions = new CollisionManager();
+                        DoLocalGameStart(config.PlaneColor, config.IsAI, config.PlayerName);
 
-                        _playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
-                        World.ViewObject = _playerPlane;
-                        _objs.AddPlane(_playerPlane);
+                        //World.IsNetGame = false;
+                        //World.IsServer = false;
 
-                        InitRenderer(null);
-                        StartGameThread();
-                        ResumeGame();
+                        //_collisions = new CollisionManager();
 
-                        _render?.ClearHudMessage();
+                        //_playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
+                        //World.ViewObject = _playerPlane;
+                        //_objs.AddPlane(_playerPlane);
+
+                        //InitRenderer(null);
+                        //StartGameThread();
+                        //ResumeGame();
+
+                        //_render?.ClearHudMessage();
 
                         result = true;
 
@@ -287,6 +298,70 @@ namespace PolyPlane
 
             return result;
         }
+
+        private void DoNetGameStart(ushort port, string ip, D2DColor planeColor, bool isAI = false, string playerName = "Player")
+        {
+            World.IsNetGame = true;
+            World.IsServer = false;
+
+            if (isAI)
+                playerName = "*(BOT) " + Utilities.GetRandomName();
+
+            _playerPlane = GetNewPlane(planeColor, isAI, playerName);
+            World.ViewObject = _playerPlane;
+            _objs.AddPlane(_playerPlane);
+
+            _client = new ClientNetHost(port, ip);
+            _netMan = new NetEventManager(_client, _playerPlane);
+            _collisions = new CollisionManager(_netMan);
+
+            _netMan.ImpactEvent += HandleNewImpact;
+            _netMan.PlayerIDReceived += NetMan_PlayerIDReceived;
+            _netMan.PlayerDisconnected += NetMan_PlayerDisconnected;
+            _netMan.PlayerKicked += NetMan_PlayerKicked;
+            _netMan.PlayerRespawned += NetMan_PlayerRespawned;
+            _netMan.PlayerEventMessage += NetMan_PlayerEventMessage;
+            _netMan.PlayerJoined += NetMan_PlayerJoined;
+
+            _objs.PlayerKilledEvent += Objs_PlayerKilledEvent;
+
+            _client.PeerTimeoutEvent += Client_PeerTimeoutEvent;
+            _client.PeerDisconnectedEvent += Client_PeerDisconnectedEvent;
+
+            _inStartup = false;
+
+            InitRenderer(_netMan);
+
+            _client.Start();
+
+            StartGameThread();
+            ResumeGame();
+
+            _render?.ClearHudMessage();
+
+        }
+
+        private void DoLocalGameStart(D2DColor planeColor, bool isAI = false, string playerName = "Player")
+        {
+            World.IsNetGame = false;
+            World.IsServer = false;
+
+            _collisions = new CollisionManager();
+
+            if (isAI)
+                playerName = "(BOT) " + Utilities.GetRandomName();
+
+            _playerPlane = GetNewPlane(planeColor, isAI, playerName);
+            World.ViewObject = _playerPlane;
+            _objs.AddPlane(_playerPlane);
+
+            InitRenderer(null);
+            StartGameThread();
+            ResumeGame();
+
+            _render?.ClearHudMessage();
+        }
+
 
         /// <summary>
         /// Return to server/game config screen.
@@ -1118,6 +1193,25 @@ namespace PolyPlane
 
         private void PolyPlaneUI_Shown(object sender, EventArgs e)
         {
+            if (_hasLaunchOptions)
+            {
+                var o = World.LaunchOptions;
+                //DoNetGameStart(o.Port, o.IPAddress, D2DColor.Randomly(), o.IsAI, o.PlayerName);
+                DoNetGameStart(o.Port, o.IPAddress, D2DColor.Randomly(), true, o.PlayerName);
+
+                if (o.DisableRender)
+                {
+                    _skipRender = true;
+                    this.WindowState = FormWindowState.Minimized;
+
+                }
+
+                _skipRender = true;
+                this.WindowState = FormWindowState.Minimized;
+
+                return;
+            }
+
             if (!DoNetGameSetup())
             {
                 this.Close();

@@ -1737,7 +1737,7 @@ namespace PolyPlane.Rendering
         public void DoScreenFlash(D2DColor color)
         {
             _screenFlashColor = color;
-            _screenFlash.Restart();
+            _screenFlash?.Restart();
         }
 
         private string GetInfo(GameObject viewObject)
