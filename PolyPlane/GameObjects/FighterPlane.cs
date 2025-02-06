@@ -461,7 +461,7 @@ namespace PolyPlane.GameObjects
                     _easePhysicsTimer.Start();
 
                 if (!_easePhysicsComplete && _easePhysicsTimer.IsRunning)
-                    easeFact = Utilities.Factor(_easePhysicsTimer.Value, _easePhysicsTimer.Interval);
+                    easeFact = _easePhysicsTimer.Position;
 
                 // Integrate torque, thrust and wing force.
                 var thrustTorque = Utilities.GetTorque(_centerOfMass.Position, _centerOfThrust.Position, thrust);

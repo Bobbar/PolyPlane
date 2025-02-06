@@ -1,4 +1,6 @@
-﻿namespace PolyPlane.GameObjects.Tools
+﻿using PolyPlane.Helpers;
+
+namespace PolyPlane.GameObjects.Tools
 {
     public class GameTimer
     {
@@ -21,7 +23,10 @@
         public bool AutoRestart { get; set; } = false;
         public float Value => _current;
 
-        public float Position => Math.Clamp(_current / _interval, 0f, 1f);
+        /// <summary>
+        /// Current timer position as a percentage.
+        /// </summary>
+        public float Position => Utilities.Factor(_current, _interval);
 
         public Action StartCallback { get; set; }
         public Action CoolDownEndCallback { get; set; }
