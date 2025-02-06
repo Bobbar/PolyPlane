@@ -5,6 +5,7 @@ namespace PolyPlane.Net.Interpolation
     public class InterpolationBuffer<T>
     {
         private double _clientStartTime = -1;
+        private SmoothDouble _offsetMedian = new SmoothDouble(10);
         private List<BufferEntry<T>> _buffer = new List<BufferEntry<T>>();
         private double _tickRate;
         private T _resetingState;
@@ -30,7 +31,9 @@ namespace PolyPlane.Net.Interpolation
             if (_buffer.Count == 0 && _clientStartTime == -1)
                 _clientStartTime = now;
 
-            var newState = new BufferEntry<T>(state, updatedAt + _tickRate);
+            var offset = _offsetMedian.Add(now - updatedAt);
+            var roundedOffset = offset / (_tickRate / 2d) * (_tickRate / 2d);
+            var newState = new BufferEntry<T>(state, updatedAt + roundedOffset + _tickRate);
 
             _buffer.Add(newState);
         }
