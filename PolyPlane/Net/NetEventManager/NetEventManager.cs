@@ -32,9 +32,7 @@ namespace PolyPlane.Net
         private bool _initialOffsetSet = false;
         private bool _syncingServerTime = true;
         private int _syncCount = 0;
-        private long _lastSyncTime = 0;
         private long _lastNetTime = 0;
-        private long _netFrames = 0;
 
         public event EventHandler<int> PlayerIDReceived;
         public event EventHandler<ImpactEvent> ImpactEvent;
@@ -48,13 +46,14 @@ namespace PolyPlane.Net
 
         private const long MAX_DEFER_AGE = 400; // Max age allowed for deferred packets.
         private const int LIST_PACKET_BATCH_COUNT = 30; // Max list packet count before batching into multiple packets.
-        private const int GAME_STATE_FRAMES = 4; // Server sends game state updates every 4 net frames.
-        private const int PEER_SYNC_REQ_FRAMES = 10; // Server sends peer sync requests every 10 frames.
-
-        private const int SYNC_FRAMES = 3; // Clients send sync requests every other net frame.
         private const int SYNC_MAX_ATTEMPTS = 40; // Max number of attempts to find true server time.
-        private const float SYNC_INTERVAL = 15f; // Interval in seconds to start another sync cycle.
+        private const float SYNC_REFRESH_INTERVAL = 15000f; // Interval in milliseconds to start fresh sync cycle.
+        private const float SYNC_RESPONSE_INTERVAL = 100f; // Interval in milliseconds to send sync packets while in a sync cycle.
+        private const float SYNC_GAMESTATE_INTERVAL = 100f; // Interval in milliseconds for server to send game state packets.
+        private const float SYNC_BAD_PEERS_INTERVAL = 300f; // Interval in milliseconds for server initiate sync cycles for out-of-sync peers.
         private const float SYNC_MAX_DELTA = 0.5f; // Server time offset delta must be less than this to accept the current offset.
+
+        private ActionScheduler _netScheduler = new ActionScheduler();
 
         public NetEventManager(NetPlayHost host, FighterPlane playerPlane)
         {
@@ -63,6 +62,9 @@ namespace PolyPlane.Net
             IsServer = false;
             ChatInterface = new ChatInterface(this, playerPlane.PlayerName);
             AttachEvents();
+
+            ScheduleUpdates();
+            ScheduleClientEvents();
 
             _lastNetTime = World.CurrentTimeTicks();
         }
@@ -75,7 +77,43 @@ namespace PolyPlane.Net
             ChatInterface = new ChatInterface(this, "Server");
             AttachEvents();
 
+            ScheduleUpdates();
+            ScheduleServerEvents();
+
             _lastNetTime = World.CurrentTimeTicks();
+        }
+
+        private void ScheduleUpdates()
+        {
+            // Schedule regular updates for clients and server.
+            _netScheduler.AddAction(World.TARGET_FRAME_TIME_NET, () =>
+            {
+                SendPlaneUpdates();
+                SendMissileUpdates();
+                SendExpiredObjects();
+            });
+        }
+
+        private void ScheduleClientEvents()
+        {
+            // Start new sync cycle.
+            _netScheduler.AddAction(SYNC_REFRESH_INTERVAL, () => _syncingServerTime = true);
+
+            // Send sync requests while in a cycle.
+            _netScheduler.AddAction(SYNC_RESPONSE_INTERVAL, () =>
+            {
+                if (_syncingServerTime)
+                    ClientSendSyncRequest();
+            });
+        }
+
+        private void ScheduleServerEvents()
+        {
+            // Send current game state to peers.
+            _netScheduler.AddAction(SYNC_GAMESTATE_INTERVAL, ServerSendGameState);
+
+            // Send sync requests to out-of-sync peers.
+            _netScheduler.AddAction(SYNC_BAD_PEERS_INTERVAL, ServerSendPeerSyncRequests);
         }
 
         private void AttachEvents()
@@ -93,43 +131,8 @@ namespace PolyPlane.Net
 
         public void HandleNetEvents(float dt)
         {
-            var now = World.CurrentTimeTicks();
-            var elap = TimeSpan.FromTicks(now - _lastNetTime).TotalMilliseconds;
-
-            // Send updates at an interval approx twice the frame time.
-            // (This will be approx 30 FPS when target FPS is set to 60)
-            if (elap >= (World.TARGET_FRAME_TIME_NET))
-            {
-                SendPlaneUpdates();
-                SendMissileUpdates();
-                SendExpiredObjects();
-
-                // Do periodic updates as needed.
-                if (!IsServer)
-                {
-                    if (_netFrames % SYNC_FRAMES == 0)
-                    {
-                        if (!_syncingServerTime && TimeSpan.FromTicks(now - _lastSyncTime).TotalSeconds > SYNC_INTERVAL)
-                            _syncingServerTime = true;
-
-                        if (_syncingServerTime)
-                            ClientSendSyncRequest();
-                    }
-                }
-                else
-                {
-                    // Send game state to all peers.
-                    if (_netFrames % GAME_STATE_FRAMES == 0)
-                        ServerSendGameState();
-
-                    // Send sync requests to out-of-sync peers.
-                    if (_netFrames % PEER_SYNC_REQ_FRAMES == 0)
-                        ServerSendPeerSyncRequests();
-                }
-
-                _lastNetTime = World.CurrentTimeTicks();
-                _netFrames++;
-            }
+            // Do scheduled net actions.
+            _netScheduler.DoActions();
 
             long totalPacketTime = 0;
             int numPackets = 0;

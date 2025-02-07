@@ -398,7 +398,6 @@ namespace PolyPlane.Net
             }
 
             _syncCount++;
-            _lastSyncTime = t3;
             _receivedFirstSync = true;
         }
     }
