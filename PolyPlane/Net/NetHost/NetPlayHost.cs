@@ -151,7 +151,7 @@ namespace PolyPlane.Net.NetHost
 
                     var packet = netEvent.Packet;
 
-                    if (TryParsePacket(ref packet, out NetPacket netPacket))
+                    if (TryParsePacket(ref packet, out NetPacket? netPacket))
                     {
                         HandleReceive(netPacket);
                     }
@@ -181,7 +181,7 @@ namespace PolyPlane.Net.NetHost
 
                 packet.CopyTo(buffer);
 
-                var packetObj = Serialization.ByteArrayToObject(buffer) as NetPacket;
+                var packetObj = Serialization.ByteArrayToObject(buffer);
 
                 netPacket = packetObj;
                 return true;

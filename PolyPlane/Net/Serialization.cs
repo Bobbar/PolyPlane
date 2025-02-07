@@ -37,7 +37,7 @@ namespace PolyPlane.Net
             return bytes;
         }
 
-        public static object ByteArrayToObject(byte[] arrBytes)
+        public static NetPacket ByteArrayToObject(byte[] arrBytes)
         {
             var data = BufferPool.GetBitBuffer();
 
@@ -48,7 +48,7 @@ namespace PolyPlane.Net
 
             var type = (PacketTypes)data.PeekByte();
 
-            object obj = null;
+            NetPacket? obj = null;
 
             switch (type)
             {
