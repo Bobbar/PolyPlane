@@ -1441,14 +1441,15 @@ namespace PolyPlane.Rendering
             var lineHeight = 20f;
             var linePosY = topLeft.Y;
 
-            var sortedPlanes = _objs.Planes.OrderByDescending(p => p.Kills).ThenBy(p => p.Deaths).ToArray();
+            var sortedPlanes = _objs.Planes.OrderByDescending(p => p.Kills).ThenBy(p => p.Deaths);
+            var numPlanes = sortedPlanes.Count();
 
-            if (_scoreScrollPos >= sortedPlanes.Length)
-                _scoreScrollPos = sortedPlanes.Length - 1;
+            if (_scoreScrollPos >= numPlanes)
+                _scoreScrollPos = numPlanes - 1;
 
-            for (int i = _scoreScrollPos; i < sortedPlanes.Length; i++)
+            for (int i = _scoreScrollPos; i < numPlanes; i++)
             {
-                var playerPlane = sortedPlanes[i];
+                var playerPlane = sortedPlanes.ElementAt(i);
                 var lineRect = new D2DRect(topLeft.X, linePosY, 800f, lineHeight);
                 var lineRectColumn1 = new D2DRect(topLeft.X + 200f, linePosY, 800f, lineHeight);
                 var lineRectColumn2 = new D2DRect(topLeft.X + 300f, linePosY, 800f, lineHeight);
@@ -1464,7 +1465,7 @@ namespace PolyPlane.Rendering
             }
 
             // Draw scroll bar.
-            var scrollBarPos = new D2DPoint(rect.right - 10f, Utilities.Lerp(rect.top + lineHeight + titleRect.Height, rect.bottom, ((float)_scoreScrollPos / sortedPlanes.Length)));
+            var scrollBarPos = new D2DPoint(rect.right - 10f, Utilities.Lerp(rect.top + lineHeight + titleRect.Height, rect.bottom, ((float)_scoreScrollPos / numPlanes)));
             var scrollBarRect = new D2DRect(scrollBarPos, new D2DSize(10f, 20f));
             ctx.Gfx.FillRectangle(scrollBarRect, D2DColor.White);
         }
