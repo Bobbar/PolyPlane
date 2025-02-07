@@ -1,5 +1,4 @@
-﻿using PolyPlane.GameObjects.Interfaces;
-using PolyPlane.GameObjects.Particles;
+﻿using PolyPlane.GameObjects.Particles;
 using PolyPlane.Helpers;
 using PolyPlane.Net;
 
@@ -47,8 +46,6 @@ namespace PolyPlane.GameObjects.Manager
                     {
                         if (obj is GuidedMissile missile)
                         {
-                            var missileOwner = missile.Owner as FighterPlane;
-
                             if (missile.Owner.Equals(plane))
                                 continue;
 
@@ -102,8 +99,6 @@ namespace PolyPlane.GameObjects.Manager
 
                         if (obj is Bullet bullet)
                         {
-                            var bulletOwner = bullet.Owner as FighterPlane;
-
                             if (bullet.IsExpired)
                                 continue;
 
@@ -134,7 +129,6 @@ namespace PolyPlane.GameObjects.Manager
                                         plane.HandleImpactResult(impactResult, dt);
                                         _netMan.SendNetImpact(impactResult);
                                     }
-
 
                                     bullet.IsExpired = true;
                                 }
@@ -184,10 +178,28 @@ namespace PolyPlane.GameObjects.Manager
                             if (bullet.Owner.Equals(missile.Owner))
                                 continue;
 
-                            if (missile.CollidesWith(bullet, out D2DPoint posb, dt))
+                            if (_isNetGame)
                             {
-                                missile.IsExpired = true;
-                                bullet.IsExpired = true;
+                                var bulletLagComp = (long)(bullet.LagAmount + World.NET_INTERP_AMOUNT);
+
+                                if (missile.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - bulletLagComp, dt))
+                                {
+                                    if (histState != null)
+                                    {
+                                        missile.SetPosition(histState.Position, histState.Rotation);
+                                    }
+
+                                    missile.IsExpired = true;
+                                    bullet.IsExpired = true;
+                                }
+                            }
+                            else
+                            {
+                                if (missile.CollidesWith(bullet, out D2DPoint posb, dt))
+                                {
+                                    missile.IsExpired = true;
+                                    bullet.IsExpired = true;
+                                }
                             }
                         }
                         else if (obj is Decoy decoy)
