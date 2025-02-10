@@ -454,14 +454,16 @@ namespace PolyPlane.Server
 
             aiPlane.FireMissileCallback = (m) =>
             {
-                _objs.EnqueueMissile(m);
+                _objs.AddMissile(m);
+
                 _netMan.SendNewMissilePacket(m);
             };
 
 
             aiPlane.FireBulletCallback = b =>
             {
-                _objs.EnqueueBullet(b);
+                _objs.AddBullet(b);
+
                 _netMan.SendNewBulletPacket(b);
             };
 
@@ -584,6 +586,8 @@ namespace PolyPlane.Server
             infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
             infoText += $"Packets Rec/s: {Math.Round(_recPacketsSmooth.Current, 2)}\n";
             infoText += $"Packets Sent/s: {Math.Round(_sentPacketsSmooth.Current, 2)}\n";
+            infoText += $"Packets Deferred: {_netMan.NumDeferredPackets}\n";
+            infoText += $"Packets Expired: {_netMan.NumExpiredPackets}\n";
             infoText += $"MB Rec/s: {Math.Round(_recBytesSmooth.Current, 3)}\n";
             infoText += $"MB Sent/s: {Math.Round(_sentBytesSmooth.Current, 3)}\n";
             infoText += $"DT: {Math.Round(World.TargetDT, 4)}\n";
