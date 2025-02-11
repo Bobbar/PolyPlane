@@ -435,7 +435,7 @@ namespace PolyPlane
 
             plane.FireBulletCallback = b =>
             {
-                _objs.AddBullet(b);
+                _objs.EnqueueBullet(b);
 
                 if (b.Owner.Equals(World.ViewObject))
                     _render.DoScreenShake(2f);
@@ -446,7 +446,7 @@ namespace PolyPlane
 
             plane.FireMissileCallback = (m) =>
             {
-                _objs.AddMissile(m);
+                _objs.EnqueueMissile(m);
 
                 if (World.IsNetGame)
                     _netMan.SendNewMissilePacket(m);
@@ -550,6 +550,8 @@ namespace PolyPlane
 
         private void AdvanceAndRender()
         {
+            _render.InitGfx();
+
             World.Update();
 
             var dt = World.CurrentDT;
@@ -613,7 +615,6 @@ namespace PolyPlane
                 _render.RenderFrame(viewObject, dt);
             else
                 _fpsLimiter.Wait(World.TARGET_FPS);
-
 
             if (_slewEnable)
             {
@@ -1153,9 +1154,6 @@ namespace PolyPlane
                     this.WindowState = FormWindowState.Minimized;
 
                 }
-
-                _skipRender = true;
-                this.WindowState = FormWindowState.Minimized;
 
                 return;
             }

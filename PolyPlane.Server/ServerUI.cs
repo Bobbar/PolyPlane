@@ -385,7 +385,10 @@ namespace PolyPlane.Server
                 FighterPlane viewPlane = World.GetViewPlane();
 
                 if (viewPlane != null)
+                {
+                    _render.InitGfx();
                     _render.RenderFrame(viewPlane, dt);
+                }
 
                 _timer.Stop();
                 _renderTime = _timer.Elapsed;
@@ -454,7 +457,7 @@ namespace PolyPlane.Server
 
             aiPlane.FireMissileCallback = (m) =>
             {
-                _objs.AddMissile(m);
+                _objs.EnqueueMissile(m);
 
                 _netMan.SendNewMissilePacket(m);
             };
@@ -462,7 +465,7 @@ namespace PolyPlane.Server
 
             aiPlane.FireBulletCallback = b =>
             {
-                _objs.AddBullet(b);
+                _objs.EnqueueBullet(b);
 
                 _netMan.SendNewBulletPacket(b);
             };

@@ -192,7 +192,7 @@ namespace PolyPlane.Rendering
             _device.Resize();
         }
 
-        private void InitGfx()
+        public void InitGfx()
         {
             if (_gfx != null)
                 return;
@@ -409,7 +409,9 @@ namespace PolyPlane.Rendering
 
         public void RenderFrame(GameObject viewObject, float dt)
         {
-            InitGfx();
+            if (_gfx == null)
+                throw new InvalidOperationException($"Renderer not initialized. Please call {nameof(InitGfx)} first.");
+
             ResizeGfx();
 
             _timer.Restart();
