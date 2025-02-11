@@ -140,7 +140,7 @@ namespace PolyPlane.GameObjects
         private List<GameObject> _attachments = null;
         private List<GameObject> _attachmentsPhyics = null;
         private List<GameTimer> _timers = null;
-       
+
         protected float _rotationSpeed = 0f;
         protected float _rotation = 0f;
         protected float _verticalSpeed = 0f;
@@ -165,7 +165,7 @@ namespace PolyPlane.GameObjects
                     HistoryBuffer = new HistoricalBuffer<GameObjectPacket>(GetInterpState);
 
                 if (InterpBuffer == null)
-                    InterpBuffer = new InterpolationBuffer<GameObjectPacket>(TimeSpan.FromMilliseconds(World.NET_INTERP_AMOUNT).Ticks, InterpObject);
+                    InterpBuffer = new InterpolationBuffer<GameObjectPacket>(TimeSpan.FromMilliseconds(World.NET_INTERP_AMOUNT).Ticks, GetInterpState);
             }
 
             _hasPhysicsUpdate = ImplementsPhysicsUpdate();
@@ -347,7 +347,9 @@ namespace PolyPlane.GameObjects
         /// <param name="dt"></param>
         public virtual void DoPhysicsUpdate(float dt)
         {
-            AdvancePositionAndRotation(dt);
+            // Don't advance net physics objects.
+            if (!World.IsNetGame || World.IsNetGame && !this.IsNetObject)
+                AdvancePositionAndRotation(dt);
         }
 
         /// <summary>
@@ -366,7 +368,19 @@ namespace PolyPlane.GameObjects
             if (World.IsNetGame && IsNetObject && InterpBuffer != null && !World.IsServer)
             {
                 var now = World.CurrentNetTimeTicks();
-                InterpBuffer.InterpolateState(now);
+                var state = InterpBuffer.InterpolateState(now);
+
+                if (state != null)
+                {
+                    this.Velocity = state.Velocity;
+                    this.SetPosition(state.Position, state.Rotation);
+                }
+                else
+                {
+                    // Just try to advance normally if we failed to get an interpolated state.
+                    var extrapPos = this.Position + this.Velocity * dt;
+                    this.SetPosition(extrapPos);
+                }
 
                 // Update physics attachments (like wings) after interpolating a new state.
                 UpdatePhysicsAttachments(0f);
@@ -404,7 +418,7 @@ namespace PolyPlane.GameObjects
                 this.Velocity = velocity;
                 this.SetPosition(position, rotation);
             }
-          
+
             var now = World.CurrentNetTimeTicks();
             this.LagAmount = TimeSpan.FromTicks(now - frameTime).TotalMilliseconds;
             this._lastNetTime = now;
