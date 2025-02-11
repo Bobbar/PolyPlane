@@ -222,43 +222,7 @@ namespace PolyPlane
                     case DialogResult.OK:
                         // Net game.
 
-
                         DoNetGameStart(config.Port, config.ServerIPAddress, config.PlaneColor, config.IsAI, config.PlayerName);
-
-                        //World.IsNetGame = true;
-                        //World.IsServer = false;
-
-                        //_playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
-                        //World.ViewObject = _playerPlane;
-                        //_objs.AddPlane(_playerPlane);
-
-                        //_client = new ClientNetHost(config.Port, config.ServerIPAddress);
-                        //_netMan = new NetEventManager(_client, _playerPlane);
-                        //_collisions = new CollisionManager(_netMan);
-
-                        //_netMan.ImpactEvent += HandleNewImpact;
-                        //_netMan.PlayerIDReceived += NetMan_PlayerIDReceived;
-                        //_netMan.PlayerDisconnected += NetMan_PlayerDisconnected;
-                        //_netMan.PlayerKicked += NetMan_PlayerKicked;
-                        //_netMan.PlayerRespawned += NetMan_PlayerRespawned;
-                        //_netMan.PlayerEventMessage += NetMan_PlayerEventMessage;
-                        //_netMan.PlayerJoined += NetMan_PlayerJoined;
-
-                        //_objs.PlayerKilledEvent += Objs_PlayerKilledEvent;
-
-                        //_client.PeerTimeoutEvent += Client_PeerTimeoutEvent;
-                        //_client.PeerDisconnectedEvent += Client_PeerDisconnectedEvent;
-
-                        //_inStartup = false;
-
-                        //InitRenderer(_netMan);
-
-                        //_client.Start();
-
-                        //StartGameThread();
-                        //ResumeGame();
-
-                        //_render?.ClearHudMessage();
 
                         result = true;
                         break;
@@ -267,21 +231,6 @@ namespace PolyPlane
                         // Solo game.
 
                         DoLocalGameStart(config.PlaneColor, config.IsAI, config.PlayerName);
-
-                        //World.IsNetGame = false;
-                        //World.IsServer = false;
-
-                        //_collisions = new CollisionManager();
-
-                        //_playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
-                        //World.ViewObject = _playerPlane;
-                        //_objs.AddPlane(_playerPlane);
-
-                        //InitRenderer(null);
-                        //StartGameThread();
-                        //ResumeGame();
-
-                        //_render?.ClearHudMessage();
 
                         result = true;
 
@@ -1196,8 +1145,7 @@ namespace PolyPlane
             if (_hasLaunchOptions)
             {
                 var o = World.LaunchOptions;
-                //DoNetGameStart(o.Port, o.IPAddress, D2DColor.Randomly(), o.IsAI, o.PlayerName);
-                DoNetGameStart(o.Port, o.IPAddress, D2DColor.Randomly(), true, o.PlayerName);
+                DoNetGameStart(o.Port, o.IPAddress, D2DColor.Randomly(), o.IsAI, o.PlayerName);
 
                 if (o.DisableRender)
                 {

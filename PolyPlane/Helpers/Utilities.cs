@@ -663,7 +663,7 @@ namespace PolyPlane.Helpers
             return tagText;
         }
 
-        public static AIPersonality GetRandomPersonalities(int num, bool allowCowardly = false)
+        public static AIPersonality GetRandomPersonalities(int num, bool allowCowardly = true)
         {
             AIPersonality personality = AIPersonality.Normal;
 
