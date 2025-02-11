@@ -486,7 +486,7 @@ namespace PolyPlane
 
             plane.FireBulletCallback = b =>
             {
-                _objs.EnqueueBullet(b);
+                _objs.AddBullet(b);
 
                 if (b.Owner.Equals(World.ViewObject))
                     _render.DoScreenShake(2f);
@@ -497,7 +497,7 @@ namespace PolyPlane
 
             plane.FireMissileCallback = (m) =>
             {
-                _objs.EnqueueMissile(m);
+                _objs.AddMissile(m);
 
                 if (World.IsNetGame)
                     _netMan.SendNewMissilePacket(m);

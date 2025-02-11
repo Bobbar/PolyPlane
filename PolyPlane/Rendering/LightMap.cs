@@ -164,7 +164,7 @@ namespace PolyPlane.Rendering
 
             r.X = 1f - (1f - colorA.X) * (1f - colorB.X);
 
-            if (r.X < float.Epsilon)
+            if (r.X < 0.001f)
                 return r; // Fully transparent -- R,G,B not important
 
             var alphaFact = colorA.X / r.X;

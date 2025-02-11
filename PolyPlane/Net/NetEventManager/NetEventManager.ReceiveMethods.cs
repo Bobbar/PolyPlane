@@ -275,9 +275,10 @@ namespace PolyPlane.Net
             bullet.LagAmount = bulletPacket.Age;
 
             // Try to spawn the bullet ahead (extrapolate) to compensate for latency?
-            bullet.Position += bullet.Velocity * (bullet.LagAmountFrames * dt);
+            var extrapPos = bullet.Position + (bullet.Velocity * (bullet.LagAmountFrames * dt));
+            bullet.SetPosition(extrapPos);
 
-            _objs.EnqueueBullet(bullet);
+            _objs.AddBullet(bullet);
         }
 
         private void HandleNewMissile(MissilePacket missilePacket)
@@ -301,7 +302,7 @@ namespace PolyPlane.Net
                 missile.Target = missileTarget;
                 missile.LagAmount = missilePacket.Age;
 
-                _objs.EnqueueMissile(missile);
+                _objs.AddMissile(missile);
             }
             else
             {
@@ -398,7 +399,6 @@ namespace PolyPlane.Net
             }
 
             _syncCount++;
-            _lastSyncTime = t3;
             _receivedFirstSync = true;
         }
     }

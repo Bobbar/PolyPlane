@@ -457,6 +457,9 @@ namespace PolyPlane.Rendering
                 // Pop screen shake transform.
                 _ctx.PopTransform();
 
+                // Chat and event box.
+                DrawChatAndEventBox(_ctx);
+
                 // Draw overlay text. (FPS, Help and Info)
                 DrawOverlays(_ctx, viewObject);
 
@@ -979,8 +982,6 @@ namespace PolyPlane.Rendering
                     var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height - (viewportsize.height * 0.85f));
                     DrawHealthBarAndAmmo(ctx.Gfx, plane, pos, healthBarSize);
 
-                    DrawMessageBox(ctx, viewportsize);
-
                     DrawPopMessages(ctx, viewportsize, plane);
                 }
             }
@@ -1336,37 +1337,46 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private void DrawMessageBox(RenderContext ctx, D2DSize viewportsize)
+        private void DrawChatAndEventBox(RenderContext ctx)
         {
             const float SCALE = 1f;
             const float ACTIVE_SCALE = 1.8f;
             const float LEFT_PAD = 10f;
-            const int MAX_LINES = 15;
+            const int LINES_ACTIVE = 20;
+            const int LINES_INACTIVE = 8;
+            const float LINE_HEIGHT = 10f;
             const float WIDTH = 400f;
-            const float HEIGHT = 150f;
 
-            var lineSize = new D2DSize(WIDTH, HEIGHT / MAX_LINES);
+            var viewportsize = World.ViewPortRectUnscaled.Size;
+
+            ctx.PushTransform();
+            ctx.ScaleTransform(_hudScale, new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f));
+
             var chatActive = _netMan != null && _netMan.ChatInterface.ChatIsActive;
             var scale = SCALE;
-
-            var boxPos = new D2DPoint(350f * HudScale * scale, viewportsize.height - (240f * HudScale * scale));
+            var numLines = LINES_INACTIVE;
+            var height = numLines * LINE_HEIGHT;
+            var boxPos = new D2DPoint(330f * HudScale * scale, viewportsize.height - (180f * HudScale * scale));
 
             if (chatActive)
             {
                 scale = ACTIVE_SCALE;
-                boxPos = new D2DPoint((viewportsize.width * 0.5f), (viewportsize.height * 0.5f) - (HEIGHT * 0.5f));
+                numLines = LINES_ACTIVE;
+                height = numLines * LINE_HEIGHT;
+                boxPos = new D2DPoint((viewportsize.width * 0.5f), (viewportsize.height * 0.5f) - (height * 0.5f));
             }
 
             var linePos = new D2DPoint(boxPos.X + LEFT_PAD, boxPos.Y);
+            var lineSize = new D2DSize(WIDTH, height / numLines);
 
             ctx.PushTransform();
             ctx.ScaleTransform(scale, boxPos);
-            ctx.Gfx.FillRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, new D2DColor(0.05f, World.HudColor));
+            ctx.Gfx.FillRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y - lineSize.height, WIDTH, height + lineSize.height, new D2DColor(0.05f, World.HudColor));
 
             var start = 0;
 
-            if (_messageEvents.Count >= MAX_LINES)
-                start = _messageEvents.Count - MAX_LINES;
+            if (_messageEvents.Count >= numLines)
+                start = _messageEvents.Count - numLines;
 
             for (int i = start; i < _messageEvents.Count; i++)
             {
@@ -1385,12 +1395,12 @@ namespace PolyPlane.Rendering
                 linePos += new D2DPoint(0, lineSize.height);
             }
 
-            ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, World.HudColor);
+            ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y - lineSize.height, WIDTH, height + lineSize.height, World.HudColor);
 
             // Draw current chat message.
             if (chatActive)
             {
-                var rect = new D2DRect(new D2DPoint(boxPos.X + LEFT_PAD, boxPos.Y + HEIGHT + 6f), lineSize);
+                var rect = new D2DRect(new D2DPoint(boxPos.X + LEFT_PAD, boxPos.Y + height + 6f), lineSize);
                 var curText = _netMan.ChatInterface.CurrentText;
 
                 if (string.IsNullOrEmpty(curText))
@@ -1398,9 +1408,10 @@ namespace PolyPlane.Rendering
                 else
                     ctx.Gfx.DrawText(_netMan.ChatInterface.CurrentText, _whiteColorBrush, _messageBoxFont, rect);
 
-                ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y + HEIGHT, WIDTH, lineSize.height + 5f, World.HudColor);
+                ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y + height, WIDTH, lineSize.height + 5f, World.HudColor);
             }
 
+            ctx.PopTransform();
             ctx.PopTransform();
         }
 
@@ -1441,14 +1452,15 @@ namespace PolyPlane.Rendering
             var lineHeight = 20f;
             var linePosY = topLeft.Y;
 
-            var sortedPlanes = _objs.Planes.OrderByDescending(p => p.Kills).ThenBy(p => p.Deaths).ToArray();
+            var sortedPlanes = _objs.Planes.OrderByDescending(p => p.Kills).ThenBy(p => p.Deaths);
+            var numPlanes = sortedPlanes.Count();
 
-            if (_scoreScrollPos >= sortedPlanes.Length)
-                _scoreScrollPos = sortedPlanes.Length - 1;
+            if (_scoreScrollPos >= numPlanes)
+                _scoreScrollPos = numPlanes - 1;
 
-            for (int i = _scoreScrollPos; i < sortedPlanes.Length; i++)
+            for (int i = _scoreScrollPos; i < numPlanes; i++)
             {
-                var playerPlane = sortedPlanes[i];
+                var playerPlane = sortedPlanes.ElementAt(i);
                 var lineRect = new D2DRect(topLeft.X, linePosY, 800f, lineHeight);
                 var lineRectColumn1 = new D2DRect(topLeft.X + 200f, linePosY, 800f, lineHeight);
                 var lineRectColumn2 = new D2DRect(topLeft.X + 300f, linePosY, 800f, lineHeight);
@@ -1464,7 +1476,7 @@ namespace PolyPlane.Rendering
             }
 
             // Draw scroll bar.
-            var scrollBarPos = new D2DPoint(rect.right - 10f, Utilities.Lerp(rect.top + lineHeight + titleRect.Height, rect.bottom, ((float)_scoreScrollPos / sortedPlanes.Length)));
+            var scrollBarPos = new D2DPoint(rect.right - 10f, Utilities.Lerp(rect.top + lineHeight + titleRect.Height, rect.bottom, ((float)_scoreScrollPos / numPlanes)));
             var scrollBarRect = new D2DRect(scrollBarPos, new D2DSize(10f, 20f));
             ctx.Gfx.FillRectangle(scrollBarRect, D2DColor.White);
         }

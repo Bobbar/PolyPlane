@@ -29,8 +29,6 @@ namespace PolyPlane.GameObjects
 
         public ConcurrentQueue<GameObject> NewDecoys = new();
         public ConcurrentQueue<GameObject> NewDebris = new();
-        public ConcurrentQueue<GameObject> NewBullets = new();
-        public ConcurrentQueue<GameObject> NewMissiles = new();
         public ConcurrentQueue<FighterPlane> NewPlanes = new();
         public ConcurrentQueue<Particle> NewParticles = new();
 
@@ -94,7 +92,7 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private void AddBullet(Bullet bullet)
+        public void AddBullet(Bullet bullet)
         {
             if (!Contains(bullet))
             {
@@ -103,12 +101,7 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public void EnqueueBullet(Bullet bullet)
-        {
-            NewBullets.Enqueue(bullet);
-        }
-
-        private void AddMissile(GuidedMissile missile)
+        public void AddMissile(GuidedMissile missile)
         {
             if (!Contains(missile))
             {
@@ -118,11 +111,6 @@ namespace PolyPlane.GameObjects
                 var trail = new MissileSmokeTrail(missile);
                 MissileTrails.Add(trail);
             }
-        }
-
-        public void EnqueueMissile(GuidedMissile missile)
-        {
-            NewMissiles.Enqueue(missile);
         }
 
         public void AddPlane(FighterPlane plane)
@@ -227,8 +215,6 @@ namespace PolyPlane.GameObjects
             DummyObjs.Clear();
             NewDecoys.Clear();
             NewDebris.Clear();
-            NewBullets.Clear();
-            NewMissiles.Clear();
             NewPlanes.Clear();
             NewParticles.Clear();
 
@@ -477,22 +463,6 @@ namespace PolyPlane.GameObjects
                 if (NewDebris.TryDequeue(out GameObject debris))
                 {
                     AddDebris(debris as Debris);
-                }
-            }
-
-            while (NewBullets.Count > 0)
-            {
-                if (NewBullets.TryDequeue(out GameObject bullet))
-                {
-                    AddBullet(bullet as Bullet);
-                }
-            }
-
-            while (NewMissiles.Count > 0)
-            {
-                if (NewMissiles.TryDequeue(out GameObject missile))
-                {
-                    AddMissile(missile as GuidedMissile);
                 }
             }
 

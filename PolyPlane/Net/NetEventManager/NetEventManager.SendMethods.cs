@@ -109,15 +109,21 @@ namespace PolyPlane.Net
             while (expiredObjs.Count > 0)
             {
                 var obj = expiredObjs[0];
-                var packet = new BasicPacket(PacketTypes.ExpiredObjects, obj.ID, obj.Position);
-                expiredObjPacket.Packets.Add(packet);
 
-                // Batch the list packet as needed.
-                if (expiredObjPacket.Packets.Count >= LIST_PACKET_BATCH_COUNT)
+                // Send all expired objects from server.
+                // Clients send only their local objects.
+                if (IsServer || !IsServer && !obj.IsNetObject)
                 {
-                    Host.EnqueuePacket(expiredObjPacket);
+                    var packet = new BasicPacket(PacketTypes.ExpiredObjects, obj.ID, obj.Position);
+                    expiredObjPacket.Packets.Add(packet);
 
-                    expiredObjPacket = new BasicListPacket(PacketTypes.ExpiredObjects);
+                    // Batch the list packet as needed.
+                    if (expiredObjPacket.Packets.Count >= LIST_PACKET_BATCH_COUNT)
+                    {
+                        Host.EnqueuePacket(expiredObjPacket);
+
+                        expiredObjPacket = new BasicListPacket(PacketTypes.ExpiredObjects);
+                    }
                 }
 
                 expiredObjs.RemoveAt(0);
