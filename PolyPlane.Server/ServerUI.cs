@@ -48,6 +48,7 @@ namespace PolyPlane.Server
         private string _address;
         private string _serverName;
         private int _port;
+        private bool _mouseOverPlayerList = false;
         private GameObjectManager _objs = World.ObjectManager;
         private NetEventManager _netMan;
         private DiscoveryServer _discovery;
@@ -83,7 +84,7 @@ namespace PolyPlane.Server
             this.Disposed += ServerUI_Disposed; ;
 
             _updateTimer.Tick += UpdateTimer_Tick;
-            _updateTimer.Interval = 32;
+            _updateTimer.Interval = 66;
 
             // Periodically broadcast discovery packets.
             _discoveryTimer.TriggerCallback = () => _discovery?.BroadcastServerInfo(new DiscoveryPacket(_address, _serverName, _port));
@@ -506,6 +507,11 @@ namespace PolyPlane.Server
 
         private void UpdatePlayerList()
         {
+            if (_mouseOverPlayerList)
+                return;
+
+            PlayersListBox.SuspendLayout();
+
             for (int i = 0; i < _currentPlayers.Count; i++)
             {
                 var player = _currentPlayers[i];
@@ -548,6 +554,7 @@ namespace PolyPlane.Server
                 }
             }
 
+            PlayersListBox.ResumeLayout();
         }
 
         private void KickSelectedPlayer()
@@ -802,6 +809,16 @@ namespace PolyPlane.Server
         {
             World.TargetDT = World.DEFAULT_DT;
             DeltaTimeNumeric.Value = (decimal)World.TargetDT;
+        }
+
+        private void PlayersListBox_MouseEnter(object sender, EventArgs e)
+        {
+            _mouseOverPlayerList = true;
+        }
+
+        private void PlayersListBox_MouseLeave(object sender, EventArgs e)
+        {
+            _mouseOverPlayerList = false;
         }
     }
 }
