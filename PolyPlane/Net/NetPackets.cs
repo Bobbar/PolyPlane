@@ -3,7 +3,6 @@ using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Manager;
 using unvell.D2DLib;
 
-
 namespace PolyPlane.Net
 {
     public abstract class NetPacket
@@ -26,6 +25,11 @@ namespace PolyPlane.Net
                 return age;
             }
         }
+
+        // Get number of bits needed to store common enum types.
+        public static int NumBitsPacketType = Serialization.NumBitsEnum<PacketTypes>();
+        public static int NumBitsSendType = Serialization.NumBitsEnum<SendType>();
+        public static int NumBitsImpactType = Serialization.NumBitsEnum<ImpactType>();
 
         public NetPacket()
         {
@@ -56,8 +60,8 @@ namespace PolyPlane.Net
 
         public virtual void Serialize(BitBuffer data)
         {
-            data.AddByte((byte)Type);
-            data.AddByte((byte)SendType);
+            data.Add(NumBitsPacketType, (uint)Type);
+            data.Add(NumBitsSendType, (uint)SendType);
             data.AddGameID(ID);
             data.AddLong(FrameTime);
             data.AddUInt(PeerID);
@@ -65,8 +69,8 @@ namespace PolyPlane.Net
 
         public virtual void Deserialize(BitBuffer data)
         {
-            Type = (PacketTypes)data.ReadByte();
-            SendType = (SendType)data.ReadByte();
+            Type = (PacketTypes)data.Read(NumBitsPacketType);
+            SendType = (SendType)data.Read(NumBitsSendType);
             ID = data.ReadGameID();
             FrameTime = data.ReadLong();
             PeerID = data.ReadUInt();
@@ -479,7 +483,7 @@ namespace PolyPlane.Net
             base.Serialize(data);
 
             data.AddGameID(VictimID);
-            data.AddByte((byte)ImpactType);
+            data.Add(NumBitsImpactType, (uint)ImpactType);
             data.AddInt(Score);
             data.AddInt(Deaths);
         }
@@ -489,7 +493,7 @@ namespace PolyPlane.Net
             base.Deserialize(data);
 
             VictimID = data.ReadGameID();
-            ImpactType = (ImpactType)data.ReadByte();
+            ImpactType = (ImpactType)data.Read(NumBitsImpactType);
             Score = data.ReadInt();
             Deaths = data.ReadInt();
         }
@@ -708,6 +712,11 @@ namespace PolyPlane.Net
         public int NumBullets;
         public int NumDecoys;
 
+        // Get number of bits needed to store loadout stats.
+        private static int NumBitsMissiles = Serialization.NumBits(FighterPlane.MAX_MISSILES);
+        private static int NumBitsBullets = Serialization.NumBits(FighterPlane.MAX_BULLETS);
+        private static int NumBitsDecoys = Serialization.NumBits(FighterPlane.MAX_DECOYS);
+
         public PlanePacket(BitBuffer data)
         {
             this.Deserialize(data);
@@ -757,9 +766,9 @@ namespace PolyPlane.Net
             data.AddBool(FiringBurst);
             data.AddBool(ThrustOn);
             data.AddBool(IsFlipped);
-            data.AddByte((byte)NumMissiles);
-            data.AddByte((byte)NumBullets);
-            data.AddByte((byte)NumDecoys);
+            data.Add(NumBitsMissiles, (uint)NumMissiles);
+            data.Add(NumBitsBullets, (uint)NumBullets);
+            data.Add(NumBitsDecoys, (uint)NumDecoys);
         }
 
         public override void Deserialize(BitBuffer data)
@@ -770,9 +779,10 @@ namespace PolyPlane.Net
             FiringBurst = data.ReadBool();
             ThrustOn = data.ReadBool();
             IsFlipped = data.ReadBool();
-            NumMissiles = data.ReadByte();
-            NumBullets = data.ReadByte();
-            NumDecoys = data.ReadByte();
+
+            NumMissiles = (int)data.Read(NumBitsMissiles);
+            NumBullets = (int)data.Read(NumBitsBullets);
+            NumDecoys = (int)data.Read(NumBitsDecoys);
         }
     }
 
@@ -862,7 +872,7 @@ namespace PolyPlane.Net
             data.AddGameID(ImpactorID);
             data.AddD2DPoint(ImpactPoint);
             data.AddD2DPoint(ImpactPointOrigin);
-            data.AddByte((byte)ImpactType);
+            data.Add(NumBitsImpactType, (uint)ImpactType);
             data.AddFloat(ImpactAngle);
             data.AddFloat(DamageAmount);
             data.AddFloat(NewHealth);
@@ -876,7 +886,7 @@ namespace PolyPlane.Net
             ImpactorID = data.ReadGameID();
             ImpactPoint = data.ReadD2DPoint();
             ImpactPointOrigin = data.ReadD2DPoint();
-            ImpactType = (ImpactType)data.ReadByte();
+            ImpactType = (ImpactType)data.Read(NumBitsImpactType);
             ImpactAngle = data.ReadFloat();
             DamageAmount = data.ReadFloat();
             NewHealth = data.ReadFloat();

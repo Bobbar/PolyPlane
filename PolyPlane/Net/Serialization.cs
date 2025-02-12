@@ -46,7 +46,7 @@ namespace PolyPlane.Net
 
             data.FromArray(arrBytes, arrBytes.Length);
 
-            var type = (PacketTypes)data.PeekByte();
+            var type = (PacketTypes)data.Peek(NetPacket.NumBitsPacketType);
 
             NetPacket? obj = null;
 
@@ -165,6 +165,37 @@ namespace PolyPlane.Net
 
             input.Dispose();
             return output.ToArray();
+        }
+
+        /// <summary>
+        /// Returns the number of bits required to store all possible values of the specified enum.
+        /// </summary>
+        /// <typeparam name="T">Enum type</typeparam>
+        /// <returns></returns>
+        public static int NumBitsEnum<T>() where T : struct, IConvertible
+        {
+            var maxVal = Enum.GetValues(typeof(T)).Cast<T>().Max();
+            var bits = NumBits((int)(object)maxVal);
+
+            return bits;
+        }
+
+        /// <summary>
+        /// Returns the number of bits required to store an integer with the specified maximum value.
+        /// </summary>
+        /// <param name="maxValue">Maximum allowed value</param>
+        /// <returns></returns>
+        public static int NumBits(int maxValue)
+        {
+            int bits = 0;
+
+            if (maxValue >> 16 > 0) { bits += 16; maxValue >>= 16; }
+            if (maxValue >> 8 > 0) { bits += 8; maxValue >>= 8; }
+            if (maxValue >> 4 > 0) { bits += 4; maxValue >>= 4; }
+            if (maxValue >> 2 > 0) { bits += 2; maxValue >>= 2; }
+            if (maxValue - 1 > 0) ++bits;
+
+            return bits + 1;
         }
     }
 }
