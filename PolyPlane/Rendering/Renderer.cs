@@ -429,6 +429,13 @@ namespace PolyPlane.Rendering
 
             if (viewObject != null)
             {
+                // Do G-Force screen shake effect for planes.
+                if (viewObject is FighterPlane plane)
+                {
+                    if (plane.GForce > World.SCREEN_SHAKE_G)
+                        DoScreenShake(plane.GForce / 4f);
+                }
+
                 var viewPortSize = new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE);
                 var viewPortRect = new D2DRect(viewObject.Position, viewPortSize);
                 _ctx.PushViewPort(viewPortRect);
