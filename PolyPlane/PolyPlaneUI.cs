@@ -128,9 +128,18 @@ namespace PolyPlane
             EnqueueAction(disableFreeCamAction);
         }
 
-        private void NetMan_PlayerRespawned(object? sender, FighterPlane e)
+        private void AddRespawnMessage(FighterPlane plane)
         {
-            _render?.AddNewEventMessage($"'{e.PlayerName}' has respawned.", EventType.Net);
+            _render?.AddNewEventMessage($"'{plane.PlayerName}' has respawned.", EventType.Net);
+        }
+
+
+        private void NetMan_PlayerRespawned(object? sender, FighterPlane plane)
+        {
+            if (plane.Equals(_playerPlane))
+                _render.ClearHudMessage();
+
+            AddRespawnMessage(plane);
         }
 
         private void NetMan_PlayerKicked(object? sender, int e)
@@ -336,7 +345,7 @@ namespace PolyPlane
                 _netMan.PlayerKicked -= NetMan_PlayerKicked;
                 _netMan = null;
             }
-          
+
 
             if (_client != null)
             {
@@ -467,12 +476,8 @@ namespace PolyPlane
                 return;
             }
 
-            plane.ThrustOn = true;
-            plane.Velocity = new D2DPoint(World.PlaneSpawnVelo, 0f);
-            plane.RotationSpeed = 0f;
-            plane.IsDisabled = false;
-            plane.FixPlane();
-            plane.SetPosition(Utilities.FindSafeSpawnPoint(), 0f);
+            AddRespawnMessage(plane);
+            plane.RespawnPlane(Utilities.FindSafeSpawnPoint());
         }
 
         private void ResetPlayerPlane()
@@ -481,25 +486,18 @@ namespace PolyPlane
                 return;
 
             if (World.IsNetGame)
+            {
                 SendPlayerReset();
 
-            _playerPlane.ThrustOn = true;
-            _playerPlane.Position = Utilities.FindSafeSpawnPoint();
-
-            // Set player plane rotation to current guidance angle.
-            // Allow players to choose to spawn traveling left or right.
-            var guideAngle = GetPlayerGuidanceAngle();
-
-            if (Utilities.IsPointingRight(guideAngle))
-                _playerPlane.Rotation = 0f;
+                // Prevent duplicate reset packets being sent.
+                _playerPlane.RespawnQueued = true;
+            }
             else
-                _playerPlane.Rotation = 180f;
+            {
+                _playerPlane.RespawnPlane(Utilities.FindSafeSpawnPoint());
+                AddRespawnMessage(_playerPlane);
 
-            _playerPlane.Velocity = Utilities.AngleToVectorDegrees(_playerPlane.Rotation, World.PlaneSpawnVelo);
-
-            _playerPlane.RotationSpeed = 0f;
-            _playerPlane.IsDisabled = false;
-            _playerPlane.FixPlane();
+            }
 
             _canRespawn = false;
             _render.ClearHudMessage();
@@ -683,7 +681,8 @@ namespace PolyPlane
             {
                 if (plane.IsAI && plane.HasCrashed && plane.AIRespawnReady)
                 {
-                    ResetAIPlane(plane);
+                    if (!plane.RespawnQueued)
+                        ResetAIPlane(plane);
                 }
             }
         }
@@ -826,7 +825,7 @@ namespace PolyPlane
 
         private void SendPlayerReset()
         {
-            _netMan.SendPlaneReset(_playerPlane);
+            _netMan.ClientSendPlaneReset(_playerPlane);
         }
 
         private void NextViewPlane()

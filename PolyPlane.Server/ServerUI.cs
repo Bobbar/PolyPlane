@@ -418,14 +418,11 @@ namespace PolyPlane.Server
 
         private void ResetPlane(FighterPlane plane)
         {
-            _netMan.SendPlaneReset(plane);
+            var spawnPos = Utilities.FindSafeSpawnPoint();
 
-            plane.ThrustOn = true;
-            plane.Velocity = new D2DPoint(World.PlaneSpawnVelo, 0f);
-            plane.RotationSpeed = 0f;
-            plane.IsDisabled = false;
-            plane.FixPlane();
-            plane.SetPosition(Utilities.FindSafeSpawnPoint(), 0f);
+            _netMan.ServerSendPlaneReset(plane, spawnPos);
+
+            plane.RespawnPlane(spawnPos);
         }
 
         private void ProcessQueuedActions()

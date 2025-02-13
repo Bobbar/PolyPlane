@@ -76,7 +76,6 @@ namespace PolyPlane.Net.NetHost
                 or PacketTypes.NewDecoy
                 or PacketTypes.Impact
                 or PacketTypes.PlayerDisconnect
-                or PacketTypes.PlayerReset
                 or PacketTypes.PlayerEvent:
 
                     // Queue certain updates to re-broadcast ASAP.

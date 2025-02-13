@@ -413,8 +413,23 @@ namespace PolyPlane.Net
 
                     if (resetPlane != null)
                     {
+                        if (IsServer)
+                        {
+                            // Get a spawn point and send it back to the clients.
+                            var spawnPos = Utilities.FindSafeSpawnPoint();
+                            resetPack.Position = spawnPos;
+                            Host.EnqueuePacket(resetPack);
+                            
+                            // Respawn the plane locally to make sure it is occupying the spawn point.
+                            // Prevents the spawn point from being given to another player before the client moves its plane there.
+                            resetPlane.RespawnPlane(spawnPos);
+                        }
+                        else
+                        {
+                            resetPlane.RespawnPlane(resetPack.Position);
+                        }
+
                         ClearImpacts(resetPack.ID.PlayerID);
-                        resetPlane.FixPlane();
                         PlayerRespawned?.Invoke(this, resetPlane);
                     }
 

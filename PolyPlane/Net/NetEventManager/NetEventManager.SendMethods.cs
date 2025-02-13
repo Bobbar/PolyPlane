@@ -308,9 +308,22 @@ namespace PolyPlane.Net
                 Host.EnqueuePacket(impactsPacket, SendType.ToOnly, destID.PlayerID);
         }
 
-        public void SendPlaneReset(FighterPlane plane)
+        public void ClientSendPlaneReset(FighterPlane plane)
         {
+            if (IsServer)
+                return;
+
             var resetPacket = new BasicPacket(PacketTypes.PlayerReset, plane.ID);
+            ClearImpacts(plane.PlayerID);
+            Host.EnqueuePacket(resetPacket);
+        }
+
+        public void ServerSendPlaneReset(FighterPlane plane, D2DPoint spawnPos)
+        {
+            if (!IsServer) 
+                return;
+
+            var resetPacket = new BasicPacket(PacketTypes.PlayerReset, plane.ID, spawnPos);
             ClearImpacts(plane.PlayerID);
             Host.EnqueuePacket(resetPacket);
         }

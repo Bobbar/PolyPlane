@@ -82,6 +82,7 @@ namespace PolyPlane.GameObjects
         public bool WasHeadshot { get; set; } = false;
         public bool IsDisabled { get; set; } = false;
 
+        public bool RespawnQueued = false;
         public bool HasRadarLock = false;
         public bool AIRespawnReady = false;
         public string PlayerName = "Player";
@@ -1073,12 +1074,15 @@ namespace PolyPlane.GameObjects
             Health = 0;
         }
 
-        public void FixPlane()
+        public void RespawnPlane(D2DPoint location)
         {
+            this.SetPosition(location);
+
             Health = MAX_HEALTH;
             NumBullets = MAX_BULLETS;
             NumMissiles = MAX_MISSILES;
             NumDecoys = MAX_DECOYS;
+            RespawnQueued = false;
             IsDisabled = false;
             HasCrashed = false;
             ThrustOn = true;
@@ -1088,7 +1092,6 @@ namespace PolyPlane.GameObjects
             _bulletHoles.ForEach(b => b.Dispose());
             _bulletHoles.Clear();
             WasHeadshot = false;
-            PlayerGuideAngle = 0f;
             _easePhysicsComplete = false;
             _easePhysicsTimer.Restart();
             AIRespawnReady = false;
@@ -1109,6 +1112,14 @@ namespace PolyPlane.GameObjects
 
             if (IsAI)
                 _aiBehavior.ClearTarget();
+
+            // Spawn the plane pointing in the desired direction.
+            if (Utilities.IsPointingRight(PlayerGuideAngle))
+                Rotation = 0f;
+            else
+                Rotation = 180f;
+
+            Velocity = Utilities.AngleToVectorDegrees(Rotation, World.PlaneSpawnVelo);
 
             this.UpdateAllAttachments(0f);
         }
