@@ -8,12 +8,17 @@ namespace PolyPlane.GameObjects.Manager
     {
         private GameObjectManager _objs = World.ObjectManager;
         private NetEventManager _netMan;
+        private ActionScheduler _rateLimitedActions = new ActionScheduler();
 
         private bool _isNetGame = true;
 
         public CollisionManager(NetEventManager netMan)
         {
             _netMan = netMan;
+
+            // Server will need to rate limit explosion impulses.
+            if (World.IsServer)
+                _rateLimitedActions.AddAction(World.TARGET_FRAME_TIME, () => HandleExplosionImpulse(World.CurrentDT));
         }
 
         public CollisionManager()
@@ -232,7 +237,15 @@ namespace PolyPlane.GameObjects.Manager
                 }
             }
 
-            HandleExplosionImpulse(dt);
+            // Since the server runs at a higher FPS than clients,
+            // we want to limit the rate of explosion impulses.
+            // Otherwise we may be sending dozens of packets per second
+            // for explosion splash damage.
+            if (World.IsServer)
+                _rateLimitedActions.DoActions();
+            else
+                HandleExplosionImpulse(dt);
+
             HandleGroundImpacts(dt);
             HandleFieldWrap();
         }
