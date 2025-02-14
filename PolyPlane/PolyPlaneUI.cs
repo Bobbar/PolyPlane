@@ -1105,8 +1105,11 @@ namespace PolyPlane
             if (e.KeyData.HasFlag(Keys.Enter) && e.KeyData.HasFlag(Keys.Alt))
                 ToggleFullscreen();
 
-            if (e.KeyData == Keys.Escape && _isFullScreen && (_netMan != null && !_netMan.ChatInterface.ChatIsActive))
-                ToggleFullscreen();
+            if (e.KeyData == Keys.Escape && _isFullScreen)
+            {
+                if (!World.IsNetGame || (World.IsNetGame && !_netMan.ChatInterface.ChatIsActive))
+                    ToggleFullscreen();
+            }
         }
 
         private void PolyPlaneUI_KeyUp(object sender, KeyEventArgs e)
