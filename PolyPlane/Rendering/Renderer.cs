@@ -566,7 +566,8 @@ namespace PolyPlane.Rendering
             var inflateAmt = VIEWPORT_PADDING_AMT * zAmt;
             viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true); // Inflate slightly to prevent "pop-in".
 
-            var objsInViewport = _objs.GetInViewport(ctx.Viewport).Where(o => o is not Explosion);
+            // Query the spatial grid for objects within the current viewport.
+            var objsInViewport = _objs.GetInViewport(viewPortRect).Where(o => o is not Explosion);
 
             // Update the light map.
             if (World.UseLightMap)
