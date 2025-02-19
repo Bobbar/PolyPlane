@@ -948,22 +948,32 @@ namespace PolyPlane.GameObjects
             result.ImpactAngle = angle;
             result.WasFlipped = this.Polygon.IsFlipped;
 
+            var isMissile = impactor is GuidedMissile;
+
+            // Set the impact type.
+            if (isMissile)
+                result.Type |= ImpactType.Missile;
+            else
+                result.Type |= ImpactType.Bullet;
+
             if (!IsDisabled)
             {
                 if (this.Health > 0)
                 {
+                    // Set distortion amount.
                     var distortAmt = BULLET_DISTORT_AMT;
-                    if (impactor is GuidedMissile)
+                 
+                    if (isMissile)
                         distortAmt = MISSILE_DISTORT_AMT;
 
+                    // Check for headshots.
                     var distortVec = Utilities.AngleToVectorDegrees(angle + this.Rotation, distortAmt);
                     var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
 
                     var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos + distortVec);
+
                     if (hitCockpit)
-                    {
                         result.Type |= ImpactType.Headshot;
-                    }
 
                     // Copy the polygon and check for distortion related damage effects.
                     var polyCopy = new RenderPoly(this.Polygon, this.Position, this.Rotation);
@@ -971,16 +981,11 @@ namespace PolyPlane.GameObjects
 
                     AddPolyDamageEffectsResult(polyCopy, result);
 
-                    if (impactor is GuidedMissile)
-                    {
-                        result.Type |= ImpactType.Missile;
+                    // Set the damage amount.
+                    if (isMissile)
                         result.DamageAmount = MISSILE_DAMAGE;
-                    }
                     else
-                    {
-                        result.Type |= ImpactType.Bullet;
                         result.DamageAmount = BULLET_DAMAGE;
-                    }
 
                     result.NewHealth = this.Health - result.DamageAmount;
 
