@@ -6,11 +6,11 @@ namespace PolyPlane.GameObjects.Manager
     {
         public FighterPlane TargetPlane;
         public GameObject ImpactorObject;
-        public ImpactType Type;
+        public ImpactType ImpactType;
         public D2DPoint ImpactPoint;
         public D2DPoint ImpactPointOrigin;
         public float ImpactAngle;
-        public bool WasHeadshot => (Type & ImpactType.Headshot) == ImpactType.Headshot;
+        public bool WasHeadshot => ImpactType.HasFlag(ImpactType.Headshot);
         public bool WasFlipped;
         public float DamageAmount = 0f;
         public float NewHealth = 0f;
@@ -19,18 +19,18 @@ namespace PolyPlane.GameObjects.Manager
 
         public PlaneImpactResult(ImpactType type, D2DPoint impactPoint, float impactAngle, float damageAmount, bool wasHeadshot)
         {
-            Type = type;
+            ImpactType = type;
             ImpactPoint = impactPoint;
             ImpactAngle = impactAngle;
             DamageAmount = damageAmount;
 
             if (wasHeadshot)
-                Type |= ImpactType.Headshot;
+                ImpactType |= ImpactType.Headshot;
         }
 
         public PlaneImpactResult(ImpactPacket impactPacket)
         {
-            Type = impactPacket.ImpactType;
+            ImpactType = impactPacket.ImpactType;
             ImpactPoint = impactPacket.ImpactPoint;
             ImpactPointOrigin = impactPacket.ImpactPointOrigin;
             ImpactAngle = impactPacket.ImpactAngle;
@@ -38,7 +38,7 @@ namespace PolyPlane.GameObjects.Manager
             WasFlipped = impactPacket.WasFlipped;
 
             if (impactPacket.WasHeadshot)
-                Type |= ImpactType.Headshot;
+                ImpactType |= ImpactType.Headshot;
         }
     }
 

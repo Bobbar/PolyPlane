@@ -1796,8 +1796,6 @@ namespace PolyPlane.Rendering
                 if (viewObject is FighterPlane plane)
                 {
                     infoText += $"Kills: {plane.Kills}\n";
-                    infoText += $"Bullets (Fired/Hit): ({plane.BulletsFired} / {plane.BulletsHit}) \n";
-                    infoText += $"Missiles (Fired/Hit): ({plane.MissilesFired} / {plane.MissilesHit}) \n";
                     infoText += $"Headshots: {plane.Headshots}\n";
                     infoText += $"IsDisabled: {plane.IsDisabled}\n";
                     infoText += $"HasCrashed: {plane.HasCrashed}\n";

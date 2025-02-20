@@ -862,7 +862,7 @@ namespace PolyPlane.Net
             WasFlipped = result.WasFlipped;
             DamageAmount = result.DamageAmount;
             NewHealth = result.NewHealth;
-            ImpactType = result.Type;
+            ImpactType = result.ImpactType;
         }
 
         public override void Serialize(BitBuffer data)

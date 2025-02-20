@@ -493,7 +493,7 @@ namespace PolyPlane.GameObjects
                     if (veloMag > (gravMag * 0.25f) && this.IsAwake)
                     {
                         // Bounce.
-                        this.Position = new D2DPoint(this.Position.X, 0f);
+                        this.SetPosition(new D2DPoint(this.Position.X, 0f));
                         this.Velocity = new D2DPoint(this.Velocity.X * 0.7f, -this.Velocity.Y * 0.3f);
 
                         // Set rotation speed to horizonal velocity to give a rolling effect.
@@ -506,13 +506,13 @@ namespace PolyPlane.GameObjects
                         {
                             // Go to sleep.
                             this.Velocity = D2DPoint.Zero;
-                            this.Position = new D2DPoint(this.Position.X, 0f);
+                            this.SetPosition(new D2DPoint(this.Position.X, 0f));
                             this.RotationSpeed = 0f;
                             this.IsAwake = false;
                         }
                         else
                         {
-                            this.Position = new D2DPoint(this.Position.X, 0f);
+                            this.SetPosition(new D2DPoint(this.Position.X, 0f));
                         }
                     }
                 }
@@ -522,7 +522,7 @@ namespace PolyPlane.GameObjects
                 // Clamp all other objects to ground level.
                 if (this.Altitude <= 0f)
                 {
-                    this.Position = new D2DPoint(this.Position.X, 0f);
+                    this.SetPosition(new D2DPoint(this.Position.X, 0f));
                     this.Velocity = new D2DPoint(this.Velocity.X + -this.Velocity.X * (dt * 1f), 0f);
                 }
             }

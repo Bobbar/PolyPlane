@@ -92,8 +92,6 @@ namespace PolyPlane.GameObjects
         public int BulletsFired = 0;
         public int MissilesFired = 0;
         public int DecoysDropped = 0;
-        public int BulletsHit = 0;
-        public int MissilesHit = 0;
         public int Kills = 0;
         public int Headshots = 0;
         public int Deaths = 0;
@@ -808,7 +806,7 @@ namespace PolyPlane.GameObjects
         public void AddBulletHole(D2DPoint pos, float angle, float distortAmt = 3f)
         {
             var distortVec = Utilities.AngleToVectorDegrees(angle, distortAmt);
-          
+
             DistortPolygon(this.Polygon, pos, distortVec);
 
             var bulletHole = AddAttachment(new BulletHole(this, pos + distortVec, angle));
@@ -838,14 +836,14 @@ namespace PolyPlane.GameObjects
             var tailWing = _wings.Last();
 
             if (mainWing.Visible && !Utilities.PointInPoly(mainWing.PivotPoint.Position, poly.Poly))
-                result.Type |= ImpactType.DamagedMainWing;
+                result.ImpactType |= ImpactType.DamagedMainWing;
 
             if (tailWing.Visible && !Utilities.PointInPoly(tailWing.PivotPoint.Position, poly.Poly))
-                result.Type |= ImpactType.DamagedTailWing;
+                result.ImpactType |= ImpactType.DamagedTailWing;
 
             // Check for engine damage.
             if (this.ThrustOn && !this.EngineDamaged && !Utilities.PointInPoly(_centerOfThrust.Position, this.Polygon.Poly))
-                result.Type |= ImpactType.DamagedEngine;
+                result.ImpactType |= ImpactType.DamagedEngine;
         }
 
         private void ApplyPolyDamageEffects(PlaneImpactResult result)
@@ -853,19 +851,19 @@ namespace PolyPlane.GameObjects
             var mainWing = _wings.First();
             var tailWing = _wings.Last();
 
-            if (mainWing.Visible && (result.Type & ImpactType.DamagedMainWing) == ImpactType.DamagedMainWing)
+            if (mainWing.Visible && result.ImpactType.HasFlag(ImpactType.DamagedMainWing))
             {
                 mainWing.Visible = false;
                 SpawnDebris(1, mainWing.Position, D2DColor.Gray);
             }
 
-            if (tailWing.Visible && (result.Type & ImpactType.DamagedTailWing) == ImpactType.DamagedTailWing)
+            if (tailWing.Visible && result.ImpactType.HasFlag(ImpactType.DamagedTailWing))
             {
                 tailWing.Visible = false;
                 SpawnDebris(1, tailWing.Position, D2DColor.Gray);
             }
 
-            if (this.ThrustOn && !this.EngineDamaged && (result.Type & ImpactType.DamagedEngine) == ImpactType.DamagedEngine)
+            if (this.ThrustOn && !this.EngineDamaged && result.ImpactType.HasFlag(ImpactType.DamagedEngine))
             {
                 _engineFireFlame.StartSpawning();
                 this.EngineDamaged = true;
@@ -884,18 +882,14 @@ namespace PolyPlane.GameObjects
             if (this.IsAI)
                 _aiBehavior.ChangeTarget(attackPlane);
 
-            if (result.Type != ImpactType.Splash)
+            if (result.ImpactType != ImpactType.Splash)
             {
-                if (impactor is Bullet)
-                    attackPlane.BulletsHit++;
-                else if (impactor is GuidedMissile)
-                    attackPlane.MissilesHit++;
+                var distortAmt = BULLET_DISTORT_AMT;
+
+                if (result.ImpactType.HasFlag(ImpactType.Missile))
+                    distortAmt = MISSILE_DISTORT_AMT;
 
                 var angle = result.ImpactAngle;
-
-                var distortAmt = BULLET_DISTORT_AMT;
-                if (impactor is GuidedMissile)
-                    distortAmt = MISSILE_DISTORT_AMT;
 
                 // Add bullet hole and polygon distortion.
                 AddBulletHole(result.ImpactPointOrigin, angle, distortAmt);
@@ -920,9 +914,9 @@ namespace PolyPlane.GameObjects
                 {
                     Health -= result.DamageAmount;
 
-                    if (result.Type == ImpactType.Missile)
+                    if (result.ImpactType.HasFlag(ImpactType.Missile))
                         SpawnDebris(4, result.ImpactPoint, this.PlaneColor);
-                    else if (result.Type == ImpactType.Bullet)
+                    else if (result.ImpactType.HasFlag(ImpactType.Bullet))
                         SpawnDebris(1, result.ImpactPoint, this.PlaneColor);
                 }
 
@@ -930,7 +924,7 @@ namespace PolyPlane.GameObjects
                 {
                     // Only do this for local games or from the server during net play.
                     if (!World.IsNetGame || (World.IsNetGame && World.IsServer))
-                        DoPlayerKilled(attackPlane, result.Type);
+                        DoPlayerKilled(attackPlane, result.ImpactType);
                 }
             }
 
@@ -939,7 +933,12 @@ namespace PolyPlane.GameObjects
 
         public PlaneImpactResult GetImpactResult(GameObject impactor, D2DPoint impactPos)
         {
+            // Get impact angle, damage and distortion results.
             var angle = Utilities.ClampAngle((impactor.Velocity - this.Velocity).Angle() - this.Rotation);
+            var isMissile = impactor is GuidedMissile;
+            var distortAmt = 0f;
+            var damageAmt = 0f;
+
             var result = new PlaneImpactResult();
             result.TargetPlane = this;
             result.ImpactorObject = impactor;
@@ -948,50 +947,45 @@ namespace PolyPlane.GameObjects
             result.ImpactAngle = angle;
             result.WasFlipped = this.Polygon.IsFlipped;
 
-            var isMissile = impactor is GuidedMissile;
-
-            // Set the impact type.
             if (isMissile)
-                result.Type |= ImpactType.Missile;
-            else
-                result.Type |= ImpactType.Bullet;
-
-            if (!IsDisabled)
             {
-                if (this.Health > 0)
-                {
-                    // Set distortion amount.
-                    var distortAmt = BULLET_DISTORT_AMT;
-                 
-                    if (isMissile)
-                        distortAmt = MISSILE_DISTORT_AMT;
+                result.ImpactType |= ImpactType.Missile;
+                damageAmt = MISSILE_DAMAGE;
+                distortAmt = MISSILE_DISTORT_AMT;
+            }
+            else
+            {
+                result.ImpactType |= ImpactType.Bullet;
+                damageAmt = BULLET_DAMAGE;
+                distortAmt = BULLET_DISTORT_AMT;
+            }
 
-                    // Check for headshots.
-                    var distortVec = Utilities.AngleToVectorDegrees(angle + this.Rotation, distortAmt);
-                    var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
+            // Check for headshots.
+            var distortVec = Utilities.AngleToVectorDegrees(angle + this.Rotation, distortAmt);
+            var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
 
-                    var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos + distortVec);
+            var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos + distortVec);
 
-                    if (hitCockpit)
-                        result.Type |= ImpactType.Headshot;
+            if (hitCockpit)
+            {
+                result.ImpactType |= ImpactType.Headshot;
+                damageAmt = this.Health;
+            }
 
-                    // Copy the polygon and check for distortion related damage effects.
-                    var polyCopy = new RenderPoly(this.Polygon, this.Position, this.Rotation);
-                    DistortPolygon(polyCopy, result.ImpactPointOrigin, distortVec);
+            // Copy the polygon, distort it, then check for distortion related damage effects.
+            var polyCopy = new RenderPoly(this.Polygon, this.Position, this.Rotation);
+            DistortPolygon(polyCopy, result.ImpactPointOrigin, distortVec);
 
-                    AddPolyDamageEffectsResult(polyCopy, result);
+            AddPolyDamageEffectsResult(polyCopy, result);
 
-                    // Set the damage amount.
-                    if (isMissile)
-                        result.DamageAmount = MISSILE_DAMAGE;
-                    else
-                        result.DamageAmount = BULLET_DAMAGE;
+            // Set the damage amount.
+            if (!IsDisabled && this.Health > 0f)
+            {
+                result.DamageAmount = damageAmt;
+                result.NewHealth = this.Health - result.DamageAmount;
 
-                    result.NewHealth = this.Health - result.DamageAmount;
-
-                    if (result.WasHeadshot)
-                        result.NewHealth = 0;
-                }
+                if (result.WasHeadshot)
+                    result.NewHealth = 0f;
             }
 
             return result;
