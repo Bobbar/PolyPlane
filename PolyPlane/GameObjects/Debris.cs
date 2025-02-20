@@ -20,7 +20,8 @@ namespace PolyPlane.GameObjects
             this.Mass = 40f;
             this.RenderOrder = 3;
 
-            _flame = AddAttachment(new FlameEmitter(this, D2DPoint.Zero, 2f, 4f));
+            _flame = new FlameEmitter(this, D2DPoint.Zero, 2f, 4f);
+
         }
 
         public void ReInit(GameObject owner, D2DPoint pos, D2DPoint velo, D2DColor color)
@@ -28,6 +29,8 @@ namespace PolyPlane.GameObjects
             this.IsExpired = false;
             this.Age = 0f;
             this.Position = pos;
+
+            _onGroundAge = 0f;
 
             this.Owner = owner;
             _color = color;
@@ -38,11 +41,16 @@ namespace PolyPlane.GameObjects
 
             this.Velocity = velo * 0.7f;
             this.Velocity += Utilities.RandOPoint(100f);
+
+            _flame.IsExpired = false;
+            _flame.StartSpawning();
         }
 
         public override void DoUpdate(float dt)
         {
             base.DoUpdate(dt);
+
+            _flame.Update(dt);
 
             if (this.IsAwake)
                 this.Velocity += (World.Gravity * 1f) * dt;
