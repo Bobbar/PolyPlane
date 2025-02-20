@@ -14,11 +14,21 @@ namespace PolyPlane.GameObjects
         private float _onGroundAge = 0f;
         private const float MAX_AGE = 70f;
 
-        public Debris(GameObject owner, D2DPoint pos, D2DPoint velo, D2DColor color) : base(pos, velo)
+        public Debris() : base()
         {
             this.Flags = GameObjectFlags.Pushable | GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround | GameObjectFlags.CanSleep;
             this.Mass = 40f;
             this.RenderOrder = 3;
+
+            _flame = AddAttachment(new FlameEmitter(this, D2DPoint.Zero, 2f, 4f));
+        }
+
+        public void ReInit(GameObject owner, D2DPoint pos, D2DPoint velo, D2DColor color)
+        {
+            this.IsExpired = false;
+            this.Age = 0f;
+            this.Position = pos;
+
             this.Owner = owner;
             _color = color;
 
@@ -28,8 +38,6 @@ namespace PolyPlane.GameObjects
 
             this.Velocity = velo * 0.7f;
             this.Velocity += Utilities.RandOPoint(100f);
-
-            _flame = AddAttachment(new FlameEmitter(this, D2DPoint.Zero, 2f, 4f));
         }
 
         public override void DoUpdate(float dt)
@@ -65,7 +73,7 @@ namespace PolyPlane.GameObjects
         {
             base.Dispose();
 
-            _flame.Dispose();
+            World.ObjectManager.ReturnDebris(this);
         }
     }
 }

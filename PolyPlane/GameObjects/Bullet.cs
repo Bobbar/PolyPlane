@@ -31,10 +31,11 @@ namespace PolyPlane.GameObjects
             this.Flags = GameObjectFlags.SpatialGrid;
         }
 
-        public Bullet(FighterPlane plane) : this()
+        public void ReInit(FighterPlane plane)
         {
             this.PlayerID = plane.PlayerID;
             this.IsExpired = false;
+            this.IsNetObject = false;
             this.Age = 0f;
 
             this.Position = plane.GunPosition;
@@ -48,7 +49,7 @@ namespace PolyPlane.GameObjects
             this.Polygon.Update();
         }
 
-        public Bullet(D2DPoint pos, D2DPoint velo, float rotation) : this()
+        public void ReInit(D2DPoint pos, D2DPoint velo, float rotation)
         {
             this.IsExpired = false;
             this.IsNetObject = true;
@@ -59,6 +60,13 @@ namespace PolyPlane.GameObjects
             this.Rotation = rotation;
 
             this.Polygon.Update();
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+
+            World.ObjectManager.ReturnBullet(this);
         }
 
         public override void DoUpdate(float dt)

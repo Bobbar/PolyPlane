@@ -71,7 +71,9 @@ namespace PolyPlane.GameObjects.Fixtures
             // Don't actually fire a bullet for net planes.
             if (!_ownerPlane.IsNetObject)
             {
-                var bullet = new Bullet(_ownerPlane);
+                var bullet = World.ObjectManager.RentBullet();
+                bullet.ReInit(_ownerPlane);
+
                 FireBulletCallback(bullet);
                 _ownerPlane.BulletsFired++;
                 _ownerPlane.NumBullets--;

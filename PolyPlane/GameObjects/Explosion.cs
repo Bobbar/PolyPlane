@@ -21,14 +21,22 @@ namespace PolyPlane.GameObjects
         private D2DColor _showckWaveColor = new D2DColor(1f, D2DColor.White);
         private readonly D2DColor _lightMapColor = new D2DColor(1f, 0.96f, 0.67f, 0.26f);
 
-        public Explosion(GameObject owner, float maxRadius, float duration) : base(owner.Position)
+        public Explosion() : base()
         {
             this.Flags = GameObjectFlags.SpatialGrid;
+        }
+
+        public void ReInit(GameObject owner, float maxRadius, float duration)
+        {
+            this.IsExpired = false;
+            this.Age = 0f;
+            this.Position = owner.Position;
             this.Owner = owner;
             this.MaxRadius = maxRadius;
             this.MaxShockwaveRadius = maxRadius * 6f;
             this.Duration = duration;
             this.PlayerID = owner.PlayerID;
+            _hasShockWave = false;
 
             // If are right at ground level, spawn just below it.
             // Allows explosions to kick around debris and planes more.
@@ -98,6 +106,8 @@ namespace PolyPlane.GameObjects
         public override void Dispose()
         {
             base.Dispose();
+
+            World.ObjectManager.ReturnExplosion(this);
         }
 
         float ILightMapContributor.GetLightRadius()

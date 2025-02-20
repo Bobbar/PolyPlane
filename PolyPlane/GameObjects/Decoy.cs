@@ -16,8 +16,30 @@ namespace PolyPlane.GameObjects
 
         private FloatAnimation _flashAnimation;
 
-        public Decoy(FighterPlane owner, D2DPoint pos) : base(pos)
+        public Decoy() : base() 
         {
+            InitStuff();
+        }
+
+        private void InitStuff()
+        {
+            this.Flags = GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround;
+            this.Mass = 50f;
+            this.RenderOrder = 1;
+
+            _flashAnimation = new FloatAnimation(0f, 5f, 0.4f, EasingFunctions.EaseLinear, v => _currentFlashRadius = v);
+            _flashAnimation.Start();
+            _flashAnimation.ReverseOnLoop = true;
+            _flashAnimation.Loop = true;
+        }
+
+        public void ReInit(FighterPlane owner, D2DPoint pos)
+        {
+            this.IsExpired = false;
+            this.Age = 0f;
+            this.IsNetObject = false;
+
+            this.Position = pos;
             this.PlayerID = owner.PlayerID;
             this.Owner = owner;
             this.Velocity = owner.Velocity;
@@ -35,27 +57,20 @@ namespace PolyPlane.GameObjects
             var topVec = new D2DPoint(rotVec.Y, -rotVec.X);
             this.Velocity += topVec * EJECT_FORCE;
 
-            InitStuff();
+            _flashAnimation.Start();
         }
 
-        public Decoy(FighterPlane owner, D2DPoint pos, D2DPoint velo) : base(pos, velo)
+        public void ReInit(FighterPlane owner, D2DPoint pos, D2DPoint velo)
         {
+            this.IsExpired = false;
+            this.Age = 0f;
+
             this.PlayerID = owner.PlayerID;
             this.Owner = owner;
+            this.Position = pos;
+            this.Velocity = velo;
 
-            InitStuff();
-        }
-
-        private void InitStuff()
-        {
-            this.Flags = GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround;
-            this.Mass = 50f;
-            this.RenderOrder = 1;
-
-            _flashAnimation = new FloatAnimation(0f, 5f, 0.4f, EasingFunctions.EaseLinear, v => _currentFlashRadius = v);
             _flashAnimation.Start();
-            _flashAnimation.ReverseOnLoop = true;
-            _flashAnimation.Loop = true;
         }
 
         public override void DoUpdate(float dt)
@@ -88,6 +103,15 @@ namespace PolyPlane.GameObjects
             var isFlashFrame = _currentFrame % FLASH_FRAME1 == 0 || _currentFrame % FLASH_FRAME2 == 0;
 
             return isFlashFrame;
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+
+            _flashAnimation.Stop();
+
+            World.ObjectManager.ReturnDecoy(this);
         }
 
         float ILightMapContributor.GetLightRadius()

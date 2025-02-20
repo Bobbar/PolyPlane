@@ -22,8 +22,8 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private PingObj _lockedPingObj = null;
-        private PingObj _aimedAtPingObj = null;
+        private PingObj? _lockedPingObj = null;
+        private PingObj? _aimedAtPingObj = null;
 
         private readonly float _radarFOV = World.SENSOR_FOV * 0.25f;
         private const float MIN_IMPACT_TIME = 20f; // Min time before defending.
@@ -33,6 +33,7 @@ namespace PolyPlane.GameObjects
 
         private D2DColor _color = World.HudColor;
         private Dictionary<GameID, PingObj> _pings = new Dictionary<GameID, PingObj>();
+        private GameObjectPool<PingObj> _pingPool = new GameObjectPool<PingObj>(() => new PingObj());
 
         private GameTimer _lockTimer = new GameTimer(2f);
         private GameTimer _lostLockTimer = new GameTimer(10f);
@@ -407,16 +408,26 @@ namespace PolyPlane.GameObjects
             foreach (var ping in _pings.Values)
             {
                 if (ping.Age > _maxAge)
+                {
                     _pings.Remove(ping.Obj.ID);
+                    _pingPool.ReturnObject(ping);
+                }
             }
         }
 
         private void AddOrRefresh(GameObject obj, D2DPoint radarPos)
         {
             if (_pings.TryGetValue(obj.ID, out var ping))
+            {
                 ping.Refresh(radarPos);
+            }
             else
-                _pings.Add(obj.ID, new PingObj(obj, radarPos));
+            {
+                var newPing = _pingPool.RentObject();
+                newPing.ReInit(obj, radarPos);
+
+                _pings.Add(obj.ID, newPing);
+            }
         }
 
 
@@ -426,15 +437,13 @@ namespace PolyPlane.GameObjects
             public D2DPoint RadarPos;
             public float Age = 0f;
 
-            public PingObj(GameObject obj)
-            {
-                Obj = obj;
-            }
+            public PingObj() { }
 
-            public PingObj(GameObject obj, D2DPoint pos)
+            public void ReInit(GameObject obj, D2DPoint pos)
             {
                 Obj = obj;
                 RadarPos = pos;
+                Age = 0f;
             }
 
             public void Update(float dt)

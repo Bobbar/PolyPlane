@@ -43,6 +43,10 @@ namespace PolyPlane.GameObjects
         private List<GameObject> _expiredObjs = new();
 
         private GameObjectPool<Particle> _particlePool = new(() => new Particle());
+        private GameObjectPool<Bullet> _bulletPool = new(() => new Bullet());
+        private GameObjectPool<Decoy> _decoyPool = new(() => new Decoy());
+        private GameObjectPool<Explosion> _explosionPool = new(() => new Explosion());
+        private GameObjectPool<Debris> _debrisPool = new(() => new Debris());
 
         public event EventHandler<PlayerScoredEventArgs> PlayerScoredEvent;
         public event EventHandler<EventMessage> PlayerKilledEvent;
@@ -85,6 +89,17 @@ namespace PolyPlane.GameObjects
                 NewDebris.Enqueue(debris);
         }
 
+        public Debris RentDebris()
+        {
+            var debris = _debrisPool.RentObject();
+            return debris;
+        }
+
+        public void ReturnDebris(Debris debris)
+        {
+            _debrisPool.ReturnObject(debris);
+        }
+
         private void AddDebris(Debris debris)
         {
             if (!Contains(debris))
@@ -92,6 +107,17 @@ namespace PolyPlane.GameObjects
                 AddObject(debris);
                 Debris.Add(debris);
             }
+        }
+
+        public Bullet RentBullet()
+        {
+            var bullet = _bulletPool.RentObject();
+            return bullet;
+        }
+
+        public void ReturnBullet(Bullet bullet)
+        {
+            _bulletPool.ReturnObject(bullet);
         }
 
         public void AddBullet(Bullet bullet)
@@ -149,6 +175,18 @@ namespace PolyPlane.GameObjects
             NewPlanes.Enqueue(plane);
         }
 
+
+        public Decoy RentDecoy()
+        {
+            var decoy = _decoyPool.RentObject();
+            return decoy;
+        }
+
+        public void ReturnDecoy(Decoy decoy)
+        {
+            _decoyPool.ReturnObject(decoy);
+        }
+
         private void AddDecoy(Decoy decoy)
         {
             if (!Contains(decoy))
@@ -157,21 +195,7 @@ namespace PolyPlane.GameObjects
                 Decoys.Add(decoy);
             }
         }
-
-        public DummyObject AddDummyObject(GameID id)
-        {
-            var obj = new DummyObject();
-            obj.ID = id;
-
-            if (!Contains(obj))
-            {
-                AddObject(obj);
-                DummyObjs.Add(obj);
-            }
-
-            return obj;
-        }
-
+      
         public void EnqueueDecoy(Decoy decoy)
         {
             NewDecoys.Enqueue(decoy);
@@ -202,14 +226,37 @@ namespace PolyPlane.GameObjects
 
         private void AddMissileExplosion(GuidedMissile missile)
         {
-            var explosion = new Explosion(missile, 300f, 2.4f);
+            var explosion = _explosionPool.RentObject();
+            explosion.ReInit(missile, 300f, 2.4f);
+
             AddExplosion(explosion);
         }
 
         private void AddBulletExplosion(Bullet bullet)
         {
-            var explosion = new Explosion(bullet, 50f, 1.5f);
+            var explosion = _explosionPool.RentObject();
+            explosion.ReInit(bullet, 50f, 1.5f);
+
             AddExplosion(explosion);
+        }
+
+        public void ReturnExplosion(Explosion explosion)
+        {
+            _explosionPool.ReturnObject(explosion);
+        }
+
+        public DummyObject AddDummyObject(GameID id)
+        {
+            var obj = new DummyObject();
+            obj.ID = id;
+
+            if (!Contains(obj))
+            {
+                AddObject(obj);
+                DummyObjs.Add(obj);
+            }
+
+            return obj;
         }
 
         public void Clear()

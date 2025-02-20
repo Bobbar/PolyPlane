@@ -266,7 +266,9 @@ namespace PolyPlane.Net
                 return;
             }
 
-            var bullet = new Bullet(bulletPacket.Position, bulletPacket.Velocity, bulletPacket.Rotation);
+            var bullet = _objs.RentBullet();
+            bullet.ReInit(bulletPacket.Position, bulletPacket.Velocity, bulletPacket.Rotation);
+
             bullet.ID = bulletPacket.ID;
 
             bulletPacket.SyncObj(bullet);
@@ -316,7 +318,9 @@ namespace PolyPlane.Net
 
             if (decoyOwner != null)
             {
-                var decoy = new Decoy(decoyOwner, decoyOwner.ExhaustPosition, decoyPacket.Velocity);
+                var decoy = _objs.RentDecoy();
+                decoy.ReInit(decoyOwner, decoyPacket.Position, decoyPacket.Velocity);
+
                 decoy.IsNetObject = true;
                 decoy.ID = decoyPacket.ID;
                 decoyPacket.SyncObj(decoy);
