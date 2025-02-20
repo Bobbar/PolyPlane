@@ -82,7 +82,6 @@ namespace PolyPlane.GameObjects.Particles
                 newColor.a = newColor.a * visFact * Math.Clamp(World.SampleNoise(newPos), 0.3f, 1f);
 
                 var newPart = Particle.SpawnParticle(Owner, newPos, newVelo, newRad, newColor, newColor, ParticleType.Vapor);
-                newPart.InitRadius = newRad;
                 newPart.MaxAge = MAX_AGE;
             }
         }

@@ -30,7 +30,8 @@ namespace PolyPlane.GameObjects.Particles
         }
 
         public float MaxAge = 1f;
-        public float InitRadius = 0f;
+        public float TargetRadius = 0f;
+
         protected D2DPoint RiseRate;
 
         protected const float DEFAULT_MAX_AGE = 30f;
@@ -38,6 +39,7 @@ namespace PolyPlane.GameObjects.Particles
         protected const float MAX_RISE_RATE = -70f;
         protected const float WIND_SPEED = 20f; // Fake wind effect amount.
         protected const float PARTICLE_MASS = 30f;
+        protected const float PART_GROW_AGE = 0.3f; // Age at which particle will grow to its full size.
 
         private static readonly Vector3 Luminance = new Vector3(0.2126f, 0.7152f, 0.0722f); // For flame particle lighting amount.
 
@@ -67,6 +69,10 @@ namespace PolyPlane.GameObjects.Particles
 
                     // Simulate the particles being blown by the wind.
                     RiseRate.X = WIND_SPEED * Utilities.FactorWithEasing(Age, MaxAge, EasingFunctions.Out.EaseQuad);
+                   
+                    // Gradually grow until we reach the target radius.
+                    var ageFactGrow = Utilities.Factor(Age, PART_GROW_AGE);
+                    Radius = TargetRadius * ageFactGrow;
 
                     Ellipse.origin = Position;
 
@@ -85,7 +91,7 @@ namespace PolyPlane.GameObjects.Particles
 
                     var ageFact = 1f - Utilities.Factor(Age, MaxAge);
                     var radAmt = EasingFunctions.Out.EaseQuintic(ageFact);
-                    var rad = (InitRadius * radAmt);
+                    var rad = (TargetRadius * radAmt);
 
                     var alphaSmoke = StartColor.a * ageFact;
 
@@ -155,6 +161,7 @@ namespace PolyPlane.GameObjects.Particles
             particle.Age = 0f;
             particle.IsExpired = false;
 
+            particle.TargetRadius = radius;
             particle.Ellipse.origin = pos;
             particle.Ellipse.radiusX = radius;
             particle.Ellipse.radiusY = radius;

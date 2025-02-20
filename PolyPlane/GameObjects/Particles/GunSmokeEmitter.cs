@@ -54,7 +54,6 @@ namespace PolyPlane.GameObjects.Particles
             var newColor = _smokeColor;
 
             var newPart = Particle.SpawnParticle(Owner, newPos, newVelo, newRad, newColor, newColor, ParticleType.Smoke);
-            newPart.InitRadius = newRad;
             newPart.MaxAge = MAX_AGE;
             newPart.RenderOrder = 6;
         }
