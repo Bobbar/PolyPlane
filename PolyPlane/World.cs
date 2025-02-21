@@ -40,7 +40,7 @@ namespace PolyPlane
         public static readonly float TARGET_FRAME_TIME_NET = TARGET_FRAME_TIME * 2f;
         public const float DEFAULT_FRAME_TIME = 1000f / 60f;
         public const double SERVER_FRAME_TIME = 1000d / NET_SERVER_FPS;
-        public static float CurrentDT = TargetDT;
+        public static float CurrentDT => _currentDT;
 
         public static float TargetDT
         {
@@ -69,7 +69,7 @@ namespace PolyPlane
 
             var dt = (float)(World.TargetDT * (elapFrameTime / World.DEFAULT_FRAME_TIME));
 
-            CurrentDT = dt;
+            _currentDT = dt;
 
             SetSubDT(dt);
 
@@ -165,6 +165,7 @@ namespace PolyPlane
         public const float DEFAULT_DT = 0.0425f;
         public const float DEFAULT_SUB_DT = DEFAULT_DT / DEFAULT_SUB_STEPS;
 
+        private static float _currentDT = TargetDT;
         private static float _dt = DEFAULT_DT * ((float)DEFAULT_FPS / (float)TARGET_FPS);
         private static float _sub_dt = DEFAULT_SUB_DT * ((float)DEFAULT_FPS / (float)TARGET_FPS);
         private static int _sub_steps = DEFAULT_SUB_STEPS;

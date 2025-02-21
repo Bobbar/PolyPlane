@@ -404,6 +404,10 @@ namespace PolyPlane.GameObjects.Manager
 
         private void HandleGroundImpacts(float dt)
         {
+            // Impact bullets & missiles just below ground level.
+            // Lets the impacts kick up debris and planes.
+            const float GROUND_LEVEL_OFFSET = 10f;
+
             // Planes.
             for (int a = 0; a < _objs.Planes.Count; a++)
             {
@@ -430,11 +434,9 @@ namespace PolyPlane.GameObjects.Manager
             // Bullets & missiles.
             foreach (var bullet in _objs.Bullets)
             {
-                if (!bullet.IsExpired && bullet.Altitude <= bullet.Velocity.Length() * World.CurrentDT)
+                if (!bullet.IsExpired && bullet.Altitude <= bullet.Velocity.Length() * dt)
                 {
-                    var groundImpactPos = Utilities.GroundCollisionPoint(bullet);
-
-                    if (groundImpactPos != D2DPoint.Zero)
+                    if (Utilities.TryGetGroundCollisionPoint(bullet, GROUND_LEVEL_OFFSET, dt, out D2DPoint groundImpactPos))
                     {
                         bullet.Position = groundImpactPos;
                         bullet.IsExpired = true;
@@ -444,11 +446,9 @@ namespace PolyPlane.GameObjects.Manager
 
             foreach (var missile in _objs.Missiles)
             {
-                if (!missile.IsExpired && missile.Altitude <= missile.Velocity.Length() * World.CurrentDT)
+                if (!missile.IsExpired && missile.Altitude <= missile.Velocity.Length() * dt)
                 {
-                    var groundImpactPos = Utilities.GroundCollisionPoint(missile);
-
-                    if (groundImpactPos != D2DPoint.Zero)
+                    if (Utilities.TryGetGroundCollisionPoint(missile, GROUND_LEVEL_OFFSET, dt, out D2DPoint groundImpactPos))
                     {
                         missile.Position = groundImpactPos;
                         missile.IsExpired = true;
