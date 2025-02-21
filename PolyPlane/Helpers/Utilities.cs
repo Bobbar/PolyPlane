@@ -205,24 +205,35 @@ namespace PolyPlane.Helpers
             return groundPos;
         }
 
-        public static D2DPoint GroundCollisionPoint(GameObject obj)
+        /// <summary>
+        /// Checks for ground intersections with the previous and next positions of the specified object.
+        /// </summary>
+        /// <param name="obj">Object to test.</param>
+        /// <param name="altOffset">Ground level Y coordinate offset. (Move the intersection test up or down)</param>
+        /// <param name="dt">Current time delta.</param>
+        /// <param name="impactPnt">Ground intersection point.</param>
+        /// <returns>True if a ground intersection was found.</returns>
+        public static bool TryGetGroundCollisionPoint(GameObject obj, float altOffset, float dt, out D2DPoint impactPnt)
         {
             const float GROUND_LINE_LEN = 50000f;
-            const float Y_OFFSET = 0f;
 
-            var groundLineA = new D2DPoint(obj.Position.X - GROUND_LINE_LEN, 0f);
-            var groundLineB = new D2DPoint(obj.Position.X + GROUND_LINE_LEN, 0f);
+            var groundLineA = new D2DPoint(obj.Position.X - GROUND_LINE_LEN, altOffset);
+            var groundLineB = new D2DPoint(obj.Position.X + GROUND_LINE_LEN, altOffset);
 
             // Intersect current and previous positions.
-            var intersectVector = obj.Position + (obj.Velocity * World.CurrentDT);
-            var intersectVectorPrev = obj.Position - (obj.Velocity * World.CurrentDT);
+            var intersectVector = obj.Position + (obj.Velocity * dt);
+            var intersectVectorPrev = obj.Position - (obj.Velocity * dt);
 
-            var groundPos = D2DPoint.Zero;
+            impactPnt = D2DPoint.Zero;
 
-            if (!CollisionHelpers.IsIntersecting(obj.Position, intersectVector, groundLineA, groundLineB, out groundPos))
-                CollisionHelpers.IsIntersecting(obj.Position, intersectVectorPrev, groundLineA, groundLineB, out groundPos);
+            if (CollisionHelpers.IsIntersecting(obj.Position, intersectVector, groundLineA, groundLineB, out impactPnt))
+                return true;
 
-            return groundPos;
+            // Additional check with previous position.
+            if (CollisionHelpers.IsIntersecting(obj.Position, intersectVectorPrev, groundLineA, groundLineB, out impactPnt))
+                return true;
+
+            return false;
         }
 
         public static float PositionToAltitude(D2DPoint position)
