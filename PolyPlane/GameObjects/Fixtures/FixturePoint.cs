@@ -5,7 +5,7 @@ namespace PolyPlane.GameObjects.Fixtures
 {
     public class FixturePoint : GameObject, INoGameID
     {
-        public D2DPoint ReferencePosition { get; private set; }
+        public D2DPoint ReferencePosition { get; set; }
 
         private bool _copyRotation = true;
 
@@ -28,7 +28,7 @@ namespace PolyPlane.GameObjects.Fixtures
             SyncWithOwner();
         }
 
-        private void SyncWithOwner()
+        public void SyncWithOwner()
         {
             if (_copyRotation)
                 Rotation = this.Owner.Rotation;

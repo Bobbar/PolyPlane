@@ -319,7 +319,11 @@ namespace PolyPlane.Net
             if (decoyOwner != null)
             {
                 var decoy = _objs.RentDecoy();
-                decoy.ReInit(decoyOwner, decoyPacket.Position, decoyPacket.Velocity);
+
+                // Just spawn new decoys at the current position of the owner plane.
+                // Otherwise they would appear in front of the plane due to client-side interpolation.
+
+                decoy.ReInit(decoyOwner, decoyOwner.ExhaustPosition, decoyPacket.Velocity);
 
                 decoy.IsNetObject = true;
                 decoy.ID = decoyPacket.ID;

@@ -19,6 +19,7 @@ namespace PolyPlane.Rendering
         private Dictionary<GameID, PlaneTag> _currentPlanes = new();
         private List<TrailSegment> _segments = new List<TrailSegment>();
         private SpatialGrid<TrailSegment> _segmentGrid = new(s => s.PointA, SegmentIsExpired);
+        private GameObjectPool<TrailSegment> _segmentPool = new GameObjectPool<TrailSegment>(() => new TrailSegment());
         private D2DColor _trailColor = new D2DColor(ALPHA, D2DColor.WhiteSmoke);
 
         public void Update(List<FighterPlane> planes, float dt)
@@ -60,7 +61,8 @@ namespace PolyPlane.Rendering
                                 // Add a new segment and update previous position.
                                 if (dist >= minDistDT)
                                 {
-                                    var seg = new TrailSegment(plane, tag.PrevPos, newPos);
+                                    var seg = _segmentPool.RentObject();
+                                    seg.ReInit(plane, tag.PrevPos, newPos);
 
                                     _segments.Add(seg);
                                     _segmentGrid.Add(seg);
@@ -98,7 +100,10 @@ namespace PolyPlane.Rendering
                     seg.Age += dt;
 
                     if (SegmentIsExpired(seg))
+                    {
                         _segments.RemoveAt(i);
+                        _segmentPool.ReturnObject(seg);
+                    }
                 }
 
                 // Prune expired planes.
@@ -214,8 +219,11 @@ namespace PolyPlane.Rendering
             public FighterPlane Plane;
             public float Age = 0;
 
-            public TrailSegment(FighterPlane plane, D2DPoint pointA, D2DPoint pointB)
+            public TrailSegment() { }
+
+            public void ReInit(FighterPlane plane, D2DPoint pointA, D2DPoint pointB)
             {
+                this.Age = 0f;
                 this.Plane = plane;
                 this.PointA = pointA;
                 this.PointB = pointB;

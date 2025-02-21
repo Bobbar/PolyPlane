@@ -467,16 +467,19 @@ namespace PolyPlane.GameObjects
             if (_timers == null)
                 return;
 
-            _timers.ForEach(timer => timer.Update(dt));
+            foreach (var timer in _timers)
+                timer.Update(dt);
         }
 
         private void FlipAttachments()
         {
             if (_attachments != null)
-                _attachments.ForEach(a => a.FlipY());
+                foreach (var attachment in _attachments)
+                    attachment.FlipY();
 
             if (_attachmentsPhyics != null)
-                _attachmentsPhyics.ForEach(a => a.FlipY());
+                foreach (var physicsAttach in  _attachmentsPhyics)
+                    physicsAttach.FlipY();
         }
 
         public virtual void ClampToGround(float dt)

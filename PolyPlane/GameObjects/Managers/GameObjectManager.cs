@@ -47,6 +47,8 @@ namespace PolyPlane.GameObjects
         private GameObjectPool<Decoy> _decoyPool = new(() => new Decoy());
         private GameObjectPool<Explosion> _explosionPool = new(() => new Explosion());
         private GameObjectPool<Debris> _debrisPool = new(() => new Debris());
+        private GameObjectPool<GroundImpact> _groundImpactPool = new(() => new GroundImpact());
+        private ConcurrentQueue<BulletHole> _bulletHolePool = new();
 
         public event EventHandler<PlayerScoredEventArgs> PlayerScoredEvent;
         public event EventHandler<EventMessage> PlayerKilledEvent;
@@ -57,6 +59,31 @@ namespace PolyPlane.GameObjects
         public GameObjectManager()
         {
             _multiThreadNum = Environment.ProcessorCount;
+        }
+
+        public BulletHole RentBulletHole(GameObject obj, D2DPoint offset, float angle)
+        {
+            if (_bulletHolePool.TryDequeue(out BulletHole hole))
+            {
+                hole.Owner = obj;
+                hole.ReferencePosition = offset;
+                hole.Angle = angle;
+                hole.Age = 0f;
+                hole.IsExpired = false;
+                hole.SyncWithOwner();
+
+                return hole;
+            }
+            else
+            {
+                var newHole = new BulletHole(obj, offset, angle);
+                return newHole;
+            }
+        }
+
+        public void ReturnBulletHole(BulletHole bulletHole)
+        {
+            _bulletHolePool.Enqueue(bulletHole);
         }
 
         public Particle RentParticle()
@@ -195,7 +222,7 @@ namespace PolyPlane.GameObjects
                 Decoys.Add(decoy);
             }
         }
-      
+
         public void EnqueueDecoy(Decoy decoy)
         {
             NewDecoys.Enqueue(decoy);
@@ -213,12 +240,16 @@ namespace PolyPlane.GameObjects
                     if (explosion.Owner is GuidedMissile)
                     {
                         var missileRadius = Utilities.Rnd.NextFloat(23f, 27f);
-                        GroundImpacts.Add(new GroundImpact(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 8f)), new D2DSize(missileRadius + 8f, missileRadius), explosion.Owner.Rotation));
+                        var impact = _groundImpactPool.RentObject();
+                        impact.ReInit(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 8f)), new D2DSize(missileRadius + 8f, missileRadius), explosion.Owner.Rotation);
+                        GroundImpacts.Add(impact);
                     }
                     else if (explosion.Owner is Bullet)
                     {
                         var bulletRadius = Utilities.Rnd.NextFloat(9f, 12f);
-                        GroundImpacts.Add(new GroundImpact(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 5f)), new D2DSize(bulletRadius + 8f, bulletRadius), explosion.Owner.Rotation));
+                        var impact = _groundImpactPool.RentObject();
+                        impact.ReInit(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 5f)), new D2DSize(bulletRadius + 8f, bulletRadius), explosion.Owner.Rotation);
+                        GroundImpacts.Add(impact);
                     }
                 }
             }
@@ -336,21 +367,22 @@ namespace PolyPlane.GameObjects
             SyncObjCollections();
 
             // Update all regular objects.
-            _allObjects.ForEachParallel(o => o.Update(dt), _multiThreadNum);
+            _allObjects.ForEachParallel(o => o.Update(World.CurrentDT), _multiThreadNum);
 
             // Update planes separately.
             // They are pretty expensive, so we want "all threads on deck"
             // to be working on the updates.
-            Planes.ForEachParallel(o => o.Update(dt), _multiThreadNum);
+            Planes.ForEachParallel(o => o.Update(World.CurrentDT), _multiThreadNum);
 
             if (!World.IsNetGame || World.IsClient)
             {
                 // Update particles.
-                Particles.ForEachParallel(o => o.Update(dt), _multiThreadNum);
+                Particles.ForEachParallel(o => o.Update(World.CurrentDT), _multiThreadNum);
             }
 
             // Update ground impacts.
-            GroundImpacts.ForEach(i => i.Age += dt);
+            foreach (var impact in GroundImpacts)
+                impact.Age += dt; 
         }
 
         public bool Contains(GameObject obj)
@@ -416,7 +448,10 @@ namespace PolyPlane.GameObjects
                 var impact = GroundImpacts[i];
 
                 if (impact.Age > GroundImpact.MAX_AGE)
+                {
                     GroundImpacts.RemoveAt(i);
+                    _groundImpactPool.ReturnObject(impact);
+                }
             }
 
             TotalObjects += GroundImpacts.Count;

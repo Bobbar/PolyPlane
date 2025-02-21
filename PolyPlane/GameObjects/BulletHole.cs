@@ -11,6 +11,12 @@ namespace PolyPlane.GameObjects
         public D2DSize OuterHoleSize { get; set; }
         public D2DColor Color { get; set; }
 
+        public float Angle
+        {
+            get { return _rotOffset; }
+            set { _rotOffset = value; }
+        }
+
         public override float Rotation
         {
             get => base.Rotation + _rotOffset;
@@ -57,6 +63,13 @@ namespace PolyPlane.GameObjects
         {
             var color = D2DColor.White.WithBrightness(Utilities.Rnd.NextFloat(0.3f, 0.6f));
             return color;
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+
+            World.ObjectManager.ReturnBulletHole(this);
         }
     }
 }

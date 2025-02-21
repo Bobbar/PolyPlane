@@ -539,7 +539,19 @@ namespace PolyPlane.Net
 
                     if (!IsServer)
                     {
-                        decoyList.Packets.ForEach(HandleNewDecoy);
+                        decoyList.Packets.ForEach(d =>
+                        {
+                            var owner = GetNetPlane(d.OwnerID);
+
+                            if (owner != null)
+                            {
+                                var decoy = _objs.RentDecoy();
+                                decoy.ReInit(owner, d.Position, d.Velocity);
+                                decoy.IsNetObject = true;
+                                decoy.ID = d.ID;
+                                _objs.EnqueueDecoy(decoy);
+                            }
+                        });
                     }
 
                     break;

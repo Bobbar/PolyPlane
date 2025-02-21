@@ -596,7 +596,9 @@ namespace PolyPlane.Rendering
             DrawGroundObjs(ctx);
             DrawPlaneGroundShadows(ctx, shadowColor, todAngle);
 
-            _objs.MissileTrails.ForEach(o => o.Render(ctx));
+            foreach (var trail in _objs.MissileTrails) 
+                trail.Render(ctx);
+
             _contrailBox.Render(ctx);
 
             foreach (var obj in objsInViewport)
@@ -632,7 +634,8 @@ namespace PolyPlane.Rendering
             }
 
             // Render explosions separate so that they can clip to the viewport correctly.
-            _objs.Explosions.ForEach(e => e.Render(ctx));
+            foreach (var explosion in _objs.Explosions)
+                explosion.Render(ctx);
 
             DrawClouds(ctx);
             DrawPlaneCloudShadows(ctx, shadowColor, objsInViewport);

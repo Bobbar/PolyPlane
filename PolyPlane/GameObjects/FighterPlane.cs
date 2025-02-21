@@ -560,8 +560,9 @@ namespace PolyPlane.GameObjects
             ctx.DrawPolygonWithLighting(this.Polygon, this.Position, D2DColor.Black.WithAlpha(0.3f), 0.5f, _planeColor, maxIntensity: 0.6f);
 
             DrawClippedObjects(ctx);
-            _wings.ForEach(w => w.Render(ctx));
 
+            foreach (var wing in _wings)
+                wing.Render(ctx);
 
             //foreach (var b in _bulletHoles)
             //    ctx.DrawArrow(b.Position, b.Position + Utilities.AngleToVectorDegrees(b.Rotation, 10), D2DColor.Blue, 1f, 3f);
@@ -809,7 +810,8 @@ namespace PolyPlane.GameObjects
 
             DistortPolygon(this.Polygon, pos, distortVec);
 
-            var bulletHole = AddAttachment(new BulletHole(this, pos + distortVec, angle));
+            var bulletHole = AddAttachment(World.ObjectManager.RentBulletHole(this, pos + distortVec, angle));
+
             bulletHole.IsNetObject = this.IsNetObject;
             _bulletHoles.Add(bulletHole);
         }
