@@ -57,7 +57,7 @@ namespace PolyPlane.GameObjects
 
             this.Velocity += -this.Velocity * (dt * 0.01f);
 
-            if (this.Altitude <= 1f)
+            if (this.Altitude <= 10f)
             {
                 _flame.StopSpawning();
                 _onGroundAge += dt;

@@ -341,8 +341,10 @@ namespace PolyPlane.GameObjects.Manager
             const float FORCE = 50000f;
             const float DAMAGE_AMT = 25f;
 
-            foreach (Explosion explosion in _objs.Explosions)
+            for (int i = 0; i < _objs.Explosions.Count; i++)
             {
+                var explosion = _objs.Explosions[i] as Explosion;
+
                 if (explosion.IsExpired || explosion.Age > explosion.Duration)
                     continue;
 
@@ -432,8 +434,9 @@ namespace PolyPlane.GameObjects.Manager
             }
 
             // Bullets & missiles.
-            foreach (var bullet in _objs.Bullets)
+            for (int i = 0; i < _objs.Bullets.Count; i++)
             {
+                var bullet = _objs.Bullets[i];
                 if (!bullet.IsExpired && bullet.Altitude <= bullet.Velocity.Length() * dt)
                 {
                     if (Utilities.TryGetGroundCollisionPoint(bullet, GROUND_LEVEL_OFFSET, dt, out D2DPoint groundImpactPos))
@@ -444,8 +447,9 @@ namespace PolyPlane.GameObjects.Manager
                 }
             }
 
-            foreach (var missile in _objs.Missiles)
+            for (int i = 0; i < _objs.Missiles.Count; i++)
             {
+                var missile = _objs.Missiles[i];
                 if (!missile.IsExpired && missile.Altitude <= missile.Velocity.Length() * dt)
                 {
                     if (Utilities.TryGetGroundCollisionPoint(missile, GROUND_LEVEL_OFFSET, dt, out D2DPoint groundImpactPos))
@@ -476,8 +480,9 @@ namespace PolyPlane.GameObjects.Manager
         // Quietly wrap any planes that try to leave the field.
         private void HandleFieldWrap()
         {
-            foreach (var plane in _objs.Planes)
+            for (int i = 0; i < _objs.Planes.Count; i++)
             {
+                var plane = _objs.Planes[i];
                 if (plane.Position.X > World.FieldPlaneXBounds.Y)
                 {
                     plane.SetPosition(new D2DPoint(World.FieldPlaneXBounds.X, plane.Position.Y));

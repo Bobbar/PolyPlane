@@ -76,11 +76,17 @@ namespace PolyPlane.GameObjects
         {
             // Check all sources and add pings if they are within the FOV of the current sweep.
 
-            foreach (var missile in World.ObjectManager.Missiles)
+            for (int i = 0; i < World.ObjectManager.Missiles.Count; i++)
+            {
+                var missile = World.ObjectManager.Missiles[i];
                 DoSweep(missile);
+            }
 
-            foreach (var plane in World.ObjectManager.Planes)
+            for (int i = 0; i < World.ObjectManager.Planes.Count; i++)
+            {
+                var plane = World.ObjectManager.Planes[i];
                 DoSweep(plane);
+            }
 
             CheckForLock();
         }
