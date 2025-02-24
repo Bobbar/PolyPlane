@@ -393,7 +393,7 @@ namespace PolyPlane.Rendering
 
             if (!World.IsPaused)
             {
-                UpdateClouds(dt);
+                UpdateClouds();
 
                 // Check if we need to update the ground brush.
                 var todDiff = Math.Abs(World.TimeOfDay - _groundColorTOD);
@@ -1590,19 +1590,11 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private void UpdateClouds(float dt)
+        private void UpdateClouds()
         {
             const int MULTI_THREAD_NUM = 10;
 
-            ParallelHelpers.ParallelForSlim(_clouds.Count, MULTI_THREAD_NUM, (start, end) =>
-            {
-                for (int i = start; i < end; i++)
-                {
-                    var cloud = _clouds[i];
-
-                    cloud.Update(dt);
-                }
-            });
+            _clouds.ForEachParallel(c => c.Update(World.CurrentDT), MULTI_THREAD_NUM);
         }
 
         private void UpdateGroundColorBrush(RenderContext ctx)
