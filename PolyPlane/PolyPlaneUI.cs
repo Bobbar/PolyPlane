@@ -677,8 +677,9 @@ namespace PolyPlane
             if (!World.RespawnAIPlanes)
                 return;
 
-            foreach (var plane in _objs.Planes)
+            for (int i = 0; i < _objs.Planes.Count; i++)
             {
+                var plane = _objs.Planes[i];
                 if (plane.IsAI && plane.HasCrashed && plane.AIRespawnReady)
                 {
                     if (!plane.RespawnQueued)

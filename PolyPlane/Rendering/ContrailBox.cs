@@ -29,8 +29,10 @@ namespace PolyPlane.Rendering
             // so we need to increase the min distance as DT increases.
             var minDistDT = MIN_DIST + ((MIN_DIST * dt) * 10f);
 
-            foreach (var plane in planes)
+            for (int i = 0; i < planes.Count; i++)
             {
+                var plane = planes[i];
+
                 if (IsInside(plane))
                 {
                     // Add tag for new planes.

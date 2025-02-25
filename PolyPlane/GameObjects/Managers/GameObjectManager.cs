@@ -381,8 +381,8 @@ namespace PolyPlane.GameObjects
             }
 
             // Update ground impacts.
-            foreach (var impact in GroundImpacts)
-                impact.Age += dt; 
+            for (int i = 0; i < GroundImpacts.Count; i++)
+                GroundImpacts[i].Age += dt;
         }
 
         public bool Contains(GameObject obj)

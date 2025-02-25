@@ -596,8 +596,8 @@ namespace PolyPlane.Rendering
             DrawGroundObjs(ctx);
             DrawPlaneGroundShadows(ctx, shadowColor, todAngle);
 
-            foreach (var trail in _objs.MissileTrails) 
-                trail.Render(ctx);
+            for (int i = 0; i < _objs.MissileTrails.Count; i++)
+                _objs.MissileTrails[i].Render(ctx);
 
             _contrailBox.Render(ctx);
 
@@ -634,8 +634,8 @@ namespace PolyPlane.Rendering
             }
 
             // Render explosions separate so that they can clip to the viewport correctly.
-            foreach (var explosion in _objs.Explosions)
-                explosion.Render(ctx);
+            for (int i = 0; i < _objs.Explosions.Count; i++)
+                _objs.Explosions[i].Render(ctx);
 
             DrawClouds(ctx);
             DrawPlaneCloudShadows(ctx, shadowColor, objsInViewport);
@@ -671,8 +671,10 @@ namespace PolyPlane.Rendering
         {
             var todColor = ctx.GetTimeOfDayColor();
 
-            foreach (var tree in _trees)
+            for (int i = 0; i < _trees.Count; i++)
             {
+                var tree = _trees[i];
+
                 if (ctx.Viewport.Contains(tree.Position, tree.TotalHeight * GROUND_OBJ_SCALE))
                 {
                     tree.Render(ctx, todColor, GROUND_OBJ_SCALE);
@@ -693,8 +695,10 @@ namespace PolyPlane.Rendering
             {
                 ctx.Gfx.PushLayer(_groundClipLayer, ctx.Viewport, clipGeo);
 
-                foreach (var impact in _objs.GroundImpacts)
+                for (int i = 0; i < _objs.GroundImpacts.Count; i++)
                 {
+                    var impact = _objs.GroundImpacts[i];
+
                     if (ctx.Viewport.Contains(impact.Position))
                     {
                         ctx.PushTransform();
@@ -795,8 +799,10 @@ namespace PolyPlane.Rendering
             const float MAX_SHOW_ALT = 2000f;
             const float Y_POS = 15f;
 
-            foreach (var plane in _objs.Planes)
+            for (int i = 0; i < _objs.Planes.Count; i++)
             {
+                var plane = _objs.Planes[i];
+
                 if (plane.Altitude > MAX_SHOW_ALT)
                     continue;
 

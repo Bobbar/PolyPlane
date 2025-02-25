@@ -14,7 +14,7 @@ namespace PolyPlane.GameObjects
         private const float ALPHA = 0.3f;
         private const float LINE_WEIGHT = 2f;
 
-        private Queue<D2DPoint> _trailQueue = new Queue<D2DPoint>();
+        private List<D2DPoint> _trailList = new List<D2DPoint>();
         private GuidedMissile _parentMissile;
         private D2DColor _trailColor = new D2DColor(0.3f, D2DColor.WhiteSmoke);
         private GameTimer _timeOut = new GameTimer(TIMEOUT);
@@ -43,10 +43,10 @@ namespace PolyPlane.GameObjects
                 var dist = this.Position.DistanceTo(_prevPos);
                 if (dist >= TRAIL_DIST)
                 {
-                    _trailQueue.Enqueue(_parentMissile.CenterOfThrust);
+                    _trailList.Add(_parentMissile.CenterOfThrust);
 
-                    if (_trailQueue.Count == TRAIL_LEN)
-                        _trailQueue.Dequeue();
+                    if (_trailList.Count == TRAIL_LEN)
+                        _trailList.RemoveAt(0);
 
                     _prevPos = this.Position;
                 }
@@ -59,12 +59,13 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
-            if (_trailQueue.Count == 0)
+            if (_trailList.Count == 0)
                 return;
 
-            var lastPos = _trailQueue.First();
-            foreach (var trail in _trailQueue)
+            var lastPos = _trailList.First();
+            for (int i = 0; i < _trailList.Count; i++)
             {
+                var trail = _trailList[i];
                 var nextPos = trail;
 
                 var color = _trailColor;
@@ -77,11 +78,11 @@ namespace PolyPlane.GameObjects
             // Draw connecting line between last trail segment and the source position.
             var endPosition = _parentMissile.CenterOfThrust;
 
-            if (_trailQueue.Count > 1 && _trailEnabled)
+            if (_trailList.Count > 1 && _trailEnabled)
                 ctx.DrawLine(lastPos, endPosition, _trailColor, LINE_WEIGHT);
 
-            if (_trailQueue.Count > 0 && _trailQueue.Count < TRAIL_LEN - 1)
-                ctx.FillEllipse(new D2DEllipse(_trailQueue.First(), new D2DSize(50f, 50f)), _trailColor);
+            if (_trailList.Count > 0 && _trailList.Count < TRAIL_LEN - 1)
+                ctx.FillEllipse(new D2DEllipse(_trailList.First(), new D2DSize(50f, 50f)), _trailColor);
 
             if (_parentMissile.IsExpired && _trailEnabled)
                 ctx.FillEllipse(new D2DEllipse(endPosition, new D2DSize(50f, 50f)), _trailColor);
@@ -89,12 +90,13 @@ namespace PolyPlane.GameObjects
 
         public override bool ContainedBy(D2DRect rect)
         {
-            if (_trailQueue.Count == 0)
+            if (_trailList.Count == 0)
                 return false;
             else
             {
-                foreach (var trail in _trailQueue)
+                for (int i = 0; i < _trailList.Count; i++)
                 {
+                    var trail = _trailList[i];
                     if (rect.Contains(trail))
                         return true;
                 }

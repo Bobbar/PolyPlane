@@ -401,8 +401,10 @@ namespace PolyPlane.GameObjects
             }
 
             // Wing force and torque.
-            foreach (var wing in _wings)
+            for (int i = 0; i < _wings.Count; i++)
             {
+                var wing = _wings[i];
+
                 // How much force a damaged wing contributes.
                 const float DAMAGED_FACTOR = 0.2f;
 
@@ -427,8 +429,10 @@ namespace PolyPlane.GameObjects
 
             if (!IsNetObject && World.BulletHoleDrag)
             {
-                foreach (var hole in _bulletHoles)
+                for (int i = 0; i < _bulletHoles.Count; i++)
                 {
+                    var hole = _bulletHoles[i];
+
                     GetBulletHoleDrag(hole, dt, out D2DPoint dVec, out float dTq);
                     damageTorque += dTq;
                     damageForce += dVec;
@@ -688,8 +692,9 @@ namespace PolyPlane.GameObjects
 
         private void DrawBulletHoles(RenderContext ctx)
         {
-            foreach (var hole in _bulletHoles)
+            for (int i = 0; i < _bulletHoles.Count; i++)
             {
+                var hole = _bulletHoles[i];
                 if (!ctx.Viewport.Contains(hole.Position))
                     return;
 
