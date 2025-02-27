@@ -19,7 +19,7 @@ namespace PolyPlane.GameObjects
 
         private D2DColor _color = new D2DColor(0.4f, D2DColor.Orange);
         private D2DColor _showckWaveColor = new D2DColor(1f, D2DColor.White);
-        private readonly D2DColor _lightMapColor = new D2DColor(1f, 0.96f, 0.67f, 0.26f);
+        private static readonly D2DColor _lightMapColor = new D2DColor(1f, 0.96f, 0.67f, 0.26f);
 
         public Explosion() : base()
         {

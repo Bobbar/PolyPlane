@@ -11,7 +11,7 @@ namespace PolyPlane.GameObjects
         public const float SPEED = 800f;
         public float Lifetime = 10f;
 
-        private readonly D2DColor _lightMapColor = new D2DColor(1f, 1f, 0.98f, 0.54f);
+        private static readonly D2DColor _lightMapColor = new D2DColor(1f, 1f, 0.98f, 0.54f);
 
         private static readonly D2DPoint[] _poly = new D2DPoint[]
         {

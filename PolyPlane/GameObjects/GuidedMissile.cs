@@ -60,7 +60,7 @@ namespace PolyPlane.GameObjects
 
         private RenderPoly FlamePoly;
         private D2DColor _flameFillColor = new D2DColor(0.6f, D2DColor.Yellow);
-        private readonly D2DColor _lightMapColor = new D2DColor(1f, 0.98f, 0.77f, 0.31f);
+        private static readonly D2DColor _lightMapColor = new D2DColor(1f, 0.98f, 0.77f, 0.31f);
 
         private GuidanceType GuidanceType = GuidanceType.Advanced;
         private GuidanceBase _guidance;

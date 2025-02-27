@@ -19,14 +19,15 @@ namespace PolyPlane.GameObjects
             this.Flags = GameObjectFlags.Pushable | GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround | GameObjectFlags.CanSleep;
             this.Mass = 40f;
             this.RenderOrder = 3;
+            this.Polygon = new RenderPoly(this, RandomPoly(8, 12));
 
             _flame = new FlameEmitter(this, D2DPoint.Zero, 2f, 4f);
-
         }
 
         public void ReInit(GameObject owner, D2DPoint pos, D2DPoint velo, D2DColor color)
         {
             this.IsExpired = false;
+            this.IsAwake = true;
             this.Age = 0f;
             this.Position = pos;
 
@@ -34,8 +35,6 @@ namespace PolyPlane.GameObjects
 
             this.Owner = owner;
             _color = color;
-
-            this.Polygon = new RenderPoly(this, RandomPoly(8, 12));
 
             this.RotationSpeed = Utilities.Rnd.NextFloat(-200f, 200f);
 
