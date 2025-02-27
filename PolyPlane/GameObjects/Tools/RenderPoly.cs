@@ -10,6 +10,8 @@ namespace PolyPlane.GameObjects.Tools
         public bool IsFlipped = false;
         public GameObject ParentObject;
 
+        private D2DPoint[] _originalPoly;
+
         public D2DPoint Position => ParentObject.Position;
 
         public RenderPoly(GameObject parent)
@@ -17,74 +19,59 @@ namespace PolyPlane.GameObjects.Tools
             ParentObject = parent;
             Poly = new D2DPoint[0];
             SourcePoly = new D2DPoint[0];
+            _originalPoly = new D2DPoint[0];
         }
 
         public RenderPoly(RenderPoly copyPoly, D2DPoint pos, float rotation) : this(copyPoly.ParentObject)
         {
-            Poly = new D2DPoint[copyPoly.SourcePoly.Length];
-            SourcePoly = new D2DPoint[copyPoly.SourcePoly.Length];
-
-            Array.Copy(copyPoly.SourcePoly, Poly, copyPoly.SourcePoly.Length);
-            Array.Copy(copyPoly.SourcePoly, SourcePoly, copyPoly.SourcePoly.Length);
+            InitPolyArrays(copyPoly.SourcePoly, D2DPoint.Zero);
 
             this.Update(pos, rotation, copyPoly.ParentObject.RenderScale);
         }
 
         public RenderPoly(GameObject parent, D2DPoint[] polygon) : this(parent)
         {
-            Poly = new D2DPoint[polygon.Length];
-            SourcePoly = new D2DPoint[polygon.Length];
-
-            Array.Copy(polygon, Poly, polygon.Length);
-            Array.Copy(polygon, SourcePoly, polygon.Length);
+            InitPolyArrays(polygon, D2DPoint.Zero);
 
             this.Update();
         }
 
         public RenderPoly(GameObject parent, D2DPoint[] polygon, D2DPoint offset) : this(parent)
         {
-            Poly = new D2DPoint[polygon.Length];
-            SourcePoly = new D2DPoint[polygon.Length];
-
-            Array.Copy(polygon, Poly, polygon.Length);
-            Array.Copy(polygon, SourcePoly, polygon.Length);
-
-
-            Utilities.ApplyTranslation(Poly, Poly, 0f, offset);
-            Utilities.ApplyTranslation(SourcePoly, SourcePoly, 0f, offset);
+            InitPolyArrays(polygon, offset);
 
             this.Update();
         }
 
         public RenderPoly(GameObject parent, D2DPoint[] polygon, D2DPoint offset, float scale) : this(parent)
         {
-            Poly = new D2DPoint[polygon.Length];
-            SourcePoly = new D2DPoint[polygon.Length];
-
-            Array.Copy(polygon, Poly, polygon.Length);
-            Array.Copy(polygon, SourcePoly, polygon.Length);
-
-            Utilities.ApplyTranslation(Poly, Poly, 0f, offset, scale);
-            Utilities.ApplyTranslation(SourcePoly, SourcePoly, 0f, offset, scale);
+            InitPolyArrays(polygon, offset, scale);
 
             this.Update();
         }
 
         public RenderPoly(GameObject parent, D2DPoint[] polygon, float scale, float tessalateDist = 0f) : this(parent)
         {
-            Poly = new D2DPoint[polygon.Length];
-            SourcePoly = new D2DPoint[polygon.Length];
-
-            Array.Copy(polygon, Poly, polygon.Length);
-            Array.Copy(polygon, SourcePoly, polygon.Length);
-
-            Utilities.ApplyTranslation(Poly, Poly, 0f, D2DPoint.Zero, scale);
-            Utilities.ApplyTranslation(SourcePoly, SourcePoly, 0f, D2DPoint.Zero, scale);
+            InitPolyArrays(polygon, D2DPoint.Zero, scale);
 
             if (tessalateDist > 0f)
                 Tessellate(tessalateDist);
 
             this.Update();
+        }
+
+        private void InitPolyArrays(D2DPoint[] polygon, D2DPoint offset, float scale = 1f)
+        {
+            Poly = new D2DPoint[polygon.Length];
+            SourcePoly = new D2DPoint[polygon.Length];
+            _originalPoly = new D2DPoint[polygon.Length];
+
+            Array.Copy(polygon, SourcePoly, polygon.Length);
+            Array.Copy(polygon, Poly, polygon.Length);
+            Array.Copy(polygon, _originalPoly, polygon.Length);
+
+            Utilities.ApplyTranslation(Poly, Poly, 0f, offset, scale);
+            Utilities.ApplyTranslation(SourcePoly, SourcePoly, 0f, offset, scale);
         }
 
         /// <summary>
@@ -249,7 +236,42 @@ namespace PolyPlane.GameObjects.Tools
 
             SourcePoly = srcCopy.ToArray();
             Poly = new D2DPoint[SourcePoly.Length];
+            _originalPoly = new D2DPoint[SourcePoly.Length];
+
             Array.Copy(SourcePoly, Poly, SourcePoly.Length);
+            Array.Copy(SourcePoly, _originalPoly, SourcePoly.Length);
+        }
+
+        /// <summary>
+        /// Distorts 3 vertices closest to the specified position in the direction and magnitude of the specified vector.
+        /// </summary>
+        /// <param name="position">Position within the polygon (at origin) to add the distortion.</param>
+        /// <param name="distortVec">Vector containing the magnitude and direction of the distortion.</param>
+        public void Distort(D2DPoint position, D2DPoint distortVec)
+        {
+            // Find the closest poly point to the impact and distort the polygon.
+            var closestIdx = ClosestIdx(position);
+
+            // Distort the closest point and the two surrounding points.
+            var prevIdx = Utilities.WrapIndex(closestIdx - 1, SourcePoly.Length);
+            var nextIdx = Utilities.WrapIndex(closestIdx + 1, SourcePoly.Length);
+
+            SourcePoly[prevIdx] += distortVec * 0.6f;
+            SourcePoly[closestIdx] += distortVec;
+            SourcePoly[nextIdx] += distortVec * 0.6f;
+
+            Update();
+        }
+
+        /// <summary>
+        /// Undo any distortion and restore to the original shape.
+        /// </summary>
+        public void Restore()
+        {
+            for (int i = 0; i < SourcePoly.Length; i++)
+                SourcePoly[i] = _originalPoly[i];
+
+            Update();
         }
 
         /// <summary>

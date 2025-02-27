@@ -813,28 +813,11 @@ namespace PolyPlane.GameObjects
         {
             var distortVec = Utilities.AngleToVectorDegrees(angle, distortAmt);
 
-            DistortPolygon(this.Polygon, pos, distortVec);
+            this.Polygon.Distort(pos, distortVec);
 
             var bulletHole = AddAttachment(World.ObjectManager.RentBulletHole(this, pos + distortVec, angle));
-
             bulletHole.IsNetObject = this.IsNetObject;
             _bulletHoles.Add(bulletHole);
-        }
-
-        private void DistortPolygon(RenderPoly poly, D2DPoint pos, D2DPoint distortVec)
-        {
-            // Find the closest poly point to the impact and distort the polygon.
-            var closestIdx = this.Polygon.ClosestIdx(pos);
-
-            // Distort the closest point and the two surrounding points.
-            var prevIdx = Utilities.WrapIndex(closestIdx - 1, poly.Poly.Length);
-            var nextIdx = Utilities.WrapIndex(closestIdx + 1, poly.Poly.Length);
-
-            poly.SourcePoly[prevIdx] += distortVec * 0.6f;
-            poly.SourcePoly[closestIdx] += distortVec;
-            poly.SourcePoly[nextIdx] += distortVec * 0.6f;
-
-            poly.Update();
         }
 
         private void AddPolyDamageEffectsResult(RenderPoly poly, PlaneImpactResult result)
@@ -981,7 +964,7 @@ namespace PolyPlane.GameObjects
 
             // Copy the polygon, distort it, then check for distortion related damage effects.
             var polyCopy = new RenderPoly(this.Polygon, this.Position, this.Rotation);
-            DistortPolygon(polyCopy, result.ImpactPointOrigin, distortVec);
+            polyCopy.Distort(result.ImpactPointOrigin, distortVec);
 
             AddPolyDamageEffectsResult(polyCopy, result);
 
@@ -1113,7 +1096,7 @@ namespace PolyPlane.GameObjects
 
             var flipped = this.Polygon.IsFlipped;
 
-            this.Polygon = new RenderPoly(this, _planePoly, this.RenderScale, POLY_TESSELLATE_DIST);
+            this.Polygon.Restore();
 
             if (flipped)
                 this.Polygon.FlipY();
