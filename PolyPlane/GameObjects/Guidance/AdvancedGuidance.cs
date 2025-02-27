@@ -2,6 +2,10 @@
 
 namespace PolyPlane.GameObjects.Guidance
 {
+
+    /// <summary>
+    /// My own implementation of missile guidance. This logic trades computational complexity for accuracy, and tries to find a more efficient guidance solution.
+    /// </summary>
     public class AdvancedGuidance : GuidanceBase
     {
         private D2DPoint _prevTargPos = D2DPoint.Zero;

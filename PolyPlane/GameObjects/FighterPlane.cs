@@ -385,7 +385,7 @@ namespace PolyPlane.GameObjects
 
             // Get guidance direction.
             if (_isAIPlane)
-                guideRot = GetAPGuidanceDirection(_aiBehavior.GetAIGuidance(dt));
+                guideRot = GetAPGuidanceDirection(_aiBehavior.GetAIGuidanceDirection(dt));
             else
                 guideRot = GetAPGuidanceDirection(PlayerGuideAngle);
 

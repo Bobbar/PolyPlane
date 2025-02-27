@@ -10,10 +10,10 @@ namespace PolyPlane.GameObjects.Fixtures
         private bool _copyRotation = true;
 
         /// <summary>
-        /// Creates a new instance of <see cref="FixturePoint"/> and attaches it to the specified <see cref="GameObjects.GameObject"/>.
+        /// Creates a new instance of <see cref="FixturePoint"/> and attaches it to the specified <see cref="GameObject"/>.
         /// </summary>
         /// <param name="gameObject">Parent object.</param>
-        /// <param name="referencePosition">Position within the parent object to attach to.</param>
+        /// <param name="referencePosition">Position (at origin) within the parent object to attach to.</param>
         /// <param name="copyRotation">Copy current rotation from parent object on every update.  Otherwise set manually.</param>
         public FixturePoint(GameObject gameObject, D2DPoint referencePosition, bool copyRotation = true) : base(gameObject)
         {

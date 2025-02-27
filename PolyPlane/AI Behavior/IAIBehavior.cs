@@ -9,7 +9,7 @@ namespace PolyPlane.AI_Behavior
         FighterPlane TargetPlane { get; }
         AIPersonality Personality { get; }
 
-        float GetAIGuidance(float dt);
+        float GetAIGuidanceDirection(float dt);
         void ClearTarget();
         void ChangeTarget(FighterPlane plane);
         void Update(float dt);
