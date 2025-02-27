@@ -22,7 +22,6 @@ namespace PolyPlane.Helpers
         private readonly Func<T, D2DPoint> _positionSelector = positionSelector;
         private readonly Func<T, bool> _isExpiredSelector = isExpiredSelector;
         private readonly int SIDE_LEN = sideLen;
-        private readonly int THREAD_NUM = Environment.ProcessorCount;
 
         /// <summary>
         /// Removes expired objects and moves live objects to their new grid positions as needed.
@@ -194,19 +193,19 @@ namespace PolyPlane.Helpers
 
         private void ComputeNextHashes()
         {
-            ParallelHelpers.ParallelForSlim(_allObjects.Count, THREAD_NUM, (start, end) =>
-            {
-                for (int i = start; i < end; i++)
-                {
-                    var item = _allObjects[i];
-                    var obj = item.Item;
-                    var newHash = GetGridHash(obj);
-
-                    item.NextHash = newHash;
-                }
-            });
+            ParallelHelpers.ParallelForSlim(_allObjects.Count, ComputeHashes);
 
             _allObjects.Clear();
+        }
+
+        private void ComputeHashes(int start, int end)
+        {
+            for (int i = start; i < end; i++)
+            {
+                var item = _allObjects[i];
+                var newHash = GetGridHash(item.Item);
+                item.NextHash = newHash;
+            }
         }
 
         private void AddInternal(int hash, T obj)
@@ -249,7 +248,6 @@ namespace PolyPlane.Helpers
         {
             public int NextHash;
             public T Item;
-
             public Entry() { }
 
             public void ReInit(int curHash, T item)

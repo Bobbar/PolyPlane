@@ -33,6 +33,7 @@ namespace PolyPlane
             _turbulenceNoise.SetFrequency(NOISE_FREQUENCY);
 
             TARGET_FRAME_TIME = 1000f / (float)TARGET_FPS;
+            MUTLI_THREAD_COUNT = Environment.ProcessorCount;
         }
 
         public static double LAST_FRAME_TIME = 16.6d;
@@ -160,6 +161,7 @@ namespace PolyPlane
         public static bool RespawnAIPlanes = true;
         public static bool GunsOnly = false;
 
+        public static readonly int MUTLI_THREAD_COUNT = 8;
         public const int DEFAULT_FPS = 60;
         public const int DEFAULT_SUB_STEPS = 6;
         public const float DEFAULT_DT = 0.0425f;

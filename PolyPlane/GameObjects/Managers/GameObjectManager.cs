@@ -54,12 +54,6 @@ namespace PolyPlane.GameObjects
         public event EventHandler<EventMessage> PlayerKilledEvent;
         public event EventHandler<FighterPlane> NewPlayerEvent;
 
-        private int _multiThreadNum = 2;
-
-        public GameObjectManager()
-        {
-            _multiThreadNum = Environment.ProcessorCount;
-        }
 
         public BulletHole RentBulletHole(GameObject obj, D2DPoint offset, float angle)
         {
@@ -367,17 +361,18 @@ namespace PolyPlane.GameObjects
             SyncObjCollections();
 
             // Update all regular objects.
-            _allObjects.ForEachParallel(o => o.Update(World.CurrentDT), _multiThreadNum);
+            _allObjects.ForEachParallel(o => o.Update(World.CurrentDT));
 
             // Update planes separately.
             // They are pretty expensive, so we want "all threads on deck"
             // to be working on the updates.
-            Planes.ForEachParallel(o => o.Update(World.CurrentDT), _multiThreadNum);
+            Planes.ForEachParallel(o => o.Update(World.CurrentDT));
 
             if (!World.IsNetGame || World.IsClient)
             {
                 // Update particles.
-                Particles.ForEachParallel(o => o.Update(World.CurrentDT), _multiThreadNum);
+                Particles.ForEachParallel(o => o.Update(World.CurrentDT));
+
             }
 
             // Update ground impacts.

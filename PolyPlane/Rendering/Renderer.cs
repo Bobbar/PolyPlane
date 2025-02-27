@@ -1598,9 +1598,7 @@ namespace PolyPlane.Rendering
 
         private void UpdateClouds()
         {
-            const int MULTI_THREAD_NUM = 10;
-
-            _clouds.ForEachParallel(c => c.Update(World.CurrentDT), MULTI_THREAD_NUM);
+            _clouds.ForEachParallel(c => c.Update(World.CurrentDT));
         }
 
         private void UpdateGroundColorBrush(RenderContext ctx)
