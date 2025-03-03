@@ -284,6 +284,7 @@ namespace PolyPlane.GameObjects.Tools
             for (int i = 0; i < Poly.Length; i++)
             {
                 SourcePoly[i].Y = -SourcePoly[i].Y;
+                _originalPoly[i].Y = -_originalPoly[i].Y;
             }
 
             this.Update();

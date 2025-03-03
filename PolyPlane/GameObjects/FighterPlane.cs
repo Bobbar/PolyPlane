@@ -1094,12 +1094,7 @@ namespace PolyPlane.GameObjects
 
             _wings.ForEach(w => w.Visible = true);
 
-            var flipped = this.Polygon.IsFlipped;
-
             this.Polygon.Restore();
-
-            if (flipped)
-                this.Polygon.FlipY();
 
             if (IsAI)
                 _aiBehavior.ClearTarget();
