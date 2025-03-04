@@ -304,7 +304,6 @@ namespace PolyPlane.GameObjects
             NewPlanes.Clear();
             NewParticles.Clear();
 
-
             _objLookup.Clear();
             _spatialGrid.Clear();
             _expiredObjs.Clear();
@@ -346,6 +345,7 @@ namespace PolyPlane.GameObjects
         {
             return _allObjects;
         }
+
 
         /// <summary>
         /// Updates and syncs all collections/queues, spatial grid and advances all objects.

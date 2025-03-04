@@ -14,10 +14,10 @@ namespace PolyPlane.Helpers
     /// <param name="sideLen">And integer (S) representing the grid cell side length (L), L = 1 << S. </param>
     public sealed class SpatialGrid<T>(Func<T, D2DPoint> positionSelector, Func<T, bool> isExpiredSelector, int sideLen = 9)
     {
-        private Dictionary<int, List<Entry>> _grid = new Dictionary<int, List<Entry>>();
+        private Dictionary<int, EntrySequence> _sequences = new();
+        private List<Entry> _entries = new();
         private GameObjectPool<Entry> _entryPool = new GameObjectPool<Entry>(() => new Entry());
-        private List<Entry> _movedObjects = new List<Entry>();
-        private List<Entry> _allObjects = new List<Entry>();
+        private GameObjectPool<EntrySequence> _sequencePool = new GameObjectPool<EntrySequence>(() => new EntrySequence());
 
         private readonly Func<T, D2DPoint> _positionSelector = positionSelector;
         private readonly Func<T, bool> _isExpiredSelector = isExpiredSelector;
@@ -28,61 +28,159 @@ namespace PolyPlane.Helpers
         /// </summary>
         public void Update()
         {
-            // Since we cannot add to a dictionary within a foreach loop,
-            // we need to record objects which need moved and re-add them after.
-
-            // We save the new hashes in a KVP so that we do not need to compute
-            // the hash twice.
-
             // Compute new hashes in parallel.
             ComputeNextHashes();
 
-            // Iterate all items in the grid and make/record changes as needed.
-            foreach (var kvp in _grid)
+            // Iterate all entries and update as needed.
+            for (int i = _entries.Count - 1; i >= 0; i--)
             {
-                var curHash = kvp.Key;
-                var entries = kvp.Value;
+                var entry = _entries[i];
 
-                for (int i = entries.Count - 1; i >= 0; i--)
+                // Remove expired entries.
+                if (_isExpiredSelector(entry.Item))
                 {
-                    var entry = entries[i];
-                    var obj = entry.Item;
+                    RemoveFromSequence(entry);
 
-                    if (_isExpiredSelector(obj))
+                    _entries.RemoveAt(i);
+
+                    _entryPool.ReturnObject(entry);
+                }
+                else
+                {
+                    // Move entry to a new sequence.
+                    var curHash = entry.CurrentHash;
+                    if (curHash != entry.NextHash)
                     {
-                        // Just remove expired objects.
-                        entries.RemoveAt(i);
-                        _entryPool.ReturnObject(entry);
-                    }
-                    else
-                    {
-                        // Check hash and record moved objects as needed.
-                        var newHash = entry.NextHash;
-                        if (newHash != curHash)
-                        {
-                            entries.RemoveAt(i);
-                            _entryPool.ReturnObject(entry);
-                            _movedObjects.Add(entry);
-                        }
+                        MoveEntry(entry);
                     }
                 }
-
-                // Remove empty cells.
-                if (entries.Count == 0)
-                    _grid.Remove(curHash);
-                else // Record current objects.
-                    _allObjects.AddRange(entries);
             }
+        }
 
-            // Add moved objects.
-            for (int i = 0; i < _movedObjects.Count; i++)
+        /// <summary>
+        /// Move the specified entry to its new sequence.
+        /// </summary>
+        /// <param name="entry"></param>
+        private void MoveEntry(Entry entry)
+        {
+            RemoveFromSequence(entry);
+
+            AddToSequence(entry);
+
+            entry.CurrentHash = entry.NextHash;
+        }
+
+        /// <summary>
+        /// Removes the specified entry from its current sequence and ensures the previous sequence is correctly linked.
+        /// </summary>
+        /// <param name="entry"></param>
+        private void RemoveFromSequence(Entry entry)
+        {
+            var entrySeq = entry.Sequence;
+
+            if (entry.IsHead)
             {
-                var tmp = _movedObjects[i];
-                AddInternal(tmp.NextHash, tmp.Item);
-            }
+                // Remove head if it's the final entry.
+                if (entry.Next == null)
+                {
+                    _sequences.Remove(entry.CurrentHash);
+                    _sequencePool.ReturnObject(entrySeq);
+                }
+                // Otherwise move the head up to the next entry.
+                else
+                {
+                    entry.Next.IsHead = true;
+                    entry.Next.Prev = null;
+                    entrySeq.Head = entry.Next;
 
-            // Clear the temp storage.
-            _movedObjects.Clear();
+                    entry.Prev = null;
+                    entry.Next = null;
+                }
+
+                entry.IsHead = false;
+            }
+            else
+            {
+                var prev = entry.Prev;
+                var next = entry.Next;
+
+                // Tail entry: Move tail to previous entry.
+                if (prev != null && next == null)
+                {
+                    // It's a tail entry?
+                    entrySeq.Tail = prev;
+                    prev.Next = null;
+
+                }
+                // Middle entry: Link previous and next entries together.
+                else if (prev != null && next != null)
+                {
+                    prev.Next = next;
+                    next.Prev = prev;
+
+                    entry.Prev = null;
+                    entry.Next = null;
+                }
+            }
+        }
+
+
+        private void AddInternal(int hash, T obj)
+        {
+            var entry = _entryPool.RentObject();
+            entry.ReInit(hash, obj);
+
+            AddToSequence(entry);
+
+            _entries.Add(entry);
+        }
+
+        /// <summary>
+        /// Adds/inserts the specified entry into a matching sequence. Or creates a new one if one does not already exist.
+        /// </summary>
+        /// <param name="entry"></param>
+        private void AddToSequence(Entry entry)
+        {
+            var hash = entry.NextHash;
+
+            if (_sequences.TryGetValue(hash, out var existingSeq))
+            {
+                // Add to existing head.
+                entry.Sequence = existingSeq;
+
+                // Has tail, add to end.
+                if (existingSeq.Tail != null)
+                {
+                    entry.IsHead = false;
+                    entry.Prev = existingSeq.Tail;
+                    existingSeq.Tail.Next = entry;
+                    existingSeq.Tail = entry;
+                    entry.Next = null;
+                    entry.Sequence = existingSeq;
+                }
+                else// No tail, add second item.
+                {
+                    entry.Prev = existingSeq.Head;
+                    existingSeq.Head.Next = entry;
+                    existingSeq.Tail = entry;
+                    entry.Next = null;
+                    entry.Sequence = existingSeq;
+                }
+            }
+            else
+            {
+                // Add new head.
+                entry.IsHead = true;
+                entry.Prev = null;
+                entry.Next = null;
+
+                var newIndex = _sequencePool.RentObject();
+                newIndex.ReInit(entry);
+
+                entry.Sequence = newIndex;
+
+                _sequences.Add(hash, newIndex);
+            }
         }
 
         /// <summary>
@@ -112,11 +210,15 @@ namespace PolyPlane.Helpers
                     var yo = idxY + y;
                     var nHash = GetGridHash(xo, yo);
 
-                    if (_grid.TryGetValue(nHash, out var ns))
+                    if (_sequences.TryGetValue(nHash, out var index))
                     {
-                        for (int i = 0; i < ns.Count; i++)
+                        var cur = index.Head;
+
+                        while (cur != null)
                         {
-                            yield return ns[i].Item;
+                            yield return cur.Item;
+
+                            cur = cur.Next;
                         }
                     }
                 }
@@ -140,11 +242,15 @@ namespace PolyPlane.Helpers
                     var yo = idxY + y;
                     var nHash = GetGridHash(xo, yo);
 
-                    if (_grid.TryGetValue(nHash, out var ns))
+                    if (_sequences.TryGetValue(nHash, out var index))
                     {
-                        for (int i = 0; i < ns.Count; i++)
+                        var cur = index.Head;
+
+                        while (cur != null)
                         {
-                            yield return ns[i].Item;
+                            yield return cur.Item;
+
+                            cur = cur.Next;
                         }
                     }
                 }
@@ -173,11 +279,15 @@ namespace PolyPlane.Helpers
                 {
                     var nHash = GetGridHash(x, y);
 
-                    if (_grid.TryGetValue(nHash, out var ns))
+                    if (_sequences.TryGetValue(nHash, out var index))
                     {
-                        for (int i = 0; i < ns.Count; i++)
+                        var cur = index.Head;
+
+                        while (cur != null)
                         {
-                            yield return ns[i].Item;
+                            yield return cur.Item;
+
+                            cur = cur.Next;
                         }
                     }
                 }
@@ -186,39 +296,23 @@ namespace PolyPlane.Helpers
 
         public void Clear()
         {
-            _grid.Clear();
-            _movedObjects.Clear();
-            _allObjects.Clear();
+            _entries.Clear();
+            _sequences.Clear();
         }
 
         private void ComputeNextHashes()
         {
-            ParallelHelpers.ParallelForSlim(_allObjects.Count, ComputeHashes);
-
-            _allObjects.Clear();
+            ParallelHelpers.ParallelForSlim(_entries.Count, ComputeHashes);
         }
 
         private void ComputeHashes(int start, int end)
         {
             for (int i = start; i < end; i++)
             {
-                var item = _allObjects[i];
+                var item = _entries[i];
                 var newHash = GetGridHash(item.Item);
                 item.NextHash = newHash;
             }
-        }
-
-        private void AddInternal(int hash, T obj)
-        {
-            var entry = _entryPool.RentObject();
-            entry.ReInit(hash, obj);
-
-            if (_grid.TryGetValue(hash, out var objs))
-                objs.Add(entry);
-            else
-                _grid.Add(hash, new List<Entry> { entry });
-
-            _allObjects.Add(entry);
         }
 
         private void GetGridIdx(D2DPoint pos, out int idxX, out int idxY)
@@ -244,15 +338,45 @@ namespace PolyPlane.Helpers
         }
 
 
+        private class EntrySequence
+        {
+            public Entry Head;
+            public Entry? Tail;
+
+            public EntrySequence() { }
+
+            public void ReInit(Entry head)
+            {
+                Head = head;
+                Tail = null;
+            }
+        }
+
         private class Entry
         {
             public int NextHash;
+            public int CurrentHash;
             public T Item;
+
+            public bool IsHead = false;
+
+            public EntrySequence? Sequence;
+
+            public Entry? Prev;
+            public Entry? Next;
+
             public Entry() { }
 
             public void ReInit(int curHash, T item)
             {
+                IsHead = false;
                 NextHash = curHash;
+                CurrentHash = curHash;
+
+                Sequence = null;
+                Prev = null;
+                Next = null;
+
                 Item = item;
             }
         }
