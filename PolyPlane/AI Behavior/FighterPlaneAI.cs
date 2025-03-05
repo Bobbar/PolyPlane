@@ -22,6 +22,8 @@ namespace PolyPlane.AI_Behavior
         private bool _gainingVelo = false;
         private bool _reverseDirection = false;
         private bool _isDefending = false;
+        private bool _isVengeful = false;
+        private bool _isCoward = false;
 
         private GameTimer _fireBurstTimer = new GameTimer(2f, 6f);
         private GameTimer _fireMissileCooldown = new GameTimer(6f);
@@ -133,6 +135,8 @@ namespace PolyPlane.AI_Behavior
                             {
                                 MAX_SPEED = 700f;
                                 this.Plane.Thrust = 700f;
+
+                                _isCoward = true;
                             }
                             break;
 
@@ -148,6 +152,9 @@ namespace PolyPlane.AI_Behavior
                     }
                 }
             }
+
+            if (this.Personality.HasFlag(AIPersonality.Vengeful))
+                _isVengeful = true;
         }
 
         private void HandlePlayerKilled(PlayerKilledEventArgs killedEvent)
@@ -165,7 +172,7 @@ namespace PolyPlane.AI_Behavior
                     _killedByPlane = null;
 
                 // Vengeful AI will always go after the last player that killed them.
-                if (this.Personality.HasFlag(AIPersonality.Vengeful) && (_killedByPlane != null && _killedByPlane.IsDisabled == false))
+                if (_isVengeful && (_killedByPlane != null && _killedByPlane.IsDisabled == false))
                     rndTarg = _killedByPlane;
 
                 _targetPlane = rndTarg;
@@ -317,7 +324,7 @@ namespace PolyPlane.AI_Behavior
                 var dirToTarget = TargetPlane.Position - this.Plane.Position;
                 var distToTarget = this.Plane.Position.DistanceTo(TargetPlane.Position);
 
-                if (this.Personality.HasFlag(AIPersonality.Cowardly) && distToTarget < RUN_DISTANCE && distToTarget > FIGHT_DISTANCE)
+                if (_isCoward && distToTarget < RUN_DISTANCE && distToTarget > FIGHT_DISTANCE)
                 {
                     // Fly away from target plane.
                     dirToTarget *= -1f;
