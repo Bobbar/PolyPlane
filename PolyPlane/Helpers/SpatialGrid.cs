@@ -42,7 +42,6 @@ namespace PolyPlane.Helpers
                     RemoveFromSequence(entry);
 
                     _entries.RemoveAt(i);
-
                     _entryPool.ReturnObject(entry);
                 }
                 else
@@ -53,6 +52,23 @@ namespace PolyPlane.Helpers
                     {
                         MoveEntry(entry);
                     }
+                }
+            }
+
+            PruneSeqs();
+        }
+
+        /// <summary>
+        /// Removes any empty sequences left over after updating.
+        /// </summary>
+        private void PruneSeqs()
+        {
+            foreach (var seq in _sequences.Values)
+            {
+                if (seq.IsEmpty)
+                {
+                    _sequences.Remove(seq.Hash);
+                    _sequencePool.ReturnObject(seq);
                 }
             }
         }
@@ -80,15 +96,22 @@ namespace PolyPlane.Helpers
 
             if (entry.IsHead)
             {
-                // Remove head if it's the final entry.
+                // Last entry in the sequence?
                 if (entry.Next == null)
                 {
-                    _sequences.Remove(entry.CurrentHash);
-                    _sequencePool.ReturnObject(entrySeq);
+                    // Set sequence empty.
+                    // It will be reused if another item moves into its cell.
+                    entrySeq.IsEmpty = true;
+                    entrySeq.Head = null;
+                    entrySeq.Tail = null;
+
+                    entry.IsHead = false;
+                    entry.Prev = null;
+                    entry.Next = null;
                 }
-                // Otherwise move the head up to the next entry.
                 else
                 {
+                    // Otherwise move the head up to the next entry.
                     entry.Next.IsHead = true;
                     entry.Next.Prev = null;
                     entrySeq.Head = entry.Next;
@@ -104,17 +127,16 @@ namespace PolyPlane.Helpers
                 var prev = entry.Prev;
                 var next = entry.Next;
 
-                // Tail entry: Move tail to previous entry.
                 if (prev != null && next == null)
                 {
-                    // It's a tail entry?
+                    // Tail entry: Move tail to previous entry.
                     entrySeq.Tail = prev;
                     prev.Next = null;
 
                 }
-                // Middle entry: Link previous and next entries together.
                 else if (prev != null && next != null)
                 {
+                    // Middle entry: Link previous and next entries together.
                     prev.Next = next;
                     next.Prev = prev;
 
@@ -122,17 +144,6 @@ namespace PolyPlane.Helpers
                     entry.Next = null;
                 }
             }
-        }
-
-
-        private void AddInternal(int hash, T obj)
-        {
-            var entry = _entryPool.RentObject();
-            entry.ReInit(hash, obj);
-
-            AddToSequence(entry);
-
-            _entries.Add(entry);
         }
 
         /// <summary>
@@ -145,38 +156,44 @@ namespace PolyPlane.Helpers
 
             if (_sequences.TryGetValue(hash, out var existingSeq))
             {
-                // Add to existing head.
+                existingSeq.Hash = hash;
                 entry.Sequence = existingSeq;
 
-                // Has tail, add to end.
-                if (existingSeq.Tail != null)
+                // Add to existing sequence.
+                if (existingSeq.IsEmpty)
                 {
-                    entry.IsHead = false;
-                    entry.Prev = existingSeq.Tail;
-                    existingSeq.Tail.Next = entry;
-                    existingSeq.Tail = entry;
+                    existingSeq.IsEmpty = false;
+                    existingSeq.Head = entry;
+                    entry.IsHead = true;
                     entry.Next = null;
-                    entry.Sequence = existingSeq;
+                    entry.Prev = null;
                 }
-                else// No tail, add second item.
+                else
                 {
-                    entry.Prev = existingSeq.Head;
-                    existingSeq.Head.Next = entry;
+                    // If the sequence has a tail, add to the end.
+                    // Otherwise add after the head.
+                    var swapEntry = existingSeq.Head;
+
+                    if (existingSeq.Tail != null)
+                        swapEntry = existingSeq.Tail;
+
+                    entry.Prev = swapEntry;
+                    swapEntry.Next = entry;
+
                     existingSeq.Tail = entry;
                     entry.Next = null;
-                    entry.Sequence = existingSeq;
                 }
             }
             else
             {
-                // Add new head.
+                // Add to new sequence.
                 entry.IsHead = true;
                 entry.Prev = null;
                 entry.Next = null;
 
                 var newIndex = _sequencePool.RentObject();
                 newIndex.ReInit(entry);
-
+                newIndex.Hash = hash;
                 entry.Sequence = newIndex;
 
                 _sequences.Add(hash, newIndex);
@@ -191,6 +208,16 @@ namespace PolyPlane.Helpers
         {
             var hash = GetGridHash(obj);
             AddInternal(hash, obj);
+        }
+
+        private void AddInternal(int hash, T obj)
+        {
+            var entry = _entryPool.RentObject();
+            entry.ReInit(hash, obj);
+
+            AddToSequence(entry);
+
+            _entries.Add(entry);
         }
 
         /// <summary>
@@ -256,7 +283,6 @@ namespace PolyPlane.Helpers
                 }
             }
         }
-
 
         /// <summary>
         /// Get all objects within the specified rectangle.
@@ -337,11 +363,12 @@ namespace PolyPlane.Helpers
             return HashCode.Combine(idxX, idxY);
         }
 
-
         private class EntrySequence
         {
-            public Entry Head;
+            public Entry? Head;
             public Entry? Tail;
+            public int Hash;
+            public bool IsEmpty = false;
 
             public EntrySequence() { }
 
@@ -349,6 +376,7 @@ namespace PolyPlane.Helpers
             {
                 Head = head;
                 Tail = null;
+                IsEmpty = false;
             }
         }
 
