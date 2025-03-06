@@ -46,6 +46,9 @@ namespace PolyPlane.GameObjects.Particles
             if (World.IsNetGame && World.IsServer)
                 return;
 
+            // Make sure our position is synced to ensure a correct angular velocity result.
+            this.SyncWithOwner();
+
             _spawnTimer.Interval = DEFAULT_INTERVAL + Utilities.Rnd.NextFloat(-0.1f, 0.1f);
 
             D2DPoint newPos = Position;
