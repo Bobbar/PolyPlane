@@ -4,6 +4,7 @@ using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Net;
 using System.Diagnostics;
+using System.Text;
 using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
@@ -29,6 +30,8 @@ namespace PolyPlane.Rendering
             get { return _netMan; }
             set { _netMan = value; }
         }
+
+        private StringBuilder _stringBuilder = new StringBuilder();
 
         private D2DDevice _device;
         private D2DGraphics _gfx = null;
@@ -1541,39 +1544,39 @@ namespace PolyPlane.Rendering
 
             if (_showHelp)
             {
-                infoText += "\nH: Hide help\n\n";
+                _stringBuilder.AppendLine("H: Hide help\n");
 
                 if (!World.IsNetGame)
                 {
-                    infoText += $"Alt + Enter: Toggle Fullscreen\n";
-                    infoText += $"P: Pause\n";
-                    infoText += $"U: Spawn AI Plane\n";
-                    infoText += $"C: Remove AI Planes\n";
+                    _stringBuilder.AppendLine($"Alt + Enter: Toggle Fullscreen");
+                    _stringBuilder.AppendLine($"P: Pause");
+                    _stringBuilder.AppendLine($"U: Spawn AI Plane");
+                    _stringBuilder.AppendLine($"C: Remove AI Planes");
                 }
 
-                infoText += $"Y: Start Chat Message\n";
-                infoText += $"Tab: Show Scores\n";
-                infoText += $"(+/-): Zoom\n";
-                infoText += $"Shift + (+/-): HUD Scale\n";
-                infoText += $"Left-Click: Fire Bullets\n";
-                infoText += $"Right-Click: Drop Decoys\n";
-                infoText += $"Middle-Click/Space Bar: Fire Missile\n";
-                infoText += $"L: Toggle Lead Indicators\n";
-                infoText += $"M: Toggle Missiles On Radar\n";
-                infoText += $"K: Toggle Missiles Regen\n";
-                infoText += $"F2: Toggle HUD\n";
+                _stringBuilder.AppendLine($"Y: Start Chat Message");
+                _stringBuilder.AppendLine($"Tab: Show Scores");
+                _stringBuilder.AppendLine($"(+/-): Zoom");
+                _stringBuilder.AppendLine($"Shift + (+/-): HUD Scale");
+                _stringBuilder.AppendLine($"Left-Click: Fire Bullets");
+                _stringBuilder.AppendLine($"Right-Click: Drop Decoys");
+                _stringBuilder.AppendLine($"Middle-Click/Space Bar: Fire Missile");
+                _stringBuilder.AppendLine($"L: Toggle Lead Indicators");
+                _stringBuilder.AppendLine($"M: Toggle Missiles On Radar");
+                _stringBuilder.AppendLine($"K: Toggle Missiles Regen");
+                _stringBuilder.AppendLine($"F2: Toggle HUD");
 
-                infoText += $"\nSpectate (While crashed)\n";
-                infoText += $"([/]): Prev/Next Spectate Plane\n";
-                infoText += $"Backspace: Reset Spectate\n";
-                infoText += $"F: Toggle Free Camera Mode (Hold Right-Mouse to move)\n";
+                _stringBuilder.AppendLine($"\nSpectate (While crashed)");
+                _stringBuilder.AppendLine($"([/]): Prev/Next Spectate Plane");
+                _stringBuilder.AppendLine($"Backspace: Reset Spectate");
+                _stringBuilder.AppendLine($"F: Toggle Free Camera Mode (Hold Right-Mouse to move)");
             }
             else
             {
-                infoText += "H: Show help";
+                _stringBuilder.AppendLine("H: Show help");
             }
 
-            gfx.DrawText(infoText, _greenYellowColorBrush, _textConsolas12, World.ViewPortRect.Deflate(30f, 30f));
+            gfx.DrawText(_stringBuilder.ToString(), _greenYellowColorBrush, _textConsolas12, World.ViewPortRect.Deflate(30f, 30f));
         }
 
         private void DrawScreenFlash(D2DGraphics gfx)
@@ -1763,54 +1766,53 @@ namespace PolyPlane.Rendering
 
         private string GetInfo(GameObject viewObject)
         {
-            string infoText = string.Empty;
+            _stringBuilder.Clear();
 
             var numObj = _objs.TotalObjects;
-            infoText += $"FPS: {Math.Round(_fpsSmooth.Add(_renderFPS), 1)}\n";
+
+            _stringBuilder.AppendLine($"FPS: {Math.Round(_fpsSmooth.Add(_renderFPS), 1)}");
 
             if (_showInfo)
             {
                 if (World.IsNetGame && _netMan != null)
                 {
-                    infoText += $"Latency: {Math.Round(_netMan.Host.GetPlayerRTT(0), 2)}\n";
-                    infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
-                    infoText += $"Packet Loss: {_netMan.Host.PacketLoss()}\n";
-                    infoText += $"Packets Deferred: {_netMan.NumDeferredPackets}\n";
-                    infoText += $"Packets Expired: {_netMan.NumExpiredPackets}\n\n";
+                    _stringBuilder.AppendLine($"Latency: {Math.Round(_netMan.Host.GetPlayerRTT(0), 2)}");
+                    _stringBuilder.AppendLine($"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}");
+                    _stringBuilder.AppendLine($"Packet Loss: {_netMan.Host.PacketLoss()}");
+                    _stringBuilder.AppendLine($"Packets Deferred: {_netMan.NumDeferredPackets}");
+                    _stringBuilder.AppendLine($"Packets Expired: {_netMan.NumExpiredPackets}\n");
                 }
 
-                infoText += $"Num Objects: {numObj}\n";
-                infoText += $"On Screen: {GraphicsExtensions.OnScreen}\n";
-                infoText += $"Off Screen: {GraphicsExtensions.OffScreen}\n";
-                infoText += $"Planes: {_objs.Planes.Count}\n";
-                infoText += $"Update ms: {Math.Round(_updateTimeSmooth.Add(UpdateTime.TotalMilliseconds), 2)}\n";
-                infoText += $"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}\n";
-                infoText += $"Collision ms: {Math.Round(CollisionTime.TotalMilliseconds, 2)}\n";
-                infoText += $"Total ms: {Math.Round(UpdateTime.TotalMilliseconds + CollisionTime.TotalMilliseconds + _renderTimeSmooth.Current, 2)}\n";
+                _stringBuilder.AppendLine($"Num Objects: {numObj}");
+                _stringBuilder.AppendLine($"On Screen: {GraphicsExtensions.OnScreen}");
+                _stringBuilder.AppendLine($"Off Screen: {GraphicsExtensions.OffScreen}");
+                _stringBuilder.AppendLine($"Planes: {_objs.Planes.Count}");
+                _stringBuilder.AppendLine($"Update ms: {Math.Round(_updateTimeSmooth.Add(UpdateTime.TotalMilliseconds), 2)}");
+                _stringBuilder.AppendLine($"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}");
+                _stringBuilder.AppendLine($"Collision ms: {Math.Round(CollisionTime.TotalMilliseconds, 2)}");
+                _stringBuilder.AppendLine($"Total ms: {Math.Round(UpdateTime.TotalMilliseconds + CollisionTime.TotalMilliseconds + _renderTimeSmooth.Current, 2)}");
 
-                infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
-                infoText += $"DT: {Math.Round(World.TargetDT, 4)}  ({Math.Round(World.CurrentDT, 4)}) \n";
-                infoText += $"Position: {viewObject?.Position}\n";
+                _stringBuilder.AppendLine($"Zoom: {Math.Round(World.ZoomScale, 2)}");
+                _stringBuilder.AppendLine($"DT: {Math.Round(World.TargetDT, 4)}  ({Math.Round(World.CurrentDT, 4)}) ");
+                _stringBuilder.AppendLine($"Position: {viewObject?.Position}");
 
                 if (viewObject is FighterPlane plane)
                 {
-                    infoText += $"Kills: {plane.Kills}\n";
-                    infoText += $"Headshots: {plane.Headshots}\n";
-                    infoText += $"IsDisabled: {plane.IsDisabled}\n";
-                    infoText += $"HasCrashed: {plane.HasCrashed}\n";
-                    infoText += $"ThrustOn: {plane.ThrustOn}\n";
+                    _stringBuilder.AppendLine($"Kills: {plane.Kills}");
+                    _stringBuilder.AppendLine($"Headshots: {plane.Headshots}");
+                    _stringBuilder.AppendLine($"IsDisabled: {plane.IsDisabled}");
+                    _stringBuilder.AppendLine($"HasCrashed: {plane.HasCrashed}");
+                    _stringBuilder.AppendLine($"ThrustOn: {plane.ThrustOn}");
                 }
 
-                infoText += $"GunsOnly: {World.GunsOnly.ToString()}\n";
-                infoText += $"MissilesOnRadar: {World.ShowMissilesOnRadar.ToString()}\n";
-                infoText += $"Missile Regen: {World.MissileRegen.ToString()}\n";
-                infoText += $"TimeOfDay: {Math.Round(World.TimeOfDay, 1)}\n";
-                infoText += $"TimeOffset: {Math.Round(TimeSpan.FromTicks((long)World.ServerTimeOffset).TotalMilliseconds, 2)}\n";
-
-
+                _stringBuilder.AppendLine($"GunsOnly: {World.GunsOnly.ToString()}");
+                _stringBuilder.AppendLine($"MissilesOnRadar: {World.ShowMissilesOnRadar.ToString()}");
+                _stringBuilder.AppendLine($"Missile Regen: {World.MissileRegen.ToString()}");
+                _stringBuilder.AppendLine($"TimeOfDay: {Math.Round(World.TimeOfDay, 1)}");
+                _stringBuilder.AppendLine($"TimeOffset: {Math.Round(TimeSpan.FromTicks((long)World.ServerTimeOffset).TotalMilliseconds, 2)}");
             }
 
-            return infoText;
+            return _stringBuilder.ToString();
         }
 
     }
