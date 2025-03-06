@@ -57,6 +57,9 @@ namespace PolyPlane.GameObjects
                 var radius = NUM_FLAME + Utilities.Rnd.NextFloat(-20f, 10f);
                 radius = Math.Clamp(radius, 8f, 100f);
 
+                // Add a small amount of velocity from the owner object.
+                velo += owner.Velocity * 0.25f;
+
                 Particle.SpawnParticle(this, pnt, velo, radius, World.GetRandomFlameColor(), World.BlackSmokeColor);
             }
         }
