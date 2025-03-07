@@ -6,7 +6,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Explosion : GameObject, INoGameID, ILightMapContributor
+    public sealed class Explosion : GameObject, INoGameID, ILightMapContributor
     {
         public float MaxRadius { get; set; } = 100f;
         public float MaxShockwaveRadius { get; set; } = 100f;

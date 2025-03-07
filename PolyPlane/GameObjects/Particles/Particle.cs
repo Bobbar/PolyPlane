@@ -6,7 +6,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects.Particles
 {
-    public class Particle : GameObject, INoGameID, ILightMapContributor
+    public sealed class Particle : GameObject, INoGameID, ILightMapContributor
     {
         public ParticleType Type;
 

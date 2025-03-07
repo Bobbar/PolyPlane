@@ -7,7 +7,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class GuidedMissile : GameObjectPoly, ILightMapContributor
+    public sealed class GuidedMissile : GameObjectPoly, ILightMapContributor
     {
         public float Deflection = 0f;
         public bool FlameOn = false;

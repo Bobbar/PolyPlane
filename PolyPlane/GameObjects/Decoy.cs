@@ -6,7 +6,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Decoy : GameObject, ILightMapContributor
+    public sealed class Decoy : GameObject, ILightMapContributor
     {
         private const float Radius = 5f;
         private const float LifeSpan = 10f;

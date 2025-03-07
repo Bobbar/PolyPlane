@@ -7,7 +7,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Debris : GameObjectPoly, INoGameID
+    public sealed class Debris : GameObjectPoly, INoGameID
     {
         private D2DColor _color;
         private FlameEmitter _flame;

@@ -11,7 +11,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class FighterPlane : GameObjectPoly
+    public sealed class FighterPlane : GameObjectPoly
     {
         public Gun Gun => _gun;
         public bool IsAI => _isAIPlane;
