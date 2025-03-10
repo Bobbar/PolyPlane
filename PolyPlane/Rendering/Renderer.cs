@@ -73,9 +73,9 @@ namespace PolyPlane.Rendering
         private float _groundColorTOD = 0f;
         private string _hudMessage = string.Empty;
 
-        private SmoothDouble _renderTimeSmooth = new SmoothDouble(10);
-        private SmoothDouble _updateTimeSmooth = new SmoothDouble(10);
-        private SmoothDouble _fpsSmooth = new SmoothDouble(10);
+        private SmoothDouble _renderTimeSmooth = new SmoothDouble(60);
+        private SmoothDouble _updateTimeSmooth = new SmoothDouble(60);
+        private SmoothDouble _fpsSmooth = new SmoothDouble(20);
 
         private Stopwatch _timer = new Stopwatch();
         private GameTimer _hudMessageTimeout = new GameTimer(10f);
@@ -125,9 +125,8 @@ namespace PolyPlane.Rendering
         private const float MESSAGEBOX_FONT_SIZE = 10f;
         private const string DEFAULT_FONT_NAME = "Consolas";
 
-        private List<Cloud> _clouds = new List<Cloud>();
         private List<Tree> _trees = new List<Tree>();
-
+        private CloudManager _cloudManager = new();
 
         public Renderer(Control renderTarget, NetEventManager netMan)
         {
@@ -260,49 +259,8 @@ namespace PolyPlane.Rendering
         {
             var rnd = new Random(1234);
 
-            GenClouds(rnd);
+            _cloudManager.GenClouds(rnd, NUM_CLOUDS);
             GenTrees(rnd);
-        }
-
-        private void GenClouds(Random rnd)
-        {
-            // Generate a pseudo-random? list of clouds.
-            // I tried to do clouds procedurally, but wasn't having much luck.
-            // It turns out that we need a surprisingly few number of clouds
-            // to cover a very large area, so we will just brute force this for now.
-
-            var cloudDeDup = new HashSet<D2DPoint>();
-            const int MIN_PNTS = 12;
-            const int MAX_PNTS = 28;
-            const int MIN_RADIUS = 5;
-            const int MAX_RADIUS = 30;
-
-            var cloudRange = World.CloudRangeY;
-            var fieldRange = World.FieldXBounds;
-
-            for (int i = 0; i < NUM_CLOUDS; i++)
-            {
-                var rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudRange.X, cloudRange.Y));
-
-                while (!cloudDeDup.Add(rndPos))
-                    rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudRange.X, cloudRange.Y));
-
-                var rndCloud = Cloud.RandomCloud(rnd, rndPos, MIN_PNTS, MAX_PNTS, MIN_RADIUS, MAX_RADIUS);
-                _clouds.Add(rndCloud);
-            }
-
-            // Add a more dense layer near the ground?
-            var cloudLayerRangeY = new D2DPoint(-2500, -2000);
-            for (int i = 0; i < NUM_CLOUDS / 2; i++)
-            {
-                var rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
-
-                while (!cloudDeDup.Add(rndPos))
-                    rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
-
-                var rndCloud = Cloud.RandomCloud(rnd, rndPos, MIN_PNTS, MAX_PNTS, MIN_RADIUS, MAX_RADIUS);
-                _clouds.Add(rndCloud);
-            }
         }
 
         private void GenTrees(Random rnd)
@@ -393,21 +351,17 @@ namespace PolyPlane.Rendering
             _warnLightFlash.Update(World.DEFAULT_DT);
 
             _contrailBox.Update(_objs.Planes, dt);
+            _cloudManager.Update();
 
-            if (!World.IsPaused)
+            // Check if we need to update the ground brush.
+            var todDiff = Math.Abs(World.TimeOfDay - _groundColorTOD);
+            if (todDiff > GROUND_TOD_INTERVAL)
             {
-                UpdateClouds();
-
-                // Check if we need to update the ground brush.
-                var todDiff = Math.Abs(World.TimeOfDay - _groundColorTOD);
-                if (todDiff > GROUND_TOD_INTERVAL)
-                {
-                    _groundColorTOD = World.TimeOfDay;
-                    UpdateGroundColorBrush(_ctx);
-                }
-
-                UpdatePopMessages(dt);
+                _groundColorTOD = World.TimeOfDay;
+                UpdateGroundColorBrush(_ctx);
             }
+
+            UpdatePopMessages(dt);
         }
 
         public void RenderFrame(GameObject viewObject, float dt)
@@ -763,19 +717,9 @@ namespace PolyPlane.Rendering
             ctx.DrawText(plane.PlayerName, _hudColorBrush, _textConsolas30Centered, rect);
         }
 
-
         private void DrawClouds(RenderContext ctx)
         {
-            var todColor = ctx.GetTimeOfDayColor();
-            var todAngle = ctx.GetTimeOfDaySunAngle();
-            var shadowColor = Utilities.LerpColorWithAlpha(todColor, D2DColor.Black, 0.7f, 0.05f);
-
-            for (int i = 0; i < _clouds.Count; i++)
-            {
-                var cloud = _clouds[i];
-
-                cloud.Render(ctx, shadowColor, todColor, todAngle);
-            }
+            _cloudManager.Render(ctx);
         }
 
         private void DrawPlaneCloudShadows(RenderContext ctx, D2DColor shadowColor, IEnumerable<GameObject> objs)
@@ -1599,11 +1543,6 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private void UpdateClouds()
-        {
-            _clouds.ForEachParallel(c => c.Update(World.CurrentDT));
-        }
-
         private void UpdateGroundColorBrush(RenderContext ctx)
         {
             _groundBrush?.Dispose();
@@ -1790,8 +1729,8 @@ namespace PolyPlane.Rendering
                 _stringBuilder.AppendLine($"Update ms: {Math.Round(_updateTimeSmooth.Add(UpdateTime.TotalMilliseconds), 2)}");
                 _stringBuilder.AppendLine($"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}");
                 _stringBuilder.AppendLine($"Collision ms: {Math.Round(CollisionTime.TotalMilliseconds, 2)}");
-                _stringBuilder.AppendLine($"Total ms: {Math.Round(UpdateTime.TotalMilliseconds + CollisionTime.TotalMilliseconds + _renderTimeSmooth.Current, 2)}");
-
+                _stringBuilder.AppendLine($"Total ms: {Math.Round(_updateTimeSmooth.Current + CollisionTime.TotalMilliseconds + _renderTimeSmooth.Current, 2)}");
+              
                 _stringBuilder.AppendLine($"Zoom: {Math.Round(World.ZoomScale, 2)}");
                 _stringBuilder.AppendLine($"DT: {Math.Round(World.TargetDT, 4)}  ({Math.Round(World.CurrentDT, 4)}) ");
                 _stringBuilder.AppendLine($"Position: {viewObject?.Position}");

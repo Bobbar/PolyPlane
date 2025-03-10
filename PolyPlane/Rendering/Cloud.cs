@@ -1,86 +1,74 @@
-﻿using PolyPlane.GameObjects;
-using PolyPlane.Helpers;
+﻿using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
 {
     public class Cloud
     {
+        public CloudGeometry Geometry;
         public D2DPoint Position;
-        public readonly D2DPoint[] PointsOrigin = Array.Empty<D2DPoint>();
-        public D2DPoint[] Points = Array.Empty<D2DPoint>();
-        public List<D2DSize> Dims = new List<D2DSize>();
-
-        public float Rotation = 0f;
-        public float Radius = 0f;
-        public float ScaleX = 1f;
-        public float ScaleY = 1f;
-        public float RotationDirection = 1f;
-
-        private MinMax _translatedDims = new MinMax();
         private static D2DPoint[] _shadowRayPoly = new D2DPoint[4];
         private readonly D2DColor _cloudColorLight = D2DColor.WhiteSmoke;
         private readonly D2DColor _cloudColorDark = new D2DColor(1f, 0.6f, 0.6f, 0.6f);
         private const float LIGHT_INTENSITY = 0.7f;
         private const float MAX_SHADOW_ALT = 8000f;
 
-        public Cloud(D2DPoint position, List<D2DPoint> points, List<D2DSize> dims, float rotation)
+        public Cloud(D2DPoint position, CloudGeometry geo)
         {
+            Geometry = geo;
             Position = position;
-            PointsOrigin = points.ToArray();
-            Points = points.ToArray();
-            Dims = dims;
-            Rotation = rotation;
         }
 
         public void Render(RenderContext ctx, D2DColor shadowColor, D2DColor todColor, float todAngle)
         {
             DrawCloudGroundShadowAndRay(ctx, shadowColor, todAngle);
 
-            if (ctx.Viewport.Contains(this.Position, (this.Radius * 2f) * this.ScaleX * World.CLOUD_SCALE))
+            if (ctx.Viewport.Contains(this.Position, (this.Geometry.Radius * 2f) * this.Geometry.ScaleX * World.CLOUD_SCALE))
                 DrawCloud(ctx, todColor);
         }
 
         public void Update(float dt)
         {
             var altFact = 30f * Utilities.Factor(Utilities.PositionToAltitude(this.Position), World.CloudRangeY.X * -1f); // Higher clouds move slower?
-            var sizeOffset = (this.Radius / 2f); // Smaller clouds move slightly faster?
+
+            var sizeOffset = (this.Geometry.Radius / 2f); // Smaller clouds move slightly faster?
             var rate = Math.Clamp((World.CLOUD_MOVE_RATE - altFact) - sizeOffset, 0.1f, World.CLOUD_MOVE_RATE);
 
             this.Position.X += rate * dt;
-            this.Rotation = Utilities.ClampAngle(this.Rotation + (0.8f * this.RotationDirection) * dt);
-
+          
             // Wrap clouds.
             if (this.Position.X > World.CLOUD_MAX_X)
                 this.Position.X = -World.CLOUD_MAX_X;
-
-            // Apply translations.
-            Utilities.ApplyTranslation(this.PointsOrigin, this.Points, this.Rotation, this.Position, World.CLOUD_SCALE);
-            Utilities.ApplyTranslation(this.Points, this.Points, this.Position, 0f, D2DPoint.Zero, this.ScaleX, this.ScaleY);
-
-            // Update translated dimensions for rendering purposes.
-            _translatedDims.Reset();
-            _translatedDims.Update(this.Points);
         }
 
         private void DrawCloud(RenderContext ctx, D2DColor todColor)
         {
+            const float MAX_ALT = 30000f;
+            const float MIN_ALT = 10000f;
+
             var color1 = _cloudColorDark;
             var color2 = _cloudColorLight;
-            var points = this.Points;
+            var points = this.Geometry.Points;
 
             // Find min/max height.
-            var minY = _translatedDims.MinY;
-            var maxY = _translatedDims.MaxY;
+            var minY = this.Geometry.TranslatedDims.MinY;
+            var maxY = this.Geometry.TranslatedDims.MaxY;
+
+            // Try to make clouds at higher altitude more thin and whispy?
+            var scaleFactY = 1f - Utilities.FactorWithEasing(Utilities.PositionToAltitude(this.Position) - MIN_ALT, MAX_ALT, EasingFunctions.Out.EaseQuad);
+            scaleFactY = Math.Clamp(scaleFactY, 0.6f, 1f);
+
+            ctx.PushTransform();
+            ctx.TranslateTransform(this.Position * ctx.CurrentScale);
+            ctx.ScaleTransform(1f, scaleFactY, D2DPoint.Zero);
 
             for (int i = 0; i < points.Length; i++)
             {
                 var point = points[i];
-                var dims = this.Dims[i];
+                var dims = this.Geometry.Dims[i];
 
                 // Lerp slightly darker colors to give the cloud some depth.
-
-                //Darker clouds on bottom.
+                // Darker clouds on bottom.
                 var amt = Utilities.Factor(point.Y, minY, maxY);
                 var color = Utilities.LerpColor(color1, color2, 1f - amt);
 
@@ -88,8 +76,11 @@ namespace PolyPlane.Rendering
                 color = Utilities.LerpColor(color, todColor, 0.5f);
 
                 // Draw cloud part with lighting.
-                ctx.FillEllipseWithLighting(new D2DEllipse(point, dims), color, LIGHT_INTENSITY);
+                var sampleLocation = point + this.Position;
+                ctx.FillEllipseWithLighting(new D2DEllipse(point, dims), sampleLocation, color, LIGHT_INTENSITY, clipped: false);
             }
+
+            ctx.PopTransform();
         }
 
         private void DrawCloudGroundShadowAndRay(RenderContext ctx, D2DColor shadowColor, float todAngle)
@@ -106,8 +97,8 @@ namespace PolyPlane.Rendering
                 return;
 
             // Get min/max X positions and compute widths and offsets.
-            var minX = _translatedDims.MinX - WIDTH_OFFSET;
-            var maxX = _translatedDims.MaxX + WIDTH_OFFSET;
+            var minX = this.Position.X + this.Geometry.TranslatedDims.MinX - WIDTH_OFFSET;
+            var maxX = this.Position.X + this.Geometry.TranslatedDims.MaxX + WIDTH_OFFSET;
             var width = Math.Abs(maxX - minX);
             var widthHalf = width * 0.5f;
             var widthOffset = new D2DPoint(widthHalf, 0f);
@@ -135,7 +126,7 @@ namespace PolyPlane.Rendering
             }
 
             // Draw ground shadows.
-            if (ctx.Viewport.Contains(cloudShadowPos, this.Radius * this.ScaleX * World.CLOUD_SCALE * 3f))
+            if (ctx.Viewport.Contains(cloudShadowPos, this.Geometry.Radius * this.Geometry.ScaleX * World.CLOUD_SCALE * 3f))
             {
                 // Make the ground shadow slightly wider.
                 var shadowWidth = widthHalf * 1.2f;
@@ -157,45 +148,6 @@ namespace PolyPlane.Rendering
             cloudShadowPos.Y = cloudGroundPos.Y;
 
             return cloudShadowPos;
-        }
-
-        public static Cloud RandomCloud(Random rnd, D2DPoint position, int minPoints, int maxPoints, int minRadius, int maxRadius)
-        {
-            const float MAX_ALT = 30000f;
-            const float MIN_DIMS_X = 60f;
-            const float MAX_DIMS_X = 100f;
-            const float MIN_DIMS_Y = 50f;
-            const float MAX_DIMS_Y = 70f;
-
-            const float ALT_FACT_AMT = 30f;
-            var nPnts = rnd.Next(minPoints, maxPoints);
-            var radius = rnd.Next(minRadius, maxRadius);
-            var dims = new List<D2DSize>();
-
-            // Try to make clouds at higher altitude more thin and whispy?
-            var altFact = Utilities.Factor(Math.Abs(position.Y), MAX_ALT);
-
-            for (int i = 0; i < nPnts; i++)
-            {
-                var dimsX = rnd.NextFloat(MIN_DIMS_X + (altFact * ALT_FACT_AMT), MAX_DIMS_X + (altFact * ALT_FACT_AMT));
-                var dimsY = rnd.NextFloat(MIN_DIMS_Y - (altFact * ALT_FACT_AMT), MAX_DIMS_Y - (altFact * ALT_FACT_AMT));
-                dims.Add(new D2DSize(dimsX, dimsY));
-            }
-
-            var rotation = 0f;
-            var poly = GameObjectPoly.RandomPoly(nPnts, radius);
-            var pnts = poly.ToList();
-
-            var newCloud = new Cloud(position, pnts, dims, rotation);
-            newCloud.Radius = radius;
-            newCloud.ScaleX = rnd.NextFloat(1.5f, 5f);
-            newCloud.ScaleY = rnd.NextFloat(0.4f, 0.7f);
-
-            // Fiddle rotation direction.
-            if (nPnts % 2 == 0)
-                newCloud.RotationDirection = -1f;
-
-            return newCloud;
         }
     }
 }

@@ -150,6 +150,7 @@ namespace PolyPlane.Rendering
         public void PopTransform()
         {
             Gfx.PopTransform();
+
             UpdateScale();
         }
 
@@ -161,6 +162,7 @@ namespace PolyPlane.Rendering
         public void TranslateTransform(float x, float y)
         {
             Gfx.TranslateTransform(x, y);
+
             UpdateScale();
         }
 
@@ -194,25 +196,43 @@ namespace PolyPlane.Rendering
             _currentScale = scaleX;
         }
 
-        public void FillEllipseWithLighting(D2DEllipse ellipse, D2DColor color, float maxIntensity)
+        public void FillEllipseWithLighting(D2DEllipse ellipse, D2DPoint sampleLocation, D2DColor color, float maxIntensity, bool clipped = true)
         {
-            FillEllipseWithLighting(ellipse, color, 0f, maxIntensity);
+            FillEllipseWithLighting(ellipse, sampleLocation, color, 0f, maxIntensity, clipped);
         }
 
-        public void FillEllipseWithLighting(D2DEllipse ellipse, D2DColor color, float minIntensity, float maxIntensity)
+        public void FillEllipseWithLighting(D2DEllipse ellipse, D2DColor color, float maxIntensity, bool clipped = true)
+        {
+            FillEllipseWithLighting(ellipse, color, 0f, maxIntensity, clipped);
+        }
+
+        public void FillEllipseWithLighting(D2DEllipse ellipse, D2DPoint sampleLocation, D2DColor color, float minIntensity, float maxIntensity, bool clipped = true)
+        {
+            if (World.UseLightMap)
+            {
+                var lightedColor = LightMap.SampleColor(sampleLocation, color, minIntensity, maxIntensity * _currentLightingFactor);
+                FillEllipse(ellipse, lightedColor, clipped);
+            }
+            else
+            {
+                FillEllipse(ellipse, color, clipped);
+            }
+        }
+
+        public void FillEllipseWithLighting(D2DEllipse ellipse, D2DColor color, float minIntensity, float maxIntensity, bool clipped = true)
         {
             if (World.UseLightMap)
             {
                 var lightedColor = LightMap.SampleColor(ellipse.origin, color, minIntensity, maxIntensity * _currentLightingFactor);
-                FillEllipse(ellipse, lightedColor);
+                FillEllipse(ellipse, lightedColor, clipped);
             }
             else
             {
-                FillEllipse(ellipse, color);
+                FillEllipse(ellipse, color, clipped);
             }
         }
 
-        public void FillEllipse(D2DEllipse ellipse, D2DColor color)
+        public void FillEllipse(D2DEllipse ellipse, D2DColor color, bool clipped = true)
         {
             if (color.a <= 0f)
                 return;
@@ -227,7 +247,7 @@ namespace PolyPlane.Rendering
             var viewRad = Math.Max(ellipse.radiusX * scale, ellipse.radiusY * scale);
             if (World.FastPrimitives && viewRad > World.FAST_PRIMITIVE_MIN_SIZE || !World.FastPrimitives)
             {
-                FillEllipse(ellipse, _cachedBrush);
+                FillEllipse(ellipse, _cachedBrush, clipped);
             }
             else
             {
@@ -235,9 +255,15 @@ namespace PolyPlane.Rendering
             }
         }
 
-        public void FillEllipse(D2DEllipse ellipse, D2DBrush brush)
+        public void FillEllipse(D2DEllipse ellipse, D2DBrush brush, bool clipped = true)
         {
-            Gfx.FillEllipseClipped(Viewport, ellipse, brush);
+            if (clipped)
+                Gfx.FillEllipseClipped(Viewport, ellipse, brush);
+            else
+            {
+                Gfx.FillEllipse(ellipse, brush);
+                GraphicsExtensions.OnScreen++;
+            }
         }
 
         public void FillEllipseSimple(D2DPoint pos, float radius, D2DColor color)
@@ -329,9 +355,12 @@ namespace PolyPlane.Rendering
             Gfx.FillRectangleClipped(Viewport, rect, color);
         }
 
-        public void FillRectangle(D2DRect rect, D2DBrush brush)
+        public void FillRectangle(D2DRect rect, D2DBrush brush, bool clipped = true)
         {
-            Gfx.FillRectangleClipped(Viewport, rect, brush);
+            if (clipped)
+                Gfx.FillRectangleClipped(Viewport, rect, brush);
+            else
+                Gfx.FillRectangle(rect, brush);
         }
 
         public void FillRectangle(float x, float y, float width, float height, D2DColor color)
