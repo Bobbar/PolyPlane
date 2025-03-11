@@ -351,17 +351,21 @@ namespace PolyPlane.Rendering
             _warnLightFlash.Update(World.DEFAULT_DT);
 
             _contrailBox.Update(_objs.Planes, dt);
-            _cloudManager.Update();
 
-            // Check if we need to update the ground brush.
-            var todDiff = Math.Abs(World.TimeOfDay - _groundColorTOD);
-            if (todDiff > GROUND_TOD_INTERVAL)
+            if (!World.IsPaused)
             {
-                _groundColorTOD = World.TimeOfDay;
-                UpdateGroundColorBrush(_ctx);
-            }
+                _cloudManager.Update(); 
 
-            UpdatePopMessages(dt);
+                // Check if we need to update the ground brush.
+                var todDiff = Math.Abs(World.TimeOfDay - _groundColorTOD);
+                if (todDiff > GROUND_TOD_INTERVAL)
+                {
+                    _groundColorTOD = World.TimeOfDay;
+                    UpdateGroundColorBrush(_ctx);
+                }
+
+                UpdatePopMessages(dt);
+            }
         }
 
         public void RenderFrame(GameObject viewObject, float dt)
@@ -1730,7 +1734,7 @@ namespace PolyPlane.Rendering
                 _stringBuilder.AppendLine($"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}");
                 _stringBuilder.AppendLine($"Collision ms: {Math.Round(CollisionTime.TotalMilliseconds, 2)}");
                 _stringBuilder.AppendLine($"Total ms: {Math.Round(_updateTimeSmooth.Current + CollisionTime.TotalMilliseconds + _renderTimeSmooth.Current, 2)}");
-              
+
                 _stringBuilder.AppendLine($"Zoom: {Math.Round(World.ZoomScale, 2)}");
                 _stringBuilder.AppendLine($"DT: {Math.Round(World.TargetDT, 4)}  ({Math.Round(World.CurrentDT, 4)}) ");
                 _stringBuilder.AppendLine($"Position: {viewObject?.Position}");

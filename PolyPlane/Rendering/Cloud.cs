@@ -7,16 +7,22 @@ namespace PolyPlane.Rendering
     {
         public CloudGeometry Geometry;
         public D2DPoint Position;
+        public int OrderIndex;
+
         private static D2DPoint[] _shadowRayPoly = new D2DPoint[4];
         private readonly D2DColor _cloudColorLight = D2DColor.WhiteSmoke;
         private readonly D2DColor _cloudColorDark = new D2DColor(1f, 0.6f, 0.6f, 0.6f);
         private const float LIGHT_INTENSITY = 0.7f;
         private const float MAX_SHADOW_ALT = 8000f;
 
+        private static int _orderIndex = 0;
+
         public Cloud(D2DPoint position, CloudGeometry geo)
         {
             Geometry = geo;
             Position = position;
+            _orderIndex++;
+            OrderIndex = _orderIndex;
         }
 
         public void Render(RenderContext ctx, D2DColor shadowColor, D2DColor todColor, float todAngle)

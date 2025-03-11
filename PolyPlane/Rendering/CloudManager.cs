@@ -8,6 +8,7 @@ namespace PolyPlane.Rendering
     {
         private List<CloudGeometry> _cloudGeometries = new();
         private List<Cloud> _clouds = new();
+        private SpatialGrid<Cloud> _cloudGrid = new SpatialGrid<Cloud>(c => c.Position, c => false, 11);
 
         private const int NUM_GEO = 1000;
 
@@ -15,18 +16,24 @@ namespace PolyPlane.Rendering
         {
             _cloudGeometries.ForEachParallel(c => c.Update(World.CurrentDT));
             _clouds.ForEachParallel(c => c.Update(World.CurrentDT));
+            _cloudGrid.Update();
         }
 
         public void Render(RenderContext ctx)
         {
+            const float INFLATE_FACT_W = 3f;
+            const float INFLATE_FACT_H = 7f;
+
             var todColor = ctx.GetTimeOfDayColor();
             var todAngle = ctx.GetTimeOfDaySunAngle();
             var shadowColor = Utilities.LerpColorWithAlpha(todColor, D2DColor.Black, 0.7f, 0.05f);
 
-            for (int i = 0; i < _clouds.Count; i++)
-            {
-                var cloud = _clouds[i];
+            // Inflate the viewport to ensure off-screen clouds with shadow rays are included.
+            var viewPortInflated = ctx.Viewport.Inflate(ctx.Viewport.Width * INFLATE_FACT_W, ctx.Viewport.Height * INFLATE_FACT_H);
+            var inViewPort = _cloudGrid.GetInViewport(viewPortInflated).OrderBy(c => c.OrderIndex);
 
+            foreach (var cloud in inViewPort)
+            {
                 cloud.Render(ctx, shadowColor, todColor, todAngle);
             }
         }
@@ -61,6 +68,7 @@ namespace PolyPlane.Rendering
                 var cloud = new Cloud(rndPos, rndGeo);
 
                 _clouds.Add(cloud);
+                _cloudGrid.Add(cloud);
             }
 
             // Add a more dense layer near the ground?
@@ -76,6 +84,7 @@ namespace PolyPlane.Rendering
                 var cloud = new Cloud(rndPos, rndGeo);
 
                 _clouds.Add(cloud);
+                _cloudGrid.Add(cloud);
             }
         }
 
