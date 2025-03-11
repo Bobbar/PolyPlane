@@ -951,10 +951,9 @@ namespace PolyPlane.GameObjects
             }
 
             // Check for headshots.
-            var distortVec = Utilities.AngleToVectorDegrees(angle + this.Rotation, distortAmt);
+            var distortVecOrigin = Utilities.AngleToVectorDegrees(angle + this.Rotation, distortAmt);
             var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
-
-            var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos + distortVec);
+            var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos + distortVecOrigin);
 
             if (hitCockpit)
             {
@@ -963,6 +962,7 @@ namespace PolyPlane.GameObjects
             }
 
             // Copy the polygon, distort it, then check for distortion related damage effects.
+            var distortVec = Utilities.AngleToVectorDegrees(angle, distortAmt);
             var polyCopy = new RenderPoly(this.Polygon, this.Position, this.Rotation);
             polyCopy.Distort(result.ImpactPointOrigin, distortVec);
 
