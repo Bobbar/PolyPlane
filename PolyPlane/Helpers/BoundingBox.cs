@@ -35,7 +35,7 @@ namespace PolyPlane.Helpers
             for (int i = 0; i < polygon.Length; i++)
             {
                 var pnt = polygon[i];
-                minMax.Update(pnt.X, pnt.Y);
+                minMax.Update(pnt);
             }
 
             var rect = new D2DRect(minMax.MinX, minMax.MinY, minMax.MaxX - minMax.MinX, minMax.MaxY - minMax.MinY);
