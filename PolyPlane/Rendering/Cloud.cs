@@ -62,7 +62,7 @@ namespace PolyPlane.Rendering
 
             // Try to make clouds at higher altitude more thin and whispy?
             var scaleFactY = 1f - Utilities.FactorWithEasing(Utilities.PositionToAltitude(this.Position) - MIN_ALT, MAX_ALT, EasingFunctions.Out.EaseQuad);
-            scaleFactY = Math.Clamp(scaleFactY, 0.6f, 1f);
+            scaleFactY = Math.Clamp(scaleFactY, 0.4f, 1f);
 
             ctx.PushTransform();
             ctx.TranslateTransform(this.Position * ctx.CurrentScale);

@@ -10,13 +10,13 @@ namespace PolyPlane.Rendering
         private List<Cloud> _clouds = new();
         private SpatialGrid<Cloud> _cloudGrid = new SpatialGrid<Cloud>(c => c.Position, c => false, 11);
 
-        private const int NUM_GEO = 1000;
+        private const int NUM_GEO = 500;
 
         public void Update()
         {
             _cloudGeometries.ForEachParallel(c => c.Update(World.CurrentDT));
             _clouds.ForEachParallel(c => c.Update(World.CurrentDT));
-            _cloudGrid.Update();
+            _cloudGrid.Update(); 
         }
 
         public void Render(RenderContext ctx)
@@ -49,11 +49,6 @@ namespace PolyPlane.Rendering
             GenGeometry(rnd, NUM_GEO);
            
             var cloudDeDup = new HashSet<D2DPoint>();
-            const int MIN_PNTS = 12;
-            const int MAX_PNTS = 28;
-            const int MIN_RADIUS = 5;
-            const int MAX_RADIUS = 30;
-
             var cloudRange = World.CloudRangeY;
             var fieldRange = World.FieldXBounds;
 
@@ -65,6 +60,9 @@ namespace PolyPlane.Rendering
                     rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudRange.X, cloudRange.Y));
 
                 var rndGeo = _cloudGeometries[rnd.Next(_cloudGeometries.Count)];
+
+                rndGeo = DeDupGeo(rnd, rndGeo, rndPos);
+
                 var cloud = new Cloud(rndPos, rndGeo);
 
                 _clouds.Add(cloud);
@@ -81,11 +79,42 @@ namespace PolyPlane.Rendering
                     rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
 
                 var rndGeo = _cloudGeometries[rnd.Next(_cloudGeometries.Count)];
+
+                rndGeo = DeDupGeo(rnd, rndGeo, rndPos);
+
                 var cloud = new Cloud(rndPos, rndGeo);
 
                 _clouds.Add(cloud);
                 _cloudGrid.Add(cloud);
             }
+        }
+
+        /// <summary>
+        /// Replaces the specified geometry with a new randomly picked geometry if the specified position is too close to another cloud with the same geometry.
+        /// </summary>
+        private CloudGeometry DeDupGeo(Random rnd, CloudGeometry geo, D2DPoint pos)
+        {
+            const float MIN_DIST = 10000f;
+
+            var sameGeo = _clouds.Where(c => c.Geometry.ID == geo.ID);
+
+            if (sameGeo.Any())
+            {
+                var nearest = sameGeo.Min(c => c.Position.DistanceTo(pos));
+
+                while (nearest <= MIN_DIST)
+                {
+                    geo = _cloudGeometries[rnd.Next(_cloudGeometries.Count)];
+                    sameGeo = _clouds.Where(c => c.Geometry.ID == geo.ID);
+
+                    if (!sameGeo.Any())
+                        break;
+
+                    nearest = sameGeo.Min(c => c.Position.DistanceTo(pos));
+                }
+            }
+
+            return geo;
         }
 
         private void GenGeometry(Random rnd, int num)
@@ -101,12 +130,7 @@ namespace PolyPlane.Rendering
 
             for (int i = 0; i < num; i++)
             {
-                var rndPos = new D2DPoint(0f, rnd.NextFloat(cloudRange.X, cloudRange.Y));
-
-                while (!cloudDeDup.Add(rndPos))
-                    rndPos = new D2DPoint(0f, rnd.NextFloat(cloudRange.X, cloudRange.Y));
-
-                var geo = CloudGeometry.RandomGeometry(rnd, rndPos, MIN_PNTS, MAX_PNTS, MIN_RADIUS, MAX_RADIUS);
+                var geo = CloudGeometry.RandomGeometry(rnd, MIN_PNTS, MAX_PNTS, MIN_RADIUS, MAX_RADIUS);
                 _cloudGeometries.Add(geo);
             }
         }
@@ -122,10 +146,12 @@ namespace PolyPlane.Rendering
         public float ScaleY = 1f;
         public float Radius;
         public MinMax TranslatedDims = new MinMax();
+        public int ID = 0;
 
         private readonly D2DPoint[] _pointsOrigin = Array.Empty<D2DPoint>();
+        private static int _geoID = 0;
 
-        public CloudGeometry(D2DPoint position, List<D2DPoint> points, List<D2DSize> dims, float scaleX, float scaleY, float radius)
+        public CloudGeometry(List<D2DPoint> points, List<D2DSize> dims, float scaleX, float scaleY, float radius)
         {
             _pointsOrigin = points.ToArray();
             Points = points.ToArray();
@@ -133,6 +159,9 @@ namespace PolyPlane.Rendering
             ScaleX = scaleX;
             ScaleY = scaleY;
             Radius = radius;
+
+            _geoID++;
+            ID = _geoID;
         }
 
         public void Update(float dt)
@@ -148,7 +177,7 @@ namespace PolyPlane.Rendering
             TranslatedDims.Update(this.Points);
         }
 
-        public static CloudGeometry RandomGeometry(Random rnd, D2DPoint position, int minPoints, int maxPoints, int minRadius, int maxRadius)
+        public static CloudGeometry RandomGeometry(Random rnd, int minPoints, int maxPoints, int minRadius, int maxRadius)
         {
             const float MAX_ALT = 30000f;
             const float MIN_DIMS_X = 60f;
@@ -157,8 +186,8 @@ namespace PolyPlane.Rendering
             const float MAX_DIMS_Y = 70f;
 
             const float ALT_FACT_AMT = 30f;
-            var nPnts = rnd.Next(minPoints, maxPoints);
             var radius = rnd.Next(minRadius, maxRadius);
+            var nPnts = (int)radius;
             var dims = new List<D2DSize>();
 
             for (int i = 0; i < nPnts; i++)
@@ -176,7 +205,7 @@ namespace PolyPlane.Rendering
             var scaleX = rnd.NextFloat(1.5f, 5f);
             var scaleY = rnd.NextFloat(0.4f, 0.7f);
 
-            var geo = new CloudGeometry(position, pnts, dims, scaleX, scaleY, radius);
+            var geo = new CloudGeometry(pnts, dims, scaleX, scaleY, radius);
 
             // Fiddle rotation direction.
             if (nPnts % 2 == 0)
