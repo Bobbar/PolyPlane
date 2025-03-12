@@ -178,6 +178,7 @@ namespace PolyPlane
         public const int NET_CLIENT_FPS = TARGET_FPS;
         public const float NET_INTERP_AMOUNT = 70f; // Amount of time in milliseconds for the interpolation buffer.
 
+        public const int SPATIAL_GRID_SIDELEN = 9;
         public const float FAST_PRIMITIVE_MIN_SIZE = 1.5f;
         public const float SCREEN_SHAKE_G = 9f; // Amount of g-force before screen shake effect.
         public const float INERTIA_MULTI = 20f; // Mass is multiplied by this value for interia calculations.

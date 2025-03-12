@@ -4,6 +4,7 @@ using PolyPlane.GameObjects.Particles;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -355,8 +356,6 @@ namespace PolyPlane.GameObjects
 
             PruneExpired();
 
-            _spatialGrid.Update();
-
             SyncObjCollections();
 
             // Update all regular objects.
@@ -373,6 +372,8 @@ namespace PolyPlane.GameObjects
                 Particles.ForEachParallel(o => o.Update(World.CurrentDT));
 
             }
+
+            _spatialGrid.Update();
 
             // Update ground impacts.
             for (int i = 0; i < GroundImpacts.Count; i++)

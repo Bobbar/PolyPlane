@@ -10,6 +10,9 @@ namespace PolyPlane.GameObjects
 {
     public abstract class GameObject : IEquatable<GameObject>, IDisposable, IFlippable
     {
+
+        public int GridHash { get { return _gridHash; } }
+
         public GameID ID { get; set; } = new GameID();
 
         public D2DPoint Position { get; set; }
@@ -146,6 +149,7 @@ namespace PolyPlane.GameObjects
         protected float _verticalSpeed = 0f;
         protected float _prevAlt = 0f;
         protected long _lastNetTime = 0;
+        protected int _gridHash = 0;
 
         private bool _hasPhysicsUpdate = false;
 
@@ -331,6 +335,12 @@ namespace PolyPlane.GameObjects
 
             UpdateTimers(dt);
             UpdateAttachments(dt);
+
+            if (this.HasFlag(GameObjectFlags.SpatialGrid))
+            {
+                // Update the hash for the spatial grid.
+                _gridHash = SpatialGridGameObject.GetGridHash(Position, World.SPATIAL_GRID_SIDELEN);
+            }
         }
 
         private void AdvancePositionAndRotation(float dt)

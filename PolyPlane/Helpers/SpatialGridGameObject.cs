@@ -21,9 +21,6 @@ namespace PolyPlane.Helpers
         /// </summary>
         public void Update()
         {
-            // Compute new hashes in parallel.
-            ComputeNextHashes();
-
             // Iterate all entries and update as needed.
             for (int i = _entries.Count - 1; i >= 0; i--)
             {
@@ -41,6 +38,8 @@ namespace PolyPlane.Helpers
                 {
                     // Move entry to a new sequence.
                     var curHash = entry.CurrentHash;
+                    entry.NextHash = entry.Object.GridHash;
+
                     if (curHash != entry.NextHash)
                     {
                         MoveEntry(entry);
@@ -319,21 +318,6 @@ namespace PolyPlane.Helpers
             _sequences.Clear();
         }
 
-        private void ComputeNextHashes()
-        {
-            ParallelHelpers.ParallelForSlim(_entries.Count, ComputeHashes);
-        }
-
-        private void ComputeHashes(int start, int end)
-        {
-            for (int i = start; i < end; i++)
-            {
-                var item = _entries[i];
-                var newHash = GetGridHash(item.Object);
-                item.NextHash = newHash;
-            }
-        }
-
         private void GetGridIdx(D2DPoint pos, out int idxX, out int idxY)
         {
             idxX = (int)Math.Floor(pos.X) >> SIDE_LEN;
@@ -353,6 +337,14 @@ namespace PolyPlane.Helpers
 
         private int GetGridHash(int idxX, int idxY)
         {
+            return HashCode.Combine(idxX, idxY);
+        }
+
+        public static int GetGridHash(D2DPoint pos, int sideLen)
+        {
+            int idxX = (int)Math.Floor(pos.X) >> sideLen;
+            int idxY = (int)Math.Floor(pos.Y) >> sideLen;
+
             return HashCode.Combine(idxX, idxY);
         }
 
