@@ -34,9 +34,8 @@ namespace PolyPlane.GameObjects
         public ConcurrentQueue<FighterPlane> NewPlanes = new();
         public ConcurrentQueue<Particle> NewParticles = new();
 
-
         private Dictionary<int, GameObject> _objLookup = new();
-        private SpatialGrid<GameObject> _spatialGrid = new(o => o.Position, o => o.IsExpired);
+        private SpatialGridGameObject _spatialGrid = new();
 
         private List<GameObject> _allNetObjects = new();
         private List<GameObject> _allObjects = new();
