@@ -25,7 +25,7 @@ namespace PolyPlane.Rendering
         {
             var tri = new D2DPoint[TrianglePoly.Length];
 
-            Utilities.ApplyTranslation(TrianglePoly, tri, 0f, position, scale);
+            TrianglePoly.Translate(tri, 0f, position, scale);
 
             gfx.DrawPolygon(tri, color, 1f, D2DDashStyle.Solid, fillColor);
         }

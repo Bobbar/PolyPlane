@@ -159,7 +159,7 @@ namespace PolyPlane.Net
                 }
             }
 
-            // Enqueue deferred packets to be handled on the next frame.
+            // Try to handle deferred packets.
             HandleDeferredPackets(dt);
 
             if (totalPacketTime > 0f && numPackets > 0)
@@ -205,9 +205,9 @@ namespace PolyPlane.Net
         }
 
         /// <summary>
-        /// Queues the specified packet to be handled on the next frame.
+        /// Queues the specified packet to make an attempt at handling it later.
         /// 
-        /// For situations where we can't handle the packet due to other packets which haven't arrived.
+        /// For situations where we can't handle the packet due to other requisite packets which haven't yet arrived.
         /// </summary>
         /// <param name="packet"></param>
         private void DeferPacket(NetPacket packet)

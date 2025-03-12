@@ -86,11 +86,11 @@ namespace PolyPlane.Rendering
             ctx.PushTransform();
             ctx.RotateTransform(shadowAngle, this.Position);
 
-            Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, D2DPoint.Zero, 0f, this.Position, scale, scale * SHADOW_LEN_SCALE);
+            TrunkPoly.Translate(_trunkTransPoly, D2DPoint.Zero, 0f, this.Position, scale, scale * SHADOW_LEN_SCALE);
 
             // Adjust the bottom two points of the shadow to line up with the bottom of the trunk.
-            _trunkTransPoly[0] = Utilities.ApplyTranslation(TrunkPoly[0], -shadowAngle, this.Position, scale);
-            _trunkTransPoly[1] = Utilities.ApplyTranslation(TrunkPoly[1], -shadowAngle, this.Position, scale);
+            _trunkTransPoly[0] = TrunkPoly[0].Translate(-shadowAngle, this.Position, scale);
+            _trunkTransPoly[1] = TrunkPoly[1].Translate(-shadowAngle, this.Position, scale);
 
             ctx.FillPolygon(_trunkTransPoly, shadowColor);
 
@@ -101,7 +101,7 @@ namespace PolyPlane.Rendering
             ctx.PopTransform();
 
             // Draw tree.
-            Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, 180f, this.Position, scale);
+            TrunkPoly.Translate(_trunkTransPoly, 180f, this.Position, scale);
 
             var trunkPos = this.Position + (-D2DPoint.UnitY * TotalHeight);
             ctx.FillPolygonWithLighting(_trunkTransPoly, trunkPos, trunkColor, LIGHT_INTENSITY);
@@ -180,24 +180,24 @@ namespace PolyPlane.Rendering
             ctx.PushTransform();
             ctx.RotateTransform(shadowAngle, this.Position);
 
-            Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, D2DPoint.Zero, 0f, this.Position, 1f, SHADOW_LEN_SCALE);
+            TrunkPoly.Translate(_trunkTransPoly, D2DPoint.Zero, 0f, this.Position, 1f, SHADOW_LEN_SCALE);
 
             //Adjust the bottom two points of the shadow to line up with the bottom of the trunk.
-            _trunkTransPoly[0] = Utilities.ApplyTranslation(TrunkPoly[0], -shadowAngle, this.Position, 1f);
-            _trunkTransPoly[1] = Utilities.ApplyTranslation(TrunkPoly[1], -shadowAngle, this.Position, 1f);
+            _trunkTransPoly[0] = TrunkPoly[0].Translate(-shadowAngle, this.Position, 1f);
+            _trunkTransPoly[1] = TrunkPoly[1].Translate(-shadowAngle, this.Position, 1f);
 
             ctx.FillPolygon(_trunkTransPoly, shadowColor);
 
             ctx.ScaleTransform(1f, SHADOW_LEN_SCALE, this.Position);
-            Utilities.ApplyTranslation(TopPoly, _topTrans, 0f, shadowTopPos, scale);
+            TopPoly.Translate(_topTrans, 0f, shadowTopPos, scale);
 
             ctx.FillPolygon(_topTrans, shadowColor);
 
             ctx.PopTransform();
 
             // Draw tree.
-            Utilities.ApplyTranslation(TopPoly, _topTrans, 180f, this.Position - new D2DPoint(0, this.Height), scale);
-            Utilities.ApplyTranslation(TrunkPoly, _trunkTransPoly, 180f, this.Position, 1f);
+            TopPoly.Translate(_topTrans, 180f, this.Position - new D2DPoint(0, this.Height), scale);
+            TrunkPoly.Translate(_trunkTransPoly, 180f, this.Position, 1f);
 
             // Center Y position.
             var centerPos = this.Position + (-D2DPoint.UnitY * (TotalHeight * 2f));

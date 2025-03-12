@@ -175,7 +175,7 @@ namespace PolyPlane.GameObjects.Fixtures
             liftForce *= aoaFact;
 
             // Reduce max lift/drag forces as we approach the minimum velo. (Increases stall effect)
-            var veloFact = Utilities.FactorWithEasing((float)veloMagSq, (float)Math.Pow(MIN_VELO, 2f), EasingFunctions.Out.EaseSine);
+            var veloFact = Utilities.FactorWithEasing((float)veloMagSq, MathF.Pow(MIN_VELO, 2f), EasingFunctions.Out.EaseSine);
 
             var maxLift = MAX_LIFT * veloFact;
             var maxDrag = MAX_DRAG * veloFact;

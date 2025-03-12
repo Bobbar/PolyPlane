@@ -110,7 +110,7 @@ namespace PolyPlane.GameObjects.Guidance
 
         private float ImpactTime(float dist, float velo, float accel)
         {
-            var finalVelo = (float)Math.Sqrt(Math.Abs(Math.Pow(velo, 2f) + (2f * accel) * dist));
+            var finalVelo = MathF.Sqrt(MathF.Abs(MathF.Pow(velo, 2f) + (2f * accel) * dist));
             var impactTime = (finalVelo - velo) / accel;
 
             return impactTime;

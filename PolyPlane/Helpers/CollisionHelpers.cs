@@ -64,16 +64,6 @@ namespace PolyPlane.Helpers
             return Math.Abs(value) < float.Epsilon;
         }
 
-        public static bool EllipseContains(D2DEllipse ellipse, float ellipseRotation, D2DPoint pos)
-        {
-            var mat = Matrix3x2.CreateRotation(-ellipseRotation * (float)(Math.PI / 180f), ellipse.origin);
-            var transPos = D2DPoint.Transform(pos, mat);
-
-            var p = Math.Pow(transPos.X - ellipse.origin.X, 2f) / Math.Pow(ellipse.radiusX, 2f) + Math.Pow(transPos.Y - ellipse.origin.Y, 2f) / Math.Pow(ellipse.radiusY, 2f);
-
-            return p <= 1f;
-        }
-
         public static bool PolyIntersect(D2DPoint a, D2DPoint b, D2DPoint[] poly)
         {
             for (int i = 0; i < poly.Length; i++)

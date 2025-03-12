@@ -10,17 +10,12 @@ namespace PolyPlane.Helpers
     public static class Utilities
     {
         public static Random Rnd = new Random();
-        public const float DEGREES_TO_RADS = (float)Math.PI / 180f;
-        public const float RADS_TO_DEGREES = 180f / (float)Math.PI;
+        public const float DEGREES_TO_RADS = (float)(Math.PI / 180d);
+        public const float RADS_TO_DEGREES = (float)(180d / Math.PI);
 
         public static float Lerp(float value1, float value2, float amount)
         {
             return value1 + (value2 - value1) * amount;
-        }
-
-        public static float Lerp(float value1, float value2, float factor1, float factor2)
-        {
-            return value1 + (value2 - value1) * Factor(factor1, factor2);
         }
 
         public static float LerpAngle(float value1, float value2, float amount)
@@ -55,7 +50,7 @@ namespace PolyPlane.Helpers
 
         public static float Repeat(float t, float length)
         {
-            return Math.Clamp(t - (float)Math.Floor(t / length) * length, 0.0f, length);
+            return Math.Clamp(t - MathF.Floor(t / length) * length, 0.0f, length);
         }
 
         public static float Clamp01(float value)
@@ -96,14 +91,8 @@ namespace PolyPlane.Helpers
         public static D2DPoint AngleToVectorDegrees(float angle, float length = 1f)
         {
             var rads = DegreesToRads(angle);
-            var vec = new D2DPoint((float)Math.Cos(rads), (float)Math.Sin(rads));
+            var vec = new D2DPoint(MathF.Cos(rads),MathF.Sin(rads));
             return vec * length;
-        }
-
-        public static D2DPoint AngleToVectorRads(float angle)
-        {
-            var vec = new D2DPoint((float)Math.Cos(angle), (float)Math.Sin(angle));
-            return vec;
         }
 
         /// <summary>
@@ -269,7 +258,7 @@ namespace PolyPlane.Helpers
             return vals[Rnd.Next(len)];
         }
 
-        public static D2DPoint ApplyTranslation(D2DPoint src, float rotation, D2DPoint translation, float scale = 1f)
+        public static D2DPoint Translate(this D2DPoint src, float rotation, D2DPoint translation, float scale = 1f)
         {
             var mat = Matrix3x2.CreateScale(scale);
             mat *= Matrix3x2.CreateRotation(rotation * DEGREES_TO_RADS, D2DPoint.Zero);
@@ -278,16 +267,7 @@ namespace PolyPlane.Helpers
             return D2DPoint.Transform(src, mat);
         }
 
-        public static D2DPoint ApplyTranslation(D2DPoint src, float rotation, D2DPoint centerPoint, D2DPoint translation, float scale = 1f)
-        {
-            var mat = Matrix3x2.CreateScale(scale);
-            mat *= Matrix3x2.CreateRotation(rotation * DEGREES_TO_RADS, centerPoint);
-            mat *= Matrix3x2.CreateTranslation(translation);
-
-            return D2DPoint.Transform(src, mat);
-        }
-
-        public static void ApplyTranslation(D2DPoint[] src, D2DPoint[] dst, float rotation, D2DPoint translation, float scale = 1f)
+        public static void Translate(this D2DPoint[] src, D2DPoint[] dst, float rotation, D2DPoint translation, float scale = 1f)
         {
             var mat = Matrix3x2.CreateScale(scale);
             mat *= Matrix3x2.CreateRotation(rotation * DEGREES_TO_RADS, D2DPoint.Zero);
@@ -300,7 +280,7 @@ namespace PolyPlane.Helpers
             }
         }
 
-        public static void ApplyTranslation(D2DPoint[] src, D2DPoint[] dst, D2DPoint center, float rotation, D2DPoint translation, float scaleX = 1f, float scaleY = 1f)
+        public static void Translate(this D2DPoint[] src, D2DPoint[] dst, D2DPoint center, float rotation, D2DPoint translation, float scaleX = 1f, float scaleY = 1f)
         {
             var mat = Matrix3x2.CreateScale(scaleX, scaleY, center);
             mat *= Matrix3x2.CreateRotation(rotation * DEGREES_TO_RADS, center);

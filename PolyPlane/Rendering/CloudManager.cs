@@ -169,8 +169,8 @@ namespace PolyPlane.Rendering
             this.Rotation = Utilities.ClampAngle(this.Rotation + (0.8f * this.RotationDirection) * dt);
 
             // Apply translations.
-            Utilities.ApplyTranslation(this._pointsOrigin, this.Points, this.Rotation, D2DPoint.Zero, World.CLOUD_SCALE);
-            Utilities.ApplyTranslation(this.Points, this.Points, D2DPoint.Zero, 0f, D2DPoint.Zero, this.ScaleX, this.ScaleY);
+            this._pointsOrigin.Translate(this.Points, this.Rotation, D2DPoint.Zero, World.CLOUD_SCALE);
+            this.Points.Translate(this.Points, D2DPoint.Zero, 0f, D2DPoint.Zero, this.ScaleX, this.ScaleY);
 
             // Update translated dimensions for rendering purposes.
             TranslatedDims.Reset();

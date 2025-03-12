@@ -192,7 +192,7 @@ namespace PolyPlane.Rendering
         private void UpdateScale()
         {
             var trans = Gfx.GetTransform();
-            var scaleX = (float)Math.Sqrt(trans.M11 * trans.M11 + trans.M12 * trans.M12);
+            var scaleX = MathF.Sqrt(trans.M11 * trans.M11 + trans.M12 * trans.M12);
             _currentScale = scaleX;
         }
 

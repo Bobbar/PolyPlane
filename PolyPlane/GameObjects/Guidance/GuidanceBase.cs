@@ -176,7 +176,7 @@ namespace PolyPlane.GameObjects.Guidance
 
             var targetDist = D2DPoint.Distance(missile.Position, target.Position);
             var targetTemp = MaxEngineTemp * target.ThrustAmount * EngineRadius;
-            var engineArea = 4f * (float)Math.PI * (float)Math.Pow(targetDist, 2f);
+            var engineArea = 4f * MathF.PI * MathF.Pow(targetDist, 2f);
             targetTemp /= engineArea;
 
             maxTempObj = target;
@@ -200,7 +200,7 @@ namespace PolyPlane.GameObjects.Guidance
                 if (dist > MAX_DISTANCE)
                     continue;
 
-                var decoyTemp = (MaxDecoyTemp * DecoyRadius) / (4f * (float)Math.PI * (float)Math.Pow(dist, 2f));
+                var decoyTemp = (MaxDecoyTemp * DecoyRadius) / (4f * MathF.PI * MathF.Pow(dist, 2f));
 
                 if (decoyTemp > maxTemp)
                 {

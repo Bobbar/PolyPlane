@@ -33,7 +33,7 @@ namespace PolyPlane.GameObjects.Fixtures
             if (_copyRotation)
                 Rotation = this.Owner.Rotation;
 
-            Position = Utilities.ApplyTranslation(ReferencePosition, this.Owner.Rotation, this.Owner.Position, this.RenderScale);
+            Position = ReferencePosition.Translate(this.Owner.Rotation, this.Owner.Position, this.RenderScale);
             Velocity = this.Owner.Velocity;
 
             this.IsExpired = this.Owner.IsExpired;

@@ -191,10 +191,10 @@ namespace PolyPlane.Rendering
 
             // Dynamically change the side length with viewport scale.
             // (Larger side length when zoomed out.)
-            _sideLen = (float)Math.Clamp(Math.Floor(World.ViewPortScaleMulti * 1.5f), MIN_LEN, MAX_LEN);
+            _sideLen = Math.Clamp(MathF.Floor(World.ViewPortScaleMulti * 1.5f), MIN_LEN, MAX_LEN);
 
-            var width = (int)Math.Floor(viewport.Width / SIDE_LEN) + PAD;
-            var height = (int)Math.Floor(viewport.Height / SIDE_LEN) + PAD;
+            var width = (int)MathF.Floor(viewport.Width / SIDE_LEN) + PAD;
+            var height = (int)MathF.Floor(viewport.Height / SIDE_LEN) + PAD;
 
             if (_gridSize.width != width || _gridSize.height != height)
             {
@@ -209,8 +209,8 @@ namespace PolyPlane.Rendering
         {
             var posOffset = pos - _viewport.Location;
 
-            X = (int)Math.Floor(posOffset.X / SIDE_LEN);
-            Y = (int)Math.Floor(posOffset.Y / SIDE_LEN);
+            X = (int)MathF.Floor(posOffset.X / SIDE_LEN);
+            Y = (int)MathF.Floor(posOffset.Y / SIDE_LEN);
         }
     }
 

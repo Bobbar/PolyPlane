@@ -773,8 +773,8 @@ namespace PolyPlane.Rendering
                 var lineB = new D2DPoint(MAX_WIDTH, 0f);
 
                 // Rotate the segment.
-                lineA = Utilities.ApplyTranslation(lineA, todRotationOffset, D2DPoint.Zero);
-                lineB = Utilities.ApplyTranslation(lineB, todRotationOffset, D2DPoint.Zero);
+                lineA = lineA.Translate(todRotationOffset, D2DPoint.Zero);
+                lineB = lineB.Translate(todRotationOffset, D2DPoint.Zero);
 
                 // Get the abs diff between the X coords of the line to compute the initial shadow width.
                 var width = Math.Abs(lineB.X - lineA.X);

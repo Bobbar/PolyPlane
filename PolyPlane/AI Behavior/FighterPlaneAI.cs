@@ -301,7 +301,7 @@ namespace PolyPlane.AI_Behavior
 
 
             // *** Fly around in a sinusoidal path if there are no targets. ***
-            var patrolDir = Utilities.ClampAngle(Utilities.RadsToDegrees((float)Math.Sin(_sineWavePos)));
+            var patrolDir = Utilities.ClampAngle(Utilities.RadsToDegrees(MathF.Sin(_sineWavePos)));
 
             // Flip directions if we are near the end of the play field.
             if (this.TargetPlane == null)

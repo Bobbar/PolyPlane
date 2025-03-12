@@ -70,8 +70,8 @@ namespace PolyPlane.GameObjects.Tools
             Array.Copy(polygon, Poly, polygon.Length);
             Array.Copy(polygon, _originalPoly, polygon.Length);
 
-            Utilities.ApplyTranslation(Poly, Poly, 0f, offset, scale);
-            Utilities.ApplyTranslation(SourcePoly, SourcePoly, 0f, offset, scale);
+            Poly.Translate(Poly, 0f, offset, scale);
+            SourcePoly.Translate(SourcePoly, 0f, offset, scale);
         }
 
         /// <summary>
@@ -292,7 +292,7 @@ namespace PolyPlane.GameObjects.Tools
 
         public void Update(D2DPoint pos, float rotation, float scale)
         {
-            Utilities.ApplyTranslation(SourcePoly, Poly, rotation, pos, scale);
+            SourcePoly.Translate(Poly, rotation, pos, scale);
         }
 
         public void Update()

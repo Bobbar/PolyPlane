@@ -824,9 +824,9 @@ namespace PolyPlane.GameObjects
 
             for (int i = 0; i < nPoints; i++)
             {
-                var pnt = new D2DPoint((float)Math.Cos(angle * radians) * dists[i], (float)Math.Sin(angle * radians) * dists[i]);
+                var pnt = new D2DPoint(MathF.Cos(angle * radians) * dists[i], MathF.Sin(angle * radians) * dists[i]);
                 poly[i] = pnt;
-                angle += (float)(2f * Math.PI / nPoints);
+                angle += (2f * MathF.PI / nPoints);
             }
 
             return poly;

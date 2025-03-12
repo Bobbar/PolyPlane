@@ -953,7 +953,7 @@ namespace PolyPlane.GameObjects
             // Check for headshots.
             var distortVecOrigin = Utilities.AngleToVectorDegrees(angle + this.Rotation, distortAmt);
             var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
-            var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos + distortVecOrigin);
+            var hitCockpit = cockpitEllipse.Contains(_cockpitPosition.Rotation, impactPos + distortVecOrigin);
 
             if (hitCockpit)
             {
@@ -1149,7 +1149,7 @@ namespace PolyPlane.GameObjects
 
             var hVeloNorm = hVelo.Normalized();
             var hVeloMag = hVelo.Length();
-            var hVeloMagSq = (float)Math.Pow(hVeloMag, 2f);
+            var hVeloMagSq = MathF.Pow(hVeloMag, 2f);
             var dAmt = DAMAGE_DRAG_AMT * 0.5f * hDens * hVeloMagSq;
 
             var dVec = -hVeloNorm * dAmt;

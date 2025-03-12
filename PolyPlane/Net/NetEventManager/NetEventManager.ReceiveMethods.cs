@@ -118,7 +118,7 @@ namespace PolyPlane.Net
 
         private void HandleNetPlaneUpdates(PlaneListPacket listPacket)
         {
-            // If we are a client and our ID has been set.
+            // Defer if we aren't ready yet.
             if (!ClientIsReady())
             {
                 DeferPacket(listPacket);
@@ -133,7 +133,7 @@ namespace PolyPlane.Net
 
         private void HandleNetPlaneUpdate(PlanePacket planePacket)
         {
-            // If we are a client and our ID has been set.
+            // Defer if we aren't ready yet.
             if (!ClientIsReady())
             {
                 DeferPacket(planePacket);
