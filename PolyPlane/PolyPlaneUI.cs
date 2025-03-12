@@ -617,8 +617,16 @@ namespace PolyPlane
             if (_playerPlane.HasCrashed)
                 EnableRespawn();
 
-            // Hold current altitude while player is typeing.
-            if ((_netMan != null && _netMan.ChatInterface.ChatIsActive) || _isHoldingAlt)
+            // Hold altitude while spectating. 
+            if (viewObject.Equals(_playerPlane) == false)
+                _isHoldingAlt = true;
+
+            // Hold altitude while viewing/typing in net chat.
+            if ((_netMan != null && _netMan.ChatInterface.ChatIsActive))
+                _isHoldingAlt = true;
+
+            // Make player plane maintain its current altitude.
+            if (_isHoldingAlt)
             {
                 if (_holdAltitude == 0f)
                     _holdAltitude = _playerPlane.Altitude;

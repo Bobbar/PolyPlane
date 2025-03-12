@@ -509,15 +509,18 @@ namespace PolyPlane.Helpers
         public static float MaintainAltitudeAngle(GameObject obj, float targAlt)
         {
             const float defAmt = 30f;
+
             var toRight = IsPointingRight(obj.Rotation);
             var alt = obj.Altitude;
             var altDiff = alt - targAlt;
             var sign = Math.Sign(altDiff);
 
-            var vsFact = 200f * Factor(Math.Abs(obj.VerticalSpeed), 1f) + 200f;
+            var vsFact = Factor(Math.Abs(obj.VerticalSpeed), 1f) + 200f;
             var fact = Factor(Math.Abs(altDiff), vsFact);
+            var defFact = Math.Clamp(Factor(Math.Abs(altDiff), 1000f), 0.3f, 1f);
 
-            var amt = defAmt * fact * sign;
+            var amt = (defAmt * defFact) * fact * sign;
+
             var altDir = 0f;
             if (!toRight)
                 altDir = 180f - amt;
