@@ -484,30 +484,34 @@ namespace PolyPlane.Helpers
         /// Returns the angle required to ascend/descend to and maintain the specified altitude.
         /// </summary>
         /// <param name="obj">Target object.</param>
-        /// <param name="targAlt">Target altitude.</param>
+        /// <param name="targetAltitude">Target altitude.</param>
         /// <returns>Guidance angle.</returns>
-        public static float MaintainAltitudeAngle(GameObject obj, float targAlt)
+        public static float MaintainAltitudeAngle(GameObject obj, float targetAltitude)
         {
-            const float defAmt = 30f;
+            const float MAX_ANGLE = 30f; // Max angle to climb or descend (to meet the target altitude).
+            const float EASE_ALT = 1000f; // Determines the difference in altitude at which to begin leveling out.
 
-            var toRight = IsPointingRight(obj.Rotation);
-            var alt = obj.Altitude;
-            var altDiff = alt - targAlt;
+            var finalAngle = 0f;
+
+            // Get the difference and direction.
+            var altDiff = obj.Altitude - targetAltitude;
             var sign = Math.Sign(altDiff);
 
-            var vsFact = Factor(Math.Abs(obj.VerticalSpeed), 1f) + 200f;
-            var fact = Factor(Math.Abs(altDiff), vsFact);
-            var defFact = Math.Clamp(Factor(Math.Abs(altDiff), 1000f), 0.3f, 1f);
+            // Ease out the angle amount as we approach the target altitude.
+            var angleAmount = FactorWithEasing(Math.Abs(altDiff), EASE_ALT, EasingFunctions.Out.EaseSine);
 
-            var amt = (defAmt * defFact) * fact * sign;
+            // Initial angle.
+            var angle = MAX_ANGLE * sign * angleAmount;
 
-            var altDir = 0f;
-            if (!toRight)
-                altDir = 180f - amt;
+            // Flip the angle as needed.
+            var toRight = IsPointingRight(obj.Rotation);
+
+            if (IsPointingRight(obj.Rotation))
+                finalAngle = angle;
             else
-                altDir = amt;
+                finalAngle = 180f - angle;
 
-            return ClampAngle(altDir);
+            return ClampAngle(finalAngle);
         }
 
         /// <summary>
