@@ -12,6 +12,8 @@ namespace PolyPlane.Rendering
         private static D2DPoint[] _shadowRayPoly = new D2DPoint[4];
         private readonly D2DColor _cloudColorLight = D2DColor.WhiteSmoke;
         private readonly D2DColor _cloudColorDark = new D2DColor(1f, 0.6f, 0.6f, 0.6f);
+        private readonly float _moveRate;
+
         private const float LIGHT_INTENSITY = 0.7f;
         private const float MAX_SHADOW_ALT = 8000f;
 
@@ -23,6 +25,11 @@ namespace PolyPlane.Rendering
             Position = position;
             _orderIndex++;
             OrderIndex = _orderIndex;
+
+            // Calc the move rate for this altitude.
+            var altFact = 30f * Utilities.Factor(Utilities.PositionToAltitude(this.Position), World.CloudRangeY.X * -1f); // Higher clouds move slower?
+            var sizeOffset = (this.Geometry.Radius / 2f); // Smaller clouds move slightly faster?
+            _moveRate = Math.Clamp((World.CLOUD_MOVE_RATE - altFact) - sizeOffset, 0.1f, World.CLOUD_MOVE_RATE);
         }
 
         public void Render(RenderContext ctx, D2DColor shadowColor, D2DColor todColor, float todAngle)
@@ -35,13 +42,8 @@ namespace PolyPlane.Rendering
 
         public void Update(float dt)
         {
-            var altFact = 30f * Utilities.Factor(Utilities.PositionToAltitude(this.Position), World.CloudRangeY.X * -1f); // Higher clouds move slower?
+            this.Position.X += _moveRate * dt;
 
-            var sizeOffset = (this.Geometry.Radius / 2f); // Smaller clouds move slightly faster?
-            var rate = Math.Clamp((World.CLOUD_MOVE_RATE - altFact) - sizeOffset, 0.1f, World.CLOUD_MOVE_RATE);
-
-            this.Position.X += rate * dt;
-          
             // Wrap clouds.
             if (this.Position.X > World.CLOUD_MAX_X)
                 this.Position.X = -World.CLOUD_MAX_X;
