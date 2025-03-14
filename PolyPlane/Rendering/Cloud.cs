@@ -13,9 +13,13 @@ namespace PolyPlane.Rendering
         private readonly D2DColor _cloudColorLight = D2DColor.WhiteSmoke;
         private readonly D2DColor _cloudColorDark = new D2DColor(1f, 0.6f, 0.6f, 0.6f);
         private readonly float _moveRate;
+        private readonly float _altScale;
+        private readonly float _altitude;
 
         private const float LIGHT_INTENSITY = 0.7f;
         private const float MAX_SHADOW_ALT = 8000f;
+        private const float MAX_ALT = 30000f;
+        private const float MIN_ALT = 10000f;
 
         private static int _orderIndex = 0;
 
@@ -26,15 +30,29 @@ namespace PolyPlane.Rendering
             _orderIndex++;
             OrderIndex = _orderIndex;
 
+            // Calc altitude, move rate and scale.
+            _altitude = Utilities.PositionToAltitude(this.Position);
+
             // Calc the move rate for this altitude.
-            var altFact = 30f * Utilities.Factor(Utilities.PositionToAltitude(this.Position), World.CloudRangeY.X * -1f); // Higher clouds move slower?
+            var altFact = 30f * Utilities.Factor(_altitude, World.CloudRangeY.X * -1f); // Higher clouds move slower?
             var sizeOffset = (this.Geometry.Radius / 2f); // Smaller clouds move slightly faster?
             _moveRate = Math.Clamp((World.CLOUD_MOVE_RATE - altFact) - sizeOffset, 0.1f, World.CLOUD_MOVE_RATE);
+
+            // Scale by altitude.
+            // Try to make clouds at higher altitude more thin and whispy?
+            var scaleFactY = 1f - Utilities.FactorWithEasing(_altitude - MIN_ALT, MAX_ALT, EasingFunctions.Out.EaseQuad);
+            scaleFactY = Math.Clamp(scaleFactY, 0.4f, 1f);
+            _altScale = scaleFactY;
         }
 
         public void Render(RenderContext ctx, D2DColor shadowColor, D2DColor todColor, float todAngle)
         {
-            DrawCloudGroundShadowAndRay(ctx, shadowColor, todAngle);
+            // Don't even try if the viewport is above the shadows and rays.
+            if (ctx.Viewport.bottom * -1f < MAX_SHADOW_ALT)
+            {
+                if (_altitude <= MAX_SHADOW_ALT)
+                    DrawCloudGroundShadowAndRay(ctx, shadowColor, todAngle);
+            }
 
             if (ctx.Viewport.Contains(this.Position, (this.Geometry.Radius * 2f) * this.Geometry.ScaleX * World.CLOUD_SCALE))
                 DrawCloud(ctx, todColor);
@@ -51,9 +69,6 @@ namespace PolyPlane.Rendering
 
         private void DrawCloud(RenderContext ctx, D2DColor todColor)
         {
-            const float MAX_ALT = 30000f;
-            const float MIN_ALT = 10000f;
-
             var color1 = _cloudColorDark;
             var color2 = _cloudColorLight;
             var points = this.Geometry.Points;
@@ -62,13 +77,9 @@ namespace PolyPlane.Rendering
             var minY = this.Geometry.TranslatedDims.MinY;
             var maxY = this.Geometry.TranslatedDims.MaxY;
 
-            // Try to make clouds at higher altitude more thin and whispy?
-            var scaleFactY = 1f - Utilities.FactorWithEasing(Utilities.PositionToAltitude(this.Position) - MIN_ALT, MAX_ALT, EasingFunctions.Out.EaseQuad);
-            scaleFactY = Math.Clamp(scaleFactY, 0.4f, 1f);
-
             ctx.PushTransform();
             ctx.TranslateTransform(this.Position * ctx.CurrentScale);
-            ctx.ScaleTransform(1f, scaleFactY, D2DPoint.Zero);
+            ctx.ScaleTransform(1f, _altScale, D2DPoint.Zero);
 
             for (int i = 0; i < points.Length; i++)
             {
@@ -100,15 +111,6 @@ namespace PolyPlane.Rendering
         {
             const float WIDTH_OFFSET = 50f;
 
-            // Don't even try if the viewport is above the shadows and rays.
-            if (ctx.Viewport.bottom * -1f > MAX_SHADOW_ALT)
-                return;
-
-            var cloudAlt = Utilities.PositionToAltitude(this.Position);
-
-            if (cloudAlt > MAX_SHADOW_ALT)
-                return;
-
             // Get min/max X positions and compute widths and offsets.
             var minX = this.Position.X + this.Geometry.TranslatedDims.MinX - WIDTH_OFFSET;
             var maxX = this.Position.X + this.Geometry.TranslatedDims.MaxX + WIDTH_OFFSET;
@@ -128,7 +130,7 @@ namespace PolyPlane.Rendering
             // Draw ray.
             if (ctx.Viewport.Contains(_shadowRayPoly))
             {
-                var alpha = 0.05f * Math.Clamp((1f - Utilities.FactorWithEasing(cloudAlt, MAX_SHADOW_ALT, EasingFunctions.EaseLinear)), 0.1f, 1f);
+                var alpha = 0.05f * Math.Clamp((1f - Utilities.FactorWithEasing(_altitude, MAX_SHADOW_ALT, EasingFunctions.EaseLinear)), 0.1f, 1f);
 
                 // Don't draw the ray if alpha is below the point of being visible.
                 if (alpha >= 0.005f)
