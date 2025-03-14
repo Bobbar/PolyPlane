@@ -127,7 +127,7 @@ namespace PolyPlane.GameObjects.Particles
 
                     // Move the ellipse backwards as velo increases.
                     var veloFact = Utilities.Factor(this.Owner.Velocity.Length() - MIN_VELO, MIN_VELO);
-                    var ellip = new D2DEllipse(Ellipse.origin - Utilities.AngleToVectorDegrees(this.Owner.Rotation, VELO_MOVE_AMT * veloFact), new D2DSize(Ellipse.radiusX, Ellipse.radiusY));
+                    var ellip = new D2DEllipse(Ellipse.origin - (this.Owner.Velocity.Normalized() * (VELO_MOVE_AMT * veloFact)), new D2DSize(Ellipse.radiusX, Ellipse.radiusY));
                     ctx.FillEllipse(ellip, Color);
 
                     break;

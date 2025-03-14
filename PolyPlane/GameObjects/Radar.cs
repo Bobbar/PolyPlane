@@ -40,6 +40,8 @@ namespace PolyPlane.GameObjects
         private GameTimer _updateTimer = new GameTimer(0.5f, true);
 
         private D2DLayer _groundClipLayer = null;
+        private D2DTextFormat _textConsolas20Centered = null;
+        private D2DTextFormat _textConsolas15Centered = null;
 
         public Radar(FighterPlane hostPlane)
         {
@@ -117,6 +119,12 @@ namespace PolyPlane.GameObjects
         {
             var gfx = ctx.Gfx;
 
+            if (_textConsolas20Centered == null)
+                _textConsolas20Centered = ctx.Device.CreateTextFormat("Consolas", 20f, D2DFontWeight.Normal, D2DFontStyle.Normal, D2DFontStretch.Normal, DWriteTextAlignment.Center, DWriteParagraphAlignment.Center);
+
+            if (_textConsolas15Centered == null)
+                _textConsolas15Centered = ctx.Device.CreateTextFormat("Consolas", 15f, D2DFontWeight.Normal, D2DFontStyle.Normal, D2DFontStretch.Normal, DWriteTextAlignment.Center, DWriteParagraphAlignment.Center);
+
             // Background
             var bgColor = new D2DColor(_color.a * 0.05f, _color);
             gfx.FillEllipse(new D2DEllipse(D2DPoint.Zero, new D2DSize(_radius, _radius)), bgColor);
@@ -171,7 +179,7 @@ namespace PolyPlane.GameObjects
                     var dRect = new D2DRect(distPos, new D2DSize(180, 80));
                     gfx.FillRectangle(dRect, new D2DColor(0.5f, D2DColor.Black));
                     var info = $"D:{Math.Round(dist / 1000f, 0)}\nA:{Math.Round(aimedAtPlane.Altitude / 1000f, 0)}\n{aimedAtPlane.PlayerName}";
-                    gfx.DrawTextCenter(info, _color, "Consolas", 20f, dRect);
+                    ctx.DrawText(info, _color, _textConsolas20Centered, dRect);
                 }
 
             }
@@ -200,7 +208,7 @@ namespace PolyPlane.GameObjects
                 var color = Utilities.LerpColor(World.HudColor, D2DColor.WhiteSmoke, 0.3f);
                 var lockPos = new D2DPoint(0f, -130f);
                 var lRect = new D2DRect(lockPos, new D2DSize(80, 20));
-                ctx.Gfx.DrawTextCenter("LOCKED", color, "Consolas", 15f, lRect);
+                ctx.DrawText("LOCKED", color, _textConsolas15Centered, lRect);
                 ctx.Gfx.FillRectangle(lRect, color.WithAlpha(0.1f));
             }
         }

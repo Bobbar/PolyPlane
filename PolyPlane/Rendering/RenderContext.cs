@@ -378,19 +378,15 @@ namespace PolyPlane.Rendering
             Gfx.DrawRectangleClipped(Viewport, rect, color, strokeWidth, dashStyle);
         }
 
-        public void DrawText(string text, D2DColor color, string fontName, float fontSize, D2DRect rect, DWriteTextAlignment halign = DWriteTextAlignment.Leading, DWriteParagraphAlignment valign = DWriteParagraphAlignment.Near)
+        public void DrawText(string text, D2DSolidColorBrush brush, D2DTextFormat format, D2DRect rect)
         {
-            Gfx.DrawTextClipped(Viewport, text, color, fontName, fontSize, rect, halign, valign);
+            Gfx.DrawText(text, brush, format, rect);
         }
 
-        public void DrawText(string text, D2DColor color, string fontName, float fontSize, float x, float y, DWriteTextAlignment halign = DWriteTextAlignment.Leading, DWriteParagraphAlignment valign = DWriteParagraphAlignment.Near)
+        public void DrawText(string text, D2DColor color, D2DTextFormat format, D2DRect rect)
         {
-            Gfx.DrawTextClipped(Viewport, text, color, fontName, fontSize, new D2DRect(x, y, 99999f, 99999f), halign, valign);
-        }
-
-        public void DrawText(string text, D2DBrush brush, D2DTextFormat format, D2DRect rect)
-        {
-            Gfx.DrawTextClipped(Viewport, text, brush, format, rect);
+            _cachedBrush.Color = color;
+            DrawText(text, _cachedBrush, format, rect);
         }
 
         public void DrawArrow(D2DPoint start, D2DPoint end, D2DColor color, float weight, float arrowLen = 10f)
