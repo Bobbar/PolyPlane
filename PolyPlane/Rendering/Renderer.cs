@@ -120,7 +120,6 @@ namespace PolyPlane.Rendering
         private const int NUM_TREES = 1000;
 
         private const float GROUND_TOD_INTERVAL = 0.1f; // Update ground brush when elapsed TOD exceeds this amount.
-        private const float GROUND_OBJ_SCALE = 4f;
         private const float ZOOM_FACTOR = 0.07f; // Effects zoom in/out speed.
         private const float MESSAGEBOX_FONT_SIZE = 10f;
         private const string DEFAULT_FONT_NAME = "Consolas";
@@ -554,7 +553,7 @@ namespace PolyPlane.Rendering
 
             DrawGround(ctx, viewObj.Position);
             DrawGroundImpacts(ctx);
-            DrawGroundObjs(ctx);
+            DrawTrees(ctx);
             DrawPlaneGroundShadows(ctx, shadowColor, todAngle);
 
             for (int i = 0; i < _objs.MissileTrails.Count; i++)
@@ -628,17 +627,19 @@ namespace PolyPlane.Rendering
             ctx.Gfx.FillRectangle(rect, _groundBrush);
         }
 
-        private void DrawGroundObjs(RenderContext ctx)
+        private void DrawTrees(RenderContext ctx)
         {
             var todColor = ctx.GetTimeOfDayColor();
+            var shadowColor = ctx.GetShadowColor();
+            var shadowAngle = Tree.GetTreeShadowAngle();
 
             for (int i = 0; i < _trees.Count; i++)
             {
                 var tree = _trees[i];
 
-                if (ctx.Viewport.Contains(tree.Position, tree.TotalHeight * GROUND_OBJ_SCALE))
+                if (ctx.Viewport.Contains(tree.Position, tree.TotalHeight * Tree.TREE_SCALE))
                 {
-                    tree.Render(ctx, todColor, GROUND_OBJ_SCALE);
+                    tree.Render(ctx, todColor, shadowColor, shadowAngle);
                 }
             }
         }
