@@ -71,6 +71,11 @@ namespace PolyPlane.Rendering
             for (int i = 0; i < points.Length; i++)
             {
                 var point = points[i];
+
+                // Skip ellipses outside the viewport.
+                if (!ctx.Viewport.Contains(point + this.Position))
+                    continue;
+
                 var dims = this.Geometry.Dims[i];
 
                 // Lerp slightly darker colors to give the cloud some depth.
