@@ -21,6 +21,12 @@ namespace PolyPlane.GameObjects.Tools
         public bool IsInCooldown => _isInCooldown;
         public bool IsRunning => _isRunning;
         public bool AutoRestart { get; set; } = false;
+
+        /// <summary>
+        /// True if <see cref="StartCallback"/> firing rate will be limited to the interval.  Otherwise it will always fire immediately.
+        /// </summary>
+        public bool RateLimitStartCallback { get; set; } = false;
+
         public float Value => _current;
 
         /// <summary>
@@ -35,6 +41,7 @@ namespace PolyPlane.GameObjects.Tools
         private float _interval = 0f;
         private float _current = 0f;
         private float _currentCooldown = 0f;
+        private float _elapSinceLastStart = 0f;
 
         private bool _hasFired = false;
         private bool _isRunning = false;
@@ -66,6 +73,8 @@ namespace PolyPlane.GameObjects.Tools
 
         public void Update(float dt)
         {
+            _elapSinceLastStart += dt;
+
             if (Cooldown > 0f)
             {
                 if (IsInCooldown)
@@ -105,10 +114,31 @@ namespace PolyPlane.GameObjects.Tools
 
         public void Start()
         {
-            if (!_isRunning && StartCallback != null)
-                StartCallback();
-
-            _isRunning = true;
+            if (!_isRunning)
+            {
+                if (StartCallback != null)
+                {
+                    // Don't allow start callbacks to be fired at a rate higher than the interval.
+                    if (RateLimitStartCallback)
+                    {
+                        if (_elapSinceLastStart > 0f && _elapSinceLastStart >= _interval)
+                        {
+                            _elapSinceLastStart = 0f;
+                            StartCallback();
+                            _isRunning = true;
+                        }
+                    }
+                    else
+                    {
+                        StartCallback();
+                        _isRunning = true;
+                    }
+                }
+                else
+                {
+                    _isRunning = true;
+                }
+            }
         }
 
         public void Stop()

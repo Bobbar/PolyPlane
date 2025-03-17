@@ -24,6 +24,8 @@ namespace PolyPlane.GameObjects.Fixtures
             _smoke = AddAttachment(new GunSmokeEmitter(this, D2DPoint.Zero, new D2DColor(0.7f, D2DColor.BurlyWood)));
 
             _burstTimer = AddTimer(0.25f, true);
+            _burstTimer.RateLimitStartCallback = true;
+
             _muzzleFlashTimer = AddTimer(0.16f);
 
             _burstTimer.StartCallback = FireBullet;

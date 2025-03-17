@@ -15,6 +15,7 @@ namespace PolyPlane.GameObjects.Fixtures
             _plane = plane;
 
             _decoyTimer = AddTimer(0.25f, true);
+            _decoyTimer.RateLimitStartCallback = true;
 
             _decoyTimer.StartCallback = DropDecoy;
             _decoyTimer.TriggerCallback = DropDecoy;
