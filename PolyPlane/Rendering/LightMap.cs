@@ -48,32 +48,29 @@ namespace PolyPlane.Rendering
             foreach (var obj in objs)
             {
                 if (obj.ContainedBy(_viewport))
-                    AddObjContribution(obj);
+                    AddObjContribution(obj as ILightMapContributor);
             }
         }
 
-        private void AddObjContribution(GameObject obj)
+        private void AddObjContribution(ILightMapContributor lightContributor)
         {
             var sampleNum = SAMPLE_NUM;
             var gradRadius = GRADIENT_RADIUS;
             var intensityFactor = 1f;
             var lightColor = Vector4.Zero;
-            var lightPosition = obj.Position;
+            var lightPosition = D2DPoint.Zero;
 
             // Query light params for contributor.
-            if (obj is ILightMapContributor lightContributor)
-            {
-                if (lightContributor.IsLightEnabled() == false)
-                    return;
+            if (lightContributor.IsLightEnabled() == false)
+                return;
 
-                intensityFactor = lightContributor.GetIntensityFactor();
-                lightColor = lightContributor.GetLightColor().ToVector4();
-                lightPosition = lightContributor.GetLightPosition();
-                gradRadius = lightContributor.GetLightRadius();
+            intensityFactor = lightContributor.GetIntensityFactor();
+            lightColor = lightContributor.GetLightColor().ToVector4();
+            lightPosition = lightContributor.GetLightPosition();
+            gradRadius = lightContributor.GetLightRadius();
 
-                // Compute the number of samples needed for the current radius.
-                sampleNum = (int)(gradRadius / SIDE_LEN);
-            }
+            // Compute the number of samples needed for the current radius.
+            sampleNum = (int)(gradRadius / SIDE_LEN);
 
             GetGridPos(lightPosition, out int idxX, out int idxY);
 
@@ -147,10 +144,6 @@ namespace PolyPlane.Rendering
             // We use the alpha channel to determine the intensity.
             // Clamp the intensity to the specified range.
             var intensity = Utilities.ScaleToRange(color.X, 0f, 1f, minIntensity, maxIntensity);
-
-            // Set the sample color alpha to full as we don't want the sample
-            // color to effect the alpha of the initial input color.
-            color.X = 1f;
 
             // Lerp the new color per the intensity.
             var newColor = Vector4.Lerp(initColor.ToVector4(), color, intensity);

@@ -38,11 +38,6 @@ namespace PolyPlane.GameObjects
             this.PlayerID = owner.PlayerID;
             _hasShockWave = false;
 
-            // If are right at ground level, spawn just below it.
-            // Allows explosions to kick around debris and planes more.
-            if (this.Position.Y == 0f)
-                this.Position += new D2DPoint(0f, 10f);
-
             if (this.Owner == null || this.Owner is not Bullet)
                 _hasShockWave = true;
 
