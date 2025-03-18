@@ -74,7 +74,25 @@ namespace PolyPlane.GameObjects
 
         public Radar Radar { get; set; }
         public float Thrust { get; set; } = 2000f;
-        public bool FiringBurst { get; set; } = false;
+
+        public bool FiringBurst
+        {
+            get { return _firingBurst; }
+            set
+            {
+                if (_firingBurst != value)
+                {
+                    // Trigger gun burst as soon as this changes state.
+                    if (value)
+                        _gun.StartBurst();
+                    else
+                        _gun.StopBurst();
+
+                    _firingBurst = value;
+                }
+            }
+        }
+
         public bool DroppingDecoy { get; set; } = false;
         public bool ThrustOn { get; set; } = true;
         public bool EngineDamaged { get; set; } = false;
@@ -145,6 +163,7 @@ namespace PolyPlane.GameObjects
         private GameTimer _groundDustSpawnTimer;
         private FloatAnimation _engineOutSpoolDown;
 
+        private bool _firingBurst = false;
         private bool _easePhysicsComplete = false;
         private float _damageDeflection = 0f;
         private float _gForce = 0f;
