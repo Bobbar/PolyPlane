@@ -1326,9 +1326,6 @@ namespace PolyPlane.Rendering
 
             var viewportsize = World.ViewPortRectUnscaled.Size;
 
-            ctx.PushTransform();
-            ctx.ScaleTransform(_hudScale, new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f));
-
             var chatActive = _netMan != null && _netMan.ChatInterface.ChatIsActive;
             var scale = SCALE;
             var numLines = LINES_INACTIVE;
@@ -1345,8 +1342,6 @@ namespace PolyPlane.Rendering
 
             var linePos = new D2DPoint(boxPos.X + LEFT_PAD, boxPos.Y);
             var lineSize = new D2DSize(WIDTH, height / numLines);
-
-            ctx.PopTransform();
 
             ctx.PushTransform();
             ctx.ScaleTransform(scale, boxPos);
