@@ -22,6 +22,7 @@ namespace PolyPlane.GameObjects.Fixtures
             _ownerPlane = plane;
 
             _smoke = AddAttachment(new GunSmokeEmitter(this, D2DPoint.Zero, new D2DColor(0.7f, D2DColor.BurlyWood)));
+            _smoke.Visible = false;
 
             _burstTimer = AddTimer(0.25f, true);
             _burstTimer.RateLimitStartCallback = true;
@@ -35,21 +36,32 @@ namespace PolyPlane.GameObjects.Fixtures
             _muzzleFlashTimer.TriggerCallback = () => { MuzzleFlashOn = false; };
         }
 
-        public override void DoUpdate(float dt)
+        public void StartBurst()
         {
-            base.DoUpdate(dt);
-
-            if (_ownerPlane.FiringBurst && _ownerPlane.NumBullets > 0 && _ownerPlane.IsDisabled == false)
+            if (_ownerPlane.NumBullets > 0 && _ownerPlane.IsDisabled == false)
             {
                 _smoke.Visible = true;
                 _burstTimer.Start();
             }
             else
             {
-                _smoke.Visible = false;
-                _burstTimer.Stop();
-                _burstTimer.Reset();
+                StopBurst();
             }
+        }
+
+        public void StopBurst()
+        {
+            _smoke.Visible = false;
+            _burstTimer.Stop();
+            _burstTimer.Reset();
+        }
+
+        public override void DoUpdate(float dt)
+        {
+            base.DoUpdate(dt);
+
+            if (_ownerPlane.NumBullets <= 0 || _ownerPlane.IsDisabled)
+                StopBurst();
         }
 
         public override void Render(RenderContext ctx)
