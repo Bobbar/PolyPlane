@@ -67,7 +67,7 @@ namespace PolyPlane.GameObjects.Fixtures
             Rotation = PivotPoint.Rotation;
             Position = FixedPosition.Position;
 
-            var nextVelo = Utilities.AngularVelocity(_parentObject, Position);
+            var nextVelo = Utilities.PointVelocity(_parentObject, Position);
             Velocity = nextVelo;
         }
 

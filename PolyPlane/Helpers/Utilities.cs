@@ -91,7 +91,7 @@ namespace PolyPlane.Helpers
         public static D2DPoint AngleToVectorDegrees(float angle, float length = 1f)
         {
             var rads = DegreesToRads(angle);
-            var vec = new D2DPoint(MathF.Cos(rads),MathF.Sin(rads));
+            var vec = new D2DPoint(MathF.Cos(rads), MathF.Sin(rads));
             return vec * length;
         }
 
@@ -515,31 +515,36 @@ namespace PolyPlane.Helpers
         }
 
         /// <summary>
-        /// Computes the angular velocity for the specified point in relation to the rotation speed of the parent object.
+        /// Computes the linear velocity for the specified point in relation to the rotation speed and position of the parent object.
         /// </summary>
         /// <param name="parentObject">Parent object from which position and rotation speed are taken.</param>
         /// <param name="point">A point along the axis of rotation.</param>
-        /// <param name="dt">Time delta.</param>
-        /// <returns>A velocity vector which sums the parent object velocity with the computed angular velocity.</returns>
+        /// <returns>A velocity vector which sums the parent object velocity with the computed linear velocity.</returns>
         /// <remarks>See: http://hyperphysics.phy-astr.gsu.edu/hbase/rotq.html</remarks>
-        public static D2DPoint AngularVelocity(GameObject parentObject, D2DPoint point)
+        public static D2DPoint PointVelocity(GameObject parentObject, D2DPoint point)
+        {
+            var baseVelo = parentObject.Velocity;
+            var linearVelo = LinearVelocity(parentObject.Position, point, parentObject.RotationSpeed);
+
+            return baseVelo + linearVelo;
+        }
+
+        /// <summary>
+        /// Computes the linear velocity for the specified point given the specified center point and rotation speed.
+        /// </summary>
+        /// <param name="center">Center point representing the axis of rotation.</param>
+        /// <param name="point">A point along the axis of rotation.</param>
+        /// <param name="rotationSpeedDeg">Rotation speed (angular velocity) in degrees per second.</param>
+        /// <returns>The linear velocity of the specified point.</returns>
+        /// <remarks>See: http://hyperphysics.phy-astr.gsu.edu/hbase/rotq.html</remarks>
+        public static D2DPoint LinearVelocity(D2DPoint center, D2DPoint point, float rotationSpeedDeg)
         {
             // V = WR
-            var baseVelo = parentObject.Velocity;
-            var R = parentObject.Position.DistanceTo(point);
+            var R = center - point;
+            var W = DegreesToRads(rotationSpeedDeg);
+            var V = R.Tangent() * W;
 
-            // There can be no angular velocity if we are at the center of the axis of rotation.
-            if (R > 0f)
-            {
-                var dir = parentObject.Position - point;
-                var dirNorm = D2DPoint.Normalize(dir);
-                var dirNormTan = dirNorm.Tangent();
-                var W = DegreesToRads(parentObject.RotationSpeed);
-
-                return baseVelo + (dirNormTan * (R * W));
-            }
-
-            return baseVelo;
+            return V;
         }
 
         public static float GetTorque(D2DPoint centerPosition, D2DPoint forcePosition, D2DPoint force)

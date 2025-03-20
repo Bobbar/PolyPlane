@@ -1135,7 +1135,7 @@ namespace PolyPlane.GameObjects
             const float DAMAGE_TQ_FACTOR = 2f;
 
             var hDens = World.GetAltitudeDensity(hole.Position);
-            var hVelo = Utilities.AngularVelocity(this, hole.Position);
+            var hVelo = Utilities.PointVelocity(this, hole.Position);
 
             if (hVelo.Length() == 0f)
             {

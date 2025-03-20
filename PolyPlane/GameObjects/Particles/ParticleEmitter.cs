@@ -52,7 +52,7 @@ namespace PolyPlane.GameObjects.Particles
             _spawnTimer.Interval = DEFAULT_INTERVAL + Utilities.Rnd.NextFloat(-0.1f, 0.1f);
 
             D2DPoint newPos = Position;
-            D2DPoint newVelo = Utilities.AngularVelocity(Owner, Position);
+            D2DPoint newVelo = Utilities.PointVelocity(Owner, Position);
 
             newVelo += Utilities.RandOPoint(10f);
 
