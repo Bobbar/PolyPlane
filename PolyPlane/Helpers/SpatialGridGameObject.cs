@@ -11,8 +11,6 @@ namespace PolyPlane.Helpers
     {
         private Dictionary<int, EntrySequence> _sequences = new();
         private List<Entry> _entries = new();
-        private GameObjectPool<Entry> _entryPool = new GameObjectPool<Entry>(() => new Entry());
-        private GameObjectPool<EntrySequence> _sequencePool = new GameObjectPool<EntrySequence>(() => new EntrySequence());
 
         private readonly int SIDE_LEN = sideLen;
 
@@ -32,7 +30,6 @@ namespace PolyPlane.Helpers
                     RemoveFromSequence(entry);
 
                     _entries.RemoveAt(i);
-                    _entryPool.ReturnObject(entry);
                 }
                 else
                 {
@@ -60,7 +57,6 @@ namespace PolyPlane.Helpers
                 if (seq.IsEmpty)
                 {
                     _sequences.Remove(seq.Hash);
-                    _sequencePool.ReturnObject(seq);
                 }
             }
         }
@@ -183,8 +179,8 @@ namespace PolyPlane.Helpers
                 entry.Prev = null;
                 entry.Next = null;
 
-                var newIndex = _sequencePool.RentObject();
-                newIndex.ReInit(entry);
+                var newIndex = new EntrySequence(entry);
+
                 newIndex.Hash = hash;
                 entry.Sequence = newIndex;
 
@@ -204,8 +200,7 @@ namespace PolyPlane.Helpers
 
         private void AddInternal(int hash, GameObject obj)
         {
-            var entry = _entryPool.RentObject();
-            entry.ReInit(hash, obj);
+            var entry = new Entry(hash, obj);
 
             AddToSequence(entry);
 
@@ -355,9 +350,7 @@ namespace PolyPlane.Helpers
             public int Hash;
             public bool IsEmpty = false;
 
-            public EntrySequence() { }
-
-            public void ReInit(Entry head)
+            public EntrySequence(Entry head)
             {
                 Head = head;
                 Tail = null;
@@ -378,9 +371,7 @@ namespace PolyPlane.Helpers
             public Entry? Prev;
             public Entry? Next;
 
-            public Entry() { }
-
-            public void ReInit(int curHash, GameObject item)
+            public Entry(int curHash, GameObject item)
             {
                 IsHead = false;
                 NextHash = curHash;
