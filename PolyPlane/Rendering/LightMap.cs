@@ -145,6 +145,10 @@ namespace PolyPlane.Rendering
             // Clamp the intensity to the specified range.
             var intensity = Utilities.ScaleToRange(color.X, 0f, 1f, minIntensity, maxIntensity);
 
+            // Set the sample color alpha to full as we don't want the sample
+            // color to effect the alpha of the initial input color.
+            color.X = 1f;
+
             // Lerp the new color per the intensity.
             var newColor = Vector4.Lerp(initColor.ToVector4(), color, intensity);
 
