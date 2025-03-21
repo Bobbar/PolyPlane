@@ -220,11 +220,7 @@ namespace PolyPlane.Helpers
             {
                 for (int y = -1; y <= 1; y++)
                 {
-                    var xo = idxX + x;
-                    var yo = idxY + y;
-                    var nHash = GetGridHash(xo, yo);
-
-                    if (_sequences.TryGetValue(nHash, out var index))
+                    if (_sequences.TryGetValue(GetGridHash(idxX + x, idxY + y), out var index))
                     {
                         var cur = index.Head;
 
@@ -252,11 +248,7 @@ namespace PolyPlane.Helpers
             {
                 for (int y = -1; y <= 1; y++)
                 {
-                    var xo = idxX + x;
-                    var yo = idxY + y;
-                    var nHash = GetGridHash(xo, yo);
-
-                    if (_sequences.TryGetValue(nHash, out var index))
+                    if (_sequences.TryGetValue(GetGridHash(idxX + x, idxY + y), out var index))
                     {
                         var cur = index.Head;
 
@@ -290,9 +282,7 @@ namespace PolyPlane.Helpers
             {
                 for (int y = idxY; y <= idxY + nY; y++)
                 {
-                    var nHash = GetGridHash(x, y);
-
-                    if (_sequences.TryGetValue(nHash, out var index))
+                    if (_sequences.TryGetValue(GetGridHash(x, y), out var index))
                     {
                         var cur = index.Head;
 
