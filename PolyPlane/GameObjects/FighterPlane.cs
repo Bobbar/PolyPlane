@@ -6,6 +6,7 @@ using PolyPlane.GameObjects.Manager;
 using PolyPlane.GameObjects.Particles;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
+using PolyPlane.Net;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
@@ -525,9 +526,9 @@ namespace PolyPlane.GameObjects
                 _engineFireFlame.StopSpawning();
         }
 
-        public override void NetUpdate(D2DPoint position, D2DPoint velocity, float rotation, long frameTime)
+        public override void NetUpdate(GameObjectPacket packet)
         {
-            base.NetUpdate(position, velocity, rotation, frameTime);
+            base.NetUpdate(packet);
 
             _controlWing.Deflection = this.Deflection;
         }

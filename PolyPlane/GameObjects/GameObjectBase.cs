@@ -384,12 +384,14 @@ namespace PolyPlane.GameObjects
                 {
                     this.Velocity = state.Velocity;
                     this.SetPosition(state.Position, state.Rotation);
+                    this.RotationSpeed = state.RotationSpeed;
                 }
                 else
                 {
                     // Just try to advance normally if we failed to get an interpolated state.
                     var extrapPos = this.Position + this.Velocity * dt;
-                    this.SetPosition(extrapPos);
+                    var extrapRot = this.Rotation + this.RotationSpeed * dt;
+                    this.SetPosition(extrapPos, extrapRot);
                 }
 
                 // Update physics attachments (like wings) after interpolating a new state.
@@ -411,26 +413,22 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public virtual void NetUpdate(D2DPoint position, D2DPoint velocity, float rotation, long frameTime)
+        public virtual void NetUpdate(GameObjectPacket packet)
         {
             // Don't interp on server.
             if (!World.IsServer)
             {
-                var newState = new GameObjectPacket(this);
-                newState.Position = position;
-                newState.Velocity = velocity;
-                newState.Rotation = rotation;
-
-                InterpBuffer.Enqueue(newState, frameTime);
+                InterpBuffer.Enqueue(packet, packet.FrameTime);
             }
             else
             {
-                this.Velocity = velocity;
-                this.SetPosition(position, rotation);
+                this.Velocity = packet.Velocity;
+                this.SetPosition(packet.Position, packet.Rotation);
+                this.RotationSpeed = packet.RotationSpeed;
             }
 
             var now = World.CurrentNetTimeTicks();
-            this.LagAmount = TimeSpan.FromTicks(now - frameTime).TotalMilliseconds;
+            this.LagAmount = TimeSpan.FromTicks(now - packet.FrameTime).TotalMilliseconds;
             this._lastNetTime = now;
         }
 
@@ -613,14 +611,6 @@ namespace PolyPlane.GameObjects
             return null;
         }
 
-        private void InterpObject(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
-        {
-            var state = GetInterpState(from, to, pctElapsed);
-
-            this.Velocity = state.Velocity;
-            this.SetPosition(state.Position, state.Rotation);
-        }
-
         private GameObjectPacket GetInterpState(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
         {
             var state = new GameObjectPacket();
@@ -628,6 +618,7 @@ namespace PolyPlane.GameObjects
             state.Position = D2DPoint.Lerp(from.Position, to.Position, (float)pctElapsed);
             state.Velocity = D2DPoint.Lerp(from.Velocity, to.Velocity, (float)pctElapsed);
             state.Rotation = Utilities.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
+            state.RotationSpeed = Utilities.Lerp(from.RotationSpeed, to.RotationSpeed, (float)pctElapsed);
 
             return state;
         }

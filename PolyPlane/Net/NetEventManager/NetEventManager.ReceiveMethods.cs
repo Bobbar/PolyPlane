@@ -145,7 +145,7 @@ namespace PolyPlane.Net
             if (netPlane != null)
             {
                 planePacket.SyncObj(netPlane);
-                netPlane.NetUpdate(planePacket.Position, planePacket.Velocity, planePacket.Rotation, planePacket.FrameTime);
+                netPlane.NetUpdate(planePacket);
             }
         }
 
@@ -182,7 +182,7 @@ namespace PolyPlane.Net
                 if (netMissileOwner != null && netMissileOwner.IsNetObject)
                 {
                     missilePacket.SyncObj(netMissile);
-                    netMissile.NetUpdate(missilePacket.Position, missilePacket.Velocity, missilePacket.Rotation, missilePacket.FrameTime);
+                    netMissile.NetUpdate(missilePacket);
                 }
             }
             else

@@ -2,6 +2,7 @@
 using PolyPlane.GameObjects.Guidance;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
+using PolyPlane.Net;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
@@ -341,9 +342,9 @@ namespace PolyPlane.GameObjects
             return rot;
         }
 
-        public override void NetUpdate(D2DPoint position, D2DPoint velocity, float rotation, long frameTime)
+        public override void NetUpdate(GameObjectPacket packet)
         {
-            base.NetUpdate(position, velocity, rotation, frameTime);
+            base.NetUpdate(packet);
 
             _tailWing.Deflection = this.Deflection;
         }

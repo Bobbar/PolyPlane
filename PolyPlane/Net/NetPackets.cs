@@ -576,6 +576,7 @@ namespace PolyPlane.Net
         public D2DPoint Position;
         public D2DPoint Velocity;
         public float Rotation;
+        public float RotationSpeed;
 
         public GameObjectPacket(PacketTypes type) : base(type) { }
 
@@ -596,6 +597,7 @@ namespace PolyPlane.Net
             Position = obj.Position;
             Velocity = obj.Velocity;
             Rotation = obj.Rotation;
+            RotationSpeed = obj.RotationSpeed;
         }
 
         public GameObjectPacket(GameObject obj, PacketTypes type) : base(type, obj.ID)
@@ -609,6 +611,7 @@ namespace PolyPlane.Net
             Position = obj.Position;
             Velocity = obj.Velocity;
             Rotation = obj.Rotation;
+            RotationSpeed = obj.RotationSpeed;
         }
 
         public virtual void SyncObj(GameObject obj)
@@ -629,6 +632,7 @@ namespace PolyPlane.Net
             data.AddD2DPoint(Position);
             data.AddD2DPoint(Velocity, World.VeloBounds);
             data.AddFloat(Rotation);
+            data.AddFloat(RotationSpeed);
         }
 
         public override void Deserialize(BitBuffer data)
@@ -639,6 +643,7 @@ namespace PolyPlane.Net
             Position = data.ReadD2DPoint();
             Velocity = data.ReadD2DPoint(World.VeloBounds);
             Rotation = data.ReadFloat();
+            RotationSpeed = data.ReadFloat();
         }
     }
 
