@@ -122,7 +122,7 @@ namespace PolyPlane.Rendering
             var cloudDeDup = new HashSet<D2DPoint>();
             const int MIN_PNTS = 12;
             const int MAX_PNTS = 28;
-            const int MIN_RADIUS = 5;
+            const int MIN_RADIUS = 10;
             const int MAX_RADIUS = 30;
 
             var cloudRange = World.CloudRangeY;
@@ -198,11 +198,10 @@ namespace PolyPlane.Rendering
                 dims.Add(new D2DSize(dimsX, dimsY));
             }
 
-            var rotation = 0f;
             var poly = GameObjectPoly.RandomPoly(nPnts, radius);
             var pnts = poly.ToList();
 
-            var scaleX = rnd.NextFloat(1.5f, 5f);
+            var scaleX = rnd.NextFloat(2f, 5f);
             var scaleY = rnd.NextFloat(0.4f, 0.7f);
 
             var geo = new CloudGeometry(pnts, dims, scaleX, scaleY, radius);
