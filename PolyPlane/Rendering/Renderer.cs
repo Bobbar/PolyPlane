@@ -1325,7 +1325,9 @@ namespace PolyPlane.Rendering
             const float WIDTH = 400f;
 
             var viewportsize = World.ViewPortRectUnscaled.Size;
-
+            
+            // Fudge/compute the position and scaling of the chat box.
+            // Apply user scaling and re-position while active for net chat. 
             var chatActive = _netMan != null && _netMan.ChatInterface.ChatIsActive;
             var scale = SCALE;
             var numLines = LINES_INACTIVE;
@@ -1343,8 +1345,12 @@ namespace PolyPlane.Rendering
             var linePos = new D2DPoint(boxPos.X + LEFT_PAD, boxPos.Y);
             var lineSize = new D2DSize(WIDTH, height / numLines);
 
+            // TODO: These transforms are screwy..
             ctx.PushTransform();
+
+            ctx.ScaleTransform(_hudScale, new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f));
             ctx.ScaleTransform(scale, boxPos);
+
             ctx.Gfx.FillRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y - lineSize.height, WIDTH, height + lineSize.height, new D2DColor(0.05f, World.HudColor));
 
             var start = 0;
