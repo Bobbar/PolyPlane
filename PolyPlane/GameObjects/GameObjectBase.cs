@@ -122,6 +122,12 @@ namespace PolyPlane.GameObjects
             set { ID = new GameID(value, ID.ObjectID); }
         }
 
+        public uint ObjectID
+        {
+            get { return ID.ObjectID; }
+            set { ID = new GameID(ID.PlayerID, value); }
+        }
+
         public GameObject Owner { get; set; }
 
         public GameObjectFlags Flags { get; set; }

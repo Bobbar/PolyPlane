@@ -33,6 +33,7 @@ namespace PolyPlane.GameObjects
 
         public void ReInit(FighterPlane plane)
         {
+            this.ObjectID = World.GetNextObjectId();
             this.PlayerID = plane.PlayerID;
             this.IsExpired = false;
             this.IsNetObject = false;

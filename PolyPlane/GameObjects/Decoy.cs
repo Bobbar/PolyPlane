@@ -35,14 +35,15 @@ namespace PolyPlane.GameObjects
 
         public void ReInit(FighterPlane owner, D2DPoint pos)
         {
+            this.ObjectID = World.GetNextObjectId();
+            this.PlayerID = owner.PlayerID;
             this.IsExpired = false;
-            this.Age = 0f;
             this.IsNetObject = false;
+            this.Age = 0f;
 
             this.Position = pos;
-            this.PlayerID = owner.PlayerID;
-            this.Owner = owner;
             this.Velocity = owner.Velocity;
+            this.Owner = owner;
 
             // Make the decoy shoot out from the top of the plane.
             const float EJECT_FORCE = 200f;
