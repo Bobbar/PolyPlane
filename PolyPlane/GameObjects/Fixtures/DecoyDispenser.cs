@@ -43,8 +43,7 @@ namespace PolyPlane.GameObjects.Fixtures
             if (_plane.IsDisabled)
                 return;
 
-            var decoy = World.ObjectManager.RentDecoy();
-            decoy.ReInit(_plane, this.Position);
+            var decoy = new Decoy(_plane, this.Position);
 
             _plane.DecoysDropped++;
             _plane.NumDecoys--;

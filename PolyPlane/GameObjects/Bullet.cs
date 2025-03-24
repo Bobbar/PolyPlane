@@ -1,5 +1,4 @@
-﻿using PolyPlane.GameObjects.Interfaces;
-using PolyPlane.GameObjects.Tools;
+﻿using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
@@ -31,7 +30,7 @@ namespace PolyPlane.GameObjects
             this.Flags = GameObjectFlags.SpatialGrid;
         }
 
-        public void ReInit(FighterPlane plane)
+        public Bullet(FighterPlane plane) : this()
         {
             this.ObjectID = World.GetNextObjectId();
             this.PlayerID = plane.PlayerID;
@@ -50,7 +49,7 @@ namespace PolyPlane.GameObjects
             this.Polygon.Update();
         }
 
-        public void ReInit(D2DPoint pos, D2DPoint velo, float rotation)
+        public Bullet(D2DPoint pos, D2DPoint velo, float rotation) : this()
         {
             this.IsExpired = false;
             this.IsNetObject = true;
@@ -61,13 +60,6 @@ namespace PolyPlane.GameObjects
             this.Rotation = rotation;
 
             this.Polygon.Update();
-        }
-
-        public override void Dispose()
-        {
-            base.Dispose();
-
-            World.ObjectManager.ReturnBullet(this);
         }
 
         public override void DoUpdate(float dt)

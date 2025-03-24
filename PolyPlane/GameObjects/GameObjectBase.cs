@@ -381,20 +381,32 @@ namespace PolyPlane.GameObjects
             if (this.IsExpired)
                 return;
 
-            if (World.IsNetGame && IsNetObject && InterpBuffer != null && !World.IsServer)
+            if (World.IsNetGame && IsNetObject && InterpBuffer != null)
             {
-                var now = World.CurrentNetTimeTicks();
-                var state = InterpBuffer.InterpolateState(now);
 
-                if (state != null)
+                if (!World.IsServer && InterpBuffer != null)
                 {
-                    this.Velocity = state.Velocity;
-                    this.SetPosition(state.Position, state.Rotation);
-                    this.RotationSpeed = state.RotationSpeed;
+                    var now = World.CurrentNetTimeTicks();
+                    var state = InterpBuffer.InterpolateState(now);
+
+                    if (state != null)
+                    {
+                        // Apply interpolated state.
+                        this.Velocity = state.Velocity;
+                        this.SetPosition(state.Position, state.Rotation);
+                        this.RotationSpeed = state.RotationSpeed;
+                    }
+                    else
+                    {
+                        // Just try to extrapolate if we failed to get an interpolated state.
+                        var extrapPos = this.Position + this.Velocity * dt;
+                        var extrapRot = this.Rotation + this.RotationSpeed * dt;
+                        this.SetPosition(extrapPos, extrapRot);
+                    }
                 }
-                else
+                else if (World.IsServer)
                 {
-                    // Just try to advance normally if we failed to get an interpolated state.
+                    // Always extrapolate on server.
                     var extrapPos = this.Position + this.Velocity * dt;
                     var extrapRot = this.Rotation + this.RotationSpeed * dt;
                     this.SetPosition(extrapPos, extrapRot);

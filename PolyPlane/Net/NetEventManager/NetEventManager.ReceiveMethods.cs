@@ -266,8 +266,7 @@ namespace PolyPlane.Net
                 return;
             }
 
-            var bullet = _objs.RentBullet();
-            bullet.ReInit(bulletPacket.Position, bulletPacket.Velocity, bulletPacket.Rotation);
+            var bullet = new Bullet(bulletPacket.Position, bulletPacket.Velocity, bulletPacket.Rotation);
 
             bullet.ID = bulletPacket.ID;
 
@@ -275,6 +274,7 @@ namespace PolyPlane.Net
 
             bullet.Owner = owner;
             bullet.LagAmount = bulletPacket.Age;
+            bullet.Age = bullet.LagAmountFrames * dt;
 
             // Try to spawn the bullet ahead (extrapolate) to compensate for latency?
             var extrapPos = bullet.Position + (bullet.Velocity * (bullet.LagAmountFrames * dt));
@@ -312,21 +312,20 @@ namespace PolyPlane.Net
             }
         }
 
-        private void HandleNewDecoy(GameObjectPacket decoyPacket)
+        private void HandleNewDecoy(GameObjectPacket decoyPacket, float dt)
         {
             var decoyOwner = GetNetPlane(decoyPacket.OwnerID);
 
             if (decoyOwner != null)
             {
-                var decoy = _objs.RentDecoy();
-
                 // Just spawn new decoys at the current position of the owner plane.
                 // Otherwise they would appear in front of the plane due to client-side interpolation.
-
-                decoy.ReInit(decoyOwner, decoyOwner.ExhaustPosition, decoyPacket.Velocity);
-
+                var decoy = new Decoy(decoyOwner, decoyOwner.ExhaustPosition, decoyPacket.Velocity);
                 decoy.IsNetObject = true;
                 decoy.ID = decoyPacket.ID;
+                decoy.LagAmount = decoyPacket.Age;
+                decoy.Age = decoy.LagAmountFrames * dt;
+
                 decoyPacket.SyncObj(decoy);
 
                 _objs.EnqueueDecoy(decoy);

@@ -1,5 +1,4 @@
 ﻿using PolyPlane.GameObjects.Animations;
-using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
@@ -21,19 +20,7 @@ namespace PolyPlane.GameObjects
             InitStuff();
         }
 
-        private void InitStuff()
-        {
-            this.Flags = GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround;
-            this.Mass = 50f;
-            this.RenderOrder = 1;
-
-            _flashAnimation = new FloatAnimation(0f, 5f, 0.4f, EasingFunctions.EaseLinear, v => _currentFlashRadius = v);
-            _flashAnimation.Start();
-            _flashAnimation.ReverseOnLoop = true;
-            _flashAnimation.Loop = true;
-        }
-
-        public void ReInit(FighterPlane owner, D2DPoint pos)
+        public Decoy(FighterPlane owner, D2DPoint pos) : this()
         {
             this.ObjectID = World.GetNextObjectId();
             this.PlayerID = owner.PlayerID;
@@ -61,7 +48,7 @@ namespace PolyPlane.GameObjects
             _flashAnimation.Start();
         }
 
-        public void ReInit(FighterPlane owner, D2DPoint pos, D2DPoint velo)
+        public Decoy(FighterPlane owner, D2DPoint pos, D2DPoint velo) : this()
         {
             this.IsExpired = false;
             this.Age = 0f;
@@ -72,6 +59,18 @@ namespace PolyPlane.GameObjects
             this.Velocity = velo;
 
             _flashAnimation.Start();
+        }
+
+        private void InitStuff()
+        {
+            this.Flags = GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround;
+            this.Mass = 50f;
+            this.RenderOrder = 1;
+
+            _flashAnimation = new FloatAnimation(0f, 5f, 0.4f, EasingFunctions.EaseLinear, v => _currentFlashRadius = v);
+            _flashAnimation.Start();
+            _flashAnimation.ReverseOnLoop = true;
+            _flashAnimation.Loop = true;
         }
 
         public override void DoUpdate(float dt)
@@ -111,8 +110,6 @@ namespace PolyPlane.GameObjects
             base.Dispose();
 
             _flashAnimation.Stop();
-
-            World.ObjectManager.ReturnDecoy(this);
         }
 
         float ILightMapContributor.GetLightRadius()

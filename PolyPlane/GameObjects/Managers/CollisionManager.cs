@@ -415,11 +415,24 @@ namespace PolyPlane.GameObjects.Manager
             {
                 var plane = _objs.Planes[a];
 
-                if (plane.Altitude <= 1f && !plane.InResetCooldown)
+                // Check if the plane is going to hit the ground.
+                if (!plane.InResetCooldown && plane.Altitude <= 500f)
                 {
-                    if (!plane.HasCrashed)
-                        plane.DoHitGround();
+                    // TODO: Clients and server must both come to the same conclusion here.
+                    // Otherwise the client plane may end up in a partially disabled/dead state.
+                    // Making this server authoritative may be problematic for laggy clients.
 
+                    if (Utilities.TryGetGroundCollisionPoint(plane, 0f, dt, out D2DPoint groundImpactPos))
+                    {
+                        // Run the hit ground logic.
+                        if (!plane.HasCrashed)
+                            plane.DoHitGround();
+                    }
+                }
+
+                // Ease the plane rotation until it is flat on the ground.
+                if (plane.IsDisabled && plane.Altitude <= 5f)
+                {
                     float crashDir = 0f;
                     var pointingRight = Utilities.IsPointingRight(plane.Rotation);
                     if (pointingRight)
@@ -427,7 +440,6 @@ namespace PolyPlane.GameObjects.Manager
                     else
                         crashDir = 180f;
 
-                    // Ease the plane rotation until it is flat on the ground.
                     plane.Rotation = EaseRotation(crashDir, plane.Rotation, dt);
                     plane.RotationSpeed = 0f;
                 }

@@ -43,8 +43,6 @@ namespace PolyPlane.GameObjects
         private List<GameObject> _expiredObjs = new();
 
         private GameObjectPool<Particle> _particlePool = new(() => new Particle());
-        private GameObjectPool<Bullet> _bulletPool = new(() => new Bullet());
-        private GameObjectPool<Decoy> _decoyPool = new(() => new Decoy());
         private GameObjectPool<Explosion> _explosionPool = new(() => new Explosion());
         private GameObjectPool<Debris> _debrisPool = new(() => new Debris());
         private GameObjectPool<GroundImpact> _groundImpactPool = new(() => new GroundImpact());
@@ -130,17 +128,6 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public Bullet RentBullet()
-        {
-            var bullet = _bulletPool.RentObject();
-            return bullet;
-        }
-
-        public void ReturnBullet(Bullet bullet)
-        {
-            _bulletPool.ReturnObject(bullet);
-        }
-
         public void AddBullet(Bullet bullet)
         {
             if (!Contains(bullet))
@@ -194,18 +181,6 @@ namespace PolyPlane.GameObjects
         public void EnqueuePlane(FighterPlane plane)
         {
             NewPlanes.Enqueue(plane);
-        }
-
-
-        public Decoy RentDecoy()
-        {
-            var decoy = _decoyPool.RentObject();
-            return decoy;
-        }
-
-        public void ReturnDecoy(Decoy decoy)
-        {
-            _decoyPool.ReturnObject(decoy);
         }
 
         private void AddDecoy(Decoy decoy)
@@ -410,14 +385,14 @@ namespace PolyPlane.GameObjects
         {
             TotalObjects = 0;
 
-            PruneExpired(Missiles);
-            PruneExpired(MissileTrails, recordExpired: false);
+            PruneExpired(Missiles, recordExpired: true);
+            PruneExpired(MissileTrails);
             PruneExpired(Decoys);
             PruneExpired(Bullets);
-            PruneExpired(Explosions, recordExpired: false);
-            PruneExpired(Debris, recordExpired: false);
-            PruneExpired(Particles, recordExpired: false);
-            PruneExpired(DummyObjs, recordExpired: false);
+            PruneExpired(Explosions);
+            PruneExpired(Debris);
+            PruneExpired(Particles);
+            PruneExpired(DummyObjs);
 
             // Prune planes.
             for (int i = Planes.Count - 1; i >= 0; i--)
@@ -452,7 +427,7 @@ namespace PolyPlane.GameObjects
             TotalObjects += GroundImpacts.Count;
         }
 
-        private void PruneExpired(List<GameObject> objs, bool recordExpired = true)
+        private void PruneExpired(List<GameObject> objs, bool recordExpired = false)
         {
             const double MAX_NET_AGE = 500;
 

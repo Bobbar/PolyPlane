@@ -345,7 +345,7 @@ namespace PolyPlane.Net
                 case PacketTypes.NewDecoy:
 
                     var newDecoyPacket = packet as GameObjectPacket;
-                    HandleNewDecoy(newDecoyPacket);
+                    HandleNewDecoy(newDecoyPacket, dt);
 
                     break;
 
@@ -545,8 +545,7 @@ namespace PolyPlane.Net
 
                             if (owner != null)
                             {
-                                var decoy = _objs.RentDecoy();
-                                decoy.ReInit(owner, d.Position, d.Velocity);
+                                var decoy = new Decoy(owner, d.Position, d.Velocity);
                                 decoy.IsNetObject = true;
                                 decoy.ID = d.ID;
                                 _objs.EnqueueDecoy(decoy);
