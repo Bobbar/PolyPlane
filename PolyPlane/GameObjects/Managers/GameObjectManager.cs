@@ -387,7 +387,7 @@ namespace PolyPlane.GameObjects
 
             PruneExpired(Missiles, recordExpired: true);
             PruneExpired(MissileTrails);
-            PruneExpired(Decoys);
+            PruneExpired(Decoys, recordExpired: true);
             PruneExpired(Bullets);
             PruneExpired(Explosions);
             PruneExpired(Debris);

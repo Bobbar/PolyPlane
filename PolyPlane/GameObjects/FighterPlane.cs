@@ -908,7 +908,7 @@ namespace PolyPlane.GameObjects
                 ApplyPolyDamageEffects(result);
 
                 // Push and twist the plane accordingly.
-                DoImpactImpulse(impactor, result.ImpactPoint, dt);
+                DoImpactImpulse(impactor, result.ImpactPoint);
             }
 
             if (result.DamageAmount > 0f)
@@ -1027,20 +1027,20 @@ namespace PolyPlane.GameObjects
             PlayerKilledCallback?.Invoke(killedEvent);
         }
 
-        private void DoImpactImpulse(GameObject impactor, D2DPoint impactPos, float dt)
+        private void DoImpactImpulse(GameObject impactor, D2DPoint impactPos)
         {
             if (this.IsNetObject)
                 return;
 
-            const float IMPACT_MASS = 160f;
+            const float IMPACT_MASS = 2f;
 
             var velo = impactor.Velocity - this.Velocity;
-            var force = (IMPACT_MASS * velo.Length()) / 4f;
+            var force = (IMPACT_MASS * velo.Length());
             var forceVec = (velo.Normalized() * force);
             var impactTq = Utilities.GetTorque(_centerOfMass.Position, impactPos, forceVec);
 
-            this.RotationSpeed += (float)(impactTq / this.GetInertia(this.Mass) * dt);
-            this.Velocity += forceVec / this.Mass * dt;
+            this.RotationSpeed += impactTq / this.GetInertia(this.Mass);
+            this.Velocity += forceVec / this.Mass;
         }
 
         /// <summary>
