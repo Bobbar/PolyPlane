@@ -34,7 +34,7 @@ namespace PolyPlane.Rendering
             _altitude = Utilities.PositionToAltitude(this.Position);
 
             // Calc the move rate for this altitude.
-            var altFact = 30f * Utilities.Factor(_altitude, World.CloudRangeY.X * -1f); // Higher clouds move slower?
+            var altFact = 30f * Utilities.Factor(_altitude, World.CloudRangeY.X * -1.4f); // Higher clouds move slower?
             var sizeOffset = (this.Geometry.Radius / 2f); // Smaller clouds move slightly faster?
             _moveRate = Math.Clamp((World.CLOUD_MOVE_RATE - altFact) - sizeOffset, 0.1f, World.CLOUD_MOVE_RATE);
 
@@ -64,7 +64,7 @@ namespace PolyPlane.Rendering
 
             // Wrap clouds.
             if (this.Position.X > World.CLOUD_MAX_X)
-                this.Position.X = -World.CLOUD_MAX_X;
+                this.Position.X = -World.CLOUD_MAX_X + (this.Position.X - World.CLOUD_MAX_X);
         }
 
         private void DrawCloud(RenderContext ctx, D2DColor todColor)
