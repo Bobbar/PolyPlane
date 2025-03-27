@@ -762,17 +762,19 @@ namespace PolyPlane.Rendering
                 // Find the ground intersection point for the shadow position.
                 var shadowPos = Utilities.GroundIntersectionPoint(plane, todAngle);
 
+                // Move the shadow position down to the desired Y position.
+                shadowPos += new D2DPoint(0f, Y_POS);
+
                 // Make sure it is inside the viewport.
                 if (!ctx.Viewport.Contains(shadowPos))
                     continue;
 
-                // Two offsets. One for ToD angle offset by 90 degrees, another offset by plane rotation.
-                var todAngleOffset = Utilities.ClampAngle(todAngle + 90f);
-                var todRotationOffset = Utilities.ClampAngle(todAngleOffset - plane.Rotation);
+                // Offset ToD angle by plane rotation.
+                var todRotationOffset = Utilities.ClampAngle(todAngle - plane.Rotation);
 
                 // Make a line segment to represent the plane's rotation in relation to the angle of the sun.
                 var lineA = new D2DPoint(0f, 0f);
-                var lineB = new D2DPoint(MAX_WIDTH, 0f);
+                var lineB = new D2DPoint(0f, MAX_WIDTH);
 
                 // Rotate the segment.
                 lineA = lineA.Translate(todRotationOffset, D2DPoint.Zero);
@@ -781,9 +783,6 @@ namespace PolyPlane.Rendering
                 // Get the abs diff between the X coords of the line to compute the initial shadow width.
                 var width = Math.Abs(lineB.X - lineA.X);
                 var initialWidth = ((width) * 0.5f) + WIDTH_PADDING;
-
-                // Move the shadow position down to the desired Y position.
-                shadowPos += new D2DPoint(0f, Y_POS);
 
                 // Compute the shadow width and alpha per altitude and draw it.
                 var shadowWidth = Utilities.Lerp(1f, initialWidth, Utilities.Factor(MAX_SIZE_ALT, plane.Altitude));

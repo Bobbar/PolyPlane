@@ -7,6 +7,8 @@ namespace PolyPlane.GameObjects
 {
     public sealed class Decoy : GameObject, ILightMapContributor
     {
+        public float CurrentRadius => Radius + _currentFlashRadius;
+
         private const float Radius = 5f;
         private const float LifeSpan = 10f;
 

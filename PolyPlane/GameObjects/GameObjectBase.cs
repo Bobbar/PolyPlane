@@ -552,7 +552,7 @@ namespace PolyPlane.GameObjects
                 if (this.Altitude <= 0f)
                 {
                     this.SetPosition(new D2DPoint(this.Position.X, 0f));
-                    this.Velocity = new D2DPoint(this.Velocity.X + -this.Velocity.X * (dt * 1f), 0f);
+                    this.Velocity = new D2DPoint(this.Velocity.X * 0.97f, 0f);
                 }
             }
         }

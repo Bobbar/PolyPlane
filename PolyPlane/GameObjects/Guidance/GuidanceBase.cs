@@ -89,7 +89,7 @@ namespace PolyPlane.GameObjects.Guidance
                 _decoyDistractArm.Update(dt);
                 _pitbullTimer.Update(dt);
 
-                DoDecoySuccess();
+                DoDecoySuccessBySize();
                 DoGroundScatter();
             }
 
@@ -130,8 +130,8 @@ namespace PolyPlane.GameObjects.Guidance
         {
             var pos = this.Target.Position;
 
-            if (this.Target is FighterPlane plane)
-                pos = plane.ExhaustPosition;
+            //if (this.Target is FighterPlane plane)
+            //    pos = plane.ExhaustPosition;
 
 
             // Try to compensate for lag?
@@ -141,10 +141,80 @@ namespace PolyPlane.GameObjects.Guidance
             return pos;
         }
 
+
         /// <summary>
         /// Consider distracting missiles with decoys.
         /// </summary>
-        protected void DoDecoySuccess()
+        protected void DoDecoySuccessBySize()
+        {
+            // Test for decoy success.
+            const float MAX_DISTANCE = 20000f; // Max distance for decoys to be considered.
+
+            var decoys = World.ObjectManager.Decoys;
+
+            var missile = this.Missile;
+            var owner = this.Missile.Owner as FighterPlane;
+            var ownerRadar = owner.Radar;
+            var target = missile.Target as FighterPlane;
+
+            if (target == null)
+                return;
+
+            if (missile == null)
+                return;
+
+            // No sense in trying to control missiles we don't have control of...
+            if (missile.IsNetObject)
+                return;
+
+            GameObject maxSizeObj = target;
+            var maxDiam = 0f;
+            var targetDiam = Utilities.AngularSize(target, this.Missile.Position);
+
+            for (int k = 0; k < decoys.Count; k++)
+            {
+                var decoy = decoys[k] as Decoy;
+
+                if (decoy.IsExpired)
+                    continue;
+
+                if (decoy.Owner.Equals(this.Missile.Owner))
+                    continue;
+
+                if (!missile.IsObjInFOV(decoy, SENSOR_FOV_DECOY))
+                    continue;
+
+                var dist = D2DPoint.Distance(decoy.Position, missile.Position);
+
+                if (dist > MAX_DISTANCE)
+                    continue;
+
+                var decoyDiam = Utilities.AngularSize(decoy, this.Missile.Position);
+
+                if (decoyDiam > targetDiam)
+                {
+                    maxDiam = decoyDiam;
+                    maxSizeObj = decoy;
+                }
+            }
+
+            if (maxSizeObj is Decoy)
+            {
+                // Decrease likelihood of decoy distractions when owner plane is locked onto the target.
+                const int IN_FOV_CHANCE = 4;
+
+                if (ownerRadar.LockedObj != null && ownerRadar.LockedObj.Equals(this.Target))
+                    DoChangeTargetChance(maxSizeObj, IN_FOV_CHANCE);
+                else
+                    DoChangeTargetChance(maxSizeObj, 0);
+            }
+        }
+
+
+        /// <summary>
+        /// Consider distracting missiles with decoys.
+        /// </summary>
+        protected void DoDecoySuccessByTemperature()
         {
             // Test for decoy success.
             const float MAX_DISTANCE = 20000f; // Max distance for decoys to be considered.

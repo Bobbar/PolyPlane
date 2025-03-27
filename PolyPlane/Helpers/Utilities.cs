@@ -514,6 +514,41 @@ namespace PolyPlane.Helpers
             return ClampAngle(finalAngle);
         }
 
+        public static float AngularSize(FighterPlane plane, D2DPoint viewPoint)
+        {
+            const float MAX_PLANE_WIDTH = 120f;
+            const float MIN_PLANE_THICCNESS = 10f;
+
+            var dist = viewPoint.DistanceTo(plane.Position);
+            var angleTo = viewPoint.AngleTo(plane.Position);
+            var angleToRot = ClampAngle(angleTo - plane.Rotation);
+
+            // Make a line segment to represent the plane's rotation.
+            var lineA = D2DPoint.Zero;
+            var lineB = new D2DPoint(0f, MAX_PLANE_WIDTH);
+
+            // Rotate the segment.
+            lineA = lineA.Translate(angleToRot, D2DPoint.Zero);
+            lineB = lineB.Translate(angleToRot, D2DPoint.Zero);
+
+            // Get the abs diff between the X coords of the line to compute linear diameter.
+            var linearDiam = Math.Abs(lineB.X - lineA.X);
+            linearDiam = Math.Clamp(linearDiam, MIN_PLANE_THICCNESS, float.MaxValue);
+
+            var delta = 2f * MathF.Atan(linearDiam / (2f * dist));
+
+            return RadsToDegrees(delta);
+        }
+
+        public static float AngularSize(Decoy decoy, D2DPoint viewPoint)
+        {
+            var dist = viewPoint.DistanceTo(decoy.Position);
+            var linearDiam = decoy.CurrentRadius;
+            var delta = 2f * MathF.Atan(linearDiam / (2f * dist));
+
+            return RadsToDegrees(delta);
+        }
+
         /// <summary>
         /// Computes the linear velocity for the specified point in relation to the rotation speed and position of the parent object.
         /// </summary>
