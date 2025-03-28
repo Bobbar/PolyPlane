@@ -12,6 +12,8 @@ namespace PolyPlane.GameObjects.Guidance
         protected GuidedMissile Missile { get; set; }
         public GameObject Target { get; set; }
 
+        private SensorType _sensorType = SensorType.HeatSeek;
+
         private const float ARM_TIME = 3f;
         private const float SENSOR_FOV = World.SENSOR_FOV * 1f;
         private const float SENSOR_FOV_DECOY = World.SENSOR_FOV * 0.3f;
@@ -53,10 +55,11 @@ namespace PolyPlane.GameObjects.Guidance
         private bool _isArmed = false;
         private float _missedTargetRot = 0f;
 
-        protected GuidanceBase(GuidedMissile missile, GameObject target)
+        protected GuidanceBase(GuidedMissile missile, GameObject target, SensorType sensorType = SensorType.Radar)
         {
             Missile = missile;
             Target = target;
+            _sensorType = sensorType;
 
             _lostLockTimer.TriggerCallback = () =>
             {
@@ -89,7 +92,11 @@ namespace PolyPlane.GameObjects.Guidance
                 _decoyDistractArm.Update(dt);
                 _pitbullTimer.Update(dt);
 
-                DoDecoySuccessBySize();
+                if (_sensorType == SensorType.HeatSeek)
+                    DoDecoySuccessByTemperature();
+                else
+                    DoDecoySuccessBySize();
+
                 DoGroundScatter();
             }
 
@@ -130,10 +137,13 @@ namespace PolyPlane.GameObjects.Guidance
         {
             var pos = this.Target.Position;
 
-            //if (this.Target is FighterPlane plane)
-            //    pos = plane.ExhaustPosition;
-
-
+            // Heat seekers will aim for the engine exhaust.
+            if (_sensorType == SensorType.HeatSeek)
+            {
+                if (this.Target is FighterPlane plane)
+                    pos = plane.ExhaustPosition;
+            }
+         
             // Try to compensate for lag?
             if (this.Target.IsNetObject)
                 pos = this.Target.Position + (this.Target.Velocity * ((float)(this.Target.LagAmount * 2f) / 1000f));
@@ -144,6 +154,8 @@ namespace PolyPlane.GameObjects.Guidance
 
         /// <summary>
         /// Consider distracting missiles with decoys.
+        /// 
+        /// Goes after decoys if their apparent size is larger than the profile of the target plane.
         /// </summary>
         protected void DoDecoySuccessBySize()
         {
@@ -213,6 +225,8 @@ namespace PolyPlane.GameObjects.Guidance
 
         /// <summary>
         /// Consider distracting missiles with decoys.
+        /// 
+        /// Goes after decoys when their apparent tempurature is greater than the target plane exhaust.
         /// </summary>
         protected void DoDecoySuccessByTemperature()
         {
@@ -282,7 +296,7 @@ namespace PolyPlane.GameObjects.Guidance
             if (maxTempObj is Decoy)
             {
                 // Decrease likelihood of decoy distractions when owner plane is locked onto the target.
-                const int IN_FOV_CHANCE = 3;
+                const int IN_FOV_CHANCE = 4;
 
                 if (ownerRadar.LockedObj != null && ownerRadar.LockedObj.Equals(this.Target))
                     DoChangeTargetChance(maxTempObj, IN_FOV_CHANCE);
