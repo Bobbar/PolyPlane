@@ -148,7 +148,6 @@ namespace PolyPlane.Rendering
             }
 
 
-            InitProceduralGenStuff();
             InitRenderTarget();
 
             _groundColorTOD = World.TimeOfDay;
@@ -234,6 +233,7 @@ namespace PolyPlane.Rendering
 
             UpdateGroundColorBrush(_ctx);
             InitClearGradientBitmap();
+            InitProceduralGenStuff(_ctx);
         }
 
         private void InitClearGradientBitmap()
@@ -255,15 +255,15 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private void InitProceduralGenStuff()
+        private void InitProceduralGenStuff(RenderContext ctx)
         {
             var rnd = new Random(1234);
 
             _cloudManager.GenClouds(rnd, NUM_CLOUDS);
-            GenTrees(rnd);
+            GenTrees(rnd, ctx);
         }
 
-        private void GenTrees(Random rnd)
+        private void GenTrees(Random rnd, RenderContext ctx)
         {
             // Gen trees.
             var treeDeDup = new HashSet<D2DPoint>();
@@ -284,13 +284,13 @@ namespace PolyPlane.Rendering
                     rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), 0f);
 
                 var type = rnd.Next(10);
-                var height = 10f + (rnd.NextFloat(1f, 3f) * 20f);
+                var height = (int)(10f + (rnd.NextFloat(1f, 3f) * 20f));
 
                 Tree newTree;
 
                 if (type <= 8)
                 {
-                    var radius = rnd.NextFloat(40f, 80f);
+                    var radius = rnd.Next(40, 80);
 
                     var leafColor = leafColorNormal;
                     leafColor.g -= rnd.NextFloat(0.0f, 0.2f);
@@ -298,12 +298,12 @@ namespace PolyPlane.Rendering
                     var trunkColor = Utilities.LerpColor(trunkColorNormal, trunkColorNormalDark, rnd.NextFloat(0f, 1f));
                     var trunkWidth = rnd.NextFloat(3f, 7f);
 
-                    newTree = new NormalTree(rndPos, height, radius, trunkWidth, trunkColor, leafColor);
+                    newTree = new NormalTree(ctx, rndPos, height, radius, trunkWidth, trunkColor, leafColor);
                 }
                 else
                 {
                     var width = rnd.NextFloat(20f, 30f);
-                    newTree = new PineTree(rndPos, height, width, trunkColorPine, leafColorPine);
+                    newTree = new PineTree(ctx, rndPos, height, width, trunkColorPine, leafColorPine);
                 }
 
                 _trees.Add(newTree);
@@ -642,7 +642,7 @@ namespace PolyPlane.Rendering
                 {
                     tree.Render(ctx, todColor, shadowColor, shadowAngle);
                 }
-            } 
+            }  
         }
 
         private void DrawGroundImpacts(RenderContext ctx)
