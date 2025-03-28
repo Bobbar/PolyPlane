@@ -314,6 +314,11 @@ namespace PolyPlane.Rendering
             Gfx.DrawPolygonClipped(Viewport, points, D2DColor.Transparent, 0f, D2DDashStyle.Solid, fillColor);
         }
 
+        public void FillPolygon(D2DPoint[] points, D2DBrush fillBrush)
+        {
+            Gfx.DrawPolygonClipped(Viewport, points, D2DColor.Transparent, 0f, D2DDashStyle.Solid, fillBrush);
+        }
+
         public void FillPolygon(RenderPoly poly, D2DColor fillColor)
         {
             Gfx.DrawPolygonClipped(Viewport, poly.Poly, D2DColor.Transparent, 0f, D2DDashStyle.Solid, fillColor);

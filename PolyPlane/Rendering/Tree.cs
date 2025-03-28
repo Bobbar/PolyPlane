@@ -6,12 +6,14 @@ namespace PolyPlane.Rendering
     public abstract class Tree : IDisposable
     {
         public D2DPoint Position;
-        public float Height;
         public float TotalHeight;
-        public D2DColor TrunkColor;
-        public D2DColor LeafColor;
+
+        protected float Height;
+        protected D2DColor TrunkColor;
+        protected D2DColor LeafColor;
         protected const float LIGHT_INTENSITY = 0.5f;
         protected const float SHADOW_LEN_SCALE = 2f;
+
         public const float TREE_SCALE = 4f;
 
         public Tree(D2DPoint position, float height, D2DColor trunkColor, D2DColor leafColor)
@@ -36,53 +38,74 @@ namespace PolyPlane.Rendering
 
     public class NormalTree : Tree
     {
-        public float Radius;
-        public float TrunkWidth;
-        public readonly D2DPoint[] TrunkPoly;
+        private float _radius;
+        private float _trunkWidth;
+        private readonly D2DPoint[] _trunkPoly;
         private D2DPoint[] _trunkTransPolyShadow;
         private D2DPoint[] _trunkTransPoly;
         private D2DPoint _leafYPos;
+        private D2DPoint _shadowLeafPos;
+        private D2DPoint _normalLeafPos;
         private D2DSize _leafSize;
         private D2DRadialGradientBrush _leafBrush = null;
+        private D2DLinearGradientBrush _trunkOverlayBrush = null;
+
 
         public NormalTree(D2DPoint pos, float height, float radius, float trunkWidth, D2DColor trunkColor, D2DColor leafColor) : base(pos, height, trunkColor, leafColor)
         {
-            Radius = radius;
-            TrunkWidth = trunkWidth;
+            _radius = radius;
+            _trunkWidth = trunkWidth;
             TotalHeight = height + radius;
 
-            TrunkPoly =
+            _trunkPoly =
             [
-                new D2DPoint(-TrunkWidth, 0),
-                new D2DPoint(TrunkWidth, 0),
-                new D2DPoint(TrunkWidth * 0.25f, this.Height),
-                new D2DPoint(-TrunkWidth * 0.25f, this.Height),
+                new D2DPoint(-_trunkWidth, 0),
+                new D2DPoint(_trunkWidth, 0),
+                new D2DPoint(_trunkWidth * 0.25f, this.Height),
+                new D2DPoint(-_trunkWidth * 0.25f, this.Height),
             ];
 
-            _trunkTransPoly = new D2DPoint[TrunkPoly.Length];
-            _trunkTransPolyShadow = new D2DPoint[TrunkPoly.Length];
+            _trunkTransPoly = new D2DPoint[_trunkPoly.Length];
+            _trunkTransPolyShadow = new D2DPoint[_trunkPoly.Length];
 
-            TrunkPoly.Translate(_trunkTransPoly, 180f, this.Position, TREE_SCALE);
+            _trunkPoly.Translate(_trunkTransPoly, 180f, this.Position, TREE_SCALE);
 
-            _leafYPos = new D2DPoint(0f, (-this.Height * TREE_SCALE) - this.Radius);
-            _leafSize = new D2DSize(Radius, Radius);
+            _leafYPos = new D2DPoint(0f, (-Height * TREE_SCALE) - (_radius - 0.1f));
+            _shadowLeafPos = this.Position - _leafYPos;
+            _normalLeafPos = this.Position + _leafYPos;
+            _leafSize = new D2DSize(_radius, _radius);
+        }
+
+        private void InitBrushes(RenderContext ctx)
+        {
+            if (_leafBrush == null)
+                _leafBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, this._radius, this._radius, [new D2DGradientStop(0f, this.LeafColor), new D2DGradientStop(1f, Utilities.LerpColor(this.LeafColor, D2DColor.Black, 0.2f))]);
+
+            // Leaf trunk occlusion overlay.
+            if (_trunkOverlayBrush == null)
+            {
+                var trunkLeafRatio = (_radius / Height);
+                var endStopPos = trunkLeafRatio - (trunkLeafRatio * 0.7f);
+                var startPos = _normalLeafPos + new D2DPoint(0f, _radius);
+                var startStop = new D2DGradientStop(0f, D2DColor.Black.WithAlpha(0.4f));
+                var endStop = new D2DGradientStop(endStopPos, D2DColor.Transparent);
+
+                _trunkOverlayBrush = ctx.Device.CreateLinearGradientBrush(startPos, this.Position, [startStop, endStop]);
+            }
         }
 
         public override void Render(RenderContext ctx, D2DColor timeOfDayColor, D2DColor shadowColor, float shadowAngle)
         {
-            if (_leafBrush == null)
-                _leafBrush = ctx.Device.CreateRadialGradientBrush(D2DPoint.Zero, D2DPoint.Zero, this.Radius, this.Radius, [new D2DGradientStop(0f, this.LeafColor), new D2DGradientStop(1f, Utilities.LerpColor(this.LeafColor, D2DColor.Black, 0.2f))]);
+            InitBrushes(ctx);
 
             // Add time of day color
             var trunkColor = Utilities.LerpColor(this.TrunkColor, timeOfDayColor, 0.3f);
             var leafToDColor = new D2DColor(0.2f, timeOfDayColor);
-            var shadowLeafPos = this.Position - _leafYPos;
-            var normalLeafPos = this.Position + _leafYPos;
 
             // Draw shadows.
 
             // Rotate trunk shadow.
-            TrunkPoly.Translate(_trunkTransPolyShadow, D2DPoint.Zero, shadowAngle, this.Position, TREE_SCALE, TREE_SCALE * SHADOW_LEN_SCALE);
+            _trunkPoly.Translate(_trunkTransPolyShadow, D2DPoint.Zero, shadowAngle, this.Position, TREE_SCALE, TREE_SCALE * SHADOW_LEN_SCALE);
 
             // Adjust the bottom two points of the shadow to line up with the bottom of the trunk.
             _trunkTransPolyShadow[0] = _trunkTransPoly[1];
@@ -96,17 +119,20 @@ namespace PolyPlane.Rendering
             ctx.RotateTransform(shadowAngle, this.Position);
             ctx.ScaleTransform(1f, SHADOW_LEN_SCALE, this.Position);
 
-            ctx.FillEllipse(new D2DEllipse(shadowLeafPos, _leafSize), shadowColor);
+            ctx.FillEllipse(new D2DEllipse(_shadowLeafPos, _leafSize), shadowColor);
 
             ctx.PopTransform();
 
-            // Draw tree.
+            // Normal trunk.
             var trunkPos = this.Position + (-D2DPoint.UnitY * TotalHeight);
             ctx.FillPolygonWithLighting(_trunkTransPoly, trunkPos, trunkColor, LIGHT_INTENSITY);
 
-            // Draw leaf gradient.
+            // Trunk occlusion overlay.
+            ctx.FillPolygon(_trunkTransPoly, _trunkOverlayBrush);
+
+            // Leaf gradient.
             ctx.PushTransform();
-            ctx.TranslateTransform(normalLeafPos * ctx.CurrentScale);
+            ctx.TranslateTransform(_normalLeafPos * ctx.CurrentScale);
 
             var leafEllipse = new D2DEllipse(D2DPoint.Zero, _leafSize);
             ctx.Gfx.FillEllipse(leafEllipse, _leafBrush);
@@ -114,7 +140,7 @@ namespace PolyPlane.Rendering
             ctx.PopTransform();
 
             // Add ToD color overlay.
-            leafEllipse.origin = normalLeafPos;
+            leafEllipse.origin = _normalLeafPos;
             ctx.FillEllipseWithLighting(leafEllipse, leafToDColor, LIGHT_INTENSITY);
         }
 
@@ -123,39 +149,42 @@ namespace PolyPlane.Rendering
             base.Dispose();
 
             _leafBrush?.Dispose();
+            _trunkOverlayBrush?.Dispose();
         }
     }
 
     public class PineTree : Tree
     {
-        public float Width;
+        private float _width;
 
-        public readonly D2DPoint[] TopPoly;
+        private readonly D2DPoint[] _topPoly;
         private D2DPoint[] _topTrans;
         private D2DPoint[] _topTransShadow;
 
-        public readonly D2DPoint[] TrunkPoly;
+        private readonly D2DPoint[] _trunkPoly;
         private D2DPoint[] _trunkTransPoly;
         private D2DPoint[] _trunkTransPolyShadow;
 
+        private D2DLinearGradientBrush _trunkOverlayBrush = null;
+
         public PineTree(D2DPoint pos, float height, float width, D2DColor trunkColor, D2DColor leafColor) : base(pos, height, trunkColor, leafColor)
         {
-            Width = width;
+            _width = width;
             TotalHeight = height;
 
-            TopPoly =
+            _topPoly =
             [
-                new D2DPoint(-(this.Width / 2f), 0),
-                new D2DPoint((this.Width / 2f), 0),
+                new D2DPoint(-(this._width / 2f), 0),
+                new D2DPoint((this._width / 2f), 0),
                 new D2DPoint(0, this.Height),
             ];
 
-            _topTrans = new D2DPoint[TopPoly.Length];
-            _topTransShadow = new D2DPoint[TopPoly.Length];
+            _topTrans = new D2DPoint[_topPoly.Length];
+            _topTransShadow = new D2DPoint[_topPoly.Length];
 
-            var trunkRect = new D2DRect(D2DPoint.Zero, new D2DSize(this.Width / 2f, this.Height));
+            var trunkRect = new D2DRect(D2DPoint.Zero, new D2DSize(this._width / 2f, this.Height));
 
-            TrunkPoly =
+            _trunkPoly =
             [
                 new D2DPoint(trunkRect.right, trunkRect.top + (trunkRect.Height * 0.5f)),
                 new D2DPoint(trunkRect.left, trunkRect.top + (trunkRect.Height * 0.5f)),
@@ -163,24 +192,35 @@ namespace PolyPlane.Rendering
                 new D2DPoint(trunkRect.right, trunkRect.bottom + (trunkRect.Height * 0.5f)),
             ];
 
-            _trunkTransPoly = new D2DPoint[TrunkPoly.Length];
-            _trunkTransPolyShadow = new D2DPoint[TrunkPoly.Length];
+            _trunkTransPoly = new D2DPoint[_trunkPoly.Length];
+            _trunkTransPolyShadow = new D2DPoint[_trunkPoly.Length];
 
-            TopPoly.Translate(_topTrans, 180f, this.Position - new D2DPoint(0, this.Height), TREE_SCALE);
-            TrunkPoly.Translate(_trunkTransPoly, 180f, this.Position, 1f);
+            _topPoly.Translate(_topTrans, 180f, this.Position - new D2DPoint(0, this.Height), TREE_SCALE);
+            _trunkPoly.Translate(_trunkTransPoly, 180f, this.Position, 1f);
 
             var shadowTopPos = this.Position + new D2DPoint(0, this.Height);
-            TopPoly.Translate(_topTransShadow, 0f, shadowTopPos, TREE_SCALE);
+            _topPoly.Translate(_topTransShadow, 0f, shadowTopPos, TREE_SCALE);
         }
 
         public override void Render(RenderContext ctx, D2DColor timeOfDayColor, D2DColor shadowColor, float shadowAngle)
         {
+            // Leaf trunk occlusion overlay.
+            if (_trunkOverlayBrush == null)
+            {
+                var endStopPos = 0.7f;
+                var startPos = this.Position - new D2DPoint(0, this.Height);
+                var startStop = new D2DGradientStop(0f, D2DColor.Black.WithAlpha(0.5f));
+                var endStop = new D2DGradientStop(endStopPos, D2DColor.Transparent);
+
+                _trunkOverlayBrush = ctx.Device.CreateLinearGradientBrush(startPos, this.Position, [startStop, endStop]);
+            }
+
             // Add time of day color
             var trunkColor = Utilities.LerpColor(this.TrunkColor, timeOfDayColor, 0.3f);
             var leafColor = Utilities.LerpColor(this.LeafColor, timeOfDayColor, 0.3f);
 
-            // Draw shadow.
-            TrunkPoly.Translate(_trunkTransPolyShadow, D2DPoint.Zero, shadowAngle, this.Position, 1f, SHADOW_LEN_SCALE);
+            // Rotate trunk shadow poly.
+            _trunkPoly.Translate(_trunkTransPolyShadow, D2DPoint.Zero, shadowAngle, this.Position, 1f, SHADOW_LEN_SCALE);
 
             //Adjust the bottom two points of the shadow to line up with the bottom of the trunk.
             _trunkTransPolyShadow[0] = _trunkTransPoly[1];
@@ -200,8 +240,22 @@ namespace PolyPlane.Rendering
 
             // Draw tree.
             var centerPos = this.Position + (-D2DPoint.UnitY * (TotalHeight * 2f));
-            ctx.FillPolygonWithLighting(_trunkTransPoly, centerPos, trunkColor, LIGHT_INTENSITY);
+
+            // Normal trunk.
+            ctx.FillPolygonWithLighting(_trunkTransPoly, centerPos + new D2DPoint(0, this.Height), trunkColor, LIGHT_INTENSITY);
+
+            // Trunk occlusion overlay.
+            ctx.FillPolygon(_trunkTransPoly, _trunkOverlayBrush);
+
+            // Normal top.
             ctx.FillPolygonWithLighting(_topTrans, centerPos, leafColor, LIGHT_INTENSITY);
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+
+            _trunkOverlayBrush?.Dispose();
         }
     }
 }

@@ -296,7 +296,7 @@ namespace PolyPlane.Rendering
                     leafColor.g -= rnd.NextFloat(0.0f, 0.2f);
 
                     var trunkColor = Utilities.LerpColor(trunkColorNormal, trunkColorNormalDark, rnd.NextFloat(0f, 1f));
-                    var trunkWidth = rnd.NextFloat(2f, 7f);
+                    var trunkWidth = rnd.NextFloat(3f, 7f);
 
                     newTree = new NormalTree(rndPos, height, radius, trunkWidth, trunkColor, leafColor);
                 }
@@ -642,7 +642,7 @@ namespace PolyPlane.Rendering
                 {
                     tree.Render(ctx, todColor, shadowColor, shadowAngle);
                 }
-            }
+            } 
         }
 
         private void DrawGroundImpacts(RenderContext ctx)
