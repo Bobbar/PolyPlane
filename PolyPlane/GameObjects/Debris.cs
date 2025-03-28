@@ -21,7 +21,7 @@ namespace PolyPlane.GameObjects
             this.RenderOrder = 3;
             this.Polygon = new RenderPoly(this, RandomPoly(8, 12));
 
-            _flame = new FlameEmitter(this, D2DPoint.Zero, 2f, 4f);
+            _flame = new FlameEmitter(this, D2DPoint.Zero, 2f, 4f, false);
         }
 
         public void ReInit(GameObject owner, D2DPoint pos, D2DPoint velo, D2DColor color)
