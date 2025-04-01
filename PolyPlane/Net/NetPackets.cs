@@ -876,7 +876,7 @@ namespace PolyPlane.Net
 
             data.AddGameID(ImpactorID);
             data.AddD2DPoint(ImpactPoint);
-            data.AddD2DPoint(ImpactPointOrigin);
+            data.AddD2DPoint(ImpactPointOrigin, World.OriginBounds);
             data.Add(NumBitsImpactType, (uint)ImpactType);
             data.AddFloat(ImpactAngle);
             data.AddFloat(DamageAmount);
@@ -890,7 +890,7 @@ namespace PolyPlane.Net
 
             ImpactorID = data.ReadGameID();
             ImpactPoint = data.ReadD2DPoint();
-            ImpactPointOrigin = data.ReadD2DPoint();
+            ImpactPointOrigin = data.ReadD2DPoint(World.OriginBounds);
             ImpactType = (ImpactType)data.Read(NumBitsImpactType);
             ImpactAngle = data.ReadFloat();
             DamageAmount = data.ReadFloat();

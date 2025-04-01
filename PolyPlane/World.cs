@@ -11,23 +11,30 @@ namespace PolyPlane
 
         public static readonly GameObjectManager ObjectManager;
 
-        public static BoundedRange[] WorldBounds = new BoundedRange[2];
-        public static BoundedRange[] VeloBounds = new BoundedRange[2];
+        // Bounded ranges for net-play quantization:
+        public static BoundedRange[] WorldBounds = // World position bounds.
+        [
+            new BoundedRange(-350000f, 350000, 0.05f), 
+            new BoundedRange(-100000f, 1000f, 0.05f)
+        ]; 
+
+        public static BoundedRange[] VeloBounds = // Velocity bounds.
+        [
+            new BoundedRange(-5000f, 5000f, 0.05f), 
+            new BoundedRange(-5000f, 5000f, 0.05f)
+        ]; 
+
+        public static BoundedRange[] OriginBounds = // Origin bounds. (For impact positions on plane polys)
+        [
+            new BoundedRange(-50f, 50f, 0.001f),
+            new BoundedRange(-50f, 50f, 0.001f)
+        ]; 
 
         private static FastNoiseLite _turbulenceNoise = new FastNoiseLite();
-
-        public static int PHYSICS_SUB_STEPS => _sub_steps;
-
 
         static World()
         {
             ObjectManager = new GameObjectManager();
-
-            WorldBounds[0] = new BoundedRange(-350000f, 350000, 0.05f);
-            WorldBounds[1] = new BoundedRange(-100000f, 1000f, 0.05f);
-
-            VeloBounds[0] = new BoundedRange(-5000f, 5000f, 0.05f);
-            VeloBounds[1] = new BoundedRange(-5000f, 5000f, 0.05f);
 
             _turbulenceNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
             _turbulenceNoise.SetFrequency(NOISE_FREQUENCY);
@@ -161,6 +168,7 @@ namespace PolyPlane
         public static bool RespawnAIPlanes = true;
         public static bool GunsOnly = false;
 
+        public static int PHYSICS_SUB_STEPS => _sub_steps;
         public static readonly int MUTLI_THREAD_COUNT = 8;
         public const int DEFAULT_FPS = 60;
         public const int DEFAULT_SUB_STEPS = 6;
