@@ -53,6 +53,9 @@ namespace PolyPlane.GameObjects.Particles
 
         private void SpawnPart()
         {
+            const float MIN_VELO = 800f;
+            const float VELO_MOVE_AMT = 45f;
+
             D2DPoint newPos = Position;
             D2DPoint newVelo = Velocity;
 
@@ -68,6 +71,10 @@ namespace PolyPlane.GameObjects.Particles
             var sVisFact = Utilities.Factor(veloMag - _visibleVelo, _visibleVelo);
             var gVisFact = Utilities.FactorWithEasing(gforce - _visibleGs * 0.5f, _visibleGs, EasingFunctions.In.EaseCircle);
             var visFact = sVisFact + gVisFact;
+
+            // Move the ellipse backwards as velo increases.
+            var veloFact = Utilities.Factor(this.Owner.Velocity.Length() - MIN_VELO, MIN_VELO);
+            newPos = Position - (this.Owner.Velocity.Normalized() * (VELO_MOVE_AMT * veloFact));
 
             // Only spawn if the particle will actually be visible.
             if (visFact >= 0.02f)

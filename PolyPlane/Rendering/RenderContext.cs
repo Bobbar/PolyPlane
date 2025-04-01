@@ -26,6 +26,7 @@ namespace PolyPlane.Rendering
         private D2DSolidColorBrush _cachedBrush;
         private float _currentScale = 1f;
         private float _currentLightingFactor = 1f;
+        private D2DColor _timeOfDayColor = D2DColor.Transparent;
 
         private const double GaussianSigma2 = 0.035;
         private readonly double GaussianSigma = Math.Sqrt(2.0 * Math.PI * GaussianSigma2);
@@ -39,12 +40,15 @@ namespace PolyPlane.Rendering
             _cachedBrush = device.CreateSolidColorBrush(D2DColor.Transparent);
         }
 
-        private void UpdateTimeOfDayLightFactor()
+        private void UpdateTimeOfDayColors()
         {
             // Compute a TimeOfDay factor to be applied to all lighting intensity.
             // Decrease lighting intensity during the day.
             var factor = Math.Clamp(Utilities.FactorWithEasing(World.TimeOfDay, World.MAX_TIMEOFDAY - 5, EasingFunctions.EaseLinear), 0.5f, 1f);
             _currentLightingFactor = factor;
+
+            var todColor = InterpolateColorGaussian(World.TimeOfDayPallet, World.TimeOfDay, World.MAX_TIMEOFDAY);
+            _timeOfDayColor = todColor;
         }
 
         /// <summary>
@@ -67,8 +71,7 @@ namespace PolyPlane.Rendering
         /// <returns></returns>
         public D2DColor GetTimeOfDayColor()
         {
-            var todColor = InterpolateColorGaussian(World.TimeOfDayPallet, World.TimeOfDay, World.MAX_TIMEOFDAY);
-            return todColor;
+            return _timeOfDayColor;
         }
 
         /// <summary>
@@ -120,7 +123,7 @@ namespace PolyPlane.Rendering
         public void BeginRender(D2DBitmap bitmap)
         {
             Gfx.BeginRender(bitmap);
-            UpdateTimeOfDayLightFactor();
+            UpdateTimeOfDayColors();
 
             // Reset on-screen/off-screen object stats.
             GraphicsExtensions.OnScreen = 0;
@@ -130,7 +133,7 @@ namespace PolyPlane.Rendering
         public void BeginRender(D2DColor color)
         {
             Gfx.BeginRender(color);
-            UpdateTimeOfDayLightFactor();
+            UpdateTimeOfDayColors();
 
             // Reset on-screen/off-screen object stats.
             GraphicsExtensions.OnScreen = 0;
