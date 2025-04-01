@@ -542,6 +542,8 @@ namespace PolyPlane.GameObjects
             var len = this.Velocity.Length() * 0.05f;
             len += thrustMag * 0.01f;
             len *= 0.6f;
+            len = Math.Clamp(len, 0f, 70f);
+
             FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
             _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
 
@@ -852,7 +854,7 @@ namespace PolyPlane.GameObjects
                 result.ImpactType |= ImpactType.DamagedTailWing;
 
             // Check for engine damage.
-            if (this.ThrustOn && !this.EngineDamaged && !Utilities.PointInPoly(_centerOfThrust.Position, this.Polygon.Poly))
+            if (!this.EngineDamaged && !Utilities.PointInPoly(_centerOfThrust.Position, poly.Poly))
                 result.ImpactType |= ImpactType.DamagedEngine;
         }
 
@@ -873,7 +875,7 @@ namespace PolyPlane.GameObjects
                 SpawnDebris(1, tailWing.Position, D2DColor.Gray);
             }
 
-            if (this.ThrustOn && !this.EngineDamaged && result.ImpactType.HasFlag(ImpactType.DamagedEngine))
+            if (!this.EngineDamaged && result.ImpactType.HasFlag(ImpactType.DamagedEngine))
             {
                 _engineFireFlame.StartSpawning();
                 this.EngineDamaged = true;
