@@ -79,6 +79,7 @@ namespace PolyPlane.Net.NetHost
         {
             // Wait for peer to connect.
             var startTime = World.CurrentTimeMs();
+
             while (Peer.State == PeerState.Connecting)
             {
                 var elap = World.CurrentTimeMs() - startTime;

@@ -32,14 +32,14 @@ namespace PolyPlane.GameObjects.Particles
         public float MaxAge = 1f;
         public float TargetRadius = 0f;
 
-        protected D2DPoint RiseRate;
+        private D2DPoint RiseRate;
 
-        protected const float DEFAULT_MAX_AGE = 30f;
-        protected const float MIN_RISE_RATE = -50f;
-        protected const float MAX_RISE_RATE = -70f;
-        protected const float WIND_SPEED = 20f; // Fake wind effect amount.
-        protected const float PARTICLE_MASS = 30f;
-        protected const float PART_GROW_AGE = 0.3f; // Age at which particle will grow to its full size.
+        const float DEFAULT_MAX_AGE = 30f;
+        const float MIN_RISE_RATE = -50f;
+        const float MAX_RISE_RATE = -70f;
+        const float WIND_SPEED = 20f; // Fake wind effect amount.
+        const float PARTICLE_MASS = 30f;
+        const float PART_GROW_AGE = 0.3f; // Age at which particle will grow to its full size.
 
         private static readonly Vector3 Luminance = new Vector3(0.2126f, 0.7152f, 0.0722f); // For flame particle lighting amount.
 
@@ -114,9 +114,7 @@ namespace PolyPlane.GameObjects.Particles
             {
                 case ParticleType.Flame or ParticleType.Dust:
 
-                    var color = Color;
-
-                    ctx.FillEllipseWithLighting(Ellipse, color, maxIntensity: 0.6f);
+                    ctx.FillEllipseWithLighting(Ellipse, Color, maxIntensity: 0.6f);
 
                     break;
 

@@ -1,5 +1,4 @@
-﻿using NetStack.Quantization;
-using PolyPlane.GameObjects;
+﻿using PolyPlane.GameObjects;
 using PolyPlane.Helpers;
 using unvell.D2DLib;
 
@@ -8,9 +7,180 @@ namespace PolyPlane
     public static class World
     {
         public static CommandLineOptions? LaunchOptions = null;
-
         public static readonly GameObjectManager ObjectManager;
+        public static GameObject ViewObject;
 
+        public static float TargetDT
+        {
+            get => _dt;
+
+            set
+            {
+                _dt = Math.Clamp(value, 0.0045f, 1f);
+
+                SetSubDT(_dt);
+            }
+        }
+
+        public static float SUB_DT
+        {
+            get => _sub_dt;
+        }
+
+        public static float ZoomScale
+        {
+            get => _zoomScale;
+
+            set
+            {
+                if (value >= 0.01f && value <= 3f)
+                    _zoomScale = value;
+            }
+        }
+
+        public static float TimeOfDay
+        {
+            get => _timeOfDay;
+
+            set
+            {
+                _timeOfDay = value % MAX_TIMEOFDAY;
+            }
+        }
+
+        public static bool IsClient
+        {
+            get { return IsNetGame && !IsServer; }
+        }
+
+        public static bool IsServer
+        {
+            get { return IsNetGame && _isServer; }
+
+            set { _isServer = value; }
+        }
+
+        public static D2DSize ViewPortSize { get; set; }
+        public static D2DSize ViewPortBaseSize { get; set; }
+        public static D2DRect ViewPortRect { get; set; }
+        public static D2DRect ViewPortRectUnscaled { get; set; }
+
+        public static float ViewPortScaleMulti
+        {
+            get
+            {
+                var multi = 1f / _zoomScale;
+                return multi;
+            }
+        }
+
+        public static bool FastPrimitives = true;
+        public static bool DrawLightMap = false;
+        public static bool DrawNoiseMap = false;
+        public static bool UseLightMap = true;
+        public static bool MissileRegen = true;
+        public static bool ShowMissilesOnRadar = false;
+        public static bool ShowLeadIndicators = true;
+        public static bool ShowAero = false;
+        public static bool ShowTracking = false;
+        public static bool ShowAITags = false;
+        public static bool EnableTurbulence = true;
+        public static bool BulletHoleDrag = true;
+        public static bool IsPaused = false;
+        public static bool IsNetGame = false;
+        public static bool FreeCameraMode = false;
+        public static bool UseSkyGradient = false;
+        public static bool RespawnAIPlanes = true;
+        public static bool GunsOnly = false;
+
+        public static float CurrentDT => _currentDT;
+        public static uint CurrentObjId = 0;
+        public static int CurrentPlayerId = 1000;
+        public static float TimeOfDayDir = -1f;
+        public static double ServerTimeOffset = 0;
+
+        public static double LAST_FRAME_TIME = 16.6d;
+        public static float TARGET_FRAME_TIME = 16.6f;
+        public static readonly float TARGET_FRAME_TIME_NET = TARGET_FRAME_TIME * 2f;
+        public const float DEFAULT_FRAME_TIME = 1000f / 60f;
+        public const double SERVER_FRAME_TIME = 1000d / NET_SERVER_FPS;
+
+        public const float MAX_TIMEOFDAY = 24f;
+        public const float TOD_RATE = 0.02f;
+
+        public static int PHYSICS_SUB_STEPS => _sub_steps;
+        public static readonly int MUTLI_THREAD_COUNT = 8;
+        public const int DEFAULT_FPS = 60;
+        public const int DEFAULT_SUB_STEPS = 6;
+        public const float DEFAULT_DT = 0.0425f;
+        public const float DEFAULT_SUB_DT = DEFAULT_DT / DEFAULT_SUB_STEPS;
+
+        public const int TARGET_FPS = 60; // Primary FPS target. Change this to match the desired refresh rate.
+        public const int NET_SERVER_FPS = 240;
+        public const int NET_CLIENT_FPS = TARGET_FPS;
+        public const float NET_INTERP_AMOUNT = 70f; // Amount of time in milliseconds for the interpolation buffer.
+
+        public const int SPATIAL_GRID_SIDELEN = 9;
+        public const float FAST_PRIMITIVE_MIN_SIZE = 1.5f;
+        public const float SCREEN_SHAKE_G = 9f; // Amount of g-force before screen shake effect.
+        public const float INERTIA_MULTI = 20f; // Mass is multiplied by this value for interia calculations.
+        public const float DEFAULT_DPI = 96f;
+        public const float SENSOR_FOV = 60f; // TODO: Not sure this belongs here. Maybe make this unique based on missile/plane types and move it there.
+        public const float MAX_ALTITUDE = 100000f; // Max density altitude.  (Air density drops to zero at this altitude)
+        public const float MIN_TURB_ALT = 3000f; // Altitude below which turbulence is at maximum.
+        public const float MAX_TURB_ALT = 20000f; // Max altitude at which turbulence decreases to zero.
+        public const float CLOUD_SCALE = 5f;
+        public const float CLOUD_MOVE_RATE = 40f;
+        public const float CLOUD_MAX_X = 400000f;
+        public const float MAX_AIR_DENSITY = 1.225f;
+      
+        public static readonly D2DColor DefaultHudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
+        public static D2DColor HudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
+        public static readonly D2DColor DefaultFlameColor = new D2DColor(0.6f, D2DColor.Yellow);
+        public static readonly D2DColor BlackSmokeColor = new D2DColor(0.6f, D2DColor.Black);
+        public static readonly D2DColor GraySmokeColor = new D2DColor(0.6f, D2DColor.Gray);
+
+        public static readonly D2DPoint Gravity = new D2DPoint(0, 19.6f);
+        public static readonly D2DPoint FieldPlaneXBounds = new D2DPoint(-350000, 350000);
+        public static readonly D2DPoint FieldXBounds = new D2DPoint(-400000, 400000);
+        public static readonly D2DPoint CloudRangeY = new D2DPoint(-30000, -2000);
+        public static readonly D2DPoint PlaneSpawnRange = new D2DPoint(-250000, 250000);
+        public static readonly float PlaneSpawnVelo = 500f;
+
+        public static readonly D2DColor[] TimeOfDayPallet =
+        [
+            new D2DColor(1f, 0.33f, 0.35f, 0.49f),
+            new D2DColor(1f, 0.33f, 0.35f, 0.49f),
+            new D2DColor(1f, 0.64f, 0.52f, 0.66f),
+            new D2DColor(1f, 0.64f, 0.52f, 0.66f),
+            new D2DColor(1f, 1f, 0.67f, 0f),
+            new D2DColor(1f, 1f, 0.47f, 0f),
+            new D2DColor(1f, 1f, 0f, 0.08f),
+            new D2DColor(1f, 1f, 0f, 0.49f),
+            new D2DColor(1f, 0.86f, 0f, 1f),
+            new D2DColor(1f, 0.64f, 0.52f, 0.66f),
+            new D2DColor(1f, 0.33f, 0.35f, 0.49f),
+            new D2DColor(1f, 0.37f, 0.4f, 0.54f),
+            new D2DColor(1f, 0.71f, 0.77f, 0.93f),
+            new D2DColor(0.5f, 0f, 0f, 0f),
+            new D2DColor(0.5f, 0f, 0f, 0f)
+        ];
+
+        private const float NOISE_FLOOR = -1f;
+        private const float NOISE_CEILING = 0.8f;
+        private const float NOISE_FREQUENCY = 0.0025f;
+        private const float MIN_TURB = 0.80f;
+        private const float MAX_TURB = 1f;
+
+        private static long _lastFrameTimeTicks = 0;
+        private static float _timeOfDay = 5f;
+        private static bool _isServer = false;
+        private static float _currentDT = TargetDT;
+        private static float _dt = DEFAULT_DT * ((float)DEFAULT_FPS / (float)TARGET_FPS);
+        private static float _sub_dt = DEFAULT_SUB_DT * ((float)DEFAULT_FPS / (float)TARGET_FPS);
+        private static int _sub_steps = DEFAULT_SUB_STEPS;
+        private static float _zoomScale = 0.11f;
+        private static GameID _viewObjectID;
         private static FastNoiseLite _turbulenceNoise = new FastNoiseLite();
 
         static World()
@@ -22,28 +192,6 @@ namespace PolyPlane
 
             TARGET_FRAME_TIME = 1000f / (float)TARGET_FPS;
             MUTLI_THREAD_COUNT = Environment.ProcessorCount;
-        }
-
-        public static double LAST_FRAME_TIME = 16.6d;
-        public static float TARGET_FRAME_TIME = 16.6f;
-        public static readonly float TARGET_FRAME_TIME_NET = TARGET_FRAME_TIME * 2f;
-        public const float DEFAULT_FRAME_TIME = 1000f / 60f;
-        public const double SERVER_FRAME_TIME = 1000d / NET_SERVER_FPS;
-        public static float CurrentDT => _currentDT;
-
-        public static float TargetDT
-        {
-            get
-            {
-                return _dt;
-            }
-
-            set
-            {
-                _dt = Math.Clamp(value, 0.0045f, 1f);
-
-                SetSubDT(_dt);
-            }
         }
 
         /// <summary>
@@ -77,174 +225,6 @@ namespace PolyPlane
             _sub_dt = dt / subSteps;
             _sub_steps = subSteps;
         }
-
-        public static float SUB_DT
-        {
-            get
-            {
-                return _sub_dt;
-            }
-        }
-
-        public const float RenderScale = 1f;
-
-        public static float ZoomScale
-        {
-            get => _zoomScale;
-
-            set
-            {
-                if (value >= 0.01f && value <= 3f)
-                    _zoomScale = value;
-            }
-        }
-
-
-        public static D2DSize ViewPortSize { get; set; }
-        public static D2DSize ViewPortBaseSize { get; set; }
-        public static D2DRect ViewPortRect { get; set; }
-        public static D2DRect ViewPortRectUnscaled { get; set; }
-
-
-        public static float ViewPortScaleMulti
-        {
-            get
-            {
-                var multi = 1f / _zoomScale;
-                return multi;
-            }
-        }
-
-        public static bool FastPrimitives = true;
-        public static bool DrawLightMap = false;
-        public static bool DrawNoiseMap = false;
-        public static bool UseLightMap = true;
-        public static bool MissileRegen = true;
-        public static bool ShowMissilesOnRadar = false;
-        public static bool ShowLeadIndicators = true;
-        public static bool ShowAero = false;
-        public static bool ShowTracking = false;
-        public static bool ShowAITags = false;
-        public static bool EnableTurbulence = true;
-        public static bool BulletHoleDrag = true;
-        public static bool IsPaused = false;
-        public static bool IsNetGame = false;
-        public static bool FreeCameraMode = false;
-        public static bool UseSkyGradient = false;
-
-        public static bool IsClient
-        {
-            get { return IsNetGame && !IsServer; }
-        }
-
-        public static bool IsServer
-        {
-            get { return IsNetGame && _isServer; }
-
-            set { _isServer = value; }
-        }
-
-        private static bool _isServer = false;
-
-        public static bool RespawnAIPlanes = true;
-        public static bool GunsOnly = false;
-
-        public static int PHYSICS_SUB_STEPS => _sub_steps;
-        public static readonly int MUTLI_THREAD_COUNT = 8;
-        public const int DEFAULT_FPS = 60;
-        public const int DEFAULT_SUB_STEPS = 6;
-        public const float DEFAULT_DT = 0.0425f;
-        public const float DEFAULT_SUB_DT = DEFAULT_DT / DEFAULT_SUB_STEPS;
-
-        private static float _currentDT = TargetDT;
-        private static float _dt = DEFAULT_DT * ((float)DEFAULT_FPS / (float)TARGET_FPS);
-        private static float _sub_dt = DEFAULT_SUB_DT * ((float)DEFAULT_FPS / (float)TARGET_FPS);
-        private static int _sub_steps = DEFAULT_SUB_STEPS;
-        private static float _zoomScale = 0.11f;
-
-        public const int TARGET_FPS = 60; // Primary FPS target. Change this to match the desired refresh rate.
-        public const int NET_SERVER_FPS = 240;
-        public const int NET_CLIENT_FPS = TARGET_FPS;
-        public const float NET_INTERP_AMOUNT = 70f; // Amount of time in milliseconds for the interpolation buffer.
-
-        public const int SPATIAL_GRID_SIDELEN = 9;
-        public const float FAST_PRIMITIVE_MIN_SIZE = 1.5f;
-        public const float SCREEN_SHAKE_G = 9f; // Amount of g-force before screen shake effect.
-        public const float INERTIA_MULTI = 20f; // Mass is multiplied by this value for interia calculations.
-        public const float DEFAULT_DPI = 96f;
-        public const float SENSOR_FOV = 60f; // TODO: Not sure this belongs here. Maybe make this unique based on missile/plane types and move it there.
-        public const float MAX_ALTITUDE = 100000f; // Max density altitude.  (Air density drops to zero at this altitude)
-        public const float MIN_TURB_ALT = 3000f; // Altitude below which turbulence is at maximum.
-        public const float MAX_TURB_ALT = 20000f; // Max altitude at which turbulence decreases to zero.
-        public const float CLOUD_SCALE = 5f;
-        public const float CLOUD_MOVE_RATE = 40f;
-        public const float CLOUD_MAX_X = 400000f;
-        public const float MAX_AIR_DENSITY = 1.225f;
-        private const float NOISE_FLOOR = -1f;
-        private const float NOISE_CEILING = 0.8f;
-        private const float NOISE_FREQUENCY = 0.0025f;
-        private const float MIN_TURB = 0.80f;
-        private const float MAX_TURB = 1f;
-
-        public static readonly D2DColor DefaultHudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
-        public static D2DColor HudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
-        public static readonly D2DColor DefaultFlameColor = new D2DColor(0.6f, D2DColor.Yellow);
-        public static readonly D2DColor BlackSmokeColor = new D2DColor(0.6f, D2DColor.Black);
-        public static readonly D2DColor GraySmokeColor = new D2DColor(0.6f, D2DColor.Gray);
-
-        public static readonly D2DPoint Gravity = new D2DPoint(0, 19.6f);
-        public static readonly D2DPoint FieldPlaneXBounds = new D2DPoint(-350000, 350000);
-        public static readonly D2DPoint FieldXBounds = new D2DPoint(-400000, 400000);
-        public static readonly D2DPoint CloudRangeY = new D2DPoint(-30000, -2000);
-        public static readonly D2DPoint PlaneSpawnRange = new D2DPoint(-250000, 250000);
-        public static readonly float PlaneSpawnVelo = 500f;
-
-        public static readonly D2DColor[] TimeOfDayPallet =
-        [
-            new D2DColor(1f, 0.33f, 0.35f, 0.49f),
-            new D2DColor(1f, 0.33f, 0.35f, 0.49f),
-            new D2DColor(1f, 0.64f, 0.52f, 0.66f),
-            new D2DColor(1f, 0.64f, 0.52f, 0.66f),
-            new D2DColor(1f, 1f, 0.67f, 0f),
-            new D2DColor(1f, 1f, 0.47f, 0f),
-            new D2DColor(1f, 1f, 0f, 0.08f),
-            new D2DColor(1f, 1f, 0f, 0.49f),
-            new D2DColor(1f, 0.86f, 0f, 1f),
-            new D2DColor(1f, 0.64f, 0.52f, 0.66f),
-            new D2DColor(1f, 0.33f, 0.35f, 0.49f),
-            new D2DColor(1f, 0.37f, 0.4f, 0.54f),
-            new D2DColor(1f, 0.71f, 0.77f, 0.93f),
-            new D2DColor(0.5f, 0f, 0f, 0f),
-            new D2DColor(0.5f, 0f, 0f, 0f)
-        ];
-
-        public static uint CurrentObjId = 0;
-        public static int CurrentPlayerId = 1000;
-
-        private static long _lastFrameTimeTicks = 0;
-
-        private static GameID ViewObjectID;
-        public static GameObject ViewObject;
-
-        public static double ServerTimeOffset = 0;
-
-        public const float MAX_TIMEOFDAY = 24f;
-        public const float TOD_RATE = 0.02f;
-
-        public static float TimeOfDay
-        {
-            get { return _timeOfDay; }
-
-            set
-            {
-                _timeOfDay = value % MAX_TIMEOFDAY;
-            }
-        }
-
-
-        public static float TimeOfDayDir = -1f;
-
-        private static float _timeOfDay = 5f;
 
         public static D2DColor GetRandomFlameColor()
         {
@@ -399,7 +379,7 @@ namespace PolyPlane
         public static GameObject GetViewObject()
         {
             var obj = ViewObject;
-            ViewObjectID = obj.ID;
+            _viewObjectID = obj.ID;
 
             return obj;
         }
@@ -414,7 +394,7 @@ namespace PolyPlane
                 if (plane != null)
                 {
                     ViewObject = plane;
-                    ViewObjectID = plane.ID;
+                    _viewObjectID = plane.ID;
                 }
             }
         }
@@ -429,14 +409,14 @@ namespace PolyPlane
                 if (plane != null)
                 {
                     ViewObject = plane;
-                    ViewObjectID = plane.ID;
+                    _viewObjectID = plane.ID;
                 }
             }
         }
 
         private static int GetNextViewID()
         {
-            if (ViewObjectID.PlayerID == -1 && ObjectManager.Planes.Count > 0)
+            if (_viewObjectID.PlayerID == -1 && ObjectManager.Planes.Count > 0)
                 return ObjectManager.Planes.First().ID.PlayerID;
 
             int nextId = -1;
@@ -444,11 +424,11 @@ namespace PolyPlane
             {
                 var plane = ObjectManager.Planes[i];
 
-                if (plane.ID.PlayerID == ViewObjectID.PlayerID && i + 1 < ObjectManager.Planes.Count)
+                if (plane.ID.PlayerID == _viewObjectID.PlayerID && i + 1 < ObjectManager.Planes.Count)
                 {
                     nextId = ObjectManager.Planes[i + 1].ID.PlayerID;
                 }
-                else if (plane.ID.PlayerID == ViewObjectID.PlayerID && i + 1 >= ObjectManager.Planes.Count)
+                else if (plane.ID.PlayerID == _viewObjectID.PlayerID && i + 1 >= ObjectManager.Planes.Count)
                 {
                     nextId = ObjectManager.Planes.First().PlayerID;
                 }
@@ -462,7 +442,7 @@ namespace PolyPlane
 
         private static int GetPrevViewID()
         {
-            if (ViewObjectID.PlayerID == -1 && ObjectManager.Planes.Count > 0)
+            if (_viewObjectID.PlayerID == -1 && ObjectManager.Planes.Count > 0)
                 return ObjectManager.Planes.Last().ID.PlayerID;
 
             int nextId = -1;
@@ -470,11 +450,11 @@ namespace PolyPlane
             {
                 var plane = ObjectManager.Planes[i];
 
-                if (plane.ID.PlayerID == ViewObjectID.PlayerID && i - 1 >= 0)
+                if (plane.ID.PlayerID == _viewObjectID.PlayerID && i - 1 >= 0)
                 {
                     nextId = ObjectManager.Planes[i - 1].ID.PlayerID;
                 }
-                else if (plane.ID.PlayerID == ViewObjectID.PlayerID && i - 1 <= 0)
+                else if (plane.ID.PlayerID == _viewObjectID.PlayerID && i - 1 <= 0)
                 {
                     nextId = ObjectManager.Planes.Last().ID.PlayerID;
                 }
