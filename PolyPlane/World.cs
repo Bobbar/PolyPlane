@@ -11,25 +11,6 @@ namespace PolyPlane
 
         public static readonly GameObjectManager ObjectManager;
 
-        // Bounded ranges for net-play quantization:
-        public static BoundedRange[] WorldBounds = // World position bounds.
-        [
-            new BoundedRange(-350000f, 350000, 0.05f), 
-            new BoundedRange(-100000f, 1000f, 0.05f)
-        ]; 
-
-        public static BoundedRange[] VeloBounds = // Velocity bounds.
-        [
-            new BoundedRange(-5000f, 5000f, 0.05f), 
-            new BoundedRange(-5000f, 5000f, 0.05f)
-        ]; 
-
-        public static BoundedRange[] OriginBounds = // Origin bounds. (For impact positions on plane polys)
-        [
-            new BoundedRange(-50f, 50f, 0.001f),
-            new BoundedRange(-50f, 50f, 0.001f)
-        ]; 
-
         private static FastNoiseLite _turbulenceNoise = new FastNoiseLite();
 
         static World()

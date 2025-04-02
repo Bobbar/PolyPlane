@@ -9,12 +9,12 @@ namespace PolyPlane.Net
     {
         public static void AddD2DPoint(this BitBuffer data, D2DPoint point)
         {
-            AddD2DPoint(data, point, World.WorldBounds);
+            data.AddD2DPoint(point, Ranges.WorldBounds);
         }
 
         public static D2DPoint ReadD2DPoint(this BitBuffer data)
         {
-            return ReadD2DPoint(data, World.WorldBounds);
+            return data.ReadD2DPoint(Ranges.WorldBounds);
         }
 
         public static void AddD2DPoint(this BitBuffer data, D2DPoint point, BoundedRange[] bounds)
@@ -59,6 +59,17 @@ namespace PolyPlane.Net
         public static float ReadFloat(this BitBuffer data)
         {
             return HalfPrecision.Dequantize(data.ReadUShort());
+        }
+
+        public static void AddFloat(this BitBuffer data, float value, BoundedRange range)
+        {
+            var quant = range.Quantize(value);
+            data.AddUInt(quant);
+        }
+
+        public static float ReadFloat(this BitBuffer data, BoundedRange range)
+        {
+            return range.Dequantize(data.ReadUInt());
         }
 
 

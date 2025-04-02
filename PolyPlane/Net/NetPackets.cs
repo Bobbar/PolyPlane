@@ -249,7 +249,7 @@ namespace PolyPlane.Net
             data.AddFloat(TimeOfDayDir);
             data.AddBool(GunsOnly);
             data.AddBool(IsPaused);
-            data.AddFloat(DeltaTime);
+            data.AddFloat(DeltaTime, Ranges.TimeDeltaBounds);
         }
 
         public override void Deserialize(BitBuffer data)
@@ -260,7 +260,7 @@ namespace PolyPlane.Net
             TimeOfDayDir = data.ReadFloat();
             GunsOnly = data.ReadBool();
             IsPaused = data.ReadBool();
-            DeltaTime = data.ReadFloat();
+            DeltaTime = data.ReadFloat(Ranges.TimeDeltaBounds);
         }
     }
 
@@ -524,7 +524,7 @@ namespace PolyPlane.Net
             base.Serialize(data);
 
             data.AddBool(IsDisabled);
-            data.AddFloat(Health);
+            data.AddFloat(Health, Ranges.HealthBounds);
             data.AddInt(Score);
             data.AddInt(Deaths);
         }
@@ -534,7 +534,7 @@ namespace PolyPlane.Net
             base.Deserialize(data);
 
             IsDisabled = data.ReadBool();
-            Health = data.ReadFloat();
+            Health = data.ReadFloat(Ranges.HealthBounds);
             Score = data.ReadInt();
             Deaths = data.ReadInt();
         }
@@ -630,8 +630,8 @@ namespace PolyPlane.Net
 
             data.AddGameID(OwnerID);
             data.AddD2DPoint(Position);
-            data.AddD2DPoint(Velocity, World.VeloBounds);
-            data.AddFloat(Rotation);
+            data.AddD2DPoint(Velocity, Ranges.VeloBounds);
+            data.AddFloat(Rotation, Ranges.AngleBounds);
             data.AddFloat(RotationSpeed);
         }
 
@@ -641,8 +641,8 @@ namespace PolyPlane.Net
 
             OwnerID = data.ReadGameID();
             Position = data.ReadD2DPoint();
-            Velocity = data.ReadD2DPoint(World.VeloBounds);
-            Rotation = data.ReadFloat();
+            Velocity = data.ReadD2DPoint(Ranges.VeloBounds);
+            Rotation = data.ReadFloat(Ranges.AngleBounds);
             RotationSpeed = data.ReadFloat();
         }
     }
@@ -767,7 +767,7 @@ namespace PolyPlane.Net
         {
             base.Serialize(data);
 
-            data.AddFloat(Deflection);
+            data.AddFloat(Deflection, Ranges.DeflectionBounds);
             data.AddBool(FiringBurst);
             data.AddBool(ThrustOn);
             data.AddBool(IsFlipped);
@@ -780,7 +780,7 @@ namespace PolyPlane.Net
         {
             base.Deserialize(data);
 
-            Deflection = data.ReadFloat();
+            Deflection = data.ReadFloat(Ranges.DeflectionBounds);
             FiringBurst = data.ReadBool();
             ThrustOn = data.ReadBool();
             IsFlipped = data.ReadBool();
@@ -822,7 +822,7 @@ namespace PolyPlane.Net
         {
             base.Serialize(data);
 
-            data.AddFloat(Deflection);
+            data.AddFloat(Deflection, Ranges.DeflectionBounds);
             data.AddBool(FlameOn);
             data.AddGameID(TargetID);
         }
@@ -831,7 +831,7 @@ namespace PolyPlane.Net
         {
             base.Deserialize(data);
 
-            Deflection = data.ReadFloat();
+            Deflection = data.ReadFloat(Ranges.DeflectionBounds);
             FlameOn = data.ReadBool();
             TargetID = data.ReadGameID();
         }
@@ -876,11 +876,11 @@ namespace PolyPlane.Net
 
             data.AddGameID(ImpactorID);
             data.AddD2DPoint(ImpactPoint);
-            data.AddD2DPoint(ImpactPointOrigin, World.OriginBounds);
+            data.AddD2DPoint(ImpactPointOrigin, Ranges.OriginBounds);
             data.Add(NumBitsImpactType, (uint)ImpactType);
-            data.AddFloat(ImpactAngle);
+            data.AddFloat(ImpactAngle, Ranges.AngleBounds);
             data.AddFloat(DamageAmount);
-            data.AddFloat(NewHealth);
+            data.AddFloat(NewHealth, Ranges.HealthBounds);
             data.AddBool(WasFlipped);
         }
 
@@ -890,11 +890,11 @@ namespace PolyPlane.Net
 
             ImpactorID = data.ReadGameID();
             ImpactPoint = data.ReadD2DPoint();
-            ImpactPointOrigin = data.ReadD2DPoint(World.OriginBounds);
+            ImpactPointOrigin = data.ReadD2DPoint(Ranges.OriginBounds);
             ImpactType = (ImpactType)data.Read(NumBitsImpactType);
-            ImpactAngle = data.ReadFloat();
+            ImpactAngle = data.ReadFloat(Ranges.AngleBounds);
             DamageAmount = data.ReadFloat();
-            NewHealth = data.ReadFloat();
+            NewHealth = data.ReadFloat(Ranges.HealthBounds);
             WasFlipped = data.ReadBool();
         }
     }
