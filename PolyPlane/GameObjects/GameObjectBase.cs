@@ -48,8 +48,12 @@ namespace PolyPlane.GameObjects
         {
             get
             {
+                // Additional factor for units.
+                // Bring the value down to better match real-life numbers. (Shooting for knots here.)
+                const float UNITS_FACTOR = 0.7f;
+
                 var dens = World.GetAltitudeDensity(this.Position);
-                return this.Velocity.Length() * dens;
+                return this.Velocity.Length() * dens * UNITS_FACTOR;
             }
         }
 

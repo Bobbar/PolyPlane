@@ -603,7 +603,7 @@ namespace PolyPlane.GameObjects
 
         private void DrawShockwave(RenderContext ctx)
         {
-            const float MIN_VELO = 850f;
+            const float MIN_VELO = 600f;
             const int NUM_SEGS = 30;
 
             // Compute speed factor and fiddle with dimensions, positions, line weight and color alpha.

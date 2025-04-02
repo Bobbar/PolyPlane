@@ -288,7 +288,7 @@ namespace PolyPlane.AI_Behavior
             const float MIN_IMPACT_TIME = 7f; // Min ground impact time to consider avoiding ground.
             const float BLOCK_PITCH_DOWN_ALT = 800f; // Do not allow pitch down angles below this altitude.
             const float EXTRA_AIM_AMT = 0.4f; // How much to pitch beyond the location of the target plane.  (Helps with dog-fighting)
-            const float MIN_VELO = 160f; // Min velo before trying to gain velocity;
+            const float MIN_VELO = 120f; // Min velo before trying to gain velocity;
             const float OK_VELO = 210f; // Velo to stop trying to gain velocity.
             const float RUN_DISTANCE = 30000f; // Cowardly IA: How close before we run away from the target plane.
             const float FIGHT_DISTANCE = 4000f; // Cowardly IA: If the target is closer than this, engage and fight them.
