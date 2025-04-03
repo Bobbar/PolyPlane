@@ -134,6 +134,39 @@ namespace PolyPlane.GameObjects.Tools
             }
         }
 
+        /// <summary>
+        /// Returns a list of line segments representing the faces of the polygon which are facing the specified direction.
+        /// </summary>
+        /// <param name="direction">Vector representing the direction to test for.</param>
+        /// <returns></returns>
+        public IEnumerable<LineSegment> GetSidesFacingDirection(D2DPoint direction)
+        {
+            // Determine if the polygon is clockwise or counter-clockwise.
+            bool clockwise = IsClockwise();
+
+            for (int i = 0; i < Poly.Length; i++)
+            {
+                var idx1 = Utilities.WrapIndex(i, Poly.Length);
+                var idx2 = Utilities.WrapIndex(i + 1, Poly.Length);
+
+                var pnt1 = Poly[idx1];
+                var pnt2 = Poly[idx2];
+
+                // Compute the direction of the current segment.
+                var segDir = (pnt1 - pnt2).Normalized();
+
+                // Flip for CW.
+                if (clockwise)
+                    segDir *= -1f;
+
+                // Valid face if cross product is greater than zero.
+                var diff = (segDir.Cross(direction));
+                if (diff > 0f)
+                {
+                    yield return new LineSegment(pnt1, pnt2);
+                }
+            }
+        }
 
         /// <summary>
         /// Returns a list of points for the faces of the polygon which are facing the specified direction.
@@ -170,6 +203,39 @@ namespace PolyPlane.GameObjects.Tools
             }
         }
 
+        /// <summary>
+        /// Returns a list of points for the faces of the polygon which are facing the specified direction.
+        /// </summary>
+        /// <param name="direction">Vector representing the direction to test for.</param>
+        /// <returns></returns>
+        public IEnumerable<D2DPoint> GetPointsFacingDirection(D2DPoint direction)
+        {
+            // Determine if the polygon is clockwise or counter-clockwise.
+            bool clockwise = IsClockwise();
+
+            for (int i = 0; i < Poly.Length; i++)
+            {
+                var idx1 = Utilities.WrapIndex(i, Poly.Length);
+                var idx2 = Utilities.WrapIndex(i + 1, Poly.Length);
+
+                var pnt1 = Poly[idx1];
+                var pnt2 = Poly[idx2];
+
+                // Compute the direction of the current segment.
+                var segDir = (pnt1 - pnt2).Normalized();
+
+                // Flip for CW.
+                if (clockwise)
+                    segDir *= -1f;
+
+                // Valid point if cross product is greater than zero.
+                var diff = (segDir.Cross(direction));
+                if (diff > 0f)
+                {
+                    yield return pnt1;
+                }
+            }
+        }
 
         /// <summary>
         /// Performs a polygon winding algorithm and returns true if the polygon is wound in the clockwise direction.

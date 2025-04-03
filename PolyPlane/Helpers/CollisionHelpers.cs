@@ -1,7 +1,5 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Tools;
-using System.Numerics;
-using unvell.D2DLib;
 
 namespace PolyPlane.Helpers
 {
@@ -124,10 +122,8 @@ namespace PolyPlane.Helpers
             }
 
             // Now do the collisions.
-            // Get relative velo and angle.
+            // Get relative velo.
             var relVelo = (impactorObj.Velocity - targetVelo) * dt;
-            var relVeloHalf = relVelo * 0.5f;
-            var angleToTarget = relVelo.Angle();
 
             // Bounding box for initial collision testing.
             var targetBounds = new BoundingBox(targetPoly.Poly, BB_INFLATE_AMT);
@@ -146,7 +142,7 @@ namespace PolyPlane.Helpers
                     if (targetBounds.BoundsRect.Contains(lagPntStart, lagPntEnd) || targetBounds.Contains(lagPntStart, lagPntEnd, impactorObj.Position))
                     {
                         // Get the sides of the poly which face the impactor.
-                        var angleToImpactor = (lagPntStart - lagPntEnd).Angle();
+                        var angleToImpactor = lagPntStart - lagPntEnd;
                         var polyFaces = targetPoly.GetSidesFacingDirection(angleToImpactor);
 
                         if (PolyIntersect(lagPntStart, lagPntEnd, polyFaces, out D2DPoint iPosLag))
@@ -159,7 +155,9 @@ namespace PolyPlane.Helpers
             }
 
             // Test the facing points of the impactor with the target poly.
+            var angleToTarget = impactorObj.Velocity - targetVelo;
             var impactorPoints = impactorObj.Polygon.GetPointsFacingDirection(angleToTarget);
+
             foreach (var pnt in impactorPoints)
             {
                 var pnt1 = pnt;
@@ -169,7 +167,7 @@ namespace PolyPlane.Helpers
                 if (targetBounds.BoundsRect.Contains(pnt1, pnt2) || targetBounds.Contains(pnt1, pnt2, impactorObj.Position))
                 {
                     // Get the sides of the poly which face the impactor.
-                    var angleToImpactor = (pnt1 - pnt2).Angle();
+                    var angleToImpactor = pnt1 - pnt2;
                     var polyFaces = targetPoly.GetSidesFacingDirection(angleToImpactor);
 
                     // Check for an intersection and get the exact location of the impact.
@@ -189,7 +187,7 @@ namespace PolyPlane.Helpers
             if (targetBounds.BoundsRect.Contains(centerPnt1, centerPnt2) || targetBounds.Contains(centerPnt1, centerPnt2))
             {
                 // Get the sides of the poly which face the impactor.
-                var angleToImpactor = (centerPnt1 - centerPnt2).Angle();
+                var angleToImpactor = centerPnt1 - centerPnt2;
                 var polyFaces = targetPoly.GetSidesFacingDirection(angleToImpactor);
 
                 // Check for an intersection and get the exact location of the impact.
@@ -216,7 +214,7 @@ namespace PolyPlane.Helpers
             var centerPnt2 = impactorObj.Position + relVelo;
 
             // Get the sides of the poly which face the impactor.
-            var angleToImpactor = (centerPnt1 - centerPnt2).Angle();
+            var angleToImpactor = centerPnt1 - centerPnt2;
             var polyFaces = targetPoly.GetSidesFacingDirection(angleToImpactor);
 
             // Check for an intersection and get the exact location of the impact.
