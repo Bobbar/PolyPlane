@@ -110,8 +110,7 @@ namespace PolyPlane
 
         public static int PHYSICS_SUB_STEPS => _sub_steps;
         public static readonly int MUTLI_THREAD_COUNT = 8;
-        public const int DEFAULT_FPS = 60;
-        public const int DEFAULT_SUB_STEPS = 6;
+     
         public const float DEFAULT_DT = 0.0425f;
         public const float DEFAULT_SUB_DT = DEFAULT_DT / DEFAULT_SUB_STEPS;
 
@@ -166,6 +165,9 @@ namespace PolyPlane
             new D2DColor(0.5f, 0f, 0f, 0f)
         ];
 
+        private const int DEFAULT_FPS = 60;
+        private const int DEFAULT_SUB_STEPS = 6;
+        private const int MAX_SUB_STEPS = 8;
         private const float NOISE_FLOOR = -1f;
         private const float NOISE_CEILING = 0.8f;
         private const float NOISE_FREQUENCY = 0.0025f;
@@ -221,6 +223,7 @@ namespace PolyPlane
         {
             // Compute sub DT and number of sub steps.
             var subSteps = (int)Math.Ceiling(dt / DEFAULT_SUB_DT);
+            subSteps = Math.Clamp(subSteps, 1, MAX_SUB_STEPS);
 
             _sub_dt = dt / subSteps;
             _sub_steps = subSteps;
