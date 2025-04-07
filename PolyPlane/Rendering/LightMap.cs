@@ -1,6 +1,8 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.Helpers;
+using System.Buffers;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
@@ -10,7 +12,8 @@ namespace PolyPlane.Rendering
     /// </summary>
     public sealed class LightMap
     {
-        private Vector4[,] _map = null;
+        private Vector4[] _map = null;
+        private ArrayPool<Vector4> _mapPool = ArrayPool<Vector4>.Create();
 
         public float SIDE_LEN
         {
@@ -21,7 +24,8 @@ namespace PolyPlane.Rendering
         const float GRADIENT_RADIUS = 450f;
 
         private D2DRect _viewport;
-        private D2DSize _gridSize;
+        private int _gridWidth = 0;
+        private int _gridHeight = 0;
         private float _sideLen = 60f;
 
         public LightMap() { }
@@ -54,6 +58,9 @@ namespace PolyPlane.Rendering
 
         private void AddObjContribution(ILightMapContributor lightContributor)
         {
+            if (_map == null)
+                return;
+
             var sampleNum = SAMPLE_NUM;
             var gradRadius = GRADIENT_RADIUS;
             var intensityFactor = 1f;
@@ -84,7 +91,7 @@ namespace PolyPlane.Rendering
                     var xo = idxX + x;
                     var yo = idxY + y;
 
-                    if (xo >= 0 && yo >= 0 && xo < _gridSize.width && yo < _gridSize.height)
+                    if (xo >= 0 && yo >= 0 && xo < _gridWidth && yo < _gridHeight)
                     {
                         // Compute the gradient from distance to center.
                         var gradPos = new D2DPoint(xo * SIDE_LEN, yo * SIDE_LEN);
@@ -99,11 +106,13 @@ namespace PolyPlane.Rendering
                             lightColor.X = Math.Clamp(intensity, 0f, 1f);
 
                             // Blend the new color.
-                            var current = _map[xo, yo];
-
+                            var idx = GetMapIndex(xo, yo);
+                          
+                            var current = _map[idx];
+                           
                             var next = Blend(current, lightColor);
 
-                            _map[xo, yo] = next;
+                            _map[idx] = next;
                         }
                     }
                 }
@@ -119,11 +128,15 @@ namespace PolyPlane.Rendering
         {
             var sample = Vector4.Zero;
 
+            if (_map == null)
+                return sample;
+
             GetGridPos(pos, out int idxX, out int idxY);
 
-            if (idxX >= 0 && idxY >= 0 && idxX < _gridSize.width && idxY < _gridSize.height)
+            if (idxX >= 0 && idxY >= 0 && idxX < _gridWidth && idxY < _gridHeight)
             {
-                sample = _map[idxX, idxY];
+                var idx = GetMapIndex(idxX, idxY);
+                sample = _map[idx];
             }
 
             return sample;
@@ -174,12 +187,6 @@ namespace PolyPlane.Rendering
             return r;
         }
 
-        private void ClearMap()
-        {
-            if (_map != null)
-                Array.Clear(_map);
-        }
-
         private void UpdateViewport(D2DRect viewport)
         {
             const int PAD = 5;
@@ -193,21 +200,42 @@ namespace PolyPlane.Rendering
             var width = (int)MathF.Floor(viewport.Width / SIDE_LEN) + PAD;
             var height = (int)MathF.Floor(viewport.Height / SIDE_LEN) + PAD;
 
-            if (_gridSize.width != width || _gridSize.height != height)
+            if (_gridWidth != width || _gridHeight != height)
             {
-                _gridSize = new D2DSize(width, height);
-                _map = new Vector4[width, height];
+                _gridWidth = width;
+                _gridHeight = height;
+
+                var len = width * height;
+
+                // Return the previous buffer and rent a new one.
+                if (_map != null)
+                    _mapPool.Return(_map);
+
+                _map = _mapPool.Rent(len);
             }
 
             _viewport = viewport;
         }
 
+        private void ClearMap()
+        {
+            if (_map != null)
+                Array.Clear(_map);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void GetGridPos(D2DPoint pos, out int X, out int Y)
         {
             var posOffset = pos - _viewport.Location;
 
             X = (int)MathF.Floor(posOffset.X / SIDE_LEN);
             Y = (int)MathF.Floor(posOffset.Y / SIDE_LEN);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int GetMapIndex(int x, int y)
+        {
+            return _gridWidth * y + x;
         }
     }
 
