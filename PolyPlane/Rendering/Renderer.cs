@@ -323,7 +323,8 @@ namespace PolyPlane.Rendering
 
             ResizeViewPort();
 
-            InitClearGradientBitmap();
+            if (World.UseSkyGradient)
+                InitClearGradientBitmap();
 
             // Resizing graphics causes spikes in FPS. Try to limit them here.
             _fpsLimiter.Wait(World.TARGET_FPS);
@@ -642,7 +643,7 @@ namespace PolyPlane.Rendering
                 {
                     tree.Render(ctx, todColor, shadowColor, shadowAngle);
                 }
-            }  
+            }
         }
 
         private void DrawGroundImpacts(RenderContext ctx)
@@ -1324,7 +1325,7 @@ namespace PolyPlane.Rendering
             const float WIDTH = 400f;
 
             var viewportsize = World.ViewPortRectUnscaled.Size;
-            
+
             // Fudge/compute the position and scaling of the chat box.
             // Apply user scaling and re-position while active for net chat. 
             var chatActive = _netMan != null && _netMan.ChatInterface.ChatIsActive;
