@@ -8,6 +8,7 @@ namespace PolyPlane.GameObjects.Fixtures
     public class Wing : GameObject, INoGameID
     {
         public WingParameters Parameters => _params;
+        public bool Visible = true;
 
         public float Deflection
         {

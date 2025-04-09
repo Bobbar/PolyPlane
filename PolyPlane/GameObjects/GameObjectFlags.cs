@@ -29,5 +29,7 @@ namespace PolyPlane.GameObjects
         /// Object will be put to sleep once its velocity is very close to zero.
         /// </summary>
         CanSleep = 16,
+
+        NetObject = 32,
     }
 }

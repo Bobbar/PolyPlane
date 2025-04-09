@@ -1,6 +1,6 @@
 ﻿using NetStack.Serialization;
 using PolyPlane.GameObjects;
-using PolyPlane.GameObjects.Manager;
+using PolyPlane.GameObjects.Managers;
 using unvell.D2DLib;
 
 namespace PolyPlane.Net
@@ -23,6 +23,18 @@ namespace PolyPlane.Net
                 var now = World.CurrentNetTimeTicks();
                 var age = TimeSpan.FromTicks(now - FrameTime).TotalMilliseconds;
                 return age;
+            }
+        }
+
+        /// <summary>
+        /// Number of frames elapsed since this packet was created.
+        /// </summary>
+        public float LagFrames
+        {
+            get
+            {
+                var frames = (float)this.Age / (float)World.LAST_FRAME_TIME;
+                return frames;
             }
         }
 

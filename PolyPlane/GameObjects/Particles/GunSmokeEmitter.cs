@@ -8,6 +8,8 @@ namespace PolyPlane.GameObjects.Particles
 {
     public class GunSmokeEmitter : FixturePoint, INoGameID
     {
+        public bool Visible = true;
+
         private GameTimer _spawnTimer;
         private D2DColor _smokeColor = new D2DColor(0.3f, D2DColor.White);
         private const int MAX_PARTS = 20;

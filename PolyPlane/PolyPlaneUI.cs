@@ -1,5 +1,5 @@
 using PolyPlane.GameObjects;
-using PolyPlane.GameObjects.Manager;
+using PolyPlane.GameObjects.Managers;
 using PolyPlane.Helpers;
 using PolyPlane.Net;
 using PolyPlane.Net.NetHost;

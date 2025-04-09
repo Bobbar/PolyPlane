@@ -1,6 +1,7 @@
 ﻿using PolyPlane.AI_Behavior;
 using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Fixtures;
+using PolyPlane.GameObjects.Managers;
 using System.Net;
 using System.Numerics;
 using unvell.D2DLib;
@@ -369,6 +370,29 @@ namespace PolyPlane.Helpers
             return rndPnt;
         }
 
+        public static D2DPoint[] RandomPoly(int nPoints, float radius)
+        {
+            var poly = new D2DPoint[nPoints];
+            var dists = new float[nPoints];
+
+            for (int i = 0; i < nPoints; i++)
+            {
+                dists[i] = Rnd.NextFloat(radius / 2f, radius);
+            }
+
+            var radians = Rnd.NextFloat(0.8f, 1f);
+            var angle = 0f;
+
+            for (int i = 0; i < nPoints; i++)
+            {
+                var pnt = new D2DPoint(MathF.Cos(angle * radians) * dists[i], MathF.Sin(angle * radians) * dists[i]);
+                poly[i] = pnt;
+                angle += (2f * MathF.PI / nPoints);
+            }
+
+            return poly;
+        }
+
         public static bool PointInPoly(D2DPoint pnt, D2DPoint[] poly)
         {
             int i, j = 0;
@@ -474,7 +498,7 @@ namespace PolyPlane.Helpers
         {
             var groundPos = new D2DPoint(obj.Position.X, 0f);
             var groundDist = obj.Position.DistanceTo(groundPos);
-            var vs = -obj.VerticalSpeed;
+            var vs = obj.Velocity.Y;
             var impactTime = groundDist / vs;
 
             return impactTime;

@@ -1,11 +1,12 @@
-﻿using PolyPlane.GameObjects.Tools;
+﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public sealed class Bullet : GameObjectPoly, ILightMapContributor
+    public sealed class Bullet : GameObjectNet, IPolygon, ILightMapContributor
     {
         public const float SPEED = 800f;
         public float Lifetime = 10f;
@@ -22,6 +23,8 @@ namespace PolyPlane.GameObjects
             new D2DPoint(0,4),
             new D2DPoint(4,3),
         };
+
+        public RenderPoly Polygon { get; set; }
 
         public Bullet() : base()
         {

@@ -1,5 +1,5 @@
 ﻿using PolyPlane.GameObjects;
-using PolyPlane.GameObjects.Manager;
+using PolyPlane.GameObjects.Managers;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 
@@ -285,7 +285,7 @@ namespace PolyPlane.AI_Behavior
         /// <returns></returns>
         public float GetAIGuidanceDirection(float dt)
         {
-            const float MIN_IMPACT_TIME = 7f; // Min ground impact time to consider avoiding ground.
+            const float MIN_IMPACT_TIME = 7.5f; // Min ground impact time to consider avoiding ground.
             const float BLOCK_PITCH_DOWN_ALT = 800f; // Do not allow pitch down angles below this altitude.
             const float EXTRA_AIM_AMT = 0.4f; // How much to pitch beyond the location of the target plane.  (Helps with dog-fighting)
             const float MIN_VELO = 120f; // Min velo before trying to gain velocity;

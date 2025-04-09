@@ -1,4 +1,4 @@
-﻿namespace PolyPlane.GameObjects.Manager
+﻿namespace PolyPlane.GameObjects.Managers
 {
     public interface IImpactEvent
     {

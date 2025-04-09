@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.GameObjects.Managers;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Net;
@@ -10,7 +11,6 @@ namespace PolyPlane.GameObjects
 {
     public abstract class GameObject : IEquatable<GameObject>, IDisposable, IFlippable
     {
-
         public int GridHash { get { return _gridHash; } }
 
         public GameID ID { get; set; } = new GameID();
@@ -38,8 +38,6 @@ namespace PolyPlane.GameObjects
                 return Utilities.PositionToAltitude(this.Position);
             }
         }
-
-        public float VerticalSpeed => _verticalSpeed;
 
         /// <summary>
         /// Air speed relative to altitude & air density.
@@ -82,37 +80,6 @@ namespace PolyPlane.GameObjects
         }
 
         /// <summary>
-        /// Lag amount in milliseconds of the most recent net update.
-        /// </summary>
-        public double LagAmount = 0;
-
-        /// <summary>
-        /// Lag amount in number of elapsed frames.
-        /// </summary>
-        public float LagAmountFrames
-        {
-            get
-            {
-                var frames = (float)this.LagAmount / (float)World.LAST_FRAME_TIME;
-                return frames;
-            }
-        }
-
-        /// <summary>
-        /// Milliseconds elapsed between now and the last net update.
-        /// </summary>
-        public double NetAge
-        {
-            get
-            {
-                var now = World.CurrentNetTimeTicks();
-                var age = now - _lastNetTime;
-                var ageMs = TimeSpan.FromTicks(age).TotalMilliseconds;
-                return ageMs;
-            }
-        }
-
-        /// <summary>
         /// Age in milliseconds.
         /// </summary>
         public double AgeMs(float dt)
@@ -143,23 +110,39 @@ namespace PolyPlane.GameObjects
         public bool IsExpired = false;
         public float RenderScale = 1f;
         public int RenderOrder = 99;
-        public bool Visible = true;
-        public bool IsNetObject = false;
         public float Age = 0f;
 
-        protected Random _rnd => Utilities.Rnd;
-        protected InterpolationBuffer<GameObjectPacket> InterpBuffer = null;
-        protected HistoricalBuffer<GameObjectPacket> HistoryBuffer = null;
+        public bool IsNetObject
+        {
+            get { return HasFlag(GameObjectFlags.NetObject); }
+
+            set
+            {
+                if (value)
+                {
+                    if (!HasFlag(GameObjectFlags.NetObject))
+                        Flags |= GameObjectFlags.NetObject;
+                }
+                else
+                {
+                    if (HasFlag(GameObjectFlags.NetObject))
+                        Flags -= GameObjectFlags.NetObject;
+                }
+            }
+        }
+
         private List<GameObject> _attachments = null;
         private List<GameObject> _attachmentsPhyics = null;
         private List<GameTimer> _timers = null;
 
         protected float _rotationSpeed = 0f;
         protected float _rotation = 0f;
+        protected int _gridHash = 0;
+
+        public float VerticalSpeed => _verticalSpeed;
+
         protected float _verticalSpeed = 0f;
         protected float _prevAlt = 0f;
-        protected long _lastNetTime = 0;
-        protected int _gridHash = 0;
 
         private bool _hasPhysicsUpdate = false;
 
@@ -167,20 +150,8 @@ namespace PolyPlane.GameObjects
 
         public GameObject()
         {
-            if (World.IsNetGame)
-                this._lastNetTime = World.CurrentNetTimeTicks();
-
             if (this is not INoGameID)
                 this.ID = new GameID(-1, World.GetNextObjectId());
-
-            if (World.IsNetGame && (this is FighterPlane || this is GuidedMissile))
-            {
-                if (HistoryBuffer == null)
-                    HistoryBuffer = new HistoricalBuffer<GameObjectPacket>(GetInterpState);
-
-                if (InterpBuffer == null)
-                    InterpBuffer = new InterpolationBuffer<GameObjectPacket>(TimeSpan.FromMilliseconds(World.NET_INTERP_AMOUNT).Ticks, GetInterpState);
-            }
 
             _hasPhysicsUpdate = ImplementsPhysicsUpdate();
         }
@@ -385,76 +356,41 @@ namespace PolyPlane.GameObjects
             if (this.IsExpired)
                 return;
 
-            if (World.IsNetGame && IsNetObject && InterpBuffer != null)
+            if (this.IsAwake)
             {
+                if (!_hasPhysicsUpdate)
+                    AdvancePositionAndRotation(dt);
 
-                if (!World.IsServer && InterpBuffer != null)
-                {
-                    var now = World.CurrentNetTimeTicks();
-                    var state = InterpBuffer.InterpolateState(now);
 
-                    if (state != null)
-                    {
-                        // Apply interpolated state.
-                        this.Velocity = state.Velocity;
-                        this.SetPosition(state.Position, state.Rotation);
-                        this.RotationSpeed = state.RotationSpeed;
-                    }
-                    else
-                    {
-                        // Just try to extrapolate if we failed to get an interpolated state.
-                        var extrapPos = this.Position + this.Velocity * dt;
-                        var extrapRot = this.Rotation + this.RotationSpeed * dt;
-                        this.SetPosition(extrapPos, extrapRot);
-                    }
-                }
-                else if (World.IsServer)
-                {
-                    // Always extrapolate on server.
-                    var extrapPos = this.Position + this.Velocity * dt;
-                    var extrapRot = this.Rotation + this.RotationSpeed * dt;
-                    this.SetPosition(extrapPos, extrapRot);
-                }
-
-                // Update physics attachments (like wings) after interpolating a new state.
-                UpdatePhysicsAttachments(0f);
+                var altDiff = this.Altitude - _prevAlt;
+                _verticalSpeed = altDiff / dt;
+                _prevAlt = this.Altitude;
             }
-            else
-            {
-                if (this.IsAwake)
-                {
-                    if (!_hasPhysicsUpdate)
-                        AdvancePositionAndRotation(dt);
 
-                    var altDiff = this.Altitude - _prevAlt;
-                    _verticalSpeed = altDiff / dt;
-                    _prevAlt = this.Altitude;
-                }
+            ClampToGround(dt);
+            UpdatePoly();
 
-                ClampToGround(dt);
-            }
         }
 
-        public virtual void NetUpdate(GameObjectPacket packet)
+        protected void UpdatePoly()
         {
-            // Don't interp on server.
-            if (!World.IsServer)
+            if (this is IPolygon polyObj)
             {
-                InterpBuffer.Enqueue(packet, packet.FrameTime);
+                if (polyObj.Polygon != null)
+                    polyObj.Polygon.Update();
             }
-            else
-            {
-                this.Velocity = packet.Velocity;
-                this.SetPosition(packet.Position, packet.Rotation);
-                this.RotationSpeed = packet.RotationSpeed;
-            }
-
-            var now = World.CurrentNetTimeTicks();
-            this.LagAmount = TimeSpan.FromTicks(now - packet.FrameTime).TotalMilliseconds;
-            this._lastNetTime = now;
         }
 
-        private void UpdatePhysicsAttachments(float dt)
+        protected void FlipPoly()
+        {
+            if (this is IPolygon polyObj)
+            {
+                if (polyObj.Polygon != null)
+                    polyObj.Polygon.FlipY();
+            }
+        }
+
+        protected void UpdatePhysicsAttachments(float dt)
         {
             if (_attachmentsPhyics == null)
                 return;
@@ -468,6 +404,8 @@ namespace PolyPlane.GameObjects
                 else
                     attachment.Update(dt);
             }
+
+            UpdatePoly();
         }
 
         private void UpdateAttachments(float dt)
@@ -563,13 +501,15 @@ namespace PolyPlane.GameObjects
 
         public virtual void Render(RenderContext ctx)
         {
-            if (this.IsExpired || !this.Visible)
+            if (this.IsExpired)
                 return;
         }
 
         public virtual void FlipY()
         {
             FlipAttachments();
+
+            FlipPoly();
         }
 
         public float GetInertia(float mass)
@@ -614,57 +554,93 @@ namespace PolyPlane.GameObjects
             this.IsExpired = true;
         }
 
-        /// <summary>
-        /// Recursively finds the root object within the <see cref="GameObject.Owner"/> relationships.
-        /// </summary>
-        /// <returns></returns>
-        public GameObject FindRootObject()
+
+        public bool CollidesWith(GameObject obj, out D2DPoint pos, float dt)
         {
-            return FindRootObject(this);
+            if (this is IPolygon polyObj)
+            {
+                if (obj is IPolygon impactPoly)
+                {
+                    return CollisionHelpers.PolygonSweepCollision(obj, impactPoly.Polygon, polyObj.Polygon, this.Velocity, dt, out pos);
+                }
+                else
+                {
+                    return CollisionHelpers.PolygonSweepCollision(obj, polyObj.Polygon, this.Velocity, dt, out pos);
+                }
+            }
+
+            pos = D2DPoint.Zero;
+            return false;
         }
 
-        private GameObject FindRootObject(GameObject obj)
-        {
-            if (obj.Owner != null)
-                return FindRootObject(obj.Owner);
-            else if (obj.Owner == null)
-                return obj;
-
-            return null;
-        }
-
-        private GameObjectPacket GetInterpState(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
-        {
-            var state = new GameObjectPacket();
-
-            state.Position = D2DPoint.Lerp(from.Position, to.Position, (float)pctElapsed);
-            state.Velocity = D2DPoint.Lerp(from.Velocity, to.Velocity, (float)pctElapsed);
-            state.Rotation = Utilities.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
-            state.RotationSpeed = Utilities.Lerp(from.RotationSpeed, to.RotationSpeed, (float)pctElapsed);
-
-            return state;
-        }
     }
 
 
-    public class GameObjectPoly : GameObject
+    public class GameObjectNet : GameObject
     {
-        public RenderPoly Polygon;
+        /// <summary>
+        /// Lag amount in milliseconds of the most recent net update.
+        /// </summary>
+        public double LagAmount = 0;
 
-        public GameObjectPoly() : base()
+        /// <summary>
+        /// Lag amount in number of elapsed frames.
+        /// </summary>
+        public float LagAmountFrames
         {
+            get
+            {
+                var frames = (float)this.LagAmount / (float)World.LAST_FRAME_TIME;
+                return frames;
+            }
         }
 
-        public GameObjectPoly(D2DPoint pos) : base(pos)
+        /// <summary>
+        /// Milliseconds elapsed between now and the last net update.
+        /// </summary>
+        public double NetAge
         {
+            get
+            {
+                var now = World.CurrentNetTimeTicks();
+                var age = now - _lastNetTime;
+                var ageMs = TimeSpan.FromTicks(age).TotalMilliseconds;
+                return ageMs;
+            }
         }
 
-        public GameObjectPoly(D2DPoint pos, D2DPoint velo) : base(pos, velo)
+        protected InterpolationBuffer<GameObjectPacket> InterpBuffer = null;
+        protected HistoricalBuffer<GameObjectPacket> HistoryBuffer = null;
+        protected long _lastNetTime = 0;
+
+        public GameObjectNet()
         {
+            InitNetBuffers();
         }
 
-        public GameObjectPoly(D2DPoint pos, D2DPoint velo, float rotation) : base(pos, velo, rotation)
+        public GameObjectNet(D2DPoint pos) : base(pos)
         {
+            InitNetBuffers();
+        }
+
+        public GameObjectNet(D2DPoint pos, D2DPoint velo, float rotation) : base(pos, velo, rotation)
+        {
+            InitNetBuffers();
+        }
+
+        private void InitNetBuffers()
+        {
+            if (World.IsNetGame)
+                this._lastNetTime = World.CurrentNetTimeTicks();
+
+            if (World.IsNetGame && (this is FighterPlane || this is GuidedMissile))
+            {
+                if (HistoryBuffer == null)
+                    HistoryBuffer = new HistoricalBuffer<GameObjectPacket>(GetInterpState);
+
+                if (InterpBuffer == null)
+                    InterpBuffer = new InterpolationBuffer<GameObjectPacket>(TimeSpan.FromMilliseconds(World.NET_INTERP_AMOUNT).Ticks, GetInterpState);
+            }
         }
 
         public override void Update(float dt)
@@ -678,29 +654,61 @@ namespace PolyPlane.GameObjects
         {
             base.DoUpdate(dt);
 
-            if (Polygon != null)
-                Polygon.Update();
+            if (World.IsNetGame && IsNetObject && InterpBuffer != null)
+            {
+
+                if (!World.IsServer && InterpBuffer != null)
+                {
+                    var now = World.CurrentNetTimeTicks();
+                    var state = InterpBuffer.InterpolateState(now);
+
+                    if (state != null)
+                    {
+                        // Apply interpolated state.
+                        this.Velocity = state.Velocity;
+                        this.SetPosition(state.Position, state.Rotation);
+                        this.RotationSpeed = state.RotationSpeed;
+                    }
+                    else
+                    {
+                        // Just try to extrapolate if we failed to get an interpolated state.
+                        var extrapPos = this.Position + this.Velocity * dt;
+                        var extrapRot = this.Rotation + this.RotationSpeed * dt;
+                        this.SetPosition(extrapPos, extrapRot);
+                    }
+                }
+                else if (World.IsServer)
+                {
+                    // Always extrapolate on server.
+                    var extrapPos = this.Position + this.Velocity * dt;
+                    var extrapRot = this.Rotation + this.RotationSpeed * dt;
+                    this.SetPosition(extrapPos, extrapRot);
+                }
+
+                // Update physics attachments (like wings) after interpolating a new state.
+                UpdatePhysicsAttachments(0f);
+            }
         }
 
-        public override void UpdateAllAttachments(float dt)
+        public virtual void NetUpdate(GameObjectPacket packet)
         {
-            base.UpdateAllAttachments(dt);
+            // Don't interp on server.
+            if (!World.IsServer)
+            {
+                InterpBuffer.Enqueue(packet, packet.FrameTime);
+            }
+            else
+            {
+                this.Velocity = packet.Velocity;
+                this.SetPosition(packet.Position, packet.Rotation);
+                this.RotationSpeed = packet.RotationSpeed;
+            }
 
-            if (Polygon != null)
-                Polygon.Update();
+            var now = World.CurrentNetTimeTicks();
+            this.LagAmount = TimeSpan.FromTicks(now - packet.FrameTime).TotalMilliseconds;
+            this._lastNetTime = now;
         }
 
-        public override void FlipY()
-        {
-            base.FlipY();
-
-            if (Polygon != null)
-                Polygon.FlipY();
-        }
-
-        /// <summary>
-        /// Records the current state to the historical buffer.  (Used for lag compensation during collisions)
-        /// </summary>
         public void RecordHistory()
         {
             if (!World.IsNetGame)
@@ -713,20 +721,35 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public bool CollidesWithNet(GameObjectPoly obj, out D2DPoint pos, out GameObjectPacket? histState, double frameTime, float dt)
+        private GameObjectPacket GetInterpState(GameObjectPacket from, GameObjectPacket to, double pctElapsed)
+        {
+            var state = new GameObjectPacket();
+
+            state.Position = D2DPoint.Lerp(from.Position, to.Position, (float)pctElapsed);
+            state.Velocity = D2DPoint.Lerp(from.Velocity, to.Velocity, (float)pctElapsed);
+            state.Rotation = Utilities.LerpAngle(from.Rotation, to.Rotation, (float)pctElapsed);
+            state.RotationSpeed = Utilities.Lerp(from.RotationSpeed, to.RotationSpeed, (float)pctElapsed);
+
+            return state;
+        }
+
+        public bool CollidesWithNet(GameObject obj, out D2DPoint pos, out GameObjectPacket? histState, double frameTime, float dt)
         {
             var histPos = this.HistoryBuffer.GetHistoricalState(frameTime);
 
             if (histPos != null)
             {
-                // Create a copy of the polygon and translate it to the historical position/rotation.
-                var histPoly = new RenderPoly(this.Polygon, histPos.Position, histPos.Rotation);
-
-                // Check for collisions against the historical position.
-                if (CollisionHelpers.PolygonSweepCollision(obj, histPoly, histPos.Velocity, dt, out pos))
+                if (this is IPolygon polyObj)
                 {
-                    histState = histPos;
-                    return true;
+                    // Create a copy of the polygon and translate it to the historical position/rotation.
+                    var histPoly = new RenderPoly(polyObj.Polygon, histPos.Position, histPos.Rotation);
+
+                    // Check for collisions against the historical position.
+                    if (CollisionHelpers.PolygonSweepCollision(obj, histPoly, histPos.Velocity, dt, out pos))
+                    {
+                        histState = histPos;
+                        return true;
+                    }
                 }
             }
             else
@@ -742,118 +765,5 @@ namespace PolyPlane.GameObjects
             return false;
         }
 
-        public bool CollidesWith(GameObjectPoly obj, out D2DPoint pos, float dt)
-        {
-            return CollisionHelpers.PolygonSweepCollision(obj, this.Polygon, this.Velocity, dt, out pos);
-        }
-
-        public bool CollidesWith(GameObject obj, out D2DPoint pos, float dt)
-        {
-            return CollisionHelpers.PolygonSweepCollision(obj, this.Polygon, this.Velocity, dt, out pos);
-        }
-
-        public void DrawVeloLines(D2DGraphics gfx, D2DColor color)
-        {
-            var dt = World.CurrentDT;
-
-            var relVelo = this.Velocity * dt;
-            var relVeloHalf = relVelo * 0.5f;
-
-            var targAngle = 0f;
-
-            if (this is Bullet || this is GuidedMissile || this is FighterPlane)
-            {
-                var nearest = World.ObjectManager.GetNear(this).Where(o => !o.ID.Equals(this.ID) && o is FighterPlane).OrderBy(o => o.Position.DistanceTo(this.Position)).FirstOrDefault();
-                if (nearest != null)
-                {
-                    relVelo = (this.Velocity - nearest.Velocity) * dt;
-                    relVeloHalf = relVelo * 0.5f;
-                    targAngle = relVelo.Angle();
-                }
-            }
-
-            foreach (var pnt in this.Polygon.Poly)
-            {
-                var aVelo = Utilities.PointVelocity(this, pnt);
-                var veloPnt1 = pnt;
-                var veloPnt2 = pnt + relVelo;
-
-
-                gfx.DrawLine(veloPnt1, veloPnt2, color, 0.5f);
-            }
-
-            var lagPntStart = this.Position - (this.Velocity * (this.LagAmountFrames * dt));
-            var lagPntEnd = this.Position;
-
-            if (this.AgeMs(dt) < (this.LagAmount * 2f))
-                gfx.DrawLine(lagPntStart, lagPntEnd, color);
-
-
-            var pnts = this.Polygon.GetPointsFacingDirection(targAngle);
-
-            foreach (var pnt in pnts)
-            {
-                gfx.FillEllipseSimple(pnt, 1f, D2DColor.Blue);
-            }
-
-        }
-
-        public virtual bool Contains(D2DPoint pnt)
-        {
-            return PointInPoly(pnt, this.Polygon.Poly);
-        }
-
-        private bool PointInPoly(D2DPoint pnt, D2DPoint[] poly)
-        {
-            int i, j = 0;
-            bool c = false;
-            for (i = 0, j = poly.Length - 1; i < poly.Length; j = i++)
-            {
-                if (((poly[i].Y > pnt.Y) != (poly[j].Y > pnt.Y)) && (pnt.X < (poly[j].X - poly[i].X) * (pnt.Y - poly[i].Y) / (poly[j].Y - poly[i].Y) + poly[i].X))
-                    c = !c;
-            }
-
-            return c;
-        }
-
-        public D2DPoint CenterOfPolygon()
-        {
-            var centroid = D2DPoint.Zero;
-
-            // List iteration
-            // Link reference:
-            // https://en.wikipedia.org/wiki/Centroid
-            foreach (var point in this.Polygon.Poly)
-                centroid += point;
-
-            centroid /= this.Polygon.Poly.Length;
-            return centroid;
-        }
-
-        public static D2DPoint[] RandomPoly(int nPoints, float radius)
-        {
-            var rnd = Utilities.Rnd;
-
-            var poly = new D2DPoint[nPoints];
-            var dists = new float[nPoints];
-
-            for (int i = 0; i < nPoints; i++)
-            {
-                dists[i] = rnd.NextFloat(radius / 2f, radius);
-            }
-
-            var radians = rnd.NextFloat(0.8f, 1f);
-            var angle = 0f;
-
-            for (int i = 0; i < nPoints; i++)
-            {
-                var pnt = new D2DPoint(MathF.Cos(angle * radians) * dists[i], MathF.Sin(angle * radians) * dists[i]);
-                poly[i] = pnt;
-                angle += (2f * MathF.PI / nPoints);
-            }
-
-            return poly;
-        }
     }
-
 }

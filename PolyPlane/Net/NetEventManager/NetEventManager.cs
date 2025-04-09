@@ -1,6 +1,6 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Interfaces;
-using PolyPlane.GameObjects.Manager;
+using PolyPlane.GameObjects.Managers;
 using PolyPlane.Helpers;
 using PolyPlane.Net.NetHost;
 using PolyPlane.Rendering;

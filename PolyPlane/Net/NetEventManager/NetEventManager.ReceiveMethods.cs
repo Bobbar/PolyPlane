@@ -1,5 +1,5 @@
 ﻿using PolyPlane.GameObjects;
-using PolyPlane.GameObjects.Manager;
+using PolyPlane.GameObjects.Managers;
 using PolyPlane.Rendering;
 
 namespace PolyPlane.Net
@@ -323,8 +323,7 @@ namespace PolyPlane.Net
                 var decoy = new Decoy(decoyOwner, decoyOwner.ExhaustPosition, decoyPacket.Velocity);
                 decoy.IsNetObject = true;
                 decoy.ID = decoyPacket.ID;
-                decoy.LagAmount = decoyPacket.Age;
-                decoy.Age = decoy.LagAmountFrames * dt;
+                decoy.Age = decoyPacket.LagFrames * dt;
 
                 decoyPacket.SyncObj(decoy);
 

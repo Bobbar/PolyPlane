@@ -2,7 +2,8 @@
 using PolyPlane.GameObjects.Animations;
 using PolyPlane.GameObjects.Fixtures;
 using PolyPlane.GameObjects.Guidance;
-using PolyPlane.GameObjects.Manager;
+using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.GameObjects.Managers;
 using PolyPlane.GameObjects.Particles;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
@@ -12,8 +13,9 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public sealed class FighterPlane : GameObjectPoly
+    public sealed class FighterPlane : GameObjectNet, IPolygon
     {
+        public RenderPoly Polygon { get; set; }
         public Gun Gun => _gun;
         public bool IsAI => _isAIPlane;
         public D2DPoint GunPosition => _gun.Position;
@@ -544,8 +546,8 @@ namespace PolyPlane.GameObjects
             len *= 0.6f;
             len = Math.Clamp(len, 0f, 70f);
 
-            FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
-            _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
+            FlamePoly.SourcePoly[1].X = -Utilities.Rnd.NextFloat(9f + len, 11f + len);
+            _flameFillColor.g = Utilities.Rnd.NextFloat(0.6f, 0.86f);
 
             FlamePoly.Update(_flamePos.Position, flameAngle, this.RenderScale);
         }

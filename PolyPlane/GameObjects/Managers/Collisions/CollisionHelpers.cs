@@ -1,7 +1,8 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Tools;
+using PolyPlane.Helpers;
 
-namespace PolyPlane.Helpers
+namespace PolyPlane.GameObjects.Managers
 {
     /// <summary>
     /// Credit: https://www.codeproject.com/Tips/862988/Find-the-Intersection-Point-of-Two-Line-Segments
@@ -44,7 +45,7 @@ namespace PolyPlane.Helpers
 
             // 4. If r x s != 0 and 0 <= t <= 1 and 0 <= u <= 1
             // the two line segments meet at the point p + t r = q + u s.
-            if (!rxs.IsZero() && (0f <= t && t <= 1f) && (0f <= u && u <= 1f))
+            if (!rxs.IsZero() && 0f <= t && t <= 1f && 0f <= u && u <= 1f)
             {
                 // We can calculate the intersection point using either t or u.
                 pos = p + t * r;
@@ -94,7 +95,8 @@ namespace PolyPlane.Helpers
             return false;
         }
 
-        public static bool PolygonSweepCollision(GameObjectPoly impactorObj, RenderPoly targetPoly, D2DPoint targetVelo, float dt, out D2DPoint impactPoint)
+
+        public static bool PolygonSweepCollision(GameObject impactorObj, RenderPoly impactorPoly, RenderPoly targetPoly, D2DPoint targetVelo, float dt, out D2DPoint impactPoint)
         {
             // Sweep-based Continuous Collision Detection technique.
             // Project lines from each polygon vert of the impactor; one point at the current position, and one point at the next/future position.
@@ -118,7 +120,7 @@ namespace PolyPlane.Helpers
             if (movedBack)
             {
                 impactorObj.Position -= impactorObj.Velocity * dt;
-                impactorObj.Polygon.Update();
+                impactorPoly.Update();
             }
 
             // Now do the collisions.
@@ -133,13 +135,13 @@ namespace PolyPlane.Helpers
             // so we need to handle collisions for the "gap" between the real bullet/plane and the net bullet on the client.
             if (World.IsNetGame)
             {
-                if (impactorObj is Bullet && impactorObj.AgeMs(dt) < (impactorObj.LagAmount * 1f))
+                if (impactorObj is Bullet netBullet && netBullet.AgeMs(dt) < netBullet.LagAmount * 1f)
                 {
-                    var lagPntStart = impactorObj.Position - (impactorObj.Velocity * (impactorObj.LagAmountFrames * dt));
-                    var lagPntEnd = impactorObj.Position;
+                    var lagPntStart = netBullet.Position - netBullet.Velocity * (netBullet.LagAmountFrames * dt);
+                    var lagPntEnd = netBullet.Position;
 
                     // Check for intersection on bounding box first.
-                    if (targetBounds.BoundsRect.Contains(lagPntStart, lagPntEnd) || targetBounds.Contains(lagPntStart, lagPntEnd, impactorObj.Position))
+                    if (targetBounds.BoundsRect.Contains(lagPntStart, lagPntEnd) || targetBounds.Contains(lagPntStart, lagPntEnd, netBullet.Position))
                     {
                         // Get the sides of the poly which face the impactor.
                         var angleToImpactor = lagPntStart - lagPntEnd;
@@ -156,7 +158,7 @@ namespace PolyPlane.Helpers
 
             // Test the facing points of the impactor with the target poly.
             var angleToTarget = impactorObj.Velocity - targetVelo;
-            var impactorPoints = impactorObj.Polygon.GetPointsFacingDirection(angleToTarget);
+            var impactorPoints = impactorPoly.GetPointsFacingDirection(angleToTarget);
 
             foreach (var pnt in impactorPoints)
             {

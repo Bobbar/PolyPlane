@@ -198,7 +198,7 @@ namespace PolyPlane.Rendering
                 dims.Add(new D2DSize(dimsX, dimsY));
             }
 
-            var poly = GameObjectPoly.RandomPoly(nPnts, radius);
+            var poly = Utilities.RandomPoly(nPnts, radius);
             var pnts = poly.ToList();
 
             var scaleX = rnd.NextFloat(2f, 5f);

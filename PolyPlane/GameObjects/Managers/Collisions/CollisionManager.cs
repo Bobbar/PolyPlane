@@ -2,7 +2,7 @@
 using PolyPlane.Helpers;
 using PolyPlane.Net;
 
-namespace PolyPlane.GameObjects.Manager
+namespace PolyPlane.GameObjects.Managers
 {
     public class CollisionManager
     {

@@ -1,5 +1,6 @@
 ﻿using PolyPlane.GameObjects.Fixtures;
 using PolyPlane.GameObjects.Guidance;
+using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Net;
@@ -8,11 +9,11 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public sealed class GuidedMissile : GameObjectPoly, ILightMapContributor
+    public sealed class GuidedMissile : GameObjectNet, IPolygon, ILightMapContributor
     {
         public float Deflection = 0f;
         public bool FlameOn = false;
-
+        public RenderPoly Polygon { get; set; }
         public GameObject Target { get; set; }
         public GuidanceBase Guidance => _guidance;
 
@@ -418,8 +419,8 @@ namespace PolyPlane.GameObjects
             var len = this.Velocity.Length() * 0.05f;
             len += thrust * 0.01f;
             len *= 0.8f;
-            FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
-            _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
+            FlamePoly.SourcePoly[1].X = -Utilities.Rnd.NextFloat(9f + len, 11f + len);
+            _flameFillColor.g = Utilities.Rnd.NextFloat(0.6f, 0.86f);
             FlamePoly.Update(_flamePos.Position, flameAngle, this.RenderScale);
         }
 

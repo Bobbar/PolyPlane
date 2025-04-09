@@ -1,13 +1,11 @@
 ﻿using PolyPlane.GameObjects.Interfaces;
-using PolyPlane.GameObjects.Manager;
 using PolyPlane.GameObjects.Particles;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using unvell.D2DLib;
 
-namespace PolyPlane.GameObjects
+namespace PolyPlane.GameObjects.Managers
 {
     /// <summary>
     /// Handles collections for all game objects and provides fast lookups and nearest neighbor searching.
@@ -442,7 +440,9 @@ namespace PolyPlane.GameObjects
                     // Perhaps if an update packet arrives after an expired packet for the same object.
                     if (obj is GuidedMissile || obj is FighterPlane)
                     {
-                        if (obj.IsNetObject && obj.NetAge > MAX_NET_AGE)
+                        var netObj = obj as GameObjectNet;
+
+                        if (obj.IsNetObject && netObj.NetAge > MAX_NET_AGE)
                             obj.IsExpired = true;
                     }
                 }

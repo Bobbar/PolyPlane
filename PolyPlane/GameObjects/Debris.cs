@@ -7,19 +7,21 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public sealed class Debris : GameObjectPoly, INoGameID
+    public sealed class Debris : GameObject, IPolygon, INoGameID
     {
         private D2DColor _color;
         private FlameEmitter _flame;
         private float _onGroundAge = 0f;
         private const float MAX_AGE = 70f;
 
+        public RenderPoly Polygon { get; set; }
+
         public Debris() : base()
         {
             this.Flags = GameObjectFlags.Pushable | GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround | GameObjectFlags.CanSleep;
             this.Mass = 40f;
             this.RenderOrder = 3;
-            this.Polygon = new RenderPoly(this, RandomPoly(8, 12));
+            this.Polygon = new RenderPoly(this, Utilities.RandomPoly(8, 12));
 
             _flame = new FlameEmitter(this, D2DPoint.Zero, 2f, 4f, false);
         }

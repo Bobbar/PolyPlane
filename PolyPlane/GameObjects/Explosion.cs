@@ -41,7 +41,7 @@ namespace PolyPlane.GameObjects
             if (this.Owner == null || this.Owner is not Bullet)
                 _hasShockWave = true;
 
-            _color.r = _rnd.NextFloat(0.8f, 1f);
+            _color.r = Utilities.Rnd.NextFloat(0.8f, 1f);
 
             int NUM_FLAME = (int)(maxRadius / 6f);
 
