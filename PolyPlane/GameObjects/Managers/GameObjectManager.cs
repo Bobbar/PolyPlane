@@ -328,6 +328,7 @@ namespace PolyPlane.GameObjects.Managers
             SyncObjQueues();
 
             PruneExpired();
+            PruneParticles();
 
             SyncObjCollections();
 
@@ -343,7 +344,6 @@ namespace PolyPlane.GameObjects.Managers
             {
                 // Update particles.
                 Particles.ForEachParallel(o => o.Update(World.CurrentDT));
-
             }
 
             _spatialGrid.Update();
@@ -389,7 +389,6 @@ namespace PolyPlane.GameObjects.Managers
             PruneExpired(Bullets);
             PruneExpired(Explosions);
             PruneExpired(Debris);
-            PruneExpired(Particles);
             PruneExpired(DummyObjs);
 
             // Prune planes.
@@ -450,8 +449,10 @@ namespace PolyPlane.GameObjects.Managers
                 if (obj.IsExpired)
                 {
                     objs.RemoveAt(i);
-                    _objLookup.Remove(obj.ID.GetHashCode());
                     obj.Dispose();
+
+                    if (obj is not INoGameID)
+                        _objLookup.Remove(obj.ID.GetHashCode());
 
                     if (recordExpired && World.IsNetGame)
                         _expiredObjs.Add(obj);
@@ -476,6 +477,53 @@ namespace PolyPlane.GameObjects.Managers
             }
 
             TotalObjects += objs.Count;
+        }
+
+        private void PruneParticles()
+        {
+            int num = 0;
+            int swapIdx = 0;
+            int count = Particles.Count;
+
+            if (count == 0)
+                return;
+
+            // Find the index (from the end) of the first un-expired particle.
+            for (int i = count - 1; i >= 0; i--)
+            {
+                var p = Particles[i];
+                if (!p.IsExpired)
+                {
+                    swapIdx = i;
+                    break;
+                }
+            }
+
+            // Start at the index found above and iterate.
+            for (int i = swapIdx; i >= 0; i--)
+            {
+                var part = Particles[i];
+
+                if (part.IsExpired)
+                {
+                    part.Dispose();
+
+                    // Swap the expired particles to the end of the list.
+                    var tmp = Particles[i];
+                    Particles[i] = Particles[swapIdx];
+                    Particles[swapIdx] = tmp;
+
+                    // Move to the next swap index.
+                    swapIdx--;
+                    num++;
+                }
+            }
+
+            // Remove the chunk of expired particles now located at the end of the list.
+            if (num > 0)
+                Particles.RemoveRange(Particles.Count - num, num);
+
+            TotalObjects += Particles.Count;
         }
 
         private void AddObject(GameObject obj)
