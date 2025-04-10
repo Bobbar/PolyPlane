@@ -8,6 +8,7 @@ namespace PolyPlane.GameObjects.Particles
 {
     public sealed class Particle : GameObject, INoGameID, ILightMapContributor
     {
+        public int Idx;
         public ParticleType Type;
 
         public D2DEllipse Ellipse = new D2DEllipse();
@@ -69,7 +70,7 @@ namespace PolyPlane.GameObjects.Particles
 
                     // Simulate the particles being blown by the wind.
                     RiseRate.X = WIND_SPEED * Utilities.FactorWithEasing(Age, MaxAge, EasingFunctions.Out.EaseQuad);
-                   
+
                     // Gradually grow until we reach the target radius.
                     var ageFactGrow = Utilities.Factor(Age, PART_GROW_AGE);
                     Radius = TargetRadius * ageFactGrow;
@@ -102,8 +103,13 @@ namespace PolyPlane.GameObjects.Particles
                     break;
             }
 
-            if (Age > MaxAge)
+            if (Age > MaxAge && !IsExpired)
+            {
+                // Add our index to the queue to be cleaned up later.
+                World.ObjectManager.ExpiredParticleIdxs.Enqueue(Idx);
+
                 IsExpired = true;
+            }
         }
 
         public override void Render(RenderContext ctx)

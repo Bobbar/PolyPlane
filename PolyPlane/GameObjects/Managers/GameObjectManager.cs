@@ -20,7 +20,7 @@ namespace PolyPlane.GameObjects.Managers
         public List<GameObject> Bullets = new();
         public List<GameObject> Explosions = new();
         public List<GameObject> Debris = new();
-        public List<GameObject> Particles = new();
+        public List<Particle> Particles = new();
         public List<GameObject> DummyObjs = new();
 
         public List<GroundImpact> GroundImpacts = new();
@@ -32,6 +32,7 @@ namespace PolyPlane.GameObjects.Managers
         public ConcurrentQueue<GameObject> NewMissiles = new();
         public ConcurrentQueue<FighterPlane> NewPlanes = new();
         public ConcurrentQueue<Particle> NewParticles = new();
+        public ConcurrentQueue<int> ExpiredParticleIdxs = new();
 
         private Dictionary<int, GameObject> _objLookup = new();
         private SpatialGridGameObject _spatialGrid = new();
@@ -92,6 +93,9 @@ namespace PolyPlane.GameObjects.Managers
         {
             Particles.Add(particle);
             _spatialGrid.Add(particle);
+
+            // Set the index for the new particle.
+            particle.Idx = Particles.Count - 1;
         }
 
         public void EnqueueParticle(Particle particle)
@@ -382,6 +386,7 @@ namespace PolyPlane.GameObjects.Managers
         {
             TotalObjects = 0;
 
+            // Prune other objects.
             PruneExpired(Missiles, recordExpired: true);
             PruneExpired(MissileTrails);
             PruneExpired(Decoys, recordExpired: true);
@@ -424,53 +429,10 @@ namespace PolyPlane.GameObjects.Managers
             // Prune particles.
             PruneParticles();
 
-            // Accum object counts.
+            // Accum new object counts.
             TotalObjects += Planes.Count;
             TotalObjects += GroundImpacts.Count;
             TotalObjects += Particles.Count;
-        }
-
-        private void PruneExpired(List<GameObject> objs, bool recordExpired = false)
-        {
-
-            for (int i = objs.Count - 1; i >= 0; i--)
-            {
-                var obj = objs[i];
-
-                // Expire any stale net objects.
-                ExpireStaleNetObject(obj);
-
-                if (obj.IsExpired)
-                {
-                    objs.RemoveAt(i);
-                    obj.Dispose();
-
-                    if (obj is not INoGameID)
-                        _objLookup.Remove(obj.ID.GetHashCode());
-
-                    if (recordExpired && World.IsNetGame)
-                        _expiredObjs.Add(obj);
-
-                    // Add explosions when missiles & bullets are expired.
-                    if (obj is GuidedMissile missile)
-                    {
-                        AddMissileExplosion(missile);
-
-                        // Remove dummy objects as needed.
-                        if (missile.Target != null && missile.Target is DummyObject)
-                        {
-                            missile.Target.IsExpired = true;
-                            _objLookup.Remove(missile.Target.ID.GetHashCode());
-                        }
-                    }
-                    else if (obj is Bullet bullet)
-                    {
-                        AddBulletExplosion(bullet);
-                    }
-                }
-            }
-
-            TotalObjects += objs.Count;
         }
 
         private void ExpireStaleNetObject(GameObject obj)
@@ -492,6 +454,92 @@ namespace PolyPlane.GameObjects.Managers
             }
         }
 
+        private void PruneExpired(List<GameObject> objs, bool recordExpired = false)
+        {
+            int num = 0;
+            int tailIdx = 0;
+            int count = objs.Count;
+
+            if (count == 0)
+                return;
+
+            // Find the index (from the end) of the first un-expired object.
+            for (int i = count - 1; i >= 0; i--)
+            {
+                var obj = objs[i];
+
+                // Expire any stale net objects.
+                ExpireStaleNetObject(obj);
+
+                if (!obj.IsExpired)
+                {
+                    tailIdx = i;
+                    break;
+                }
+            }
+
+            // Start at the index found above and iterate.
+            int swapIdx = tailIdx;
+            for (int i = tailIdx; i >= 0; i--)
+            {
+                var obj = objs[i];
+
+                // Expire any stale net objects.
+                ExpireStaleNetObject(obj);
+
+                if (obj.IsExpired)
+                {
+                    // Do additional expired logic.
+                    HandledExpired(obj, recordExpired);
+
+                    // Swap the expired object to the end of the list.
+                    var tmp = objs[i];
+                    objs[i] = objs[swapIdx];
+                    objs[swapIdx] = tmp;
+
+                    // Move to the next swap index.
+                    swapIdx--;
+                    num++;
+                }
+            }
+
+            // Remove the chunk of expired objects now located at the end of the list.
+            int numTail = objs.Count - tailIdx - 1;
+            int numRemoved = numTail + num;
+
+            objs.RemoveRange(objs.Count - numRemoved, numRemoved);
+
+            TotalObjects += objs.Count;
+        }
+
+        private void HandledExpired(GameObject obj, bool recordExpired)
+        {
+            obj.Dispose();
+
+            if (obj is not INoGameID)
+                _objLookup.Remove(obj.ID.GetHashCode());
+
+            if (recordExpired && World.IsNetGame)
+                _expiredObjs.Add(obj);
+
+            // Add explosions when missiles & bullets are expired.
+            if (obj is GuidedMissile missile)
+            {
+                AddMissileExplosion(missile);
+
+                // Remove dummy objects as needed.
+                if (missile.Target != null && missile.Target is DummyObject)
+                {
+                    missile.Target.IsExpired = true;
+                    _objLookup.Remove(missile.Target.ID.GetHashCode());
+                }
+            }
+            else if (obj is Bullet bullet)
+            {
+                AddBulletExplosion(bullet);
+            }
+        }
+
         private void PruneParticles()
         {
             int num = 0;
@@ -500,6 +548,12 @@ namespace PolyPlane.GameObjects.Managers
 
             if (count == 0)
                 return;
+
+            if (ExpiredParticleIdxs.Count == 0)
+                return;
+
+            // Sort the indices by largest to smallest.
+            var removeIdxs = ExpiredParticleIdxs.OrderDescending();
 
             // Find the index (from the end) of the first un-expired particle.
             for (int i = count - 1; i >= 0; i--)
@@ -512,25 +566,26 @@ namespace PolyPlane.GameObjects.Managers
                 }
             }
 
-            // Start at the index found above and iterate.
+            // Iterate the indices to be removed and swap each one to the end of the list.
             int swapIdx = tailIdx;
-            for (int i = tailIdx; i >= 0; i--)
+            foreach (var idx in removeIdxs)
             {
-                var p = Particles[i];
+                // Skip any indices larger than the tail, as they are already at the end.
+                if (idx > tailIdx)
+                    continue;
 
-                if (p.IsExpired)
-                {
-                    p.Dispose();
+                // Swap the expired particles to the end of the list.
+                var tmp = Particles[idx];
+                Particles[idx] = Particles[swapIdx];
+                Particles[swapIdx] = tmp;
 
-                    // Swap the expired particles to the end of the list.
-                    var tmp = Particles[i];
-                    Particles[i] = Particles[swapIdx];
-                    Particles[swapIdx] = tmp;
+                // Dispose the expired particle, and update the index for the swapped particle.
+                tmp.Dispose();
+                Particles[idx].Idx = idx;
 
-                    // Move to the next swap index.
-                    swapIdx--;
-                    num++;
-                }
+                // Move to the next swap index.
+                swapIdx--;
+                num++;
             }
 
             // Remove the chunk of expired particles now located at the end of the list.
@@ -538,6 +593,9 @@ namespace PolyPlane.GameObjects.Managers
             int numRemoved = numTail + num;
 
             Particles.RemoveRange(Particles.Count - numRemoved, numRemoved);
+
+            // Clear the indices for the next frame.
+            ExpiredParticleIdxs.Clear();
         }
 
         private void AddObject(GameObject obj)
