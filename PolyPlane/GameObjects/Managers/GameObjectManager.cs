@@ -328,7 +328,6 @@ namespace PolyPlane.GameObjects.Managers
             SyncObjQueues();
 
             PruneExpired();
-            PruneParticles();
 
             SyncObjCollections();
 
@@ -396,6 +395,9 @@ namespace PolyPlane.GameObjects.Managers
             {
                 var plane = Planes[i];
 
+                // Expire stale net planes.
+                ExpireStaleNetObject(plane);
+
                 if (plane.IsExpired)
                 {
                     if (World.IsNetGame)
@@ -406,8 +408,6 @@ namespace PolyPlane.GameObjects.Managers
                     plane.Dispose();
                 }
             }
-
-            TotalObjects += Planes.Count;
 
             // Prune ground impacts.
             for (int i = GroundImpacts.Count - 1; i >= 0; i--)
@@ -421,30 +421,24 @@ namespace PolyPlane.GameObjects.Managers
                 }
             }
 
+            // Prune particles.
+            PruneParticles();
+
+            // Accum object counts.
+            TotalObjects += Planes.Count;
             TotalObjects += GroundImpacts.Count;
+            TotalObjects += Particles.Count;
         }
 
         private void PruneExpired(List<GameObject> objs, bool recordExpired = false)
         {
-            const double MAX_NET_AGE = 500;
 
             for (int i = objs.Count - 1; i >= 0; i--)
             {
                 var obj = objs[i];
 
-                if (World.IsNetGame)
-                {
-                    // Check for stale net objects which don't appear to be receiving updates.
-                    // This really shouldn't happen, but it does rarely.
-                    // Perhaps if an update packet arrives after an expired packet for the same object.
-                    if (obj is GuidedMissile || obj is FighterPlane)
-                    {
-                        var netObj = obj as GameObjectNet;
-
-                        if (obj.IsNetObject && netObj.NetAge > MAX_NET_AGE)
-                            obj.IsExpired = true;
-                    }
-                }
+                // Expire any stale net objects.
+                ExpireStaleNetObject(obj);
 
                 if (obj.IsExpired)
                 {
@@ -479,10 +473,29 @@ namespace PolyPlane.GameObjects.Managers
             TotalObjects += objs.Count;
         }
 
+        private void ExpireStaleNetObject(GameObject obj)
+        {
+            const double MAX_NET_AGE = 500;
+
+            if (World.IsNetGame)
+            {
+                // Check for stale net objects which don't appear to be receiving updates.
+                // This really shouldn't happen, but it does rarely.
+                // Perhaps if an update packet arrives after an expired packet for the same object.
+                if (obj is GuidedMissile || obj is FighterPlane)
+                {
+                    var netObj = obj as GameObjectNet;
+
+                    if (obj.IsNetObject && netObj.NetAge > MAX_NET_AGE)
+                        obj.IsExpired = true;
+                }
+            }
+        }
+
         private void PruneParticles()
         {
             int num = 0;
-            int swapIdx = 0;
+            int tailIdx = 0;
             int count = Particles.Count;
 
             if (count == 0)
@@ -494,19 +507,20 @@ namespace PolyPlane.GameObjects.Managers
                 var p = Particles[i];
                 if (!p.IsExpired)
                 {
-                    swapIdx = i;
+                    tailIdx = i;
                     break;
                 }
             }
 
             // Start at the index found above and iterate.
-            for (int i = swapIdx; i >= 0; i--)
+            int swapIdx = tailIdx;
+            for (int i = tailIdx; i >= 0; i--)
             {
-                var part = Particles[i];
+                var p = Particles[i];
 
-                if (part.IsExpired)
+                if (p.IsExpired)
                 {
-                    part.Dispose();
+                    p.Dispose();
 
                     // Swap the expired particles to the end of the list.
                     var tmp = Particles[i];
@@ -520,10 +534,10 @@ namespace PolyPlane.GameObjects.Managers
             }
 
             // Remove the chunk of expired particles now located at the end of the list.
-            if (num > 0)
-                Particles.RemoveRange(Particles.Count - num, num);
+            int numTail = Particles.Count - tailIdx - 1;
+            int numRemoved = numTail + num;
 
-            TotalObjects += Particles.Count;
+            Particles.RemoveRange(Particles.Count - numRemoved, numRemoved);
         }
 
         private void AddObject(GameObject obj)

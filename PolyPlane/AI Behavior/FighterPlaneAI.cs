@@ -447,7 +447,7 @@ namespace PolyPlane.AI_Behavior
                     _avoidingGroundAlt = 500f;
             }
 
-            if (groundImpactTime < 0f)
+            if (groundImpactTime > MIN_IMPACT_TIME)
                 _avoidingGround = false;
 
             // Climb until no longer in danger of ground collision.
