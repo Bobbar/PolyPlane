@@ -543,8 +543,9 @@ namespace PolyPlane.GameObjects.Managers
         private void PruneParticles()
         {
             int num = 0;
-            int tailIdx = 0;
             int count = Particles.Count;
+            int lastIdx = count - 1;
+            int tailIdx = lastIdx;
 
             if (count == 0)
                 return;
@@ -555,14 +556,20 @@ namespace PolyPlane.GameObjects.Managers
             // Sort the indices by largest to smallest.
             var removeIdxs = ExpiredParticleIdxs.OrderDescending();
 
-            // Find the index (from the end) of the first un-expired particle.
-            for (int i = count - 1; i >= 0; i--)
+            // If the last index matches the first remove index, 
+            // search until we find the first unexpired particle and set the tail index.
+            // This is rarely needed as new particles are always added to the end;
+            // expired particles will be closer to the beginning.
+            if (tailIdx == removeIdxs.First())
             {
-                var p = Particles[i];
-                if (!p.IsExpired)
+                for (int i = lastIdx; i >= 0; i--)
                 {
-                    tailIdx = i;
-                    break;
+                    var p = Particles[i];
+                    if (!p.IsExpired)
+                    {
+                        tailIdx = i;
+                        break;
+                    }
                 }
             }
 
