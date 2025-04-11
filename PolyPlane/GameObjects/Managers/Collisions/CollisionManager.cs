@@ -462,6 +462,11 @@ namespace PolyPlane.GameObjects.Managers
             for (int i = 0; i < _objs.Missiles.Count; i++)
             {
                 var missile = _objs.Missiles[i];
+
+                // Skip net missiles. They should be expired by client packets if they hit the ground.
+                if (missile.IsNetObject)
+                    continue;
+
                 if (!missile.IsExpired && missile.Altitude <= missile.Velocity.Length() * dt)
                 {
                     if (Utilities.TryGetGroundCollisionPoint(missile, GROUND_LEVEL_OFFSET, dt, out D2DPoint groundImpactPos))

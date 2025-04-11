@@ -1729,6 +1729,7 @@ namespace PolyPlane.Rendering
                     _stringBuilder.AppendLine($"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}");
                     _stringBuilder.AppendLine($"Packet Loss: {_netMan.Host.PacketLoss()}");
                     _stringBuilder.AppendLine($"Packets Deferred: {_netMan.NumDeferredPackets}");
+                    _stringBuilder.AppendLine($"Packets Handled: {_netMan.NumHandledPackets}");
                     _stringBuilder.AppendLine($"Packets Expired: {_netMan.NumExpiredPackets}\n");
                 }
 

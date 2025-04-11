@@ -325,8 +325,10 @@ namespace PolyPlane.GameObjects
                 _currentFuel -= BURN_RATE * dt;
             }
 
-            if (_currentFuel <= 0f && this.Age > LIFESPAN && this.MissedTarget)
-                this.IsExpired = true;
+            // Don't expire net missiles. Wait for client packets.
+            if (!this.IsNetObject)
+                if (_currentFuel <= 0f && this.Age > LIFESPAN && this.MissedTarget)
+                    this.IsExpired = true;
 
             if (_currentFuel <= 0f)
                 FlameOn = false;

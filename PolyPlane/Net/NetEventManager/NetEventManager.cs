@@ -16,6 +16,7 @@ namespace PolyPlane.Net
         public double PacketDelay = 0;
         public int NumDeferredPackets = 0;
         public int NumExpiredPackets = 0;
+        public int NumHandledPackets = 0;
 
         private GameObjectManager _objs = World.ObjectManager;
         private SmoothDouble _packetDelayAvg = new SmoothDouble(100);
@@ -214,14 +215,28 @@ namespace PolyPlane.Net
         {
             if (packet.Age < MAX_DEFER_AGE)
             {
+                // Increment deferred count for unseen packets.
+                if (packet.NumTimesDeferred == 0)
+                    NumDeferredPackets++;
+
+                packet.NumTimesDeferred++;
                 _deferredPackets.Add(packet);
-                NumDeferredPackets++;
             }
             else
             {
                 NumExpiredPackets++;
                 //Debug.WriteLine($"Can't defer, too old!  ID: {packet.ID}  Type: {packet.Type}   Age: {packet.Age}");
             }
+        }
+
+        /// <summary>
+        /// Increments the counter for successfully deferred packets as needed.
+        /// </summary>
+        /// <param name="packet"></param>
+        private void RecordDeferSuccess(NetPacket packet)
+        {
+            if (packet.NumTimesDeferred > 0)
+                NumHandledPackets++;
         }
 
         /// <summary>
@@ -419,7 +434,7 @@ namespace PolyPlane.Net
                             var spawnPos = Utilities.FindSafeSpawnPoint();
                             resetPack.Position = spawnPos;
                             Host.EnqueuePacket(resetPack);
-                            
+
                             // Respawn the plane locally to make sure it is occupying the spawn point.
                             // Prevents the spawn point from being given to another player before the client moves its plane there.
                             resetPlane.RespawnPlane(spawnPos);

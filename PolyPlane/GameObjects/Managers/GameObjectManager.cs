@@ -553,6 +553,14 @@ namespace PolyPlane.GameObjects.Managers
             if (ExpiredParticleIdxs.Count == 0)
                 return;
 
+            // Just clear if all remaining particles are to be removed.
+            if (ExpiredParticleIdxs.Count == Particles.Count)
+            {
+                Particles.Clear();
+                ExpiredParticleIdxs.Clear();
+                return;
+            }
+
             // Sort the indices by largest to smallest.
             var removeIdxs = ExpiredParticleIdxs.OrderDescending();
 

@@ -12,6 +12,7 @@ namespace PolyPlane.Net
         public GameID ID;
         public long FrameTime;
         public uint PeerID = uint.MaxValue;
+        public int NumTimesDeferred = 0;
 
         /// <summary>
         /// Milliseconds elapsed between now and when this packet was created.

@@ -47,6 +47,8 @@ namespace PolyPlane.Net
                 plane.Health = statusPacket.Health;
                 plane.Kills = statusPacket.Score;
                 plane.Deaths = statusPacket.Deaths;
+
+                RecordDeferSuccess(statusPacket);
             }
             else
             {
@@ -70,6 +72,8 @@ namespace PolyPlane.Net
                 victimPlane.DoPlayerKilled(scorePlane, scorePacket.ImpactType);
 
                 PlayerScoredEvent?.Invoke(this, new PlayerScoredEventArgs(scorePlane, victimPlane, scorePacket.WasHeadshot));
+
+                RecordDeferSuccess(scorePacket);
             }
             else
             {
@@ -125,6 +129,8 @@ namespace PolyPlane.Net
                 return;
             }
 
+            RecordDeferSuccess(listPacket);
+
             foreach (var planeUpdPacket in listPacket.Planes)
             {
                 HandleNetPlaneUpdate(planeUpdPacket);
@@ -139,6 +145,8 @@ namespace PolyPlane.Net
                 DeferPacket(planePacket);
                 return;
             }
+
+            RecordDeferSuccess(planePacket);
 
             var netPlane = GetNetPlane(planePacket.ID);
 
@@ -184,6 +192,8 @@ namespace PolyPlane.Net
                     missilePacket.SyncObj(netMissile);
                     netMissile.NetUpdate(missilePacket);
                 }
+
+                RecordDeferSuccess(missilePacket);
             }
             else
             {
@@ -252,6 +262,8 @@ namespace PolyPlane.Net
                     if (flipped)
                         target.FlipY();
                 }
+
+                RecordDeferSuccess(packet);
             }
         }
 
@@ -281,6 +293,8 @@ namespace PolyPlane.Net
             bullet.SetPosition(extrapPos);
 
             _objs.AddBullet(bullet);
+
+            RecordDeferSuccess(bulletPacket);
         }
 
         private void HandleNewMissile(MissilePacket missilePacket)
@@ -305,6 +319,8 @@ namespace PolyPlane.Net
                 missile.LagAmount = missilePacket.Age;
 
                 _objs.AddMissile(missile);
+
+                RecordDeferSuccess(missilePacket);
             }
             else
             {
@@ -328,6 +344,8 @@ namespace PolyPlane.Net
                 decoyPacket.SyncObj(decoy);
 
                 _objs.EnqueueDecoy(decoy);
+
+                RecordDeferSuccess(decoyPacket);
             }
             else
             {

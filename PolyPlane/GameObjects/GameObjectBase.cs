@@ -111,25 +111,7 @@ namespace PolyPlane.GameObjects
         public float RenderScale = 1f;
         public int RenderOrder = 99;
         public float Age = 0f;
-
-        public bool IsNetObject
-        {
-            get { return HasFlag(GameObjectFlags.NetObject); }
-
-            set
-            {
-                if (value)
-                {
-                    if (!HasFlag(GameObjectFlags.NetObject))
-                        Flags |= GameObjectFlags.NetObject;
-                }
-                else
-                {
-                    if (HasFlag(GameObjectFlags.NetObject))
-                        Flags -= GameObjectFlags.NetObject;
-                }
-            }
-        }
+        public bool IsNetObject = false;
 
         private List<GameObject> _attachments = null;
         private List<GameObject> _attachmentsPhyics = null;
@@ -138,12 +120,6 @@ namespace PolyPlane.GameObjects
         protected float _rotationSpeed = 0f;
         protected float _rotation = 0f;
         protected int _gridHash = 0;
-
-        public float VerticalSpeed => _verticalSpeed;
-
-        protected float _verticalSpeed = 0f;
-        protected float _prevAlt = 0f;
-
         private bool _hasPhysicsUpdate = false;
 
         private const float MAX_ROT_SPD = 3000f;
@@ -360,16 +336,10 @@ namespace PolyPlane.GameObjects
             {
                 if (!_hasPhysicsUpdate)
                     AdvancePositionAndRotation(dt);
-
-
-                var altDiff = this.Altitude - _prevAlt;
-                _verticalSpeed = altDiff / dt;
-                _prevAlt = this.Altitude;
             }
 
             ClampToGround(dt);
             UpdatePoly();
-
         }
 
         protected void UpdatePoly()
