@@ -116,10 +116,9 @@ namespace PolyPlane.GameObjects.Particles
                 case ParticleType.Flame or ParticleType.Dust:
 
                     var ageFactFade = 1f - Utilities.Factor(Age, MaxAge);
-                    var ageFactSmoke = Utilities.Factor(Age, MaxAge * 3f);
                     var alpha = StartColor.a * ageFactFade;
-
-                    Color = Utilities.LerpColorWithAlpha(Color, EndColor, ageFactSmoke, alpha);
+                    var ageFactSmoke = Utilities.Factor(Age * 4f, MaxAge);
+                    Color = Utilities.LerpColorWithAlpha(StartColor, EndColor, ageFactSmoke, alpha);
 
                     ctx.FillEllipseWithLighting(Ellipse, Color, maxIntensity: 0.6f);
 
