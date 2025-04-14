@@ -14,16 +14,16 @@ namespace PolyPlane.GameObjects.Managers
     {
         public int TotalObjects = 0;
 
-        public List<GameObject> Missiles = new();
-        public List<GameObject> MissileTrails = new();
-        public List<GameObject> Decoys = new();
-        public List<GameObject> Bullets = new();
-        public List<GameObject> Explosions = new();
-        public List<GameObject> Debris = new();
-        public List<Particle> Particles = new();
+        public List<GameObject> Missiles = new(50);
+        public List<GameObject> MissileTrails = new(50);
+        public List<GameObject> Decoys = new(1000);
+        public List<GameObject> Bullets = new(1000);
+        public List<GameObject> Explosions = new(1000);
+        public List<GameObject> Debris = new(2000);
+        public List<Particle> Particles = new(60000);
         public List<GameObject> DummyObjs = new();
 
-        public List<GroundImpact> GroundImpacts = new();
+        public List<GroundImpact> GroundImpacts = new(5000);
         public List<FighterPlane> Planes = new();
 
         public ConcurrentQueue<Explosion> NewExplosions = new();
@@ -39,7 +39,7 @@ namespace PolyPlane.GameObjects.Managers
         private SpatialGridGameObject _spatialGrid = new();
 
         private List<GameObject> _allNetObjects = new();
-        private List<GameObject> _allObjects = new();
+        private List<GameObject> _allObjects = new(80000);
         private List<GameObject> _expiredObjs = new();
 
         private GameObjectPool<Particle> _particlePool = new(() => new Particle());
