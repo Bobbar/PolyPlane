@@ -1403,7 +1403,7 @@ namespace PolyPlane.Rendering
 
                 if (msg.Displayed && msg.TargetPlayerID.Equals(viewPlane.ID))
                 {
-                    var color = Utilities.LerpColor(D2DColor.Red, D2DColor.Transparent, msg.Age / msg.LIFESPAN);
+                    var color = Utilities.LerpColor(msg.Color, D2DColor.Transparent, msg.Age / msg.LIFESPAN);
                     var rect = new D2DRect(msg.RenderPos, new D2DSize(600, 50));
                     ctx.DrawText(msg.Message, color, _textConsolas30Centered, rect);
                 }
@@ -1573,7 +1573,7 @@ namespace PolyPlane.Rendering
                 else
                     msg = $"Destroyed {e.Target.PlayerName}!";
 
-                var scoringPlayerMsg = new PopMessage(msg, startPos, e.Player.ID);
+                var scoringPlayerMsg = new PopMessage(msg, startPos, e.Player.ID, D2DColor.GreenYellow);
                 _popMessages.Add(scoringPlayerMsg);
 
                 // Message for destroyed player.

@@ -1,5 +1,6 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.Helpers;
+using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
 {
@@ -11,6 +12,7 @@ namespace PolyPlane.Rendering
         public D2DPoint RenderPos = D2DPoint.Zero;
         public bool Displayed = true;
         public GameID TargetPlayerID;
+        public D2DColor Color = D2DColor.Red;
 
         public readonly float LIFESPAN = 20f;
 
@@ -27,6 +29,16 @@ namespace PolyPlane.Rendering
             Message = message;
             Position = position;
             TargetPlayerID = targetPlayerID;
+
+            _curSideAmt = Utilities.Rnd.NextFloat(-SIDE_AMT * 0.5f, SIDE_AMT * 0.5f);
+        }
+
+        public PopMessage(string message, D2DPoint position, GameID targetPlayerID, D2DColor color)
+        {
+            Message = message;
+            Position = position;
+            TargetPlayerID = targetPlayerID;
+            Color = color;
 
             _curSideAmt = Utilities.Rnd.NextFloat(-SIDE_AMT * 0.5f, SIDE_AMT * 0.5f);
         }
