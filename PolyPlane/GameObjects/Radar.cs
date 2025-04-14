@@ -105,12 +105,12 @@ namespace PolyPlane.GameObjects
                 return;
 
             var dist = HostPlane.Position.DistanceTo(obj.Position);
-            var angle = (HostPlane.Position - obj.Position).Angle();
+            var dir = (HostPlane.Position - obj.Position).Normalized();
             var radDist = _radius / _maxRange * dist;
-            var radPos = D2DPoint.Zero - Utilities.AngleToVectorDegrees(angle, radDist);
+            var radPos = D2DPoint.Zero - (dir * radDist);
 
             if (dist > _maxRange)
-                radPos = D2DPoint.Zero - Utilities.AngleToVectorDegrees(angle, _radius);
+                radPos = D2DPoint.Zero - (dir * _radius);
 
             AddOrRefresh(obj, radPos);
         }
@@ -142,7 +142,7 @@ namespace PolyPlane.GameObjects
                     else
                     {
                         // Draw direction line.
-                        gfx.DrawLine(p.RadarPos, p.RadarPos + Utilities.AngleToVectorDegrees(p.Obj.Velocity.Angle(), 7f), pColor);
+                        gfx.DrawLine(p.RadarPos, p.RadarPos + (p.Obj.Velocity.Normalized() * 7f), pColor);
 
                         gfx.FillRectangle(new D2DRect(p.RadarPos, new D2DSize(6f, 6f)), pColor);
                     }
