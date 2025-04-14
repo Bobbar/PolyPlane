@@ -38,6 +38,8 @@ namespace PolyPlane.Rendering
             LightMap = new LightMap();
 
             _cachedBrush = device.CreateSolidColorBrush(D2DColor.Transparent);
+
+            UpdateTimeOfDayColors();
         }
 
         private void UpdateTimeOfDayColors()
