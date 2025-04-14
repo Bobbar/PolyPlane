@@ -613,7 +613,11 @@ namespace PolyPlane.GameObjects.Managers
             {
                 // Skip any indices larger than the tail, as they are already at the end.
                 if (idx > tailIdx)
+                {
+                    // Dispose the tail particles.
+                    Particles[idx].Dispose();
                     continue;
+                }
 
                 // Swap the expired particles to the end of the list.
                 var tmp = Particles[idx];
