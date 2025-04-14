@@ -39,7 +39,9 @@ namespace PolyPlane.Helpers
                 {
                     RemoveFromSequence(entry);
 
-                    _entries.RemoveAt(i);
+                    // Move to the end of the list and remove.
+                    _entries[i] = _entries[_entries.Count - 1];
+                    _entries.RemoveAt(_entries.Count - 1);
                 }
                 else
                 {
