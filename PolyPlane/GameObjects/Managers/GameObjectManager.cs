@@ -26,6 +26,7 @@ namespace PolyPlane.GameObjects.Managers
         public List<GroundImpact> GroundImpacts = new();
         public List<FighterPlane> Planes = new();
 
+        public ConcurrentQueue<Explosion> NewExplosions = new();
         public ConcurrentQueue<GameObject> NewDecoys = new();
         public ConcurrentQueue<GameObject> NewDebris = new();
         public ConcurrentQueue<GameObject> NewBullets = new();
@@ -199,12 +200,11 @@ namespace PolyPlane.GameObjects.Managers
             NewDecoys.Enqueue(decoy);
         }
 
-        private void AddExplosion(GameObject explosion)
+        private void EnqueueExplosion(Explosion explosion)
         {
             if (!Contains(explosion))
             {
-                AddObject(explosion);
-                Explosions.Add(explosion);
+                NewExplosions.Enqueue(explosion);
 
                 if (explosion.Altitude <= 10f)
                 {
@@ -231,7 +231,7 @@ namespace PolyPlane.GameObjects.Managers
             var explosion = _explosionPool.RentObject();
             explosion.ReInit(missile, 300f, 2.4f);
 
-            AddExplosion(explosion);
+            EnqueueExplosion(explosion);
         }
 
         private void AddBulletExplosion(Bullet bullet)
@@ -239,7 +239,7 @@ namespace PolyPlane.GameObjects.Managers
             var explosion = _explosionPool.RentObject();
             explosion.ReInit(bullet, 50f, 1.5f);
 
-            AddExplosion(explosion);
+            EnqueueExplosion(explosion);
         }
 
         public void ReturnExplosion(Explosion explosion)
@@ -329,9 +329,9 @@ namespace PolyPlane.GameObjects.Managers
         /// </summary>
         public void Update(float dt)
         {
-            SyncObjQueues();
-
             PruneExpired();
+
+            SyncObjQueues();
 
             SyncObjCollections();
 
@@ -463,7 +463,22 @@ namespace PolyPlane.GameObjects.Managers
             if (count == 0)
                 return;
 
+            // Special case for only one remaining object.
+            if (count == 1)
+            {
+                ExpireStaleNetObject(objs[0]);
+
+                if (objs[0].IsExpired)
+                {
+                    HandledExpired(objs[0], recordExpired);
+                    objs.Clear();
+                }
+
+                return;
+            }
+
             // Find the index (from the end) of the first un-expired object.
+            // We need to find where we can start storing the expired objects.
             for (int i = count - 1; i >= 0; i--)
             {
                 var obj = objs[i];
@@ -473,36 +488,47 @@ namespace PolyPlane.GameObjects.Managers
 
                 if (!obj.IsExpired)
                 {
+                    // Tail index where we will store expired objects at the end of the list.
                     tailIdx = i;
                     break;
                 }
-            }
-
-            // Start at the index found above and iterate.
-            int swapIdx = tailIdx;
-            for (int i = tailIdx; i >= 0; i--)
-            {
-                var obj = objs[i];
-
-                // Expire any stale net objects.
-                ExpireStaleNetObject(obj);
-
-                if (obj.IsExpired)
+                else
                 {
-                    // Do additional expired logic.
+                    // Do additional expired logic for tailing objects,
+                    // They will be skipped in the next step.
                     HandledExpired(obj, recordExpired);
-
-                    // Swap the expired object to the end of the list.
-                    var tmp = objs[i];
-                    objs[i] = objs[swapIdx];
-                    objs[swapIdx] = tmp;
-
-                    // Move to the next swap index.
-                    swapIdx--;
-                    num++;
                 }
             }
 
+
+            if (tailIdx > 0)
+            {
+                // Start at the index found above and iterate.
+                int swapIdx = tailIdx;
+                for (int i = tailIdx; i >= 0; i--)
+                {
+                    var obj = objs[i];
+
+                    // Expire any stale net objects.
+                    ExpireStaleNetObject(obj);
+
+                    if (obj.IsExpired)
+                    {
+                        // Do additional expired logic.
+                        HandledExpired(obj, recordExpired);
+
+                        // Swap the expired object to the end of the list.
+                        var tmp = objs[i];
+                        objs[i] = objs[swapIdx];
+                        objs[swapIdx] = tmp;
+
+                        // Move to the next swap index.
+                        swapIdx--;
+                        num++;
+                    }
+                }
+            }
+        
             // Remove the chunk of expired objects now located at the end of the list.
             int numTail = objs.Count - tailIdx - 1;
             int numRemoved = numTail + num;
@@ -696,6 +722,15 @@ namespace PolyPlane.GameObjects.Managers
                 if (NewParticles.TryDequeue(out Particle particle))
                 {
                     AddParticle(particle);
+                }
+            }
+
+            while (NewExplosions.Count > 0)
+            {
+                if (NewExplosions.TryDequeue(out Explosion explosion))
+                {
+                    AddObject(explosion);
+                    Explosions.Add(explosion);
                 }
             }
         }
