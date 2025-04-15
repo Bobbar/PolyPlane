@@ -197,6 +197,10 @@ namespace PolyPlane.Helpers
         public void Add(GameObject obj)
         {
             var hash = GetGridHash(obj);
+
+            // Set the grid ref so objects can update their hashes.
+            obj.SpatialGridRef = this;
+
             AddInternal(hash, obj);
         }
 
@@ -316,7 +320,7 @@ namespace PolyPlane.Helpers
             GetGridIdx(obj.Position, out idxX, out idxY);
         }
 
-        private int GetGridHash(GameObject obj)
+        public int GetGridHash(GameObject obj)
         {
             GetGridIdx(obj.Position, out int idxX, out int idxY);
             return GetGridHash(idxX, idxY);
@@ -324,14 +328,6 @@ namespace PolyPlane.Helpers
 
         private int GetGridHash(int idxX, int idxY)
         {
-            return HashCode.Combine(idxX, idxY);
-        }
-
-        public static int GetGridHash(D2DPoint pos, int sideLen)
-        {
-            int idxX = (int)Math.Floor(pos.X) >> sideLen;
-            int idxY = (int)Math.Floor(pos.Y) >> sideLen;
-
             return HashCode.Combine(idxX, idxY);
         }
 

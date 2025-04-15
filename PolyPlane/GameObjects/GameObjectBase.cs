@@ -9,9 +9,11 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public abstract class GameObject : IEquatable<GameObject>, IDisposable, IFlippable
+    public abstract class GameObject : IEquatable<GameObject>, IDisposable, IFlippable, ISpatialGrid
     {
         public int GridHash { get { return _gridHash; } }
+
+        public SpatialGridGameObject SpatialGridRef { get; set; }
 
         public GameID ID { get; set; } = new GameID();
 
@@ -293,10 +295,10 @@ namespace PolyPlane.GameObjects
             UpdateTimers(dt);
             UpdateAttachments(dt);
 
-            if (this.HasFlag(GameObjectFlags.SpatialGrid))
+            if (this.HasFlag(GameObjectFlags.SpatialGrid) && SpatialGridRef != null)
             {
                 // Update the hash for the spatial grid.
-                _gridHash = SpatialGridGameObject.GetGridHash(Position, World.SPATIAL_GRID_SIDELEN);
+                _gridHash = SpatialGridRef.GetGridHash(this);
             }
         }
 

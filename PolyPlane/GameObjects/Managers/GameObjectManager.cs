@@ -36,7 +36,7 @@ namespace PolyPlane.GameObjects.Managers
         public ConcurrentQueue<int> ExpiredParticleIdxs = new();
 
         private Dictionary<int, GameObject> _objLookup = new();
-        private SpatialGridGameObject _spatialGrid = new();
+        private SpatialGridGameObject _spatialGrid = new(World.SPATIAL_GRID_SIDELEN);
 
         private List<GameObject> _allNetObjects = new();
         private List<GameObject> _allObjects = new(80000);
