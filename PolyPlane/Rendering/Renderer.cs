@@ -1403,7 +1403,7 @@ namespace PolyPlane.Rendering
 
                 if (msg.Displayed && msg.TargetPlayerID.Equals(viewPlane.ID))
                 {
-                    var color = Utilities.LerpColor(msg.Color, D2DColor.Transparent, msg.Age / msg.LIFESPAN);
+                    var color = Utilities.LerpColor(msg.Color, D2DColor.Transparent, msg.Age / (msg.LIFESPAN * 2f));
                     var rect = new D2DRect(msg.RenderPos, new D2DSize(600, 50));
                     ctx.DrawText(msg.Message, color, _textConsolas30Centered, rect);
                 }
@@ -1563,7 +1563,9 @@ namespace PolyPlane.Rendering
         {
             if (!World.FreeCameraMode)
             {
-                var startPos = new D2DPoint(this.Width / 2f, this.Height * 0.40f);
+                // Try to spawn score and killed messages on either side of the screen.
+                var startPosScored = new D2DPoint(this.Width * 0.45f, this.Height * 0.60f);
+                var startPosKilled = new D2DPoint(this.Width * 0.55f, this.Height * 0.60f);
 
                 // Message for scoring player.
                 string msg = string.Empty;
@@ -1573,11 +1575,11 @@ namespace PolyPlane.Rendering
                 else
                     msg = $"Destroyed {e.Target.PlayerName}!";
 
-                var scoringPlayerMsg = new PopMessage(msg, startPos, e.Player.ID, D2DColor.GreenYellow);
+                var scoringPlayerMsg = new PopMessage(msg, startPosScored, e.Player.ID, D2DColor.GreenYellow);
                 _popMessages.Add(scoringPlayerMsg);
 
                 // Message for destroyed player.
-                var killedPlayerMsg = new PopMessage($"Destroyed by {e.Player.PlayerName}", startPos, e.Target.ID);
+                var killedPlayerMsg = new PopMessage($"Destroyed by {e.Player.PlayerName}", startPosKilled, e.Target.ID);
                 _popMessages.Add(killedPlayerMsg);
             }
         }

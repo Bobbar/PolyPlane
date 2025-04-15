@@ -58,6 +58,9 @@
 
                         if (!_isReversed)
                             _elapsed = 0f;
+                        else
+                            _elapsed = Duration;
+
                     }
                 }
                 else
