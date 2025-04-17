@@ -1077,7 +1077,16 @@ namespace PolyPlane.Rendering
             var impactTime = Utilities.GroundImpactTime(viewPlane);
 
             if (impactTime > 0f && impactTime < WARN_TIME)
+            {
+                var flashScale = Utilities.ScaleToRange(_warnLightFlashAmount, 0f, 1f, 1f, 1.4f);
+
+                ctx.PushTransform();
+                ctx.ScaleTransform(flashScale, flashScale, pos);
+
                 ctx.Gfx.DrawText("PULL UP!", _redColorBrush, _textConsolas30Centered, rect);
+
+                ctx.PopTransform();
+            }
         }
 
         private void DrawPlanePointers(RenderContext ctx, D2DSize viewportsize, FighterPlane plane, float dt)
