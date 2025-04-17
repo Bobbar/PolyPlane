@@ -66,12 +66,6 @@ namespace PolyPlane.GameObjects.Particles
                     // Simulate the particles being blown by the wind.
                     RiseRate.X = WIND_SPEED * Utilities.FactorWithEasing(Age, MaxAge, EasingFunctions.Out.EaseQuad);
 
-                    // Gradually grow until we reach the target radius.
-                    var ageFactGrow = Utilities.Factor(Age, PART_GROW_AGE);
-                    Radius = TargetRadius * ageFactGrow;
-
-                    Ellipse.origin = Position;
-
                     break;
 
                 case ParticleType.Smoke or ParticleType.Vapor:
@@ -83,20 +77,10 @@ namespace PolyPlane.GameObjects.Particles
 
                     Velocity += -Velocity * (dt * dtFact);
 
-                    Ellipse.origin = Position;
-
-                    var ageFact = 1f - Utilities.Factor(Age, MaxAge);
-                    var radAmt = EasingFunctions.Out.EaseQuintic(ageFact);
-                    var rad = (TargetRadius * radAmt);
-
-                    var alphaSmoke = StartColor.a * ageFact;
-
-                    Color = new D2DColor(alphaSmoke, StartColor);
-
-                    Radius = rad;
-
                     break;
             }
+
+            Ellipse.origin = Position;
 
             if (Age > MaxAge && !IsExpired)
             {
@@ -118,6 +102,11 @@ namespace PolyPlane.GameObjects.Particles
                     var ageFactFade = 1f - Utilities.Factor(Age, MaxAge);
                     var alpha = StartColor.a * ageFactFade;
                     var ageFactSmoke = Utilities.Factor(Age * 4f, MaxAge);
+
+                    // Gradually grow until we reach the target radius.
+                    var ageFactGrow = Utilities.Factor(Age, PART_GROW_AGE);
+                   
+                    Radius = TargetRadius * ageFactGrow;
                     Color = Utilities.LerpColorWithAlpha(StartColor, EndColor, ageFactSmoke, alpha);
 
                     ctx.FillEllipseWithLighting(Ellipse, Color, maxIntensity: 0.6f);
@@ -125,6 +114,14 @@ namespace PolyPlane.GameObjects.Particles
                     break;
 
                 case ParticleType.Smoke or ParticleType.Vapor:
+
+                    var ageFact = 1f - Utilities.Factor(Age, MaxAge);
+                    var radAmt = EasingFunctions.Out.EaseQuintic(ageFact);
+                    var rad = (TargetRadius * radAmt);
+                    var alphaSmoke = StartColor.a * ageFact;
+
+                    Color = new D2DColor(alphaSmoke, StartColor);
+                    Radius = rad;
 
                     ctx.FillEllipse(Ellipse, Color);
 
