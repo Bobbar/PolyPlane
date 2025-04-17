@@ -82,6 +82,7 @@ namespace PolyPlane
         public static bool MissileRegen = true;
         public static bool ShowMissilesOnRadar = false;
         public static bool ShowLeadIndicators = true;
+        public static bool ShowPointerLine = true;
         public static bool ShowAero = false;
         public static bool ShowTracking = false;
         public static bool ShowAITags = false;

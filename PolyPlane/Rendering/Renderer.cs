@@ -1053,7 +1053,20 @@ namespace PolyPlane.Rendering
             var planeVec = Utilities.AngleToVectorDegrees(planeAngle, DIST);
             gfx.DrawCrosshair(pos + planeVec, 2f, World.HudColor, 5f, 20f);
 
-            //gfx.DrawLine(pos, pos + planeVec, World.HudColor, 1f, D2DDashStyle.Dot);
+
+            if (World.ShowPointerLine)
+            {
+                // Draw pointer line.
+                // Fade out with zoom level.
+                var alphaFact = Utilities.ScaleToRange(Utilities.Factor(World.ViewPortScaleMulti, 40f), 0.3f, 0.5f, 0f, 1f);
+
+                if (alphaFact > 0.001f)
+                {
+                    var color = new D2DColor(0.3f * alphaFact, World.HudColor);
+                    gfx.DrawLine(pos, pos + (planeVec * 1f), color, 2f, D2DDashStyle.Dot);
+                    gfx.FillEllipseSimple(pos + (planeVec * 1f), 2f, color);
+                }
+            }
         }
 
         private void DrawGroundWarning(RenderContext ctx, D2DSize viewportsize, FighterPlane viewPlane)
