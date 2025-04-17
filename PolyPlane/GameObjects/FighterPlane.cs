@@ -974,10 +974,13 @@ namespace PolyPlane.GameObjects
                 distortAmt = BULLET_DISTORT_AMT;
             }
 
+            // Distortion vector for poly damage and headshot checks.
+            var distortVec = Utilities.AngleToVectorDegrees(angle, distortAmt);
+
             // Check for headshots.
-            var distortVecOrigin = Utilities.AngleToVectorDegrees(angle + this.Rotation, distortAmt);
             var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
-            var hitCockpit = cockpitEllipse.Contains(_cockpitPosition.Rotation, impactPos + distortVecOrigin);
+            var cockpitImpactPos = (result.ImpactPointOrigin + distortVec).Translate(this.Rotation, this.Position, this.RenderScale);
+            var hitCockpit = cockpitEllipse.Contains(_cockpitPosition.Rotation, cockpitImpactPos);
 
             if (hitCockpit)
             {
@@ -986,7 +989,6 @@ namespace PolyPlane.GameObjects
             }
 
             // Copy the polygon, distort it, then check for distortion related damage effects.
-            var distortVec = Utilities.AngleToVectorDegrees(angle, distortAmt);
             var polyCopy = new RenderPoly(this.Polygon, this.Position, this.Rotation);
             polyCopy.Distort(result.ImpactPointOrigin, distortVec);
 
