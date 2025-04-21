@@ -22,6 +22,7 @@ namespace PolyPlane.GameObjects
         public D2DPoint ExhaustPosition => _centerOfThrust.Position;
         public Direction FlipDirection => _currentDir;
         public float GForce => _gForce;
+        public double LastBurstTime => _gun.LastBurstTime;
 
         public AIPersonality Personality
         {

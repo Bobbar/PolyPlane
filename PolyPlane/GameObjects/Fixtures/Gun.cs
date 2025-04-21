@@ -10,6 +10,7 @@ namespace PolyPlane.GameObjects.Fixtures
     {
         public Action<Bullet> FireBulletCallback;
         public bool MuzzleFlashOn = false;
+        public double LastBurstTime = 0;
 
         private GunSmokeEmitter _smoke;
         private FighterPlane _ownerPlane;
@@ -91,6 +92,8 @@ namespace PolyPlane.GameObjects.Fixtures
                 _ownerPlane.BulletsFired++;
                 _ownerPlane.NumBullets--;
             }
+
+            LastBurstTime = World.CurrentTimeMs();
         }
     }
 }

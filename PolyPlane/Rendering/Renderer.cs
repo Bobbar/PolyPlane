@@ -1056,12 +1056,17 @@ namespace PolyPlane.Rendering
 
             if (World.ShowPointerLine)
             {
-                // Draw pointer line.
+                // Fade out with time since last burst.
+                var elapSinceLastBullet = (float)TimeSpan.FromMilliseconds(World.CurrentTimeMs() - viewPlane.LastBurstTime).TotalSeconds;
+                var elapFact = 1f - Utilities.Factor(elapSinceLastBullet, 5f);
+
                 // Fade out with zoom level.
                 var alphaFact = Utilities.ScaleToRange(Utilities.Factor(World.ViewPortScaleMulti, 40f), 0.3f, 0.5f, 0f, 1f);
+                alphaFact *= elapFact;
 
                 if (alphaFact > 0.001f)
                 {
+                    // Draw pointer line.
                     var color = new D2DColor(0.3f * alphaFact, World.HudColor);
                     gfx.DrawLine(pos, pos + (planeVec * 1f), color, 2f, D2DDashStyle.Dot);
                     gfx.FillEllipseSimple(pos + (planeVec * 1f), 2f, color);
