@@ -194,6 +194,7 @@ namespace PolyPlane.GameObjects
             this.Rotation = rotation;
 
             UpdateAllAttachments(0f);
+            UpdatePoly();
         }
 
         /// <summary>
@@ -376,8 +377,6 @@ namespace PolyPlane.GameObjects
                 else
                     attachment.Update(dt);
             }
-
-            UpdatePoly();
         }
 
         private void UpdateAttachments(float dt)

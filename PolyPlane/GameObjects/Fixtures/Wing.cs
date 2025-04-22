@@ -77,6 +77,9 @@ namespace PolyPlane.GameObjects.Fixtures
             base.FlipY();
             PivotPoint.FlipY();
             FixedPosition.FlipY();
+
+            Rotation = PivotPoint.Rotation;
+            Position = FixedPosition.Position;
         }
 
         public override void Render(RenderContext ctx)
