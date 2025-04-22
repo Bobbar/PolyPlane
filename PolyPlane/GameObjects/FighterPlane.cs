@@ -230,53 +230,27 @@ namespace PolyPlane.GameObjects
 
         ];
 
-        public FighterPlane(D2DPoint pos, AIPersonality personality, int playerId) : base(pos)
+        public FighterPlane(D2DPoint pos, D2DColor color) : base(pos)
         {
-            this.PlayerID = playerId;
+            this.PlayerID = World.GetNextPlayerId();
+            _isAIPlane = false;
+            _thrustAmt.Target = 1f;
+            _planeColor = color;
+
+            InitStuff();
+        }
+
+        public FighterPlane(D2DPoint pos, D2DColor color, AIPersonality personality) : this(pos, color)
+        {
             _aiBehavior = new FighterPlaneAI(this, personality);
             _isAIPlane = true;
-            _thrustAmt.Target = 1f;
-            _planeColor = D2DColor.Randomly();
-
-            InitStuff();
         }
 
-        public FighterPlane(D2DPoint pos, D2DColor color, int playerId, bool isAI = false, bool isNetPlane = false) : base(pos)
-        {
-            this.PlayerID = playerId;
-            _thrustAmt.Target = 1f;
-            IsNetObject = isNetPlane;
-            _isAIPlane = isAI;
-            _planeColor = color;
-
-            if (isAI)
-            {
-                const int NUM_PERS = 2;
-                var personality = Utilities.GetRandomPersonalities(NUM_PERS);
-
-                _aiBehavior = new FighterPlaneAI(this, personality);
-            }
-
-            InitStuff();
-        }
-
-        public FighterPlane(D2DPoint pos, D2DColor color, GameID id, bool isAI = false, bool isNetPlane = false) : base(pos)
+        public FighterPlane(D2DPoint pos, D2DColor color, GameID id) : this(pos, color)
         {
             this.ID = id;
-            _thrustAmt.Target = 1f;
-            IsNetObject = isNetPlane;
-            _isAIPlane = isAI;
-            _planeColor = color;
-
-            if (isAI)
-            {
-                const int NUM_PERS = 2;
-                var personality = Utilities.GetRandomPersonalities(NUM_PERS);
-
-                _aiBehavior = new FighterPlaneAI(this, personality);
-            }
-
-            InitStuff();
+            IsNetObject = true;
+            _isAIPlane = false;
         }
 
         private void InitStuff()

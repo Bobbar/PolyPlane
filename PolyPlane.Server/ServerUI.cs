@@ -10,6 +10,7 @@ using PolyPlane.Rendering;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
+using unvell.D2DLib;
 
 
 namespace PolyPlane.Server
@@ -449,9 +450,9 @@ namespace PolyPlane.Server
             FighterPlane aiPlane;
 
             if (personality.HasValue)
-                aiPlane = new FighterPlane(pos, personality.Value, World.GetNextPlayerId());
+                aiPlane = new FighterPlane(pos, D2DColor.Randomly(), personality.Value);
             else
-                aiPlane = new FighterPlane(pos, Utilities.GetRandomPersonalities(2), World.GetNextPlayerId());
+                aiPlane = new FighterPlane(pos, D2DColor.Randomly(), Utilities.GetRandomPersonalities(2));
 
             aiPlane.PlayerName = "(BOT) " + Utilities.GetRandomName();
 

@@ -284,6 +284,10 @@ namespace PolyPlane.GameObjects.Managers
             _objLookup.Clear();
             _spatialGrid.Clear();
             _expiredObjs.Clear();
+
+            // Reset object and player IDs.
+            World.CurrentObjId = 0;
+            World.CurrentPlayerId = 1000;
         }
 
         public GameObject GetObjectByID(GameID gameID)

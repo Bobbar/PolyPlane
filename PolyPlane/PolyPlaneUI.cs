@@ -432,7 +432,13 @@ namespace PolyPlane
         private FighterPlane GetNewPlane(D2DColor planeColor, bool isAI = false, string playerName = "Player")
         {
             var pos = Utilities.FindSafeSpawnPoint();
-            var plane = new FighterPlane(pos, planeColor, World.GetNextPlayerId(), isAI, false);
+
+            FighterPlane plane;
+
+            if (isAI)
+                plane = new FighterPlane(pos, planeColor, Utilities.GetRandomPersonalities(2));
+            else
+                plane = new FighterPlane(pos, planeColor);
 
             plane.PlayerName = playerName;
 

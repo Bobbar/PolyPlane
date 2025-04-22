@@ -109,7 +109,7 @@ namespace PolyPlane.Net
 
                 if (!existing)
                 {
-                    var newPlane = new FighterPlane(player.Position, player.PlaneColor, player.ID, isAI: false, isNetPlane: true);
+                    var newPlane = new FighterPlane(player.Position, player.PlaneColor, player.ID);
                     newPlane.PlayerName = player.Name;
                     newPlane.IsNetObject = true;
                     newPlane.LagAmount = player.Age;

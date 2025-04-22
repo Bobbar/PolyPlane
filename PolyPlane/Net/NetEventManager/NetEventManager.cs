@@ -322,7 +322,7 @@ namespace PolyPlane.Net
                     {
                         if (playerPacket != null)
                         {
-                            var newPlane = new FighterPlane(playerPacket.Position, playerPacket.PlaneColor, playerPacket.ID, isAI: false, isNetPlane: true);
+                            var newPlane = new FighterPlane(playerPacket.Position, playerPacket.PlaneColor, playerPacket.ID);
                             newPlane.PlayerName = playerPacket.Name;
                             newPlane.IsNetObject = true;
                             newPlane.PlayerKilledCallback += HandlePlayerKilled;
