@@ -9,8 +9,9 @@ namespace PolyPlane.Helpers
     /// <param name="sideLen">And integer (S) representing the grid cell side length (L), L = 1 << S. </param>
     public sealed class SpatialGridGameObject(int sideLen = 9)
     {
-        private Dictionary<int, EntrySequence> _sequences = new();
-        private List<Entry> _entries = new();
+        private Dictionary<int, EntrySequence> _sequences = new(1000);
+        private List<Entry> _entries = new(50000);
+        private Stack<int> _freeIndices = new(1000);
 
         private readonly int SIDE_LEN = sideLen;
 
@@ -19,6 +20,9 @@ namespace PolyPlane.Helpers
         /// </summary>
         public void Update()
         {
+            // Clear free entries left over from the previous turn.
+            PruneFreeEntries();
+
             // Iterate all entries and update as needed.
             for (int i = _entries.Count - 1; i >= 0; i--)
             {
@@ -29,9 +33,8 @@ namespace PolyPlane.Helpers
                 {
                     RemoveFromSequence(entry);
 
-                    // Move to the end of the list and remove.
-                    _entries[i] = _entries[_entries.Count - 1];
-                    _entries.RemoveAt(_entries.Count - 1);
+                    // Record the free index to possibly be reused before the next turn.
+                    _freeIndices.Push(i);
                 }
                 else
                 {
@@ -47,6 +50,17 @@ namespace PolyPlane.Helpers
             }
 
             PruneSeqs();
+        }
+
+        private void PruneFreeEntries()
+        {
+            foreach (var idx in _freeIndices.OrderByDescending(i => i))
+            {
+                _entries[idx] = _entries[_entries.Count - 1];
+                _entries.RemoveAt(_entries.Count - 1);
+            }
+
+            _freeIndices.Clear();
         }
 
         /// <summary>
@@ -206,11 +220,31 @@ namespace PolyPlane.Helpers
 
         private void AddInternal(int hash, GameObject obj)
         {
-            var entry = new Entry(hash, obj);
+            Entry entry;
+
+            // Reuse freed entries if any are available.
+            // Otherwise allocate and add a new one.
+            if (_freeIndices.TryPop(out int idx))
+            {
+                entry = _entries[idx];
+
+                entry.IsHead = false;
+                entry.CurrentHash = hash;
+                entry.NextHash = hash;
+                entry.Next = null;
+                entry.Prev = null;
+                entry.Sequence = null;
+                entry.Object = obj;
+            }
+            else
+            {
+                entry = new Entry(hash, obj);
+
+                _entries.Add(entry);
+            }
+
 
             AddToSequence(entry);
-
-            _entries.Add(entry);
         }
 
         /// <summary>
