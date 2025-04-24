@@ -32,5 +32,10 @@ namespace PolyPlane.Helpers
         {
             _pool.Enqueue(obj);
         }
+
+        public void Clear()
+        {
+            _pool.Clear();
+        }
     }
 }

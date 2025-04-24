@@ -12,9 +12,6 @@ namespace PolyPlane.Rendering
 {
     public class Renderer : IDisposable
     {
-        public TimeSpan CollisionTime = TimeSpan.Zero;
-        public TimeSpan UpdateTime = TimeSpan.Zero;
-
         public float HudScale
         {
             get { return _hudScale; }
@@ -76,6 +73,7 @@ namespace PolyPlane.Rendering
 
         private SmoothDouble _renderTimeSmooth = new SmoothDouble(60);
         private SmoothDouble _updateTimeSmooth = new SmoothDouble(60);
+        private SmoothDouble _collisionTimeSmooth = new SmoothDouble(60);
         private SmoothDouble _fpsSmooth = new SmoothDouble(20);
 
         private Stopwatch _timer = new Stopwatch();
@@ -377,13 +375,12 @@ namespace PolyPlane.Rendering
 
             ResizeGfx();
 
-            _timer.Restart();
-
+            Profiler.Start(ProfilerStat.Update);
             UpdateTimersAndAnims(dt);
+            Profiler.StopAndAppend(ProfilerStat.Update);
 
-            _timer.Stop();
-            UpdateTime += _timer.Elapsed;
-            _timer.Restart();
+
+            Profiler.Start(ProfilerStat.Render);
 
             if (World.UseSkyGradient)
                 _ctx.BeginRender(_clearBitmap);
@@ -441,8 +438,7 @@ namespace PolyPlane.Rendering
                 _ctx.PopViewPort();
             }
 
-            _timer.Stop();
-            _renderTimeSmooth.Add(_timer.Elapsed.TotalMilliseconds);
+            _renderTimeSmooth.Add(Profiler.Stop(ProfilerStat.Render).GetElapsedMilliseconds());
 
             _ctx.EndRender();
 
@@ -1752,6 +1748,9 @@ namespace PolyPlane.Rendering
 
             if (_showInfo)
             {
+                _updateTimeSmooth.Add(Profiler.GetElapsedMilliseconds(ProfilerStat.Update));
+                _collisionTimeSmooth.Add(Profiler.GetElapsedMilliseconds(ProfilerStat.Collisions));
+
                 if (World.IsNetGame && _netMan != null)
                 {
                     _stringBuilder.AppendLine($"Latency: {Math.Round(_netMan.Host.GetPlayerRTT(0), 2)}");
@@ -1766,10 +1765,10 @@ namespace PolyPlane.Rendering
                 _stringBuilder.AppendLine($"On Screen: {GraphicsExtensions.OnScreen}");
                 _stringBuilder.AppendLine($"Off Screen: {GraphicsExtensions.OffScreen}");
                 _stringBuilder.AppendLine($"Planes: {_objs.Planes.Count}");
-                _stringBuilder.AppendLine($"Update ms: {Math.Round(_updateTimeSmooth.Add(UpdateTime.TotalMilliseconds), 2)}");
+                _stringBuilder.AppendLine($"Update ms: {Math.Round(_updateTimeSmooth.Current, 2)}");
                 _stringBuilder.AppendLine($"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}");
-                _stringBuilder.AppendLine($"Collision ms: {Math.Round(CollisionTime.TotalMilliseconds, 2)}");
-                _stringBuilder.AppendLine($"Total ms: {Math.Round(_updateTimeSmooth.Current + CollisionTime.TotalMilliseconds + _renderTimeSmooth.Current, 2)}");
+                _stringBuilder.AppendLine($"Collision ms: {Math.Round(_collisionTimeSmooth.Current, 2)}");
+                _stringBuilder.AppendLine($"Total ms: {Math.Round(_updateTimeSmooth.Current + _collisionTimeSmooth.Current + _renderTimeSmooth.Current, 2)}");
 
                 _stringBuilder.AppendLine($"Zoom: {Math.Round(World.ZoomScale, 2)}");
                 _stringBuilder.AppendLine($"DT: {Math.Round(World.TargetDT, 4)}  ({Math.Round(World.CurrentDT, 4)}) ");

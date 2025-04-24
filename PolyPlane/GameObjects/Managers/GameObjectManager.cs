@@ -52,6 +52,12 @@ namespace PolyPlane.GameObjects.Managers
         public event EventHandler<EventMessage> PlayerKilledEvent;
         public event EventHandler<FighterPlane> NewPlayerEvent;
 
+        private CollisionManager _collisionManager;
+
+        public void SetCollisionManager(CollisionManager collisionManager)
+        {
+            _collisionManager = collisionManager;
+        }
 
         public BulletHole RentBulletHole(GameObject obj, D2DPoint offset, float angle)
         {
@@ -264,6 +270,7 @@ namespace PolyPlane.GameObjects.Managers
         public void Clear()
         {
             _allNetObjects.Clear();
+            _allObjects.Clear();
             Missiles.Clear();
             MissileTrails.Clear();
             Decoys.Clear();
@@ -271,15 +278,25 @@ namespace PolyPlane.GameObjects.Managers
             Explosions.Clear();
             Planes.Clear();
             Debris.Clear();
+            GroundImpacts.Clear();
+            DummyObjs.Clear();
+
             Particles.ForEach(f => f.Dispose());
             Particles.Clear();
-            DummyObjs.Clear();
+
             NewDecoys.Clear();
             NewDebris.Clear();
             NewBullets.Clear();
             NewMissiles.Clear();
             NewPlanes.Clear();
             NewParticles.Clear();
+            ExpiredParticleIdxs.Clear();
+
+            _particlePool.Clear();
+            _explosionPool.Clear();
+            _debrisPool.Clear();
+            _groundImpactPool.Clear();
+            _bulletHolePool.Clear();
 
             _objLookup.Clear();
             _spatialGrid.Clear();
@@ -329,10 +346,15 @@ namespace PolyPlane.GameObjects.Managers
 
 
         /// <summary>
-        /// Updates and syncs all collections/queues, spatial grid and advances all objects.
+        /// Updates and syncs all collections/queues, spatial grid and advances all objects and executes collision logic.
         /// </summary>
         public void Update(float dt)
         {
+            DoCollisions(dt);
+
+
+            Profiler.Start(ProfilerStat.Update);
+
             PruneExpired();
 
             SyncObjQueues();
@@ -358,6 +380,17 @@ namespace PolyPlane.GameObjects.Managers
             // Update ground impacts.
             for (int i = 0; i < GroundImpacts.Count; i++)
                 GroundImpacts[i].Age += dt;
+
+            Profiler.Stop(ProfilerStat.Update);
+        }
+
+        private void DoCollisions(float dt)
+        {
+            Profiler.Start(ProfilerStat.Collisions);
+
+            _collisionManager.DoCollisions(dt);
+
+            Profiler.Stop(ProfilerStat.Collisions);
         }
 
         public bool Contains(GameObject obj)
@@ -532,7 +565,7 @@ namespace PolyPlane.GameObjects.Managers
                     }
                 }
             }
-        
+
             // Remove the chunk of expired objects now located at the end of the list.
             int numTail = objs.Count - tailIdx - 1;
             int numRemoved = numTail + num;

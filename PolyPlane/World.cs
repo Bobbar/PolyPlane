@@ -283,6 +283,9 @@ namespace PolyPlane
 
         public static void Update()
         {
+            // Reset profiler stats.
+            Profiler.ResetAll();
+
             // Compute elapsed time since the last frame
             // and use it to compute a dynamic delta time
             // for the next frame.

@@ -22,17 +22,14 @@ namespace PolyPlane.Server
 
         private AIPersonality _aiPersonality = AIPersonality.Normal;
         private Thread _gameThread;
-
+        private ManualResetEventSlim _pauseRenderEvent = new ManualResetEventSlim(true);
         private GameTimer _discoveryTimer = new GameTimer(2f, true);
 
-        private ManualResetEventSlim _pauseRenderEvent = new ManualResetEventSlim(true);
-
         private Stopwatch _bwTimer = new Stopwatch();
-        private Stopwatch _timer = new Stopwatch();
-        private TimeSpan _renderTime = new TimeSpan();
-        private SmoothDouble _updateTimeSmooth = new SmoothDouble(10);
-        private SmoothDouble _collisionTimeSmooth = new SmoothDouble(10);
-        private SmoothDouble _netTimeSmooth = new SmoothDouble(10);
+        private SmoothDouble _updateTimeSmooth = new SmoothDouble(60);
+        private SmoothDouble _collisionTimeSmooth = new SmoothDouble(60);
+        private SmoothDouble _netTimeSmooth = new SmoothDouble(60);
+        private SmoothDouble _renderTimeSmooth = new SmoothDouble(60);
         private SmoothDouble _fpsSmooth = new SmoothDouble(10);
         private SmoothDouble _sentBytesSmooth = new SmoothDouble(50);
         private SmoothDouble _recBytesSmooth = new SmoothDouble(50);
@@ -53,7 +50,6 @@ namespace PolyPlane.Server
         private GameObjectManager _objs = World.ObjectManager;
         private NetEventManager _netMan;
         private DiscoveryServer _discovery;
-        private CollisionManager _collisions;
         private NetPlayHost _server;
         private Renderer _render = null;
         private FPSLimiter _fpsLimiter = new FPSLimiter();
@@ -123,7 +119,8 @@ namespace PolyPlane.Server
                 _server = new ServerNetHost(port, addy);
                 _netMan = new NetEventManager(_server);
                 _discovery = new DiscoveryServer();
-                _collisions = new CollisionManager(_netMan);
+                var collisions = new CollisionManager(_netMan);
+                World.ObjectManager.SetCollisionManager(collisions);
 
                 _netMan.PlayerDisconnected += NetMan_PlayerDisconnected;
                 _netMan.PlayerJoined += NetMan_PlayerJoined;
@@ -350,40 +347,22 @@ namespace PolyPlane.Server
             ProcessQueuedActions();
 
             // Process net events.
-            _timer.Restart();
+            Profiler.Start(ProfilerStat.NetTime);
 
             _netMan.HandleNetEvents(dt);
 
-            _timer.Stop();
-            _netTimeSmooth.Add((float)_timer.Elapsed.TotalMilliseconds);
+            _netTimeSmooth.Add(Profiler.Stop(ProfilerStat.NetTime).GetElapsedMilliseconds());
 
             // Update/advance objects.
             if (!World.IsPaused)
             {
-                // Do collisions.
-                _timer.Restart();
-
-                _collisions.DoCollisions(dt);
-
-                _timer.Stop();
-                _collisionTimeSmooth.Add((float)_timer.Elapsed.TotalMilliseconds);
-
                 // Update all objects and world.
-                _timer.Restart();
-
                 _objs.Update(dt);
-
-                _timer.Stop();
-                _updateTimeSmooth.Add((float)_timer.Elapsed.TotalMilliseconds);
             }
 
             // Render if spectate viewport is active.
-            _renderTime = TimeSpan.Zero;
-
             if (_render != null && !_stopRender)
             {
-                _timer.Restart();
-
                 FighterPlane viewPlane = World.GetViewPlane();
 
                 if (viewPlane != null)
@@ -392,9 +371,11 @@ namespace PolyPlane.Server
                     _render.RenderFrame(viewPlane, dt);
                 }
 
-                _timer.Stop();
-                _renderTime = _timer.Elapsed;
+                _renderTimeSmooth.Add(Profiler.GetElapsedMilliseconds(ProfilerStat.Render));
             }
+
+            _updateTimeSmooth.Add(Profiler.GetElapsedMilliseconds(ProfilerStat.Update));
+            _collisionTimeSmooth.Add(Profiler.GetElapsedMilliseconds(ProfilerStat.Collisions));
 
             _discoveryTimer.Update(dt);
 
@@ -591,7 +572,7 @@ namespace PolyPlane.Server
             infoText += $"Net ms: {Math.Round(_netTimeSmooth.Current, 2)}\n";
 
             if (_viewPort != null)
-                infoText += $"Render ms: {Math.Round(_renderTime.TotalMilliseconds, 2)}\n";
+                infoText += $"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}\n";
 
             infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
             infoText += $"Packets Rec/s: {Math.Round(_recPacketsSmooth.Current, 2)}\n";

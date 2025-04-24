@@ -36,17 +36,12 @@ namespace PolyPlane
         private D2DPoint _mouseDownPosition = D2DPoint.Zero;
         private D2DPoint _prevViewObjectPosition = D2DPoint.Zero;
 
-        private Stopwatch _timer = new Stopwatch();
-        private TimeSpan _updateTime = new TimeSpan();
-        private TimeSpan _collisionTime = new TimeSpan();
-
         private GameObjectManager _objs = World.ObjectManager;
         private FighterPlane _playerPlane;
         private DummyObject? _freeCamObject = null;
 
         private NetPlayHost _client;
         private NetEventManager _netMan;
-        private CollisionManager _collisions;
         private Renderer _render = null;
         private FPSLimiter _fpsLimiter = new FPSLimiter();
         private SelectObjectUI? _selectObjectUI = null;
@@ -271,7 +266,9 @@ namespace PolyPlane
 
             _client = new ClientNetHost(port, ip);
             _netMan = new NetEventManager(_client, _playerPlane);
-            _collisions = new CollisionManager(_netMan);
+
+            var collisions = new CollisionManager(_netMan);
+            World.ObjectManager.SetCollisionManager(collisions);
 
             _netMan.ImpactEvent += HandleNewImpact;
             _netMan.PlayerIDReceived += NetMan_PlayerIDReceived;
@@ -304,7 +301,8 @@ namespace PolyPlane
             World.IsNetGame = false;
             World.IsServer = false;
 
-            _collisions = new CollisionManager();
+            var collisions = new CollisionManager();
+            World.ObjectManager.SetCollisionManager(collisions);
 
             if (isAI)
                 playerName = "(BOT) " + Utilities.GetRandomName();
@@ -563,9 +561,6 @@ namespace PolyPlane
             if (_killRender)
                 return;
 
-            _updateTime = TimeSpan.Zero;
-            _collisionTime = TimeSpan.Zero;
-
             // Process any queued actions.
             ProcessQueuedActions();
 
@@ -575,36 +570,17 @@ namespace PolyPlane
             // Get the current view object.
             var viewObject = GetViewObjectOrCamera(World.GetViewObject());
 
-
             // Process net events during net games.
             if (World.IsNetGame)
                 _netMan.HandleNetEvents(dt);
 
-            // Update/advance objects.
+            // Update/advance all objects.
             if (!World.IsPaused || _oneStep)
             {
-                // Do collisions.
-                _timer.Restart();
-
-                _collisions.DoCollisions(dt);
-
-                _timer.Stop();
-                _collisionTime += _timer.Elapsed;
-
-                // Update all objects and world.
-                _timer.Restart();
-
                 _objs.Update(dt);
-
-                _timer.Stop();
-                _updateTime += _timer.Elapsed;
 
                 _oneStep = false;
             }
-
-            // Update the collision and update times for stats overlay.
-            _render.CollisionTime = _collisionTime;
-            _render.UpdateTime = _updateTime;
 
             // Render the frame.
             // Or hit the FPS limiter if window is minimized or we're skipping rendering.
