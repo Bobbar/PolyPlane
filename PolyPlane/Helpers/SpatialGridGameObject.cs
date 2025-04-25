@@ -339,6 +339,7 @@ namespace PolyPlane.Helpers
 
         public void Clear()
         {
+            _freeIndices.Clear();
             _entries.Clear();
             _sequences.Clear();
         }
