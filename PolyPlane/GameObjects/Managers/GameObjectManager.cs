@@ -208,26 +208,23 @@ namespace PolyPlane.GameObjects.Managers
 
         private void EnqueueExplosion(Explosion explosion)
         {
-            if (!Contains(explosion))
-            {
-                NewExplosions.Enqueue(explosion);
+            NewExplosions.Enqueue(explosion);
 
-                if (explosion.Altitude <= 10f)
+            if (explosion.Altitude <= 10f)
+            {
+                if (explosion.Owner is GuidedMissile)
                 {
-                    if (explosion.Owner is GuidedMissile)
-                    {
-                        var missileRadius = Utilities.Rnd.NextFloat(23f, 27f);
-                        var impact = _groundImpactPool.RentObject();
-                        impact.ReInit(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 8f)), new D2DSize(missileRadius + 8f, missileRadius), explosion.Owner.Rotation);
-                        GroundImpacts.Add(impact);
-                    }
-                    else if (explosion.Owner is Bullet)
-                    {
-                        var bulletRadius = Utilities.Rnd.NextFloat(9f, 12f);
-                        var impact = _groundImpactPool.RentObject();
-                        impact.ReInit(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 5f)), new D2DSize(bulletRadius + 8f, bulletRadius), explosion.Owner.Rotation);
-                        GroundImpacts.Add(impact);
-                    }
+                    var missileRadius = Utilities.Rnd.NextFloat(23f, 27f);
+                    var impact = _groundImpactPool.RentObject();
+                    impact.ReInit(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 8f)), new D2DSize(missileRadius + 8f, missileRadius), explosion.Owner.Rotation);
+                    GroundImpacts.Add(impact);
+                }
+                else if (explosion.Owner is Bullet)
+                {
+                    var bulletRadius = Utilities.Rnd.NextFloat(9f, 12f);
+                    var impact = _groundImpactPool.RentObject();
+                    impact.ReInit(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 5f)), new D2DSize(bulletRadius + 8f, bulletRadius), explosion.Owner.Rotation);
+                    GroundImpacts.Add(impact);
                 }
             }
         }
@@ -424,11 +421,11 @@ namespace PolyPlane.GameObjects.Managers
             TotalObjects = 0;
 
             // Prune other objects.
+            PruneExpired(Explosions);
             PruneExpired(Missiles, recordExpired: true);
             PruneExpired(MissileTrails);
             PruneExpired(Decoys, recordExpired: true);
             PruneExpired(Bullets);
-            PruneExpired(Explosions);
             PruneExpired(Debris);
             PruneExpired(DummyObjs);
 
@@ -493,9 +490,9 @@ namespace PolyPlane.GameObjects.Managers
 
         private void PruneExpired(List<GameObject> objs, bool recordExpired = false)
         {
-            int num = 0;
-            int tailIdx = 0;
             int count = objs.Count;
+            int tailIdx = 0;
+            int numRemoved = 0;
 
             if (count == 0)
                 return;
@@ -534,6 +531,7 @@ namespace PolyPlane.GameObjects.Managers
                     // Do additional expired logic for tailing objects,
                     // They will be skipped in the next step.
                     HandledExpired(obj, recordExpired);
+                    numRemoved++;
                 }
             }
 
@@ -561,14 +559,10 @@ namespace PolyPlane.GameObjects.Managers
 
                         // Move to the next swap index.
                         swapIdx--;
-                        num++;
+                        numRemoved++;
                     }
                 }
             }
-
-            // Remove the chunk of expired objects now located at the end of the list.
-            int numTail = objs.Count - tailIdx - 1;
-            int numRemoved = numTail + num;
 
             objs.RemoveRange(objs.Count - numRemoved, numRemoved);
 
@@ -577,8 +571,6 @@ namespace PolyPlane.GameObjects.Managers
 
         private void HandledExpired(GameObject obj, bool recordExpired)
         {
-            obj.Dispose();
-
             if (obj is not INoGameID)
                 _objLookup.Remove(obj.ID.GetHashCode());
 
@@ -601,6 +593,8 @@ namespace PolyPlane.GameObjects.Managers
             {
                 AddBulletExplosion(bullet);
             }
+
+            obj.Dispose();
         }
 
         private void PruneParticles()
@@ -770,8 +764,11 @@ namespace PolyPlane.GameObjects.Managers
             {
                 if (NewExplosions.TryDequeue(out Explosion explosion))
                 {
-                    AddObject(explosion);
-                    Explosions.Add(explosion);
+                    if (!Contains(explosion))
+                    {
+                        AddObject(explosion);
+                        Explosions.Add(explosion);
+                    }
                 }
             }
         }
