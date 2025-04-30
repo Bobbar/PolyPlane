@@ -137,7 +137,7 @@ namespace PolyPlane.Rendering
             ctx.RotateTransform(shadowAngle, this.Position);
             ctx.ScaleTransform(1f, SHADOW_LEN_SCALE, this.Position);
 
-            ctx.FillEllipse(new D2DEllipse(_shadowLeafPos, _leafSize), shadowColor);
+            ctx.Gfx.FillEllipse(new D2DEllipse(_shadowLeafPos, _leafSize), shadowColor);
 
             ctx.PopTransform();
 

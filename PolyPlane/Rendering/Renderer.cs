@@ -124,8 +124,8 @@ namespace PolyPlane.Rendering
         private const float MESSAGEBOX_FONT_SIZE = 10f;
         private const string DEFAULT_FONT_NAME = "Consolas";
 
-        private List<Tree> _trees = new List<Tree>();
         private CloudManager _cloudManager = new();
+        private TreeManager _treeManager = new();
 
         public Renderer(Control renderTarget, NetEventManager netMan)
         {
@@ -178,7 +178,7 @@ namespace PolyPlane.Rendering
             _greenYellowColorBrush?.Dispose();
 
             _clearBitmap?.Dispose();
-            _trees.ForEach(t => t.Dispose());
+            _treeManager?.Dispose();
 
             _device?.Dispose();
             _fpsLimiter?.Dispose();
@@ -259,57 +259,7 @@ namespace PolyPlane.Rendering
             var rnd = new Random(1234);
 
             _cloudManager.GenClouds(rnd, NUM_CLOUDS);
-            GenTrees(rnd, ctx);
-        }
-
-        private void GenTrees(Random rnd, RenderContext ctx)
-        {
-            // Gen trees.
-            var treeDeDup = new HashSet<D2DPoint>();
-
-            var trunkColorNormal = D2DColor.Chocolate;
-            var trunkColorNormalDark = new D2DColor(1f, 0.29f, 0.18f, 0.105f);
-            var leafColorNormal = D2DColor.ForestGreen;
-            var trunkColorPine = D2DColor.BurlyWood;
-            var leafColorPine = D2DColor.Green;
-            var minDist = rnd.NextFloat(20f, 200f);
-            var fieldRange = World.FieldXBounds;
-
-            for (int i = 0; i < NUM_TREES; i++)
-            {
-                var rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), 0f);
-
-                while (!treeDeDup.Add(rndPos) || (_trees.Count > 0 && _trees.Min(t => t.Position.DistanceTo(rndPos)) < minDist))
-                    rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), 0f);
-
-                var type = rnd.Next(10);
-                var height = (int)(10f + (rnd.NextFloat(1f, 3f) * 20f));
-
-                Tree newTree;
-
-                if (type <= 8)
-                {
-                    var radius = rnd.Next(40, 80);
-
-                    var leafColor = leafColorNormal;
-                    leafColor.g -= rnd.NextFloat(0.0f, 0.2f);
-
-                    var trunkColor = Utilities.LerpColor(trunkColorNormal, trunkColorNormalDark, rnd.NextFloat(0f, 1f));
-                    var trunkWidth = rnd.NextFloat(3f, 7f);
-
-                    newTree = new NormalTree(ctx, rndPos, height, radius, trunkWidth, trunkColor, leafColor);
-                }
-                else
-                {
-                    var width = rnd.NextFloat(20f, 30f);
-                    newTree = new PineTree(ctx, rndPos, height, width, trunkColorPine, leafColorPine);
-                }
-
-                _trees.Add(newTree);
-
-                if (i % 50 == 0)
-                    minDist = rnd.NextFloat(20f, 200f);
-            }
+            _treeManager.GenTrees(rnd, NUM_TREES, ctx);
         }
 
         private void ResizeGfx(bool force = false)
@@ -628,19 +578,7 @@ namespace PolyPlane.Rendering
 
         private void DrawTrees(RenderContext ctx)
         {
-            var todColor = ctx.GetTimeOfDayColor();
-            var shadowColor = ctx.GetShadowColor();
-            var shadowAngle = Tree.GetTreeShadowAngle();
-
-            for (int i = 0; i < _trees.Count; i++)
-            {
-                var tree = _trees[i];
-
-                if (ctx.Viewport.Contains(tree.Position, tree.TotalHeight * Tree.TREE_SCALE))
-                {
-                    tree.Render(ctx, todColor, shadowColor, shadowAngle);
-                }
-            }
+            _treeManager.Render(ctx);
         }
 
         private void DrawGroundImpacts(RenderContext ctx)
