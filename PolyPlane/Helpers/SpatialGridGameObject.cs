@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects;
+using System.Collections;
 using unvell.D2DLib;
 
 namespace PolyPlane.Helpers
@@ -7,13 +8,24 @@ namespace PolyPlane.Helpers
     /// Provides a dynamic sparse 2D spatial grid for fast nearest-neighbor searching of <see cref="GameObject"/>.
     /// </summary>
     /// <param name="sideLen">And integer (S) representing the grid cell side length (L), L = 1 << S. </param>
-    public sealed class SpatialGridGameObject(int sideLen = 9)
+    public sealed class SpatialGridGameObject
     {
         private Dictionary<int, EntrySequence> _sequences = new(1000);
         private List<Entry> _entries = new(50000);
         private Stack<int> _freeIndices = new(1000);
 
-        private readonly int SIDE_LEN = sideLen;
+        private GetInViewportEnumerator _viewportEnumerator;
+        private GetNearEnumerator _getNearEnumerator;
+
+        private readonly int SIDE_LEN = 9;
+
+        public SpatialGridGameObject(int sideLen = 9)
+        {
+            SIDE_LEN = sideLen;
+
+            _viewportEnumerator = new GetInViewportEnumerator(this);
+            _getNearEnumerator = new GetNearEnumerator(this);
+        }
 
         /// <summary>
         /// Removes expired objects and moves live objects to their new grid positions as needed.
@@ -254,53 +266,8 @@ namespace PolyPlane.Helpers
         /// <returns></returns>
         public IEnumerable<GameObject> GetNear(GameObject obj)
         {
-            GetGridIdx(obj, out int idxX, out int idxY);
-
-            for (int x = -1; x <= 1; x++)
-            {
-                for (int y = -1; y <= 1; y++)
-                {
-                    if (_sequences.TryGetValue(GetGridHash(idxX + x, idxY + y), out var index))
-                    {
-                        var cur = index.Head;
-
-                        while (cur != null)
-                        {
-                            yield return cur.Object;
-
-                            cur = cur.Next;
-                        }
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Get all objects within neighboring grid cells of the specified position.
-        /// </summary>
-        /// <param name="position"></param>
-        /// <returns></returns>
-        public IEnumerable<GameObject> GetNear(D2DPoint position)
-        {
-            GetGridIdx(position, out int idxX, out int idxY);
-
-            for (int x = -1; x <= 1; x++)
-            {
-                for (int y = -1; y <= 1; y++)
-                {
-                    if (_sequences.TryGetValue(GetGridHash(idxX + x, idxY + y), out var index))
-                    {
-                        var cur = index.Head;
-
-                        while (cur != null)
-                        {
-                            yield return cur.Object;
-
-                            cur = cur.Next;
-                        }
-                    }
-                }
-            }
+            _getNearEnumerator.Begin(obj);
+            return _getNearEnumerator;
         }
 
         /// <summary>
@@ -310,31 +277,8 @@ namespace PolyPlane.Helpers
         /// <returns></returns>
         public IEnumerable<GameObject> GetInViewport(D2DRect viewport)
         {
-            // Calc number of indexes for x/y coords.
-            int nX = (int)(viewport.Width / (1 << SIDE_LEN)) + 1;
-            int nY = (int)(viewport.Height / (1 << SIDE_LEN)) + 1;
-
-            // Find the initial indices for the top-left corner.
-            GetGridIdx(viewport.Location, out int idxX, out int idxY);
-
-            // Iterate x/y indices and return objects.
-            for (int x = idxX; x <= idxX + nX; x++)
-            {
-                for (int y = idxY; y <= idxY + nY; y++)
-                {
-                    if (_sequences.TryGetValue(GetGridHash(x, y), out var index))
-                    {
-                        var cur = index.Head;
-
-                        while (cur != null)
-                        {
-                            yield return cur.Object;
-
-                            cur = cur.Next;
-                        }
-                    }
-                }
-            }
+            _viewportEnumerator.Begin(viewport);
+            return _viewportEnumerator;
         }
 
         public void Clear()
@@ -405,6 +349,325 @@ namespace PolyPlane.Helpers
                 Next = null;
 
                 Object = item;
+            }
+        }
+
+
+        private sealed class GetInViewportEnumerator : IEnumerable<GameObject>, IEnumerable, IEnumerator<GameObject>, IEnumerator, IDisposable
+        {
+            private int _state;
+
+            private GameObject _current;
+            private D2DRect _viewport;
+            public SpatialGridGameObject _gridRef;
+
+            private int _numIdxX;
+            private int _numIdxY;
+            private int _curIdxX;
+            private int _curIdxY;
+            private int _curX;
+            private int _curY;
+
+            private EntrySequence _curSeq;
+            private Entry _curEntry;
+
+            GameObject IEnumerator<GameObject>.Current
+            {
+                get
+                {
+                    return _current;
+                }
+            }
+
+            object IEnumerator.Current
+            {
+                get
+                {
+                    return _current;
+                }
+            }
+
+            public GetInViewportEnumerator(SpatialGridGameObject grid)
+            {
+                _gridRef = grid;
+                _state = 0;
+            }
+
+            public void Begin(D2DRect viewport)
+            {
+                _state = 0;
+                _current = null;
+
+                _numIdxX = 0;
+                _numIdxY = 0;
+                _curIdxX = 0;
+                _curIdxY = 0;
+                _curX = 0;
+                _curY = 0;
+                _viewport = viewport;
+
+                _numIdxX = (int)(_viewport.Width / (float)(1 << _gridRef.SIDE_LEN)) + 1;
+                _numIdxY = (int)(_viewport.Height / (float)(1 << _gridRef.SIDE_LEN)) + 1;
+            }
+
+            void IDisposable.Dispose()
+            {
+                _curSeq = null;
+                _curEntry = null;
+                _state = -2;
+            }
+
+            private bool MoveNext()
+            {
+                int state = _state;
+                if (state != 0)
+                {
+                    if (state != 1)
+                    {
+                        return false;
+                    }
+
+                    _state = -1;
+                    _curEntry = _curEntry.Next;
+
+                    goto IL_012f;
+                }
+
+                _state = -1;
+                _gridRef.GetGridIdx(_viewport.Location, out _curIdxX, out _curIdxY);
+                _curX = _curIdxX;
+
+                goto IL_018e;
+
+            IL_018e:
+
+                if (_curX <= _curIdxX + _numIdxX)
+                {
+                    _curY = _curIdxY;
+
+                    goto IL_015c;
+                }
+
+                return false;
+
+            IL_0144:
+
+                _curSeq = null;
+                _curY++;
+                goto IL_015c;
+
+            IL_015c:
+
+                if (_curY <= _curIdxY + _numIdxY)
+                {
+                    if (_gridRef._sequences.TryGetValue(_gridRef.GetGridHash(_curX, _curY), out _curSeq))
+                    {
+                        _curEntry = _curSeq.Head;
+
+                        goto IL_012f;
+                    }
+
+                    goto IL_0144;
+                }
+
+                _curX++;
+
+                goto IL_018e;
+
+            IL_012f:
+
+                if (_curEntry != null)
+                {
+                    _current = _curEntry.Object;
+                    _state = 1;
+
+                    return true;
+                }
+
+                _curEntry = null;
+
+                goto IL_0144;
+            }
+
+            bool IEnumerator.MoveNext()
+            {
+                return this.MoveNext();
+            }
+
+            void IEnumerator.Reset()
+            {
+                throw new NotSupportedException();
+            }
+
+            IEnumerator<GameObject> IEnumerable<GameObject>.GetEnumerator()
+            {
+                _state = 0;
+
+                return this;
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return ((IEnumerable<GameObject>)this).GetEnumerator();
+            }
+        }
+
+
+        private sealed class GetNearEnumerator : IEnumerable<GameObject>, IEnumerable, IEnumerator<GameObject>, IEnumerator, IDisposable
+        {
+            private int _state;
+            private GameObject _current;
+            private GameObject _targetObj;
+            private SpatialGridGameObject _gridRef;
+
+            private int _idxX;
+            private int _idxY;
+            private int _curLutIdx = 0;
+            private IntPoint _offset;
+
+            private EntrySequence _curSeq;
+            private Entry _curEntry;
+
+            private static readonly IntPoint[] OFFSET_LUT =
+            [
+                new IntPoint(-1, -1),
+                new IntPoint(-1, 0),
+                new IntPoint(-1, 1),
+                new IntPoint(0, -1),
+                new IntPoint(0, 0),
+                new IntPoint(0, 1),
+                new IntPoint(1, -1),
+                new IntPoint(1, 0),
+                new IntPoint(1, 1)
+            ];
+
+            GameObject IEnumerator<GameObject>.Current
+            {
+                get
+                {
+                    return _current;
+                }
+            }
+
+            object IEnumerator.Current
+            {
+                get
+                {
+                    return _current;
+                }
+            }
+
+            public GetNearEnumerator(SpatialGridGameObject grid)
+            {
+                _gridRef = grid;
+                this._state = 0;
+            }
+
+            public void Begin(GameObject gameObject)
+            {
+                _state = 0;
+                _targetObj = gameObject;
+                _idxX = 0;
+                _idxY = 0;
+                _curLutIdx = 0;
+            }
+
+            void IDisposable.Dispose()
+            {
+                _curSeq = null;
+                _curEntry = null;
+                _state = -2;
+            }
+
+            private bool MoveNext()
+            {
+                int state = _state;
+                if (state != 0)
+                {
+                    if (state != 1)
+                    {
+                        return false;
+                    }
+
+                    _state = -1;
+                    _curEntry = _curEntry.Next;
+
+                    goto IL_00f5;
+                }
+
+                _state = -1;
+                _gridRef.GetGridIdx(_targetObj, out _idxX, out _idxY);
+                _curLutIdx = 0;
+
+            IL_0122:
+                if (_curLutIdx < OFFSET_LUT.Length)
+                {
+                    _offset = OFFSET_LUT[_curLutIdx];
+
+                    if (_gridRef._sequences.TryGetValue(_gridRef.GetGridHash(_idxX + _offset.X, _idxY + _offset.Y), out _curSeq))
+                    {
+                        _curEntry = _curSeq.Head;
+
+                        goto IL_00f5;
+                    }
+
+                    goto IL_010a;
+                }
+
+                return false;
+
+            IL_00f5:
+                if (_curEntry != null)
+                {
+                    _current = _curEntry.Object;
+                    _state = 1;
+
+                    return true;
+                }
+
+                _curEntry = null;
+
+                goto IL_010a;
+
+            IL_010a:
+
+                _curSeq = null;
+                _curLutIdx++;
+
+                goto IL_0122;
+            }
+
+            bool IEnumerator.MoveNext()
+            {
+                return this.MoveNext();
+            }
+
+            void IEnumerator.Reset()
+            {
+                throw new NotSupportedException();
+            }
+
+            IEnumerator<GameObject> IEnumerable<GameObject>.GetEnumerator()
+            {
+                _state = 0;
+                return this;
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return ((IEnumerable<GameObject>)this).GetEnumerator();
+            }
+
+            private struct IntPoint
+            {
+                public int X;
+                public int Y;
+
+                public IntPoint(int x, int y)
+                {
+                    X = x;
+                    Y = y;
+                }
             }
         }
     }

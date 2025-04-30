@@ -1,4 +1,5 @@
-﻿using unvell.D2DLib;
+﻿using System.Collections;
+using unvell.D2DLib;
 
 namespace PolyPlane.Helpers
 {
@@ -12,15 +13,27 @@ namespace PolyPlane.Helpers
     /// <param name="positionSelector">Selector for current object positions. Grid positions are updated on <see cref="Update"/></param>
     /// <param name="isExpiredSelector">Selector for object expired status.  Expired objects are removed on <see cref="Update"/></param>
     /// <param name="sideLen">And integer (S) representing the grid cell side length (L), L = 1 << S. </param>
-    public sealed class SpatialGrid<T>(Func<T, D2DPoint> positionSelector, Func<T, bool> isExpiredSelector, int sideLen = 9)
+    public sealed class SpatialGrid<T>
     {
         private Dictionary<int, EntrySequence> _sequences = new(1000);
         private List<Entry> _entries = new(50000);
         private Stack<int> _freeIndices = new(1000);
+        private GetInViewportEnumerator _viewportEnumerator;
+        private GetNearEnumerator _getNearEnumerator;
 
-        private readonly Func<T, D2DPoint> _positionSelector = positionSelector;
-        private readonly Func<T, bool> _isExpiredSelector = isExpiredSelector;
-        private readonly int SIDE_LEN = sideLen;
+        private readonly Func<T, D2DPoint> _positionSelector;
+        private readonly Func<T, bool> _isExpiredSelector;
+        private readonly int SIDE_LEN = 9;
+
+        public SpatialGrid(Func<T, D2DPoint> positionSelector, Func<T, bool> isExpiredSelector, int sideLen = 9)
+        {
+            _positionSelector = positionSelector;
+            _isExpiredSelector = isExpiredSelector;
+            SIDE_LEN = sideLen;
+
+            _viewportEnumerator = new GetInViewportEnumerator(this);
+            _getNearEnumerator = new GetNearEnumerator(this);
+        }
 
         /// <summary>
         /// Removes expired objects and moves live objects to their new grid positions as needed.
@@ -258,29 +271,8 @@ namespace PolyPlane.Helpers
         /// <returns></returns>
         public IEnumerable<T> GetNear(T obj)
         {
-            GetGridIdx(obj, out int idxX, out int idxY);
-
-            for (int x = -1; x <= 1; x++)
-            {
-                for (int y = -1; y <= 1; y++)
-                {
-                    var xo = idxX + x;
-                    var yo = idxY + y;
-                    var nHash = GetGridHash(xo, yo);
-
-                    if (_sequences.TryGetValue(nHash, out var index))
-                    {
-                        var cur = index.Head;
-
-                        while (cur != null)
-                        {
-                            yield return cur.Item;
-
-                            cur = cur.Next;
-                        }
-                    }
-                }
-            }
+            _getNearEnumerator.Begin(obj);
+            return _getNearEnumerator;
         }
 
         /// <summary>
@@ -322,33 +314,8 @@ namespace PolyPlane.Helpers
         /// <returns></returns>
         public IEnumerable<T> GetInViewport(D2DRect viewport)
         {
-            // Calc number of indexes for x/y coords.
-            int nX = (int)(viewport.Width / (1 << SIDE_LEN)) + 1;
-            int nY = (int)(viewport.Height / (1 << SIDE_LEN)) + 1;
-
-            // Find the initial indices for the top-left corner.
-            GetGridIdx(viewport.Location, out int idxX, out int idxY);
-
-            // Iterate x/y indices and return objects.
-            for (int x = idxX; x <= idxX + nX; x++)
-            {
-                for (int y = idxY; y <= idxY + nY; y++)
-                {
-                    var nHash = GetGridHash(x, y);
-
-                    if (_sequences.TryGetValue(nHash, out var index))
-                    {
-                        var cur = index.Head;
-
-                        while (cur != null)
-                        {
-                            yield return cur.Item;
-
-                            cur = cur.Next;
-                        }
-                    }
-                }
-            }
+            _viewportEnumerator.Begin(viewport);
+            return _viewportEnumerator;
         }
 
         public void Clear()
@@ -433,6 +400,321 @@ namespace PolyPlane.Helpers
                 Next = null;
 
                 Item = item;
+            }
+        }
+
+        private sealed class GetInViewportEnumerator : IEnumerable<T>, IEnumerable, IEnumerator<T>, IEnumerator, IDisposable
+        {
+            private int _state;
+
+            private T _current;
+            private D2DRect _viewport;
+            private SpatialGrid<T> _gridRef;
+
+            private int _numIdxX;
+            private int _numIdxY;
+            private int _curIdxX;
+            private int _curIdxY;
+            private int _curX;
+            private int _curY;
+
+            private EntrySequence _curSeq;
+            private Entry _curEntry;
+
+            T IEnumerator<T>.Current
+            {
+                get
+                {
+                    return _current;
+                }
+            }
+
+            object IEnumerator.Current
+            {
+                get
+                {
+                    return _current;
+                }
+            }
+
+            public GetInViewportEnumerator(SpatialGrid<T> grid)
+            {
+                _gridRef = grid;
+                _state = 0;
+            }
+
+            public void Begin(D2DRect viewport)
+            {
+                _state = 0;
+                _numIdxX = 0;
+                _numIdxY = 0;
+                _curIdxX = 0;
+                _curIdxY = 0;
+                _curX = 0;
+                _curY = 0;
+                _viewport = viewport;
+
+                _numIdxX = (int)(_viewport.Width / (float)(1 << _gridRef.SIDE_LEN)) + 1;
+                _numIdxY = (int)(_viewport.Height / (float)(1 << _gridRef.SIDE_LEN)) + 1;
+            }
+
+            void IDisposable.Dispose()
+            {
+                _curSeq = null;
+                _curEntry = null;
+                _state = -2;
+            }
+
+            private bool MoveNext()
+            {
+                int state = _state;
+                if (state != 0)
+                {
+                    if (state != 1)
+                    {
+                        return false;
+                    }
+
+                    _state = -1;
+                    _curEntry = _curEntry.Next;
+
+                    goto IL_012f;
+                }
+
+                _state = -1;
+                _gridRef.GetGridIdx(_viewport.Location, out _curIdxX, out _curIdxY);
+                _curX = _curIdxX;
+
+                goto IL_018e;
+
+            IL_018e:
+
+                if (_curX <= _curIdxX + _numIdxX)
+                {
+                    _curY = _curIdxY;
+
+                    goto IL_015c;
+                }
+
+                return false;
+
+            IL_0144:
+
+                _curSeq = null;
+                _curY++;
+                goto IL_015c;
+
+            IL_015c:
+
+                if (_curY <= _curIdxY + _numIdxY)
+                {
+                    if (_gridRef._sequences.TryGetValue(_gridRef.GetGridHash(_curX, _curY), out _curSeq))
+                    {
+                        _curEntry = _curSeq.Head;
+
+                        goto IL_012f;
+                    }
+
+                    goto IL_0144;
+                }
+
+                _curX++;
+
+                goto IL_018e;
+
+            IL_012f:
+
+                if (_curEntry != null)
+                {
+                    _current = _curEntry.Item;
+                    _state = 1;
+
+                    return true;
+                }
+
+                _curEntry = null;
+
+                goto IL_0144;
+            }
+
+            bool IEnumerator.MoveNext()
+            {
+                return this.MoveNext();
+            }
+
+            void IEnumerator.Reset()
+            {
+                throw new NotSupportedException();
+            }
+
+            IEnumerator<T> IEnumerable<T>.GetEnumerator()
+            {
+                _state = 0;
+
+                return this;
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return ((IEnumerable<T>)this).GetEnumerator();
+            }
+        }
+
+        private sealed class GetNearEnumerator : IEnumerable<T>, IEnumerable, IEnumerator<T>, IEnumerator, IDisposable
+        {
+            private int _state;
+            private T _current;
+            private T _targetObj;
+            private SpatialGrid<T> _gridRef;
+
+            private int _idxX;
+            private int _idxY;
+            private int _curLutIdx = 0;
+            private IntPoint _offset;
+
+            private EntrySequence _curSeq;
+            private Entry _curEntry;
+
+            private static readonly IntPoint[] OFFSET_LUT =
+            [
+                new IntPoint(-1, -1),
+                new IntPoint(-1, 0),
+                new IntPoint(-1, 1),
+                new IntPoint(0, -1),
+                new IntPoint(0, 0),
+                new IntPoint(0, 1),
+                new IntPoint(1, -1),
+                new IntPoint(1, 0),
+                new IntPoint(1, 1)
+            ];
+
+            T IEnumerator<T>.Current
+            {
+                get
+                {
+                    return _current;
+                }
+            }
+
+            object IEnumerator.Current
+            {
+                get
+                {
+                    return _current;
+                }
+            }
+
+            public GetNearEnumerator(SpatialGrid<T> grid)
+            {
+                _gridRef = grid;
+                this._state = 0;
+            }
+
+            public void Begin(T gameObject)
+            {
+                _state = 0;
+                _targetObj = gameObject;
+                _idxX = 0;
+                _idxY = 0;
+                _curLutIdx = 0;
+            }
+
+            void IDisposable.Dispose()
+            {
+                _curSeq = null;
+                _curEntry = null;
+                _state = -2;
+            }
+
+            private bool MoveNext()
+            {
+                int state = _state;
+                if (state != 0)
+                {
+                    if (state != 1)
+                    {
+                        return false;
+                    }
+
+                    _state = -1;
+                    _curEntry = _curEntry.Next;
+
+                    goto IL_00f5;
+                }
+
+                _state = -1;
+                _gridRef.GetGridIdx(_targetObj, out _idxX, out _idxY);
+                _curLutIdx = 0;
+
+            IL_0122:
+                if (_curLutIdx < OFFSET_LUT.Length)
+                {
+                    _offset = OFFSET_LUT[_curLutIdx];
+
+                    if (_gridRef._sequences.TryGetValue(_gridRef.GetGridHash(_idxX + _offset.X, _idxY + _offset.Y), out _curSeq))
+                    {
+                        _curEntry = _curSeq.Head;
+
+                        goto IL_00f5;
+                    }
+
+                    goto IL_010a;
+                }
+
+                return false;
+
+            IL_00f5:
+                if (_curEntry != null)
+                {
+                    _current = _curEntry.Item;
+                    _state = 1;
+
+                    return true;
+                }
+
+                _curEntry = null;
+
+                goto IL_010a;
+
+            IL_010a:
+
+                _curSeq = null;
+                _curLutIdx++;
+
+                goto IL_0122;
+            }
+
+            bool IEnumerator.MoveNext()
+            {
+                return this.MoveNext();
+            }
+
+            void IEnumerator.Reset()
+            {
+                throw new NotSupportedException();
+            }
+
+            IEnumerator<T> IEnumerable<T>.GetEnumerator()
+            {
+                _state = 0;
+                return this;
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return ((IEnumerable<T>)this).GetEnumerator();
+            }
+
+            private struct IntPoint
+            {
+                public int X;
+                public int Y;
+
+                public IntPoint(int x, int y)
+                {
+                    X = x;
+                    Y = y;
+                }
             }
         }
     }

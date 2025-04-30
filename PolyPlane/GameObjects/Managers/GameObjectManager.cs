@@ -799,7 +799,6 @@ namespace PolyPlane.GameObjects.Managers
         }
 
         public IEnumerable<GameObject> GetNear(GameObject obj) => _spatialGrid.GetNear(obj);
-        public IEnumerable<GameObject> GetNear(D2DPoint position) => _spatialGrid.GetNear(position);
         public IEnumerable<GameObject> GetInViewport(D2DRect viewport) => _spatialGrid.GetInViewport(viewport);
     }
 }
