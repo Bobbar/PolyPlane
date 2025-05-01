@@ -52,7 +52,7 @@ namespace PolyPlane.GameObjects
         private const float BURN_RATE = 0.85f;
         private const float THRUST = 2500f;
         private const float FUEL = 10f;
-        private const float DEFLECTION_RATE = 45f;
+        private const float DEFLECTION_RATE = 35f;
 
         private float _currentFuel = 0f;
         private float _gForce = 0f;
@@ -266,6 +266,10 @@ namespace PolyPlane.GameObjects
                 const float TAIL_AUTH = 1f;
                 const float NOSE_AUTH = 0f;
 
+                // Apply guidance.
+                if (_guidance != null)
+                    _guideRotation = _guidance.GuideTo(dt);
+
                 // Hold initial rotation until activated.
                 // Otherwise ease in the guidance rotation.
                 if (!this.IsActivated)
@@ -315,10 +319,6 @@ namespace PolyPlane.GameObjects
         public override void DoUpdate(float dt)
         {
             base.DoUpdate(dt);
-
-            // Apply guidance.
-            if (_guidance != null)
-                _guideRotation = _guidance.GuideTo(dt);
 
             if (_currentFuel > 0f)
             {

@@ -2,6 +2,7 @@
 using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Fixtures;
 using PolyPlane.GameObjects.Managers;
+using System;
 using System.Net;
 using System.Numerics;
 using unvell.D2DLib;
@@ -13,6 +14,11 @@ namespace PolyPlane.Helpers
         public static Random Rnd = new Random();
         public const float DEGREES_TO_RADS = (float)(Math.PI / 180d);
         public const float RADS_TO_DEGREES = (float)(180d / Math.PI);
+
+        public static float Damp(float a, float b, float lambda, float dt)
+        {
+            return Lerp(a, b, 1 - MathF.Exp(-lambda * dt));
+}
 
         public static float Lerp(float value1, float value2, float amount)
         {

@@ -11,6 +11,7 @@ namespace PolyPlane.GameObjects.Guidance
         private D2DPoint _prevTargPos = D2DPoint.Zero;
         private D2DPoint _prevImpactPnt = D2DPoint.Zero;
         private SmoothFloat _closingRateSmooth = new SmoothFloat(5);
+        private SmoothPoint _predictSmooth = new SmoothPoint(10);
 
         private float _prevVelo = 0f;
         private float _prevTargetDist = 0f;
@@ -25,11 +26,12 @@ namespace PolyPlane.GameObjects.Guidance
         public override float GetGuidanceDirection(float dt)
         {
             // Tweakables
-            const float ROT_MOD_TIME = 10f; // Impact time to begin increasing rotation rate. (Get more aggro the closer we get)
-            const float ROT_MOD_AMT = 0.8f; // Max amount to increase rot rate per above time.
+            const float ROT_MOD_TIME = 30f; // Impact time to begin increasing rotation rate. (Get more aggro the closer we get)
+            const float ROT_MOD_AMT = 0.95f; // Max amount to increase rot rate per above time.
             const float ROT_AMT_FACTOR = 1.2f; // Effects sensitivity and how much rotation is computed. (Higher value == more rotatation for a given aim direction)
             const float IMPACT_POINT_DELTA_THRESH = 10f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
             const float MIN_CLOSE_RATE = 0.05f; // Min closing rate required to aim at predicted impact point.
+            const float DAMP_AMT = 200f; // Damping factor for the computed rotation.  (Helps with control surface oscillations)
 
             var targetPosition = GetTargetPosition();
             var targetVelo = this.Target.Velocity;
@@ -64,7 +66,8 @@ namespace PolyPlane.GameObjects.Guidance
 
                 var relVelo = (missileVelo - targetVelo).Length();
                 var framesToImpact = ImpactTime(targDist, (relVelo * dt), (deltaV * dt));
-                impactPnt = RefineImpact(targetPosition, targetVelo, targAngleDelta, framesToImpact, dt);
+                var predictedPoint = RefineImpact(targetPosition, targetVelo, targAngleDelta, framesToImpact, dt);
+                impactPnt = _predictSmooth.Add(predictedPoint);
             }
 
             // Compute the speed (delta) of the impact point as it is refined.
@@ -98,7 +101,10 @@ namespace PolyPlane.GameObjects.Guidance
                 rotMod = 1f + (1f - Utilities.FactorWithEasing(timeToImpact, ROT_MOD_TIME, EasingFunctions.Out.EaseCircle)) * ROT_MOD_AMT;
 
             // Offset our current rotation from our current velocity vector to compute the next rotation.
-            var nextRot = missileVeloAngle + -(rotAmt * rotMod);
+            var rot = missileVeloAngle + -(rotAmt * rotMod);
+            
+            // Apply damping to the rotation.
+            var nextRot = Utilities.Damp(missileVeloAngle, rot, DAMP_AMT, dt);
 
             // Tracking info.
             ImpactPoint = impactPnt; // Red
@@ -123,7 +129,7 @@ namespace PolyPlane.GameObjects.Guidance
 
             D2DPoint predicted = targetPos;
 
-            if (framesToImpact >= 1 && framesToImpact < MAX_FTI)
+            if (framesToImpact > 5 && framesToImpact < MAX_FTI)
             {
                 var targLoc = targetPos;
                 var angle = targetVelo.Angle();
