@@ -841,6 +841,7 @@ namespace PolyPlane
             _selectObjectUI.WindowState = FormWindowState.Normal;
             _selectObjectUI.Show();
             _selectObjectUI.BringToFront();
+            _selectObjectUI.UpdateObjectList();
         }
 
         private void PolyPlaneUI_KeyPress(object sender, KeyPressEventArgs e)
