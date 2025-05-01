@@ -353,39 +353,26 @@ namespace PolyPlane.Helpers
         }
 
 
-        private sealed class GetInViewportEnumerator : IEnumerable<GameObject>, IEnumerable, IEnumerator<GameObject>, IEnumerator, IDisposable
+        private sealed class GetInViewportEnumerator : IEnumerable<GameObject>, IEnumerator<GameObject>
         {
             private int _state;
 
             private GameObject _current;
             private D2DRect _viewport;
-            public SpatialGridGameObject _gridRef;
+            private SpatialGridGameObject _gridRef;
 
             private int _numIdxX;
             private int _numIdxY;
-            private int _curIdxX;
-            private int _curIdxY;
+            private int _startIdxX;
+            private int _startIdxY;
             private int _curX;
             private int _curY;
 
             private EntrySequence _curSeq;
             private Entry _curEntry;
 
-            GameObject IEnumerator<GameObject>.Current
-            {
-                get
-                {
-                    return _current;
-                }
-            }
-
-            object IEnumerator.Current
-            {
-                get
-                {
-                    return _current;
-                }
-            }
+            GameObject IEnumerator<GameObject>.Current => _current;
+            object IEnumerator.Current => _current;
 
             public GetInViewportEnumerator(SpatialGridGameObject grid)
             {
@@ -400,8 +387,8 @@ namespace PolyPlane.Helpers
 
                 _numIdxX = 0;
                 _numIdxY = 0;
-                _curIdxX = 0;
-                _curIdxY = 0;
+                _startIdxX = 0;
+                _startIdxY = 0;
                 _curX = 0;
                 _curY = 0;
                 _viewport = viewport;
@@ -419,10 +406,9 @@ namespace PolyPlane.Helpers
 
             private bool MoveNext()
             {
-                int state = _state;
-                if (state != 0)
+                if (_state != 0)
                 {
-                    if (state != 1)
+                    if (_state != 1)
                     {
                         return false;
                     }
@@ -430,51 +416,49 @@ namespace PolyPlane.Helpers
                     _state = -1;
                     _curEntry = _curEntry.Next;
 
-                    goto IL_012f;
+                    goto SET_CURRENT;
                 }
 
                 _state = -1;
-                _gridRef.GetGridIdx(_viewport.Location, out _curIdxX, out _curIdxY);
-                _curX = _curIdxX;
+                _gridRef.GetGridIdx(_viewport.Location, out _startIdxX, out _startIdxY);
+                _curX = _startIdxX;
 
-                goto IL_018e;
+            CHECK_FOR_END:
 
-            IL_018e:
-
-                if (_curX <= _curIdxX + _numIdxX)
+                if (_curX <= _startIdxX + _numIdxX)
                 {
-                    _curY = _curIdxY;
+                    _curY = _startIdxY;
 
-                    goto IL_015c;
+                    goto NEXT_SEQ_OR_INCREMENT_X;
                 }
 
                 return false;
 
-            IL_0144:
+            INCREMENT_Y:
 
                 _curSeq = null;
                 _curY++;
-                goto IL_015c;
+                goto NEXT_SEQ_OR_INCREMENT_X;
 
-            IL_015c:
+            NEXT_SEQ_OR_INCREMENT_X:
 
-                if (_curY <= _curIdxY + _numIdxY)
+                if (_curY <= _startIdxY + _numIdxY)
                 {
                     if (_gridRef._sequences.TryGetValue(_gridRef.GetGridHash(_curX, _curY), out _curSeq))
                     {
                         _curEntry = _curSeq.Head;
 
-                        goto IL_012f;
+                        goto SET_CURRENT;
                     }
 
-                    goto IL_0144;
+                    goto INCREMENT_Y;
                 }
 
                 _curX++;
 
-                goto IL_018e;
+                goto CHECK_FOR_END;
 
-            IL_012f:
+            SET_CURRENT:
 
                 if (_curEntry != null)
                 {
@@ -486,23 +470,15 @@ namespace PolyPlane.Helpers
 
                 _curEntry = null;
 
-                goto IL_0144;
+                goto INCREMENT_Y;
             }
 
-            bool IEnumerator.MoveNext()
-            {
-                return this.MoveNext();
-            }
-
-            void IEnumerator.Reset()
-            {
-                throw new NotSupportedException();
-            }
+            bool IEnumerator.MoveNext() => MoveNext();
+            void IEnumerator.Reset() => throw new NotSupportedException();
 
             IEnumerator<GameObject> IEnumerable<GameObject>.GetEnumerator()
             {
                 _state = 0;
-
                 return this;
             }
 
@@ -513,9 +489,10 @@ namespace PolyPlane.Helpers
         }
 
 
-        private sealed class GetNearEnumerator : IEnumerable<GameObject>, IEnumerable, IEnumerator<GameObject>, IEnumerator, IDisposable
+        private sealed class GetNearEnumerator : IEnumerable<GameObject>, IEnumerator<GameObject>
         {
             private int _state;
+
             private GameObject _current;
             private GameObject _targetObj;
             private SpatialGridGameObject _gridRef;
@@ -541,26 +518,13 @@ namespace PolyPlane.Helpers
                 new IntPoint(1, 1)
             ];
 
-            GameObject IEnumerator<GameObject>.Current
-            {
-                get
-                {
-                    return _current;
-                }
-            }
-
-            object IEnumerator.Current
-            {
-                get
-                {
-                    return _current;
-                }
-            }
+            GameObject IEnumerator<GameObject>.Current => _current;
+            object IEnumerator.Current => _current;
 
             public GetNearEnumerator(SpatialGridGameObject grid)
             {
                 _gridRef = grid;
-                this._state = 0;
+                _state = 0;
             }
 
             public void Begin(GameObject gameObject)
@@ -581,10 +545,9 @@ namespace PolyPlane.Helpers
 
             private bool MoveNext()
             {
-                int state = _state;
-                if (state != 0)
+                if (_state != 0)
                 {
-                    if (state != 1)
+                    if (_state != 1)
                     {
                         return false;
                     }
@@ -592,14 +555,15 @@ namespace PolyPlane.Helpers
                     _state = -1;
                     _curEntry = _curEntry.Next;
 
-                    goto IL_00f5;
+                    goto SET_CURRENT;
                 }
 
                 _state = -1;
                 _gridRef.GetGridIdx(_targetObj, out _idxX, out _idxY);
                 _curLutIdx = 0;
 
-            IL_0122:
+            NEXT_SEQ:
+
                 if (_curLutIdx < OFFSET_LUT.Length)
                 {
                     _offset = OFFSET_LUT[_curLutIdx];
@@ -608,15 +572,16 @@ namespace PolyPlane.Helpers
                     {
                         _curEntry = _curSeq.Head;
 
-                        goto IL_00f5;
+                        goto SET_CURRENT;
                     }
 
-                    goto IL_010a;
+                    goto NEXT_OFFSET;
                 }
 
                 return false;
 
-            IL_00f5:
+            SET_CURRENT:
+
                 if (_curEntry != null)
                 {
                     _current = _curEntry.Object;
@@ -627,25 +592,18 @@ namespace PolyPlane.Helpers
 
                 _curEntry = null;
 
-                goto IL_010a;
+                goto NEXT_OFFSET;
 
-            IL_010a:
+            NEXT_OFFSET:
 
                 _curSeq = null;
                 _curLutIdx++;
 
-                goto IL_0122;
+                goto NEXT_SEQ;
             }
 
-            bool IEnumerator.MoveNext()
-            {
-                return this.MoveNext();
-            }
-
-            void IEnumerator.Reset()
-            {
-                throw new NotSupportedException();
-            }
+            bool IEnumerator.MoveNext() => MoveNext();
+            void IEnumerator.Reset() => throw new NotSupportedException();
 
             IEnumerator<GameObject> IEnumerable<GameObject>.GetEnumerator()
             {
