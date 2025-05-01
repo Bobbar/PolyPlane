@@ -18,7 +18,7 @@ namespace PolyPlane.GameObjects
 
         public Debris() : base()
         {
-            this.Flags = GameObjectFlags.Pushable | GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround | GameObjectFlags.CanSleep;
+            this.Flags = GameObjectFlags.AeroPushable | GameObjectFlags.ExplosionImpulse | GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround | GameObjectFlags.CanSleep;
             this.Mass = 40f;
             this.RenderOrder = 3;
             this.Polygon = new RenderPoly(this, Utilities.RandomPoly(8, 12));

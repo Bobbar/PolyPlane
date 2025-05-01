@@ -101,8 +101,7 @@ namespace PolyPlane.GameObjects.Managers
                                 }
                             }
                         }
-
-                        if (obj is Bullet bullet)
+                        else if (obj is Bullet bullet)
                         {
                             if (bullet.IsExpired)
                                 continue;
@@ -264,27 +263,7 @@ namespace PolyPlane.GameObjects.Managers
             const float VELO_FACTOR = 50f;
             const float MIN_VELO = 10f;
 
-            if (particleObject.IsNetObject)
-                return;
-
-            if (!particleObject.HasFlag(GameObjectFlags.Pushable))
-                return;
-
-            // Don't push certain particle types.
-            if (particleObject is Particle particle)
-            {
-                switch (particle.Type)
-                {
-                    case ParticleType.Vapor or ParticleType.Smoke:
-                        return;
-                }
-            }
-
-            // Don't push planes.
-            if (particleObject is FighterPlane)
-                return;
-
-            if (particleObject.Equals(pushObject))
+            if (!particleObject.HasFlag(GameObjectFlags.AeroPushable))
                 return;
 
             var pushVelo = pushObject.Velocity.Length();
@@ -389,7 +368,7 @@ namespace PolyPlane.GameObjects.Managers
                         }
 
                         // Impart an impulse on other nearby pushable objects.
-                        if (obj.HasFlag(GameObjectFlags.Pushable))
+                        if (obj.HasFlag(GameObjectFlags.ExplosionImpulse))
                         {
                             var dir = (obj.Position - explosion.Position);
                             var dirNorm = dir.Normalized();

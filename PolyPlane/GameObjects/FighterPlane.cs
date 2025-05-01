@@ -255,7 +255,7 @@ namespace PolyPlane.GameObjects
 
         private void InitStuff()
         {
-            this.Flags = GameObjectFlags.ClampToGround | GameObjectFlags.SpatialGrid | GameObjectFlags.Pushable;
+            this.Flags = GameObjectFlags.ClampToGround | GameObjectFlags.SpatialGrid | GameObjectFlags.ExplosionImpulse;
             this.Radar = new Radar(this);
 
             this.Mass = 90f;

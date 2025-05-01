@@ -49,7 +49,7 @@ namespace PolyPlane.GameObjects.Particles
             Ellipse = new D2DEllipse();
             RenderOrder = 0;
             Mass = PARTICLE_MASS;
-            Flags = GameObjectFlags.SpatialGrid | GameObjectFlags.Pushable | GameObjectFlags.BounceOffGround;
+            Flags = GameObjectFlags.SpatialGrid | GameObjectFlags.AeroPushable | GameObjectFlags.ExplosionImpulse | GameObjectFlags.BounceOffGround;
         }
 
         public override void DoUpdate(float dt)

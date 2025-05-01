@@ -14,20 +14,24 @@ namespace PolyPlane.GameObjects
         /// </summary>
         SpatialGrid = 1,
         /// <summary>
-        /// Object can be pushed by explosions and aerodynamic effects.
+        /// Object can be pushed by aerodynamic effects.
         /// </summary>
-        Pushable = 2,
+        AeroPushable = 2,
+        /// <summary>
+        /// Object can be pushed by explosions.
+        /// </summary>
+        ExplosionImpulse = 4,
         /// <summary>
         /// Object will be clamped to the ground level with no bounce.
         /// </summary>
-        ClampToGround = 4,
+        ClampToGround = 8,
         /// <summary>
         /// Object will bounce off the ground.
         /// </summary>
-        BounceOffGround = 8,
+        BounceOffGround = 16,
         /// <summary>
         /// Object will be put to sleep once its velocity is very close to zero.
         /// </summary>
-        CanSleep = 16
+        CanSleep = 32
     }
 }
