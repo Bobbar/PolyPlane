@@ -1,5 +1,7 @@
 ﻿using PolyPlane.GameObjects;
 using System.Collections;
+using System.Diagnostics;
+using System.Runtime.InteropServices.ObjectiveC;
 using unvell.D2DLib;
 
 namespace PolyPlane.Helpers
@@ -15,7 +17,7 @@ namespace PolyPlane.Helpers
         private Stack<int> _freeIndices = new(1000);
 
         private GetInViewportEnumerator _viewportEnumerator;
-        private GetNearEnumerator _getNearEnumerator;
+        private GetNearEnumerator[] _getNearEnumPool = new GetNearEnumerator[0];
 
         private readonly int SIDE_LEN = 9;
 
@@ -24,7 +26,6 @@ namespace PolyPlane.Helpers
             SIDE_LEN = sideLen;
 
             _viewportEnumerator = new GetInViewportEnumerator(this);
-            _getNearEnumerator = new GetNearEnumerator(this);
         }
 
         /// <summary>
@@ -266,8 +267,39 @@ namespace PolyPlane.Helpers
         /// <returns></returns>
         public IEnumerable<GameObject> GetNear(GameObject obj)
         {
-            _getNearEnumerator.Begin(obj);
-            return _getNearEnumerator;
+            var getNearEnum = GetPooledGetNearEnum();
+            getNearEnum.Begin(obj);
+            return getNearEnum;
+        }
+
+        private GetNearEnumerator GetPooledGetNearEnum()
+        {
+            // Use thread ID to index and cache enumerators for multi-threaded ops.
+            var tid = Environment.CurrentManagedThreadId;
+            GetNearEnumerator enumerator;
+
+            if (_getNearEnumPool.Length - 1 < tid)
+            {
+                var newPool = new GetNearEnumerator[tid + 1];
+
+                Array.Copy(_getNearEnumPool, 0, newPool, 0, _getNearEnumPool.Length);
+
+                _getNearEnumPool = newPool;
+
+                enumerator = new GetNearEnumerator(this);
+                _getNearEnumPool[tid] = enumerator;
+            }
+            else if (_getNearEnumPool[tid] == null)
+            {
+                enumerator = new GetNearEnumerator(this);
+                _getNearEnumPool[tid] = enumerator;
+            }
+            else
+            {
+                enumerator = _getNearEnumPool[tid];
+            }
+
+            return enumerator;
         }
 
         /// <summary>
@@ -534,6 +566,8 @@ namespace PolyPlane.Helpers
                 _idxX = 0;
                 _idxY = 0;
                 _curLutIdx = 0;
+                _curEntry = null;
+                _curSeq = null;
             }
 
             void IDisposable.Dispose()

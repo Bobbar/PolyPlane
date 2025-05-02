@@ -312,10 +312,9 @@ namespace PolyPlane.Net
                 if (missileTarget == null)
                     missileTarget = _objs.AddDummyObject(missilePacket.TargetID);
 
-                var missile = new GuidedMissile(missileOwner, missilePacket.Position, missilePacket.Velocity, missilePacket.Rotation);
+                var missile = new GuidedMissile(missileOwner, missileTarget, missilePacket.Position, missilePacket.Velocity, missilePacket.Rotation);
                 missile.ID = missilePacket.ID;
                 missilePacket.SyncObj(missile);
-                missile.Target = missileTarget;
                 missile.LagAmount = missilePacket.Age;
 
                 _objs.AddMissile(missile);

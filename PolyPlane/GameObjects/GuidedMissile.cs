@@ -111,10 +111,11 @@ namespace PolyPlane.GameObjects
             new D2DPoint(-8, -1.5f),
         ];
 
-        public GuidedMissile(GameObject player, D2DPoint position, D2DPoint velocity, float rotation)
+        public GuidedMissile(GameObject player, GameObject target, D2DPoint position, D2DPoint velocity, float rotation)
         {
             this.PlayerID = player.ID.PlayerID;
             this.IsNetObject = true;
+            this.Target = target;
             _currentFuel = FUEL;
 
             this.Position = position;

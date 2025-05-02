@@ -1,6 +1,6 @@
-﻿using PolyPlane.GameObjects.Particles;
-using PolyPlane.Helpers;
+﻿using PolyPlane.Helpers;
 using PolyPlane.Net;
+using System.Diagnostics;
 
 namespace PolyPlane.GameObjects.Managers
 {
@@ -36,206 +36,220 @@ namespace PolyPlane.GameObjects.Managers
             var now = World.CurrentNetTimeMs();
 
             // Targets/AI Planes vs missiles and bullets.
-            for (int r = 0; r < _objs.Planes.Count; r++)
+            ParallelHelpers.ParallelForSlim(_objs.Planes.Count, (start, end) =>
             {
-                var plane = _objs.Planes[r];
-
-                if (plane == null)
-                    continue;
-
-                var nearObjs = _objs.GetNear(plane);
-
-                foreach (var obj in nearObjs)
+                for (int r = start; r < end; r++)
                 {
-                    if (doLocalCollisions)
+                    var plane = _objs.Planes[r];
+
+                    if (plane == null)
+                        continue;
+
+                    var nearObjs = _objs.GetNear(plane);
+
+                    foreach (var obj in nearObjs)
                     {
-                        if (obj is GuidedMissile missile)
+                        if (doLocalCollisions)
                         {
-                            if (missile.Owner.Equals(plane))
-                                continue;
-
-                            if (missile.IsExpired)
-                                continue;
-
-                            if (_isNetGame)
+                            if (obj is GuidedMissile missile)
                             {
-                                var missileLagComp = (long)(missile.LagAmount + World.NET_INTERP_AMOUNT);
+                                if (missile.Owner.Equals(plane))
+                                    continue;
 
-                                if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - missileLagComp, dt))
+                                if (missile.IsExpired)
+                                    continue;
+
+                                if (_isNetGame)
                                 {
-                                    if (histState != null)
+                                    var missileLagComp = (long)(missile.LagAmount + World.NET_INTERP_AMOUNT);
+
+                                    if (plane.CollidesWithNet(missile, out D2DPoint pos, out GameObjectPacket? histState, now - missileLagComp, dt))
                                     {
-                                        var ogState = new GameObjectPacket(plane);
+                                        if (histState != null)
+                                        {
+                                            var ogState = new GameObjectPacket(plane);
 
-                                        plane.SetPosition(histState.Position, histState.Rotation);
+                                            plane.SetPosition(histState.Position, histState.Rotation);
 
-                                        var impactResultM = plane.GetImpactResult(missile, pos);
-                                        plane.HandleImpactResult(impactResultM, dt);
-                                        _netMan.SendNetImpact(impactResultM);
+                                            var impactResultM = plane.GetImpactResult(missile, pos);
+                                            plane.HandleImpactResult(impactResultM, dt);
+                                            _netMan.SendNetImpact(impactResultM);
 
-                                        plane.SetPosition(ogState.Position, ogState.Rotation);
+                                            plane.SetPosition(ogState.Position, ogState.Rotation);
+                                        }
+                                        else
+                                        {
+                                            var impactResultM = plane.GetImpactResult(missile, pos);
+                                            plane.HandleImpactResult(impactResultM, dt);
+                                            _netMan.SendNetImpact(impactResultM);
+                                        }
+
+                                        missile.IsExpired = true;
                                     }
-                                    else
+                                }
+                                else
+                                {
+                                    if (plane.CollidesWith(missile, out D2DPoint pos, dt))
                                     {
-                                        var impactResultM = plane.GetImpactResult(missile, pos);
-                                        plane.HandleImpactResult(impactResultM, dt);
-                                        _netMan.SendNetImpact(impactResultM);
-                                    }
+                                        if (!missile.IsExpired)
+                                        {
+                                            var result = plane.GetImpactResult(missile, pos);
 
-                                    missile.IsExpired = true;
+                                            plane.HandleImpactResult(result, dt);
+
+                                            missile.Position = pos;
+                                            missile.IsExpired = true;
+                                        }
+                                    }
                                 }
                             }
-                            else
+                            else if (obj is Bullet bullet)
                             {
-                                if (plane.CollidesWith(missile, out D2DPoint pos, dt))
+                                if (bullet.IsExpired)
+                                    continue;
+
+                                if (bullet.Owner.Equals(plane))
+                                    continue;
+
+                                if (_isNetGame)
                                 {
-                                    if (!missile.IsExpired)
+                                    var bulletLagComp = (long)(bullet.LagAmount + World.NET_INTERP_AMOUNT);
+
+                                    if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - bulletLagComp, dt))
                                     {
-                                        var result = plane.GetImpactResult(missile, pos);
+                                        if (histState != null)
+                                        {
+                                            var ogState = new GameObjectPacket(plane);
 
-                                        plane.HandleImpactResult(result, dt);
+                                            plane.SetPosition(histState.Position, histState.Rotation);
 
-                                        missile.Position = pos;
-                                        missile.IsExpired = true;
+                                            var impactResult = plane.GetImpactResult(bullet, pos);
+                                            plane.HandleImpactResult(impactResult, dt);
+                                            _netMan.SendNetImpact(impactResult);
+
+                                            plane.SetPosition(ogState.Position, ogState.Rotation);
+                                        }
+                                        else
+                                        {
+                                            var impactResult = plane.GetImpactResult(bullet, pos);
+                                            plane.HandleImpactResult(impactResult, dt);
+                                            _netMan.SendNetImpact(impactResult);
+                                        }
+
+                                        bullet.IsExpired = true;
+                                    }
+                                }
+                                else
+                                {
+                                    if (plane.CollidesWith(bullet, out D2DPoint pos, dt))
+                                    {
+                                        if (!bullet.IsExpired)
+                                        {
+                                            var result = plane.GetImpactResult(bullet, pos);
+
+                                            plane.HandleImpactResult(result, dt);
+
+                                            bullet.Position = pos;
+                                            bullet.IsExpired = true;
+                                        }
                                     }
                                 }
                             }
                         }
-                        else if (obj is Bullet bullet)
+
+                        // Do plane particle pushes.
+                        DoParticleImpulse(plane, obj, dt);
+                    }
+                }
+            });
+
+
+            // Handle missiles hit by bullets and missiles hitting decoys.
+            ParallelHelpers.ParallelForSlim(_objs.Missiles.Count, (start, end) =>
+            {
+                for (int m = start; m < end; m++)
+                {
+                    var missile = _objs.Missiles[m] as GuidedMissile;
+
+                    if (missile.IsExpired)
+                        continue;
+
+                    var nearObjs = _objs.GetNear(missile);
+
+                    foreach (var obj in nearObjs)
+                    {
+                        if (doLocalCollisions)
                         {
-                            if (bullet.IsExpired)
-                                continue;
-
-                            if (bullet.Owner.Equals(plane))
-                                continue;
-
-                            if (_isNetGame)
+                            if (obj is Bullet bullet)
                             {
-                                var bulletLagComp = (long)(bullet.LagAmount + World.NET_INTERP_AMOUNT);
+                                if (bullet.IsExpired)
+                                    continue;
 
-                                if (plane.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - bulletLagComp, dt))
+                                if (bullet.Owner.Equals(missile.Owner))
+                                    continue;
+
+                                if (_isNetGame)
                                 {
-                                    if (histState != null)
+                                    var bulletLagComp = (long)(bullet.LagAmount + World.NET_INTERP_AMOUNT);
+
+                                    if (missile.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - bulletLagComp, dt))
                                     {
-                                        var ogState = new GameObjectPacket(plane);
+                                        if (histState != null)
+                                        {
+                                            missile.SetPosition(histState.Position, histState.Rotation);
+                                        }
 
-                                        plane.SetPosition(histState.Position, histState.Rotation);
-
-                                        var impactResult = plane.GetImpactResult(bullet, pos);
-                                        plane.HandleImpactResult(impactResult, dt);
-                                        _netMan.SendNetImpact(impactResult);
-
-                                        plane.SetPosition(ogState.Position, ogState.Rotation);
+                                        missile.IsExpired = true;
+                                        bullet.IsExpired = true;
                                     }
-                                    else
-                                    {
-                                        var impactResult = plane.GetImpactResult(bullet, pos);
-                                        plane.HandleImpactResult(impactResult, dt);
-                                        _netMan.SendNetImpact(impactResult);
-                                    }
-
-                                    bullet.IsExpired = true;
                                 }
-                            }
-                            else
-                            {
-                                if (plane.CollidesWith(bullet, out D2DPoint pos, dt))
+                                else
                                 {
-                                    if (!bullet.IsExpired)
+                                    if (missile.CollidesWith(bullet, out D2DPoint posb, dt))
                                     {
-                                        var result = plane.GetImpactResult(bullet, pos);
-
-                                        plane.HandleImpactResult(result, dt);
-
-                                        bullet.Position = pos;
+                                        missile.IsExpired = true;
                                         bullet.IsExpired = true;
                                     }
                                 }
                             }
-                        }
-                    }
-
-                    // Do plane particle pushes.
-                    DoParticleImpulse(plane, obj, dt);
-                }
-            }
-
-            // Handle missiles hit by bullets and missiles hitting decoys.
-            for (int m = 0; m < _objs.Missiles.Count; m++)
-            {
-                var missile = _objs.Missiles[m] as GuidedMissile;
-
-                if (missile.IsExpired)
-                    continue;
-
-                var nearObjs = _objs.GetNear(missile);
-
-                foreach (var obj in nearObjs)
-                {
-                    if (doLocalCollisions)
-                    {
-                        if (obj is Bullet bullet)
-                        {
-                            if (bullet.IsExpired)
-                                continue;
-
-                            if (bullet.Owner.Equals(missile.Owner))
-                                continue;
-
-                            if (_isNetGame)
+                            else if (obj is Decoy decoy)
                             {
-                                var bulletLagComp = (long)(bullet.LagAmount + World.NET_INTERP_AMOUNT);
+                                if (decoy.IsExpired)
+                                    continue;
 
-                                if (missile.CollidesWithNet(bullet, out D2DPoint pos, out GameObjectPacket? histState, now - bulletLagComp, dt))
-                                {
-                                    if (histState != null)
-                                    {
-                                        missile.SetPosition(histState.Position, histState.Rotation);
-                                    }
-
-                                    missile.IsExpired = true;
-                                    bullet.IsExpired = true;
-                                }
-                            }
-                            else
-                            {
-                                if (missile.CollidesWith(bullet, out D2DPoint posb, dt))
+                                if (missile.CollidesWith(decoy, out D2DPoint posb, dt))
                                 {
                                     missile.IsExpired = true;
-                                    bullet.IsExpired = true;
+                                    decoy.IsExpired = true;
                                 }
                             }
                         }
-                        else if (obj is Decoy decoy)
-                        {
-                            if (decoy.IsExpired)
-                                continue;
 
-                            if (missile.CollidesWith(decoy, out D2DPoint posb, dt))
-                            {
-                                missile.IsExpired = true;
-                                decoy.IsExpired = true;
-                            }
-                        }
+                        // Do missile particle pushes.
+                        DoParticleImpulse(missile, obj, dt);
                     }
-
-                    // Do missile particle pushes.
-                    DoParticleImpulse(missile, obj, dt);
                 }
-            }
+            });
+
 
             // Handle bullet particle pushes.
-            for (int b = 0; b < _objs.Bullets.Count; b++)
+            ParallelHelpers.ParallelForSlim(_objs.Bullets.Count, (start, end) =>
             {
-                var bullet = _objs.Bullets[b];
-                var nearObjs = _objs.GetNear(bullet);
-
-                foreach (var obj in nearObjs)
+                for (int b = start; b < end; b++)
                 {
-                    DoParticleImpulse(bullet, obj, dt);
-                }
-            }
+                    if (b >= _objs.Bullets.Count)
+                        Debugger.Break();
 
+                    var bullet = _objs.Bullets[b];
+                    var nearObjs = _objs.GetNear(bullet);
+
+                    foreach (var obj in nearObjs)
+                    {
+                        DoParticleImpulse(bullet, obj, dt);
+                    }
+                }
+            });
+          
             // Since the server runs at a higher FPS than clients,
             // we want to limit the rate of explosion impulses.
             // Otherwise we may be sending dozens of packets per second
