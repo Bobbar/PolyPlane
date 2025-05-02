@@ -52,7 +52,7 @@ namespace PolyPlane.GameObjects
         private const float BURN_RATE = 0.85f;
         private const float THRUST = 2500f;
         private const float FUEL = 10f;
-        private const float DEFLECTION_RATE = 35f;
+        private const float DEFLECTION_RATE = 45f;
 
         private float _currentFuel = 0f;
         private float _gForce = 0f;
@@ -168,7 +168,15 @@ namespace PolyPlane.GameObjects
 
             InitWings();
 
-            _easeGuidanceTimer = AddTimer(3f);
+            float easeTime = 3f;
+
+            // Reduce ease time for very close targets.
+            var impactTime = Utilities.ImpactTime(this, Target);
+
+            if (impactTime < easeTime && impactTime > 0f)
+                easeTime = impactTime;
+
+            _easeGuidanceTimer = AddTimer(easeTime);
 
             _igniteCooldown = AddTimer(1f);
 
@@ -197,8 +205,8 @@ namespace PolyPlane.GameObjects
                 RenderLength = 2.5f,
                 RenderWidth = 1f,
                 Area = 0.1f,
-                MaxDeflection = 45f,
-                MaxLiftForce = 4500f * liftScale,
+                MaxDeflection = 50f,
+                MaxLiftForce = 3000f * liftScale,
                 PivotPoint = new D2DPoint(-21f, 0f),
                 Position = new D2DPoint(-22f, 0f),
                 MinVelo = minVelo,
@@ -212,7 +220,7 @@ namespace PolyPlane.GameObjects
             {
                 RenderLength = 0f,
                 Area = 0.045f,
-                MaxLiftForce = 1000f * liftScale,
+                MaxLiftForce = 2000f * liftScale,
                 MinVelo = minVelo,
                 ParasiticDrag = 0.2f,
                 MaxAOA = 30f,
@@ -256,13 +264,6 @@ namespace PolyPlane.GameObjects
 
                 liftDrag += tailForce.LiftAndDrag + noseForce.LiftAndDrag + bodyForce.LiftAndDrag;
 
-                // Compute torque and rotation result.
-                var thrust = GetThrust();
-                var thrustTorque = Utilities.GetTorque(cg, _centerOfThrust.Position, thrust);
-                var torqueRot = (tailForce.Torque + bodyForce.Torque + noseForce.Torque + thrustTorque) / this.GetInertia(this.TotalMass);
-
-                this.RotationSpeed += torqueRot * dt;
-
                 const float TAIL_AUTH = 1f;
                 const float NOSE_AUTH = 0f;
 
@@ -281,16 +282,16 @@ namespace PolyPlane.GameObjects
                 var nextDeflect = GetDeflectionAmount(_guideRotation);
 
                 // Adjust the deflection as speed, rotation speed and AoA increases.
-                // This is to try to prevent over-rotation caused by thrust vectoring.
+                // This is to try to prevent over - rotation caused by thrust vectoring.
                 if (_currentFuel > 0f)
                 {
                     const float MIN_DEF_SPD = 450f; // Minimum speed required for full deflection.
                     var spdFact = Utilities.Factor(this.Velocity.Length(), MIN_DEF_SPD);
 
-                    const float MAX_DEF_AOA = 35f;// Maximum AoA allowed. Reduce deflection as AoA increases.
+                    const float MAX_DEF_AOA = 40f;// Maximum AoA allowed. Reduce deflection as AoA increases.
                     var aoaFact = 1f - (Math.Abs(_rocketBody.AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 2f))));
 
-                    const float MAX_DEF_ROT_SPD = 200f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
+                    const float MAX_DEF_ROT_SPD = 250f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
                     var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 3f))));
 
                     // Ease out of SAS as fuel runs out.
@@ -298,17 +299,26 @@ namespace PolyPlane.GameObjects
                     nextDeflect = Utilities.Lerp(nextDeflect, nextDeflect * (aoaFact * rotSpdFact * spdFact), fuelFact);
                 }
 
+                // Damp the deflection.
+                nextDeflect = Utilities.Damp(_tailWing.Deflection, nextDeflect, 80f, dt);
+
                 _tailWing.Deflection = TAIL_AUTH * -nextDeflect;
                 _noseWing.Deflection = NOSE_AUTH * nextDeflect;
 
                 this.Deflection = _tailWing.Deflection;
 
+                // Compute torque and rotation result.
+                var thrust = GetThrust();
+                var thrustTorque = Utilities.GetTorque(cg, _centerOfThrust.Position, thrust);
+                var torqueRot = (tailForce.Torque + bodyForce.Torque + noseForce.Torque + thrustTorque) / this.GetInertia(this.TotalMass);
+
                 // Add thrust and integrate acceleration.
-                accel += thrust * dt / TotalMass;
+                accel += (thrust / TotalMass) * dt;
                 accel += (liftDrag / TotalMass) * dt;
 
                 this.Velocity += accel;
                 this.Velocity += World.Gravity * dt;
+                this.RotationSpeed += torqueRot * dt;
             }
 
             var gforce = accel.Length() / dt / 9.8f;

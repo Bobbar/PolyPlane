@@ -2,7 +2,6 @@
 using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Fixtures;
 using PolyPlane.GameObjects.Managers;
-using System;
 using System.Net;
 using System.Numerics;
 using unvell.D2DLib;
@@ -17,8 +16,8 @@ namespace PolyPlane.Helpers
 
         public static float Damp(float a, float b, float lambda, float dt)
         {
-            return Lerp(a, b, 1 - MathF.Exp(-lambda * dt));
-}
+            return Lerp(a, b, 1f - MathF.Exp(-lambda * dt));
+        }
 
         public static float Lerp(float value1, float value2, float amount)
         {

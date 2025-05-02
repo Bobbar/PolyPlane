@@ -59,9 +59,10 @@ namespace PolyPlane.GameObjects.Fixtures
 
         public override void DoUpdate(float dt)
         {
+            _defRateLimit.Update(dt);
+
             PivotPoint.Rotation = _parentObject.Rotation + Deflection;
 
-            _defRateLimit.Update(dt);
             PivotPoint.Update(dt);
             FixedPosition.Update(dt);
 
