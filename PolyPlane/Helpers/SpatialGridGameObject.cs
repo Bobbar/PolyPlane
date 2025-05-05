@@ -278,18 +278,9 @@ namespace PolyPlane.Helpers
             var tid = Environment.CurrentManagedThreadId;
             GetNearEnumerator enumerator;
 
-            if (_getNearEnumPool.Length - 1 < tid)
-            {
-                var newPool = new GetNearEnumerator[tid + 1];
+            ResizePool(tid);
 
-                Array.Copy(_getNearEnumPool, 0, newPool, 0, _getNearEnumPool.Length);
-
-                _getNearEnumPool = newPool;
-
-                enumerator = new GetNearEnumerator(this);
-                _getNearEnumPool[tid] = enumerator;
-            }
-            else if (_getNearEnumPool[tid] == null)
+            if (_getNearEnumPool[tid] == null)
             {
                 enumerator = new GetNearEnumerator(this);
                 _getNearEnumPool[tid] = enumerator;
@@ -300,6 +291,19 @@ namespace PolyPlane.Helpers
             }
 
             return enumerator;
+        }
+
+        private void ResizePool(int tid)
+        {
+            // Resize the pool as needed.
+            if (_getNearEnumPool.Length - 1 < tid)
+            {
+                var newPool = new GetNearEnumerator[tid + 1];
+
+                Array.Copy(_getNearEnumPool, 0, newPool, 0, _getNearEnumPool.Length);
+
+                _getNearEnumPool = newPool;
+            }
         }
 
         /// <summary>

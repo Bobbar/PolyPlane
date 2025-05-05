@@ -15,6 +15,9 @@
 
         public static void ParallelForSlim(int count, Action<int, int> body)
         {
+            if (count == 0)
+                return;
+
             int pLen, pRem, pCount;
             Partition(count, World.MUTLI_THREAD_COUNT, out pLen, out pRem, out pCount);
 
