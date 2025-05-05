@@ -341,8 +341,11 @@ namespace PolyPlane.GameObjects
                 if (_currentFuel <= 0f && this.Age > LIFESPAN && this.MissedTarget)
                     this.IsExpired = true;
 
-            if (_currentFuel <= 0f)
+            if (FlameOn && _currentFuel <= 0f)
+            {
+                _currentFuel = 0f;
                 FlameOn = false;
+            }
         }
 
         private float GetDeflectionAmount(float dir)
