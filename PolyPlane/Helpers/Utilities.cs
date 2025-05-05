@@ -782,7 +782,7 @@ namespace PolyPlane.Helpers
                 maxDist = maxDist / 2f;
             }
 
-            var point = new D2DPoint(Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
+            var point = new D2DPoint(Rnd.NextFloat(-World.PlaneSpawnRange, World.PlaneSpawnRange), Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
             var objs = World.ObjectManager;
 
             if (objs.Planes.Count == 0)
@@ -790,7 +790,7 @@ namespace PolyPlane.Helpers
 
             var sortedPoints = new List<Tuple<float, D2DPoint>>();
 
-            for (int x = (int)World.PlaneSpawnRange.X; x < World.PlaneSpawnRange.Y; x += (int)(minDist / 4f))
+            for (int x = (int)-World.PlaneSpawnRange; x < World.PlaneSpawnRange; x += (int)(minDist / 4f))
             {
                 for (int y = (int)MIN_ALT; y < MAX_ALT; y += 1000)
                 {

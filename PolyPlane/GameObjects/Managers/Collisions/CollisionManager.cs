@@ -493,13 +493,13 @@ namespace PolyPlane.GameObjects.Managers
             for (int i = 0; i < _objs.Planes.Count; i++)
             {
                 var plane = _objs.Planes[i];
-                if (plane.Position.X > World.FieldPlaneXBounds.Y)
+                if (plane.Position.X > World.FieldPlaneXBounds)
                 {
-                    plane.SetPosition(new D2DPoint(World.FieldPlaneXBounds.X, plane.Position.Y));
+                    plane.SetPosition(new D2DPoint(-World.FieldPlaneXBounds, plane.Position.Y));
                 }
-                else if (plane.Position.X < World.FieldPlaneXBounds.X)
+                else if (plane.Position.X < -World.FieldPlaneXBounds)
                 {
-                    plane.SetPosition(new D2DPoint(World.FieldPlaneXBounds.Y, plane.Position.Y));
+                    plane.SetPosition(new D2DPoint(World.FieldPlaneXBounds, plane.Position.Y));
                 }
             }
         }

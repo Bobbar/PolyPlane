@@ -54,10 +54,10 @@ namespace PolyPlane.Rendering
 
             for (int i = 0; i < num; i++)
             {
-                var rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudRange.X, cloudRange.Y));
+                var rndPos = new D2DPoint(rnd.NextFloat(-fieldRange, fieldRange), rnd.NextFloat(cloudRange.X, cloudRange.Y));
 
                 while (!cloudDeDup.Add(rndPos))
-                    rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudRange.X, cloudRange.Y));
+                    rndPos = new D2DPoint(rnd.NextFloat(-fieldRange, fieldRange), rnd.NextFloat(cloudRange.X, cloudRange.Y));
 
                 var rndGeo = _cloudGeometries[rnd.Next(_cloudGeometries.Count)];
 
@@ -73,10 +73,10 @@ namespace PolyPlane.Rendering
             var cloudLayerRangeY = new D2DPoint(-2500, -2000);
             for (int i = 0; i < num / 2; i++)
             {
-                var rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
+                var rndPos = new D2DPoint(rnd.NextFloat(-fieldRange, fieldRange), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
 
                 while (!cloudDeDup.Add(rndPos))
-                    rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
+                    rndPos = new D2DPoint(rnd.NextFloat(-fieldRange, fieldRange), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
 
                 var rndGeo = _cloudGeometries[rnd.Next(_cloudGeometries.Count)];
 
@@ -119,14 +119,10 @@ namespace PolyPlane.Rendering
 
         private void GenGeometry(Random rnd, int num)
         {
-            var cloudDeDup = new HashSet<D2DPoint>();
             const int MIN_PNTS = 12;
             const int MAX_PNTS = 28;
             const int MIN_RADIUS = 10;
             const int MAX_RADIUS = 30;
-
-            var cloudRange = World.CloudRangeY;
-            var fieldRange = World.FieldXBounds;
 
             for (int i = 0; i < num; i++)
             {

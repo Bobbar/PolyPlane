@@ -16,8 +16,8 @@ namespace PolyPlane.Rendering
             var shadowAngle = Tree.GetTreeShadowAngle();
 
             // Find the indices for the trees closest to the left and right sides of the viewport.
-            var leftIdx = Utilities.WrapIndex(ClosestTreeIdx(ctx.Viewport.left) - IDX_PAD, _treePosIdx.Length);
-            var rightIdx = Utilities.WrapIndex(ClosestTreeIdx(ctx.Viewport.right) + IDX_PAD, _treePosIdx.Length);
+            var leftIdx = Math.Clamp(ClosestTreeIdx(ctx.Viewport.left) - IDX_PAD, 0, _treePosIdx.Length);
+            var rightIdx = Math.Clamp(ClosestTreeIdx(ctx.Viewport.right) + IDX_PAD, 0, _treePosIdx.Length);
 
             for (int i = leftIdx; i < rightIdx; i++)
             {
@@ -45,10 +45,10 @@ namespace PolyPlane.Rendering
 
             for (int i = 0; i < num; i++)
             {
-                var rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), 0f);
+                var rndPos = new D2DPoint(rnd.NextFloat(-fieldRange, fieldRange), 0f);
 
                 while (!treeDeDup.Add(rndPos) || (_trees.Count > 0 && _trees.Min(t => t.Position.DistanceTo(rndPos)) < minDist))
-                    rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), 0f);
+                    rndPos = new D2DPoint(rnd.NextFloat(-fieldRange, fieldRange), 0f);
 
                 var type = rnd.Next(10);
                 var height = (int)(10f + (rnd.NextFloat(1f, 3f) * 20f));

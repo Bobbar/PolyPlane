@@ -306,10 +306,10 @@ namespace PolyPlane.AI_Behavior
             // Flip directions if we are near the end of the play field.
             if (this.TargetPlane == null)
             {
-                if (this.Plane.Position.X > World.PlaneSpawnRange.Y + 10000f && !_reverseDirection)
+                if (this.Plane.Position.X > World.PlaneSpawnRange + 10000f && !_reverseDirection)
                     _reverseDirection = true;
 
-                if (this.Plane.Position.X < World.PlaneSpawnRange.X - 10000f && _reverseDirection)
+                if (this.Plane.Position.X < -World.PlaneSpawnRange - 10000f && _reverseDirection)
                     _reverseDirection = false;
             }
 
