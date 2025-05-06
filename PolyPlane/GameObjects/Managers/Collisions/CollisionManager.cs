@@ -217,6 +217,9 @@ namespace PolyPlane.GameObjects.Managers
                                 if (decoy.IsExpired)
                                     continue;
 
+                                if (decoy.Owner.Equals(missile.Owner))
+                                    continue;
+
                                 if (missile.CollidesWith(decoy, out D2DPoint posb, dt))
                                 {
                                     missile.IsExpired = true;
@@ -376,6 +379,9 @@ namespace PolyPlane.GameObjects.Managers
                         }
                         else if (obj is GuidedMissile detMissile)
                         {
+                            if (explosion.Owner is Bullet b && !b.Owner.Equals(detMissile.Owner))
+                                continue;
+
                             // Detonate any other missiles within the blast radius.
                             if (!detMissile.IsExpired)
                                 detMissile.IsExpired = true;

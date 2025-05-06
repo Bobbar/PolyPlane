@@ -185,6 +185,10 @@ namespace PolyPlane.GameObjects.Fixtures
             var maxLift = MAX_LIFT * veloFact;
             var maxDrag = MAX_DRAG * veloFact;
 
+            // Add addition lift/drag as specified.
+            maxLift += (veloMag * _params.VeloLiftFactor);
+            maxDrag += (veloMag * _params.VeloDragFactor);
+
             // Clamp to max lift & drag force.
             liftForce = Math.Clamp(liftForce, -maxLift, maxLift);
             dragForce = Math.Clamp(dragForce, -maxDrag, maxDrag);
@@ -238,6 +242,16 @@ namespace PolyPlane.GameObjects.Fixtures
         /// Max drag force allowed.
         /// </summary>
         public float MaxDragForce;
+
+        /// <summary>
+        /// How much velocity increases max lift force over <see cref="MaxLiftForce"/>.
+        /// </summary>
+        public float VeloLiftFactor = 0f;
+
+        /// <summary>
+        /// How much velocity increases max drag force over <see cref="MaxDragForce"/>.
+        /// </summary>
+        public float VeloDragFactor = 0f;
 
         /// <summary>
         /// Max deflection allowed.
