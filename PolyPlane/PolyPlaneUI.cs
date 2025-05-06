@@ -552,6 +552,9 @@ namespace PolyPlane
 
         private void AdvanceAndRender()
         {
+            if (_oneStep)
+                World.IsPaused = false;
+
             _render.InitGfx();
 
             World.Update();
@@ -578,6 +581,9 @@ namespace PolyPlane
             if (!World.IsPaused || _oneStep)
             {
                 _objs.Update(dt);
+
+                if (_oneStep)
+                    World.IsPaused = true;
 
                 _oneStep = false;
             }
@@ -680,6 +686,7 @@ namespace PolyPlane
 
         private void DoMouseButtons()
         {
+            var isPaused = World.IsPaused;
             var mouseInViewport = this.DesktopBounds.Contains(Control.MousePosition) && _hasFocus;
 
             // Don't allow inputs if mouse left the window.
@@ -700,7 +707,7 @@ namespace PolyPlane
 
             if (!World.FreeCameraMode && !_playerPlane.IsAI)
             {
-                if ((buttons & MouseButtons.Left) == MouseButtons.Left)
+                if (!isPaused && (buttons & MouseButtons.Left) == MouseButtons.Left)
                 {
                     _playerPlane.FiringBurst = true;
                 }
@@ -712,8 +719,7 @@ namespace PolyPlane
 
             if (mouseInViewport && (buttons & MouseButtons.Right) == MouseButtons.Right)
             {
-
-                if (!World.FreeCameraMode && !_playerPlane.IsAI)
+                if (!isPaused && !World.FreeCameraMode && !_playerPlane.IsAI)
                     _playerPlane.DroppingDecoy = true;
 
                 _rightMouseDown = true;

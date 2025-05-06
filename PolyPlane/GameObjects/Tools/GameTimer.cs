@@ -46,6 +46,7 @@ namespace PolyPlane.GameObjects.Tools
         private bool _hasFired = false;
         private bool _isRunning = false;
         private bool _isInCooldown = false;
+        private bool _firstStart = true;
 
         public GameTimer(float interval)
         {
@@ -121,11 +122,12 @@ namespace PolyPlane.GameObjects.Tools
                     // Don't allow start callbacks to be fired at a rate higher than the interval.
                     if (RateLimitStartCallback)
                     {
-                        if (_elapSinceLastStart > 0f && _elapSinceLastStart >= _interval)
+                        if (_firstStart || (_elapSinceLastStart > 0f && _elapSinceLastStart >= _interval))
                         {
                             _elapSinceLastStart = 0f;
                             StartCallback();
                             _isRunning = true;
+                            _firstStart = false;
                         }
                     }
                     else
