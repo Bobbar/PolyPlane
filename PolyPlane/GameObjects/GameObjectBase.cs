@@ -176,6 +176,26 @@ namespace PolyPlane.GameObjects
         }
 
         /// <summary>
+        /// Adds the specified flag if it is not already set.
+        /// </summary>
+        /// <param name="flag"></param>
+        public void AddFlag(GameObjectFlags flag)
+        {
+            if (!HasFlag(flag))
+                this.Flags |= flag;
+        }
+
+        /// <summary>
+        /// Removes the specified flag is it is set.
+        /// </summary>
+        /// <param name="flag"></param>
+        public void RemoveFlag(GameObjectFlags flag)
+        {
+            if (HasFlag(flag))
+                this.Flags -= flag;
+        }
+
+        /// <summary>
         /// Updates the position of this object to the specified position and syncs any attachments.
         /// </summary>
         /// <param name="position"></param>

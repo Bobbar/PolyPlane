@@ -36,7 +36,7 @@ namespace PolyPlane.GameObjects.Fixtures
 
         private WingParameters _params;
 
-        public Wing(GameObject obj, WingParameters parameters)
+        public Wing(GameObject obj, WingParameters parameters) : base(obj)
         {
             _params = parameters;
 

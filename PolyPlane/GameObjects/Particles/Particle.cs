@@ -144,6 +144,13 @@ namespace PolyPlane.GameObjects.Particles
             particle.RenderOrder = 0;
 
             particle.Type = type;
+
+            // Disable aero push effects for vapors.
+            if (type == ParticleType.Vapor)
+                particle.RemoveFlag(GameObjectFlags.AeroPushable);
+            else
+                particle.AddFlag(GameObjectFlags.AeroPushable);
+
             particle.Owner = owner;
 
             particle.MaxAge = DEFAULT_MAX_AGE + Utilities.Rnd.NextFloat(-5f, 5f);
