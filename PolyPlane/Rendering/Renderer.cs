@@ -590,34 +590,31 @@ namespace PolyPlane.Rendering
 
             var rect = new D2DRect(ctx.Viewport.Location.X, 0f, ctx.Viewport.Width, 4000f);
 
-            using (var clipGeo = ctx.Device.CreateRectangleGeometry(rect))
+            ctx.Gfx.PushLayer(_groundClipLayer, rect);
+
+            for (int i = 0; i < _objs.GroundImpacts.Count; i++)
             {
-                ctx.Gfx.PushLayer(_groundClipLayer, ctx.Viewport, clipGeo);
+                var impact = _objs.GroundImpacts[i];
 
-                for (int i = 0; i < _objs.GroundImpacts.Count; i++)
+                if (ctx.Viewport.Contains(impact.Position))
                 {
-                    var impact = _objs.GroundImpacts[i];
+                    ctx.PushTransform();
 
-                    if (ctx.Viewport.Contains(impact.Position))
-                    {
-                        ctx.PushTransform();
+                    ctx.RotateTransform(impact.Angle, impact.Position);
 
-                        ctx.RotateTransform(impact.Angle, impact.Position);
+                    float ageAlpha = 1f;
 
-                        float ageAlpha = 1f;
+                    if (impact.Age >= GroundImpact.START_FADE_AGE)
+                        ageAlpha = 1f - Utilities.FactorWithEasing(impact.Age - GroundImpact.START_FADE_AGE, GroundImpact.MAX_AGE - GroundImpact.START_FADE_AGE, EasingFunctions.In.EaseExpo);
 
-                        if (impact.Age >= GroundImpact.START_FADE_AGE)
-                            ageAlpha = 1f - Utilities.FactorWithEasing(impact.Age - GroundImpact.START_FADE_AGE, GroundImpact.MAX_AGE - GroundImpact.START_FADE_AGE, EasingFunctions.In.EaseExpo);
+                    ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), _groundImpactOuterColor.WithAlpha(ageAlpha), LIGHT_INTENSITY);
+                    ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), _groundImpactInnerColor.WithAlpha(ageAlpha), LIGHT_INTENSITY);
 
-                        ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), _groundImpactOuterColor.WithAlpha(ageAlpha), LIGHT_INTENSITY);
-                        ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), _groundImpactInnerColor.WithAlpha(ageAlpha), LIGHT_INTENSITY);
-
-                        ctx.PopTransform();
-                    }
+                    ctx.PopTransform();
                 }
-
-                ctx.Gfx.PopLayer();
             }
+
+            ctx.Gfx.PopLayer();
         }
 
         private void DrawMuzzleFlash(RenderContext ctx, FighterPlane plane)

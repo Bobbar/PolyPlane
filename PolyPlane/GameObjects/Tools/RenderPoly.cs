@@ -55,7 +55,7 @@ namespace PolyPlane.GameObjects.Tools
             InitPolyArrays(polygon, D2DPoint.Zero, scale);
 
             if (tessalateDist > 0f)
-                Tessellate(tessalateDist);
+                IncreaseResolution(tessalateDist);
 
             this.Update();
         }
@@ -267,10 +267,10 @@ namespace PolyPlane.GameObjects.Tools
         /// <summary>
         /// Adds points between polygon points where the distance is greater than the specified amount.
         /// 
-        /// Increases polygon resolution without changing the original shape.
+        /// Increases polygon resolution (number of points/verts) without changing the original shape.
         /// </summary>
         /// <param name="minDist"></param>
-        public void Tessellate(float minDist)
+        public void IncreaseResolution(float minDist)
         {
             var srcCopy = new List<D2DPoint>();
 

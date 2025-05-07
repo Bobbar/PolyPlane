@@ -17,6 +17,8 @@ namespace PolyPlane.GameObjects.Fixtures
         private GameTimer _burstTimer;
         private GameTimer _muzzleFlashTimer;
 
+        private const float BURST_INTERVAL = 0.25f;
+
         public Gun(FighterPlane plane, D2DPoint position) : base(plane, position)
         {
             IsNetObject = plane.IsNetObject;
@@ -25,14 +27,12 @@ namespace PolyPlane.GameObjects.Fixtures
             _smoke = AddAttachment(new GunSmokeEmitter(this, D2DPoint.Zero, new D2DColor(0.7f, D2DColor.BurlyWood)));
             _smoke.Visible = false;
 
-            _burstTimer = AddTimer(0.25f, true);
+            _burstTimer = AddTimer(BURST_INTERVAL, true);
             _burstTimer.RateLimitStartCallback = true;
-
-            _muzzleFlashTimer = AddTimer(0.16f);
-
             _burstTimer.StartCallback = FireBullet;
             _burstTimer.TriggerCallback = FireBullet;
 
+            _muzzleFlashTimer = AddTimer(BURST_INTERVAL);
             _muzzleFlashTimer.StartCallback = () => { MuzzleFlashOn = true; };
             _muzzleFlashTimer.TriggerCallback = () => { MuzzleFlashOn = false; };
         }
