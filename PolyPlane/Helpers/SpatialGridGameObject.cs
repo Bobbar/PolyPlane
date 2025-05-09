@@ -297,13 +297,7 @@ namespace PolyPlane.Helpers
         {
             // Resize the pool as needed.
             if (_getNearEnumPool.Length - 1 < tid)
-            {
-                var newPool = new GetNearEnumerator[tid + 1];
-
-                Array.Copy(_getNearEnumPool, 0, newPool, 0, _getNearEnumPool.Length);
-
-                _getNearEnumPool = newPool;
-            }
+                Array.Resize(ref _getNearEnumPool, tid + 1);
         }
 
         /// <summary>
