@@ -200,7 +200,7 @@ namespace PolyPlane.GameObjects
         private void InitWings()
         {
             const float liftScale = 1.5f;
-            const float minVelo = 700f;
+            const float minVelo = 800f;
 
             _tailWing = new Wing(this, new WingParameters()
             {
