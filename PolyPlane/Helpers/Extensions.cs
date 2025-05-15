@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using SkiaSharp;
+using System.Numerics;
 using unvell.D2DLib;
 
 namespace PolyPlane.Helpers
@@ -245,5 +246,26 @@ namespace PolyPlane.Helpers
 
             return new D2DColor(color.a, r, g, b);
         }
+
+        public static SKPoint[] ToSkPoints(this D2DPoint[] points)
+        {
+            var skPoints = new SKPoint[points.Length];
+
+            for (int i = 0; i < skPoints.Length; i++)
+                skPoints[i] = points[i].ToSKPoint();
+
+            return skPoints;
+        }
+
+        public static SKPoint ToSKPoint(this D2DPoint point)
+        {
+            return new SKPoint(point.X, point.Y);
+        }
+
+        public static SKColor ToSKColor(this D2DColor color)
+        {
+            return new SKColor((byte)(color.r * 255), (byte)(color.g * 255), (byte)(color.b * 255), (byte)(color.a * 255));
+        }
+
     }
 }

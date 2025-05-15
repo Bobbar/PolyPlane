@@ -521,8 +521,11 @@ namespace PolyPlane.Rendering
             offset *= zAmt;
 
             ctx.ScaleTransform(VIEW_SCALE, viewObj.Position);
-            ctx.TranslateTransform(offset);
-            ctx.TranslateTransform(pos);
+            //ctx.TranslateTransform(offset);
+            //ctx.TranslateTransform(pos);
+
+            ctx.TranslateTransform(offset + pos);
+
 
             var viewPortRect = new D2DRect(viewObj.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
 

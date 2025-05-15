@@ -49,6 +49,8 @@ namespace PolyPlane
         private NetEventManager _netMan;
         private CollisionManager _collisions;
         private Renderer _render;
+        private GLRenderer _glRender;
+
         private FPSLimiter _fpsLimiter = new FPSLimiter();
         private SelectObjectUI? _selectObjectUI = null;
         private ConcurrentQueue<Action> _actionQueue = new ConcurrentQueue<Action>();
@@ -62,7 +64,7 @@ namespace PolyPlane
             this.GotFocus += PolyPlaneUI_GotFocus;
             this.LostFocus += PolyPlaneUI_LostFocus;
             this.Disposed += PolyPlaneUI_Disposed;
-            this.MouseWheel += PolyPlaneUI_MouseWheel;
+            //this.MouseWheel += PolyPlaneUI_MouseWheel;
         }
 
         /// <summary>
@@ -503,6 +505,18 @@ namespace PolyPlane
         {
             _render?.Dispose();
             _render = new Renderer(RenderTarget, _netMan);
+
+            _glRender?.Dispose();
+
+            _glRender = new GLRenderer(RenderTarget, _netMan);
+            var control = _glRender.InitGLControl(RenderTarget);
+
+            control.KeyPress += PolyPlaneUI_KeyPress;
+            control.MouseDown += RenderTarget_MouseDown;
+            control.KeyDown += PolyPlaneUI_KeyDown;
+            control.KeyUp += PolyPlaneUI_KeyUp;
+            control.MouseMove += RenderTarget_MouseMove;
+            control.MouseWheel += PolyPlaneUI_MouseWheel;
         }
 
      
@@ -584,10 +598,14 @@ namespace PolyPlane
             if (World.IsNetGame)
                 _netMan.DoNetEvents(dt);
 
-            if (!_skipRender && !_killRender && this.WindowState != FormWindowState.Minimized)
-                _render.RenderFrame(viewObject, dt);
-            else
-                _fpsLimiter.Wait(World.TARGET_FPS);
+            //if (!_skipRender && !_killRender && this.WindowState != FormWindowState.Minimized)
+            //    _render.RenderFrame(viewObject, dt);
+            //else
+            //    _fpsLimiter.Wait(World.TARGET_FPS);
+
+            this.Invoke(() => _glRender.RenderFrame(viewObject, dt));
+
+            //_glRender.RenderFrame(viewObject, dt);
 
             DoMouseButtons();
 
@@ -1106,14 +1124,17 @@ namespace PolyPlane
             if (e.Delta > 0)
             {
                 if (!_ctrlDown)
-                    _render?.DoMouseWheelUp();
+                    //_render?.DoMouseWheelUp();
+                    _glRender?.ZoomIn();
                 else
                     PrevViewPlane();
             }
             else
             {
                 if (!_ctrlDown)
-                    _render?.DoMouseWheelDown();
+                    //_render?.DoMouseWheelDown();
+                    _glRender?.ZoomOut();
+
                 else
                     NextViewPlane();
             }

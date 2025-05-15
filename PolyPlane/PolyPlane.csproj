@@ -26,6 +26,8 @@
 
   <ItemGroup>
     <PackageReference Include="ENet-CSharp" Version="2.4.8" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="3.119.0" />
+    <PackageReference Include="SkiaSharp.Views.WindowsForms" Version="3.119.0" />
     <PackageReference Include="unvell.D2DLib-x64" Version="1.5.0" />
   </ItemGroup>
 
