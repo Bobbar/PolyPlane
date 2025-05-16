@@ -1,5 +1,5 @@
 using PolyPlane.GameObjects;
-using PolyPlane.GameObjects.Manager;
+using PolyPlane.GameObjects.Managers;
 using PolyPlane.Helpers;
 using PolyPlane.Net;
 using PolyPlane.Net.NetHost;
@@ -29,17 +29,12 @@ namespace PolyPlane
         private bool _rightMouseDown = false;
         private bool _inStartup = false;
         private float _holdAltitude = 0f;
-        private double _lastFrameTime = 0;
         private string _title;
 
         private D2DPoint _playerPlaneSlewPos = D2DPoint.Zero;
         private D2DPoint _mousePosition = D2DPoint.Zero;
         private D2DPoint _mouseDownPosition = D2DPoint.Zero;
         private D2DPoint _prevViewObjectPosition = D2DPoint.Zero;
-
-        private Stopwatch _timer = new Stopwatch();
-        private TimeSpan _updateTime = new TimeSpan();
-        private TimeSpan _collisionTime = new TimeSpan();
 
         private GameObjectManager _objs = World.ObjectManager;
         private FighterPlane _playerPlane;
@@ -54,6 +49,7 @@ namespace PolyPlane
         private FPSLimiter _fpsLimiter = new FPSLimiter();
         private SelectObjectUI? _selectObjectUI = null;
         private ConcurrentQueue<Action> _actionQueue = new ConcurrentQueue<Action>();
+        private bool _hasLaunchOptions = false;
 
         public PolyPlaneUI()
         {
@@ -110,7 +106,7 @@ namespace PolyPlane
             var resetAction = new Action(() =>
             {
                 if (World.ViewObject.Equals(_playerPlane))
-                    ResetPlane();
+                    ResetPlayerPlane();
             });
 
             EnqueueAction(resetAction);
@@ -139,9 +135,18 @@ namespace PolyPlane
             EnqueueAction(disableFreeCamAction);
         }
 
-        private void NetMan_PlayerRespawned(object? sender, FighterPlane e)
+        private void AddRespawnMessage(FighterPlane plane)
         {
             //_render?.AddNewEventMessage($"'{e.PlayerName}' has respawned.", EventType.Net);
+        }
+
+
+        private void NetMan_PlayerRespawned(object? sender, FighterPlane plane)
+        {
+            if (plane.Equals(_playerPlane))
+                _render.ClearHudMessage();
+
+            AddRespawnMessage(plane);
         }
 
         private void NetMan_PlayerKicked(object? sender, int e)
@@ -232,52 +237,16 @@ namespace PolyPlane
                 {
                     case DialogResult.OK:
                         // Net game.
-                        World.IsNetGame = true;
-                        World.IsServer = false;
 
-                        _playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
-                        World.ViewObject = _playerPlane;
-                        _objs.AddPlane(_playerPlane);
-
-                        _client = new ClientNetHost(config.Port, config.ServerIPAddress);
-                        _netMan = new NetEventManager(_client, _playerPlane);
-                        _collisions = new CollisionManager(_netMan);
-
-                        _netMan.ImpactEvent += HandleNewImpact;
-                        _netMan.PlayerIDReceived += NetMan_PlayerIDReceived;
-                        _netMan.PlayerDisconnected += NetMan_PlayerDisconnected;
-                        _netMan.PlayerKicked += NetMan_PlayerKicked;
-                        _netMan.PlayerRespawned += NetMan_PlayerRespawned;
-                        _netMan.PlayerEventMessage += NetMan_PlayerEventMessage;
-                        _netMan.PlayerJoined += NetMan_PlayerJoined;
-
-                        _objs.PlayerKilledEvent += Objs_PlayerKilledEvent;
-
-                        _client.PeerTimeoutEvent += Client_PeerTimeoutEvent;
-                        _client.PeerDisconnectedEvent += Client_PeerDisconnectedEvent;
-                        _client.Start();
-
-                        InitGfx();
-                        StartGameThread();
-                        ResumeGame();
+                        DoNetGameStart(config.Port, config.ServerIPAddress, config.PlaneColor, config.IsAI, config.PlayerName);
 
                         result = true;
                         break;
 
                     case DialogResult.Cancel:
                         // Solo game.
-                        World.IsNetGame = false;
-                        World.IsServer = false;
 
-                        _collisions = new CollisionManager();
-
-                        _playerPlane = GetNewPlane(config.PlaneColor, config.IsAI, config.PlayerName);
-                        World.ViewObject = _playerPlane;
-                        _objs.AddPlane(_playerPlane);
-
-                        InitGfx();
-                        StartGameThread();
-                        ResumeGame();
+                        DoLocalGameStart(config.PlaneColor, config.IsAI, config.PlayerName);
 
                         result = true;
 
@@ -295,6 +264,73 @@ namespace PolyPlane
             return result;
         }
 
+        private void DoNetGameStart(ushort port, string ip, D2DColor planeColor, bool isAI = false, string playerName = "Player")
+        {
+            World.IsNetGame = true;
+            World.IsServer = false;
+
+            if (isAI)
+                playerName = "*(BOT) " + Utilities.GetRandomName();
+
+            _playerPlane = GetNewPlane(planeColor, isAI, playerName);
+            World.ViewObject = _playerPlane;
+            _objs.AddPlane(_playerPlane);
+
+            _client = new ClientNetHost(port, ip);
+            _netMan = new NetEventManager(_client, _playerPlane);
+
+            var collisions = new CollisionManager(_netMan);
+            World.ObjectManager.SetCollisionManager(collisions);
+
+            _netMan.ImpactEvent += HandleNewImpact;
+            _netMan.PlayerIDReceived += NetMan_PlayerIDReceived;
+            _netMan.PlayerDisconnected += NetMan_PlayerDisconnected;
+            _netMan.PlayerKicked += NetMan_PlayerKicked;
+            _netMan.PlayerRespawned += NetMan_PlayerRespawned;
+            _netMan.PlayerEventMessage += NetMan_PlayerEventMessage;
+            _netMan.PlayerJoined += NetMan_PlayerJoined;
+
+            _objs.PlayerKilledEvent += Objs_PlayerKilledEvent;
+
+            _client.PeerTimeoutEvent += Client_PeerTimeoutEvent;
+            _client.PeerDisconnectedEvent += Client_PeerDisconnectedEvent;
+
+            _inStartup = false;
+
+            InitRenderer(_netMan);
+
+            _client.Start();
+
+            StartGameThread();
+            ResumeGame();
+
+            _render?.ClearHudMessage();
+
+        }
+
+        private void DoLocalGameStart(D2DColor planeColor, bool isAI = false, string playerName = "Player")
+        {
+            World.IsNetGame = false;
+            World.IsServer = false;
+
+            var collisions = new CollisionManager();
+            World.ObjectManager.SetCollisionManager(collisions);
+
+            if (isAI)
+                playerName = "(BOT) " + Utilities.GetRandomName();
+
+            _playerPlane = GetNewPlane(planeColor, isAI, playerName);
+            World.ViewObject = _playerPlane;
+            _objs.AddPlane(_playerPlane);
+
+            InitRenderer(null);
+            StartGameThread();
+            ResumeGame();
+
+            _render?.ClearHudMessage();
+        }
+
+
         /// <summary>
         /// Return to server/game config screen.
         /// </summary>
@@ -303,22 +339,26 @@ namespace PolyPlane
             World.IsNetGame = false;
             World.IsServer = false;
             World.FreeCameraMode = false;
+            World.ServerTimeOffset = 0;
 
             _killRender = true;
 
-            // Wait a moment for renderer to finish.
-            Task.Delay(200).Wait();
+            _gameThread.Join();
 
             _objs.Clear();
 
-            _netMan.ImpactEvent -= HandleNewImpact;
-            _netMan.PlayerIDReceived -= NetMan_PlayerIDReceived;
-            _netMan.PlayerDisconnected -= NetMan_PlayerDisconnected;
-            _netMan.PlayerKicked -= NetMan_PlayerKicked;
+            if (_netMan != null)
+            {
+                _netMan.ImpactEvent -= HandleNewImpact;
+                _netMan.PlayerIDReceived -= NetMan_PlayerIDReceived;
+                _netMan.PlayerDisconnected -= NetMan_PlayerDisconnected;
+                _netMan.PlayerKicked -= NetMan_PlayerKicked;
+                _netMan = null;
+            }
+
 
             if (_client != null)
             {
-                _client?.Stop();
                 _client?.Dispose();
 
                 _client.PeerTimeoutEvent -= Client_PeerTimeoutEvent;
@@ -328,7 +368,10 @@ namespace PolyPlane
             }
 
             if (!_inStartup)
-                DoNetGameSetup();
+            {
+                if (!DoNetGameSetup())
+                    this.Close();
+            }
         }
 
         private void Client_PeerDisconnectedEvent(object? sender, ENet.Peer e)
@@ -339,6 +382,7 @@ namespace PolyPlane
             }
             else
             {
+                _netMan?.SendPlayerDisconnectPacket(e.ID);
                 ResetGame();
             }
         }
@@ -347,19 +391,7 @@ namespace PolyPlane
         {
             if (this.Disposing || this.IsDisposed || _render == null || _killRender == true) return;
 
-            try
-            {
-                if (this.InvokeRequired && !this.Disposing)
-                    this.Invoke(() => HandleNewImpact(sender, e));
-                else
-                {
-                    HandleImpactFeedback(e);
-                }
-            }
-            catch
-            {
-                // Catch object disposed exceptions.
-            }
+            HandleImpactFeedback(e);
         }
 
         private void HandleImpactFeedback(ImpactEvent impact)
@@ -373,7 +405,7 @@ namespace PolyPlane
                     //_render.DoScreenFlash(D2DColor.Red);
                     //_render.DoScreenShake();
                 }
-                else if (impact.Attacker.Equals(viewPlane))
+                else if (impact.Attacker != null && impact.Attacker.Equals(viewPlane))
                 {
                     //if (impact.Target is FighterPlane && impact.DidDamage)
                     //    _render.DoScreenFlash(D2DColor.Green);
@@ -407,11 +439,16 @@ namespace PolyPlane
             _fpsLimiter?.Dispose();
         }
 
-
         private FighterPlane GetNewPlane(D2DColor planeColor, bool isAI = false, string playerName = "Player")
         {
             var pos = Utilities.FindSafeSpawnPoint();
-            var plane = new FighterPlane(pos, planeColor, World.GetNextPlayerId(), isAI, false);
+
+            FighterPlane plane;
+
+            if (isAI)
+                plane = new FighterPlane(pos, planeColor, Utilities.GetRandomPersonalities(2));
+            else
+                plane = new FighterPlane(pos, planeColor);
 
             plane.PlayerName = playerName;
 
@@ -419,7 +456,7 @@ namespace PolyPlane
                 plane.PlayerName += $" [{Utilities.GetPersonalityTag(plane.Personality)}]";
 
             plane.ThrustOn = true;
-            plane.Velocity = new D2DPoint(500f, 0f);
+            plane.Velocity = new D2DPoint(World.PlaneSpawnVelo, 0f);
 
             plane.FireBulletCallback = b =>
             {
@@ -449,41 +486,34 @@ namespace PolyPlane
 
         private void ResetAIPlane(FighterPlane plane)
         {
-            plane.ThrustOn = true;
-            plane.Position = Utilities.FindSafeSpawnPoint();
-            plane.Velocity = new D2DPoint(500f, 0f);
-            plane.SyncFixtures();
-            plane.RotationSpeed = 0f;
-            plane.Rotation = 0f;
-            plane.IsDisabled = false;
-            plane.FixPlane();
+            if (plane.Equals(_playerPlane))
+            {
+                ResetPlayerPlane();
+                return;
+            }
+
+            AddRespawnMessage(plane);
+            plane.RespawnPlane(Utilities.FindSafeSpawnPoint());
         }
 
-        private void ResetPlane()
+        private void ResetPlayerPlane()
         {
             if (World.IsNetGame && !_canRespawn)
                 return;
 
             if (World.IsNetGame)
+            {
                 SendPlayerReset();
 
-            _playerPlane.ThrustOn = true;
-            _playerPlane.Position = Utilities.FindSafeSpawnPoint();
-
-            // Set player plane rotation to current guidance angle.
-            // Allow players to choose to spawn traveling left or right.
-            var guideAngle = GetPlayerGuidanceAngle();
-
-            if (Utilities.IsPointingRight(guideAngle))
-                _playerPlane.Rotation = 0f;
+                // Prevent duplicate reset packets being sent.
+                _playerPlane.RespawnQueued = true;
+            }
             else
-                _playerPlane.Rotation = 180f;
+            {
+                _playerPlane.RespawnPlane(Utilities.FindSafeSpawnPoint());
+                AddRespawnMessage(_playerPlane);
 
-            _playerPlane.Velocity = Utilities.AngleToVectorDegrees(_playerPlane.Rotation, 500f);
-
-            _playerPlane.RotationSpeed = 0f;
-            _playerPlane.IsDisabled = false;
-            _playerPlane.FixPlane();
+            }
 
             _canRespawn = false;
             //_render.ClearHudMessage();
@@ -513,7 +543,7 @@ namespace PolyPlane
             _gameThread.Start();
         }
 
-        private void InitGfx()
+        private void InitRenderer(NetEventManager netMan)
         {
             //_render?.Dispose();
             //_render = new Renderer(RenderTarget, _netMan);
@@ -533,11 +563,8 @@ namespace PolyPlane
             control.GotFocus += PolyPlaneUI_GotFocus;
         }
 
-     
         private void GameLoop()
         {
-            _lastFrameTime = World.CurrentTimeMs();
-
             while (!this.Disposing && !_killRender)
             {
                 AdvanceAndRender();
@@ -549,52 +576,38 @@ namespace PolyPlane
 
         private void AdvanceAndRender()
         {
+            if (_oneStep)
+                World.IsPaused = false;
+
+            _render.InitGfx();
+
+            World.Update();
+
+            var dt = World.CurrentDT;
+
             if (_killRender)
                 return;
 
-            _updateTime = TimeSpan.Zero;
-            _collisionTime = TimeSpan.Zero;
-
+            // Process any queued actions.
             ProcessQueuedActions();
 
+            // Poll mouse buttons and position.
+            DoMouseButtons();
+
+            // Get the current view object.
             var viewObject = GetViewObjectOrCamera(World.GetViewObject());
 
-            var now = World.CurrentTimeMs();
-            var dt = World.DT;
+            // Process net events during net games.
+            if (World.IsNetGame)
+                _netMan.HandleNetEvents(dt);
 
-            // Compute elapsed time since the last frame
-            // and use it to compute a dynamic delta time
-            // for the next frame.
-            // This should allow for more correct movement
-            // when the FPS drops below the target.
-            var elapFrameTime = now - _lastFrameTime;
-            _lastFrameTime = now;
-
-            // Update/advance objects.
+            // Update/advance all objects.
             if (!World.IsPaused || _oneStep)
             {
-                if (World.DynamicTimeDelta)
-                    dt = World.SetDynamicDT(elapFrameTime);
-
-                _timer.Restart();
-
-                // Update all objects.
                 _objs.Update(dt);
 
-                _timer.Stop();
-                _updateTime += _timer.Elapsed;
-
-                _timer.Restart();
-                _collisions.DoCollisions(dt);
-                _timer.Stop();
-                _collisionTime += _timer.Elapsed;
-
-                _timer.Restart();
-
-                World.UpdateAirDensityAndWind(dt);
-
-                _timer.Stop();
-                _updateTime += _timer.Elapsed;
+                if (_oneStep)
+                    World.IsPaused = true;
 
                 _oneStep = false;
 
@@ -628,27 +641,26 @@ namespace PolyPlane
             }
             //_glRender.RenderFrame(viewObject, dt);
 
-            DoMouseButtons();
-
             if (_slewEnable)
             {
-                _playerPlane.Rotation = _playerPlane.PlayerGuideAngle;
+                _playerPlane.SetPosition(_playerPlaneSlewPos, _playerPlane.PlayerGuideAngle);
                 _playerPlane.RotationSpeed = 0f;
-                _playerPlane.Position = _playerPlaneSlewPos;
                 _playerPlane.Velocity = D2DPoint.Zero;
-                _playerPlane.Update(0f);
             }
 
             if (_playerPlane.HasCrashed)
-            {
                 EnableRespawn();
 
-                if (_playerPlane.IsAI && _playerPlane.AIRespawnReady)
-                    ResetPlane();
-            }
+            // Hold altitude while spectating. 
+            if (viewObject.Equals(_playerPlane) == false)
+                _isHoldingAlt = true;
 
-            // Hold current altitude while player is typeing.
-            if ((_netMan != null && _netMan.ChatInterface.ChatIsActive) || _isHoldingAlt)
+            // Hold altitude while viewing/typing in net chat.
+            if ((_netMan != null && _netMan.ChatInterface.ChatIsActive))
+                _isHoldingAlt = true;
+
+            // Make player plane maintain its current altitude.
+            if (_isHoldingAlt)
             {
                 if (_holdAltitude == 0f)
                     _holdAltitude = _playerPlane.Altitude;
@@ -664,10 +676,15 @@ namespace PolyPlane
             HandleAIPlaneRespawn();
         }
 
+        /// <summary>
+        /// Returns the specified object if it is not null and not expired.
+        /// 
+        /// Otherwise enable free camera and return a dummy object at the last known position to keep the view active.
+        /// </summary>
+        /// <param name="viewObject"></param>
+        /// <returns></returns>
         private GameObject GetViewObjectOrCamera(GameObject viewObject)
         {
-            // Returns the specified object if it is not null and not expired.
-            // Otherwise enable free camera and return a dummy object at the last known position to keep the view active.
             GameObject viewObj = null;
 
             if (viewObject != null)
@@ -702,23 +719,29 @@ namespace PolyPlane
             if (!World.RespawnAIPlanes)
                 return;
 
-            foreach (var plane in _objs.Planes)
+            for (int i = 0; i < _objs.Planes.Count; i++)
             {
+                var plane = _objs.Planes[i];
                 if (plane.IsAI && plane.HasCrashed && plane.AIRespawnReady)
                 {
-                    ResetAIPlane(plane);
+                    if (!plane.RespawnQueued)
+                        ResetAIPlane(plane);
                 }
             }
         }
 
         private void DoMouseButtons()
         {
+            var isPaused = World.IsPaused;
+            var mouseInViewport = this.DesktopBounds.Contains(Control.MousePosition) && _hasFocus;
+
             // Don't allow inputs if mouse left the window.
-            if (!this.DesktopBounds.Contains(Control.MousePosition) && !_playerPlane.IsAI)
+            if (!mouseInViewport && !_playerPlane.IsAI)
             {
                 _playerPlane.FiringBurst = false;
                 _playerPlane.DroppingDecoy = false;
                 _isHoldingAlt = true; // Hold the plane at the current altitude if mouse leaves the window.
+                _rightMouseDown = false;
                 return;
             }
             else
@@ -726,18 +749,11 @@ namespace PolyPlane
                 _isHoldingAlt = false;
             }
 
-            if (!_hasFocus && !_playerPlane.IsAI)
-            {
-                _playerPlane.FiringBurst = false;
-                _playerPlane.DroppingDecoy = false;
-                return;
-            }
-
             var buttons = Control.MouseButtons;
 
             if (!World.FreeCameraMode && !_playerPlane.IsAI)
             {
-                if ((buttons & MouseButtons.Left) == MouseButtons.Left)
+                if (!isPaused && (buttons & MouseButtons.Left) == MouseButtons.Left)
                 {
                     _playerPlane.FiringBurst = true;
                 }
@@ -747,10 +763,9 @@ namespace PolyPlane
                 }
             }
 
-            if ((buttons & MouseButtons.Right) == MouseButtons.Right)
+            if (mouseInViewport && (buttons & MouseButtons.Right) == MouseButtons.Right)
             {
-
-                if (!World.FreeCameraMode && !_playerPlane.IsAI)
+                if (!isPaused && !World.FreeCameraMode && !_playerPlane.IsAI)
                     _playerPlane.DroppingDecoy = true;
 
                 _rightMouseDown = true;
@@ -777,7 +792,7 @@ namespace PolyPlane
 
         private float GetPlayerGuidanceAngle()
         {
-            // Poll current mouse position and apply offsets and scaling.
+            // Scale the mouse position for the current view scale.
             var mousePos = _mousePosition;
             var scaledPos = mousePos * World.ViewPortScaleMulti;
 
@@ -785,7 +800,7 @@ namespace PolyPlane
             var center = new D2DPoint(World.ViewPortSize.width * 0.5f, World.ViewPortSize.height * 0.5f);
             center /= World.DEFAULT_DPI / (float)this.DeviceDpi; // Scale for DPI.
 
-            // Compute angle from center and update guidance.
+            // Compute angle from center.
             var angle = scaledPos.AngleTo(center);
 
             return angle;
@@ -827,7 +842,7 @@ namespace PolyPlane
             _objs.EnqueueDecoy(decoy);
 
             if (World.IsNetGame)
-                _netMan.SendNewDecoy(decoy);
+                _netMan.SendNewDecoyPacket(decoy);
         }
 
         private void PauseGame()
@@ -849,7 +864,7 @@ namespace PolyPlane
 
         private void SendPlayerReset()
         {
-            _netMan.SendPlaneReset(_playerPlane);
+            _netMan.ClientSendPlaneReset(_playerPlane);
         }
 
         private void NextViewPlane()
@@ -878,6 +893,7 @@ namespace PolyPlane
             _selectObjectUI.WindowState = FormWindowState.Normal;
             _selectObjectUI.Show();
             _selectObjectUI.BringToFront();
+            _selectObjectUI.UpdateObjectList();
         }
 
         private void PolyPlaneUI_KeyPress(object sender, KeyPressEventArgs e)
@@ -922,7 +938,6 @@ namespace PolyPlane
                     break;
 
                 case 'd':
-                    World.InterpOn = !World.InterpOn;
                     break;
 
                 case 'e':
@@ -1111,14 +1126,14 @@ namespace PolyPlane
                     case Keys.Oemplus:
 
                         if (!World.IsNetGame)
-                            World.DT += 0.002f;
+                            World.TargetDT += 0.002f;
 
                         break;
 
                     case Keys.OemMinus:
 
                         if (!World.IsNetGame)
-                            World.DT -= 0.002f;
+                            World.TargetDT -= 0.002f;
 
                         break;
                 }
@@ -1131,7 +1146,10 @@ namespace PolyPlane
                 ToggleFullscreen();
 
             if (e.KeyData == Keys.Escape && _isFullScreen)
-                ToggleFullscreen();
+            {
+                if (!World.IsNetGame || (World.IsNetGame && !_netMan.ChatInterface.ChatIsActive))
+                    ToggleFullscreen();
+            }
         }
 
         private void PolyPlaneUI_KeyUp(object sender, KeyEventArgs e)
@@ -1163,6 +1181,21 @@ namespace PolyPlane
 
         private void PolyPlaneUI_Shown(object sender, EventArgs e)
         {
+            if (_hasLaunchOptions)
+            {
+                var o = World.LaunchOptions;
+                DoNetGameStart(o.Port, o.IPAddress, D2DColor.Randomly(), o.IsAI, o.PlayerName);
+
+                if (o.DisableRender)
+                {
+                    _skipRender = true;
+                    this.WindowState = FormWindowState.Minimized;
+
+                }
+
+                return;
+            }
+
             if (!DoNetGameSetup())
             {
                 this.Close();
