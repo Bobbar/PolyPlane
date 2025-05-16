@@ -1,6 +1,7 @@
 ﻿using PolyPlane.AI_Behavior;
 using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Fixtures;
+using SkiaSharp;
 using System.Net;
 using System.Numerics;
 using unvell.D2DLib;
@@ -289,6 +290,29 @@ namespace PolyPlane.Helpers
                 color1.r + (color2.r - color1.r) * amount,
                 color1.g + (color2.g - color1.g) * amount,
                 color1.b + (color2.b - color1.b) * amount);
+
+            return newColor;
+        }
+
+
+        public static SKColor LerpColor(SKColor color1, SKColor color2, float amount)
+        {
+            var newColor = new SKColor(
+                (byte)(color1.Red + (color2.Red - color1.Red) * amount),
+                (byte)(color1.Green + (color2.Green - color1.Green) * amount),
+                (byte)(color1.Blue + (color2.Blue - color1.Blue) * amount),
+                (byte)(color1.Alpha + (color2.Alpha - color1.Alpha) * amount));
+
+            return newColor;
+        }
+
+        public static SKColor LerpColorWithAlpha(SKColor color1, SKColor color2, float amount, byte alpha)
+        {
+            var newColor = new SKColor(
+                (byte)(color1.Red + (color2.Red - color1.Red) * amount),
+                (byte)(color1.Green + (color2.Green - color1.Green) * amount),
+                (byte)(color1.Blue + (color2.Blue - color1.Blue) * amount),
+                alpha);
 
             return newColor;
         }

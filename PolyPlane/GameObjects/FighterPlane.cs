@@ -7,6 +7,8 @@ using PolyPlane.GameObjects.Manager;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
+using SkiaSharp;
+using System.Diagnostics;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -604,6 +606,116 @@ namespace PolyPlane.GameObjects
             //_centerOfThrust.Render(ctx);
         }
 
+
+        public override void RenderGL(GLRenderContext ctx)
+        {
+            base.RenderGL(ctx);
+
+            if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
+                ctx.FillPolygon(this.FlamePoly, _flameFillColor.ToSKColor());
+
+
+            if (!this.IsDisabled)
+                DrawShockwaveGL(ctx);
+
+            ctx.FillPolygon(this.Polygon, PlaneColor.ToSKColor());
+
+        }
+
+
+        private void DrawShockwaveGL(GLRenderContext ctx)
+        {
+            const float MIN_VELO = 850f;
+            const int NUM_SEGS = 30;
+
+            // Compute speed factor and fiddle with dimensions, positions, line weight and color alpha.
+            var speedFact = Utilities.FactorWithEasing(this.AirSpeedIndicated - MIN_VELO, MIN_VELO, EasingFunctions.In.EaseSine);
+            if (speedFact < 0.01f)
+                return;
+
+            var turbulence = World.GetTurbulenceForPosition(this.Position);
+
+            // Increase width and height with speed,
+            // and add some wiggle from turbulence.
+            var width = 40f;
+            width += 30f * speedFact;
+            width += 30f * turbulence;
+
+            var height = 100f;
+            height += 300f * speedFact;
+            height += 30f * turbulence;
+
+            // Increase the initial line thiccness
+            // and color alpha with speed and turbs.
+            var lineWeight = 8f;
+            lineWeight += 9f * speedFact * turbulence;
+
+            var alpha = 0.8f;
+            alpha *= speedFact * turbulence;
+
+            // ## Control points for beziers. ##
+
+            // Move center start point backwards with speed.
+            var startCenter = this.Position + Utilities.AngleToVectorDegrees(this.Rotation, 30f - (30f * speedFact));
+
+            // Reference angle for beziers.
+            var veloNorm = this.Velocity.Normalized();
+
+            // Compute the width vector and center end point.
+            var widthVec = veloNorm * width;
+            var endCenter = startCenter - widthVec;
+
+            // Computer the height/tangent vector and top/bot points.
+            var heightVec = veloNorm.Tangent() * height;
+            var endTop = endCenter - heightVec;
+            var endBot = endCenter + heightVec;
+
+            // Initial color.
+            var color = D2DColor.White.WithAlpha(alpha);
+
+            for (int i = 0; i < NUM_SEGS - 1; i++)
+            {
+                // Current positions of curve segment.
+                var t = (float)i / (float)NUM_SEGS;
+                var t2 = (float)(i + 1) / (float)NUM_SEGS;
+
+                // Simple linear curve for line width, with some padding.
+                // It just looks better compared to any of the easing funcs.
+                var w = (lineWeight * (1f - t)) + 0.2f;
+
+                // Decrease alpha with position.
+                var a = alpha * EasingFunctions.In.EaseSine(1f - t);
+
+                // Color of this segment.
+                var lineColor = color.WithAlpha(a);
+
+                // Control points for top and bottom beziers.
+                var p0 = startCenter;
+                var p1 = endCenter;
+                var p2Top = endTop;
+                var p2Bot = endBot;
+
+                // Plot top and bottom line segment points.
+                var B1Top = Utilities.LerpBezierCurve(p0, p1, p2Top, t);
+                var B2Top = Utilities.LerpBezierCurve(p0, p1, p2Top, t2);
+
+                var B1Bot = Utilities.LerpBezierCurve(p0, p1, p2Bot, t);
+                var B2Bot = Utilities.LerpBezierCurve(p0, p1, p2Bot, t2);
+
+                if (i > 0) // Skip the first segment.
+                {
+                    // Get clamped noise for segment alpha.
+                    var noiseT = Math.Clamp(World.SampleNoise(B1Top), 0.1f, 1f);
+                    var noiseB = Math.Clamp(World.SampleNoise(B1Bot), 0.1f, 1f);
+
+
+                    ctx.DrawLine(B1Top, B2Top, lineColor.WithAlpha(a * noiseT).ToSKColor(), w);
+                    ctx.DrawLine(B1Bot, B2Bot, lineColor.WithAlpha(a * noiseB).ToSKColor(), w);
+                }
+            }
+        }
+
+
         private void DrawShockwave(RenderContext ctx)
         {
             const float MIN_VELO = 850f;
@@ -694,6 +806,32 @@ namespace PolyPlane.GameObjects
                 }
             }
         }
+
+        //private void DrawClippedObjectsGL(SKCanvas ctx)
+        //{
+        //    //if (_polyClipLayer == null)
+        //    //    _polyClipLayer = ctx.Device.CreateLayer();
+
+
+        //    ctx.Cl
+
+        //    // Clip with the polygon.
+        //    using (var polyClipGeo = ctx.Device.CreatePathGeometry())
+        //    {
+        //        polyClipGeo.AddLines(this.Polygon.Poly);
+        //        polyClipGeo.ClosePath();
+
+        //        ctx.Gfx.PushLayer(_polyClipLayer, ctx.Viewport, polyClipGeo);
+
+        //        DrawCockpit(ctx);
+        //        DrawBulletHoles(ctx);
+
+        //        ctx.Gfx.PopLayer();
+        //    }
+        //}
+
+
+
 
         private void DrawClippedObjects(RenderContext ctx)
         {

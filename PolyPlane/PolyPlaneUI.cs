@@ -61,10 +61,22 @@ namespace PolyPlane
 
             _title = this.Text;
 
-            this.GotFocus += PolyPlaneUI_GotFocus;
-            this.LostFocus += PolyPlaneUI_LostFocus;
+            //this.GotFocus += PolyPlaneUI_GotFocus;
+            //this.LostFocus += PolyPlaneUI_LostFocus;
             this.Disposed += PolyPlaneUI_Disposed;
             //this.MouseWheel += PolyPlaneUI_MouseWheel;
+
+
+
+            for (int i = 0; i < World.TimeOfDayPallet.Length; i++)
+            {
+                var color = World.TimeOfDayPallet[i];
+                var skColor = color.ToSKColor();
+
+                Debug.WriteLine($"new SKColor({skColor.Red}, {skColor.Green}, {skColor.Blue}, {skColor.Alpha}),");
+
+            }
+
         }
 
         /// <summary>
@@ -129,7 +141,7 @@ namespace PolyPlane
 
         private void NetMan_PlayerRespawned(object? sender, FighterPlane e)
         {
-            _render?.AddNewEventMessage($"'{e.PlayerName}' has respawned.", EventType.Net);
+            //_render?.AddNewEventMessage($"'{e.PlayerName}' has respawned.", EventType.Net);
         }
 
         private void NetMan_PlayerKicked(object? sender, int e)
@@ -138,11 +150,11 @@ namespace PolyPlane
 
             if (playerPlane != null)
             {
-                _render?.AddNewEventMessage($"'{playerPlane.PlayerName}' has been kicked.", EventType.Net);
+                //_render?.AddNewEventMessage($"'{playerPlane.PlayerName}' has been kicked.", EventType.Net);
 
 
-                if (playerPlane.Equals(_playerPlane))
-                    _render?.NewHudMessage("You have been kicked from the server!", D2DColor.Blue);
+                //if (playerPlane.Equals(_playerPlane))
+                //    _render?.NewHudMessage("You have been kicked from the server!", D2DColor.Blue);
             }
         }
 
@@ -152,13 +164,13 @@ namespace PolyPlane
 
             if (playerPlane != null)
             {
-                _render?.AddNewEventMessage($"'{playerPlane.PlayerName}' has left.", EventType.Net);
+                //_render?.AddNewEventMessage($"'{playerPlane.PlayerName}' has left.", EventType.Net);
             }
         }
 
         private void NetMan_PlayerEventMessage(object? sender, string e)
         {
-            _render?.AddNewEventMessage(e, EventType.Net);
+            //_render?.AddNewEventMessage(e, EventType.Net);
         }
 
         private void NetMan_PlayerJoined(object? sender, int e)
@@ -167,7 +179,7 @@ namespace PolyPlane
             if (playerPlane != null)
             {
                 var joinMsg = $"'{playerPlane.PlayerName}' has joined.";
-                _render?.AddNewEventMessage(joinMsg, EventType.Net);
+                //_render?.AddNewEventMessage(joinMsg, EventType.Net);
             }
         }
 
@@ -178,7 +190,7 @@ namespace PolyPlane
 
         private void Client_PeerTimeoutEvent(object? sender, ENet.Peer e)
         {
-            _render.NewHudMessage("Timed out!?", D2DColor.Yellow);
+            //_render.NewHudMessage("Timed out!?", D2DColor.Yellow);
         }
 
         private void PolyPlaneUI_LostFocus(object? sender, EventArgs e)
@@ -201,7 +213,7 @@ namespace PolyPlane
                 if (Utilities.IsPointingRight(guideAngle))
                     spawnDirText = "Right";
 
-                _render.NewHudMessage($"Press 'R' or left-click to respawn.\n\n Direction: {spawnDirText}", D2DColor.GreenYellow);
+                //_render.NewHudMessage($"Press 'R' or left-click to respawn.\n\n Direction: {spawnDirText}", D2DColor.GreenYellow);
             }
 
             _canRespawn = true;
@@ -358,13 +370,13 @@ namespace PolyPlane
             {
                 if (impact.Target.Equals(viewPlane))
                 {
-                    _render.DoScreenFlash(D2DColor.Red);
-                    _render.DoScreenShake();
+                    //_render.DoScreenFlash(D2DColor.Red);
+                    //_render.DoScreenShake();
                 }
                 else if (impact.Attacker.Equals(viewPlane))
                 {
-                    if (impact.Target is FighterPlane && impact.DidDamage)
-                        _render.DoScreenFlash(D2DColor.Green);
+                    //if (impact.Target is FighterPlane && impact.DidDamage)
+                    //    _render.DoScreenFlash(D2DColor.Green);
                 }
             }
         }
@@ -413,8 +425,8 @@ namespace PolyPlane
             {
                 _objs.EnqueueBullet(b);
 
-                if (b.Owner.Equals(World.ViewObject))
-                    _render.DoScreenShake(2f);
+                //if (b.Owner.Equals(World.ViewObject))
+                //    _render.DoScreenShake(2f);
 
                 if (World.IsNetGame)
                     _netMan.SendNewBulletPacket(b);
@@ -474,7 +486,7 @@ namespace PolyPlane
             _playerPlane.FixPlane();
 
             _canRespawn = false;
-            _render.ClearHudMessage();
+            //_render.ClearHudMessage();
 
             if (!_playerPlane.IsAI)
                 World.ViewObject = _playerPlane;
@@ -503,8 +515,8 @@ namespace PolyPlane
 
         private void InitGfx()
         {
-            _render?.Dispose();
-            _render = new Renderer(RenderTarget, _netMan);
+            //_render?.Dispose();
+            //_render = new Renderer(RenderTarget, _netMan);
 
             _glRender?.Dispose();
 
@@ -517,6 +529,8 @@ namespace PolyPlane
             control.KeyUp += PolyPlaneUI_KeyUp;
             control.MouseMove += RenderTarget_MouseMove;
             control.MouseWheel += PolyPlaneUI_MouseWheel;
+            control.LostFocus += PolyPlaneUI_LostFocus;
+            control.GotFocus += PolyPlaneUI_GotFocus;
         }
 
      
@@ -587,13 +601,13 @@ namespace PolyPlane
                 // Do G-Force screen shake effect.
                 if (viewObject is FighterPlane plane)
                 {
-                    if (plane.GForce > World.SCREEN_SHAKE_G)
-                        _render.DoScreenShake(plane.GForce / 4f);
+                    //if (plane.GForce > World.SCREEN_SHAKE_G)
+                    //    _render.DoScreenShake(plane.GForce / 4f);
                 }
             }
 
-            _render.CollisionTime = _collisionTime;
-            _render.UpdateTime = _updateTime;
+            //_render.CollisionTime = _collisionTime;
+            //_render.UpdateTime = _updateTime;
 
             if (World.IsNetGame)
                 _netMan.DoNetEvents(dt);
@@ -603,8 +617,15 @@ namespace PolyPlane
             //else
             //    _fpsLimiter.Wait(World.TARGET_FPS);
 
-            this.Invoke(() => _glRender.RenderFrame(viewObject, dt));
+            try
+            {
+                this.Invoke(() => _glRender.RenderFrame(viewObject, dt));
 
+            }
+            catch
+            {
+
+            }
             //_glRender.RenderFrame(viewObject, dt);
 
             DoMouseButtons();
@@ -927,7 +948,7 @@ namespace PolyPlane
                     break;
 
                 case 'h':
-                    _render.ToggleHelp();
+                    //_render.ToggleHelp();
                     break;
 
                 case 'i':
@@ -955,7 +976,7 @@ namespace PolyPlane
                     break;
 
                 case 'o':
-                    _render.ToggleInfo();
+                    //_render.ToggleInfo();
                     break;
 
                 case 'p':
@@ -1014,11 +1035,11 @@ namespace PolyPlane
                 case '=' or '+':
                     if (_shiftDown)
                     {
-                        _render.HudScale += 0.01f;
+                        //_render.HudScale += 0.01f;
                     }
                     else
                     {
-                        _render?.ZoomIn();
+                        //_render?.ZoomIn();
                     }
                     break;
 
@@ -1026,11 +1047,11 @@ namespace PolyPlane
 
                     if (_shiftDown)
                     {
-                        _render.HudScale -= 0.01f;
+                        //_render.HudScale -= 0.01f;
                     }
                     else
                     {
-                        _render?.ZoomOut();
+                        //_render?.ZoomOut();
                     }
                     break;
 
@@ -1050,7 +1071,7 @@ namespace PolyPlane
                     break;
 
                 case (char)9: //Tab
-                    _render?.ToggleScore();
+                    //_render?.ToggleScore();
                     break;
 
                 case ' ':
@@ -1103,8 +1124,8 @@ namespace PolyPlane
                 }
             }
 
-            if (e.KeyData.HasFlag(Keys.F2))
-                _render?.ToggleHUD();
+            //if (e.KeyData.HasFlag(Keys.F2))
+            //    _render?.ToggleHUD();
 
             if (e.KeyData.HasFlag(Keys.Enter) && e.KeyData.HasFlag(Keys.Alt))
                 ToggleFullscreen();

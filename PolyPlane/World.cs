@@ -2,6 +2,7 @@
 using PolyPlane.GameObjects;
 using PolyPlane.Helpers;
 using unvell.D2DLib;
+using SkiaSharp;
 
 namespace PolyPlane
 {
@@ -240,6 +241,25 @@ namespace PolyPlane
             new D2DColor(1f, 0.71f, 0.77f, 0.93f),
             new D2DColor(0.5f, 0f, 0f, 0f),
             new D2DColor(0.5f, 0f, 0f, 0f)
+        ];
+
+        public static readonly SKColor[] TimeOfDayPalletGL =
+        [
+new SKColor(84, 89, 124, 255),
+new SKColor(84, 89, 124, 255),
+new SKColor(163, 132, 168, 255),
+new SKColor(163, 132, 168, 255),
+new SKColor(255, 170, 0, 255),
+new SKColor(255, 119, 0, 255),
+new SKColor(255, 0, 20, 255),
+new SKColor(255, 0, 124, 255),
+new SKColor(219, 0, 255, 255),
+new SKColor(163, 132, 168, 255),
+new SKColor(84, 89, 124, 255),
+new SKColor(94, 102, 137, 255),
+new SKColor(181, 196, 237, 255),
+new SKColor(0, 0, 0, 127),
+new SKColor(0, 0, 0, 127),
         ];
 
         public static uint CurrentObjId = 0;

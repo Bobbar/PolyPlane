@@ -267,5 +267,20 @@ namespace PolyPlane.Helpers
             return new SKColor((byte)(color.r * 255), (byte)(color.g * 255), (byte)(color.b * 255), (byte)(color.a * 255));
         }
 
+        public static SKMatrix Add(this SKMatrix matrix, SKMatrix other)
+        {
+            return SKMatrix.Concat(matrix, other);
+        }
+
+        public static Vector4 ToVector4(this SKColor color)
+        {
+            return new Vector4(color.Alpha / 255f, color.Red / 255f, color.Green / 255f, color.Blue / 255f);
+        }
+     
+        public static SKColor ToSKColor(this Vector4 color)
+        {
+            return new SKColor((byte)(255f * color.Y), (byte)(255f * color.Z), (byte)(255f * color.W), (byte)(255f * color.X));
+        }
+
     }
 }

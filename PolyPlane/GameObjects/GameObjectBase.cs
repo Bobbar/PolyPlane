@@ -3,6 +3,7 @@ using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Net;
 using PolyPlane.Rendering;
+using SkiaSharp;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -285,6 +286,12 @@ namespace PolyPlane.GameObjects
         }
 
         public virtual void Render(RenderContext ctx)
+        {
+            if (this.IsExpired || !this.Visible)
+                return;
+        }
+
+        public virtual void RenderGL(GLRenderContext ctx)
         {
             if (this.IsExpired || !this.Visible)
                 return;

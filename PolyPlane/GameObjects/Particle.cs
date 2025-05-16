@@ -63,6 +63,15 @@ namespace PolyPlane.GameObjects
             ctx.FillEllipseWithLighting(Ellipse, color, 0.6f);
         }
 
+        public override void RenderGL(GLRenderContext ctx)
+        {
+            base.RenderGL(ctx);
+
+
+            ctx.DrawCircleWithLighting(Ellipse.origin, Ellipse.radiusX, Color.ToSKColor(), 0.6f);
+            //ctx.DrawCircle(Ellipse.origin, Ellipse.radiusX, Color.ToSKColor());
+        }
+
         public override void Dispose()
         {
             base.Dispose();

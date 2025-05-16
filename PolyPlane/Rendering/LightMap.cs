@@ -1,5 +1,6 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.Helpers;
+using SkiaSharp;
 using System.Numerics;
 using unvell.D2DLib;
 
@@ -156,6 +157,24 @@ namespace PolyPlane.Rendering
             var newColor = Vector4.Lerp(initColor.ToVector4(), color, intensity);
 
             return newColor.ToD2DColor();
+        }
+
+        public SKColor SampleColorSK(D2DPoint pos, SKColor initColor, float minIntensity, float maxIntensity)
+        {
+            var color = SampleMap(pos);
+
+            // We use the alpha channel to determine the intensity.
+            // Clamp the intensity to the specified range.
+            var intensity = Utilities.ScaleToRange(color.X, 0f, 1f, minIntensity, maxIntensity);
+
+            // Set the sample color alpha to full as we don't want the sample
+            // color to effect the alpha of the initial input color.
+            color.X = 1f;
+
+            // Lerp the new color per the intensity.
+            var newColor = Vector4.Lerp(initColor.ToVector4(), color, intensity);
+
+            return newColor.ToSKColor();
         }
 
         private Vector4 Blend(Vector4 colorA, Vector4 colorB)
