@@ -52,7 +52,7 @@ namespace PolyPlane.Helpers
         public static float Angle(this D2DPoint vector, bool clamp = true)
         {
             var angle = MathF.Atan2(vector.Y, vector.X) * Utilities.RADS_TO_DEGREES;
-            
+
             if (clamp)
                 angle = Utilities.ClampAngle(angle);
 
@@ -258,6 +258,11 @@ namespace PolyPlane.Helpers
             return new SKColor((byte)(color.r * 255), (byte)(color.g * 255), (byte)(color.b * 255), (byte)(color.a * 255));
         }
 
+        public static float ToColorFloat(this byte colorbytes)
+        {
+            return (float)(colorbytes / 255f);
+        }
+
         public static SKMatrix Add(this SKMatrix matrix, SKMatrix other)
         {
             return SKMatrix.Concat(matrix, other);
@@ -267,7 +272,7 @@ namespace PolyPlane.Helpers
         {
             return new Vector4(color.Alpha / 255f, color.Red / 255f, color.Green / 255f, color.Blue / 255f);
         }
-     
+
         public static SKColor ToSKColor(this Vector4 color)
         {
             return new SKColor((byte)(255f * color.Y), (byte)(255f * color.Z), (byte)(255f * color.W), (byte)(255f * color.X));
@@ -278,5 +283,10 @@ namespace PolyPlane.Helpers
             return new SKSize(size.width, size.height);
         }
 
+
+        public static SKColor WithAlpha(this SKColor color, float alpha)
+        {
+            return color.WithAlpha((byte)(255f * alpha));
+        }
     }
 }

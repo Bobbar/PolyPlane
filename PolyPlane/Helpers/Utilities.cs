@@ -300,6 +300,11 @@ namespace PolyPlane.Helpers
             }
         }
 
+        public static SKColor SKColorFromFloats(float red, float green, float blue, float alpha)
+        {
+            return new SKColor((byte)(255f * red), (byte)(255f * green), (byte)(255f * blue), (byte)(255f * alpha));
+        }
+
         public static D2DColor LerpColor(D2DColor color1, D2DColor color2, float amount)
         {
             var newColor = new D2DColor(

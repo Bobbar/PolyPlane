@@ -2,6 +2,7 @@
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
+using SkiaSharp;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -86,6 +87,40 @@ namespace PolyPlane.GameObjects
 
             if (_parentMissile.IsExpired && _trailEnabled)
                 ctx.FillEllipse(new D2DEllipse(endPosition, new D2DSize(50f, 50f)), _trailColor);
+        }
+
+        public override void RenderGL(GLRenderContext ctx)
+        {
+            base.RenderGL(ctx);
+
+            if (_trailList.Count == 0)
+                return;
+
+            var color = _trailColor.ToSKColor();
+
+            var lastPos = _trailList.First();
+            for (int i = 0; i < _trailList.Count; i++)
+            {
+                var trail = _trailList[i];
+                var nextPos = trail;
+
+
+                ctx.DrawLine(lastPos, nextPos, color, LINE_WEIGHT);
+
+                lastPos = nextPos;
+            }
+
+            // Draw connecting line between last trail segment and the source position.
+            var endPosition = _parentMissile.CenterOfThrust;
+
+            if (_trailList.Count > 1 && _trailEnabled)
+                ctx.DrawLine(lastPos, endPosition, color, LINE_WEIGHT);
+
+            if (_trailList.Count > 0 && _trailList.Count < TRAIL_LEN - 1)
+                ctx.FillEllipse(_trailList.First(), new SKSize(50f, 50f), color);
+
+            if (_parentMissile.IsExpired && _trailEnabled)
+                ctx.FillEllipse(endPosition, new SKSize(50f, 50f), color);
         }
 
         public override bool ContainedBy(D2DRect rect)

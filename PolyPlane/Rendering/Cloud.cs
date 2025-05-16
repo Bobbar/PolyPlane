@@ -133,8 +133,6 @@ namespace PolyPlane.Rendering
 
             ctx.PushTransform();
             ctx.TranslateTransform(this.Position);
-
-            //ctx.TranslateTransform(this.Position * ctx.CurrentScale);
             ctx.ScaleTransform(1f, _altScale, D2DPoint.Zero);
 
             for (int i = 0; i < points.Length; i++)

@@ -6,6 +6,7 @@ using PolyPlane.Helpers;
 using PolyPlane.Net;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
+using SkiaSharp;
 
 namespace PolyPlane.GameObjects
 {
@@ -428,6 +429,39 @@ namespace PolyPlane.GameObjects
                 ctx.DrawLine(this.Position, _guidance.ImpactPoint, D2DColor.Red, 5f);
             }
         }
+
+        public override void RenderGL(GLRenderContext ctx)
+        {
+            base.RenderGL(ctx);
+
+            _flameFillColor = D2DColor.Orange;
+
+            UpdateFlame();
+
+            if (FlameOn)
+                ctx.FillPolygon(this.FlamePoly, _flameFillColor.ToSKColor());
+                //ctx.DrawPolygon(this.FlamePoly, _flameFillColor, 1f, _flameFillColor);
+
+            var fillColor = D2DColor.White;
+            //ctx.DrawPolygon(this.Polygon, D2DColor.Black, 0.3f, fillColor);
+            ctx.FillPolygon(this.Polygon, fillColor.ToSKColor(), SKColors.Black, 0.3f);
+
+            _tailWing.RenderGL(ctx);
+            _rocketBody.RenderGL(ctx);
+            _noseWing.RenderGL(ctx);
+
+            //if (World.ShowTracking && _guidance != null)
+            //{
+            //    ctx.FillEllipseSimple(_guidance.CurrentAimPoint, 50f, D2DColor.LawnGreen);
+            //    ctx.FillEllipseSimple(_guidance.StableAimPoint, 40f, D2DColor.Blue);
+            //    ctx.FillEllipseSimple(_guidance.ImpactPoint, 30f, D2DColor.Red);
+
+            //    ctx.DrawLine(this.Position, _guidance.CurrentAimPoint, D2DColor.LawnGreen, 5f);
+            //    ctx.DrawLine(this.Position, _guidance.StableAimPoint, D2DColor.Blue, 5f);
+            //    ctx.DrawLine(this.Position, _guidance.ImpactPoint, D2DColor.Red, 5f);
+            //}
+        }
+
 
         private void UpdateFlame()
         {

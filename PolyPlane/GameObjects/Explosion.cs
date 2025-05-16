@@ -93,6 +93,27 @@ namespace PolyPlane.GameObjects
 
         }
 
+        public override void RenderGL(GLRenderContext ctx)
+        {
+            base.RenderGL(ctx);
+
+            if (!this.ContainedBy(ctx.Viewport))
+                return;
+
+            if (this.Age < Duration)
+            {
+                //ctx.FillEllipse(new D2DEllipse(this.Position, new D2DSize(_currentRadius, _currentRadius)), _color);
+                ctx.FillCircle(this.Position, _currentRadius, _color.ToSKColor());
+
+                if (_hasShockWave)
+                    ctx.DrawCircle(this.Position, _currentShockWaveRadius, _showckWaveColor.ToSKColor(), 20f);
+
+                //ctx.DrawEllipse(new D2DEllipse(this.Position, new D2DSize(_currentShockWaveRadius, _currentShockWaveRadius)), _showckWaveColor, 20f);
+            }
+
+        }
+
+
         public override bool ContainedBy(D2DRect rect)
         {
             var ret = rect.Contains(new D2DEllipse(this.Position, new D2DSize(_currentShockWaveRadius, _currentShockWaveRadius)))

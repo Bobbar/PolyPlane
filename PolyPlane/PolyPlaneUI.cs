@@ -402,13 +402,13 @@ namespace PolyPlane
             {
                 if (impact.Target.Equals(viewPlane))
                 {
-                    //_render.DoScreenFlash(D2DColor.Red);
-                    //_render.DoScreenShake();
+                    _glRender?.DoScreenFlash(D2DColor.Red);
+                    _glRender?.DoScreenShake();
                 }
                 else if (impact.Attacker != null && impact.Attacker.Equals(viewPlane))
                 {
-                    //if (impact.Target is FighterPlane && impact.DidDamage)
-                    //    _render.DoScreenFlash(D2DColor.Green);
+                    if (impact.Target is FighterPlane && impact.DidDamage)
+                        _glRender?.DoScreenFlash(D2DColor.Green);
                 }
             }
         }
@@ -462,8 +462,8 @@ namespace PolyPlane
             {
                 _objs.EnqueueBullet(b);
 
-                //if (b.Owner.Equals(World.ViewObject))
-                //    _render.DoScreenShake(2f);
+                if (b.Owner.Equals(World.ViewObject))
+                    _glRender?.DoScreenShake(2f);
 
                 if (World.IsNetGame)
                     _netMan.SendNewBulletPacket(b);
@@ -963,7 +963,7 @@ namespace PolyPlane
                     break;
 
                 case 'h':
-                    //_render.ToggleHelp();
+                    _glRender?.ToggleHelp();
                     break;
 
                 case 'i':
@@ -991,7 +991,7 @@ namespace PolyPlane
                     break;
 
                 case 'o':
-                    //_render.ToggleInfo();
+                    _glRender?.ToggleInfo();
                     break;
 
                 case 'p':
@@ -1086,7 +1086,7 @@ namespace PolyPlane
                     break;
 
                 case (char)9: //Tab
-                    //_render?.ToggleScore();
+                    _glRender?.ToggleScore();
                     break;
 
                 case ' ':

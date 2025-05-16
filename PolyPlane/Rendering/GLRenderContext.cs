@@ -3,9 +3,11 @@ using PolyPlane.Helpers;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.Intrinsics.X86;
 using System.Text;
 using System.Threading.Tasks;
 using unvell.D2DLib;
@@ -181,12 +183,6 @@ namespace PolyPlane.Rendering
         /// Get the color for the current time of day from the time of day pallet.
         /// </summary>
         /// <returns></returns>
-        //public D2DColor GetTimeOfDayColor()
-        //{
-        //    var todColor = InterpolateColorGaussian(World.TimeOfDayPallet, World.TimeOfDay, World.MAX_TIMEOFDAY);
-        //    return todColor;
-        //}
-
         public SKColor GetTimeOfDayColor()
         {
             var todColor = InterpolateColorGaussian(World.TimeOfDayPalletGL, World.TimeOfDay, World.MAX_TIMEOFDAY);
@@ -199,11 +195,6 @@ namespace PolyPlane.Rendering
         /// </summary>
         /// <param name="color"></param>
         /// <returns></returns>
-        //public D2DColor AddTimeOfDayColor(D2DColor color)
-        //{
-        //    var todColor = GetTimeOfDayColor();
-        //    return AddTimeOfDayColor(color, todColor);
-        //}
 
         public SKColor AddTimeOfDayColor(SKColor color)
         {
@@ -230,6 +221,65 @@ namespace PolyPlane.Rendering
             return Utilities.LerpColor(color, todColor, AMT);
         }
 
+        public void DrawText(string text, Vector2 pos, SKTextAlign align, SKFont font, SKColor color)
+        {
+            _cachedPaint.Color = color;
+            var paint = _cachedPaint;
+
+            DrawText(text, pos, align, font, paint);
+        }
+
+        public void DrawTextMultiLine(string text, Vector2 pos, SKTextAlign align, SKFont font, SKColor color)
+        {
+            _cachedPaint.Color = color;
+            var paint = _cachedPaint;
+
+            var lines = text.Split('\n');
+            foreach (var line in lines)
+            {
+                DrawText(line, pos, align, font, paint);
+
+            }
+        }
+
+        public void DrawTextMultiLine(string text, Vector2 pos, SKTextAlign align, SKFont font, SKPaint paint)
+        {
+            var lines = text.Split('\n');
+            var linePos = pos;
+
+            foreach (var line in lines)
+            {
+                DrawText(line, linePos, align, font, paint);
+
+                linePos += new Vector2(0f, font.Size + 1);
+            }
+        }
+
+
+        public void DrawText(string text, Vector2 pos, SKTextAlign align, SKFont font, SKPaint paint)
+        {
+            _gfx.DrawText(text, pos, align, font, paint);
+        }
+
+        public void DrawRectangle(SKRect rect, SKColor color, float strokeWeight = 1f)
+        {
+            _cachedPaint.Color = color;
+            var paint = _cachedPaint;
+
+            paint.IsStroke = true;
+            paint.StrokeWidth = strokeWeight;
+
+
+            DrawRectangle(rect, paint);
+
+            paint.IsStroke = false;
+            paint.StrokeWidth = 0f;
+        }
+
+        public void DrawRectangle(SKRect rect, SKPaint paint)
+        {
+            _gfx.DrawRect(rect, paint);
+        }
 
         public void FillPolygon(Vector2[] poly, SKColor color)
         {
@@ -245,19 +295,32 @@ namespace PolyPlane.Rendering
             }
         }
 
+        public void FillPolygon(Vector2[] poly, SKPaint paint)
+        {
+            using (var path = new SKPath())
+            {
+                path.AddPoly(poly.ToSkPoints(), true);
+
+                _gfx.DrawPath(path, paint);
+            }
+        }
 
 
         public void FillPolygon(RenderPoly poly, SKColor color)
         {
-            using (var path = new SKPath())
-            //using (var paint = new SKPaint() { Color = color, IsAntialias = true })
+            FillPolygon(poly.Poly, color);
+        }
+
+        public void FillPolygonWithLighting(Vector2[] poly, Vector2 sampleLocation, SKColor color, float maxIntensity)
+        {
+            if (World.UseLightMap)
             {
-                _cachedPaint.Color = color;
-                var paint = _cachedPaint;
-
-                path.AddPoly(poly.Poly.ToSkPoints(), true);
-
-                _gfx.DrawPath(path, paint);
+                var lightedColor = LightMap.SampleColorSK(sampleLocation, color, 0f, maxIntensity * _currentLightingFactor);
+                FillPolygon(poly, lightedColor);
+            }
+            else
+            {
+                FillPolygon(poly, color);
             }
         }
 
@@ -275,6 +338,7 @@ namespace PolyPlane.Rendering
 
                 paint.IsStroke = true;
                 paint.Color = strokeColor;
+                paint.StrokeWidth = strokeWeight;
 
                 _gfx.DrawPath(path, paint);
 
@@ -319,6 +383,8 @@ namespace PolyPlane.Rendering
         }
 
 
+
+
         public void DrawLine(Vector2 p0, Vector2 p1, SKColor color, float weight)
         {
             //using (var paint = new SKPaint() { Color = color, IsAntialias = true, StrokeWidth = weight })
@@ -328,14 +394,19 @@ namespace PolyPlane.Rendering
                 var paint = _cachedPaint;
 
                 paint.StrokeWidth = weight;
-              
+
 
                 _gfx.DrawLine(p0, p1, paint);
 
                 paint.StrokeWidth = 0f;
             }
 
-           
+
+        }
+
+        public void DrawLine(Vector2 p0, Vector2 p1, SKPaint paint)
+        {
+            _gfx.DrawLine(p0, p1, paint);
         }
 
         public void DrawLine(Vector2 p0, Vector2 p1, SKColor color, float weight, SKStrokeCap capStyle = SKStrokeCap.Square)
@@ -450,6 +521,7 @@ namespace PolyPlane.Rendering
             _gfx.DrawOval(pos, size, paint);
         }
 
+
         public void FillEllipseWithLighting(Vector2 pos, SKSize size, SKColor color, float maxIntensity)
         {
             if (World.UseLightMap)
@@ -509,7 +581,46 @@ namespace PolyPlane.Rendering
 
         }
 
+        public void DrawCircle(Vector2 pos, float radius, SKColor color)
+        {
+            _cachedPaint.Color = color;
+            var paint = _cachedPaint;
 
+            paint.IsStroke = true;
+
+            _gfx.DrawCircle(pos, radius, paint);
+
+            paint.IsStroke = false;
+            paint.StrokeWidth = 0f;
+        }
+
+
+
+        public void DrawCircle(Vector2 pos, float radius, SKColor color, float strokeWidth)
+        {
+            _cachedPaint.Color = color;
+            var paint = _cachedPaint;
+
+            paint.IsStroke = true;
+            paint.StrokeWidth = strokeWidth;
+
+            _gfx.DrawCircle(pos, radius, paint);
+
+            paint.IsStroke = false;
+            paint.StrokeWidth = 0f;
+        }
+
+        public void DrawProgressBar(Vector2 pos, SKSize size, SKColor boderColor, SKColor fillColor, float percent)
+        {
+            FillRectangle(SKRect.Create(pos.X - size.Width * 0.5f, pos.Y, size.Width * percent, size.Height), fillColor);
+            DrawRectangle(SKRect.Create(pos - new Vector2(size.Width * 0.5f, 0f), size), boderColor);
+        }
+
+        //public void DrawProgressBar(Vector2 pos, SKSize size, SKPaint borderPaint, SKPaint fillPaint, float percent)
+        //{
+        //    FillRectangle(SKRect.Create(pos.X - (size.Width * 0.5f), pos.Y - (size.Height * 0.5f), size.Width * percent, size.Height), fillColor);
+        //    DrawRectangle(SKRect.Create(pos, size), borderPaint);
+        //}
 
         private SKColor InterpolateColorGaussian(SKColor[] colors, float value, float maxValue)
         {

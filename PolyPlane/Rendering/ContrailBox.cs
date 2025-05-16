@@ -156,6 +156,43 @@ namespace PolyPlane.Rendering
             }
         }
 
+        public void RenderGL(GLRenderContext ctx)
+        {
+            // Render all visible segments.
+            var inViewPort = _segmentGrid.GetInViewport(ctx.Viewport);
+
+            var trailColor = _trailColor.ToSKColor();
+
+            foreach (var seg in inViewPort)
+            {
+                var altFact = GetAltFadeInFactor(seg.PointA);
+                var ageFact = (1f - Utilities.Factor(seg.Age, MAX_SEG_AGE));
+                var alpha = ALPHA * ageFact * altFact;
+                var color = trailColor.WithAlpha(alpha);
+
+                ctx.DrawLine(seg.PointA, seg.PointB, color, TRAIL_WEIGHT);
+            }
+
+            // Draw final connectors between planes and the last segment.
+            foreach (var kvp in _currentPlanes)
+            {
+                var tag = kvp.Value;
+                var plane = tag.Plane;
+
+                var altFact = GetAltFadeInFactor(tag.PrevPos);
+                var alpha = ALPHA * altFact;
+                var color = trailColor.WithAlpha(alpha);
+
+                var dist = tag.PrevPos.DistanceTo(plane.ExhaustPosition);
+                if (dist > MIN_DIST * 3f)
+                    continue;
+
+                if (IsInside(plane) && plane.ThrustAmount > 0f && IsNotInSpace(plane) && !plane.IsDisabled)
+                    ctx.DrawLine(tag.PrevPos, plane.ExhaustPosition, color, TRAIL_WEIGHT);
+            }
+        }
+
+
         private float GetAltFadeInFactor(D2DPoint point)
         {
             var altFact = Utilities.Factor(Math.Abs(point.Y) - MIN_ALT, MAX_ALPHA_ALT);
