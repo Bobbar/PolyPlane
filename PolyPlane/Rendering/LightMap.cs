@@ -1,8 +1,10 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.Helpers;
-using SkiaSharp;
+using System.Buffers;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using unvell.D2DLib;
+using SkiaSharp;
 
 namespace PolyPlane.Rendering
 {
@@ -11,7 +13,8 @@ namespace PolyPlane.Rendering
     /// </summary>
     public sealed class LightMap
     {
-        private Vector4[,] _map = null;
+        private Vector4[] _map = null;
+        private ArrayPool<Vector4> _mapPool = ArrayPool<Vector4>.Create();
 
         public float SIDE_LEN
         {
@@ -22,7 +25,8 @@ namespace PolyPlane.Rendering
         const float GRADIENT_RADIUS = 450f;
 
         private D2DRect _viewport;
-        private D2DSize _gridSize;
+        private int _gridWidth = 0;
+        private int _gridHeight = 0;
         private float _sideLen = 60f;
 
         public LightMap() { }
@@ -48,33 +52,33 @@ namespace PolyPlane.Rendering
 
             foreach (var obj in objs)
             {
-                if (obj.IsInViewport(_viewport))
-                    AddObjContribution(obj);
+                if (obj.ContainedBy(_viewport))
+                    AddObjContribution(obj as ILightMapContributor);
             }
         }
 
-        private void AddObjContribution(GameObject obj)
+        private void AddObjContribution(ILightMapContributor lightContributor)
         {
+            if (_map == null)
+                return;
+
             var sampleNum = SAMPLE_NUM;
             var gradRadius = GRADIENT_RADIUS;
             var intensityFactor = 1f;
             var lightColor = Vector4.Zero;
-            var lightPosition = obj.Position;
+            var lightPosition = D2DPoint.Zero;
 
             // Query light params for contributor.
-            if (obj is ILightMapContributor lightContributor)
-            {
-                if (lightContributor.IsLightEnabled() == false)
-                    return;
+            if (lightContributor.IsLightEnabled() == false)
+                return;
 
-                intensityFactor = lightContributor.GetIntensityFactor();
-                lightColor = lightContributor.GetLightColor().ToVector4();
-                lightPosition = lightContributor.GetLightPosition();
-                gradRadius = lightContributor.GetLightRadius();
+            intensityFactor = lightContributor.GetIntensityFactor();
+            lightColor = lightContributor.GetLightColor().ToVector4();
+            lightPosition = lightContributor.GetLightPosition();
+            gradRadius = lightContributor.GetLightRadius();
 
-                // Compute the number of samples needed for the current radius.
-                sampleNum = (int)(gradRadius / SIDE_LEN);
-            }
+            // Compute the number of samples needed for the current radius.
+            sampleNum = (int)(gradRadius / SIDE_LEN);
 
             GetGridPos(lightPosition, out int idxX, out int idxY);
 
@@ -88,7 +92,7 @@ namespace PolyPlane.Rendering
                     var xo = idxX + x;
                     var yo = idxY + y;
 
-                    if (xo >= 0 && yo >= 0 && xo < _gridSize.width && yo < _gridSize.height)
+                    if (xo >= 0 && yo >= 0 && xo < _gridWidth && yo < _gridHeight)
                     {
                         // Compute the gradient from distance to center.
                         var gradPos = new D2DPoint(xo * SIDE_LEN, yo * SIDE_LEN);
@@ -96,18 +100,20 @@ namespace PolyPlane.Rendering
 
                         if (dist <= gradRadius)
                         {
-                            var intensity = 1f - Utilities.FactorWithEasing(dist, gradRadius, EasingFunctions.Out.EaseSine);
+                            var intensity = 1f - Utilities.FactorWithEasing(dist, gradRadius, EasingFunctions.Out.EaseQuad);
 
                             intensity *= intensityFactor;
 
                             lightColor.X = Math.Clamp(intensity, 0f, 1f);
 
                             // Blend the new color.
-                            var current = _map[xo, yo];
-
+                            var idx = GetMapIndex(xo, yo);
+                          
+                            var current = _map[idx];
+                           
                             var next = Blend(current, lightColor);
 
-                            _map[xo, yo] = next;
+                            _map[idx] = next;
                         }
                     }
                 }
@@ -123,11 +129,15 @@ namespace PolyPlane.Rendering
         {
             var sample = Vector4.Zero;
 
+            if (_map == null)
+                return sample;
+
             GetGridPos(pos, out int idxX, out int idxY);
 
-            if (idxX >= 0 && idxY >= 0 && idxX < _gridSize.width && idxY < _gridSize.height)
+            if (idxX >= 0 && idxY >= 0 && idxX < _gridWidth && idxY < _gridHeight)
             {
-                sample = _map[idxX, idxY];
+                var idx = GetMapIndex(idxX, idxY);
+                sample = _map[idx];
             }
 
             return sample;
@@ -183,20 +193,17 @@ namespace PolyPlane.Rendering
 
             r.X = 1f - (1f - colorA.X) * (1f - colorB.X);
 
-            if (r.X < float.Epsilon)
+            if (r.X < 0.001f)
                 return r; // Fully transparent -- R,G,B not important
 
-            r.Y = colorA.Y * colorA.X / r.X + colorB.Y * colorB.X * (1f - colorA.X) / r.X;
-            r.Z = colorA.Z * colorA.X / r.X + colorB.Z * colorB.X * (1f - colorA.X) / r.X;
-            r.W = colorA.W * colorA.X / r.X + colorB.W * colorB.X * (1f - colorA.X) / r.X;
+            var alphaFact = colorA.X / r.X;
+            var alphaFactInvert = 1f - alphaFact;
+
+            r.Y = colorA.Y * alphaFact + colorB.Y * alphaFactInvert;
+            r.Z = colorA.Z * alphaFact + colorB.Z * alphaFactInvert;
+            r.W = colorA.W * alphaFact + colorB.W * alphaFactInvert;
 
             return r;
-        }
-
-        private void ClearMap()
-        {
-            if (_map != null)
-                Array.Clear(_map);
         }
 
         private void UpdateViewport(D2DRect viewport)
@@ -207,26 +214,47 @@ namespace PolyPlane.Rendering
 
             // Dynamically change the side length with viewport scale.
             // (Larger side length when zoomed out.)
-            _sideLen = (float)Math.Clamp(Math.Floor(World.ViewPortScaleMulti * 1.5f), MIN_LEN, MAX_LEN);
+            _sideLen = Math.Clamp(MathF.Floor(World.ViewPortScaleMulti * 1.5f), MIN_LEN, MAX_LEN);
 
-            var width = (int)Math.Floor(viewport.Width / SIDE_LEN) + PAD;
-            var height = (int)Math.Floor(viewport.Height / SIDE_LEN) + PAD;
+            var width = (int)MathF.Floor(viewport.Width / SIDE_LEN) + PAD;
+            var height = (int)MathF.Floor(viewport.Height / SIDE_LEN) + PAD;
 
-            if (_gridSize.width != width || _gridSize.height != height)
+            if (_gridWidth != width || _gridHeight != height)
             {
-                _gridSize = new D2DSize(width, height);
-                _map = new Vector4[width, height];
+                _gridWidth = width;
+                _gridHeight = height;
+
+                var len = width * height;
+
+                // Return the previous buffer and rent a new one.
+                if (_map != null)
+                    _mapPool.Return(_map);
+
+                _map = _mapPool.Rent(len);
             }
 
             _viewport = viewport;
         }
 
+        private void ClearMap()
+        {
+            if (_map != null)
+                Array.Clear(_map);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void GetGridPos(D2DPoint pos, out int X, out int Y)
         {
             var posOffset = pos - _viewport.Location;
 
-            X = (int)Math.Floor(posOffset.X / SIDE_LEN);
-            Y = (int)Math.Floor(posOffset.Y / SIDE_LEN);
+            X = (int)MathF.Floor(posOffset.X / SIDE_LEN);
+            Y = (int)MathF.Floor(posOffset.Y / SIDE_LEN);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int GetMapIndex(int x, int y)
+        {
+            return _gridWidth * y + x;
         }
     }
 

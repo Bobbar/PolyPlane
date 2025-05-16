@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using PolyPlane.Helpers;
+using System.Diagnostics;
 
 namespace PolyPlane
 {
@@ -6,52 +7,44 @@ namespace PolyPlane
     {
         private WaitableTimer _waitTimer = new WaitableTimer();
         private Stopwatch _fpsTimer = new Stopwatch();
+        private Stopwatch _offsetTimer = new Stopwatch();
+        private SmoothDouble _offset = new SmoothDouble(3);
 
         public FPSLimiter() { }
 
-
-
         public void Wait(int targetFPS)
         {
-            long ticksPerSecond = TimeSpan.TicksPerSecond;
-            long targetFrameTime = ticksPerSecond / targetFPS;
-            long waitTime = 0;
+            _offsetTimer.Restart();
 
-            if (_fpsTimer.IsRunning)
+            long targetFrameTime = TimeSpan.TicksPerSecond / targetFPS;
+            long elapTime = _fpsTimer.Elapsed.Ticks;
+
+            if (elapTime < targetFrameTime)
             {
-                long elapTime = _fpsTimer.Elapsed.Ticks;
+                // # High accuracy, low CPU usage. #
+                long waitTime = (long)(targetFrameTime - elapTime);
 
-                if (elapTime < targetFrameTime)
+                // Apply the current offset.
+                waitTime += (long)Math.Ceiling(_offset.Current);
+
+                if (waitTime > 0)
                 {
-                    // # High accuracy, low CPU usage. #
-                    waitTime = (long)(targetFrameTime - elapTime);
-                    if (waitTime > 0)
-                    {
-                        _waitTimer.Wait(waitTime, false);
-                    }
+                    _waitTimer.Wait(waitTime, false);
 
-                    // # Most accurate, highest CPU usage. #
-                    //while (_fpsTimer.Elapsed.Ticks < targetFrameTime && !_loopTask.IsCompleted)
-                    //{
-                    //	Thread.SpinWait(10000);
-                    //}
-                    //elapTime = _fpsTimer.Elapsed.Ticks;
+                    // Test how long the timer actually waited versus
+                    // the expected wait time and compute an offset
+                    // for the next frame.
+                    _offsetTimer.Stop();
 
-                    // # Less accurate, less CPU usage. #
-                    //waitTime = (long)(targetFrameTime - elapTime);
-                    //if (waitTime > 0)
-                    //{
-                    //	Thread.Sleep(new TimeSpan(waitTime));
-                    //}
+                    var offset = waitTime - _offsetTimer.Elapsed.Ticks;
+
+                    // Filter out very large deviations. 
+                    if (Math.Abs(offset) < targetFrameTime)
+                        _offset.Add(offset);
                 }
+            }
 
-                _fpsTimer.Restart();
-            }
-            else
-            {
-                _fpsTimer.Start();
-                return;
-            }
+            _fpsTimer.Restart();
         }
 
         public void Dispose()

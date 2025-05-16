@@ -25,6 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="ENet-CSharp" Version="2.4.8" />
     <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="3.119.0" />
     <PackageReference Include="SkiaSharp.Views.WindowsForms" Version="3.119.0" />

@@ -1,5 +1,6 @@
 ﻿using PolyPlane.GameObjects;
-using PolyPlane.Helpers;
+using PolyPlane.GameObjects.Animations;
+using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
 {
@@ -11,31 +12,49 @@ namespace PolyPlane.Rendering
         public D2DPoint RenderPos = D2DPoint.Zero;
         public bool Displayed = true;
         public GameID TargetPlayerID;
+        public D2DColor Color = D2DColor.Red;
 
-        public readonly float LIFESPAN = 10f;
+        public readonly float LIFESPAN = 20f;
 
         private readonly float UP_RATE = 50f;
-        private readonly float SIDE_RATE = 10f;
         private readonly float SIDE_AMT = 50f;
 
-        private float _curSideAmt = 0f;
         private float _curUpAmt = 0f;
-        private float _sideDirection = 1f;
+        private float _curXPos = 1f;
 
-        public PopMessage()
+        private FloatAnimation _animation;
+
+        public PopMessage(string message, D2DPoint position, GameID targetPlayerID)
         {
-            _curSideAmt = Utilities.Rnd.NextFloat(-SIDE_AMT * 0.5f, SIDE_AMT * 0.5f);
+            Message = message;
+            Position = position;
+            TargetPlayerID = targetPlayerID;
+
+            _animation = new FloatAnimation(0f, 2f, 3f, EasingFunctions.InOut.EaseQuart, v => _curXPos = v);
+            _animation.Loop = true;
+            _animation.ReverseOnLoop = true;
+            _animation.Start();
+        }
+
+        public PopMessage(string message, D2DPoint position, GameID targetPlayerID, D2DColor color)
+        {
+            Message = message;
+            Position = position;
+            TargetPlayerID = targetPlayerID;
+            Color = color;
+
+            _animation = new FloatAnimation(0f, 2f, 3f, EasingFunctions.InOut.EaseQuart, v => _curXPos = v);
+            _animation.Loop = true;
+            _animation.ReverseOnLoop = true;
+            _animation.Start();
         }
 
         public void UpdatePos(float dt)
         {
-            _curSideAmt += _sideDirection * (SIDE_RATE * dt);
+            _animation.Update(dt);
 
-            if (Math.Abs(_curSideAmt) > SIDE_AMT)
-                _sideDirection *= -1f;
+            var amt = SIDE_AMT * _curXPos;
 
-            var pos = _curSideAmt / SIDE_AMT;
-            var amt = SIDE_AMT * EasingFunctions.InOut.EaseBack(pos);
             _curUpAmt += UP_RATE * dt;
 
             RenderPos = new D2DPoint(Position.X + amt, Position.Y - _curUpAmt);

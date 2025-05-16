@@ -8,6 +8,7 @@ namespace PolyPlane.GameObjects.Fixtures
     public class Wing : GameObject, INoGameID
     {
         public WingParameters Parameters => _params;
+        public bool Visible = true;
 
         public float Deflection
         {
@@ -35,7 +36,7 @@ namespace PolyPlane.GameObjects.Fixtures
 
         private WingParameters _params;
 
-        public Wing(GameObject obj, WingParameters parameters)
+        public Wing(GameObject obj, WingParameters parameters) : base(obj)
         {
             _params = parameters;
 
@@ -53,21 +54,22 @@ namespace PolyPlane.GameObjects.Fixtures
             if (_params.MaxDragForce == 0f)
                 _params.MaxDragForce = _params.MaxLiftForce;
 
-            this.Update(0f);
+            this.DoUpdate(0f);
         }
 
-        public override void Update(float dt)
+        public override void DoUpdate(float dt)
         {
+            _defRateLimit.Update(dt);
+
             PivotPoint.Rotation = _parentObject.Rotation + Deflection;
 
-            _defRateLimit.Update(dt);
             PivotPoint.Update(dt);
             FixedPosition.Update(dt);
 
             Rotation = PivotPoint.Rotation;
             Position = FixedPosition.Position;
 
-            var nextVelo = Utilities.AngularVelocity(_parentObject, Position);
+            var nextVelo = Utilities.PointVelocity(_parentObject, Position);
             Velocity = nextVelo;
         }
 
@@ -76,11 +78,16 @@ namespace PolyPlane.GameObjects.Fixtures
             base.FlipY();
             PivotPoint.FlipY();
             FixedPosition.FlipY();
+
+            Rotation = PivotPoint.Rotation;
+            Position = FixedPosition.Position;
         }
 
         public override void Render(RenderContext ctx)
         {
             base.Render(ctx);
+
+            const float LIGHT_INTENSITY = 0.4f;
 
             //// Draw a fixed box behind the moving wing. Helps to visualize deflection.
             //var fixedVec = Utilities.AngleToVectorDegrees(this.Rotation - this.Deflection);
@@ -100,8 +107,8 @@ namespace PolyPlane.GameObjects.Fixtures
                 var wingVec = Utilities.AngleToVectorDegrees(Rotation, _params.RenderLength);
                 var start = Position - wingVec;
                 var end = Position + wingVec;
-                ctx.DrawLine(start, end, D2DColor.Black, _params.RenderWidth + 0.5f, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
-                ctx.DrawLine(start, end, D2DColor.Gray, _params.RenderWidth, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+                ctx.DrawLineWithLighting(start, end, D2DColor.Black, LIGHT_INTENSITY, _params.RenderWidth + 0.5f, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
+                ctx.DrawLineWithLighting(start, end, D2DColor.Gray, LIGHT_INTENSITY, _params.RenderWidth, D2DDashStyle.Solid, D2DCapStyle.Triangle, D2DCapStyle.Triangle);
             }
 
             if (World.ShowAero)
@@ -120,6 +127,50 @@ namespace PolyPlane.GameObjects.Fixtures
             }
         }
 
+        public override void RenderGL(GLRenderContext ctx)
+        {
+            base.RenderGL(ctx);
+
+            const float LIGHT_INTENSITY = 0.4f;
+
+            //// Draw a fixed box behind the moving wing. Helps to visualize deflection.
+            //var fixedVec = Utilities.AngleToVectorDegrees(this.Rotation - this.Deflection);
+            //var startB = this.Position - fixedVec * RenderLength;
+            //var endB = this.Position + fixedVec * RenderLength;
+            //ctx.DrawLine(startB, endB, D2DColor.DarkGray, 2f);
+
+            ////// Draw wing without rate limit.
+            //var wingVecRaw = Utilities.AngleToVectorDegrees(_parentObject.Rotation + _defRateLimit.Target);
+            //var startRaw = this.Position - wingVecRaw * RenderLength;
+            //var end2Raw = this.Position + wingVecRaw * RenderLength;
+            //gfx.DrawLine(startRaw, end2Raw, D2DColor.Red, 1f, D2DDashStyle.Solid, D2DCapStyle.Round, D2DCapStyle.Round);
+
+            if (Visible && _params.RenderLength > 0f)
+            {
+                // Draw wing.
+                var wingVec = Utilities.AngleToVectorDegrees(Rotation, _params.RenderLength);
+                var start = Position - wingVec;
+                var end = Position + wingVec;
+                ctx.DrawLineWithLighting(start, end, D2DColor.Black.ToSKColor(), LIGHT_INTENSITY, _params.RenderWidth + 0.5f, SkiaSharp.SKStrokeCap.Round);
+                ctx.DrawLineWithLighting(start, end, D2DColor.Gray.ToSKColor(), LIGHT_INTENSITY, _params.RenderWidth, SkiaSharp.SKStrokeCap.Round);
+            }
+
+            if (World.ShowAero)
+            {
+                const float SCALE = 0.1f;//0.04f;
+                const float AERO_WEIGHT = 2f;
+                const float ALPHA = 0.5f;
+
+                ctx.DrawLine(Position, Position + LiftVector * SCALE, D2DColor.SkyBlue.WithAlpha(ALPHA).ToSKColor(), AERO_WEIGHT);
+                ctx.DrawLine(Position, Position + DragVector * (SCALE + 0.03f), D2DColor.Red.WithAlpha(ALPHA).ToSKColor(), AERO_WEIGHT);
+
+                var aggForce = (LiftVector + DragVector) * 0.5f;
+                ctx.DrawLine(Position, Position + aggForce * (SCALE + 0.03f), D2DColor.Yellow.WithAlpha(ALPHA).ToSKColor(), AERO_WEIGHT);
+
+                ctx.DrawLine(Position, Position + Velocity * (SCALE + 0.5f), D2DColor.Green.WithAlpha(ALPHA).ToSKColor(), AERO_WEIGHT);
+            }
+        }
+
         public WingForces GetForces(D2DPoint centerMassPosition)
         {
             if (Velocity.Length() == 0f)
@@ -129,18 +180,16 @@ namespace PolyPlane.GameObjects.Fixtures
             var turbulence = World.GetTurbulenceForPosition(this.Position);
 
             // Wing & air parameters.
-            float AOA_FACT = _params.AOAFactor; // How much AoA effects drag.
-            float VELO_FACT = _params.VeloFactor; // How much velocity effects drag.
+            float DRAG_FACT = _params.DragFactor; // How much AoA effects drag.
             float WING_AREA = _params.Area; // Area of the wing. Effects lift & drag forces.
             float MAX_LIFT = _params.MaxLiftForce; // Max lift force allowed.
             float MAX_DRAG = _params.MaxDragForce; // Max drag force allowed.
             float MAX_AOA = _params.MaxAOA; // Max AoA allowed before lift force reduces. (Stall)
-            float AIR_DENSITY = World.GetDensityAltitude(Position);
+            float AIR_DENSITY = World.GetAltitudeDensity(Position);
             float PARASITIC_DRAG = _params.ParasiticDrag;
             float MIN_VELO = _params.MinVelo;
 
             var velo = Velocity;
-            velo += -World.Wind;
 
             // Add turbulence factor.
             velo *= turbulence;
@@ -164,7 +213,7 @@ namespace PolyPlane.GameObjects.Fixtures
 
             // Drag force.
             var coeffDrag = 1f - Math.Cos(2f * aoaRads);
-            var dragForce = coeffDrag * AOA_FACT * WING_AREA * 0.5f * AIR_DENSITY * veloMagSq * VELO_FACT;
+            var dragForce = coeffDrag * DRAG_FACT * WING_AREA * 0.5f * AIR_DENSITY * veloMagSq;
             dragForce += veloMag * WING_AREA * PARASITIC_DRAG * AIR_DENSITY;
 
             // Lift force.
@@ -175,10 +224,14 @@ namespace PolyPlane.GameObjects.Fixtures
             liftForce *= aoaFact;
 
             // Reduce max lift/drag forces as we approach the minimum velo. (Increases stall effect)
-            var veloFact = Utilities.FactorWithEasing((float)veloMagSq, (float)Math.Pow(MIN_VELO, 2f), EasingFunctions.Out.EaseSine);
+            var veloFact = Utilities.FactorWithEasing((float)veloMagSq, MathF.Pow(MIN_VELO, 2f), EasingFunctions.Out.EaseSine);
 
             var maxLift = MAX_LIFT * veloFact;
             var maxDrag = MAX_DRAG * veloFact;
+
+            // Add addition lift/drag as specified.
+            maxLift += (veloMag * _params.VeloLiftFactor);
+            maxDrag += (veloMag * _params.VeloDragFactor);
 
             // Clamp to max lift & drag force.
             liftForce = Math.Clamp(liftForce, -maxLift, maxLift);
@@ -235,6 +288,16 @@ namespace PolyPlane.GameObjects.Fixtures
         public float MaxDragForce;
 
         /// <summary>
+        /// How much velocity increases max lift force over <see cref="MaxLiftForce"/>.
+        /// </summary>
+        public float VeloLiftFactor = 0f;
+
+        /// <summary>
+        /// How much velocity increases max drag force over <see cref="MaxDragForce"/>.
+        /// </summary>
+        public float VeloDragFactor = 0f;
+
+        /// <summary>
         /// Max deflection allowed.
         /// </summary>
         public float MaxDeflection = 40f;
@@ -255,14 +318,9 @@ namespace PolyPlane.GameObjects.Fixtures
         public float MaxAOA = 30f;
 
         /// <summary>
-        /// How much AoA effects drag.
+        /// How much AoA and velo effects drag.
         /// </summary>
-        public float AOAFactor = 0.5f;
-
-        /// <summary>
-        /// How much velocity effects drag.
-        /// </summary>
-        public float VeloFactor = 0.5f;
+        public float DragFactor = 0.25f;
 
         /// <summary>
         /// Additional drag applied regardless of AoA.
@@ -283,8 +341,6 @@ namespace PolyPlane.GameObjects.Fixtures
         public D2DPoint Lift;
         public D2DPoint Drag;
         public float Torque;
-
-        public WingForces() { }
 
         public WingForces(D2DPoint lift, D2DPoint drag, float torque)
         {

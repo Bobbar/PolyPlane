@@ -1,5 +1,6 @@
 ﻿using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.Helpers;
+using SkiaSharp;
 
 namespace PolyPlane.GameObjects.Tools
 {
@@ -10,6 +11,8 @@ namespace PolyPlane.GameObjects.Tools
         public bool IsFlipped = false;
         public GameObject ParentObject;
 
+        private D2DPoint[] _originalPoly;
+
         public D2DPoint Position => ParentObject.Position;
 
         public RenderPoly(GameObject parent)
@@ -17,74 +20,59 @@ namespace PolyPlane.GameObjects.Tools
             ParentObject = parent;
             Poly = new D2DPoint[0];
             SourcePoly = new D2DPoint[0];
+            _originalPoly = new D2DPoint[0];
         }
 
         public RenderPoly(RenderPoly copyPoly, D2DPoint pos, float rotation) : this(copyPoly.ParentObject)
         {
-            Poly = new D2DPoint[copyPoly.SourcePoly.Length];
-            SourcePoly = new D2DPoint[copyPoly.SourcePoly.Length];
-
-            Array.Copy(copyPoly.SourcePoly, Poly, copyPoly.SourcePoly.Length);
-            Array.Copy(copyPoly.SourcePoly, SourcePoly, copyPoly.SourcePoly.Length);
+            InitPolyArrays(copyPoly.SourcePoly, D2DPoint.Zero);
 
             this.Update(pos, rotation, copyPoly.ParentObject.RenderScale);
         }
 
         public RenderPoly(GameObject parent, D2DPoint[] polygon) : this(parent)
         {
-            Poly = new D2DPoint[polygon.Length];
-            SourcePoly = new D2DPoint[polygon.Length];
-
-            Array.Copy(polygon, Poly, polygon.Length);
-            Array.Copy(polygon, SourcePoly, polygon.Length);
+            InitPolyArrays(polygon, D2DPoint.Zero);
 
             this.Update();
         }
 
         public RenderPoly(GameObject parent, D2DPoint[] polygon, D2DPoint offset) : this(parent)
         {
-            Poly = new D2DPoint[polygon.Length];
-            SourcePoly = new D2DPoint[polygon.Length];
-
-            Array.Copy(polygon, Poly, polygon.Length);
-            Array.Copy(polygon, SourcePoly, polygon.Length);
-
-
-            Utilities.ApplyTranslation(Poly, Poly, 0f, offset);
-            Utilities.ApplyTranslation(SourcePoly, SourcePoly, 0f, offset);
+            InitPolyArrays(polygon, offset);
 
             this.Update();
         }
 
         public RenderPoly(GameObject parent, D2DPoint[] polygon, D2DPoint offset, float scale) : this(parent)
         {
-            Poly = new D2DPoint[polygon.Length];
-            SourcePoly = new D2DPoint[polygon.Length];
-
-            Array.Copy(polygon, Poly, polygon.Length);
-            Array.Copy(polygon, SourcePoly, polygon.Length);
-
-            Utilities.ApplyTranslation(Poly, Poly, 0f, offset, scale);
-            Utilities.ApplyTranslation(SourcePoly, SourcePoly, 0f, offset, scale);
+            InitPolyArrays(polygon, offset, scale);
 
             this.Update();
         }
 
         public RenderPoly(GameObject parent, D2DPoint[] polygon, float scale, float tessalateDist = 0f) : this(parent)
         {
-            Poly = new D2DPoint[polygon.Length];
-            SourcePoly = new D2DPoint[polygon.Length];
-
-            Array.Copy(polygon, Poly, polygon.Length);
-            Array.Copy(polygon, SourcePoly, polygon.Length);
-
-            Utilities.ApplyTranslation(Poly, Poly, 0f, D2DPoint.Zero, scale);
-            Utilities.ApplyTranslation(SourcePoly, SourcePoly, 0f, D2DPoint.Zero, scale);
+            InitPolyArrays(polygon, D2DPoint.Zero, scale);
 
             if (tessalateDist > 0f)
-                Tessellate(tessalateDist);
+                IncreaseResolution(tessalateDist);
 
             this.Update();
+        }
+
+        private void InitPolyArrays(D2DPoint[] polygon, D2DPoint offset, float scale = 1f)
+        {
+            Poly = new D2DPoint[polygon.Length];
+            SourcePoly = new D2DPoint[polygon.Length];
+            _originalPoly = new D2DPoint[polygon.Length];
+
+            Array.Copy(polygon, SourcePoly, polygon.Length);
+            Array.Copy(polygon, Poly, polygon.Length);
+            Array.Copy(polygon, _originalPoly, polygon.Length);
+
+            Poly.Translate(Poly, 0f, offset, scale);
+            SourcePoly.Translate(SourcePoly, 0f, offset, scale);
         }
 
         /// <summary>
@@ -147,6 +135,39 @@ namespace PolyPlane.GameObjects.Tools
             }
         }
 
+        /// <summary>
+        /// Returns a list of line segments representing the faces of the polygon which are facing the specified direction.
+        /// </summary>
+        /// <param name="direction">Vector representing the direction to test for.</param>
+        /// <returns></returns>
+        public IEnumerable<LineSegment> GetSidesFacingDirection(D2DPoint direction)
+        {
+            // Determine if the polygon is clockwise or counter-clockwise.
+            bool clockwise = IsClockwise();
+
+            for (int i = 0; i < Poly.Length; i++)
+            {
+                var idx1 = Utilities.WrapIndex(i, Poly.Length);
+                var idx2 = Utilities.WrapIndex(i + 1, Poly.Length);
+
+                var pnt1 = Poly[idx1];
+                var pnt2 = Poly[idx2];
+
+                // Compute the direction of the current segment.
+                var segDir = (pnt1 - pnt2).Normalized();
+
+                // Flip for CW.
+                if (clockwise)
+                    segDir *= -1f;
+
+                // Valid face if cross product is greater than zero.
+                var diff = (segDir.Cross(direction));
+                if (diff > 0f)
+                {
+                    yield return new LineSegment(pnt1, pnt2);
+                }
+            }
+        }
 
         /// <summary>
         /// Returns a list of points for the faces of the polygon which are facing the specified direction.
@@ -183,6 +204,39 @@ namespace PolyPlane.GameObjects.Tools
             }
         }
 
+        /// <summary>
+        /// Returns a list of points for the faces of the polygon which are facing the specified direction.
+        /// </summary>
+        /// <param name="direction">Vector representing the direction to test for.</param>
+        /// <returns></returns>
+        public IEnumerable<D2DPoint> GetPointsFacingDirection(D2DPoint direction)
+        {
+            // Determine if the polygon is clockwise or counter-clockwise.
+            bool clockwise = IsClockwise();
+
+            for (int i = 0; i < Poly.Length; i++)
+            {
+                var idx1 = Utilities.WrapIndex(i, Poly.Length);
+                var idx2 = Utilities.WrapIndex(i + 1, Poly.Length);
+
+                var pnt1 = Poly[idx1];
+                var pnt2 = Poly[idx2];
+
+                // Compute the direction of the current segment.
+                var segDir = (pnt1 - pnt2).Normalized();
+
+                // Flip for CW.
+                if (clockwise)
+                    segDir *= -1f;
+
+                // Valid point if cross product is greater than zero.
+                var diff = (segDir.Cross(direction));
+                if (diff > 0f)
+                {
+                    yield return pnt1;
+                }
+            }
+        }
 
         /// <summary>
         /// Performs a polygon winding algorithm and returns true if the polygon is wound in the clockwise direction.
@@ -214,10 +268,10 @@ namespace PolyPlane.GameObjects.Tools
         /// <summary>
         /// Adds points between polygon points where the distance is greater than the specified amount.
         /// 
-        /// Increases polygon resolution without changing the original shape.
+        /// Increases polygon resolution (number of points/verts) without changing the original shape.
         /// </summary>
         /// <param name="minDist"></param>
-        public void Tessellate(float minDist)
+        public void IncreaseResolution(float minDist)
         {
             var srcCopy = new List<D2DPoint>();
 
@@ -249,7 +303,49 @@ namespace PolyPlane.GameObjects.Tools
 
             SourcePoly = srcCopy.ToArray();
             Poly = new D2DPoint[SourcePoly.Length];
+            _originalPoly = new D2DPoint[SourcePoly.Length];
+
             Array.Copy(SourcePoly, Poly, SourcePoly.Length);
+            Array.Copy(SourcePoly, _originalPoly, SourcePoly.Length);
+        }
+
+        /// <summary>
+        /// Distorts 3 vertices closest to the specified position in the direction and magnitude of the specified vector.
+        /// </summary>
+        /// <param name="position">Position within the polygon (at origin) to add the distortion.</param>
+        /// <param name="distortVec">Vector containing the magnitude and direction of the distortion.</param>
+        public void Distort(D2DPoint position, D2DPoint distortVec)
+        {
+            // Find the closest poly point to the impact and distort the polygon.
+            var closestIdx = ClosestIdx(position);
+
+            // Distort the closest point and the two surrounding points.
+            var prevIdx = Utilities.WrapIndex(closestIdx - 1, SourcePoly.Length);
+            var nextIdx = Utilities.WrapIndex(closestIdx + 1, SourcePoly.Length);
+
+            SourcePoly[prevIdx] += distortVec * 0.6f;
+            SourcePoly[closestIdx] += distortVec;
+            SourcePoly[nextIdx] += distortVec * 0.6f;
+
+            Update();
+        }
+
+        public SKPath GetPath()
+        {
+            var path = new SKPath();
+            path.AddPoly(this.Poly.ToSkPoints(), true);
+            return path;
+        }
+
+        /// <summary>
+        /// Undo any distortion and restore to the original shape.
+        /// </summary>
+        public void Restore()
+        {
+            for (int i = 0; i < SourcePoly.Length; i++)
+                SourcePoly[i] = _originalPoly[i];
+
+            Update();
         }
 
         /// <summary>
@@ -262,6 +358,7 @@ namespace PolyPlane.GameObjects.Tools
             for (int i = 0; i < Poly.Length; i++)
             {
                 SourcePoly[i].Y = -SourcePoly[i].Y;
+                _originalPoly[i].Y = -_originalPoly[i].Y;
             }
 
             this.Update();
@@ -269,7 +366,7 @@ namespace PolyPlane.GameObjects.Tools
 
         public void Update(D2DPoint pos, float rotation, float scale)
         {
-            Utilities.ApplyTranslation(SourcePoly, Poly, rotation, pos, scale);
+            SourcePoly.Translate(Poly, rotation, pos, scale);
         }
 
         public void Update()

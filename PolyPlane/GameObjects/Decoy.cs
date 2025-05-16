@@ -1,13 +1,14 @@
 ﻿using PolyPlane.GameObjects.Animations;
-using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Decoy : GameObject, ICollidable, ILightMapContributor
+    public sealed class Decoy : GameObject, ILightMapContributor
     {
+        public float CurrentRadius => Radius + _currentFlashRadius;
+
         private const float Radius = 5f;
         private const float LifeSpan = 10f;
 
@@ -16,11 +17,22 @@ namespace PolyPlane.GameObjects
 
         private FloatAnimation _flashAnimation;
 
-        public Decoy(FighterPlane owner, D2DPoint pos) : base(pos)
+        public Decoy() : base() 
         {
+            InitStuff();
+        }
+
+        public Decoy(FighterPlane owner, D2DPoint pos) : this()
+        {
+            this.ObjectID = World.GetNextObjectId();
             this.PlayerID = owner.PlayerID;
-            this.Owner = owner;
+            this.IsExpired = false;
+            this.IsNetObject = false;
+            this.Age = 0f;
+
+            this.Position = pos;
             this.Velocity = owner.Velocity;
+            this.Owner = owner;
 
             // Make the decoy shoot out from the top of the plane.
             const float EJECT_FORCE = 200f;
@@ -35,19 +47,25 @@ namespace PolyPlane.GameObjects
             var topVec = new D2DPoint(rotVec.Y, -rotVec.X);
             this.Velocity += topVec * EJECT_FORCE;
 
-            InitStuff();
+            _flashAnimation.Start();
         }
 
-        public Decoy(FighterPlane owner, D2DPoint pos, D2DPoint velo) : base(pos, velo)
+        public Decoy(FighterPlane owner, D2DPoint pos, D2DPoint velo) : this()
         {
+            this.IsExpired = false;
+            this.Age = 0f;
+
             this.PlayerID = owner.PlayerID;
             this.Owner = owner;
+            this.Position = pos;
+            this.Velocity = velo;
 
-            InitStuff();
+            _flashAnimation.Start();
         }
 
         private void InitStuff()
         {
+            this.Flags = GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround;
             this.Mass = 50f;
             this.RenderOrder = 1;
 
@@ -57,9 +75,10 @@ namespace PolyPlane.GameObjects
             _flashAnimation.Loop = true;
         }
 
-        public override void Update(float dt)
+        public override void DoUpdate(float dt)
         {
-            base.Update(dt);
+            base.DoUpdate(dt);
+
             _flashAnimation.Update(dt);
 
             this.Velocity += -this.Velocity * (dt * 0.6f);
@@ -86,6 +105,13 @@ namespace PolyPlane.GameObjects
             var isFlashFrame = _currentFrame % FLASH_FRAME1 == 0 || _currentFrame % FLASH_FRAME2 == 0;
 
             return isFlashFrame;
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+
+            _flashAnimation.Stop();
         }
 
         float ILightMapContributor.GetLightRadius()

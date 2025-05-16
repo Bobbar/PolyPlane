@@ -1,40 +1,70 @@
-﻿namespace PolyPlane.GameObjects.Manager
+﻿using PolyPlane.Net;
+
+namespace PolyPlane.GameObjects.Managers
 {
     public class PlaneImpactResult
     {
-        public ImpactType Type;
+        public FighterPlane TargetPlane;
+        public GameObject ImpactorObject;
+        public ImpactType ImpactType;
         public D2DPoint ImpactPoint;
+        public D2DPoint ImpactPointOrigin;
         public float ImpactAngle;
-        public bool WasHeadshot = false;
+        public bool WasHeadshot => ImpactType.HasFlag(ImpactType.Headshot);
         public bool WasFlipped;
         public float DamageAmount = 0f;
+        public float NewHealth = 0f;
 
         public PlaneImpactResult() { }
 
         public PlaneImpactResult(ImpactType type, D2DPoint impactPoint, float impactAngle, float damageAmount, bool wasHeadshot)
         {
-            Type = type;
+            ImpactType = type;
             ImpactPoint = impactPoint;
             ImpactAngle = impactAngle;
             DamageAmount = damageAmount;
-            WasHeadshot = wasHeadshot;
+
+            if (wasHeadshot)
+                ImpactType |= ImpactType.Headshot;
         }
 
-        public PlaneImpactResult(ImpactType type, D2DPoint impactPoint, float impactAngle, float damageAmount, bool wasHeadshot, bool wasFlipped)
+        public PlaneImpactResult(ImpactPacket impactPacket)
         {
-            Type = type;
-            ImpactPoint = impactPoint;
-            ImpactAngle = impactAngle;
-            DamageAmount = damageAmount;
-            WasHeadshot = wasHeadshot;
-            WasFlipped = wasFlipped;
+            ImpactType = impactPacket.ImpactType;
+            ImpactPoint = impactPacket.ImpactPoint;
+            ImpactPointOrigin = impactPacket.ImpactPointOrigin;
+            ImpactAngle = impactPacket.ImpactAngle;
+            DamageAmount = impactPacket.DamageAmount;
+            WasFlipped = impactPacket.WasFlipped;
+
+            if (impactPacket.WasHeadshot)
+                ImpactType |= ImpactType.Headshot;
         }
     }
 
+    public class PlayerKilledEventArgs
+    {
+        public FighterPlane KilledPlane;
+        public FighterPlane AttackPlane;
+        public ImpactType ImpactType;
+
+        public PlayerKilledEventArgs(FighterPlane killedPlane, FighterPlane attackPlane, ImpactType impactType)
+        {
+            KilledPlane = killedPlane;
+            AttackPlane = attackPlane;
+            ImpactType = impactType;
+        }
+    }
+
+    [Flags]
     public enum ImpactType
     {
-        Bullet,
-        Missile,
-        Splash
+        Bullet = 1,
+        Missile = 2,
+        Splash = 4,
+        Headshot = 8,
+        DamagedEngine = 16,
+        DamagedTailWing = 32,
+        DamagedMainWing = 64
     }
 }

@@ -18,8 +18,9 @@ namespace PolyPlane.Helpers
         /// <returns></returns>
         public bool Contains(params D2DPoint[] points)
         {
-            foreach (var pnt in points)
+            for (int i = 0; i < points.Length; i++)
             {
+                var pnt = points[i];
                 if (BoundsRect.Contains(pnt))
                     return true;
             }
@@ -31,9 +32,10 @@ namespace PolyPlane.Helpers
         {
             var minMax = new MinMax();
 
-            foreach (var pnt in polygon)
+            for (int i = 0; i < polygon.Length; i++)
             {
-                minMax.Update(pnt.X, pnt.Y);
+                var pnt = polygon[i];
+                minMax.Update(pnt);
             }
 
             var rect = new D2DRect(minMax.MinX, minMax.MinY, minMax.MaxX - minMax.MinX, minMax.MaxY - minMax.MinY);

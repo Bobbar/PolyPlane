@@ -3,15 +3,16 @@ using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
+using SkiaSharp;
 
 namespace PolyPlane.GameObjects
 {
-    public class Bullet : GameObjectPoly, ICollidable, ILightMapContributor
+    public sealed class Bullet : GameObjectNet, IPolygon, ILightMapContributor
     {
         public const float SPEED = 800f;
         public float Lifetime = 10f;
 
-        private readonly D2DColor _lightMapColor = new D2DColor(1f, 1f, 0.98f, 0.54f);
+        private static readonly D2DColor _lightMapColor = new D2DColor(1f, 1f, 0.98f, 0.54f);
 
         private static readonly D2DPoint[] _poly = new D2DPoint[]
         {
@@ -24,16 +25,21 @@ namespace PolyPlane.GameObjects
             new D2DPoint(4,3),
         };
 
+        public RenderPoly Polygon { get; set; }
+
         public Bullet() : base()
         {
             this.Polygon = new RenderPoly(this, _poly);
             this.RenderOrder = 4;
+            this.Flags = GameObjectFlags.SpatialGrid;
         }
 
         public Bullet(FighterPlane plane) : this()
         {
+            this.ObjectID = World.GetNextObjectId();
             this.PlayerID = plane.PlayerID;
             this.IsExpired = false;
+            this.IsNetObject = false;
             this.Age = 0f;
 
             this.Position = plane.GunPosition;
@@ -41,7 +47,7 @@ namespace PolyPlane.GameObjects
             this.Owner = plane;
 
             var velo = (Utilities.AngleToVectorDegrees(plane.Rotation, Bullet.SPEED));
-            this.Velocity = velo + Utilities.AngularVelocity(plane, plane.Gun.Position);
+            this.Velocity = velo + Utilities.PointVelocity(plane, plane.Gun.Position);
 
             this.Rotation = this.Velocity.Angle();
             this.Polygon.Update();
@@ -50,6 +56,7 @@ namespace PolyPlane.GameObjects
         public Bullet(D2DPoint pos, D2DPoint velo, float rotation) : this()
         {
             this.IsExpired = false;
+            this.IsNetObject = true;
             this.Age = 0f;
 
             this.Position = pos;
@@ -59,9 +66,9 @@ namespace PolyPlane.GameObjects
             this.Polygon.Update();
         }
 
-        public override void Update(float dt)
+        public override void DoUpdate(float dt)
         {
-            base.Update(dt);
+            base.DoUpdate(dt);
 
             if (this.Age >= Lifetime)
                 this.IsExpired = true;
@@ -71,7 +78,14 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
-            ctx.DrawPolygon(this.Polygon, D2DColor.Black, 1f, D2DDashStyle.Solid, D2DColor.Yellow);
+            ctx.DrawPolygon(this.Polygon, D2DColor.Black, 1f, D2DColor.Yellow);
+        }
+
+        public override void RenderGL(GLRenderContext ctx)
+        {
+            base.RenderGL(ctx);
+
+            ctx.FillPolygon(this.Polygon, SKColors.Yellow, SKColors.Black, 1f);
         }
 
         float ILightMapContributor.GetLightRadius()

@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects;
+using PolyPlane.GameObjects.Managers;
 
 namespace PolyPlane
 {
@@ -30,7 +31,7 @@ namespace PolyPlane
             UpdateObjectList();
         }
 
-        private void UpdateObjectList()
+        public void UpdateObjectList()
         {
             ObjectsListbox.Items.Clear();
             ObjectsListbox.ValueMember = nameof(ObjectEntry);

@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects;
+using PolyPlane.GameObjects.Managers;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 
@@ -21,13 +22,15 @@ namespace PolyPlane.AI_Behavior
         private bool _gainingVelo = false;
         private bool _reverseDirection = false;
         private bool _isDefending = false;
+        private bool _isVengeful = false;
+        private bool _isCoward = false;
 
         private GameTimer _fireBurstTimer = new GameTimer(2f, 6f);
         private GameTimer _fireMissileCooldown = new GameTimer(6f);
         private GameTimer _dropDecoysTimer = new GameTimer(2f, 3f);
         private GameTimer _changeTargetCooldown = new GameTimer(10f);
         private GameTimer _defendMissileCooldown = new GameTimer(4f);
-        private GameTimer _dodgeMissileCooldown = new GameTimer(2.5f);
+        private GameTimer _dodgeMissileCooldown = new GameTimer(4.5f);
         private RateLimiterAngle _defendAngleRate = new RateLimiterAngle(20f);
 
         private float MIN_MISSILE_TIME = 40f;
@@ -103,7 +106,6 @@ namespace PolyPlane.AI_Behavior
                 this.Plane.ThrustOn = true;
         }
 
-
         private void ConfigPersonality()
         {
             var types = Enum.GetValues(typeof(AIPersonality));
@@ -133,6 +135,8 @@ namespace PolyPlane.AI_Behavior
                             {
                                 MAX_SPEED = 700f;
                                 this.Plane.Thrust = 700f;
+
+                                _isCoward = true;
                             }
                             break;
 
@@ -148,12 +152,14 @@ namespace PolyPlane.AI_Behavior
                     }
                 }
             }
+
+            if (this.Personality.HasFlag(AIPersonality.Vengeful))
+                _isVengeful = true;
         }
 
-        private void HandlePlayerKilled(FighterPlane plane, GameObject impactor)
+        private void HandlePlayerKilled(PlayerKilledEventArgs killedEvent)
         {
-            if (impactor.Owner is FighterPlane attackerPlane)
-                _killedByPlane = attackerPlane;
+            _killedByPlane = killedEvent.AttackPlane;
         }
 
         private void ConsiderNewTarget()
@@ -165,13 +171,11 @@ namespace PolyPlane.AI_Behavior
                 if (_killedByPlane != null && _killedByPlane.IsExpired)
                     _killedByPlane = null;
 
-                if ((this.Personality & AIPersonality.Vengeful) == AIPersonality.Vengeful && (_killedByPlane != null && _killedByPlane.IsDisabled == false))
+                // Vengeful AI will always go after the last player that killed them.
+                if (_isVengeful && (_killedByPlane != null && _killedByPlane.IsDisabled == false))
                     rndTarg = _killedByPlane;
 
                 _targetPlane = rndTarg;
-
-                if (_targetPlane != null)
-                    Log.Msg($"Picked new target: {this.Plane.ID} -> {this.TargetPlane.ID} ");
             }
         }
 
@@ -199,8 +203,6 @@ namespace PolyPlane.AI_Behavior
 
                 _fireMissileCooldown.Interval = Utilities.Rnd.NextFloat(MIN_MISSILE_TIME, MAX_MISSILE_TIME);
                 _fireMissileCooldown.Restart();
-
-                Log.Msg("Firing Missile");
             }
         }
 
@@ -276,48 +278,71 @@ namespace PolyPlane.AI_Behavior
             }
         }
 
-        public float GetAIGuidance(float dt)
+        /// <summary>
+        /// Computes the final guidance direction based on the current state.
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <returns></returns>
+        public float GetAIGuidanceDirection(float dt)
         {
-            const float MIN_IMPACT_TIME = 7f; // Min ground impact time to consider avoiding ground.
+            const float MIN_IMPACT_TIME = 7.5f; // Min ground impact time to consider avoiding ground.
             const float BLOCK_PITCH_DOWN_ALT = 800f; // Do not allow pitch down angles below this altitude.
             const float EXTRA_AIM_AMT = 0.4f; // How much to pitch beyond the location of the target plane.  (Helps with dog-fighting)
-            const float MIN_VELO = 160f; // Min velo before trying to gain velocity;
+            const float MIN_VELO = 120f; // Min velo before trying to gain velocity;
             const float OK_VELO = 210f; // Velo to stop trying to gain velocity.
             const float RUN_DISTANCE = 30000f; // Cowardly IA: How close before we run away from the target plane.
             const float FIGHT_DISTANCE = 4000f; // Cowardly IA: If the target is closer than this, engage and fight them.
 
-            var patrolDir = Utilities.ClampAngle(Utilities.RadsToDegrees((float)Math.Sin(_sineWavePos)));
+            var finalAngle = 0f;
+
+            // This logic is ordered by lowest to highest priority.
+            // Flying towards (or away) from target is lowests, while
+            // avoiding ground collisions and maintaining speed are highest priority.
+
+
+            // *** Fly around in a sinusoidal path if there are no targets. ***
+            var patrolDir = Utilities.ClampAngle(Utilities.RadsToDegrees(MathF.Sin(_sineWavePos)));
+
+            // Flip directions if we are near the end of the play field.
+            if (this.TargetPlane == null)
+            {
+                if (this.Plane.Position.X > World.PlaneSpawnRange + 10000f && !_reverseDirection)
+                    _reverseDirection = true;
+
+                if (this.Plane.Position.X < -World.PlaneSpawnRange - 10000f && _reverseDirection)
+                    _reverseDirection = false;
+            }
 
             if (_reverseDirection)
                 patrolDir = Utilities.ClampAngle(patrolDir + 180f);
 
-            var groundImpactTime = Utilities.GroundImpactTime(this.Plane);
-            var angle = patrolDir;
+            finalAngle = patrolDir;
 
+            // *** Fly towards or away from the target plane, depending on personality. ***
             if (TargetPlane != null)
             {
                 var dirToTarget = TargetPlane.Position - this.Plane.Position;
                 var distToTarget = this.Plane.Position.DistanceTo(TargetPlane.Position);
 
-                if ((this.Personality & AIPersonality.Cowardly) == AIPersonality.Cowardly && distToTarget < RUN_DISTANCE && distToTarget > FIGHT_DISTANCE)
+                if (_isCoward && distToTarget < RUN_DISTANCE && distToTarget > FIGHT_DISTANCE)
                 {
                     // Fly away from target plane.
                     dirToTarget *= -1f;
-                    angle = dirToTarget.Angle();
-                    angle += patrolDir * 0.2f; // Incorporate a small amount of the sine wave so we 'bob & weave' a little bit.
+                    finalAngle = dirToTarget.Angle();
+                    finalAngle += patrolDir * 0.2f; // Incorporate a small amount of the sine wave so we 'bob & weave' a little bit.
                 }
                 else
                 {
                     // Fly towards target plane.
-                    angle = dirToTarget.Angle();
+                    finalAngle = dirToTarget.Angle();
 
                     // Add additional pitch. Helps increase agro while dog-fighting.
                     var rotAmt = Utilities.RadsToDegrees((this.Plane.Position - TargetPlane.Position).Normalized().Cross(Utilities.AngleToVectorDegrees(this.Plane.Rotation)));
-                    angle = Utilities.ClampAngle(angle + rotAmt * EXTRA_AIM_AMT);
+                    finalAngle = Utilities.ClampAngle(finalAngle + rotAmt * EXTRA_AIM_AMT);
                 }
             }
 
-            // Fly away from missile?
+            // *** Defend against incoming missiles. ***
             if (_isDefending && DefendingMissile != null)
             {
                 // Compute two tangential angles and choose the one which
@@ -332,7 +357,7 @@ namespace PolyPlane.AI_Behavior
                 var threatVeloAngle = DefendingMissile.Velocity.Angle();
 
                 const float DEFEND_ANGLE = 25f; // Offset angle to threat slightly to try to put decoys in the flight path.
-                const float DODGE_TIME = 3f; // Impact time to try to dodge the missile.
+                const float DODGE_TIME = 2f; // Impact time to try to dodge the missile.
 
                 var defendAngleOne = Utilities.ClampAngle(angleAwayFromThreat + DEFEND_ANGLE);
                 var defendAngleTwo = Utilities.ClampAngle(angleAwayFromThreat - DEFEND_ANGLE);
@@ -340,7 +365,7 @@ namespace PolyPlane.AI_Behavior
                 var diffOne = Utilities.AngleDiff(defendAngleOne, this.Plane.Rotation);
                 var diffTwo = Utilities.AngleDiff(defendAngleTwo, this.Plane.Rotation);
 
-                float defendAngle = angle;
+                float defendAngle = finalAngle;
 
                 // Try to select an angle which points down. (To maximize velo)
                 if (Utilities.IsPointingDown(defendAngleOne))
@@ -382,24 +407,24 @@ namespace PolyPlane.AI_Behavior
                     var diffUp = Utilities.AngleDiff(defAngleTangentUp, threatVeloAngle);
 
                     if (diffDown < diffUp)
-                        angle = defAngleTangentDown;
+                        finalAngle = defAngleTangentDown;
                     else
-                        angle = defAngleTangentUp;
+                        finalAngle = defAngleTangentUp;
                 }
                 else
                 {
-                    angle = defendAngle;
+                    finalAngle = defendAngle;
                 }
             }
 
-            // Try to lead the target if we are firing a burst.
+            // *** Apply lead when firing a burst at the target. ***
             if (_fireBurstTimer.IsRunning && TargetPlane != null)
             {
                 var aimAmt = LeadTarget(TargetPlane, dt);
-                angle = aimAmt;
+                finalAngle = aimAmt;
             }
 
-            // Do we need to gain velocity?
+            // *** Gain velocity as needed. ***
             var velo = this.Plane.AirSpeedIndicated;
             if (velo < MIN_VELO)
                 _gainingVelo = true;
@@ -409,9 +434,10 @@ namespace PolyPlane.AI_Behavior
             // Pitch down to gain velo.
             // Don't bother if we are dodging.
             if (_gainingVelo && !_dodgeMissileCooldown.IsRunning)
-                angle = Utilities.MaintainAltitudeAngle(this.Plane, this.Plane.Altitude - 200f);
+                finalAngle = Utilities.MaintainAltitudeAngle(this.Plane, this.Plane.Altitude - 200f);
 
-            // Pitch up if we about to impact with ground.
+            // *** Avoid the ground if we are close to impacting. ***
+            var groundImpactTime = Utilities.GroundImpactTime(this.Plane);
             if (groundImpactTime > 0f && groundImpactTime < MIN_IMPACT_TIME && !_avoidingGround)
             {
                 _avoidingGround = true;
@@ -421,34 +447,22 @@ namespace PolyPlane.AI_Behavior
                     _avoidingGroundAlt = 500f;
             }
 
-            if (groundImpactTime < 0f)
-            {
+            if (groundImpactTime > MIN_IMPACT_TIME)
                 _avoidingGround = false;
-            }
 
             // Climb until no longer in danger of ground collision.
             if (_avoidingGround)
-                angle = Utilities.MaintainAltitudeAngle(this.Plane, _avoidingGroundAlt);
-
-            // Stay within the spawn area when not actively targeting another plane.
-            if (this.TargetPlane == null)
-            {
-                if (this.Plane.Position.X > World.PlaneSpawnRange.Y + 10000f && !_reverseDirection)
-                    _reverseDirection = true;
-
-                if (this.Plane.Position.X < World.PlaneSpawnRange.X - 10000f && _reverseDirection)
-                    _reverseDirection = false;
-            }
+                finalAngle = Utilities.MaintainAltitudeAngle(this.Plane, _avoidingGroundAlt);
 
             // Start reversing the angle at very low altitude.
             // Pitch down becomes a pitch up.
             if (this.Plane.Altitude < BLOCK_PITCH_DOWN_ALT)
             {
-                if (angle > 0f && angle < 180f)
-                    angle = 360f - angle;
+                if (finalAngle > 0f && finalAngle < 180f)
+                    finalAngle = 360f - finalAngle;
             }
 
-            var finalAngle = angle;
+            // Clamp the final angle, just in case.
             finalAngle = Utilities.ClampAngle(finalAngle);
             return finalAngle;
         }

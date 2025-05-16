@@ -3,6 +3,8 @@
     public enum PacketTypes
     {
         PlaneUpdate,
+        PlaneStatusList,
+        PlaneStatus,
         PlaneListUpdate,
         MissileUpdateList,
         MissileUpdate,
@@ -18,13 +20,15 @@
         ExpiredObjects,
         PlayerDisconnect,
         PlayerReset,
-        ServerSync,
+        SyncResponse,
+        SyncRequest,
         Discovery,
         KickPlayer,
         ImpactList,
         BulletList,
         DecoyList,
-        PlayerEvent
-
+        PlayerEvent,
+        ScoreEvent,
+        GameStateUpdate
     }
 }

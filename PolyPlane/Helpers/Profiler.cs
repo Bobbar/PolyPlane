@@ -1,80 +1,113 @@
-﻿using System.Diagnostics;
-
-namespace PolyPlane.Helpers
+﻿namespace PolyPlane.Helpers
 {
-    public class Profiler
+    public static class Profiler
     {
-        private Stopwatch _timer = new Stopwatch();
-        private Stopwatch _timer2 = new Stopwatch();
+        private static Dictionary<ProfilerStat, Marker> _stats = new Dictionary<ProfilerStat, Marker>();
 
-
-        private List<Marker> _markers = new List<Marker>();
-
-        public Profiler() { }
-
-        public void Clear()
+        /// <summary>
+        /// Get milliseconds elapsed for the specified <see cref="ProfilerStat"/>.
+        /// </summary>
+        /// <param name="stat"></param>
+        /// <returns></returns>
+        public static double GetElapsedMilliseconds(ProfilerStat stat)
         {
-            _markers.Clear();
-            _timer.Restart();
-            _timer2.Restart();
+            var marker = GetStatMarker(stat);
+
+            return TimeSpan.FromTicks(marker.Elapsed).TotalMilliseconds;
         }
 
-        public void Restart()
+        /// <summary>
+        /// Reset elapsed times for all stats.
+        /// </summary>
+        public static void ResetAll()
         {
-            //_markers.Clear();
-            _timer.Restart();
-        }
-
-        public void AddMarker(string label)
-        {
-            _timer.Stop();
-            _markers.Add(new Marker(_timer.Elapsed, label));
-            _timer.Restart();
-        }
-
-        public void Stop()
-        {
-            _timer.Stop();
-        }
-
-        public void Reset()
-        {
-            _timer.Reset();
-        }
-
-        public void AddTimeSpan(TimeSpan elap, string label)
-        {
-            _markers.Add(new Marker(elap, label));
-        }
-
-        public void PrintResults()
-        {
-            _timer.Stop();
-            _timer2.Stop();
-
-            TimeSpan totalTime = TimeSpan.Zero;
-
-            foreach (var marker in _markers)
+            foreach (var marker in _stats.Values)
             {
-                totalTime += marker.Elapsed;
-                Log.Msg($"{marker.Label}:  {marker.Elapsed.TotalMilliseconds} ms  {marker.Elapsed.Ticks} ticks");
-            }
-
-            Log.Msg($"Total: {totalTime.TotalMilliseconds} ms  {totalTime.Ticks} ticks");
-            Log.Msg($"");
-
-        }
-
-        private class Marker
-        {
-            public TimeSpan Elapsed { get; set; }
-            public string Label { get; set; }
-
-            public Marker(TimeSpan elap, string label)
-            {
-                Elapsed = elap;
-                Label = label;
+                marker.Elapsed = 0;
             }
         }
+
+        /// <summary>
+        /// Start recording time elapsed for the specified <see cref="ProfilerStat"/>.
+        /// </summary>
+        public static void Start(ProfilerStat stat)
+        {
+            var marker = GetStatMarker(stat);
+
+            marker.StartTime = CurrentTime();
+        }
+
+        /// <summary>
+        /// Stop recording time elapsed for the specified <see cref="ProfilerStat"/>.
+        /// </summary>
+        /// <param name="stat"></param>
+        /// <returns>Returns the updated <see cref="Marker"/> associated with the specified <see cref="ProfilerStat"/>.</returns>
+        public static Marker Stop(ProfilerStat stat)
+        {
+            var marker = GetStatMarker(stat);
+
+            marker.EndTime = CurrentTime();
+            marker.Elapsed = marker.EndTime - marker.StartTime;
+
+            return marker;
+        }
+
+        /// <summary>
+        /// Stop recording time elapsed for the specified <see cref="ProfilerStat"/> but adds the result to the previous elapsed value.
+        /// 
+        /// Used when a stat is composed of multiple disparate code blocks.
+        /// </summary>
+        /// <param name="stat"></param>
+        /// <returns>Returns the updated <see cref="Marker"/> associated with the specified <see cref="ProfilerStat"/>.</returns>
+        public static Marker StopAndAppend(ProfilerStat stat)
+        {
+            var marker = GetStatMarker(stat);
+
+            marker.EndTime = CurrentTime();
+            marker.Elapsed += marker.EndTime - marker.StartTime;
+
+            return marker;
+        }
+
+        private static Marker GetStatMarker(ProfilerStat stat)
+        {
+            Marker marker;
+
+            if (!_stats.TryGetValue(stat, out marker))
+            {
+                marker = new Marker();
+                _stats[stat] = marker;
+            }
+
+            return marker;
+        }
+
+        private static long CurrentTime()
+        {
+            var now = DateTimeOffset.UtcNow.Ticks;
+            return now;
+        }
+    }
+
+    public class Marker
+    {
+        public long StartTime { get; set; }
+        public long EndTime { get; set; }
+        public long Elapsed { get; set; }
+
+        public Marker() { }
+
+        public double GetElapsedMilliseconds()
+        {
+            return TimeSpan.FromTicks(Elapsed).TotalMilliseconds;
+        }
+    }
+
+    public enum ProfilerStat
+    {
+        Update,
+        Collisions,
+        Render,
+        NetTime
     }
 }

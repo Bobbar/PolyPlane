@@ -1,55 +1,87 @@
 ﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.GameObjects.Particles;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using System.Collections.Concurrent;
 using unvell.D2DLib;
 
-namespace PolyPlane.GameObjects
+namespace PolyPlane.GameObjects.Managers
 {
     /// <summary>
     /// Handles collections for all game objects and provides fast lookups and nearest neighbor searching.
     /// </summary>
-    public class GameObjectManager
+    public class GameObjectManager : IPlayerScoredEvent
     {
         public int TotalObjects = 0;
 
-        public List<GameObject> Missiles = new();
-        public List<GameObject> MissileTrails = new();
-        public List<GameObject> Decoys = new();
-        public List<GameObject> Bullets = new();
-        public List<GameObject> Explosions = new();
-        public List<GameObject> Debris = new();
-        public List<GameObject> Particles = new();
+        public List<GameObject> Missiles = new(50);
+        public List<GameObject> MissileTrails = new(50);
+        public List<GameObject> Decoys = new(1000);
+        public List<GameObject> Bullets = new(1000);
+        public List<GameObject> Explosions = new(1000);
+        public List<GameObject> Debris = new(2000);
+        public List<Particle> Particles = new(60000);
         public List<GameObject> DummyObjs = new();
 
-        public List<GroundImpact> GroundImpacts = new();
+        public List<GroundImpact> GroundImpacts = new(5000);
         public List<FighterPlane> Planes = new();
 
+        public ConcurrentQueue<Explosion> NewExplosions = new();
         public ConcurrentQueue<GameObject> NewDecoys = new();
         public ConcurrentQueue<GameObject> NewDebris = new();
         public ConcurrentQueue<GameObject> NewBullets = new();
         public ConcurrentQueue<GameObject> NewMissiles = new();
         public ConcurrentQueue<FighterPlane> NewPlanes = new();
         public ConcurrentQueue<Particle> NewParticles = new();
+        public ConcurrentQueue<int> ExpiredParticleIdxs = new();
 
         private Dictionary<int, GameObject> _objLookup = new();
-        private SpatialGrid<GameObject> _spatialGrid = new(o => o.Position, o => o.IsExpired);
+        private SpatialGridGameObject _spatialGrid = new(World.SPATIAL_GRID_SIDELEN);
 
         private List<GameObject> _allNetObjects = new();
-        private List<GameObject> _allObjects = new();
+        private List<GameObject> _allObjects = new(80000);
         private List<GameObject> _expiredObjs = new();
 
         private GameObjectPool<Particle> _particlePool = new(() => new Particle());
+        private GameObjectPool<Explosion> _explosionPool = new(() => new Explosion());
+        private GameObjectPool<Debris> _debrisPool = new(() => new Debris());
+        private GameObjectPool<GroundImpact> _groundImpactPool = new(() => new GroundImpact());
+        private ConcurrentQueue<BulletHole> _bulletHolePool = new();
 
         public event EventHandler<PlayerScoredEventArgs> PlayerScoredEvent;
         public event EventHandler<EventMessage> PlayerKilledEvent;
         public event EventHandler<FighterPlane> NewPlayerEvent;
 
-        private int _multiThreadNum = 2;
+        private CollisionManager _collisionManager;
 
-        public GameObjectManager()
+        public void SetCollisionManager(CollisionManager collisionManager)
         {
-            _multiThreadNum = Environment.ProcessorCount;
+            _collisionManager = collisionManager;
+        }
+
+        public BulletHole RentBulletHole(GameObject obj, D2DPoint offset, float angle)
+        {
+            if (_bulletHolePool.TryDequeue(out BulletHole hole))
+            {
+                hole.Owner = obj;
+                hole.ReferencePosition = offset;
+                hole.Angle = angle;
+                hole.Age = 0f;
+                hole.IsExpired = false;
+                hole.SyncWithOwner();
+
+                return hole;
+            }
+            else
+            {
+                var newHole = new BulletHole(obj, offset, angle);
+                return newHole;
+            }
+        }
+
+        public void ReturnBulletHole(BulletHole bulletHole)
+        {
+            _bulletHolePool.Enqueue(bulletHole);
         }
 
         public Particle RentParticle()
@@ -68,6 +100,9 @@ namespace PolyPlane.GameObjects
         {
             Particles.Add(particle);
             _spatialGrid.Add(particle);
+
+            // Set the index for the new particle.
+            particle.Idx = Particles.Count - 1;
         }
 
         public void EnqueueParticle(Particle particle)
@@ -78,7 +113,19 @@ namespace PolyPlane.GameObjects
 
         public void EnqueueDebris(Debris debris)
         {
-            NewDebris.Enqueue(debris);
+            if (!World.IsServer)
+                NewDebris.Enqueue(debris);
+        }
+
+        public Debris RentDebris()
+        {
+            var debris = _debrisPool.RentObject();
+            return debris;
+        }
+
+        public void ReturnDebris(Debris debris)
+        {
+            _debrisPool.ReturnObject(debris);
         }
 
         private void AddDebris(Debris debris)
@@ -90,7 +137,7 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private void AddBullet(Bullet bullet)
+        public void AddBullet(Bullet bullet)
         {
             if (!Contains(bullet))
             {
@@ -104,19 +151,14 @@ namespace PolyPlane.GameObjects
             NewBullets.Enqueue(bullet);
         }
 
-        private void AddMissile(GuidedMissile missile)
+        public void AddMissile(GuidedMissile missile)
         {
             if (!Contains(missile))
             {
                 AddObject(missile);
                 Missiles.Add(missile);
 
-                var trail = new SmokeTrail(missile, o =>
-                {
-                    var m = o as GuidedMissile;
-                    return m.CenterOfThrust;
-                }, lineWeight: 2f);
-
+                var trail = new MissileSmokeTrail(missile);
                 MissileTrails.Add(trail);
             }
         }
@@ -133,8 +175,8 @@ namespace PolyPlane.GameObjects
                 AddObject(plane);
                 Planes.Add(plane);
 
-                plane.PlayerKilledCallback = HandlePlayerKilled;
-                plane.PlayerCrashedCallback = HandlePlayerCrashed;
+                plane.PlayerKilledCallback += HandlePlayerKilled;
+                plane.PlayerCrashedCallback += HandlePlayerCrashed;
 
                 if (plane.IsAI)
                     NewPlayerEvent?.Invoke(this, plane);
@@ -159,6 +201,55 @@ namespace PolyPlane.GameObjects
             }
         }
 
+        public void EnqueueDecoy(Decoy decoy)
+        {
+            NewDecoys.Enqueue(decoy);
+        }
+
+        private void EnqueueExplosion(Explosion explosion)
+        {
+            NewExplosions.Enqueue(explosion);
+
+            if (explosion.Altitude <= 10f)
+            {
+                if (explosion.Owner is GuidedMissile)
+                {
+                    var missileRadius = Utilities.Rnd.NextFloat(23f, 27f);
+                    var impact = _groundImpactPool.RentObject();
+                    impact.ReInit(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 8f)), new D2DSize(missileRadius + 8f, missileRadius), explosion.Owner.Rotation);
+                    GroundImpacts.Add(impact);
+                }
+                else if (explosion.Owner is Bullet)
+                {
+                    var bulletRadius = Utilities.Rnd.NextFloat(9f, 12f);
+                    var impact = _groundImpactPool.RentObject();
+                    impact.ReInit(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 5f)), new D2DSize(bulletRadius + 8f, bulletRadius), explosion.Owner.Rotation);
+                    GroundImpacts.Add(impact);
+                }
+            }
+        }
+
+        private void AddMissileExplosion(GuidedMissile missile)
+        {
+            var explosion = _explosionPool.RentObject();
+            explosion.ReInit(missile, 300f, 2.4f);
+
+            EnqueueExplosion(explosion);
+        }
+
+        private void AddBulletExplosion(Bullet bullet)
+        {
+            var explosion = _explosionPool.RentObject();
+            explosion.ReInit(bullet, 50f, 1.5f);
+
+            EnqueueExplosion(explosion);
+        }
+
+        public void ReturnExplosion(Explosion explosion)
+        {
+            _explosionPool.ReturnObject(explosion);
+        }
+
         public DummyObject AddDummyObject(GameID id)
         {
             var obj = new DummyObject();
@@ -173,49 +264,10 @@ namespace PolyPlane.GameObjects
             return obj;
         }
 
-        public void EnqueueDecoy(Decoy decoy)
-        {
-            NewDecoys.Enqueue(decoy);
-        }
-
-        private void AddExplosion(GameObject explosion)
-        {
-            if (!Contains(explosion))
-            {
-                AddObject(explosion);
-                Explosions.Add(explosion);
-
-                if (explosion.Altitude <= 10f)
-                {
-                    if (explosion.Owner is GuidedMissile)
-                    {
-                        var missileRadius = Utilities.Rnd.NextFloat(23f, 27f);
-                        GroundImpacts.Add(new GroundImpact(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 8f)), new D2DSize(missileRadius + 8f, missileRadius), explosion.Owner.Rotation));
-                    }
-                    else if (explosion.Owner is Bullet)
-                    {
-                        var bulletRadius = Utilities.Rnd.NextFloat(9f, 12f);
-                        GroundImpacts.Add(new GroundImpact(new D2DPoint(explosion.Position.X, Utilities.Rnd.NextFloat(0f, 5f)), new D2DSize(bulletRadius + 8f, bulletRadius), explosion.Owner.Rotation));
-                    }
-                }
-            }
-        }
-
-        private void AddMissileExplosion(GuidedMissile missile)
-        {
-            var explosion = new Explosion(missile, 300f, 2.4f);
-            AddExplosion(explosion);
-        }
-
-        private void AddBulletExplosion(Bullet bullet)
-        {
-            var explosion = new Explosion(bullet, 50f, 0.5f);
-            AddExplosion(explosion);
-        }
-
         public void Clear()
         {
             _allNetObjects.Clear();
+            _allObjects.Clear();
             Missiles.Clear();
             MissileTrails.Clear();
             Decoys.Clear();
@@ -223,19 +275,33 @@ namespace PolyPlane.GameObjects
             Explosions.Clear();
             Planes.Clear();
             Debris.Clear();
+            GroundImpacts.Clear();
+            DummyObjs.Clear();
+
             Particles.ForEach(f => f.Dispose());
             Particles.Clear();
-            DummyObjs.Clear();
+
             NewDecoys.Clear();
             NewDebris.Clear();
             NewBullets.Clear();
             NewMissiles.Clear();
             NewPlanes.Clear();
             NewParticles.Clear();
+            ExpiredParticleIdxs.Clear();
+
+            _particlePool.Clear();
+            _explosionPool.Clear();
+            _debrisPool.Clear();
+            _groundImpactPool.Clear();
+            _bulletHolePool.Clear();
 
             _objLookup.Clear();
             _spatialGrid.Clear();
             _expiredObjs.Clear();
+
+            // Reset object and player IDs.
+            World.CurrentObjId = 0;
+            World.CurrentPlayerId = 1000;
         }
 
         public GameObject GetObjectByID(GameID gameID)
@@ -275,35 +341,53 @@ namespace PolyPlane.GameObjects
             return _allObjects;
         }
 
+
         /// <summary>
-        /// Updates and syncs all collections/queues, spatial grid and advances all objects.
+        /// Updates and syncs all collections/queues, spatial grid and advances all objects and executes collision logic.
         /// </summary>
         public void Update(float dt)
         {
-            SyncObjQueues();
+            DoCollisions(dt);
+
+
+            Profiler.Start(ProfilerStat.Update);
 
             PruneExpired();
 
-            _spatialGrid.Update();
+            SyncObjQueues();
 
             SyncObjCollections();
 
             // Update all regular objects.
-            _allObjects.ForEachParallel(o => o.Update(dt), _multiThreadNum);
+            _allObjects.ForEachParallel(o => o.Update(World.CurrentDT));
 
             // Update planes separately.
             // They are pretty expensive, so we want "all threads on deck"
             // to be working on the updates.
-            Planes.ForEachParallel(o => o.Update(dt), _multiThreadNum);
+            Planes.ForEachParallel(o => o.Update(World.CurrentDT));
 
             if (!World.IsNetGame || World.IsClient)
             {
                 // Update particles.
-                Particles.ForEachParallel(o => o.Update(dt), _multiThreadNum);
+                Particles.ForEachParallel(o => o.Update(World.CurrentDT));
             }
 
+            _spatialGrid.Update();
+
             // Update ground impacts.
-            GroundImpacts.ForEach(i => i.Age += dt);
+            for (int i = 0; i < GroundImpacts.Count; i++)
+                GroundImpacts[i].Age += dt;
+
+            Profiler.Stop(ProfilerStat.Update);
+        }
+
+        private void DoCollisions(float dt)
+        {
+            Profiler.Start(ProfilerStat.Collisions);
+
+            _collisionManager.DoCollisions(dt);
+
+            Profiler.Stop(ProfilerStat.Collisions);
         }
 
         public bool Contains(GameObject obj)
@@ -336,19 +420,22 @@ namespace PolyPlane.GameObjects
         {
             TotalObjects = 0;
 
-            PruneExpired(Missiles);
-            PruneExpired(MissileTrails, recordExpired: false);
-            PruneExpired(Decoys);
+            // Prune other objects.
+            PruneExpired(Explosions);
+            PruneExpired(Missiles, recordExpired: true);
+            PruneExpired(MissileTrails);
+            PruneExpired(Decoys, recordExpired: true);
             PruneExpired(Bullets);
-            PruneExpired(Explosions, recordExpired: false);
-            PruneExpired(Debris, recordExpired: false);
-            PruneExpired(Particles, recordExpired: false);
-            PruneExpired(DummyObjs, recordExpired: false);
+            PruneExpired(Debris);
+            PruneExpired(DummyObjs);
 
             // Prune planes.
             for (int i = Planes.Count - 1; i >= 0; i--)
             {
                 var plane = Planes[i];
+
+                // Expire stale net planes.
+                ExpireStaleNetObject(plane);
 
                 if (plane.IsExpired)
                 {
@@ -361,69 +448,230 @@ namespace PolyPlane.GameObjects
                 }
             }
 
-            TotalObjects += Planes.Count;
-
             // Prune ground impacts.
             for (int i = GroundImpacts.Count - 1; i >= 0; i--)
             {
                 var impact = GroundImpacts[i];
 
                 if (impact.Age > GroundImpact.MAX_AGE)
+                {
                     GroundImpacts.RemoveAt(i);
+                    _groundImpactPool.ReturnObject(impact);
+                }
             }
 
+            // Prune particles.
+            PruneParticles();
+
+            // Accum new object counts.
+            TotalObjects += Planes.Count;
             TotalObjects += GroundImpacts.Count;
+            TotalObjects += Particles.Count;
         }
 
-        private void PruneExpired(List<GameObject> objs, bool recordExpired = true)
+        private void ExpireStaleNetObject(GameObject obj)
         {
             const double MAX_NET_AGE = 500;
 
-            for (int i = objs.Count - 1; i >= 0; i--)
+            if (World.IsNetGame)
+            {
+                // Check for stale net objects which don't appear to be receiving updates.
+                // This really shouldn't happen, but it does rarely.
+                // Perhaps if an update packet arrives after an expired packet for the same object.
+                if (obj is GuidedMissile || obj is FighterPlane)
+                {
+                    var netObj = obj as GameObjectNet;
+
+                    if (obj.IsNetObject && netObj.NetAge > MAX_NET_AGE)
+                        obj.IsExpired = true;
+                }
+            }
+        }
+
+        private void PruneExpired(List<GameObject> objs, bool recordExpired = false)
+        {
+            int count = objs.Count;
+            int tailIdx = 0;
+            int numRemoved = 0;
+
+            if (count == 0)
+                return;
+
+            // Special case for only one remaining object.
+            if (count == 1)
+            {
+                ExpireStaleNetObject(objs[0]);
+
+                if (objs[0].IsExpired)
+                {
+                    HandledExpired(objs[0], recordExpired);
+                    objs.Clear();
+                }
+
+                return;
+            }
+
+            // Find the index (from the end) of the first un-expired object.
+            // We need to find where we can start storing the expired objects.
+            for (int i = count - 1; i >= 0; i--)
             {
                 var obj = objs[i];
 
-                if (World.IsNetGame)
+                // Expire any stale net objects.
+                ExpireStaleNetObject(obj);
+
+                if (!obj.IsExpired)
                 {
-                    // Check for stale net objects which don't appear to be receiving updates.
-                    // This really shouldn't happen, but it does rarely.
-                    // Perhaps if an update packet arrives after an expired packet for the same object.
-                    if (obj is GuidedMissile || obj is FighterPlane)
-                    {
-                        if (obj.IsNetObject && obj.NetAge > MAX_NET_AGE)
-                            obj.IsExpired = true;
-                    }
+                    // Tail index where we will store expired objects at the end of the list.
+                    tailIdx = i;
+                    break;
                 }
-
-                if (obj.IsExpired)
+                else
                 {
-                    objs.RemoveAt(i);
-                    _objLookup.Remove(obj.ID.GetHashCode());
-                    obj.Dispose();
+                    // Do additional expired logic for tailing objects,
+                    // They will be skipped in the next step.
+                    HandledExpired(obj, recordExpired);
+                    numRemoved++;
+                }
+            }
 
-                    if (recordExpired && World.IsNetGame)
-                        _expiredObjs.Add(obj);
 
-                    // Add explosions when missiles & bullets are expired.
-                    if (obj is GuidedMissile missile)
+            if (tailIdx > 0)
+            {
+                // Start at the index found above and iterate.
+                int swapIdx = tailIdx;
+                for (int i = tailIdx; i >= 0; i--)
+                {
+                    var obj = objs[i];
+
+                    // Expire any stale net objects.
+                    ExpireStaleNetObject(obj);
+
+                    if (obj.IsExpired)
                     {
-                        AddMissileExplosion(missile);
+                        // Do additional expired logic.
+                        HandledExpired(obj, recordExpired);
 
-                        // Remove dummy objects as needed.
-                        if (missile.Target != null && missile.Target is DummyObject)
-                        {
-                            missile.Target.IsExpired = true;
-                            _objLookup.Remove(missile.Target.ID.GetHashCode());
-                        }
-                    }
-                    else if (obj is Bullet bullet)
-                    {
-                        AddBulletExplosion(bullet);
+                        // Swap the expired object to the end of the list.
+                        var tmp = objs[i];
+                        objs[i] = objs[swapIdx];
+                        objs[swapIdx] = tmp;
+
+                        // Move to the next swap index.
+                        swapIdx--;
+                        numRemoved++;
                     }
                 }
             }
 
+            objs.RemoveRange(objs.Count - numRemoved, numRemoved);
+
             TotalObjects += objs.Count;
+        }
+
+        private void HandledExpired(GameObject obj, bool recordExpired)
+        {
+            if (obj is not INoGameID)
+                _objLookup.Remove(obj.ID.GetHashCode());
+
+            if (recordExpired && World.IsNetGame)
+                _expiredObjs.Add(obj);
+
+            // Add explosions when missiles & bullets are expired.
+            if (obj is GuidedMissile missile)
+            {
+                AddMissileExplosion(missile);
+
+                // Remove dummy objects as needed.
+                if (missile.Target != null && missile.Target is DummyObject)
+                {
+                    missile.Target.IsExpired = true;
+                    _objLookup.Remove(missile.Target.ID.GetHashCode());
+                }
+            }
+            else if (obj is Bullet bullet)
+            {
+                AddBulletExplosion(bullet);
+            }
+
+            obj.Dispose();
+        }
+
+        private void PruneParticles()
+        {
+            int num = 0;
+            int count = Particles.Count;
+            int lastIdx = count - 1;
+            int tailIdx = lastIdx;
+
+            if (count == 0)
+                return;
+
+            if (ExpiredParticleIdxs.Count == 0)
+                return;
+
+            // Just clear if all remaining particles are to be removed.
+            if (ExpiredParticleIdxs.Count == Particles.Count)
+            {
+                Particles.Clear();
+                ExpiredParticleIdxs.Clear();
+                return;
+            }
+
+            // Sort the indices by largest to smallest.
+            var removeIdxs = ExpiredParticleIdxs.OrderDescending();
+
+            // If the last index matches the first remove index, 
+            // search until we find the first unexpired particle and set the tail index.
+            // This is rarely needed as new particles are always added to the end;
+            // expired particles will be closer to the beginning.
+            if (tailIdx == removeIdxs.First())
+            {
+                for (int i = lastIdx; i >= 0; i--)
+                {
+                    var p = Particles[i];
+                    if (!p.IsExpired)
+                    {
+                        tailIdx = i;
+                        break;
+                    }
+                }
+            }
+
+            // Iterate the indices to be removed and swap each one to the end of the list.
+            int swapIdx = tailIdx;
+            foreach (var idx in removeIdxs)
+            {
+                // Skip any indices larger than the tail, as they are already at the end.
+                if (idx > tailIdx)
+                {
+                    // Dispose the tail particles.
+                    Particles[idx].Dispose();
+                    continue;
+                }
+
+                // Swap the expired particles to the end of the list.
+                var tmp = Particles[idx];
+                Particles[idx] = Particles[swapIdx];
+                Particles[swapIdx] = tmp;
+
+                // Dispose the expired particle, and update the index for the swapped particle.
+                tmp.Dispose();
+                Particles[idx].Idx = idx;
+
+                // Move to the next swap index.
+                swapIdx--;
+                num++;
+            }
+
+            // Remove the chunk of expired particles now located at the end of the list.
+            int numTail = Particles.Count - tailIdx - 1;
+            int numRemoved = numTail + num;
+
+            Particles.RemoveRange(Particles.Count - numRemoved, numRemoved);
+
+            // Clear the indices for the next frame.
+            ExpiredParticleIdxs.Clear();
         }
 
         private void AddObject(GameObject obj)
@@ -434,30 +682,32 @@ namespace PolyPlane.GameObjects
                 _objLookup.Add(hash, obj);
             }
 
-            // Add collidable objects to spatial lookup.
-            if (obj is ICollidable)
+            // Add objects to spatial lookup as needed.
+            if (obj.HasFlag(GameObjectFlags.SpatialGrid))
                 _spatialGrid.Add(obj);
         }
 
-        private void HandlePlayerKilled(FighterPlane plane, GameObject impactor)
+        private void HandlePlayerKilled(PlayerKilledEventArgs killedEvent)
         {
-            var impactorPlayer = impactor.Owner as FighterPlane;
+            var attackPlane = killedEvent.AttackPlane;
+            var killedPlane = killedEvent.KilledPlane;
 
-            if (impactorPlayer == null)
+            if (attackPlane == null)
                 return;
 
-            PlayerScoredEvent?.Invoke(this, new PlayerScoredEventArgs(impactorPlayer, plane));
-
+            PlayerScoredEvent?.Invoke(this, new PlayerScoredEventArgs(attackPlane, killedPlane, killedPlane.WasHeadshot));
 
             if (!World.IsClient)
             {
-                PlayerKilledEvent?.Invoke(this, new EventMessage($"'{impactorPlayer.PlayerName}' {(plane.WasHeadshot ? "headshot" : "destroyed")} '{plane.PlayerName}' with {(impactor is Bullet ? "bullets." : "a missile.")}", EventType.Kill));
+                var wasBullet = (killedEvent.ImpactType & ImpactType.Bullet) == ImpactType.Bullet;
+                PlayerKilledEvent?.Invoke(this, new EventMessage($"'{attackPlane.PlayerName}' {(killedPlane.WasHeadshot ? "headshot" : "destroyed")} '{killedPlane.PlayerName}' with {(wasBullet ? "bullets." : "a missile.")}", EventType.Kill));
             }
         }
 
         private void HandlePlayerCrashed(FighterPlane plane)
         {
-            PlayerKilledEvent?.Invoke(this, new EventMessage($"'{plane.PlayerName}' crashed into the ground...", EventType.Kill));
+            if (!World.IsClient)
+                PlayerKilledEvent?.Invoke(this, new EventMessage($"'{plane.PlayerName}' crashed into the ground...", EventType.Kill));
         }
 
         private void SyncObjQueues()
@@ -509,6 +759,18 @@ namespace PolyPlane.GameObjects
                     AddParticle(particle);
                 }
             }
+
+            while (NewExplosions.Count > 0)
+            {
+                if (NewExplosions.TryDequeue(out Explosion explosion))
+                {
+                    if (!Contains(explosion))
+                    {
+                        AddObject(explosion);
+                        Explosions.Add(explosion);
+                    }
+                }
+            }
         }
 
         private void SyncObjCollections()
@@ -537,7 +799,6 @@ namespace PolyPlane.GameObjects
         }
 
         public IEnumerable<GameObject> GetNear(GameObject obj) => _spatialGrid.GetNear(obj);
-        public IEnumerable<GameObject> GetNear(D2DPoint position) => _spatialGrid.GetNear(position);
         public IEnumerable<GameObject> GetInViewport(D2DRect viewport) => _spatialGrid.GetInViewport(viewport);
     }
 }

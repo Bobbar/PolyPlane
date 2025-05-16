@@ -1,68 +1,60 @@
 ﻿using PolyPlane.AI_Behavior;
 using PolyPlane.GameObjects;
-using PolyPlane.GameObjects.Manager;
+using PolyPlane.GameObjects.Managers;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Net;
 using PolyPlane.Net.Discovery;
 using PolyPlane.Net.NetHost;
 using PolyPlane.Rendering;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
+using unvell.D2DLib;
 
 
 namespace PolyPlane.Server
 {
     public partial class ServerUI : Form
     {
-        private bool _pauseRequested = false;
-        private bool _spawnAIPlane = false;
-        private bool _spawnRandomAIPlane = false;
-        private bool _clearAIPlanes = false;
         private bool _stopRender = false;
         private bool _killThread = false;
-        private bool _toggleGunsOnly = false;
 
         private AIPersonality _aiPersonality = AIPersonality.Normal;
         private Thread _gameThread;
-        private int _multiThreadNum = 4;
-
-        private GameTimer _discoveryTimer = new GameTimer(2f, true);
-        private GameTimer _syncTimer = new GameTimer(6f, true);
-
         private ManualResetEventSlim _pauseRenderEvent = new ManualResetEventSlim(true);
+        private GameTimer _discoveryTimer = new GameTimer(2f, true);
 
-        private Stopwatch _timer = new Stopwatch();
-        private TimeSpan _renderTime = new TimeSpan();
-        private TimeSpan _updateTime = new TimeSpan();
-        private TimeSpan _collisionTime = new TimeSpan();
-        private TimeSpan _netTime = new TimeSpan();
-        private SmoothFloat _updateTimeSmooth = new SmoothFloat(50);
-        private SmoothFloat _collisionTimeSmooth = new SmoothFloat(50);
-        private SmoothFloat _netTimeSmooth = new SmoothFloat(50);
-
-        private long _lastRenderTime = 0;
-        private float _renderFPS = 0;
-        private double _lastFrameTime = 0;
-        private FPSLimiter _fpsLimiter = new FPSLimiter();
-        private uint _lastRec = 0;
-        private uint _lastSent = 0;
         private Stopwatch _bwTimer = new Stopwatch();
-        private SmoothDouble _sentSmooth = new SmoothDouble(50);
-        private SmoothDouble _recSmooth = new SmoothDouble(50);
+        private SmoothDouble _updateTimeSmooth = new SmoothDouble(60);
+        private SmoothDouble _collisionTimeSmooth = new SmoothDouble(60);
+        private SmoothDouble _netTimeSmooth = new SmoothDouble(60);
+        private SmoothDouble _renderTimeSmooth = new SmoothDouble(60);
+        private SmoothDouble _fpsSmooth = new SmoothDouble(10);
+        private SmoothDouble _sentBytesSmooth = new SmoothDouble(50);
+        private SmoothDouble _recBytesSmooth = new SmoothDouble(50);
+        private SmoothDouble _sentPacketsSmooth = new SmoothDouble(50);
+        private SmoothDouble _recPacketsSmooth = new SmoothDouble(50);
+
+        private double _renderFPS = 0;
+        private double _lastFrameTime = 0;
+        private uint _lastRecBytes = 0;
+        private uint _lastSentBytes = 0;
+        private uint _lastRecPackets = 0;
+        private uint _lastSentPackets = 0;
 
         private string _address;
         private string _serverName;
         private int _port;
+        private bool _mouseOverPlayerList = false;
         private GameObjectManager _objs = World.ObjectManager;
         private NetEventManager _netMan;
         private DiscoveryServer _discovery;
-        private CollisionManager _collisions;
         private NetPlayHost _server;
         private Renderer _render = null;
+        private FPSLimiter _fpsLimiter = new FPSLimiter();
 
-        private bool _queueNextViewId = false;
-        private bool _queuePrevViewId = false;
+        private ConcurrentQueue<Action> _actionQueue = new ConcurrentQueue<Action>();
         private BindingList<NetPlayer> _currentPlayers = new BindingList<NetPlayer>();
 
         private Form _viewPort = null;
@@ -89,14 +81,10 @@ namespace PolyPlane.Server
             this.Disposed += ServerUI_Disposed; ;
 
             _updateTimer.Tick += UpdateTimer_Tick;
-            _updateTimer.Interval = 32;
+            _updateTimer.Interval = 66;
 
-            // Periodically broadcast discovery & time sync packets.
+            // Periodically broadcast discovery packets.
             _discoveryTimer.TriggerCallback = () => _discovery?.BroadcastServerInfo(new DiscoveryPacket(_address, _serverName, _port));
-            _syncTimer.TriggerCallback = () => _netMan.SendSyncPacket();
-
-            _multiThreadNum = Environment.ProcessorCount - 2;
-
 
             AITypeComboBox.Items.Clear();
             AITypeComboBox.DataSource = Enum.GetValues<AIPersonality>();
@@ -109,7 +97,12 @@ namespace PolyPlane.Server
             ChatMessageTextBox.MaxLength = ChatInterface.MAX_CHARS;
 
             TimeOfDaySlider.Maximum = (int)World.MAX_TIMEOFDAY;
-            DeltaTimeNumeric.Value = (decimal)World.DT;
+            DeltaTimeNumeric.Value = (decimal)World.TargetDT;
+        }
+
+        private void EnqueueAction(Action action)
+        {
+            _actionQueue.Enqueue(action);
         }
 
         private void StartServerButton_Click(object sender, EventArgs e)
@@ -126,13 +119,15 @@ namespace PolyPlane.Server
                 _server = new ServerNetHost(port, addy);
                 _netMan = new NetEventManager(_server);
                 _discovery = new DiscoveryServer();
-                _collisions = new CollisionManager(_netMan);
+                var collisions = new CollisionManager(_netMan);
+                World.ObjectManager.SetCollisionManager(collisions);
 
                 _netMan.PlayerDisconnected += NetMan_PlayerDisconnected;
                 _netMan.PlayerJoined += NetMan_PlayerJoined;
                 _netMan.PlayerRespawned += NetMan_PlayerRespawned;
                 _netMan.NewChatMessage += NetMan_NewChatMessage;
                 _netMan.PlayerEventMessage += NetMan_PlayerEventMessage;
+                _server.PeerTimeoutEvent += Server_PeerTimeoutEvent;
 
                 _objs.PlayerKilledEvent += PlayerKilledEvent;
                 _objs.NewPlayerEvent += NewPlayerEvent;
@@ -142,8 +137,6 @@ namespace PolyPlane.Server
                 if (EnableDiscoveryCheckBox.Checked)
                     _discoveryTimer.Start();
 
-                _syncTimer.Start();
-
                 StartGameThread();
                 _updateTimer.Start();
 
@@ -151,6 +144,40 @@ namespace PolyPlane.Server
                 PortTextBox.Enabled = false;
                 StartServerButton.Enabled = false;
                 ServerNameTextBox.Enabled = false;
+            }
+        }
+
+        private void PlayerDisconnected(int playerID)
+        {
+            _netMan.SendPlayerDisconnectPacket((uint)playerID);
+
+            var netPlayer = _currentPlayers.Where(p => p.ID.PlayerID == playerID).FirstOrDefault();
+            if (netPlayer != null)
+            {
+                EnqueueAction(() =>
+                {
+                    var plane = _objs.GetPlaneByPlayerID(playerID);
+
+                    if (plane != null)
+                        plane.IsExpired = true;
+
+                });
+
+                _currentPlayers.Remove(netPlayer);
+                AddNewEventMessage($"'{netPlayer.Name}' has left.");
+                _netMan.ClearImpacts(playerID);
+            }
+        }
+
+        private void Server_PeerTimeoutEvent(object? sender, ENet.Peer e)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(() => Server_PeerTimeoutEvent(sender, e));
+            }
+            else
+            {
+                PlayerDisconnected((int)e.ID);
             }
         }
 
@@ -229,12 +256,7 @@ namespace PolyPlane.Server
             }
             else
             {
-                var netPlayer = _currentPlayers.Where(p => p.ID.PlayerID == e).FirstOrDefault();
-                if (netPlayer != null)
-                {
-                    _currentPlayers.Remove(netPlayer);
-                    AddNewEventMessage($"'{netPlayer.Name}' has left.");
-                }
+                PlayerDisconnected(e);
             }
         }
 
@@ -246,12 +268,7 @@ namespace PolyPlane.Server
             }
             else
             {
-                var netPlayer = _currentPlayers.Where(p => p.ID.PlayerID == e.ID).FirstOrDefault();
-                if (netPlayer != null)
-                {
-                    _currentPlayers.Remove(netPlayer);
-                    AddNewEventMessage($"'{netPlayer.Name}' has left.");
-                }
+                PlayerDisconnected((int)e.ID);
             }
         }
 
@@ -266,6 +283,14 @@ namespace PolyPlane.Server
                 ChatBox.Items.Add(message);
                 ChatBox.TopIndex = ChatBox.Items.Count - 1;
             }
+        }
+
+        private void SendChatMessage(string message)
+        {
+            _netMan.ChatInterface.SendMessage(message);
+            ChatMessageTextBox.Text = string.Empty;
+
+            AddNewEventMessage($"Server: {message}");
         }
 
         private void ServerUI_Disposed(object? sender, EventArgs e)
@@ -306,112 +331,53 @@ namespace PolyPlane.Server
 
         private void AdvanceServer()
         {
-            _updateTime = TimeSpan.Zero;
-            _collisionTime = TimeSpan.Zero;
-            _renderTime = TimeSpan.Zero;
-            _netTime = TimeSpan.Zero;
+            World.Update();
 
-            _timer.Restart();
-            ProcessObjQueue();
-            _timer.Stop();
-            _updateTime += _timer.Elapsed;
-
+            var dt = World.CurrentDT;
             var now = World.CurrentTimeMs();
-            var dt = World.DT;
 
+            // Compute time elapsed since last frame.
             var elapFrameTime = now - _lastFrameTime;
             _lastFrameTime = now;
+
+            // Compute current FPS.
+            var fps = 1000d / elapFrameTime;
+            _renderFPS = fps;
+
+            ProcessQueuedActions();
+
+            // Process net events.
+            Profiler.Start(ProfilerStat.NetTime);
+
+            _netMan.HandleNetEvents(dt);
+
+            _netTimeSmooth.Add(Profiler.Stop(ProfilerStat.NetTime).GetElapsedMilliseconds());
 
             // Update/advance objects.
             if (!World.IsPaused)
             {
-                if (World.DynamicTimeDelta)
-                    dt = World.SetDynamicDT(elapFrameTime);
-
-                _timer.Restart();
-
-                // Update all objects.
+                // Update all objects and world.
                 _objs.Update(dt);
-
-                _timer.Stop();
-                _updateTime += _timer.Elapsed;
-
-                _timer.Restart();
-                _collisions.DoCollisions(dt);
-                _timer.Stop();
-                _collisionTime += _timer.Elapsed;
-
-                _timer.Restart();
-
-                World.UpdateAirDensityAndWind(dt);
-
-                _timer.Stop();
-                _updateTime += _timer.Elapsed;
             }
 
-            _timer.Restart();
-
+            // Render if spectate viewport is active.
             if (_render != null && !_stopRender)
             {
                 FighterPlane viewPlane = World.GetViewPlane();
 
                 if (viewPlane != null)
+                {
+                    _render.InitGfx();
                     _render.RenderFrame(viewPlane, dt);
+                }
+
+                _renderTimeSmooth.Add(Profiler.GetElapsedMilliseconds(ProfilerStat.Render));
             }
 
-            _timer.Stop();
-            _renderTime = _timer.Elapsed;
-
-
-            _timer.Restart();
-            _netMan.DoNetEvents(dt);
-            _timer.Stop();
-            _netTime = _timer.Elapsed;
-            _netTimeSmooth.Add((float)_netTime.TotalMilliseconds);
+            _updateTimeSmooth.Add(Profiler.GetElapsedMilliseconds(ProfilerStat.Update));
+            _collisionTimeSmooth.Add(Profiler.GetElapsedMilliseconds(ProfilerStat.Collisions));
 
             _discoveryTimer.Update(dt);
-            _syncTimer.Update(dt);
-
-            var fpsNow = DateTime.UtcNow.Ticks;
-            var fps = TimeSpan.TicksPerSecond / (float)(fpsNow - _lastRenderTime);
-            _lastRenderTime = fpsNow;
-            _renderFPS = fps;
-
-            if (this._pauseRequested)
-            {
-                if (!World.IsPaused)
-                    World.IsPaused = true;
-                else
-                    World.IsPaused = false;
-
-                this._pauseRequested = false;
-            }
-
-            if (this._spawnAIPlane)
-            {
-                SpawnAIPlane(_aiPersonality);
-                this._spawnAIPlane = false;
-            }
-
-
-            if (this._spawnRandomAIPlane)
-            {
-                SpawnAIPlane();
-                this._spawnRandomAIPlane = false;
-            }
-
-            if (_clearAIPlanes)
-            {
-                _clearAIPlanes = false;
-                RemoveAIPlanes();
-            }
-
-            if (_toggleGunsOnly)
-            {
-                World.GunsOnly = GunsOnlyCheckBox.Checked;
-                _netMan.SendSyncPacket();
-                _toggleGunsOnly = false;
-            }
 
             HandleAIPlaneRespawn();
 
@@ -423,8 +389,10 @@ namespace PolyPlane.Server
             if (!World.RespawnAIPlanes)
                 return;
 
-            foreach (var plane in _objs.Planes)
+            for (int i = 0; i < _objs.Planes.Count; i++)
             {
+                var plane = _objs.Planes[i];
+
                 if (plane.IsAI && plane.HasCrashed && plane.AIRespawnReady)
                 {
                     ResetPlane(plane);
@@ -434,38 +402,26 @@ namespace PolyPlane.Server
 
         private void ResetPlane(FighterPlane plane)
         {
-            _netMan.SendPlaneReset(plane);
+            var spawnPos = Utilities.FindSafeSpawnPoint();
 
-            plane.ThrustOn = true;
-            plane.Position = Utilities.FindSafeSpawnPoint();
-            plane.Velocity = new D2DPoint(500f, 0f);
-            plane.SyncFixtures();
-            plane.RotationSpeed = 0f;
-            plane.Rotation = 0f;
-            plane.IsDisabled = false;
-            plane.FixPlane();
+            _netMan.ServerSendPlaneReset(plane, spawnPos);
+
+            plane.RespawnPlane(spawnPos);
         }
 
-        private void ProcessObjQueue()
+        private void ProcessQueuedActions()
         {
-            if (_queueNextViewId)
+            while (_actionQueue.Count > 0)
             {
-                World.NextViewPlane();
-                _queueNextViewId = false;
+                if (_actionQueue.TryDequeue(out var action))
+                    action();
             }
-
-            if (_queuePrevViewId)
-            {
-                World.PrevViewPlane();
-                _queuePrevViewId = false;
-            }
-
         }
 
         private void DropDecoy(Decoy decoy)
         {
             _objs.EnqueueDecoy(decoy);
-            _netMan.SendNewDecoy(decoy);
+            _netMan.SendNewDecoyPacket(decoy);
         }
 
         private FighterPlane GetAIPlane(AIPersonality? personality = null)
@@ -475,15 +431,16 @@ namespace PolyPlane.Server
             FighterPlane aiPlane;
 
             if (personality.HasValue)
-                aiPlane = new FighterPlane(pos, personality.Value, World.GetNextPlayerId());
+                aiPlane = new FighterPlane(pos, D2DColor.Randomly(), personality.Value);
             else
-                aiPlane = new FighterPlane(pos, Utilities.RandomEnum<AIPersonality>(), World.GetNextPlayerId());
+                aiPlane = new FighterPlane(pos, D2DColor.Randomly(), Utilities.GetRandomPersonalities(2));
 
             aiPlane.PlayerName = "(BOT) " + Utilities.GetRandomName();
 
             aiPlane.FireMissileCallback = (m) =>
             {
                 _objs.EnqueueMissile(m);
+
                 _netMan.SendNewMissilePacket(m);
             };
 
@@ -491,12 +448,15 @@ namespace PolyPlane.Server
             aiPlane.FireBulletCallback = b =>
             {
                 _objs.EnqueueBullet(b);
+
                 _netMan.SendNewBulletPacket(b);
             };
 
             aiPlane.DropDecoyCallback = DropDecoy;
 
-            aiPlane.Velocity = new D2DPoint(400f, 0f);
+            aiPlane.Velocity = new D2DPoint(World.PlaneSpawnVelo, 0f);
+
+            aiPlane.PlayerKilledCallback += _netMan.HandlePlayerKilled;
 
             return aiPlane;
         }
@@ -528,6 +488,11 @@ namespace PolyPlane.Server
 
         private void UpdatePlayerList()
         {
+            if (_mouseOverPlayerList)
+                return;
+
+            PlayersListBox.SuspendLayout();
+
             for (int i = 0; i < _currentPlayers.Count; i++)
             {
                 var player = _currentPlayers[i];
@@ -570,6 +535,7 @@ namespace PolyPlane.Server
                 }
             }
 
+            PlayersListBox.ResumeLayout();
         }
 
         private void KickSelectedPlayer()
@@ -584,7 +550,8 @@ namespace PolyPlane.Server
                 playerPlane.IsExpired = true;
 
             var kickPacket = new BasicPacket(PacketTypes.KickPlayer, player.ID);
-            _server.EnqueuePacket(kickPacket);
+
+            _server.EnqueuePacket(kickPacket, SendType.ToAll);
         }
 
         private string GetInfo()
@@ -597,25 +564,25 @@ namespace PolyPlane.Server
             var numObj = _objs.TotalObjects;
             infoText += $"Num Objects: {numObj}\n";
             infoText += $"Planes: {_objs.Planes.Count}\n";
-            infoText += $"Clients: {_server.Host.PeersCount}\n";
+            infoText += $"Clients: {_server.PeersCount}\n";
 
-            infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";
-            infoText += $"Update ms: {_updateTimeSmooth.Add((float)Math.Round(_updateTime.TotalMilliseconds, 2))}\n";
-            infoText += $"Collision ms: {_collisionTimeSmooth.Add((float)Math.Round(_collisionTime.TotalMilliseconds, 2))}\n";
-            infoText += $"Net ms: {_netTimeSmooth.Add((float)Math.Round(_collisionTime.TotalMilliseconds, 2))}\n";
+            infoText += $"FPS: {Math.Round(_fpsSmooth.Add(_renderFPS), 0)}\n";
+            infoText += $"Update ms: {Math.Round(_updateTimeSmooth.Current, 2)}\n";
+            infoText += $"Collision ms: {Math.Round(_collisionTimeSmooth.Current, 2)}\n";
+            infoText += $"Net ms: {Math.Round(_netTimeSmooth.Current, 2)}\n";
 
             if (_viewPort != null)
-                infoText += $"Render ms: {Math.Round(_renderTime.TotalMilliseconds, 2)}\n";
+                infoText += $"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}\n";
 
             infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
-
-            infoText += $"Bytes Rec: {_netMan.Host.Host.BytesReceived}\n";
-            infoText += $"Bytes Sent: {_netMan.Host.Host.BytesSent}\n";
-            infoText += $"MB Rec/s: {Math.Round(_recSmooth.Current, 2)}\n";
-            infoText += $"MB Sent/s: {Math.Round(_sentSmooth.Current, 2)}\n";
-            infoText += $"DT: {Math.Round(World.DT, 4)}\n";
-            infoText += $"Interp: {World.InterpOn.ToString()}\n";
-            infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
+            infoText += $"Packets Rec/s: {Math.Round(_recPacketsSmooth.Current, 2)}\n";
+            infoText += $"Packets Sent/s: {Math.Round(_sentPacketsSmooth.Current, 2)}\n";
+            infoText += $"Packets Deferred: {_netMan.NumDeferredPackets}\n";
+            infoText += $"Packets Expired: {_netMan.NumExpiredPackets}\n";
+            infoText += $"MB Rec/s: {Math.Round(_recBytesSmooth.Current, 3)}\n";
+            infoText += $"MB Sent/s: {Math.Round(_sentBytesSmooth.Current, 3)}\n";
+            infoText += $"DT: {Math.Round(World.TargetDT, 4)}\n";
+            infoText += $"TimeOfDay: {Math.Round(World.TimeOfDay, 2)}\n";
 
             return infoText;
         }
@@ -629,63 +596,92 @@ namespace PolyPlane.Server
 
             _bwTimer.Stop();
             var elap = _bwTimer.Elapsed;
-            var recDiff = _netMan.Host.Host.BytesReceived - _lastRec;
-            var sentDiff = _netMan.Host.Host.BytesSent - _lastSent;
+            var recBytesDiff = _netMan.Host.BytesReceived - _lastRecBytes;
+            var sentBytesDiff = _netMan.Host.BytesSent - _lastSentBytes;
 
-            _lastRec = _netMan.Host.Host.BytesReceived;
-            _lastSent = _netMan.Host.Host.BytesSent;
+            var recPacketsDiff = _netMan.Host.PacketsReceived - _lastRecPackets;
+            var sentPacketsDiff = _netMan.Host.PacketsSent - _lastSentPackets;
 
-            _sentSmooth.Add((sentDiff / elap.TotalSeconds) / BYTES_PER_MB);
-            _recSmooth.Add((recDiff / elap.TotalSeconds) / BYTES_PER_MB);
+            _lastRecBytes = _netMan.Host.BytesReceived;
+            _lastSentBytes = _netMan.Host.BytesSent;
+            _lastRecPackets = _netMan.Host.PacketsReceived;
+            _lastSentPackets = _netMan.Host.PacketsSent;
+
+            _recPacketsSmooth.Add(recPacketsDiff / elap.TotalSeconds);
+            _sentPacketsSmooth.Add(sentPacketsDiff / elap.TotalSeconds);
+
+            _recBytesSmooth.Add((recBytesDiff / elap.TotalSeconds) / BYTES_PER_MB);
+            _sentBytesSmooth.Add((sentBytesDiff / elap.TotalSeconds) / BYTES_PER_MB);
             _bwTimer.Restart();
         }
 
         private void InitViewPort()
         {
-            if (_viewPort != null)
+            if (_objs.Planes.Count == 0)
                 return;
 
-            _viewPort = new Form();
-            _viewPort.Size = new Size(1346, 814);
-            _viewPort.KeyPress += ViewPort_KeyPress;
-            _viewPort.Disposed += ViewPort_Disposed;
-            _viewPort.Show();
+            if (_viewPort == null || (_viewPort != null && _viewPort.IsDisposed))
+            {
+                _viewPort = new Form();
+                _viewPort.Size = new Size(1346, 814);
+                _viewPort.KeyPress += ViewPort_KeyPress;
+                _viewPort.FormClosing += ViewPort_FormClosing;
+                _viewPort.MouseWheel += ViewPort_MouseWheel;
 
-            _render = new Renderer(_viewPort, _netMan);
+                _render = new Renderer(_viewPort, _netMan);
+            }
+
+            _viewPort.WindowState = FormWindowState.Normal;
+            _viewPort.Show();
+            _viewPort.BringToFront();
+
             _stopRender = false;
         }
 
-        private void ViewPort_Disposed(object? sender, EventArgs e)
+        private void ViewPort_MouseWheel(object? sender, MouseEventArgs e)
         {
-            // TODO: Figure out why we get no output after the first time the viewport is closed and reopened.
+            if (e.Delta > 0)
+            {
+                _render?.DoMouseWheelUp();
+            }
+            else
+            {
+                _render?.DoMouseWheelDown();
+            }
+        }
+
+        private void ViewPort_FormClosing(object? sender, FormClosingEventArgs e)
+        {
+            e.Cancel = true;
+
+            _viewPort.WindowState = FormWindowState.Minimized;
+
             _stopRender = true;
-            _render?.Dispose();
-            _render = null;
-            _viewPort.KeyPress -= ViewPort_KeyPress;
-            _viewPort.Disposed -= ViewPort_Disposed;
-            _viewPort = null;
+
+            _gameThread.Join(100);
         }
 
         private void ViewPort_KeyPress(object? sender, KeyPressEventArgs e)
         {
             switch (e.KeyChar)
             {
-
                 case '[':
-                    _queuePrevViewId = true;
-
+                    EnqueueAction(() => World.PrevViewPlane());
                     break;
                 case ']':
 
-                    _queueNextViewId = true;
+                    EnqueueAction(() => World.NextViewPlane());
                     break;
-
                 case '=' or '+':
                     _render?.ZoomIn();
                     break;
 
                 case '-' or '_':
                     _render?.ZoomOut();
+                    break;
+
+                case 'o':
+                    _render.ToggleInfo();
                     break;
             }
         }
@@ -701,7 +697,13 @@ namespace PolyPlane.Server
 
         private void PauseButton_Click(object sender, EventArgs e)
         {
-            _pauseRequested = true;
+            var pauseAction = new Action(() =>
+            {
+                World.IsPaused = !World.IsPaused;
+                _netMan.ServerSendGameState();
+            });
+
+            EnqueueAction(pauseAction);
         }
 
         private void SpawnAIPlaneButton_Click(object sender, EventArgs e)
@@ -712,13 +714,9 @@ namespace PolyPlane.Server
             {
                 var personality = (AIPersonality)selected;
                 _aiPersonality = personality;
-                _spawnAIPlane = true;
-            }
-        }
 
-        private void InterpCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            World.InterpOn = InterpCheckBox.Checked;
+                EnqueueAction(() => SpawnAIPlane(_aiPersonality));
+            }
         }
 
         private void ShowViewPortButton_Click(object sender, EventArgs e)
@@ -728,12 +726,12 @@ namespace PolyPlane.Server
 
         private void SpawnRandomAIButton_Click(object sender, EventArgs e)
         {
-            _spawnRandomAIPlane = true;
+            EnqueueAction(SpawnAIPlane);
         }
 
         private void RemoveAIPlanesButton_Click(object sender, EventArgs e)
         {
-            _clearAIPlanes = true;
+            EnqueueAction(RemoveAIPlanes);
         }
 
         private void kickToolStripMenuItem_Click(object sender, EventArgs e)
@@ -743,27 +741,21 @@ namespace PolyPlane.Server
 
         private void SentChatButton_Click(object sender, EventArgs e)
         {
-            _netMan.ChatInterface.SendMessage(ChatMessageTextBox.Text);
-            ChatMessageTextBox.Text = string.Empty;
+            SendChatMessage(ChatMessageTextBox.Text);
         }
 
         private void ChatMessageTextBox_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == (char)Keys.Enter)
             {
-                _netMan.ChatInterface.SendMessage(ChatMessageTextBox.Text);
-                ChatMessageTextBox.Text = string.Empty;
+                SendChatMessage(ChatMessageTextBox.Text);
             }
         }
 
         private void TimeOfDaySlider_Scroll(object sender, EventArgs e)
         {
             World.TimeOfDay = TimeOfDaySlider.Value;
-        }
-
-        private void TimeOfDaySlider_ValueChanged(object sender, EventArgs e)
-        {
-
+            _netMan.ServerSendGameState();
         }
 
         private void EnableDiscoveryCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -776,7 +768,13 @@ namespace PolyPlane.Server
 
         private void GunsOnlyCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            _toggleGunsOnly = true;
+            var toggleGuns = new Action(() =>
+            {
+                World.GunsOnly = GunsOnlyCheckBox.Checked;
+                _netMan.ServerSendGameState();
+            });
+
+            EnqueueAction(toggleGuns);
         }
 
         private void DeltaTimeNumeric_ValueChanged(object sender, EventArgs e)
@@ -784,14 +782,24 @@ namespace PolyPlane.Server
             if (_server == null)
                 return;
 
-            World.DT = (float)DeltaTimeNumeric.Value;
-            _netMan.SendSyncPacket();
+            World.TargetDT = (float)DeltaTimeNumeric.Value;
+            _netMan.ServerSendGameState();
         }
 
         private void DefaultDTButton_Click(object sender, EventArgs e)
         {
-            World.DT = World.DEFAULT_DT;
-            DeltaTimeNumeric.Value = (decimal)World.DT;
+            World.TargetDT = World.DEFAULT_DT;
+            DeltaTimeNumeric.Value = (decimal)World.TargetDT;
+        }
+
+        private void PlayersListBox_MouseEnter(object sender, EventArgs e)
+        {
+            _mouseOverPlayerList = true;
+        }
+
+        private void PlayersListBox_MouseLeave(object sender, EventArgs e)
+        {
+            _mouseOverPlayerList = false;
         }
     }
 }

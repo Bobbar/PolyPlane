@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using OpenTK.Graphics.OpenGL;
+using SkiaSharp;
 using System.Numerics;
 using unvell.D2DLib;
 
@@ -6,26 +7,6 @@ namespace PolyPlane.Helpers
 {
     public static class Extensions
     {
-        public static D2DPoint Add(this D2DPoint point, D2DPoint other)
-        {
-            return new D2DPoint(point.X + other.X, point.Y + other.Y);
-        }
-
-        public static D2DPoint Add(this D2DPoint point, float value)
-        {
-            return new D2DPoint(point.X + value, point.Y + value);
-        }
-
-        public static D2DPoint Subtract(this D2DPoint point, D2DPoint other)
-        {
-            return new D2DPoint(point.X - other.X, point.Y - other.Y);
-        }
-
-        public static D2DPoint Subtract(this D2DPoint point, float value)
-        {
-            return new D2DPoint(point.X - value, point.Y - value);
-        }
-
         public static float NextFloat(this Random rnd, float min, float max)
         {
             return (float)rnd.NextDouble() * (max - min) + min;
@@ -48,11 +29,6 @@ namespace PolyPlane.Helpers
                 return new D2DPoint(-point.Y, point.X);
         }
 
-        public static D2DPoint AbsDiff(this D2DPoint point, D2DPoint other)
-        {
-            return new D2DPoint(Math.Abs(point.X - other.X), Math.Abs(point.Y - other.Y));
-        }
-
         public static D2DPoint ToD2DPoint(this Point pnt)
         {
             return new D2DPoint(pnt.X, pnt.Y);
@@ -63,6 +39,11 @@ namespace PolyPlane.Helpers
             return new D2DColor(vec.X, vec.Y, vec.Z, vec.W);
         }
 
+        public static Color ToGDIColor(this D2DColor color)
+        {
+            return Color.FromArgb((int)(255f * color.a), (int)(255f * color.r), (int)(255f * color.g), (int)(255f * color.b));
+        }
+
         public static Vector4 ToVector4(this D2DColor color)
         {
             return new Vector4(color.a, color.r, color.g, color.b);
@@ -70,8 +51,8 @@ namespace PolyPlane.Helpers
 
         public static float Angle(this D2DPoint vector, bool clamp = true)
         {
-            var angle = (float)Math.Atan2(vector.Y, vector.X) * Utilities.RADS_TO_DEGREES;
-
+            var angle = MathF.Atan2(vector.Y, vector.X) * Utilities.RADS_TO_DEGREES;
+            
             if (clamp)
                 angle = Utilities.ClampAngle(angle);
 
@@ -80,7 +61,7 @@ namespace PolyPlane.Helpers
 
         public static float AngleRads(this D2DPoint vector, bool clamp = false)
         {
-            var angle = (float)Math.Atan2(vector.Y, vector.X);
+            var angle = MathF.Atan2(vector.Y, vector.X);
 
             return angle;
         }
@@ -179,6 +160,16 @@ namespace PolyPlane.Helpers
         public static bool Contains(this D2DRect rect, D2DPoint pos, float radius)
         {
             return rect.Inflate(radius, radius).Contains(pos);
+        }
+
+        public static bool Contains(this D2DEllipse ellipse, float ellipseRotation, D2DPoint pos)
+        {
+            var mat = Matrix3x2.CreateRotation(-ellipseRotation * (MathF.PI / 180f), ellipse.origin);
+            var transPos = D2DPoint.Transform(pos, mat);
+
+            var p = MathF.Pow(transPos.X - ellipse.origin.X, 2f) / MathF.Pow(ellipse.radiusX, 2f) + MathF.Pow(transPos.Y - ellipse.origin.Y, 2f) / MathF.Pow(ellipse.radiusY, 2f);
+
+            return p <= 1f;
         }
 
         public static D2DPoint AspectRatioFactor(this D2DRect rect)
@@ -280,6 +271,11 @@ namespace PolyPlane.Helpers
         public static SKColor ToSKColor(this Vector4 color)
         {
             return new SKColor((byte)(255f * color.Y), (byte)(255f * color.Z), (byte)(255f * color.W), (byte)(255f * color.X));
+        }
+
+        public static SKSize ToSKSize(this D2DSize size)
+        {
+            return new SKSize(size.width, size.height);
         }
 
     }

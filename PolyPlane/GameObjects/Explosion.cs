@@ -1,11 +1,12 @@
 ﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.GameObjects.Particles;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Explosion : GameObject, ICollidable, INoGameID, ILightMapContributor
+    public sealed class Explosion : GameObject, INoGameID, ILightMapContributor
     {
         public float MaxRadius { get; set; } = 100f;
         public float MaxShockwaveRadius { get; set; } = 100f;
@@ -18,25 +19,29 @@ namespace PolyPlane.GameObjects
 
         private D2DColor _color = new D2DColor(0.4f, D2DColor.Orange);
         private D2DColor _showckWaveColor = new D2DColor(1f, D2DColor.White);
-        private readonly D2DColor _lightMapColor = new D2DColor(1f, 0.96f, 0.67f, 0.26f);
+        private static readonly D2DColor _lightMapColor = new D2DColor(1f, 0.96f, 0.67f, 0.26f);
 
-        public Explosion(GameObject owner, float maxRadius, float duration) : base(owner.Position)
+        public Explosion() : base()
         {
+            this.Flags = GameObjectFlags.SpatialGrid;
+        }
+
+        public void ReInit(GameObject owner, float maxRadius, float duration)
+        {
+            this.IsExpired = false;
+            this.Age = 0f;
+            this.Position = owner.Position;
             this.Owner = owner;
             this.MaxRadius = maxRadius;
             this.MaxShockwaveRadius = maxRadius * 6f;
             this.Duration = duration;
             this.PlayerID = owner.PlayerID;
-
-            // If are right at ground level, spawn just below it.
-            // Allows explosions to kick around debris and planes more.
-            if (this.Position.Y == 0f)
-                this.Position += new D2DPoint(0f, 10f);
+            _hasShockWave = false;
 
             if (this.Owner == null || this.Owner is not Bullet)
                 _hasShockWave = true;
 
-            _color.r = _rnd.NextFloat(0.8f, 1f);
+            _color.r = Utilities.Rnd.NextFloat(0.8f, 1f);
 
             int NUM_FLAME = (int)(maxRadius / 6f);
 
@@ -47,13 +52,16 @@ namespace PolyPlane.GameObjects
                 var radius = NUM_FLAME + Utilities.Rnd.NextFloat(-20f, 10f);
                 radius = Math.Clamp(radius, 8f, 100f);
 
+                // Add a small amount of velocity from the owner object.
+                velo += owner.Velocity * 0.25f;
+
                 Particle.SpawnParticle(this, pnt, velo, radius, World.GetRandomFlameColor(), World.BlackSmokeColor);
             }
         }
 
-        public override void Update(float dt)
+        public override void DoUpdate(float dt)
         {
-            base.Update(dt);
+            base.DoUpdate(dt);
 
             _currentRadius = MaxRadius * Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.Out.EaseElastic);
             _color.a = 1f - Utilities.FactorWithEasing(this.Age, Duration, EasingFunctions.Out.EaseQuintic);
@@ -72,7 +80,7 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
-            if (!this.IsInViewport(ctx.Viewport))
+            if (!this.ContainedBy(ctx.Viewport))
                 return;
 
             if (this.Age < Duration)
@@ -85,10 +93,10 @@ namespace PolyPlane.GameObjects
 
         }
 
-        public override bool IsInViewport(D2DRect rect)
+        public override bool ContainedBy(D2DRect rect)
         {
             var ret = rect.Contains(new D2DEllipse(this.Position, new D2DSize(_currentShockWaveRadius, _currentShockWaveRadius)))
-                   || rect.Contains(new D2DEllipse(this.Position, new D2DSize(_currentRadius, _currentRadius)));
+                   || rect.Contains(new D2DEllipse(this.Position, new D2DSize(_currentRadius * 10f, _currentRadius * 10f)));
 
             return ret;
         }
@@ -96,12 +104,14 @@ namespace PolyPlane.GameObjects
         public override void Dispose()
         {
             base.Dispose();
+
+            World.ObjectManager.ReturnExplosion(this);
         }
 
         float ILightMapContributor.GetLightRadius()
         {
             if (this.Owner is not GuidedMissile)
-                return _currentRadius * 10f;
+                return _currentRadius * 12f;
             else
                 return _currentRadius * 7f;
         }

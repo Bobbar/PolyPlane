@@ -3,6 +3,7 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.ES20;
 using OpenTK.Platform.Windows;
 using PolyPlane.GameObjects;
+using PolyPlane.GameObjects.Managers;
 using PolyPlane.Net;
 using SkiaSharp;
 using SkiaSharp.Internals;
@@ -39,6 +40,8 @@ namespace PolyPlane.Rendering
         private int Width => (int)(_targetForm.Width / (_targetForm.DeviceDpi / DEFAULT_DPI));
         private int Height => (int)(_targetForm.Height / (_targetForm.DeviceDpi / DEFAULT_DPI));
 
+        private float _groundColorTOD = 0f;
+
 
         private const float VIEW_SCALE = 4f;
         private const float DEFAULT_DPI = 96f;
@@ -51,6 +54,7 @@ namespace PolyPlane.Rendering
         private float _currentDPI = DEFAULT_DPI;
 
         private GameObjectManager _objs = World.ObjectManager;
+      
 
         private SKColor _groundColorLight = new SKColor(0, 74, 0, 255);
         private SKColor _groundColorDark = SKColors.DarkGreen;
@@ -58,15 +62,25 @@ namespace PolyPlane.Rendering
         private SKPaint _groundBrush;
 
 
+        private const float GROUND_TOD_INTERVAL = 0.1f; // Update ground brush when elapsed TOD exceeds this amount.
+
+        private const int NUM_CLOUDS = 2000;
+        private const int NUM_TREES = 1000;
+
         //private SmoothDouble _renderTimeSmooth = new SmoothDouble(10);
         //private Stopwatch _timer = new Stopwatch();
 
         private long _lastRenderTime = 0;
         private SmoothFloat _renderFPSSmooth = new SmoothFloat(20);
 
+        private CloudManager _cloudManager = new();
+
+
+
         public GLRenderer(Control renderTarget, NetEventManager netMan)
         {
-
+            _groundColorTOD = World.TimeOfDay;
+           
         }
 
         public Control InitGLControl(Control targetControl)
@@ -87,6 +101,14 @@ namespace PolyPlane.Rendering
 
             return _glControl;
 
+        }
+
+        private void InitProceduralGenStuff(GLRenderContext ctx)
+        {
+            var rnd = new Random(1234);
+
+            _cloudManager.GenClouds(rnd, NUM_CLOUDS);
+            //_treeManager.GenTrees(rnd, NUM_TREES, ctx);
         }
 
         private void Resize(object? sender, EventArgs e)
@@ -168,36 +190,38 @@ namespace PolyPlane.Rendering
         private void HandleCreated(object? sender, EventArgs e)
         {
             InitGfx();
+
+            InitProceduralGenStuff(_ctx);
         }
 
 
         private void UpdateTimersAndAnims(float dt)
         {
             //_hudMessageTimeout.Update(dt);
-            //_warningLightFlashTimer.Update(dt);
 
             //_screenFlash.Update(dt);
             //_screenShakeX.Update(dt);
             //_screenShakeY.Update(dt);
+            //_warnLightFlash.Update(World.DEFAULT_DT);
 
             //_contrailBox.Update(_objs.Planes, dt);
 
-            //if (!World.IsPaused)
-            //{
-            //    UpdateClouds(dt);
+            if (!World.IsPaused)
+            {
+                _cloudManager.Update();
 
-            //    // Check if we need to update the ground brush.
-            //    var todDiff = Math.Abs(World.TimeOfDay - _groundColorTOD);
-            //    if (todDiff > GROUND_TOD_INTERVAL)
-            //    {
-            //        _groundColorTOD = World.TimeOfDay;
-            //        UpdateGroundColorBrush(_ctx);
-            //    }
+                // Check if we need to update the ground brush.
+                var todDiff = Math.Abs(World.TimeOfDay - _groundColorTOD);
+                if (todDiff > GROUND_TOD_INTERVAL)
+                {
+                    _groundColorTOD = World.TimeOfDay;
+                    UpdateGroundColorBrush(_ctx);
+                }
 
-            //    UpdatePopMessages(dt);
-            //}
+                //UpdatePopMessages(dt);
+            }
 
-            UpdateGroundColorBrush(_ctx);
+            //UpdateGroundColorBrush(_ctx);
 
         }
 
@@ -325,13 +349,19 @@ namespace PolyPlane.Rendering
 
 
 
+            DrawClouds(ctx);
 
-                //viewPlane.RenderGL(_ctx);
+            //viewPlane.RenderGL(_ctx);
 
             ctx.PopViewPort();
             ctx.PopTransform();
         }
 
+
+        private void DrawClouds(GLRenderContext ctx)
+        {
+            _cloudManager.RenderGL(ctx);
+        }
 
         private void DrawSky(GLRenderContext ctx, GameObject viewObject)
         {
@@ -353,7 +383,7 @@ namespace PolyPlane.Rendering
             //var rect =  SKRect.Create(new SKPoint(this.Width * 0.5f, this.Height * 0.5f), new SKSize(this.Width, this.Height));
             var rect = SKRect.Create(new SKPoint(0f, 0f), new SKSize(this.Width, this.Height));
 
-            ctx.DrawRectangle(rect, color);
+            ctx.FillRectangle(rect, color);
         }
 
         private void DrawGround(GLRenderContext ctx, D2DPoint position)
@@ -381,7 +411,7 @@ namespace PolyPlane.Rendering
             //var rect = SKRect.Create(groundPos, new SKSize(this.Width * (World.ViewPortScaleMulti * 2f), (HEIGHT * 2f)));
             var rect = SKRect.Create(groundPos, new SKSize(World.ViewPortRect.Width, (HEIGHT * 2f) / ctx.CurrentScale));
 
-            ctx.DrawRectangle(rect, _groundBrush);
+            ctx.FillRectangle(rect, _groundBrush);
 
         }
 
@@ -422,7 +452,7 @@ namespace PolyPlane.Rendering
                     pos -= roundPos;
 
                     if (rect.Contains(pos))
-                        ctx.DrawRectangle(SKRect.Create(pos, d2dSz), color);
+                        ctx.FillRectangle(SKRect.Create(pos, d2dSz), color);
                 }
             }
         }

@@ -1,4 +1,5 @@
-﻿using PolyPlane.Helpers;
+﻿using PolyPlane.GameObjects.Particles;
+using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
@@ -10,6 +11,12 @@ namespace PolyPlane.GameObjects
         public D2DSize OuterHoleSize { get; set; }
         public D2DColor Color { get; set; }
 
+        public float Angle
+        {
+            get { return _rotOffset; }
+            set { _rotOffset = value; }
+        }
+
         public override float Rotation
         {
             get => base.Rotation + _rotOffset;
@@ -20,7 +27,7 @@ namespace PolyPlane.GameObjects
         private const float MAX_HOLE_SZ = 6f;
         private float _rotOffset = 0f;
 
-        public BulletHole(GameObject obj, D2DPoint offset, float angle, bool hasFlame = true) : base(obj, offset, hasFlame)
+        public BulletHole(GameObject obj, D2DPoint offset, float angle, bool hasFlame = true) : base(obj, offset, 4f, 15f)
         {
             // Fudge the hole size to ensure it's elongated in the Y direction.
             HoleSize = new D2DSize(Utilities.Rnd.NextFloat(MIN_HOLE_SZ + 2, MAX_HOLE_SZ + 2), Utilities.Rnd.NextFloat(MIN_HOLE_SZ, MAX_HOLE_SZ - 3));
@@ -37,24 +44,47 @@ namespace PolyPlane.GameObjects
         {
             base.FlipY();
             _rotOffset = Utilities.ClampAngle(_rotOffset * -1f);
-            this.Update(0f);
         }
 
         public override void Render(RenderContext ctx)
         {
             base.Render(ctx);
 
+            const float LIGHT_INTENSITY = 0.4f;
+
             var outColor = this.Color;
             var holeColor = D2DColor.Black;
 
-            ctx.FillEllipseWithLighting(new D2DEllipse(this.Position, this.OuterHoleSize), outColor, 0.3f);
-            ctx.FillEllipseWithLighting(new D2DEllipse(this.Position, this.HoleSize), holeColor, 0.3f);
+            ctx.FillEllipseWithLighting(new D2DEllipse(this.Position, this.OuterHoleSize), outColor, LIGHT_INTENSITY);
+            ctx.FillEllipseWithLighting(new D2DEllipse(this.Position, this.HoleSize), holeColor, LIGHT_INTENSITY);
         }
+
+        public override void RenderGL(GLRenderContext ctx)
+        {
+            base.RenderGL(ctx);
+
+
+            const float LIGHT_INTENSITY = 0.4f;
+
+            var outColor = this.Color;
+            var holeColor = D2DColor.Black;
+
+            ctx.FillEllipseWithLighting(this.Position, this.OuterHoleSize.ToSKSize(), outColor.ToSKColor(), LIGHT_INTENSITY);
+            ctx.FillEllipseWithLighting(this.Position, this.HoleSize.ToSKSize(), holeColor.ToSKColor(), LIGHT_INTENSITY);
+        }
+
 
         private D2DColor GetColor()
         {
             var color = D2DColor.White.WithBrightness(Utilities.Rnd.NextFloat(0.3f, 0.6f));
             return color;
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+
+            World.ObjectManager.ReturnBulletHole(this);
         }
     }
 }

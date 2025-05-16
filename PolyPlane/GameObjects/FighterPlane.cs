@@ -3,9 +3,11 @@ using PolyPlane.GameObjects.Animations;
 using PolyPlane.GameObjects.Fixtures;
 using PolyPlane.GameObjects.Guidance;
 using PolyPlane.GameObjects.Interfaces;
-using PolyPlane.GameObjects.Manager;
+using PolyPlane.GameObjects.Managers;
+using PolyPlane.GameObjects.Particles;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
+using PolyPlane.Net;
 using PolyPlane.Rendering;
 using SkiaSharp;
 using System.Diagnostics;
@@ -13,14 +15,16 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class FighterPlane : GameObjectPoly, ICollidable, IPushable
+    public sealed class FighterPlane : GameObjectNet, IPolygon
     {
+        public RenderPoly Polygon { get; set; }
         public Gun Gun => _gun;
         public bool IsAI => _isAIPlane;
         public D2DPoint GunPosition => _gun.Position;
         public D2DPoint ExhaustPosition => _centerOfThrust.Position;
         public Direction FlipDirection => _currentDir;
         public float GForce => _gForce;
+        public double LastBurstTime => _gun.LastBurstTime;
 
         public AIPersonality Personality
         {
@@ -76,7 +80,25 @@ namespace PolyPlane.GameObjects
 
         public Radar Radar { get; set; }
         public float Thrust { get; set; } = 2000f;
-        public bool FiringBurst { get; set; } = false;
+
+        public bool FiringBurst
+        {
+            get { return _firingBurst; }
+            set
+            {
+                if (_firingBurst != value)
+                {
+                    // Trigger gun burst as soon as this changes state.
+                    if (value)
+                        _gun.StartBurst();
+                    else
+                        _gun.StopBurst();
+
+                    _firingBurst = value;
+                }
+            }
+        }
+
         public bool DroppingDecoy { get; set; } = false;
         public bool ThrustOn { get; set; } = true;
         public bool EngineDamaged { get; set; } = false;
@@ -84,6 +106,7 @@ namespace PolyPlane.GameObjects
         public bool WasHeadshot { get; set; } = false;
         public bool IsDisabled { get; set; } = false;
 
+        public bool RespawnQueued = false;
         public bool HasRadarLock = false;
         public bool AIRespawnReady = false;
         public string PlayerName = "Player";
@@ -93,8 +116,6 @@ namespace PolyPlane.GameObjects
         public int BulletsFired = 0;
         public int MissilesFired = 0;
         public int DecoysDropped = 0;
-        public int BulletsHit = 0;
-        public int MissilesHit = 0;
         public int Kills = 0;
         public int Headshots = 0;
         public int Deaths = 0;
@@ -108,32 +129,27 @@ namespace PolyPlane.GameObjects
 
         public Action<Bullet> FireBulletCallback
         {
-            get { return _fireBulletCallback; }
+            get { return _gun.FireBulletCallback; }
             set
             {
-                _fireBulletCallback = value;
                 _gun.FireBulletCallback = value;
             }
         }
 
         public Action<Decoy> DropDecoyCallback
         {
-            get { return _dropDecoyCallback; }
+            get { return _decoyDispenser.DropDecoyCallback; }
 
             set
             {
-                _dropDecoyCallback = value;
                 _decoyDispenser.DropDecoyCallback = value;
             }
         }
 
         public Action<GuidedMissile> FireMissileCallback { get; set; }
-        public Action<FighterPlane, GameObject> PlayerKilledCallback { get; set; }
+        public Action<PlayerKilledEventArgs> PlayerKilledCallback { get; set; }
         public Action<FighterPlane> PlayerCrashedCallback { get; set; }
         public Action<ImpactEvent> PlayerHitCallback { get; set; }
-
-        private Action<Decoy> _dropDecoyCallback;
-        private Action<Bullet> _fireBulletCallback;
 
         private IAIBehavior _aiBehavior;
         private List<Wing> _wings = new List<Wing>();
@@ -143,16 +159,17 @@ namespace PolyPlane.GameObjects
         private Direction _queuedDir = Direction.Right;
         private bool _isAIPlane = false;
 
-        private GameTimer _flipTimer = new GameTimer(2f);
-        private GameTimer _expireTimeout = new GameTimer(40f);
-        private GameTimer _isLockOntoTimeout = new GameTimer(3f);
-        private GameTimer _bulletRegenTimer = new GameTimer(0.2f, true);
-        private GameTimer _decoyRegenTimer = new GameTimer(0.6f, true);
-        private GameTimer _missileRegenTimer = new GameTimer(60f, true);
-        private GameTimer _easePhysicsTimer = new GameTimer(5f, true);
-        private GameTimer _groundDustSpawnTimer = new GameTimer(0.03f, true);
+        private GameTimer _flipTimer;
+        private GameTimer _expireTimeout;
+        private GameTimer _isLockOntoTimeout;
+        private GameTimer _bulletRegenTimer;
+        private GameTimer _decoyRegenTimer;
+        private GameTimer _missileRegenTimer;
+        private GameTimer _easePhysicsTimer;
+        private GameTimer _groundDustSpawnTimer;
         private FloatAnimation _engineOutSpoolDown;
 
+        private bool _firingBurst = false;
         private bool _easePhysicsComplete = false;
         private float _damageDeflection = 0f;
         private float _gForce = 0f;
@@ -184,7 +201,6 @@ namespace PolyPlane.GameObjects
         private FlameEmitter _engineFireFlame;
 
         private List<BulletHole> _bulletHoles = new List<BulletHole>();
-        private List<Vapor> _vaporTrails = new List<Vapor>();
 
         private static readonly D2DPoint[] _planePoly =
         [
@@ -216,57 +232,32 @@ namespace PolyPlane.GameObjects
 
         ];
 
-        public FighterPlane(D2DPoint pos, AIPersonality personality, int playerId) : base(pos)
+        public FighterPlane(D2DPoint pos, D2DColor color) : base(pos)
         {
-            this.PlayerID = playerId;
+            this.PlayerID = World.GetNextPlayerId();
+            _isAIPlane = false;
+            _thrustAmt.Target = 1f;
+            _planeColor = color;
+
+            InitStuff();
+        }
+
+        public FighterPlane(D2DPoint pos, D2DColor color, AIPersonality personality) : this(pos, color)
+        {
             _aiBehavior = new FighterPlaneAI(this, personality);
             _isAIPlane = true;
-            _thrustAmt.Target = 1f;
-            _planeColor = D2DColor.Randomly();
-
-            InitStuff();
         }
 
-        public FighterPlane(D2DPoint pos, D2DColor color, int playerId, bool isAI = false, bool isNetPlane = false) : base(pos)
-        {
-            this.PlayerID = playerId;
-            _thrustAmt.Target = 1f;
-            IsNetObject = isNetPlane;
-            _isAIPlane = isAI;
-            _planeColor = color;
-
-            if (isAI)
-            {
-                const int NUM_PERS = 2;
-                var personality = Utilities.GetRandomPersonalities(NUM_PERS);
-
-                _aiBehavior = new FighterPlaneAI(this, personality);
-            }
-
-            InitStuff();
-        }
-
-        public FighterPlane(D2DPoint pos, D2DColor color, GameID id, bool isAI = false, bool isNetPlane = false) : base(pos)
+        public FighterPlane(D2DPoint pos, D2DColor color, GameID id) : this(pos, color)
         {
             this.ID = id;
-            _thrustAmt.Target = 1f;
-            IsNetObject = isNetPlane;
-            _isAIPlane = isAI;
-            _planeColor = color;
-
-            if (isAI)
-            {
-                const int NUM_PERS = 2;
-                var personality = Utilities.GetRandomPersonalities(NUM_PERS);
-
-                _aiBehavior = new FighterPlaneAI(this, personality);
-            }
-
-            InitStuff();
+            IsNetObject = true;
+            _isAIPlane = false;
         }
 
         private void InitStuff()
         {
+            this.Flags = GameObjectFlags.ClampToGround | GameObjectFlags.SpatialGrid | GameObjectFlags.ExplosionImpulse;
             this.Radar = new Radar(this);
 
             this.Mass = 90f;
@@ -278,15 +269,29 @@ namespace PolyPlane.GameObjects
 
             InitWings();
 
-            _centerOfThrust = new FixturePoint(this, new D2DPoint(-26.6f, 0.46f) * this.RenderScale);
-            _flamePos = new FixturePoint(this, new D2DPoint(-27.3f, 0.46f) * this.RenderScale);
-            _cockpitPosition = new FixturePoint(this, new D2DPoint(19.5f, -5f));
-            _gun = new Gun(this, new D2DPoint(35f, 0), FireBulletCallback);
-            _decoyDispenser = new DecoyDispenser(this, new D2DPoint(-24f, 0f));
-            _engineFireFlame = new FlameEmitter(_centerOfThrust, D2DPoint.Zero, false);
-            _engineFireFlame.Owner = this;
-            _engineFireFlame.StopSpawning();
+            var centerOfThrustPos = new D2DPoint(-26.6f, 0.46f) * this.RenderScale;
 
+            _centerOfThrust = AddAttachment(new FixturePoint(this, centerOfThrustPos), highFrequencyPhysics: true);
+            _engineFireFlame = AddAttachment(new FlameEmitter(this, centerOfThrustPos, 7f, 13f, false));
+            _flamePos = AddAttachment(new FixturePoint(this, new D2DPoint(-27.3f, 0.46f) * this.RenderScale));
+            _cockpitPosition = AddAttachment(new FixturePoint(this, new D2DPoint(19.5f, -5f)));
+            _gun = AddAttachment(new Gun(this, new D2DPoint(35f, 0)));
+            _decoyDispenser = AddAttachment(new DecoyDispenser(this, new D2DPoint(-24f, 0f)));
+
+            _engineOutSpoolDown = AddAttachment(new FloatAnimation(1f, 0f, 20f, EasingFunctions.EaseLinear, v =>
+            {
+                if (!this.IsDisabled)
+                    _thrustAmt.SetNow(v);
+            }));
+
+            _flipTimer = AddTimer(2f);
+            _expireTimeout = AddTimer(40f);
+            _isLockOntoTimeout = AddTimer(3f);
+            _bulletRegenTimer = AddTimer(0.2f, true);
+            _decoyRegenTimer = AddTimer(0.6f, true);
+            _missileRegenTimer = AddTimer(60f, true);
+            _easePhysicsTimer = AddTimer(5f, true);
+            _groundDustSpawnTimer = AddTimer(0.03f, true);
 
             _expireTimeout.TriggerCallback = () =>
             {
@@ -298,23 +303,22 @@ namespace PolyPlane.GameObjects
 
             _bulletRegenTimer.TriggerCallback = () =>
             {
-                if (NumBullets < MAX_BULLETS)
+                if (!this.IsNetObject && !this.FiringBurst && NumBullets < MAX_BULLETS)
                     NumBullets++;
             };
 
 
             _missileRegenTimer.TriggerCallback = () =>
             {
-                if (World.MissileRegen)
+                if (!this.IsNetObject && World.MissileRegen)
                     if (NumMissiles < MAX_MISSILES)
                         NumMissiles++;
             };
 
-            _missileRegenTimer.Start();
 
             _decoyRegenTimer.TriggerCallback = () =>
             {
-                if (NumDecoys < MAX_DECOYS)
+                if (!this.IsNetObject && !this.DroppingDecoy && NumDecoys < MAX_DECOYS)
                     NumDecoys++;
             };
 
@@ -322,22 +326,17 @@ namespace PolyPlane.GameObjects
 
             _groundDustSpawnTimer.Start();
             _bulletRegenTimer.Start();
+            _missileRegenTimer.Start();
             _decoyRegenTimer.Start();
             _easePhysicsTimer.Start();
 
             _isLockOntoTimeout.TriggerCallback = () => HasRadarLock = false;
             _easePhysicsTimer.TriggerCallback = () => _easePhysicsComplete = true;
-
-            _engineOutSpoolDown = new FloatAnimation(1f, 0f, 20f, EasingFunctions.EaseLinear, v =>
-            {
-                if (!this.IsDisabled)
-                    _thrustAmt.SetNow(v);
-            });
         }
 
         private void InitWings()
         {
-            const float DEFLECT_RATE = 55f;
+            const float DEFLECT_RATE = 45f;
             const float MIN_VELO = 300f;
 
             // Main wing.
@@ -348,7 +347,8 @@ namespace PolyPlane.GameObjects
                 Area = 0.5f,
                 MaxLiftForce = 15000f,
                 MaxDragForce = 12000f,
-                AOAFactor = 0.6f,
+                VeloLiftFactor = 2f,
+                DragFactor = 0.3f,
                 MaxAOA = 25f,
                 Position = new D2DPoint(-5f, 0.6f) * this.RenderScale,
                 MinVelo = MIN_VELO
@@ -363,7 +363,8 @@ namespace PolyPlane.GameObjects
                 MaxDeflection = 40f,
                 MaxLiftForce = 7000f,
                 MaxDragForce = 7000f,
-                AOAFactor = 0.4f,
+                VeloLiftFactor = 2f,
+                DragFactor = 0.2f,
                 MaxAOA = 30f,
                 DeflectionRate = DEFLECT_RATE,
                 PivotPoint = new D2DPoint(-25f, 0.6f) * this.RenderScale,
@@ -372,172 +373,143 @@ namespace PolyPlane.GameObjects
             }), isControl: true);
 
             // Center of mass location.
-            _centerOfMass = new FixturePoint(this, new D2DPoint(-5f, 0f));
+            _centerOfMass = AddAttachment(new FixturePoint(this, new D2DPoint(-5f, 0f)), highFrequencyPhysics: true);
         }
 
-        public override void Update(float dt)
+        public override void DoPhysicsUpdate(float dt)
         {
-            for (int i = 0; i < World.PHYSICS_SUB_STEPS; i++)
+            base.DoPhysicsUpdate(dt);
+
+            var wingForce = D2DPoint.Zero;
+            var wingTorque = 0f;
+            var guideRot = this.Rotation;
+
+            // Get guidance direction.
+            if (_isAIPlane)
+                guideRot = GetAPGuidanceDirection(_aiBehavior.GetAIGuidanceDirection(dt));
+            else
+                guideRot = GetAPGuidanceDirection(PlayerGuideAngle);
+
+            // Deflection direction.
+            var deflection = Utilities.ClampAngle180(guideRot);
+
+            if (!IsNetObject)
             {
-                var partialDT = World.SUB_DT;
-
-                var wingForce = D2DPoint.Zero;
-                var wingTorque = 0f;
-                var guideRot = this.Rotation;
-
-                // Get guidance direction.
-                if (_isAIPlane)
-                    guideRot = GetAPGuidanceDirection(_aiBehavior.GetAIGuidance(dt));
+                if (!this.IsDisabled)
+                    _controlWing.Deflection = deflection;
                 else
-                    guideRot = GetAPGuidanceDirection(PlayerGuideAngle);
-
-                // Deflection direction.
-                var deflection = Utilities.ClampAngle180(guideRot);
-
-                if (!this.IsNetObject)
-                {
-                    if (!this.IsDisabled)
-                        _controlWing.Deflection = deflection;
-                    else
-                        _controlWing.Deflection = _damageDeflection;
-                }
-
-                // Update
-                base.Update(partialDT);
-                _wings.ForEach(w => w.Update(partialDT));
-                _centerOfThrust.Update(partialDT);
-                _centerOfMass.Update(partialDT);
-
-                // Wing force and torque.
-                foreach (var wing in _wings)
-                {
-                    // How much force a damaged wing contributes.
-                    const float DAMAGED_FACTOR = 0.2f;
-
-                    var forces = wing.GetForces(_centerOfMass.Position);
-
-                    if (wing.Visible)
-                    {
-                        wingForce += forces.LiftAndDrag;
-                        wingTorque += forces.Torque;
-                    }
-                    else
-                    {
-                        wingForce += forces.LiftAndDrag * DAMAGED_FACTOR;
-                        wingTorque += forces.Torque * DAMAGED_FACTOR;
-                    }
-                }
-
-                // Apply small amount of drag and torque for bullet holes.
-                // Decreases handling and max speed with damage.
-                float damageTorque = 0f;
-                D2DPoint damageForce = D2DPoint.Zero;
-
-                if (World.BulletHoleDrag)
-                {
-                    foreach (var hole in _bulletHoles)
-                    {
-                        GetBulletHoleDrag(hole, partialDT, out D2DPoint dVec, out float dTq);
-                        damageTorque += dTq;
-                        damageForce += dVec;
-                    }
-                }
-
-                // Apply disabled effects.
-                if (IsDisabled)
-                {
-                    wingForce *= 0.1f;
-                    wingTorque *= 0.1f;
-
-                    damageTorque *= 0.1f;
-                    damageForce *= 0.1f;
-
-                    ThrustOn = false;
-                    _thrustAmt.SetNow(0f);
-                    FiringBurst = false;
-                    _engineFireFlame.StartSpawning();
-                }
-
-                var thrust = GetThrust(true);
-
-                if (!this.IsNetObject)
-                {
-                    Deflection = _controlWing.Deflection;
-
-                    // Ease in physics.
-                    var easeFact = 1f;
-
-                    if (!_easePhysicsComplete)
-                        _easePhysicsTimer.Start();
-
-                    if (!_easePhysicsComplete && _easePhysicsTimer.IsRunning)
-                        easeFact = Utilities.Factor(_easePhysicsTimer.Value, _easePhysicsTimer.Interval);
-
-                    // Integrate torque, thrust and wing force.
-                    var thrustTorque = Utilities.GetTorque(_centerOfMass.Position, _centerOfThrust.Position, thrust);
-                    var rotAmt = ((wingTorque + thrustTorque + damageTorque) * easeFact) / this.GetInertia(this.Mass);
-
-                    this.RotationSpeed += rotAmt * partialDT;
-                    this.Velocity += (thrust * easeFact) / this.Mass * partialDT;
-                    this.Velocity += (wingForce * easeFact) / this.Mass * partialDT;
-                    this.Velocity += (damageForce * easeFact) / this.Mass * partialDT;
-                    this.Velocity += (World.Gravity * partialDT);
-                }
-
-                // Compute g-force.
-                var totForce = (thrust / this.Mass * partialDT) + (wingForce / this.Mass * partialDT);
-                var gforce = totForce.Length() / partialDT / World.Gravity.Y;
-                _gForce = _gforceAvg.Add(gforce);
-                _gForceDirection = totForce.Angle();
+                    _controlWing.Deflection = _damageDeflection;
             }
 
+            // Wing force and torque.
+            for (int i = 0; i < _wings.Count; i++)
+            {
+                var wing = _wings[i];
+
+                // How much force a damaged wing contributes.
+                const float DAMAGED_FACTOR = 0.2f;
+
+                var forces = wing.GetForces(_centerOfMass.Position);
+
+                if (wing.Visible)
+                {
+                    wingForce += forces.LiftAndDrag;
+                    wingTorque += forces.Torque;
+                }
+                else
+                {
+                    wingForce += forces.LiftAndDrag * DAMAGED_FACTOR;
+                    wingTorque += forces.Torque * DAMAGED_FACTOR;
+                }
+            }
+
+            // Apply small amount of drag and torque for bullet holes.
+            // Decreases handling and max speed with damage.
+            float damageTorque = 0f;
+            D2DPoint damageForce = D2DPoint.Zero;
+
+            if (!IsNetObject && World.BulletHoleDrag)
+            {
+                for (int i = 0; i < _bulletHoles.Count; i++)
+                {
+                    var hole = _bulletHoles[i];
+
+                    GetBulletHoleDrag(hole, dt, out D2DPoint dVec, out float dTq);
+                    damageTorque += dTq;
+                    damageForce += dVec;
+                }
+            }
+
+            // Apply disabled effects.
+            if (IsDisabled)
+            {
+                const float DISABLED_FACTOR = 0.1f;
+
+                wingForce *= DISABLED_FACTOR;
+                wingTorque *= DISABLED_FACTOR;
+
+                damageTorque *= DISABLED_FACTOR;
+                damageForce *= DISABLED_FACTOR;
+            }
+
+            var thrust = GetThrust(true);
+
+            if (!IsNetObject)
+            {
+                Deflection = _controlWing.Deflection;
+
+                // Ease in physics.
+                var easeFact = 1f;
+
+                if (!_easePhysicsComplete)
+                    _easePhysicsTimer.Start();
+
+                if (!_easePhysicsComplete && _easePhysicsTimer.IsRunning)
+                    easeFact = _easePhysicsTimer.Position;
+
+                // Integrate torque, thrust and wing force.
+                var thrustTorque = Utilities.GetTorque(_centerOfMass.Position, _centerOfThrust.Position, thrust);
+                var rotAmt = ((wingTorque + thrustTorque + damageTorque) * easeFact) / this.GetInertia(this.Mass);
+
+                this.RotationSpeed += rotAmt * dt;
+                this.Velocity += (thrust * easeFact) / this.Mass * dt;
+                this.Velocity += (wingForce * easeFact) / this.Mass * dt;
+                this.Velocity += (damageForce * easeFact) / this.Mass * dt;
+                this.Velocity += (World.Gravity * dt);
+            }
+
+            // Compute g-force.
+            var totForce = (thrust / this.Mass * dt) + (wingForce / this.Mass * dt);
+            var gforce = totForce.Length() / dt / World.Gravity.Y;
+            _gForce = _gforceAvg.Add(gforce);
+            _gForceDirection = totForce.Angle();
+        }
+
+        public override void DoUpdate(float dt)
+        {
+            base.DoUpdate(dt);
+
             // Update all the low frequency stuff.
-            _flamePos.Update(dt);
-            _cockpitPosition.Update(dt);
             _thrustAmt.Update(dt);
-            _gun.Update(dt);
-            _decoyDispenser.Update(dt);
-            _engineFireFlame.Update(dt);
-            _bulletHoles.ForEach(f => f.Update(dt));
-            _vaporTrails.ForEach(v => v.Update(dt));
 
             if (!this.IsNetObject)
                 CheckForFlip();
-
-            UpdateFlame();
-
-            _easePhysicsTimer.Update(dt);
-            _flipTimer.Update(dt);
-            _isLockOntoTimeout.Update(dt);
-            _expireTimeout.Update(dt);
-            _groundDustSpawnTimer.Update(dt);
-            _engineOutSpoolDown.Update(dt);
 
             this.Radar?.Update(dt);
 
             if (_aiBehavior != null)
                 _aiBehavior.Update(dt);
 
-            if (!this.FiringBurst)
-                _bulletRegenTimer.Update(dt);
-
-            _missileRegenTimer.Update(dt);
-
-            if (!this.DroppingDecoy)
-                _decoyRegenTimer.Update(dt);
-
-            //if (_thrustAmt.Value < 0.01f)
-            //    this.ThrustOn = false;
-
             if (this.IsDisabled)
                 DeathTime += dt;
 
-            this.RecordHistory();
+            if (!this.IsDisabled && !this.EngineDamaged)
+                _engineFireFlame.StopSpawning();
         }
 
-        public override void NetUpdate(D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
+        public override void NetUpdate(GameObjectPacket packet)
         {
-            base.NetUpdate(position, velocity, rotation, frameTime);
+            base.NetUpdate(packet);
 
             _controlWing.Deflection = this.Deflection;
         }
@@ -551,8 +523,10 @@ namespace PolyPlane.GameObjects
             var len = this.Velocity.Length() * 0.05f;
             len += thrustMag * 0.01f;
             len *= 0.6f;
-            FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
-            _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
+            len = Math.Clamp(len, 0f, 70f);
+
+            FlamePoly.SourcePoly[1].X = -Utilities.Rnd.NextFloat(9f + len, 11f + len);
+            _flameFillColor.g = Utilities.Rnd.NextFloat(0.6f, 0.86f);
 
             FlamePoly.Update(_flamePos.Position, flameAngle, this.RenderScale);
         }
@@ -572,7 +546,7 @@ namespace PolyPlane.GameObjects
                 var velo = (this.Velocity + (this.Velocity * 0.4f)) + new D2DPoint(Utilities.Rnd.NextFloat(-150f, 150f), 0f);
                 var groundPos = new D2DPoint(this.Position.X - (this.Velocity.X * 0.2f) + Utilities.Rnd.NextFloat(-100f, 100f), 0f);
 
-                Particle.SpawnParticle(this, groundPos, velo, radius, dustColor.WithAlpha(alpha), dustColor.WithAlpha(1f), ParticleType.Dust);
+                Particle.SpawnParticle(this, groundPos, velo, radius, dustColor.WithAlpha(alpha), dustColor, ParticleType.Dust);
             }
         }
 
@@ -580,20 +554,22 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
-            _vaporTrails.ForEach(v => v.Render(ctx));
+            if (!IsDisabled && _thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
+            {
+                UpdateFlame();
 
-            if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
-                ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
+                ctx.DrawPolygon(this.FlamePoly, _flameFillColor, 1f, _flameFillColor);
+            }
 
             if (!this.IsDisabled)
                 DrawShockwave(ctx);
 
-            ctx.DrawPolygonWithLighting(this.Polygon, this.Position, D2DColor.Black.WithAlpha(0.3f), 0.5f, D2DDashStyle.Solid, _planeColor, 0.6f);
+            ctx.DrawPolygonWithLighting(this.Polygon, this.Position, D2DColor.Black.WithAlpha(0.3f), 0.5f, _planeColor, maxIntensity: 0.6f);
 
             DrawClippedObjects(ctx);
-            _wings.ForEach(w => w.Render(ctx));
-            _gun.Render(ctx);
 
+            foreach (var wing in _wings)
+                wing.Render(ctx);
 
             //foreach (var b in _bulletHoles)
             //    ctx.DrawArrow(b.Position, b.Position + Utilities.AngleToVectorDegrees(b.Rotation, 10), D2DColor.Blue, 1f, 3f);
@@ -612,13 +588,26 @@ namespace PolyPlane.GameObjects
             base.RenderGL(ctx);
 
             if (_thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
+            {
+                UpdateFlame();
                 ctx.FillPolygon(this.FlamePoly, _flameFillColor.ToSKColor());
+            }
 
 
             if (!this.IsDisabled)
                 DrawShockwaveGL(ctx);
 
-            ctx.FillPolygon(this.Polygon, PlaneColor.ToSKColor());
+            using (var polyPath = this.Polygon.GetPath())
+            {
+                //ctx.FillPolygon(this.Polygon, PlaneColor.ToSKColor());
+                ctx.FillPath(polyPath, PlaneColor.ToSKColor());
+
+                DrawClippedObjectsGL(ctx, polyPath);
+            }
+
+            foreach (var wing in _wings)
+                wing.RenderGL(ctx);
+
 
         }
 
@@ -718,7 +707,7 @@ namespace PolyPlane.GameObjects
 
         private void DrawShockwave(RenderContext ctx)
         {
-            const float MIN_VELO = 850f;
+            const float MIN_VELO = 600f;
             const int NUM_SEGS = 30;
 
             // Compute speed factor and fiddle with dimensions, positions, line weight and color alpha.
@@ -807,30 +796,19 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        //private void DrawClippedObjectsGL(SKCanvas ctx)
-        //{
-        //    //if (_polyClipLayer == null)
-        //    //    _polyClipLayer = ctx.Device.CreateLayer();
+        private void DrawClippedObjectsGL(GLRenderContext ctx, SKPath clipPath)
+        {
 
-
-        //    ctx.Cl
-
-        //    // Clip with the polygon.
-        //    using (var polyClipGeo = ctx.Device.CreatePathGeometry())
-        //    {
-        //        polyClipGeo.AddLines(this.Polygon.Poly);
-        //        polyClipGeo.ClosePath();
-
-        //        ctx.Gfx.PushLayer(_polyClipLayer, ctx.Viewport, polyClipGeo);
-
-        //        DrawCockpit(ctx);
-        //        DrawBulletHoles(ctx);
-
-        //        ctx.Gfx.PopLayer();
-        //    }
-        //}
-
-
+            // Clip with the polygon.
+            // TODO: Add push/pop clip API?
+            ctx.Gfx.Save();
+            ctx.Gfx.ClipPath(clipPath, SKClipOperation.Intersect, antialias: true);
+           
+            DrawCockpitGL(ctx);
+            DrawBulletHolesGL(ctx);
+            
+            ctx.Gfx.Restore();
+        }
 
 
         private void DrawClippedObjects(RenderContext ctx)
@@ -855,8 +833,9 @@ namespace PolyPlane.GameObjects
 
         private void DrawBulletHoles(RenderContext ctx)
         {
-            foreach (var hole in _bulletHoles)
+            for (int i = 0; i < _bulletHoles.Count; i++)
             {
+                var hole = _bulletHoles[i];
                 if (!ctx.Viewport.Contains(hole.Position))
                     return;
 
@@ -864,6 +843,41 @@ namespace PolyPlane.GameObjects
                 ctx.RotateTransform(hole.Rotation, hole.Position);
 
                 hole.Render(ctx);
+
+                ctx.PopTransform();
+            }
+        }
+
+
+
+
+        private void DrawCockpitGL(GLRenderContext ctx)
+        {
+            if (!ctx.Viewport.Contains(_cockpitPosition.Position))
+                return;
+
+            ctx.PushTransform();
+            ctx.RotateTransform(_cockpitPosition.Rotation, _cockpitPosition.Position);
+
+            var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
+            ctx.FillEllipseWithLighting(cockpitEllipse.origin, _cockpitSize.ToSKSize(), WasHeadshot ? D2DColor.DarkRed.ToSKColor() : _cockpitColor.ToSKColor(), maxIntensity: 0.6f);
+            ctx.DrawEllipse(cockpitEllipse.origin, _cockpitSize.ToSKSize(), SKColors.Black.WithAlpha(127), 0.5f);
+
+            ctx.PopTransform();
+        }
+
+        private void DrawBulletHolesGL(GLRenderContext ctx)
+        {
+            for (int i = 0; i < _bulletHoles.Count; i++)
+            {
+                var hole = _bulletHoles[i];
+                if (!ctx.Viewport.Contains(hole.Position))
+                    return;
+
+                ctx.PushTransform();
+                ctx.RotateTransform(hole.Rotation, hole.Position);
+
+                hole.RenderGL(ctx);
 
                 ctx.PopTransform();
             }
@@ -879,8 +893,8 @@ namespace PolyPlane.GameObjects
 
             var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
 
-            ctx.FillEllipse(cockpitEllipse, WasHeadshot ? D2DColor.DarkRed : _cockpitColor);
-            ctx.DrawEllipse(cockpitEllipse, D2DColor.Black, 0.5f);
+            ctx.FillEllipseWithLighting(cockpitEllipse, WasHeadshot ? D2DColor.DarkRed : _cockpitColor, maxIntensity: 0.6f);
+            ctx.DrawEllipse(cockpitEllipse, D2DColor.Black.WithAlpha(0.5f), 0.5f);
 
             ctx.PopTransform();
         }
@@ -920,7 +934,7 @@ namespace PolyPlane.GameObjects
                 return;
             }
 
-            var missile = new GuidedMissile(this, target, GuidanceType.Advanced, useControlSurfaces: true, useThrustVectoring: true);
+            var missile = new GuidedMissile(this, target, GuidanceType.Advanced);
 
             FireMissileCallback(missile);
 
@@ -964,66 +978,58 @@ namespace PolyPlane.GameObjects
             const float VAPOR_TRAIL_VELO = 1000f; // Velocity before vapor trail is visible.
             const float MAX_GS = 15f; // Gs for max vapor trail intensity.
 
-            _vaporTrails.Add(new Vapor(wing, this, D2DPoint.Zero, 8f, VAPOR_TRAIL_GS, VAPOR_TRAIL_VELO, MAX_GS));
+            wing.AddAttachment(new VaporEmitter(wing, this, D2DPoint.Zero, 8f, VAPOR_TRAIL_GS, VAPOR_TRAIL_VELO, MAX_GS));
+
+            AddAttachment(wing, highFrequencyPhysics: true);
 
             _wings.Add(wing);
         }
 
-        /// <summary>
-        /// Update FixturePoint objects to move them to the current position.
-        /// </summary>
-        public void SyncFixtures()
-        {
-            this.Polygon.Update();
-            _flamePos.Update(0f);
-            _bulletHoles.ForEach(f => f.Update(0f));
-            _centerOfThrust.Update(0f);
-            _centerOfMass.Update(0f);
-            _cockpitPosition.Update(0f);
-            _gun.Update(0f);
-            this._wings.ForEach(w => w.Update(0f));
-        }
-
         public void AddBulletHole(D2DPoint pos, float angle, float distortAmt = 3f)
         {
-            // Find the closest poly point to the impact and distort the polygon.
-            // Adds a "dent" basically.
             var distortVec = Utilities.AngleToVectorDegrees(angle, distortAmt);
-            var closestIdx = this.Polygon.ClosestIdx(pos);
 
-            // Distort the closest point and the two surrounding points.
-            var prevIdx = Utilities.WrapIndex(closestIdx - 1, this.Polygon.Poly.Length);
-            var nextIdx = Utilities.WrapIndex(closestIdx + 1, this.Polygon.Poly.Length);
+            this.Polygon.Distort(pos, distortVec);
 
-            this.Polygon.SourcePoly[prevIdx] += distortVec * 0.6f;
-            this.Polygon.SourcePoly[closestIdx] += distortVec;
-            this.Polygon.SourcePoly[nextIdx] += distortVec * 0.6f;
-
-            this.Polygon.Update();
-
-            var bulletHole = new BulletHole(this, pos + distortVec, angle);
+            var bulletHole = AddAttachment(World.ObjectManager.RentBulletHole(this, pos + distortVec, angle));
             bulletHole.IsNetObject = this.IsNetObject;
             _bulletHoles.Add(bulletHole);
         }
 
-        private void CheckForDamageEffects()
+        private void AddPolyDamageEffectsResult(RenderPoly poly, PlaneImpactResult result)
         {
-            // Check for wing and engine damage.
-            // If the plane polygon gets distorted to the point
-            // that a wing attachment or engine are no longer
-            // within the polygon, we consider them damaged.
-            foreach (var wing in _wings)
-            {
-                if (wing.Visible && !Utilities.PointInPoly(wing.PivotPoint.Position, this.Polygon.Poly))
-                {
-                    wing.Visible = false;
+            var mainWing = _wings.First();
+            var tailWing = _wings.Last();
 
-                    SpawnDebris(1, wing.Position, D2DColor.Gray);
-                }
-            }
+            if (mainWing.Visible && !Utilities.PointInPoly(mainWing.PivotPoint.Position, poly.Poly))
+                result.ImpactType |= ImpactType.DamagedMainWing;
+
+            if (tailWing.Visible && !Utilities.PointInPoly(tailWing.PivotPoint.Position, poly.Poly))
+                result.ImpactType |= ImpactType.DamagedTailWing;
 
             // Check for engine damage.
-            if (this.ThrustOn && !this.EngineDamaged && !Utilities.PointInPoly(_centerOfThrust.Position, this.Polygon.Poly))
+            if (!this.EngineDamaged && !Utilities.PointInPoly(_centerOfThrust.Position, poly.Poly))
+                result.ImpactType |= ImpactType.DamagedEngine;
+        }
+
+        private void ApplyPolyDamageEffects(PlaneImpactResult result)
+        {
+            var mainWing = _wings.First();
+            var tailWing = _wings.Last();
+
+            if (mainWing.Visible && result.ImpactType.HasFlag(ImpactType.DamagedMainWing))
+            {
+                mainWing.Visible = false;
+                SpawnDebris(1, mainWing.Position, D2DColor.Gray);
+            }
+
+            if (tailWing.Visible && result.ImpactType.HasFlag(ImpactType.DamagedTailWing))
+            {
+                tailWing.Visible = false;
+                SpawnDebris(1, tailWing.Position, D2DColor.Gray);
+            }
+
+            if (!this.EngineDamaged && result.ImpactType.HasFlag(ImpactType.DamagedEngine))
             {
                 _engineFireFlame.StartSpawning();
                 this.EngineDamaged = true;
@@ -1033,37 +1039,32 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        public void HandleImpactResult(GameObject impactor, PlaneImpactResult result, float dt)
+        public void HandleImpactResult(PlaneImpactResult result, float dt)
         {
+            var impactor = result.ImpactorObject;
             var attackPlane = impactor.Owner as FighterPlane;
 
             // Always change target to attacking plane?
             if (this.IsAI)
                 _aiBehavior.ChangeTarget(attackPlane);
 
-            if (result.Type != ImpactType.Splash)
+            if (result.ImpactType != ImpactType.Splash)
             {
-                if (impactor is Bullet)
-                    attackPlane.BulletsHit++;
-                else if (impactor is GuidedMissile)
-                    attackPlane.MissilesHit++;
-
-                // Scale the impact position back to the origin of the polygon.
-                var ogPos = Utilities.ScaleToOrigin(this, result.ImpactPoint);
-                var angle = result.ImpactAngle;
-
                 var distortAmt = BULLET_DISTORT_AMT;
-                if (impactor is GuidedMissile)
+
+                if (result.ImpactType.HasFlag(ImpactType.Missile))
                     distortAmt = MISSILE_DISTORT_AMT;
 
-                // Add bullet hole and polygon distortion.
-                AddBulletHole(ogPos, angle, distortAmt);
+                var angle = result.ImpactAngle;
 
-                // Check for polygon distortion related damage effects.
-                CheckForDamageEffects();
+                // Add bullet hole and polygon distortion.
+                AddBulletHole(result.ImpactPointOrigin, angle, distortAmt);
+
+                // Apply polygon distortion related damage effects.
+                ApplyPolyDamageEffects(result);
 
                 // Push and twist the plane accordingly.
-                DoImpactImpulse(impactor, result.ImpactPoint, dt);
+                DoImpactImpulse(impactor, result.ImpactPoint);
             }
 
             if (result.DamageAmount > 0f)
@@ -1079,100 +1080,125 @@ namespace PolyPlane.GameObjects
                 {
                     Health -= result.DamageAmount;
 
-                    if (result.Type == ImpactType.Missile)
+                    if (result.ImpactType.HasFlag(ImpactType.Missile))
                         SpawnDebris(4, result.ImpactPoint, this.PlaneColor);
-                    else if (result.Type == ImpactType.Bullet)
+                    else if (result.ImpactType.HasFlag(ImpactType.Bullet))
                         SpawnDebris(1, result.ImpactPoint, this.PlaneColor);
                 }
 
-                // TODO: How to handle this during net games?
-                // It's possible for a delayed packet to reset the
-                // Health and IsDisabled flags after a kill has been recorded,
-                // which can cause duplicate kill events.
                 if (this.Health <= 0 && !this.IsDisabled)
                 {
-                    DoPlayerKilled(impactor);
+                    // Only do this for local games or from the server during net play.
+                    if (!World.IsNetGame || (World.IsNetGame && World.IsServer))
+                        DoPlayerKilled(attackPlane, result.ImpactType);
                 }
             }
 
             PlayerHitCallback?.Invoke(new ImpactEvent(this, attackPlane, result.DamageAmount > 0f));
-
         }
 
         public PlaneImpactResult GetImpactResult(GameObject impactor, D2DPoint impactPos)
         {
-            // Make sure cockpit position is up-to-date.
-            _cockpitPosition.Update(0f);
-
+            // Get impact angle, damage and distortion results.
             var angle = Utilities.ClampAngle((impactor.Velocity - this.Velocity).Angle() - this.Rotation);
+            var isMissile = impactor is GuidedMissile;
+            var distortAmt = 0f;
+            var damageAmt = 0f;
+
             var result = new PlaneImpactResult();
+            result.TargetPlane = this;
+            result.ImpactorObject = impactor;
+            result.ImpactPointOrigin = Utilities.ScaleToOrigin(this, impactPos);
             result.ImpactPoint = impactPos;
             result.ImpactAngle = angle;
             result.WasFlipped = this.Polygon.IsFlipped;
 
-            if (!IsDisabled)
+            if (isMissile)
             {
-                if (this.Health > 0)
-                {
-                    var distortAmt = BULLET_DISTORT_AMT;
-                    if (impactor is GuidedMissile)
-                        distortAmt = MISSILE_DISTORT_AMT;
+                result.ImpactType |= ImpactType.Missile;
+                damageAmt = MISSILE_DAMAGE;
+                distortAmt = MISSILE_DISTORT_AMT;
+            }
+            else
+            {
+                result.ImpactType |= ImpactType.Bullet;
+                damageAmt = BULLET_DAMAGE;
+                distortAmt = BULLET_DISTORT_AMT;
+            }
 
-                    var distortVec = Utilities.AngleToVectorDegrees(angle + this.Rotation, distortAmt);
-                    var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
+            // Distortion vector for poly damage and headshot checks.
+            var distortVec = Utilities.AngleToVectorDegrees(angle, distortAmt);
 
-                    var hitCockpit = CollisionHelpers.EllipseContains(cockpitEllipse, _cockpitPosition.Rotation, impactPos + distortVec);
-                    if (hitCockpit)
-                    {
-                        result.WasHeadshot = true;
-                    }
+            // Check for headshots.
+            var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
+            var cockpitImpactPos = (result.ImpactPointOrigin + distortVec).Translate(this.Rotation, this.Position, this.RenderScale);
+            var hitCockpit = cockpitEllipse.Contains(_cockpitPosition.Rotation, cockpitImpactPos);
 
-                    if (impactor is GuidedMissile)
-                    {
-                        result.Type = ImpactType.Missile;
-                        result.DamageAmount = MISSILE_DAMAGE;
-                    }
-                    else
-                    {
-                        result.Type = ImpactType.Bullet;
-                        result.DamageAmount = BULLET_DAMAGE;
-                    }
-                }
+            if (hitCockpit)
+            {
+                result.ImpactType |= ImpactType.Headshot;
+                damageAmt = this.Health;
+            }
+
+            // Copy the polygon, distort it, then check for distortion related damage effects.
+            var polyCopy = new RenderPoly(this.Polygon, this.Position, this.Rotation);
+            polyCopy.Distort(result.ImpactPointOrigin, distortVec);
+
+            AddPolyDamageEffectsResult(polyCopy, result);
+
+            // Set the damage amount.
+            if (!IsDisabled && this.Health > 0f)
+            {
+                result.DamageAmount = damageAmt;
+                result.NewHealth = this.Health - result.DamageAmount;
+
+                if (result.WasHeadshot)
+                    result.NewHealth = 0f;
             }
 
             return result;
         }
 
-        public void DoPlayerKilled(GameObject impactor)
+        public void DoPlayerKilled(FighterPlane attackPlane, ImpactType impactType)
         {
             if (IsDisabled)
                 return;
 
             IsDisabled = true;
+            DeathTime = World.TargetDT;
+
+            ThrustOn = false;
+            _thrustAmt.SetNow(0f);
+            FiringBurst = false;
+            DroppingDecoy = false;
+            _engineFireFlame.StartSpawning();
+
             _damageDeflection = _controlWing.Deflection;
 
-            if (impactor.Owner is FighterPlane attackPlane)
+            if (!World.IsClient)
+            {
                 attackPlane.Kills++;
+                Deaths++;
+            }
 
-            Deaths++;
-
-            PlayerKilledCallback?.Invoke(this, impactor);
+            var killedEvent = new PlayerKilledEventArgs(this, attackPlane, impactType);
+            PlayerKilledCallback?.Invoke(killedEvent);
         }
 
-        private void DoImpactImpulse(GameObject impactor, D2DPoint impactPos, float dt)
+        private void DoImpactImpulse(GameObject impactor, D2DPoint impactPos)
         {
             if (this.IsNetObject)
                 return;
 
-            const float IMPACT_MASS = 160f;
+            const float IMPACT_MASS = 2f;
 
             var velo = impactor.Velocity - this.Velocity;
-            var force = (IMPACT_MASS * velo.Length()) / 4f;
+            var force = (IMPACT_MASS * velo.Length());
             var forceVec = (velo.Normalized() * force);
             var impactTq = Utilities.GetTorque(_centerOfMass.Position, impactPos, forceVec);
 
-            this.RotationSpeed += (float)(impactTq / this.GetInertia(this.Mass) * dt);
-            this.Velocity += forceVec / this.Mass * dt;
+            this.RotationSpeed += impactTq / this.GetInertia(this.Mass);
+            this.Velocity += forceVec / this.Mass;
         }
 
         /// <summary>
@@ -1189,7 +1215,9 @@ namespace PolyPlane.GameObjects
         {
             for (int i = 0; i < num; i++)
             {
-                var debris = new Debris(this, pos, this.Velocity, color);
+                var debris = World.ObjectManager.RentDebris();
+                debris.ReInit(this, pos, this.Velocity, color);
+
                 World.ObjectManager.EnqueueDebris(debris);
             }
         }
@@ -1210,25 +1238,29 @@ namespace PolyPlane.GameObjects
 
             HasCrashed = true;
             IsDisabled = true;
+            ThrustOn = false;
             _flipTimer.Stop();
             Health = 0;
         }
 
-        public void FixPlane()
+        public void RespawnPlane(D2DPoint location)
         {
+            this.SetPosition(location);
+
             Health = MAX_HEALTH;
             NumBullets = MAX_BULLETS;
             NumMissiles = MAX_MISSILES;
             NumDecoys = MAX_DECOYS;
+            RespawnQueued = false;
             IsDisabled = false;
             HasCrashed = false;
             ThrustOn = true;
             EngineDamaged = false;
             _expireTimeout.Stop();
             _flipTimer.Restart();
+            _bulletHoles.ForEach(b => b.Dispose());
             _bulletHoles.Clear();
             WasHeadshot = false;
-            PlayerGuideAngle = 0f;
             _easePhysicsComplete = false;
             _easePhysicsTimer.Restart();
             AIRespawnReady = false;
@@ -1240,17 +1272,20 @@ namespace PolyPlane.GameObjects
 
             _wings.ForEach(w => w.Visible = true);
 
-            var flipped = this.Polygon.IsFlipped;
-
-            this.Polygon = new RenderPoly(this, _planePoly, this.RenderScale, POLY_TESSELLATE_DIST);
-
-            if (flipped)
-                this.Polygon.FlipY();
+            this.Polygon.Restore();
 
             if (IsAI)
                 _aiBehavior.ClearTarget();
 
-            this.SyncFixtures();
+            // Spawn the plane pointing in the desired direction.
+            if (Utilities.IsPointingRight(PlayerGuideAngle))
+                Rotation = 0f;
+            else
+                Rotation = 180f;
+
+            Velocity = Utilities.AngleToVectorDegrees(Rotation, World.PlaneSpawnVelo);
+
+            this.UpdateAllAttachments(0f);
         }
 
         public void MoveThrottle(bool up)
@@ -1277,8 +1312,8 @@ namespace PolyPlane.GameObjects
             const float DAMAGE_DRAG_AMT = 0.002f;
             const float DAMAGE_TQ_FACTOR = 2f;
 
-            var hDens = World.GetDensityAltitude(hole.Position);
-            var hVelo = Utilities.AngularVelocity(this, hole.Position);
+            var hDens = World.GetAltitudeDensity(hole.Position);
+            var hVelo = Utilities.PointVelocity(this, hole.Position);
 
             if (hVelo.Length() == 0f)
             {
@@ -1292,7 +1327,7 @@ namespace PolyPlane.GameObjects
 
             var hVeloNorm = hVelo.Normalized();
             var hVeloMag = hVelo.Length();
-            var hVeloMagSq = (float)Math.Pow(hVeloMag, 2f);
+            var hVeloMagSq = MathF.Pow(hVeloMag, 2f);
             var dAmt = DAMAGE_DRAG_AMT * 0.5f * hDens * hVeloMagSq;
 
             var dVec = -hVeloNorm * dAmt;
@@ -1322,16 +1357,6 @@ namespace PolyPlane.GameObjects
                 return;
 
             this.FlipY();
-
-            _wings.ForEach(w => w.FlipY());
-            _wings.ForEach(w => w.Update(World.SUB_DT));
-            _vaporTrails.ForEach(v => v.FlipY());
-            _flamePos.FlipY();
-            _bulletHoles.ForEach(f => f.FlipY());
-            _cockpitPosition.FlipY();
-            _gun.FlipY();
-            _centerOfThrust.FlipY();
-            _centerOfMass.FlipY();
 
             if (_currentDir == Direction.Right)
                 _currentDir = Direction.Left;
@@ -1367,7 +1392,7 @@ namespace PolyPlane.GameObjects
             var boostFact = Utilities.Factor(velo, thrustBoostMaxSpd);
             var maxVeloFact = 1f - Utilities.Factor(velo, MAX_VELO);
 
-            thrust *= _thrustAmt.Value * ((this.Thrust + (thrustBoostAmt * boostFact)) * World.GetDensityAltitude(this.Position));
+            thrust *= _thrustAmt.Value * ((this.Thrust + (thrustBoostAmt * boostFact)) * World.GetAltitudeDensity(this.Position));
             thrust *= maxVeloFact; // Reduce thrust as we approach max velo.
 
             return thrust;
@@ -1378,8 +1403,8 @@ namespace PolyPlane.GameObjects
             base.Dispose();
 
             _polyClipLayer?.Dispose();
+            _bulletHoles.ForEach(b => b.Dispose());
             _bulletHoles.Clear();
-            _vaporTrails.Clear();
             _engineFireFlame?.Dispose();
         }
     }

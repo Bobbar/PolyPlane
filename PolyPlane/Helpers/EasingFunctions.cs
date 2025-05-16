@@ -11,7 +11,7 @@
 
             public static float EaseCircle(float k)
             {
-                return 1f - (float)Math.Sqrt(1f - Math.Pow(k, 2f));
+                return 1f - MathF.Sqrt(1f - MathF.Pow(k, 2f));
             }
 
             public static float EaseQuintic(float k)
@@ -26,12 +26,12 @@
 
             public static float EaseSine(float k)
             {
-                return 1f - (float)Math.Cos((k * Math.PI) / 2f);
+                return 1f - MathF.Cos((k * MathF.PI) / 2f);
             }
 
             public static float EaseExpo(float k)
             {
-                return k == 0f ? 0f : (float)Math.Pow(2f, 10f * k - 10f);
+                return k == 0f ? 0f : MathF.Pow(2f, 10f * k - 10f);
             }
         }
 
@@ -42,7 +42,7 @@
                 const float c1 = 1.70158f;
                 const float c3 = c1 + 1f;
 
-                return (float)(1f + c3 * Math.Pow(k - 1f, 3f) + c1 * Math.Pow(k - 1f, 2f));
+                return 1f + c3 * MathF.Pow(k - 1f, 3f) + c1 * MathF.Pow(k - 1f, 2f);
             }
 
             public static float EaseBounce(float k)
@@ -70,24 +70,24 @@
 
             public static float EaseElastic(float k)
             {
-                const float c4 = (2f * (float)Math.PI) / 3f;
+                const float c4 = (2f * MathF.PI) / 3f;
 
-                return k == 0f ? 0f : k == 1f ? 1f : (float)Math.Pow(2f, -10f * k) * (float)Math.Sin((k * 10f - 0.75f) * c4) + 1f;
+                return k == 0f ? 0f : k == 1f ? 1f : MathF.Pow(2f, -10f * k) * MathF.Sin((k * 10f - 0.75f) * c4) + 1f;
             }
 
             public static float EaseSine(float k)
             {
-                return (float)Math.Sin((k * Math.PI) / 2f);
+                return MathF.Sin((k * MathF.PI) / 2f);
             }
 
             public static float EaseExpo(float k)
             {
-                return k == 1f ? 1f : 1f - (float)Math.Pow(2f, -10f * k);
+                return k == 1f ? 1f : 1f - MathF.Pow(2f, -10f * k);
             }
 
             public static float EaseQuintic(float k)
             {
-                return 1f + ((k -= 1f) * (float)Math.Pow(k, 4));
+                return 1f + ((k -= 1f) * MathF.Pow(k, 4));
             }
 
             public static float EaseQuad(float k)
@@ -97,12 +97,12 @@
 
             public static float EaseCircle(float k)
             {
-                return (float)Math.Sqrt(1f - Math.Pow(k - 1f, 2f));
+                return MathF.Sqrt(1f - MathF.Pow(k - 1f, 2f));
             }
 
             public static float EaseCubic(float k)
             {
-                return 1f - (float)Math.Pow(1f - k, 3f);
+                return 1f - MathF.Pow(1f - k, 3f);
             }
         }
 
@@ -114,13 +114,13 @@
                 const float c2 = c1 * 1.525f;
 
                 return k < 0.5
-                  ? (float)(Math.Pow(2f * k, 2f) * ((c2 + 1f) * 2f * k - c2)) / 2f
-                  : (float)(Math.Pow(2f * k - 2f, 2f) * ((c2 + 1f) * (k * 2f - 2f) + c2) + 2f) / 2f;
+                  ? (MathF.Pow(2f * k, 2f) * ((c2 + 1f) * 2f * k - c2)) / 2f
+                  : (MathF.Pow(2f * k - 2f, 2f) * ((c2 + 1f) * (k * 2f - 2f) + c2) + 2f) / 2f;
             }
 
             public static float EaseQuart(float k)
             {
-                return k < 0.5f ? 8f * k * k * k * k : 1f - (float)Math.Pow(-2f * k + 2f, 4f) / 2f;
+                return k < 0.5f ? 8f * k * k * k * k : 1f - MathF.Pow(-2f * k + 2f, 4f) / 2f;
             }
         }
 

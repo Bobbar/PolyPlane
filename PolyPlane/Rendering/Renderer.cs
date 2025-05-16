@@ -1,18 +1,17 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Animations;
 using PolyPlane.GameObjects.Tools;
+using PolyPlane.GameObjects.Managers;
 using PolyPlane.Helpers;
 using PolyPlane.Net;
 using System.Diagnostics;
+using System.Text;
 using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
 {
     public class Renderer : IDisposable
     {
-        public TimeSpan CollisionTime = TimeSpan.Zero;
-        public TimeSpan UpdateTime = TimeSpan.Zero;
-
         public float HudScale
         {
             get { return _hudScale; }
@@ -23,6 +22,14 @@ namespace PolyPlane.Rendering
                     _hudScale = value;
             }
         }
+
+        public NetEventManager NetManager
+        {
+            get { return _netMan; }
+            set { _netMan = value; }
+        }
+
+        private StringBuilder _stringBuilder = new StringBuilder();
 
         private D2DDevice _device;
         private D2DGraphics _gfx = null;
@@ -56,18 +63,21 @@ namespace PolyPlane.Rendering
         private bool _showHUD = true;
         private int _scoreScrollPos = 0;
         private int _currentDPI = 96;
-        private long _lastRenderTime = 0;
+        private double _lastRenderTime = 0;
         private float _hudScale = 1f;
-        private float _renderFPS = 0;
+        private double _renderFPS = 0;
         private float _screenFlashOpacity = 0f;
+        private float _warnLightFlashAmount = 1f;
         private float _groundColorTOD = 0f;
         private string _hudMessage = string.Empty;
 
-        private SmoothDouble _renderTimeSmooth = new SmoothDouble(10);
-        private SmoothDouble _updateTimeSmooth = new SmoothDouble(10);
+        private SmoothDouble _renderTimeSmooth = new SmoothDouble(60);
+        private SmoothDouble _updateTimeSmooth = new SmoothDouble(60);
+        private SmoothDouble _collisionTimeSmooth = new SmoothDouble(60);
+        private SmoothDouble _fpsSmooth = new SmoothDouble(20);
+
         private Stopwatch _timer = new Stopwatch();
         private GameTimer _hudMessageTimeout = new GameTimer(10f);
-        private GameTimer _warningLightFlashTimer = new GameTimer(0.5f, 0.5f, true);
         private List<EventMessage> _messageEvents = new List<EventMessage>();
         private List<PopMessage> _popMessages = new List<PopMessage>();
 
@@ -90,6 +100,7 @@ namespace PolyPlane.Rendering
         private readonly D2DColor _groundColorDark = D2DColor.DarkGreen;
         private readonly D2DColor _groundLightColor = new D2DColor(0.85f, 0.76f, 0.14f);
         private readonly D2DColor _deathScreenColor = new D2DColor(0.2f, D2DColor.Red);
+        private readonly D2DColor _hudColorLight = Utilities.LerpColor(World.HudColor, D2DColor.WhiteSmoke, 0.3f);
 
         private readonly D2DPoint _infoPosition = new D2DPoint(20, 20);
         private readonly D2DSize _healthBarSize = new D2DSize(80, 20);
@@ -97,6 +108,7 @@ namespace PolyPlane.Rendering
         private FloatAnimation _screenShakeX;
         private FloatAnimation _screenShakeY;
         private FloatAnimation _screenFlash;
+        private FloatAnimation _warnLightFlash;
 
         private int Width => (int)(_renderTarget.Width / (_renderTarget.DeviceDpi / DEFAULT_DPI));
         private int Height => (int)(_renderTarget.Height / (_renderTarget.DeviceDpi / DEFAULT_DPI));
@@ -108,14 +120,12 @@ namespace PolyPlane.Rendering
         private const int NUM_TREES = 1000;
 
         private const float GROUND_TOD_INTERVAL = 0.1f; // Update ground brush when elapsed TOD exceeds this amount.
-        private const float GROUND_OBJ_SCALE = 4f;
         private const float ZOOM_FACTOR = 0.07f; // Effects zoom in/out speed.
         private const float MESSAGEBOX_FONT_SIZE = 10f;
         private const string DEFAULT_FONT_NAME = "Consolas";
 
-        private List<Cloud> _clouds = new List<Cloud>();
-        private List<Tree> _trees = new List<Tree>();
-
+        private CloudManager _cloudManager = new();
+        private TreeManager _treeManager = new();
 
         public Renderer(Control renderTarget, NetEventManager netMan)
         {
@@ -129,13 +139,14 @@ namespace PolyPlane.Rendering
             {
                 _objs.PlayerKilledEvent += PlayerKilledEvent;
                 _objs.NewPlayerEvent += NewPlayerEvent;
+                _objs.PlayerScoredEvent += PlayerScoredEvent;
+            }
+            else
+            {
+                netMan.PlayerScoredEvent += PlayerScoredEvent;
             }
 
-            _objs.PlayerScoredEvent += PlayerScoredEvent;
 
-            _warningLightFlashTimer.Start();
-
-            InitProceduralGenStuff();
             InitRenderTarget();
 
             _groundColorTOD = World.TimeOfDay;
@@ -144,7 +155,6 @@ namespace PolyPlane.Rendering
         public void Dispose()
         {
             _hudMessageTimeout.Stop();
-            _warningLightFlashTimer.Stop();
 
             _groundClipLayer?.Dispose();
             _bulletLightingBrush?.Dispose();
@@ -167,6 +177,9 @@ namespace PolyPlane.Rendering
             _whiteColorBrush?.Dispose();
             _greenYellowColorBrush?.Dispose();
 
+            _clearBitmap?.Dispose();
+            _treeManager?.Dispose();
+
             _device?.Dispose();
             _fpsLimiter?.Dispose();
         }
@@ -179,7 +192,7 @@ namespace PolyPlane.Rendering
             _device.Resize();
         }
 
-        private void InitGfx()
+        public void InitGfx()
         {
             if (_gfx != null)
                 return;
@@ -198,6 +211,11 @@ namespace PolyPlane.Rendering
             _screenShakeX = new FloatAnimation(5f, 0f, 2f, EasingFunctions.Out.EaseCircle, v => _screenShakeTrans.X = v);
             _screenShakeY = new FloatAnimation(5f, 0f, 2f, EasingFunctions.Out.EaseCircle, v => _screenShakeTrans.Y = v);
 
+            _warnLightFlash = new FloatAnimation(0f, 1f, 0.3f, EasingFunctions.EaseLinear, v => _warnLightFlashAmount = v);
+            _warnLightFlash.Loop = true;
+            _warnLightFlash.ReverseOnLoop = true;
+            _warnLightFlash.Start();
+
             _textConsolas12 = _ctx.Device.CreateTextFormat(DEFAULT_FONT_NAME, 12f);
             _textConsolas15Centered = _ctx.Device.CreateTextFormat(DEFAULT_FONT_NAME, 15f, D2DFontWeight.Normal, D2DFontStyle.Normal, D2DFontStretch.Normal, DWriteTextAlignment.Center, DWriteParagraphAlignment.Center);
             _textConsolas15 = _ctx.Device.CreateTextFormat(DEFAULT_FONT_NAME, 15f);
@@ -207,13 +225,14 @@ namespace PolyPlane.Rendering
             _messageBoxFont = _ctx.Device.CreateTextFormat(DEFAULT_FONT_NAME, MESSAGEBOX_FONT_SIZE);
 
             _hudColorBrush = _ctx.Device.CreateSolidColorBrush(World.HudColor);
-            _hudColorBrushLight = _ctx.Device.CreateSolidColorBrush(Utilities.LerpColor(World.HudColor, D2DColor.WhiteSmoke, 0.3f));
+            _hudColorBrushLight = _ctx.Device.CreateSolidColorBrush(_hudColorLight);
             _redColorBrush = _ctx.Device.CreateSolidColorBrush(D2DColor.Red);
             _whiteColorBrush = _ctx.Device.CreateSolidColorBrush(D2DColor.White);
             _greenYellowColorBrush = _ctx.Device.CreateSolidColorBrush(D2DColor.GreenYellow);
 
             UpdateGroundColorBrush(_ctx);
             InitClearGradientBitmap();
+            InitProceduralGenStuff(_ctx);
         }
 
         private void InitClearGradientBitmap()
@@ -235,103 +254,12 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private void InitProceduralGenStuff()
+        private void InitProceduralGenStuff(RenderContext ctx)
         {
             var rnd = new Random(1234);
 
-            GenClouds(rnd);
-            GenTrees(rnd);
-        }
-
-        private void GenClouds(Random rnd)
-        {
-            // Generate a pseudo-random? list of clouds.
-            // I tried to do clouds procedurally, but wasn't having much luck.
-            // It turns out that we need a surprisingly few number of clouds
-            // to cover a very large area, so we will just brute force this for now.
-
-            var cloudDeDup = new HashSet<D2DPoint>();
-            const int MIN_PNTS = 12;
-            const int MAX_PNTS = 28;
-            const int MIN_RADIUS = 5;
-            const int MAX_RADIUS = 30;
-
-            var cloudRange = World.CloudRangeY;
-            var fieldRange = World.FieldXBounds;
-
-            for (int i = 0; i < NUM_CLOUDS; i++)
-            {
-                var rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudRange.X, cloudRange.Y));
-
-                while (!cloudDeDup.Add(rndPos))
-                    rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudRange.X, cloudRange.Y));
-
-                var rndCloud = Cloud.RandomCloud(rnd, rndPos, MIN_PNTS, MAX_PNTS, MIN_RADIUS, MAX_RADIUS);
-                _clouds.Add(rndCloud);
-            }
-
-            // Add a more dense layer near the ground?
-            var cloudLayerRangeY = new D2DPoint(-2500, -2000);
-            for (int i = 0; i < NUM_CLOUDS / 2; i++)
-            {
-                var rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
-
-                while (!cloudDeDup.Add(rndPos))
-                    rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), rnd.NextFloat(cloudLayerRangeY.X, cloudLayerRangeY.Y));
-
-                var rndCloud = Cloud.RandomCloud(rnd, rndPos, MIN_PNTS, MAX_PNTS, MIN_RADIUS, MAX_RADIUS);
-                _clouds.Add(rndCloud);
-            }
-        }
-
-        private void GenTrees(Random rnd)
-        {
-            // Gen trees.
-            var treeDeDup = new HashSet<D2DPoint>();
-
-            var trunkColorNormal = D2DColor.Chocolate;
-            var trunkColorNormalDark = new D2DColor(1f, 0.29f, 0.18f, 0.105f);
-            var leafColorNormal = D2DColor.ForestGreen;
-            var trunkColorPine = D2DColor.BurlyWood;
-            var leafColorPine = D2DColor.Green;
-            var minDist = rnd.NextFloat(20f, 200f);
-            var fieldRange = World.FieldXBounds;
-
-            for (int i = 0; i < NUM_TREES; i++)
-            {
-                var rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), 0f);
-
-                while (!treeDeDup.Add(rndPos) || (_trees.Count > 0 && _trees.Min(t => t.Position.DistanceTo(rndPos)) < minDist))
-                    rndPos = new D2DPoint(rnd.NextFloat(fieldRange.X, fieldRange.Y), 0f);
-
-                var type = rnd.Next(10);
-                var height = 10f + (rnd.NextFloat(1f, 3f) * 20f);
-
-                Tree newTree;
-
-                if (type <= 8)
-                {
-                    var radius = rnd.NextFloat(40f, 80f);
-
-                    var leafColor = leafColorNormal;
-                    leafColor.g -= rnd.NextFloat(0.0f, 0.2f);
-
-                    var trunkColor = Utilities.LerpColor(trunkColorNormal, trunkColorNormalDark, rnd.NextFloat(0f, 1f));
-                    var trunkWidth = rnd.NextFloat(2f, 7f);
-
-                    newTree = new NormalTree(rndPos, height, radius, trunkWidth, trunkColor, leafColor);
-                }
-                else
-                {
-                    var width = rnd.NextFloat(20f, 30f);
-                    newTree = new PineTree(rndPos, height, width, trunkColorPine, leafColorPine);
-                }
-
-                _trees.Add(newTree);
-
-                if (i % 50 == 0)
-                    minDist = rnd.NextFloat(20f, 200f);
-            }
+            _cloudManager.GenClouds(rnd, NUM_CLOUDS);
+            _treeManager.GenTrees(rnd, NUM_TREES, ctx);
         }
 
         private void ResizeGfx(bool force = false)
@@ -344,7 +272,8 @@ namespace PolyPlane.Rendering
 
             ResizeViewPort();
 
-            InitClearGradientBitmap();
+            if (World.UseSkyGradient)
+                InitClearGradientBitmap();
 
             // Resizing graphics causes spikes in FPS. Try to limit them here.
             _fpsLimiter.Wait(World.TARGET_FPS);
@@ -365,17 +294,17 @@ namespace PolyPlane.Rendering
         private void UpdateTimersAndAnims(float dt)
         {
             _hudMessageTimeout.Update(dt);
-            _warningLightFlashTimer.Update(dt);
 
             _screenFlash.Update(dt);
             _screenShakeX.Update(dt);
             _screenShakeY.Update(dt);
+            _warnLightFlash.Update(World.DEFAULT_DT);
 
             _contrailBox.Update(_objs.Planes, dt);
 
             if (!World.IsPaused)
             {
-                UpdateClouds(dt);
+                _cloudManager.Update();
 
                 // Check if we need to update the ground brush.
                 var todDiff = Math.Abs(World.TimeOfDay - _groundColorTOD);
@@ -391,12 +320,17 @@ namespace PolyPlane.Rendering
 
         public void RenderFrame(GameObject viewObject, float dt)
         {
-            InitGfx();
+            if (_gfx == null)
+                throw new InvalidOperationException($"Renderer not initialized. Please call {nameof(InitGfx)} first.");
+
             ResizeGfx();
 
-            _timer.Restart();
-
+            Profiler.Start(ProfilerStat.Update);
             UpdateTimersAndAnims(dt);
+            Profiler.StopAndAppend(ProfilerStat.Update);
+
+
+            Profiler.Start(ProfilerStat.Render);
 
             if (World.UseSkyGradient)
                 _ctx.BeginRender(_clearBitmap);
@@ -405,6 +339,13 @@ namespace PolyPlane.Rendering
 
             if (viewObject != null)
             {
+                // Do G-Force screen shake effect for planes.
+                if (viewObject is FighterPlane plane)
+                {
+                    if (plane.GForce > World.SCREEN_SHAKE_G)
+                        DoScreenShake(plane.GForce / 4f);
+                }
+
                 var viewPortSize = new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE);
                 var viewPortRect = new D2DRect(viewObject.Position, viewPortSize);
                 _ctx.PushViewPort(viewPortRect);
@@ -435,6 +376,9 @@ namespace PolyPlane.Rendering
                 // Pop screen shake transform.
                 _ctx.PopTransform();
 
+                // Chat and event box.
+                DrawChatAndEventBox(_ctx);
+
                 // Draw overlay text. (FPS, Help and Info)
                 DrawOverlays(_ctx, viewObject);
 
@@ -444,14 +388,14 @@ namespace PolyPlane.Rendering
                 _ctx.PopViewPort();
             }
 
-            _timer.Stop();
-            _renderTimeSmooth.Add(_timer.Elapsed.TotalMilliseconds);
+            _renderTimeSmooth.Add(Profiler.Stop(ProfilerStat.Render).GetElapsedMilliseconds());
 
             _ctx.EndRender();
 
-            var now = DateTime.UtcNow.Ticks;
-            var fps = TimeSpan.TicksPerSecond / (float)(now - _lastRenderTime);
+            var now = World.CurrentTimeMs();
+            var elap = now - _lastRenderTime;
             _lastRenderTime = now;
+            var fps = 1000d / elap;
             _renderFPS = fps;
         }
 
@@ -471,9 +415,7 @@ namespace PolyPlane.Rendering
             color = Utilities.LerpColor(color, D2DColor.Black, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY - 5f));
             color = Utilities.LerpColor(color, ctx.AddTimeOfDayColor(color), 0.2f);
 
-            var rect = new D2DRect(new D2DPoint(this.Width * 0.5f, this.Height * 0.5f), new D2DSize(this.Width, this.Height));
-
-            ctx.Gfx.FillRectangle(rect, color);
+            ctx.Gfx.FillRectangle(World.ViewPortRectUnscaled, color);
         }
 
         private void DrawMovingBackground(RenderContext ctx, GameObject viewObject)
@@ -481,7 +423,13 @@ namespace PolyPlane.Rendering
             float spacing = 75f;
             const float size = 4f;
             var d2dSz = new D2DSize(size, size);
-            var color = new D2DColor(0.3f, D2DColor.Gray);
+
+            // Fade out with zoom level.
+            var alphaFact = 1f - Utilities.Factor(World.ViewPortScaleMulti, 35f);
+            var color = new D2DColor(0.3f * alphaFact, D2DColor.Gray);
+
+            if (alphaFact < 0.05f)
+                return;
 
             var plrPos = viewObject.Position;
             plrPos /= World.ViewPortScaleMulti;
@@ -514,17 +462,12 @@ namespace PolyPlane.Rendering
             ctx.PushTransform();
 
             var zAmt = World.ZoomScale;
-            var pos = new D2DPoint(World.ViewPortSize.width * 0.5f, World.ViewPortSize.height * 0.5f);
-            pos *= zAmt;
-
-            var offset = new D2DPoint(-viewObj.Position.X, -viewObj.Position.Y);
-            offset *= zAmt;
+            var center = new D2DPoint(World.ViewPortBaseSize.width * 0.5f, World.ViewPortBaseSize.height * 0.5f);
+            var viewObjOffset = new D2DPoint(-viewObj.Position.X, -viewObj.Position.Y) * zAmt;
 
             ctx.ScaleTransform(VIEW_SCALE, viewObj.Position);
-            //ctx.TranslateTransform(offset);
-            //ctx.TranslateTransform(pos);
-
-            ctx.TranslateTransform(offset + pos);
+            ctx.TranslateTransform(viewObjOffset);
+            ctx.TranslateTransform(center);
 
 
             var viewPortRect = new D2DRect(viewObj.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
@@ -533,7 +476,8 @@ namespace PolyPlane.Rendering
             var inflateAmt = VIEWPORT_PADDING_AMT * zAmt;
             viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true); // Inflate slightly to prevent "pop-in".
 
-            var objsInViewport = _objs.GetInViewport(ctx.Viewport).Where(o => o is not Explosion);
+            // Query the spatial grid for objects within the current viewport.
+            var objsInViewport = _objs.GetInViewport(viewPortRect).Where(o => o is not Explosion);
 
             // Update the light map.
             if (World.UseLightMap)
@@ -558,17 +502,19 @@ namespace PolyPlane.Rendering
             ctx.PushViewPort(viewPortRect);
 
             DrawGround(ctx, viewObj.Position);
-            DrawGroundObjs(ctx);
             DrawGroundImpacts(ctx);
+            DrawTrees(ctx);
+            DrawPlaneGroundShadows(ctx, shadowColor, todAngle);
 
-            _objs.MissileTrails.ForEach(o => o.Render(ctx));
+            for (int i = 0; i < _objs.MissileTrails.Count; i++)
+                _objs.MissileTrails[i].Render(ctx);
+
             _contrailBox.Render(ctx);
 
             foreach (var obj in objsInViewport)
             {
                 if (obj is FighterPlane p)
                 {
-                    DrawPlaneGroundShadow(ctx, p, shadowColor, todAngle);
                     p.Render(ctx);
                     DrawMuzzleFlash(ctx, p);
 
@@ -588,7 +534,7 @@ namespace PolyPlane.Rendering
                     missile.Render(ctx);
 
                     // Circle enemy missiles.
-                    if (!missile.Owner.Equals(viewPlane))
+                    if (!World.FreeCameraMode && !viewObj.Equals(missile) && !missile.Owner.Equals(viewPlane))
                         ctx.DrawEllipse(new D2DEllipse(missile.Position, new D2DSize(50f, 50f)), new D2DColor(0.4f, D2DColor.Red), 8f);
                 }
                 else
@@ -598,13 +544,15 @@ namespace PolyPlane.Rendering
             }
 
             // Render explosions separate so that they can clip to the viewport correctly.
-            _objs.Explosions.ForEach(e => e.Render(ctx));
+            for (int i = 0; i < _objs.Explosions.Count; i++)
+                _objs.Explosions[i].Render(ctx);
 
             DrawClouds(ctx);
-            DrawPlaneCloudShadows(ctx, shadowColor);
+            DrawPlaneCloudShadows(ctx, shadowColor, objsInViewport);
             DrawLightFlareEffects(ctx, objsInViewport);
 
-            //DrawNoise(ctx);
+            if (World.DrawNoiseMap)
+                DrawNoise(ctx);
 
             if (World.DrawLightMap)
                 DrawLightMap(ctx);
@@ -625,20 +573,13 @@ namespace PolyPlane.Rendering
             groundPos += new D2DPoint(0f, yPos);
 
             // Draw the ground.
-            ctx.Gfx.FillRectangle(new D2DRect(groundPos, new D2DSize(this.Width * World.ViewPortScaleMulti, (HEIGHT * 2f) / ctx.CurrentScale)), _groundBrush);
+            var rect = new D2DRect(groundPos, new D2DSize(World.ViewPortSize.width, (HEIGHT * 2f) / ctx.CurrentScale));
+            ctx.Gfx.FillRectangle(rect, _groundBrush);
         }
 
-        private void DrawGroundObjs(RenderContext ctx)
+        private void DrawTrees(RenderContext ctx)
         {
-            var todColor = ctx.GetTimeOfDayColor();
-
-            foreach (var tree in _trees)
-            {
-                if (ctx.Viewport.Contains(tree.Position, tree.TotalHeight * GROUND_OBJ_SCALE))
-                {
-                    tree.Render(ctx, todColor, GROUND_OBJ_SCALE);
-                }
-            }
+            _treeManager.Render(ctx);
         }
 
         private void DrawGroundImpacts(RenderContext ctx)
@@ -646,83 +587,36 @@ namespace PolyPlane.Rendering
             if (_groundClipLayer == null)
                 _groundClipLayer = ctx.Device.CreateLayer();
 
+            const float LIGHT_INTENSITY = 0.4f;
+
             var rect = new D2DRect(ctx.Viewport.Location.X, 0f, ctx.Viewport.Width, 4000f);
 
-            using (var clipGeo = ctx.Device.CreateRectangleGeometry(rect))
+            ctx.Gfx.PushLayer(_groundClipLayer, rect);
+
+            for (int i = 0; i < _objs.GroundImpacts.Count; i++)
             {
-                ctx.Gfx.PushLayer(_groundClipLayer, ctx.Viewport, clipGeo);
+                var impact = _objs.GroundImpacts[i];
 
-                foreach (var impact in _objs.GroundImpacts)
+                if (ctx.Viewport.Contains(impact.Position))
                 {
-                    if (ctx.Viewport.Contains(impact.Position))
-                    {
-                        ctx.PushTransform();
+                    ctx.PushTransform();
 
-                        ctx.RotateTransform(impact.Angle, impact.Position);
+                    ctx.RotateTransform(impact.Angle, impact.Position);
 
-                        float ageAlpha = 1f;
+                    float ageAlpha = 1f;
 
-                        if (impact.Age >= GroundImpact.START_FADE_AGE)
-                            ageAlpha = 1f - Utilities.FactorWithEasing(impact.Age - GroundImpact.START_FADE_AGE, GroundImpact.MAX_AGE - GroundImpact.START_FADE_AGE, EasingFunctions.In.EaseExpo);
+                    if (impact.Age >= GroundImpact.START_FADE_AGE)
+                        ageAlpha = 1f - Utilities.FactorWithEasing(impact.Age - GroundImpact.START_FADE_AGE, GroundImpact.MAX_AGE - GroundImpact.START_FADE_AGE, EasingFunctions.In.EaseExpo);
 
-                        ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), _groundImpactOuterColor.WithAlpha(ageAlpha), 0.4f);
-                        ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), _groundImpactInnerColor.WithAlpha(ageAlpha), 0.4f);
+                    ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width + 4f, impact.Size.height + 4f)), _groundImpactOuterColor.WithAlpha(ageAlpha), LIGHT_INTENSITY);
+                    ctx.FillEllipseWithLighting(new D2DEllipse(impact.Position, new D2DSize(impact.Size.width, impact.Size.height)), _groundImpactInnerColor.WithAlpha(ageAlpha), LIGHT_INTENSITY);
 
-                        ctx.PopTransform();
-                    }
+                    ctx.PopTransform();
                 }
-
-                ctx.Gfx.PopLayer();
             }
+
+            ctx.Gfx.PopLayer();
         }
-
-        private void DrawPlaneGroundShadow(RenderContext ctx, FighterPlane plane, D2DColor shadowColor, float todAngle)
-        {
-            const float WIDTH_PADDING = 20f;
-            const float MAX_WIDTH = 120f;
-            const float HEIGHT = 10f;
-            const float MAX_SIZE_ALT = 500f;
-            const float MAX_SHOW_ALT = 2000f;
-            const float Y_POS = 15f;
-
-            if (plane.Altitude > MAX_SHOW_ALT)
-                return;
-
-            // Two offsets. One for ToD angle offset by 90 degrees, another offset by plane rotation.
-            var todAngleOffset = Utilities.ClampAngle(todAngle + 90f);
-            var todRotationOffset = Utilities.ClampAngle(todAngleOffset - plane.Rotation);
-
-            // Make a line segment to represent the plane's rotation in relation to the angle of the sun.
-            var lineA = new D2DPoint(0f, 0f);
-            var lineB = new D2DPoint(MAX_WIDTH, 0f);
-
-            // Rotate the segment.
-            lineA = Utilities.ApplyTranslation(lineA, todRotationOffset, D2DPoint.Zero);
-            lineB = Utilities.ApplyTranslation(lineB, todRotationOffset, D2DPoint.Zero);
-
-            // Get the abs diff between the X coords of the line to compute the initial shadow width.
-            var width = Math.Abs(lineB.X - lineA.X);
-            var initialWidth = ((width) * 0.5f) + WIDTH_PADDING;
-
-            // Find the ground intersection point for the shadow position.
-            var shadowPos = Utilities.GroundIntersectionPoint(plane, todAngle);
-
-            // Move the shadow position down to the desired Y position.
-            shadowPos += new D2DPoint(0f, Y_POS);
-
-            // Compute the shadow width and alpha per altitude and draw it.
-            var shadowWidth = Utilities.Lerp(1f, initialWidth, Utilities.Factor(MAX_SIZE_ALT, plane.Altitude));
-            var shadowAlpha = shadowColor.a * (1f - Utilities.FactorWithEasing(plane.Altitude, MAX_SHOW_ALT, EasingFunctions.In.EaseSine));
-
-            if (plane.Altitude <= 0f)
-                shadowWidth = initialWidth;
-
-            if (shadowWidth <= 0f)
-                return;
-
-            ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(shadowWidth, HEIGHT)), shadowColor.WithAlpha(shadowAlpha));
-        }
-
 
         private void DrawMuzzleFlash(RenderContext ctx, FighterPlane plane)
         {
@@ -753,8 +647,7 @@ namespace PolyPlane.Rendering
             if (healthPct > 0f && healthPct < 0.05f)
                 healthPct = 0.05f;
 
-            ctx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), World.HudColor);
-            ctx.DrawRectangle(new D2DRect(position, size), World.HudColor);
+            ctx.DrawProgressBar(position, size, World.HudColor, World.HudColor, healthPct);
 
             // Draw player name.
             if (string.IsNullOrEmpty(plane.PlayerName))
@@ -764,26 +657,79 @@ namespace PolyPlane.Rendering
             ctx.DrawText(plane.PlayerName, _hudColorBrush, _textConsolas30Centered, rect);
         }
 
-
         private void DrawClouds(RenderContext ctx)
         {
-            var todColor = ctx.GetTimeOfDayColor();
-            var todAngle = ctx.GetTimeOfDaySunAngle();
-            var shadowColor = Utilities.LerpColorWithAlpha(todColor, D2DColor.Black, 0.7f, 0.05f);
+            _cloudManager.Render(ctx);
+        }
 
-            for (int i = 0; i < _clouds.Count; i++)
+        private void DrawPlaneCloudShadows(RenderContext ctx, D2DColor shadowColor, IEnumerable<GameObject> objs)
+        {
+            // Don't bother if we are currently zoomed way out.
+            if (World.ZoomScale < 0.03f)
+                return;
+
+            var color = shadowColor.WithAlpha(0.07f);
+
+            foreach (var obj in objs)
             {
-                var cloud = _clouds[i];
-
-                cloud.Render(ctx, shadowColor, todColor, todAngle);
+                if (obj is FighterPlane plane)
+                    ctx.FillPolygon(plane.Polygon, color);
             }
         }
 
-        private void DrawPlaneCloudShadows(RenderContext ctx, D2DColor shadowColor)
+        private void DrawPlaneGroundShadows(RenderContext ctx, D2DColor shadowColor, float todAngle)
         {
-            var color = shadowColor.WithAlpha(0.07f);
-            foreach (var plane in _objs.Planes)
-                ctx.DrawPolygon(plane.Polygon.Poly, color, 0f, D2DDashStyle.Solid, color);
+            const float WIDTH_PADDING = 20f;
+            const float MAX_WIDTH = 120f;
+            const float HEIGHT = 10f;
+            const float MAX_SIZE_ALT = 500f;
+            const float MAX_SHOW_ALT = 2000f;
+            const float Y_POS = 15f;
+
+            for (int i = 0; i < _objs.Planes.Count; i++)
+            {
+                var plane = _objs.Planes[i];
+
+                if (plane.Altitude > MAX_SHOW_ALT)
+                    continue;
+
+                // Find the ground intersection point for the shadow position.
+                var shadowPos = Utilities.GroundIntersectionPoint(plane, todAngle);
+
+                // Move the shadow position down to the desired Y position.
+                shadowPos += new D2DPoint(0f, Y_POS);
+
+                // Make sure it is inside the viewport.
+                if (!ctx.Viewport.Contains(shadowPos))
+                    continue;
+
+                // Offset ToD angle by plane rotation.
+                var todRotationOffset = Utilities.ClampAngle(todAngle - plane.Rotation);
+
+                // Make a line segment to represent the plane's rotation in relation to the angle of the sun.
+                var lineA = new D2DPoint(0f, 0f);
+                var lineB = new D2DPoint(0f, MAX_WIDTH);
+
+                // Rotate the segment.
+                lineA = lineA.Translate(todRotationOffset, D2DPoint.Zero);
+                lineB = lineB.Translate(todRotationOffset, D2DPoint.Zero);
+
+                // Get the abs diff between the X coords of the line to compute the initial shadow width.
+                var width = Math.Abs(lineB.X - lineA.X);
+                var initialWidth = ((width) * 0.5f) + WIDTH_PADDING;
+
+                // Compute the shadow width and alpha per altitude and draw it.
+                var shadowWidth = Utilities.Lerp(1f, initialWidth, Utilities.Factor(MAX_SIZE_ALT, plane.Altitude));
+                var shadowAlpha = shadowColor.a * (1f - Utilities.FactorWithEasing(plane.Altitude, MAX_SHOW_ALT, EasingFunctions.In.EaseSine));
+
+                if (plane.Altitude <= 0f)
+                    shadowWidth = initialWidth;
+
+                if (shadowWidth <= 0f)
+                    return;
+
+                ctx.FillEllipse(new D2DEllipse(shadowPos, new D2DSize(shadowWidth, HEIGHT)), shadowColor.WithAlpha(shadowAlpha));
+            }
         }
 
         private void DrawLightFlareEffects(RenderContext ctx, IEnumerable<GameObject> objs)
@@ -932,7 +878,7 @@ namespace PolyPlane.Rendering
                         }
 
                         DrawPlanePointers(ctx, viewportsize, plane, dt);
-                        DrawMissilePointersAndWarnings(ctx.Gfx, viewportsize, plane);
+                        DrawMissilePointersAndWarnings(ctx, viewportsize, plane);
                     }
 
                     DrawHudMessage(ctx.Gfx, viewportsize);
@@ -940,9 +886,7 @@ namespace PolyPlane.Rendering
 
                     var healthBarSize = new D2DSize(300, 30);
                     var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height - (viewportsize.height * 0.85f));
-                    DrawHealthBarAndAmmo(ctx.Gfx, plane, pos, healthBarSize);
-
-                    DrawMessageBox(ctx, viewportsize);
+                    DrawHealthBarAndAmmo(ctx, plane, pos, healthBarSize);
 
                     DrawPopMessages(ctx, viewportsize, plane);
                 }
@@ -955,7 +899,7 @@ namespace PolyPlane.Rendering
             ctx.PopViewPort();
 
             if (World.FreeCameraMode)
-                DrawFreeCamPrompt(ctx.Gfx);
+                DrawFreeCamPrompt(ctx);
         }
 
 
@@ -982,8 +926,8 @@ namespace PolyPlane.Rendering
             var highestVal = startValue + markerRange;
             var lowestVal = (startValue - HalfH) - markerRange;
 
-            ctx.DrawRectangle(rect, World.HudColor);
-            ctx.DrawLine(new D2DPoint(pos.X - HalfW, pos.Y), new D2DPoint(pos.X + HalfW, pos.Y), D2DColor.GreenYellow, 1f, D2DDashStyle.Solid);
+            ctx.Gfx.DrawRectangle(rect, World.HudColor);
+            ctx.Gfx.DrawLine(new D2DPoint(pos.X - HalfW, pos.Y), new D2DPoint(pos.X + HalfW, pos.Y), World.HudColor.WithAlpha(1f), 1f, D2DDashStyle.Solid);
 
             if (highestVal <= minValue || lowestVal <= minValue)
             {
@@ -995,7 +939,7 @@ namespace PolyPlane.Rendering
                 var sRect = new D2DRect(s.X, s.Y, W, (pos.Y + (H * 0.5f)) - s.Y);
 
                 if (sRect.Height > 0f)
-                    ctx.FillRectangle(sRect, valueWarningColor);
+                    ctx.Gfx.FillRectangle(sRect, valueWarningColor);
             }
 
 
@@ -1016,14 +960,14 @@ namespace PolyPlane.Rendering
                 var markerValue = Math.Round(startValue + (-HalfH + (div * markerRange)), 0);
 
                 if (rect.Contains(start))
-                    ctx.DrawLine(start, end, World.HudColor, 1f, D2DDashStyle.Dash);
+                    ctx.Gfx.DrawLine(start, end, World.HudColor, 1f, D2DDashStyle.Dash);
 
-                // Fade in marker text as they move towards the center.
-                var alpha = Math.Clamp(1f - Utilities.FactorWithEasing(Math.Abs(pos.Y - posY), HalfH, EasingFunctions.Out.EaseSine), 0.02f, 0.4f);
                 if (markerValue >= 0f)
                 {
+                    // Fade in marker text as they move towards the center.
+                    var alpha = Math.Clamp(1f - Utilities.FactorWithEasing(Math.Abs(pos.Y - posY), HalfH, EasingFunctions.Out.EaseSine), 0.02f, 0.4f);
                     var textRect = new D2DRect(start - new D2DPoint(25f, 0f), new D2DSize(60f, 30f));
-                    ctx.DrawTextCenter(markerValue.ToString(), World.HudColor.WithAlpha(alpha), DEFAULT_FONT_NAME, 15f, textRect);
+                    ctx.DrawText(markerValue.ToString(), World.HudColor.WithAlpha(alpha), _textConsolas15Centered, textRect);
                 }
             }
 
@@ -1058,9 +1002,27 @@ namespace PolyPlane.Rendering
 
             var planeAngle = viewPlane.Rotation;
             var planeVec = Utilities.AngleToVectorDegrees(planeAngle, DIST);
-            gfx.DrawCrosshair(pos + planeVec, 2f, World.HudColor, 5f, 20f);
+            gfx.Gfx.DrawCrosshair(pos + planeVec, 2f, World.HudColor, 5f, 20f);
 
-            //gfx.DrawLine(pos, pos + planeVec, World.HudColor, 1f, D2DDashStyle.Dot);
+
+            if (World.ShowPointerLine)
+            {
+                // Fade out with time since last burst.
+                var elapSinceLastBullet = (float)TimeSpan.FromMilliseconds(World.CurrentTimeMs() - viewPlane.LastBurstTime).TotalSeconds;
+                var elapFact = 1f - Utilities.Factor(elapSinceLastBullet, 5f);
+
+                // Fade out with zoom level.
+                var alphaFact = Utilities.ScaleToRange(Utilities.Factor(World.ViewPortScaleMulti, 40f), 0.3f, 0.5f, 0f, 1f);
+                alphaFact *= elapFact;
+
+                if (alphaFact > 0.001f)
+                {
+                    // Draw pointer line.
+                    var color = new D2DColor(0.3f * alphaFact, World.HudColor);
+                    gfx.DrawLine(pos, pos + (planeVec * 1f), color, 2f, D2DDashStyle.Dot);
+                    gfx.FillEllipseSimple(pos + (planeVec * 1f), 2f, color);
+                }
+            }
         }
 
 
@@ -1072,7 +1034,16 @@ namespace PolyPlane.Rendering
             var impactTime = Utilities.GroundImpactTime(viewPlane);
 
             if (impactTime > 0f && impactTime < WARN_TIME)
+            {
+                var flashScale = Utilities.ScaleToRange(_warnLightFlashAmount, 0f, 1f, 1f, 1.4f);
+
+                ctx.PushTransform();
+                ctx.ScaleTransform(flashScale, flashScale, pos);
+
                 ctx.Gfx.DrawText("PULL UP!", _redColorBrush, _textConsolas30Centered, rect);
+
+                ctx.PopTransform();
+            }
         }
 
         private void DrawPlanePointers(RenderContext ctx, D2DSize viewportsize, FighterPlane plane, float dt)
@@ -1146,7 +1117,7 @@ namespace PolyPlane.Rendering
             return targetRot;
         }
 
-        private void DrawMissilePointersAndWarnings(D2DGraphics gfx, D2DSize viewportsize, FighterPlane plane)
+        private void DrawMissilePointersAndWarnings(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)
         {
             const float MAX_WARN_DIST = 60000f;
             const float MIN_IMPACT_TIME = 20f;
@@ -1190,35 +1161,55 @@ namespace PolyPlane.Rendering
                     var impactFact = 1f - Utilities.FactorWithEasing(impactTime, MIN_IMPACT_TIME, EasingFunctions.Out.EaseQuad);
 
                     if (impactFact > 0f)
-                        gfx.DrawArrow(pos1, pos2, D2DColor.Red, (impactFact * MAX_SIZE) + 1f);
+                        ctx.Gfx.DrawArrow(pos1, pos2, D2DColor.Red, (impactFact * MAX_SIZE) + 1f);
                 }
             }
+
+            var flashScale = Utilities.ScaleToRange(_warnLightFlashAmount, 0f, 1f, 0.98f, 1.1f);
+            var flashAlpha = Utilities.ScaleToRange(_warnLightFlashAmount, 0f, 1f, 0.5f, 1f);
 
             // Lock light.
             if (plane.HasRadarLock)
             {
                 var lockRect = new D2DRect(pos - new D2DPoint(0, -160), new D2DSize(120, 30));
                 var lockColor = D2DColor.Red.WithAlpha(0.7f);
-                gfx.DrawRectangle(lockRect, lockColor);
-                gfx.DrawTextCenter("LOCK", lockColor, DEFAULT_FONT_NAME, 30f, lockRect);
+
+                ctx.Gfx.DrawRectangle(lockRect, lockColor);
+                ctx.DrawText("LOCK", lockColor, _textConsolas30Centered, lockRect);
             }
 
             // Missile warning light.
             if (warningMessage)
             {
-                var rect = new D2DRect(pos - new D2DPoint(0, -200), new D2DSize(120, 30));
-                var warnColor = D2DColor.Red.WithAlpha(_warningLightFlashTimer.Value / _warningLightFlashTimer.Interval);
-                gfx.DrawRectangle(rect, warnColor);
-                gfx.DrawTextCenter("MISSILE", warnColor, DEFAULT_FONT_NAME, 30f, rect);
+                var missileWarnPos = pos - new D2DPoint(0, -200);
+
+                ctx.PushTransform();
+                ctx.ScaleTransform(flashScale, flashScale, missileWarnPos);
+
+                var missileWarnRect = new D2DRect(missileWarnPos, new D2DSize(120, 30));
+                var warnColor = D2DColor.Red.WithAlpha(flashAlpha);
+
+                ctx.Gfx.DrawRectangle(missileWarnRect, warnColor);
+                ctx.DrawText("MISSILE", warnColor, _textConsolas30Centered, missileWarnRect);
+
+                ctx.PopTransform();
             }
 
             // Engine out light.
             if (plane.EngineDamaged)
             {
-                var engineOutRect = new D2DRect(pos - new D2DPoint(0, -240), new D2DSize(180, 30));
-                var engineOutColor = D2DColor.Orange.WithAlpha(_warningLightFlashTimer.Value / _warningLightFlashTimer.Interval);
-                gfx.DrawRectangle(engineOutRect, engineOutColor);
-                gfx.DrawTextCenter("ENGINE OUT", engineOutColor, DEFAULT_FONT_NAME, 30f, engineOutRect);
+                var engineOutPos = pos - new D2DPoint(0, -240);
+
+                ctx.PushTransform();
+                ctx.ScaleTransform(flashScale, flashScale, engineOutPos);
+
+                var engineOutRect = new D2DRect(engineOutPos, new D2DSize(180, 30));
+                var engineOutColor = D2DColor.Orange.WithAlpha(flashAlpha);
+
+                ctx.Gfx.DrawRectangle(engineOutRect, engineOutColor);
+                ctx.DrawText("ENGINE OUT", engineOutColor, _textConsolas30Centered, engineOutRect);
+
+                ctx.PopTransform();
             }
         }
 
@@ -1253,56 +1244,100 @@ namespace PolyPlane.Rendering
             ctx.PopTransform();
         }
 
-        private void DrawHealthBarAndAmmo(D2DGraphics gfx, FighterPlane plane, D2DPoint position, D2DSize size)
+        private void DrawHealthBarAndAmmo(RenderContext ctx, FighterPlane plane, D2DPoint position, D2DSize size)
         {
             var healthPct = plane.Health / FighterPlane.MAX_HEALTH;
 
             if (healthPct > 0f && healthPct < 0.05f)
                 healthPct = 0.05f;
 
-            gfx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * healthPct, size.height), World.HudColor);
-            gfx.DrawRectangle(new D2DRect(position, size), World.HudColor);
+            ctx.Gfx.DrawProgressBar(position, size, World.HudColor, World.HudColor, healthPct);
 
-            // Draw ammo.
-            gfx.DrawText($"MSL: {plane.NumMissiles}", _hudColorBrush, _textConsolas15Centered, new D2DRect(position + new D2DPoint(-110f, 30f), new D2DSize(50f, 20f)));
-            gfx.DrawText($"DECOY: {plane.NumDecoys}", _hudColorBrush, _textConsolas15Centered, new D2DRect(position + new D2DPoint(0, 30f), new D2DSize(80f, 20f)));
-            gfx.DrawText($"AMMO: {plane.NumBullets}", _hudColorBrush, _textConsolas15Centered, new D2DRect(position + new D2DPoint(110f, 30f), new D2DSize(70f, 20f)));
+            // Draw loadout stats labels.
+            var labelSize = new D2DSize(120f, 30f);
+            var missilePos = position + new D2DPoint(-110f, 30f);
+            DrawLabeledValue(ctx, missilePos, labelSize, D2DColor.Red, 1, plane.NumMissiles, "MSL");
+
+            var decoyPos = position + new D2DPoint(0, 30f);
+            DrawLabeledValue(ctx, decoyPos, labelSize, D2DColor.Red, 5, plane.NumDecoys, "DECOY");
+
+            var ammoPos = position + new D2DPoint(110f, 30f);
+            DrawLabeledValue(ctx, ammoPos, labelSize, D2DColor.Red, 10, plane.NumBullets, "AMMO");
 
             // Draw player name.
             if (string.IsNullOrEmpty(plane.PlayerName))
                 return;
 
             var rect = new D2DRect(position + new D2DPoint(0, -40), new D2DSize(300, 100));
-            gfx.DrawText(plane.PlayerName, _hudColorBrush, _textConsolas30Centered, rect);
+            ctx.DrawText(plane.PlayerName, _hudColorBrush, _textConsolas30Centered, rect);
         }
 
-        private void DrawMessageBox(RenderContext ctx, D2DSize viewportsize)
+        private void DrawLabeledValue(RenderContext ctx, D2DPoint position, D2DSize size, D2DColor warnColor, float warnValue, float value, string label)
+        {
+            var flashScale = Utilities.ScaleToRange(_warnLightFlashAmount, 0f, 1f, 0.9f, 1.10f);
+
+            var labelPos = position;
+            var labelRect = new D2DRect(labelPos, size);
+            var labelText = $"{label}: {value}";
+
+            if (value <= warnValue)
+            {
+                ctx.PushTransform();
+                ctx.ScaleTransform(flashScale, flashScale, labelPos);
+
+                ctx.DrawText(labelText, warnColor, _textConsolas15Centered, labelRect);
+
+                ctx.PopTransform();
+            }
+            else
+            {
+                ctx.DrawText(labelText, _hudColorBrush, _textConsolas15Centered, labelRect);
+            }
+        }
+
+        private void DrawChatAndEventBox(RenderContext ctx)
         {
             const float SCALE = 1f;
-            const float ACTIVE_SCALE = 1.4f;
-            const float FONT_SIZE = 10f;
-            const int MAX_LINES = 10;
+            const float ACTIVE_SCALE = 1.8f;
+            const float LEFT_PAD = 10f;
+            const int LINES_ACTIVE = 20;
+            const int LINES_INACTIVE = 8;
+            const float LINE_HEIGHT = 10f;
             const float WIDTH = 400f;
-            const float HEIGHT = 100f;
 
-            var lineSize = new D2DSize(WIDTH, HEIGHT / MAX_LINES);
+            var viewportsize = World.ViewPortRectUnscaled.Size;
+
+            // Fudge/compute the position and scaling of the chat box.
+            // Apply user scaling and re-position while active for net chat. 
             var chatActive = _netMan != null && _netMan.ChatInterface.ChatIsActive;
             var scale = SCALE;
+            var numLines = LINES_INACTIVE;
+            var height = numLines * LINE_HEIGHT;
+            var boxPos = new D2DPoint(330f * HudScale * scale, viewportsize.height - (180f * HudScale * scale));
 
             if (chatActive)
+            {
                 scale = ACTIVE_SCALE;
+                numLines = LINES_ACTIVE;
+                height = numLines * LINE_HEIGHT;
+                boxPos = new D2DPoint((viewportsize.width * 0.5f), (viewportsize.height * 0.5f) - (height * 0.5f));
+            }
 
-            var boxPos = new D2DPoint(370f * HudScale * scale, viewportsize.height - (220f * HudScale * scale));
-            var linePos = boxPos;
+            var linePos = new D2DPoint(boxPos.X + LEFT_PAD, boxPos.Y);
+            var lineSize = new D2DSize(WIDTH, height / numLines);
 
+            // TODO: These transforms are screwy..
             ctx.PushTransform();
+
+            ctx.ScaleTransform(_hudScale, new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f));
             ctx.ScaleTransform(scale, boxPos);
-            ctx.Gfx.FillRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, new D2DColor(0.05f, World.HudColor));
+
+            ctx.Gfx.FillRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y - lineSize.height, WIDTH, height + lineSize.height, new D2DColor(0.05f, World.HudColor));
 
             var start = 0;
 
-            if (_messageEvents.Count >= MAX_LINES)
-                start = _messageEvents.Count - MAX_LINES;
+            if (_messageEvents.Count >= numLines)
+                start = _messageEvents.Count - numLines;
 
             for (int i = start; i < _messageEvents.Count; i++)
             {
@@ -1321,12 +1356,12 @@ namespace PolyPlane.Rendering
                 linePos += new D2DPoint(0, lineSize.height);
             }
 
-            ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y - lineSize.height, WIDTH, HEIGHT + lineSize.height, World.HudColor);
+            ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y - lineSize.height, WIDTH, height + lineSize.height, World.HudColor);
 
             // Draw current chat message.
             if (chatActive)
             {
-                var rect = new D2DRect(new D2DPoint(boxPos.X, boxPos.Y + HEIGHT + 6f), lineSize);
+                var rect = new D2DRect(new D2DPoint(boxPos.X + LEFT_PAD, boxPos.Y + height + 6f), lineSize);
                 var curText = _netMan.ChatInterface.CurrentText;
 
                 if (string.IsNullOrEmpty(curText))
@@ -1334,7 +1369,7 @@ namespace PolyPlane.Rendering
                 else
                     ctx.Gfx.DrawText(_netMan.ChatInterface.CurrentText, _whiteColorBrush, _messageBoxFont, rect);
 
-                ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f) - 10f, boxPos.Y + HEIGHT, WIDTH, lineSize.height + 5f, World.HudColor);
+                ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y + height, WIDTH, lineSize.height + 5f, World.HudColor);
             }
 
             ctx.PopTransform();
@@ -1348,9 +1383,9 @@ namespace PolyPlane.Rendering
 
                 if (msg.Displayed && msg.TargetPlayerID.Equals(viewPlane.ID))
                 {
-                    var rect = new D2DRect(msg.RenderPos, new D2DSize(200, 50));
-                    var color = Utilities.LerpColor(D2DColor.Red, D2DColor.Transparent, msg.Age / msg.LIFESPAN);
-                    ctx.Gfx.DrawTextCenter(msg.Message, color, DEFAULT_FONT_NAME, 30f, rect);
+                    var color = Utilities.LerpColor(msg.Color, D2DColor.Transparent, msg.Age / (msg.LIFESPAN * 2f));
+                    var rect = new D2DRect(msg.RenderPos, new D2DSize(600, 50));
+                    ctx.DrawText(msg.Message, color, _textConsolas30Centered, rect);
                 }
             }
         }
@@ -1377,14 +1412,15 @@ namespace PolyPlane.Rendering
             var lineHeight = 20f;
             var linePosY = topLeft.Y;
 
-            var sortedPlanes = _objs.Planes.OrderByDescending(p => p.Kills).ThenBy(p => p.Deaths).ToArray();
+            var sortedPlanes = _objs.Planes.OrderByDescending(p => p.Kills).ThenBy(p => p.Deaths);
+            var numPlanes = sortedPlanes.Count();
 
-            if (_scoreScrollPos >= sortedPlanes.Length)
-                _scoreScrollPos = sortedPlanes.Length - 1;
+            if (_scoreScrollPos >= numPlanes)
+                _scoreScrollPos = numPlanes - 1;
 
-            for (int i = _scoreScrollPos; i < sortedPlanes.Length; i++)
+            for (int i = _scoreScrollPos; i < numPlanes; i++)
             {
-                var playerPlane = sortedPlanes[i];
+                var playerPlane = sortedPlanes.ElementAt(i);
                 var lineRect = new D2DRect(topLeft.X, linePosY, 800f, lineHeight);
                 var lineRectColumn1 = new D2DRect(topLeft.X + 200f, linePosY, 800f, lineHeight);
                 var lineRectColumn2 = new D2DRect(topLeft.X + 300f, linePosY, 800f, lineHeight);
@@ -1400,22 +1436,18 @@ namespace PolyPlane.Rendering
             }
 
             // Draw scroll bar.
-            var scrollBarPos = new D2DPoint(rect.right - 10f, Utilities.Lerp(rect.top + lineHeight + titleRect.Height, rect.bottom, ((float)_scoreScrollPos / sortedPlanes.Length)));
+            var scrollBarPos = new D2DPoint(rect.right - 10f, Utilities.Lerp(rect.top + lineHeight + titleRect.Height, rect.bottom, ((float)_scoreScrollPos / numPlanes)));
             var scrollBarRect = new D2DRect(scrollBarPos, new D2DSize(10f, 20f));
             ctx.Gfx.FillRectangle(scrollBarRect, D2DColor.White);
         }
 
-        private void DrawFreeCamPrompt(D2DGraphics gfx)
+        private void DrawFreeCamPrompt(RenderContext ctx)
         {
-            const float FONT_SIZE = 20f;
             const string MSG = "Free Camera Mode";
 
             var pos = new D2DPoint(World.ViewPortRectUnscaled.Size.width * 0.5f, 100f);
-            var initSize = new D2DSize(600, 100);
-            var size = gfx.MeasureText(MSG, DEFAULT_FONT_NAME, FONT_SIZE, initSize);
-            var rect = new D2DRect(pos, size);
-
-            gfx.DrawTextCenter(MSG, D2DColor.Red, DEFAULT_FONT_NAME, FONT_SIZE, rect);
+            var rect = new D2DRect(pos, new D2DSize(600, 50));
+            ctx.DrawText(MSG, _redColorBrush, _textConsolas25Centered, rect);
         }
 
         private void DrawOverlays(RenderContext ctx, GameObject viewObject)
@@ -1430,9 +1462,7 @@ namespace PolyPlane.Rendering
 
             if (viewObject is FighterPlane plane)
             {
-                var now = World.CurrentTimeMs();
-
-                if (plane.DeathTime > 0 && plane.DeathTime < DISPLAY_TIME)
+                if (plane.IsDisabled && plane.DeathTime > 0 && plane.DeathTime < DISPLAY_TIME)
                 {
                     var alpha = Math.Clamp(1f - Utilities.FactorWithEasing(plane.DeathTime, DISPLAY_TIME, EasingFunctions.Out.EaseCircle), 0f, 0.4f);
 
@@ -1448,39 +1478,39 @@ namespace PolyPlane.Rendering
 
             if (_showHelp)
             {
-                infoText += "\nH: Hide help\n\n";
+                _stringBuilder.AppendLine("H: Hide help\n");
 
                 if (!World.IsNetGame)
                 {
-                    infoText += $"Alt + Enter: Toggle Fullscreen\n";
-                    infoText += $"P: Pause\n";
-                    infoText += $"U: Spawn AI Plane\n";
-                    infoText += $"C: Remove AI Planes\n";
+                    _stringBuilder.AppendLine($"Alt + Enter: Toggle Fullscreen");
+                    _stringBuilder.AppendLine($"P: Pause");
+                    _stringBuilder.AppendLine($"U: Spawn AI Plane");
+                    _stringBuilder.AppendLine($"C: Remove AI Planes");
                 }
 
-                infoText += $"Y: Start Chat Message\n";
-                infoText += $"Tab: Show Scores\n";
-                infoText += $"(+/-): Zoom\n";
-                infoText += $"Shift + (+/-): HUD Scale\n";
-                infoText += $"Left-Click: Fire Bullets\n";
-                infoText += $"Right-Click: Drop Decoys\n";
-                infoText += $"Middle-Click/Space Bar: Fire Missile\n";
-                infoText += $"L: Toggle Lead Indicators\n";
-                infoText += $"M: Toggle Missiles On Radar\n";
-                infoText += $"K: Toggle Missiles Regen\n";
-                infoText += $"F2: Toggle HUD\n";
+                _stringBuilder.AppendLine($"Y: Start Chat Message");
+                _stringBuilder.AppendLine($"Tab: Show Scores");
+                _stringBuilder.AppendLine($"(+/-): Zoom");
+                _stringBuilder.AppendLine($"Shift + (+/-): HUD Scale");
+                _stringBuilder.AppendLine($"Left-Click: Fire Bullets");
+                _stringBuilder.AppendLine($"Right-Click: Drop Decoys");
+                _stringBuilder.AppendLine($"Middle-Click/Space Bar: Fire Missile");
+                _stringBuilder.AppendLine($"L: Toggle Lead Indicators");
+                _stringBuilder.AppendLine($"M: Toggle Missiles On Radar");
+                _stringBuilder.AppendLine($"K: Toggle Missiles Regen");
+                _stringBuilder.AppendLine($"F2: Toggle HUD");
 
-                infoText += $"\nSpectate (While crashed)\n";
-                infoText += $"([/]): Prev/Next Spectate Plane\n";
-                infoText += $"Backspace: Reset Spectate\n";
-                infoText += $"F: Toggle Free Camera Mode (Hold Right-Mouse to move)\n";
+                _stringBuilder.AppendLine($"\nSpectate (While crashed)");
+                _stringBuilder.AppendLine($"([/]): Prev/Next Spectate Plane");
+                _stringBuilder.AppendLine($"Backspace: Reset Spectate");
+                _stringBuilder.AppendLine($"F: Toggle Free Camera Mode (Hold Right-Mouse to move)");
             }
             else
             {
-                infoText += "H: Show help";
+                _stringBuilder.AppendLine("H: Show help");
             }
 
-            gfx.DrawText(infoText, _greenYellowColorBrush, _textConsolas12, World.ViewPortRect.Deflate(30f, 30f));
+            gfx.DrawText(_stringBuilder.ToString(), _greenYellowColorBrush, _textConsolas12, World.ViewPortRect.Deflate(30f, 30f));
         }
 
         private void DrawScreenFlash(D2DGraphics gfx)
@@ -1503,21 +1533,6 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private void UpdateClouds(float dt)
-        {
-            const int MULTI_THREAD_NUM = 8;
-
-            ParallelHelpers.ParallelForSlim(_clouds.Count, MULTI_THREAD_NUM, (start, end) =>
-            {
-                for (int i = start; i < end; i++)
-                {
-                    var cloud = _clouds[i];
-
-                    cloud.Update(dt);
-                }
-            });
-        }
-
         private void UpdateGroundColorBrush(RenderContext ctx)
         {
             _groundBrush?.Dispose();
@@ -1528,9 +1543,24 @@ namespace PolyPlane.Rendering
         {
             if (!World.FreeCameraMode)
             {
-                var msg = "+1 Kill!";
-                var popMsg = new PopMessage() { Message = msg, Position = new D2DPoint(this.Width / 2f, this.Height * 0.40f), TargetPlayerID = e.Player.ID };
-                _popMessages.Add(popMsg);
+                // Try to spawn score and killed messages on either side of the screen.
+                var startPosScored = new D2DPoint(this.Width * 0.45f, this.Height * 0.60f);
+                var startPosKilled = new D2DPoint(this.Width * 0.55f, this.Height * 0.60f);
+
+                // Message for scoring player.
+                string msg = string.Empty;
+
+                if (e.WasHeadshot)
+                    msg = $"Headshot {e.Target.PlayerName}!";
+                else
+                    msg = $"Destroyed {e.Target.PlayerName}!";
+
+                var scoringPlayerMsg = new PopMessage(msg, startPosScored, e.Player.ID, D2DColor.GreenYellow);
+                _popMessages.Add(scoringPlayerMsg);
+
+                // Message for destroyed player.
+                var killedPlayerMsg = new PopMessage($"Destroyed by {e.Player.PlayerName}", startPosKilled, e.Target.ID);
+                _popMessages.Add(killedPlayerMsg);
             }
         }
 
@@ -1662,60 +1692,62 @@ namespace PolyPlane.Rendering
         public void DoScreenFlash(D2DColor color)
         {
             _screenFlashColor = color;
-            _screenFlash.Restart();
+            _screenFlash?.Restart();
         }
 
         private string GetInfo(GameObject viewObject)
         {
-            string infoText = string.Empty;
+            _stringBuilder.Clear();
 
             var numObj = _objs.TotalObjects;
-            infoText += $"FPS: {Math.Round(_renderFPS, 0)}\n";
 
-            if (_netMan != null)
-            {
-                infoText += $"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}\n";
-                infoText += $"Latency: {_netMan.Host.GetPlayerRTT(0)}\n";
-                infoText += $"Packet Loss: {_netMan.Host.PacketLoss()}\n";
-            }
+            _stringBuilder.AppendLine($"FPS: {Math.Round(_fpsSmooth.Add(_renderFPS), 1)}");
 
             if (_showInfo)
             {
-                infoText += $"Num Objects: {numObj}\n";
-                infoText += $"On Screen: {RenderContext.OnScreen}\n";
-                infoText += $"Off Screen: {RenderContext.OffScreen}\n";
-                infoText += $"Planes: {_objs.Planes.Count}\n";
-                infoText += $"Update ms: {Math.Round(_updateTimeSmooth.Add(UpdateTime.TotalMilliseconds), 2)}\n";
-                infoText += $"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}\n";
-                infoText += $"Collision ms: {Math.Round(CollisionTime.TotalMilliseconds, 2)}\n";
-                infoText += $"Total ms: {Math.Round(UpdateTime.TotalMilliseconds + CollisionTime.TotalMilliseconds + _renderTimeSmooth.Current, 2)}\n";
+                _updateTimeSmooth.Add(Profiler.GetElapsedMilliseconds(ProfilerStat.Update));
+                _collisionTimeSmooth.Add(Profiler.GetElapsedMilliseconds(ProfilerStat.Collisions));
 
-                infoText += $"Zoom: {Math.Round(World.ZoomScale, 2)}\n";
-                infoText += $"HUD Scale: {_hudScale}\n";
-                infoText += $"DT: {Math.Round(World.DT, 4)}  ({Math.Round(World.DynamicDT, 4)}) \n";
-                infoText += $"Position: {viewObject?.Position}\n";
+                if (World.IsNetGame && _netMan != null)
+                {
+                    _stringBuilder.AppendLine($"Latency: {Math.Round(_netMan.Host.GetPlayerRTT(0), 2)}");
+                    _stringBuilder.AppendLine($"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}");
+                    _stringBuilder.AppendLine($"Packet Loss: {_netMan.Host.PacketLoss()}");
+                    _stringBuilder.AppendLine($"Packets Deferred: {_netMan.NumDeferredPackets}");
+                    _stringBuilder.AppendLine($"Packets Handled: {_netMan.NumHandledPackets}");
+                    _stringBuilder.AppendLine($"Packets Expired: {_netMan.NumExpiredPackets}\n");
+                }
+
+                _stringBuilder.AppendLine($"Num Objects: {numObj}");
+                _stringBuilder.AppendLine($"On Screen: {GraphicsExtensions.OnScreen}");
+                _stringBuilder.AppendLine($"Off Screen: {GraphicsExtensions.OffScreen}");
+                _stringBuilder.AppendLine($"Planes: {_objs.Planes.Count}");
+                _stringBuilder.AppendLine($"Update ms: {Math.Round(_updateTimeSmooth.Current, 2)}");
+                _stringBuilder.AppendLine($"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}");
+                _stringBuilder.AppendLine($"Collision ms: {Math.Round(_collisionTimeSmooth.Current, 2)}");
+                _stringBuilder.AppendLine($"Total ms: {Math.Round(_updateTimeSmooth.Current + _collisionTimeSmooth.Current + _renderTimeSmooth.Current, 2)}");
+
+                _stringBuilder.AppendLine($"Zoom: {Math.Round(World.ZoomScale, 2)}");
+                _stringBuilder.AppendLine($"DT: {Math.Round(World.TargetDT, 4)}  ({Math.Round(World.CurrentDT, 4)}) ");
+                _stringBuilder.AppendLine($"Position: {viewObject?.Position}");
 
                 if (viewObject is FighterPlane plane)
                 {
-                    infoText += $"Kills: {plane.Kills}\n";
-                    infoText += $"Bullets (Fired/Hit): ({plane.BulletsFired} / {plane.BulletsHit}) \n";
-                    infoText += $"Missiles (Fired/Hit): ({plane.MissilesFired} / {plane.MissilesHit}) \n";
-                    infoText += $"Headshots: {plane.Headshots}\n";
+                    _stringBuilder.AppendLine($"Kills: {plane.Kills}");
+                    _stringBuilder.AppendLine($"Headshots: {plane.Headshots}");
+                    _stringBuilder.AppendLine($"IsDisabled: {plane.IsDisabled}");
+                    _stringBuilder.AppendLine($"HasCrashed: {plane.HasCrashed}");
+                    _stringBuilder.AppendLine($"ThrustOn: {plane.ThrustOn}");
                 }
 
-                infoText += $"Interp: {World.InterpOn.ToString()}\n";
-                infoText += $"GunsOnly: {World.GunsOnly.ToString()}\n";
-                infoText += $"MissilesOnRadar: {World.ShowMissilesOnRadar.ToString()}\n";
-                infoText += $"Missile Regen: {World.MissileRegen.ToString()}\n";
-                infoText += $"TimeOfDay: {World.TimeOfDay.ToString()}\n";
-                infoText += $"VP: {this.Width}, {this.Height}\n";
-                infoText += $"DPI: {this._renderTarget.DeviceDpi}\n";
-                infoText += $"TimeOffset: {World.ServerTimeOffset}\n";
-
-
+                _stringBuilder.AppendLine($"GunsOnly: {World.GunsOnly.ToString()}");
+                _stringBuilder.AppendLine($"MissilesOnRadar: {World.ShowMissilesOnRadar.ToString()}");
+                _stringBuilder.AppendLine($"Missile Regen: {World.MissileRegen.ToString()}");
+                _stringBuilder.AppendLine($"TimeOfDay: {Math.Round(World.TimeOfDay, 1)}");
+                _stringBuilder.AppendLine($"TimeOffset: {Math.Round(TimeSpan.FromTicks((long)World.ServerTimeOffset).TotalMilliseconds, 2)}");
             }
 
-            return infoText;
+            return _stringBuilder.ToString();
         }
 
     }

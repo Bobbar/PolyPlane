@@ -1,11 +1,16 @@
-﻿namespace PolyPlane.Helpers
+﻿using System.Numerics;
+
+namespace PolyPlane.Helpers
 {
     public class MinMax
     {
-        public float MinX;
-        public float MinY;
-        public float MaxX;
-        public float MaxY;
+        public float MinX => _minXY.X;
+        public float MinY => _minXY.Y;
+        public float MaxX => _maxXY.X;
+        public float MaxY => _maxXY.Y;
+
+        private Vector2 _minXY = Vector2.Zero;
+        private Vector2 _maxXY = Vector2.Zero;
 
         public float Width
         {
@@ -25,42 +30,29 @@
 
         public MinMax()
         {
-            MinX = float.MaxValue;
-            MinY = float.MaxValue;
-            MaxX = float.MinValue;
-            MaxY = float.MinValue;
+            Reset();
         }
 
-        public MinMax(float minX, float minY, float maxX, float maxY)
+        public void Update(D2DPoint[] points)
         {
-            MinX = minX;
-            MinY = minY;
-            MaxX = maxX;
-            MaxY = maxY;
+            for (int i = points.Length - 1; i >= 0; i--)
+            {
+                var pnt = points[i];
+                _minXY = Vector2.Min(_minXY, pnt);
+                _maxXY = Vector2.Max(_maxXY, pnt);
+            }
         }
 
-        public void Update(float x, float y)
+        public void Update(D2DPoint point)
         {
-            MinX = Math.Min(MinX, x);
-            MinY = Math.Min(MinY, y);
-            MaxX = Math.Max(MaxX, x);
-            MaxY = Math.Max(MaxY, y);
-        }
-
-        public void Update(MinMax minMax)
-        {
-            MinX = Math.Min(MinX, minMax.MinX);
-            MinY = Math.Min(MinY, minMax.MinY);
-            MaxX = Math.Max(MaxX, minMax.MaxX);
-            MaxY = Math.Max(MaxY, minMax.MaxY);
+            _minXY = Vector2.Min(_minXY, point);
+            _maxXY = Vector2.Max(_maxXY, point);
         }
 
         public void Reset()
         {
-            MinX = float.MaxValue;
-            MinY = float.MaxValue;
-            MaxX = float.MinValue;
-            MaxY = float.MinValue;
+            _minXY = new Vector2(float.MaxValue, float.MaxValue);
+            _maxXY = new Vector2(float.MinValue, float.MinValue);
         }
     }
 }

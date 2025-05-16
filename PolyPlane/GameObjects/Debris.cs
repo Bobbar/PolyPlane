@@ -1,4 +1,5 @@
 ﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.GameObjects.Particles;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
@@ -6,33 +7,50 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Debris : GameObjectPoly, ICollidable, IPushable, INoGameID
+    public sealed class Debris : GameObject, IPolygon, INoGameID
     {
         private D2DColor _color;
         private FlameEmitter _flame;
         private float _onGroundAge = 0f;
         private const float MAX_AGE = 70f;
 
-        public Debris(GameObject owner, D2DPoint pos, D2DPoint velo, D2DColor color) : base(pos, velo)
+        public RenderPoly Polygon { get; set; }
+
+        public Debris() : base()
         {
+            this.Flags = GameObjectFlags.AeroPushable | GameObjectFlags.ExplosionImpulse | GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround | GameObjectFlags.CanSleep;
             this.Mass = 40f;
             this.RenderOrder = 3;
+            this.Polygon = new RenderPoly(this, Utilities.RandomPoly(8, 12));
+
+            _flame = new FlameEmitter(this, D2DPoint.Zero, 2f, 4f, false);
+        }
+
+        public void ReInit(GameObject owner, D2DPoint pos, D2DPoint velo, D2DColor color)
+        {
+            this.IsExpired = false;
+            this.IsAwake = true;
+            this.Age = 0f;
+            this.Position = pos;
+
+            _onGroundAge = 0f;
+
             this.Owner = owner;
             _color = color;
-            this.Polygon = new RenderPoly(this, RandomPoly(8, 12));
 
             this.RotationSpeed = Utilities.Rnd.NextFloat(-200f, 200f);
 
             this.Velocity = velo * 0.7f;
             this.Velocity += Utilities.RandOPoint(100f);
 
-            _flame = new FlameEmitter(this, D2DPoint.Zero, 3f);
-            _flame.Owner = this.Owner;
+            _flame.IsExpired = false;
+            _flame.StartSpawning();
         }
 
-        public override void Update(float dt)
+        public override void DoUpdate(float dt)
         {
-            base.Update(dt);
+            base.DoUpdate(dt);
+
             _flame.Update(dt);
 
             if (this.IsAwake)
@@ -40,7 +58,7 @@ namespace PolyPlane.GameObjects
 
             this.Velocity += -this.Velocity * (dt * 0.01f);
 
-            if (this.Altitude <= 1f)
+            if (this.Altitude <= 10f)
             {
                 _flame.StopSpawning();
                 _onGroundAge += dt;
@@ -57,14 +75,14 @@ namespace PolyPlane.GameObjects
             var ageAlpha = 1f - Utilities.FactorWithEasing(_onGroundAge, MAX_AGE, EasingFunctions.In.EaseExpo);
             var color = _color.WithAlpha(ageAlpha);
 
-            ctx.DrawPolygonWithLighting(this.Polygon, this.Position, D2DColor.Black.WithAlpha(ageAlpha), 0.5f, D2DDashStyle.Solid, color, 0.5f);
+            ctx.DrawPolygonWithLighting(this.Polygon, this.Position, D2DColor.Black.WithAlpha(ageAlpha), 0.3f, color, maxIntensity: 0.5f);
         }
 
         public override void Dispose()
         {
             base.Dispose();
 
-            _flame.Dispose();
+            World.ObjectManager.ReturnDebris(this);
         }
     }
 }

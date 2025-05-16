@@ -1,60 +1,68 @@
 ﻿using PolyPlane.GameObjects.Interfaces;
+using PolyPlane.GameObjects.Particles;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects.Fixtures
 {
-    public sealed class Gun : GameObject, INoGameID
+    public sealed class Gun : FixturePoint, INoGameID
     {
         public Action<Bullet> FireBulletCallback;
         public bool MuzzleFlashOn = false;
+        public double LastBurstTime = 0;
 
-        private FixturePoint _attachPoint;
-        private GunSmoke _smoke;
+        private GunSmokeEmitter _smoke;
         private FighterPlane _ownerPlane;
-        private GameTimer _burstTimer = new GameTimer(0.25f, true);
-        private GameTimer _muzzleFlashTimer = new GameTimer(0.16f);
+        private GameTimer _burstTimer;
+        private GameTimer _muzzleFlashTimer;
 
-        public Gun(FighterPlane plane, D2DPoint position, Action<Bullet> fireBulletCallback) : base(plane)
+        private const float BURST_INTERVAL = 0.25f;
+
+        public Gun(FighterPlane plane, D2DPoint position) : base(plane, position)
         {
             IsNetObject = plane.IsNetObject;
             _ownerPlane = plane;
-            FireBulletCallback = fireBulletCallback;
 
-            _attachPoint = new FixturePoint(plane, position);
-            _smoke = new GunSmoke(_attachPoint, D2DPoint.Zero, 8f, new D2DColor(0.7f, D2DColor.BurlyWood));
+            _smoke = AddAttachment(new GunSmokeEmitter(this, D2DPoint.Zero, new D2DColor(0.7f, D2DColor.BurlyWood)));
+            _smoke.Visible = false;
 
+            _burstTimer = AddTimer(BURST_INTERVAL, true);
+            _burstTimer.RateLimitStartCallback = true;
             _burstTimer.StartCallback = FireBullet;
             _burstTimer.TriggerCallback = FireBullet;
 
+            _muzzleFlashTimer = AddTimer(BURST_INTERVAL);
             _muzzleFlashTimer.StartCallback = () => { MuzzleFlashOn = true; };
             _muzzleFlashTimer.TriggerCallback = () => { MuzzleFlashOn = false; };
         }
 
-        public override void Update(float dt)
+        public void StartBurst()
         {
-            base.Update(dt);
-
-            _burstTimer.Update(dt);
-            _muzzleFlashTimer.Update(dt);
-            _attachPoint.Update(dt);
-            _smoke.Update(dt);
-
-            Position = _attachPoint.Position;
-            Rotation = _attachPoint.Rotation;
-
-            if (_ownerPlane.FiringBurst && _ownerPlane.NumBullets > 0 && _ownerPlane.IsDisabled == false)
+            if (_ownerPlane.NumBullets > 0 && _ownerPlane.IsDisabled == false)
             {
-                _burstTimer.Start();
                 _smoke.Visible = true;
+                _burstTimer.Start();
             }
             else
             {
-                _burstTimer.Stop();
-                _burstTimer.Reset();
-                _smoke.Visible = false;
+                StopBurst();
             }
+        }
+
+        public void StopBurst()
+        {
+            _smoke.Visible = false;
+            _burstTimer.Stop();
+            _burstTimer.Reset();
+        }
+
+        public override void DoUpdate(float dt)
+        {
+            base.DoUpdate(dt);
+
+            if (_ownerPlane.NumBullets <= 0 || _ownerPlane.IsDisabled)
+                StopBurst();
         }
 
         public override void Render(RenderContext ctx)
@@ -64,12 +72,6 @@ namespace PolyPlane.GameObjects.Fixtures
             _smoke.Render(ctx);
         }
 
-        public override void FlipY()
-        {
-            base.FlipY();
-            _attachPoint.FlipY();
-        }
-
         private void FireBullet()
         {
             if (_ownerPlane.IsDisabled)
@@ -77,22 +79,21 @@ namespace PolyPlane.GameObjects.Fixtures
 
             if (_ownerPlane.NumBullets <= 0)
                 return;
-
-            if (_ownerPlane.IsNetObject)
-                return;
-
-            // Make sure fixture point is synced at the time of firing.
-            _attachPoint.Update(0f);
-            Rotation = _attachPoint.Rotation;
-            Position = _attachPoint.Position;
-
-            var bullet = new Bullet(_ownerPlane);
-
-            FireBulletCallback(bullet);
-            _ownerPlane.BulletsFired++;
-            _ownerPlane.NumBullets--;
+         
             _smoke.AddPuff();
             _muzzleFlashTimer.Restart();
+
+            // Don't actually fire a bullet for net planes.
+            if (!_ownerPlane.IsNetObject)
+            {
+                var bullet = new Bullet(_ownerPlane);
+
+                FireBulletCallback(bullet);
+                _ownerPlane.BulletsFired++;
+                _ownerPlane.NumBullets--;
+            }
+
+            LastBurstTime = World.CurrentTimeMs();
         }
     }
 }

@@ -1,10 +1,12 @@
-﻿namespace PolyPlane.Net
+﻿namespace PolyPlane.Net.Interpolation
 {
     public class HistoricalBuffer<T>
     {
-        private const int MAX_HIST = 50;
+        // Max allowed historical data in milliseconds.
+        private const long MAX_HIST_TIME = 400;
+
         private List<BufferEntry<T>> _history = new List<BufferEntry<T>>();
-        private  Func<T, T, double, T> _interpolate;
+        private Func<T, T, double, T> _interpolate;
 
         public HistoricalBuffer(Func<T, T, double, T> interpolate)
         {
@@ -15,9 +17,22 @@
         {
             var entry = new BufferEntry<T>(state, timestamp);
 
-            _history.Add(entry);
+            if (_history.Count > 0)
+            {
+                // Only add if the entry is newer than the previous.
+                if (entry.UpdatedAt > _history.Last().UpdatedAt)
+                {
+                    _history.Add(entry);
+                }
+            }
+            else
+            {
+                _history.Add(entry);
+            }
 
-            if (_history.Count > MAX_HIST)
+            // Prune old entries.
+            var now = World.CurrentNetTimeMs();
+            while (_history.Count > 0 && now - _history.First().UpdatedAt > MAX_HIST_TIME)
                 _history.RemoveAt(0);
         }
 

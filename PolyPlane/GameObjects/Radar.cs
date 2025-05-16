@@ -22,8 +22,8 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private PingObj _lockedPingObj = null;
-        private PingObj _aimedAtPingObj = null;
+        private PingObj? _lockedPingObj = null;
+        private PingObj? _aimedAtPingObj = null;
 
         private readonly float _radarFOV = World.SENSOR_FOV * 0.25f;
         private const float MIN_IMPACT_TIME = 20f; // Min time before defending.
@@ -33,12 +33,15 @@ namespace PolyPlane.GameObjects
 
         private D2DColor _color = World.HudColor;
         private Dictionary<GameID, PingObj> _pings = new Dictionary<GameID, PingObj>();
+        private GameObjectPool<PingObj> _pingPool = new GameObjectPool<PingObj>(() => new PingObj());
 
         private GameTimer _lockTimer = new GameTimer(2f);
         private GameTimer _lostLockTimer = new GameTimer(10f);
         private GameTimer _updateTimer = new GameTimer(0.5f, true);
 
         private D2DLayer _groundClipLayer = null;
+        private D2DTextFormat _textConsolas20Centered = null;
+        private D2DTextFormat _textConsolas15Centered = null;
 
         public Radar(FighterPlane hostPlane)
         {
@@ -75,11 +78,17 @@ namespace PolyPlane.GameObjects
         {
             // Check all sources and add pings if they are within the FOV of the current sweep.
 
-            foreach (var missile in World.ObjectManager.Missiles)
+            for (int i = 0; i < World.ObjectManager.Missiles.Count; i++)
+            {
+                var missile = World.ObjectManager.Missiles[i];
                 DoSweep(missile);
+            }
 
-            foreach (var plane in World.ObjectManager.Planes)
+            for (int i = 0; i < World.ObjectManager.Planes.Count; i++)
+            {
+                var plane = World.ObjectManager.Planes[i];
                 DoSweep(plane);
+            }
 
             CheckForLock();
         }
@@ -96,21 +105,25 @@ namespace PolyPlane.GameObjects
                 return;
 
             var dist = HostPlane.Position.DistanceTo(obj.Position);
-            var angle = (HostPlane.Position - obj.Position).Angle();
+            var dir = (HostPlane.Position - obj.Position).Normalized();
             var radDist = _radius / _maxRange * dist;
-            var radPos = D2DPoint.Zero - Utilities.AngleToVectorDegrees(angle, radDist);
+            var radPos = D2DPoint.Zero - (dir * radDist);
 
             if (dist > _maxRange)
-                radPos = D2DPoint.Zero - Utilities.AngleToVectorDegrees(angle, _radius);
+                radPos = D2DPoint.Zero - (dir * _radius);
 
-            var pObj = new PingObj(obj, radPos);
-
-            AddOrRefresh(pObj);
+            AddOrRefresh(obj, radPos);
         }
 
         public void Render(RenderContext ctx)
         {
             var gfx = ctx.Gfx;
+
+            if (_textConsolas20Centered == null)
+                _textConsolas20Centered = ctx.Device.CreateTextFormat("Consolas", 20f, D2DFontWeight.Normal, D2DFontStyle.Normal, D2DFontStretch.Normal, DWriteTextAlignment.Center, DWriteParagraphAlignment.Center);
+
+            if (_textConsolas15Centered == null)
+                _textConsolas15Centered = ctx.Device.CreateTextFormat("Consolas", 15f, D2DFontWeight.Normal, D2DFontStyle.Normal, D2DFontStretch.Normal, DWriteTextAlignment.Center, DWriteParagraphAlignment.Center);
 
             // Background
             var bgColor = new D2DColor(_color.a * 0.05f, _color);
@@ -127,7 +140,13 @@ namespace PolyPlane.GameObjects
                     if (plane.IsDisabled)
                         gfx.DrawEllipse(new D2DEllipse(p.RadarPos, new D2DSize(4f, 4f)), pColor);
                     else
+                    {
+                        // Draw direction line.
+                        gfx.DrawLine(p.RadarPos, p.RadarPos + (p.Obj.Velocity.Normalized() * 7f), pColor);
+
                         gfx.FillRectangle(new D2DRect(p.RadarPos, new D2DSize(6f, 6f)), pColor);
+                    }
+
                 }
 
                 if (World.ShowMissilesOnRadar)
@@ -160,7 +179,7 @@ namespace PolyPlane.GameObjects
                     var dRect = new D2DRect(distPos, new D2DSize(180, 80));
                     gfx.FillRectangle(dRect, new D2DColor(0.5f, D2DColor.Black));
                     var info = $"D:{Math.Round(dist / 1000f, 0)}\nA:{Math.Round(aimedAtPlane.Altitude / 1000f, 0)}\n{aimedAtPlane.PlayerName}";
-                    gfx.DrawTextCenter(info, _color, "Consolas", 20f, dRect);
+                    ctx.DrawText(info, _color, _textConsolas20Centered, dRect);
                 }
 
             }
@@ -189,7 +208,7 @@ namespace PolyPlane.GameObjects
                 var color = Utilities.LerpColor(World.HudColor, D2DColor.WhiteSmoke, 0.3f);
                 var lockPos = new D2DPoint(0f, -130f);
                 var lRect = new D2DRect(lockPos, new D2DSize(80, 20));
-                ctx.Gfx.DrawTextCenter("LOCKED", color, "Consolas", 15f, lRect);
+                ctx.DrawText("LOCKED", color, _textConsolas15Centered, lRect);
                 ctx.Gfx.FillRectangle(lRect, color.WithAlpha(0.1f));
             }
         }
@@ -279,6 +298,7 @@ namespace PolyPlane.GameObjects
 
             if (HostPlane.IsDisabled)
             {
+                _aimedAtPingObj = null;
                 ClearLock();
                 return;
             }
@@ -402,16 +422,26 @@ namespace PolyPlane.GameObjects
             foreach (var ping in _pings.Values)
             {
                 if (ping.Age > _maxAge)
+                {
                     _pings.Remove(ping.Obj.ID);
+                    _pingPool.ReturnObject(ping);
+                }
             }
         }
 
-        private void AddOrRefresh(PingObj pingObj)
+        private void AddOrRefresh(GameObject obj, D2DPoint radarPos)
         {
-            if (_pings.TryGetValue(pingObj.Obj.ID, out var ping))
-                ping.Refresh(pingObj.RadarPos);
+            if (_pings.TryGetValue(obj.ID, out var ping))
+            {
+                ping.Refresh(radarPos);
+            }
             else
-                _pings.Add(pingObj.Obj.ID, pingObj);
+            {
+                var newPing = _pingPool.RentObject();
+                newPing.ReInit(obj, radarPos);
+
+                _pings.Add(obj.ID, newPing);
+            }
         }
 
 
@@ -421,15 +451,13 @@ namespace PolyPlane.GameObjects
             public D2DPoint RadarPos;
             public float Age = 0f;
 
-            public PingObj(GameObject obj)
-            {
-                Obj = obj;
-            }
+            public PingObj() { }
 
-            public PingObj(GameObject obj, D2DPoint pos)
+            public void ReInit(GameObject obj, D2DPoint pos)
             {
                 Obj = obj;
                 RadarPos = pos;
+                Age = 0f;
             }
 
             public void Update(float dt)

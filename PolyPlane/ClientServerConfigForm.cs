@@ -33,6 +33,9 @@ namespace PolyPlane
 #if DEBUG
             IPAddressTextBox.Text = "127.0.0.1";
 #endif
+
+            UpdateHudColorPreview();
+            HudColorAlphaNumeric.Value = (decimal)World.HudColor.a;
         }
 
         private void ClientServerConfigForm_Disposed(object? sender, EventArgs e)
@@ -94,6 +97,11 @@ namespace PolyPlane
             }
         }
 
+        private void UpdateHudColorPreview()
+        {
+            HudColorPreviewLabel.BackColor = World.HudColor.ToGDIColor();
+        }
+
         private void StartClientButton_Click(object sender, EventArgs e)
         {
             if (IPAddress.TryParse(IPAddressTextBox.Text.Trim(), out IPAddress addy))
@@ -120,6 +128,17 @@ namespace PolyPlane
         private void AIPlaneCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             IsAI = AIPlaneCheckBox.Checked;
+
+            if (IsAI)
+            {
+                PlayerNameTextBox.Text = "(BOT) " + Utilities.GetRandomName();
+                PlayerNameTextBox.ReadOnly = true;
+            }
+            else
+            {
+                PlayerNameTextBox.Text = "Player";
+                PlayerNameTextBox.ReadOnly = false;
+            }
         }
 
         private void ServerListBox_SelectedValueChanged(object sender, EventArgs e)
@@ -138,6 +157,7 @@ namespace PolyPlane
 
         private void ClientServerConfigForm_FormClosing(object sender, FormClosingEventArgs e)
         {
+            _planePreview?.Dispose();
             _discovery?.StopListen();
             _discovery?.Dispose();
         }
@@ -162,6 +182,31 @@ namespace PolyPlane
             _planePreview.PlaneColor = PlaneColor;
         }
 
+        private void HudColorPreviewLabel_Click(object sender, EventArgs e)
+        {
+            if (PlaneColorDialog.ShowDialog(this) == DialogResult.OK)
+            {
+                World.HudColor = PlaneColorDialog.Color.ToD2DColor();
+                UpdateHudColorPreview();
+                HudColorAlphaNumeric.Value = (decimal)World.HudColor.a;
+            }
+        }
+
+        private void HudColorAlphaNumeric_ValueChanged(object sender, EventArgs e)
+        {
+            var pct = (float)HudColorAlphaNumeric.Value;
+            World.HudColor = World.HudColor.WithAlpha(pct);
+            UpdateHudColorPreview();
+        }
+
+        private void DefaultHubColorButton_Click(object sender, EventArgs e)
+        {
+            World.HudColor = World.DefaultHudColor;
+            HudColorAlphaNumeric.Value = (decimal)World.HudColor.a;
+            UpdateHudColorPreview();
+        }
+
+
         private class ServerEntry
         {
             public string IP { get; set; }
@@ -180,7 +225,5 @@ namespace PolyPlane
                 return $"{IP} - {Name}";
             }
         }
-
-
     }
 }

@@ -3,16 +3,17 @@ using PolyPlane.GameObjects.Guidance;
 using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
+using PolyPlane.Net;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class GuidedMissile : GameObjectPoly, ICollidable, ILightMapContributor
+    public sealed class GuidedMissile : GameObjectNet, IPolygon, ILightMapContributor
     {
         public float Deflection = 0f;
         public bool FlameOn = false;
-
+        public RenderPoly Polygon { get; set; }
         public GameObject Target { get; set; }
         public GuidanceBase Guidance => _guidance;
 
@@ -44,27 +45,29 @@ namespace PolyPlane.GameObjects
             }
         }
 
-        private bool IsActivated = false;
-        private readonly float THURST_VECTOR_AMT = 1f;
-        private readonly float LIFESPAN = 100f;
-        private readonly float BURN_RATE = 0.85f;
-        private readonly float THRUST = 2500f;
-        private readonly float FUEL = 10f;
+        public bool IsActivated = false;
+
+        private const float THURST_VECTOR_AMT = 1f;
+        private const float LIFESPAN = 100f;
+        private const float BURN_RATE = 0.85f;
+        private const float THRUST = 2500f;
+        private const float FUEL = 10f;
+        private const float DEFLECTION_RATE = 45f;
+        private const float DEFLECTION_DAMPING = 1.2f;
 
         private float _currentFuel = 0f;
         private float _gForce = 0f;
         private float _gForcePeak = 0f;
         private float _initRotation = 0f;
+        private float _guideRotation = 0f;
 
         private RenderPoly FlamePoly;
         private D2DColor _flameFillColor = new D2DColor(0.6f, D2DColor.Yellow);
-        private readonly D2DColor _lightMapColor = new D2DColor(1f, 0.98f, 0.77f, 0.31f);
+        private static readonly D2DColor _lightMapColor = new D2DColor(1f, 0.98f, 0.77f, 0.31f);
 
         private GuidanceType GuidanceType = GuidanceType.Advanced;
         private GuidanceBase _guidance;
 
-        private bool _useControlSurfaces = false;
-        private bool _useThrustVectoring = false;
         private Wing _tailWing;
         private Wing _noseWing;
         private Wing _rocketBody;
@@ -72,7 +75,8 @@ namespace PolyPlane.GameObjects
         private FixturePoint _warheadCenterMass;
         private FixturePoint _motorCenterMass;
         private FixturePoint _flamePos;
-        private GameTimer _igniteCooldown = new GameTimer(1f);
+        private GameTimer _igniteCooldown;
+        private GameTimer _easeGuidanceTimer;
 
         private const float LEN = 7f;
 
@@ -108,12 +112,11 @@ namespace PolyPlane.GameObjects
             new D2DPoint(-8, -1.5f),
         ];
 
-        public GuidedMissile(GameObject player, D2DPoint position, D2DPoint velocity, float rotation)
+        public GuidedMissile(GameObject player, GameObject target, D2DPoint position, D2DPoint velocity, float rotation)
         {
             this.PlayerID = player.ID.PlayerID;
             this.IsNetObject = true;
-            _useControlSurfaces = true;
-            _useThrustVectoring = true;
+            this.Target = target;
             _currentFuel = FUEL;
 
             this.Position = position;
@@ -124,17 +127,14 @@ namespace PolyPlane.GameObjects
             InitStuff();
         }
 
-        public GuidedMissile(GameObject player, GameObject target, GuidanceType guidance = GuidanceType.Advanced, bool useControlSurfaces = false, bool useThrustVectoring = false) : base(player.Position, player.Velocity, player.Rotation)
+        public GuidedMissile(GameObject player, GameObject target, GuidanceType guidance = GuidanceType.Advanced) : base(player.Position, player.Velocity, player.Rotation)
         {
             this.PlayerID = player.ID.PlayerID;
             this.GuidanceType = guidance;
             this.Target = target;
             this.Owner = player;
             this.Rotation = player.Rotation;
-            _initRotation = this.Rotation;
             _currentFuel = FUEL;
-            _useControlSurfaces = useControlSurfaces;
-            _useThrustVectoring = useThrustVectoring;
 
             _guidance = GetGuidance(target);
 
@@ -153,22 +153,39 @@ namespace PolyPlane.GameObjects
 
         private void InitStuff()
         {
+            this.Flags = GameObjectFlags.SpatialGrid;
             this.Mass = 22.5f;
             this.RenderScale = 0.9f;
             this.RenderOrder = 2;
 
-            _centerOfThrust = new FixturePoint(this, new D2DPoint(-21, 0));
-            _warheadCenterMass = new FixturePoint(this, new D2DPoint(12f, 0));
-            _motorCenterMass = new FixturePoint(this, new D2DPoint(-13f, 0));
-            _flamePos = new FixturePoint(this, new D2DPoint(-22f, 0));
+            _initRotation = this.Rotation;
+
+            _centerOfThrust = AddAttachment(new FixturePoint(this, new D2DPoint(-21, 0)), true);
+            _warheadCenterMass = AddAttachment(new FixturePoint(this, new D2DPoint(12f, 0)), true);
+            _motorCenterMass = AddAttachment(new FixturePoint(this, new D2DPoint(-13f, 0)), true);
+            _flamePos = AddAttachment(new FixturePoint(this, new D2DPoint(-22f, 0)), true);
 
             this.Polygon = new RenderPoly(this, _missilePoly, new D2DPoint(-2f, 0f));
             this.FlamePoly = new RenderPoly(_flamePos, _flamePoly, new D2DPoint(6f, 0));
 
             InitWings();
 
+            float easeTime = 3f;
+
+            // Reduce ease time for very close targets.
+            var impactTime = Utilities.ImpactTime(this, Target);
+
+            if (impactTime < easeTime && impactTime > 0f)
+                easeTime = impactTime;
+
+            _easeGuidanceTimer = AddTimer(easeTime);
+
+            _igniteCooldown = AddTimer(1f);
+
             _igniteCooldown.TriggerCallback = () =>
             {
+                _easeGuidanceTimer.Restart();
+
                 IsActivated = true;
                 FlameOn = true;
 
@@ -182,184 +199,158 @@ namespace PolyPlane.GameObjects
 
         private void InitWings()
         {
-            if (_useControlSurfaces)
+            const float liftScale = 1.5f;
+            const float minVelo = 800f;
+
+            _tailWing = new Wing(this, new WingParameters()
             {
-                const float liftScale = 1.2f;
-                const float minVelo = 500f;
+                RenderLength = 2.5f,
+                RenderWidth = 1f,
+                Area = 0.1f,
+                MaxDeflection = 45f,
+                MaxLiftForce = 4500f * liftScale,
+                VeloLiftFactor = 1f,
+                VeloDragFactor = 1f,
+                PivotPoint = new D2DPoint(-21f, 0f),
+                Position = new D2DPoint(-22f, 0f),
+                MinVelo = minVelo,
+                ParasiticDrag = 0.7f,
+                DragFactor = 0.8f,
+                DeflectionRate = DEFLECTION_RATE,
+                MaxAOA = 40f
+            });
 
-                _tailWing = new Wing(this, new WingParameters()
-                {
-                    RenderLength = 2.5f,
-                    RenderWidth = 1f,
-                    Area = 0.1f,
-                    MaxDeflection = 45f,
-                    MaxLiftForce = 4500f * liftScale,
-                    PivotPoint = new D2DPoint(-21f, 0f),
-                    Position = new D2DPoint(-22f, 0f),
-                    MinVelo = minVelo,
-                    ParasiticDrag = 0.7f,
-                    AOAFactor = 0.3f,
-                    DeflectionRate = 45f,
-                    MaxAOA = 40f
-                });
-
-                _rocketBody = new Wing(this, new WingParameters()
-                {
-                    RenderLength = 0f,
-                    Area = 0.035f,
-                    MaxLiftForce = 1000f * liftScale,
-                    MinVelo = minVelo,
-                    ParasiticDrag = 0.2f,
-                    MaxAOA = 30f,
-                    AOAFactor = 0.1f
-                });
-
-                _noseWing = new Wing(this, new WingParameters()
-                {
-                    RenderLength = 2.5f,
-                    RenderWidth = 1f,
-                    Area = 0.08f,
-                    MaxDeflection = 20f,
-                    MaxLiftForce = 2000f * liftScale,
-                    Position = new D2DPoint(21.5f, 0f),
-                    MinVelo = minVelo,
-                    ParasiticDrag = 0.2f,
-                    AOAFactor = 0.1f,
-                    MaxAOA = 30f
-                });
-            }
-            else
+            _rocketBody = new Wing(this, new WingParameters()
             {
-                _rocketBody = new Wing(this, new WingParameters() { RenderLength = 4f, Area = 0.4f });
-            }
+                RenderLength = 0f,
+                Area = 0.045f,
+                MaxLiftForce = 1000f * liftScale,
+                VeloLiftFactor = 1f,
+                VeloDragFactor = 1f,
+                MinVelo = minVelo,
+                ParasiticDrag = 0.2f,
+                MaxAOA = 30f,
+                DragFactor = 0.5f,
+            });
+
+            _noseWing = new Wing(this, new WingParameters()
+            {
+                RenderLength = 2.5f,
+                RenderWidth = 1f,
+                Area = 0.06f,
+                MaxDeflection = 20f,
+                MaxLiftForce = 2000f * liftScale,
+                VeloLiftFactor = 1f,
+                VeloDragFactor = 1f,
+                Position = new D2DPoint(21.5f, 0f),
+                MinVelo = minVelo,
+                ParasiticDrag = 0.2f,
+                DragFactor = 0.5f,
+                MaxAOA = 30f
+            });
+
+            AddAttachment(_tailWing, true);
+            AddAttachment(_rocketBody, true);
+            AddAttachment(_noseWing, true);
         }
 
-
-        public override void Update(float dt)
+        public override void DoPhysicsUpdate(float dt)
         {
-            // Apply guidance.
-            var guideRotation = 0f;
+            base.DoPhysicsUpdate(dt);
 
-            if (_guidance != null)
-                guideRotation = _guidance.GuideTo(dt);
+            D2DPoint accel = D2DPoint.Zero;
 
-            for (int i = 0; i < World.PHYSICS_SUB_STEPS; i++)
+            if (!this.IsNetObject)
             {
-                var partialDT = World.SUB_DT;
+                // Apply aerodynamics.
+                var liftDrag = D2DPoint.Zero;
+                var cg = GetCenterOfGravity();
 
-                base.Update(partialDT);
+                var tailForce = _tailWing.GetForces(cg);
+                var noseForce = _noseWing.GetForces(cg);
+                var bodyForce = _rocketBody.GetForces(cg);
 
-                if (_useControlSurfaces)
-                {
-                    _tailWing.Update(partialDT);
-                    _noseWing.Update(partialDT);
-                    _rocketBody.Update(partialDT);
-                }
+                liftDrag += tailForce.LiftAndDrag + noseForce.LiftAndDrag + bodyForce.LiftAndDrag;
+
+                const float TAIL_AUTH = 1f;
+                const float NOSE_AUTH = 0f;
+
+                // Apply guidance.
+                if (_guidance != null)
+                    _guideRotation = _guidance.GuideTo(dt);
+
+                // Hold initial rotation until activated.
+                // Otherwise ease in the guidance rotation.
+                if (!this.IsActivated)
+                    _guideRotation = _initRotation;
                 else
+                    _guideRotation = Utilities.LerpAngle(_initRotation, _guideRotation, _easeGuidanceTimer.Position);
+
+                // Compute deflection.
+                var nextDeflect = GetDeflectionAmount(_guideRotation);
+
+                // Adjust the deflection as speed, rotation speed and AoA increases.
+                // This is to try to prevent over - rotation caused by thrust vectoring.
+                if (_currentFuel > 0f)
                 {
-                    _rocketBody.Update(partialDT);
+                    const float MIN_DEF_SPD = 450f; // Minimum speed required for full deflection.
+                    var spdFact = Utilities.Factor(this.Velocity.Length(), MIN_DEF_SPD);
+
+                    const float MAX_DEF_AOA = 40f;// Maximum AoA allowed. Reduce deflection as AoA increases.
+                    var aoaFact = 1f - (Math.Abs(_rocketBody.AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 2f))));
+
+                    const float MAX_DEF_ROT_SPD = 250f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
+                    var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 3f))));
+
+                    // Ease out of SAS as fuel runs out.
+                    var fuelFact = Utilities.FactorWithEasing(_currentFuel, FUEL, EasingFunctions.Out.EaseCubic);
+                    nextDeflect = Utilities.Lerp(nextDeflect, nextDeflect * (aoaFact * rotSpdFact * spdFact), fuelFact);
                 }
 
-                _centerOfThrust.Update(partialDT);
-                _warheadCenterMass.Update(partialDT);
-                _motorCenterMass.Update(partialDT);
-                _flamePos.Update(partialDT);
+                // Damp and apply deflection.
+                _tailWing.Deflection = TAIL_AUTH * Utilities.Damp(_tailWing.Deflection, -nextDeflect, DEFLECTION_DAMPING, dt);
+                _noseWing.Deflection = NOSE_AUTH * Utilities.Damp(_noseWing.Deflection, nextDeflect, DEFLECTION_DAMPING, dt);
 
-                D2DPoint accel = D2DPoint.Zero;
+                this.Deflection = _tailWing.Deflection;
 
-                if (!this.IsNetObject)
-                {
-                    // Apply aerodynamics.
-                    var liftDrag = D2DPoint.Zero;
-                    var cg = GetCenterOfGravity();
+                // Compute torque and rotation result.
+                var thrust = GetThrust();
+                var thrustTorque = Utilities.GetTorque(cg, _centerOfThrust.Position, thrust);
+                var torqueRot = (tailForce.Torque + bodyForce.Torque + noseForce.Torque + thrustTorque) / this.GetInertia(this.TotalMass);
 
-                    if (_useControlSurfaces)
-                    {
-                        var tailForce = _tailWing.GetForces(cg);
-                        var noseForce = _noseWing.GetForces(cg);
-                        var bodyForce = _rocketBody.GetForces(cg);
+                // Add thrust and integrate acceleration.
+                accel += (thrust / TotalMass) * dt;
+                accel += (liftDrag / TotalMass) * dt;
 
-                        liftDrag += tailForce.LiftAndDrag + noseForce.LiftAndDrag + bodyForce.LiftAndDrag;
-
-                        // Compute torque and rotation result.
-                        var thrustTorque = Utilities.GetTorque(cg, _centerOfThrust.Position, GetThrust(thrustVector: _useThrustVectoring));
-                        var torqueRot = (tailForce.Torque + bodyForce.Torque + noseForce.Torque + thrustTorque) / this.GetInertia(this.TotalMass);
-
-                        this.RotationSpeed += torqueRot * partialDT;
-                    }
-                    else
-                    {
-                        var bodyForce = _rocketBody.GetForces(cg);
-                        liftDrag += bodyForce.LiftAndDrag;
-                    }
-
-
-                    if (!this.IsActivated)
-                        guideRotation = _initRotation;
-
-                    if (_useControlSurfaces)
-                    {
-                        const float TAIL_AUTH = 1f;
-                        const float NOSE_AUTH = 0f;
-
-                        // Compute deflection.
-                        var nextDeflect = GetDeflectionAmount(guideRotation);
-
-                        // Adjust the deflection as speed, rotation speed and AoA increases.
-                        // This is to try to prevent over-rotation caused by thrust vectoring.
-                        if (_currentFuel > 0f && _useThrustVectoring)
-                        {
-                            const float MIN_DEF_SPD = 550f;//450f; // Minimum speed required for full deflection.
-                            var spdFact = Utilities.Factor(this.Velocity.Length(), MIN_DEF_SPD);
-
-                            const float MAX_DEF_AOA = 30f;// Maximum AoA allowed. Reduce deflection as AoA increases.
-                            var aoaFact = 1f - (Math.Abs(_rocketBody.AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 2f))));
-
-                            const float MAX_DEF_ROT_SPD = 100f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
-                            var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 3f))));
-
-                            // Ease out of SAS as fuel runs out.
-                            var fuelFact = Utilities.FactorWithEasing(_currentFuel, FUEL, EasingFunctions.Out.EaseCubic);
-                            nextDeflect = Utilities.Lerp(nextDeflect, nextDeflect * (aoaFact * rotSpdFact * spdFact), fuelFact);
-                        }
-
-                        _tailWing.Deflection = TAIL_AUTH * -nextDeflect;
-                        _noseWing.Deflection = NOSE_AUTH * nextDeflect;
-
-                        this.Deflection = _tailWing.Deflection;
-                    }
-                    else
-                    {
-                        this.Rotation = guideRotation;
-                    }
-
-                    // Add thrust and integrate acceleration.
-                    accel += GetThrust(thrustVector: false) * partialDT / TotalMass;
-                    accel += (liftDrag / TotalMass) * partialDT;
-
-                    this.Velocity += accel;
-                    this.Velocity += World.Gravity * partialDT;
-                }
-
-                var gforce = accel.Length() / partialDT / 9.8f;
-                _gForce = gforce;
-                _gForcePeak = Math.Max(_gForcePeak, _gForce);
+                this.Velocity += accel;
+                this.Velocity += World.Gravity * dt;
+                this.RotationSpeed += torqueRot * dt;
             }
+
+            var gforce = accel.Length() / dt / 9.8f;
+            _gForce = gforce;
+            _gForcePeak = Math.Max(_gForcePeak, _gForce);
+        }
+
+        public override void DoUpdate(float dt)
+        {
+            base.DoUpdate(dt);
 
             if (_currentFuel > 0f)
             {
                 _currentFuel -= BURN_RATE * dt;
             }
 
-            if (_currentFuel <= 0f && this.Age > LIFESPAN && this.MissedTarget)
-                this.IsExpired = true;
+            // Don't expire net missiles. Wait for client packets.
+            if (!this.IsNetObject)
+                if (_currentFuel <= 0f && this.Age > LIFESPAN && this.MissedTarget)
+                    this.IsExpired = true;
 
-            _igniteCooldown.Update(dt);
-
-            if (_currentFuel <= 0f)
+            if (FlameOn && _currentFuel <= 0f)
+            {
+                _currentFuel = 0f;
                 FlameOn = false;
-
-            this.RecordHistory();
+            }
         }
 
         private float GetDeflectionAmount(float dir)
@@ -373,9 +364,9 @@ namespace PolyPlane.GameObjects
             return rot;
         }
 
-        public override void NetUpdate(D2DPoint position, D2DPoint velocity, float rotation, double frameTime)
+        public override void NetUpdate(GameObjectPacket packet)
         {
-            base.NetUpdate(position, velocity, rotation, frameTime);
+            base.NetUpdate(packet);
 
             _tailWing.Deflection = this.Deflection;
         }
@@ -412,29 +403,25 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
-            if (_useThrustVectoring)
-                _flameFillColor = D2DColor.Orange;
+            _flameFillColor = D2DColor.Orange;
 
             UpdateFlame();
 
             if (FlameOn)
-                ctx.DrawPolygon(this.FlamePoly.Poly, _flameFillColor, 1f, D2DDashStyle.Solid, _flameFillColor);
+                ctx.DrawPolygon(this.FlamePoly, _flameFillColor, 1f, _flameFillColor);
 
             var fillColor = D2DColor.White;
-            ctx.DrawPolygon(this.Polygon.Poly, D2DColor.Black, 0.3f, D2DDashStyle.Solid, fillColor);
+            ctx.DrawPolygon(this.Polygon, D2DColor.Black, 0.3f, fillColor);
 
-            if (_useControlSurfaces)
-            {
-                _tailWing.Render(ctx);
-                _rocketBody.Render(ctx);
-                _noseWing.Render(ctx);
-            }
+            _tailWing.Render(ctx);
+            _rocketBody.Render(ctx);
+            _noseWing.Render(ctx);
 
             if (World.ShowTracking && _guidance != null)
             {
-                ctx.FillEllipse(new D2DEllipse(_guidance.CurrentAimPoint, new D2DSize(50f, 50f)), D2DColor.LawnGreen);
-                ctx.FillEllipse(new D2DEllipse(_guidance.StableAimPoint, new D2DSize(40f, 40f)), D2DColor.Blue);
-                ctx.FillEllipse(new D2DEllipse(_guidance.ImpactPoint, new D2DSize(30f, 30f)), D2DColor.Red);
+                ctx.FillEllipseSimple(_guidance.CurrentAimPoint, 50f, D2DColor.LawnGreen);
+                ctx.FillEllipseSimple(_guidance.StableAimPoint, 40f, D2DColor.Blue);
+                ctx.FillEllipseSimple(_guidance.ImpactPoint, 30f, D2DColor.Red);
 
                 ctx.DrawLine(this.Position, _guidance.CurrentAimPoint, D2DColor.LawnGreen, 5f);
                 ctx.DrawLine(this.Position, _guidance.StableAimPoint, D2DColor.Blue, 5f);
@@ -446,23 +433,15 @@ namespace PolyPlane.GameObjects
         {
             float flameAngle = 0f;
 
-            if (_useThrustVectoring)
-            {
-                flameAngle = GetThrust(_useThrustVectoring).Angle();
-            }
-            else
-            {
-                const float DEF_AMT = 0.2f; // How much the flame will be deflected in relation to velocity.
-                flameAngle = this.Rotation - (Utilities.ClampAngle180(this.Rotation - this.Velocity.Angle()) * DEF_AMT);
-            }
+            flameAngle = GetThrust().Angle();
 
             // Make the flame do flamey things...(Wiggle and color)
             var thrust = GetThrust().Length();
             var len = this.Velocity.Length() * 0.05f;
             len += thrust * 0.01f;
             len *= 0.8f;
-            FlamePoly.SourcePoly[1].X = -_rnd.NextFloat(9f + len, 11f + len);
-            _flameFillColor.g = _rnd.NextFloat(0.6f, 0.86f);
+            FlamePoly.SourcePoly[1].X = -Utilities.Rnd.NextFloat(9f + len, 11f + len);
+            _flameFillColor.g = Utilities.Rnd.NextFloat(0.6f, 0.86f);
             FlamePoly.Update(_flamePos.Position, flameAngle, this.RenderScale);
         }
 
@@ -486,21 +465,14 @@ namespace PolyPlane.GameObjects
             return cm;
         }
 
-        private D2DPoint GetThrust(bool thrustVector = false)
+        private D2DPoint GetThrust()
         {
             var thrust = D2DPoint.Zero;
 
             if (_currentFuel > 0f && FlameOn)
             {
-                D2DPoint vec;
-
-                if (thrustVector)
-                    vec = Utilities.AngleToVectorDegrees(this.Rotation + (_tailWing.Deflection * THURST_VECTOR_AMT));
-                else
-                    vec = Utilities.AngleToVectorDegrees(this.Rotation);
-
+                var vec = Utilities.AngleToVectorDegrees(this.Rotation + (_tailWing.Deflection * THURST_VECTOR_AMT));
                 vec *= THRUST;
-
                 thrust = vec;
             }
 

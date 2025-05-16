@@ -1,6 +1,4 @@
 ﻿using ENet;
-using PolyPlane.GameObjects;
-using System.Collections.Concurrent;
 
 namespace PolyPlane.Net.NetHost
 {
@@ -9,17 +7,23 @@ namespace PolyPlane.Net.NetHost
         public event EventHandler<Peer> PeerTimeoutEvent;
         public event EventHandler<Peer> PeerDisconnectedEvent;
 
-        public ConcurrentQueue<NetPacket> PacketSendQueue = new ConcurrentQueue<NetPacket>();
-        public ConcurrentQueue<NetPacket> PacketReceiveQueue = new ConcurrentQueue<NetPacket>();
+        public RingBuffer<NetPacket> PacketSendQueue = new RingBuffer<NetPacket>(512);
+        public RingBuffer<NetPacket> PacketReceiveQueue = new RingBuffer<NetPacket>(512);
 
-        public Host Host;
-        public readonly ushort Port;
-        public readonly Address Address;
-
+        public uint BytesReceived => Host.BytesReceived;
+        public uint BytesSent => Host.BytesSent;
+        public uint PacketsSent => Host.PacketsSent;
+        public uint PacketsReceived => Host.PacketsReceived;
+        public uint PeersCount => Host.PeersCount;
+        
         protected const int MAX_CLIENTS = 30;
-        protected const int MAX_CHANNELS = 8;
+        protected const int MAX_CHANNELS = 9;
         protected const int TIMEOUT = 0;
         protected const int POLL_FPS = 1000;
+
+        protected Host Host;
+        protected readonly ushort Port;
+        protected readonly Address Address;
 
         private Thread _pollThread;
         private FPSLimiter _pollLimiter = new FPSLimiter();
@@ -75,47 +79,43 @@ namespace PolyPlane.Net.NetHost
             PacketReceiveQueue.Enqueue(netPacket);
         }
 
-        public virtual void EnqueuePacket(NetPacket packet)
+        public void EnqueuePacket(NetPacket packet, SendType sendType, int peerID)
         {
+            packet.SendType = sendType;
+            packet.PeerID = (uint)peerID;
             PacketSendQueue.Enqueue(packet);
         }
 
-        public void SendPlayerDisconnectPacket(uint playerID)
+        public void EnqueuePacket(NetPacket packet, SendType sendType, uint peerID)
         {
-            var packet = new BasicPacket(PacketTypes.PlayerDisconnect, new GameID(playerID));
-            EnqueuePacket(packet);
-            Host.Flush();
+            packet.SendType = sendType;
+            packet.PeerID = peerID;
+            PacketSendQueue.Enqueue(packet);
+
+        }
+        public void EnqueuePacket(NetPacket packet, SendType sendType = SendType.ToAll)
+        {
+            packet.SendType = sendType;
+            PacketSendQueue.Enqueue(packet);
         }
 
+
         public abstract ulong PacketLoss();
-        protected abstract void SendPacket(ref Packet packet, uint peerId, byte channel);
+        protected abstract void SendPacket(NetPacket netPacket);
         public abstract Peer? GetPeer(int playerID);
         public abstract void Disconnect(int playerID);
-        public abstract uint GetPlayerRTT(int playerID);
+        public abstract double GetPlayerRTT(int playerID);
 
         internal void PollLoop()
         {
             Event netEvent;
-            bool polled = false;
 
             while (_runLoop)
             {
                 ProcessSendQueue();
 
-                polled = false;
-
-                while (!polled && _runLoop)
-                {
-                    if (Host.CheckEvents(out netEvent) <= 0)
-                    {
-                        if (Host.Service(TIMEOUT, out netEvent) <= 0)
-                            break;
-
-                        polled = true;
-                    }
-
+                while (_runLoop && Host.Service(TIMEOUT, out netEvent) > 0)
                     HandleEvent(ref netEvent);
-                }
 
                 _pollLimiter.Wait(POLL_FPS);
             }
@@ -150,13 +150,11 @@ namespace PolyPlane.Net.NetHost
                 case EventType.Receive:
 
                     var packet = netEvent.Packet;
-                    var netPacket = ParsePacket(ref packet);
 
-                    // Set the peer ID only if the packet does not need bounced back.
-                    if (ShouldBounceBack(netPacket) == false)
-                        netPacket.PeerID = netEvent.Peer.ID;
-
-                    HandleReceive(netPacket);
+                    if (TryParsePacket(ref packet, out NetPacket? netPacket))
+                    {
+                        HandleReceive(netPacket);
+                    }
 
                     packet.Dispose();
 
@@ -166,7 +164,7 @@ namespace PolyPlane.Net.NetHost
 
         private void ProcessSendQueue()
         {
-            while (!PacketSendQueue.IsEmpty)
+            while (PacketSendQueue.Count > 0)
             {
                 if (PacketSendQueue.TryDequeue(out NetPacket packet))
                 {
@@ -175,42 +173,23 @@ namespace PolyPlane.Net.NetHost
             }
         }
 
-        private void SendPacket(NetPacket netPacket)
+        private bool TryParsePacket(ref Packet packet, out NetPacket netPacket)
         {
-            var packet = CreatePacket(netPacket);
-            var channel = GetChannel(netPacket);
-
-            SendPacket(ref packet, netPacket.PeerID, channel);
-        }
-
-        private NetPacket ParsePacket(ref Packet packet)
-        {
-            var buffer = new byte[packet.Length];
-
-            packet.CopyTo(buffer);
-
-            var packetObj = Serialization.ByteArrayToObject(buffer) as NetPacket;
-
-            return packetObj;
-        }
-
-        /// <summary>
-        /// True if the specified packet should be bounced back to the client/peer from which it originated.
-        /// </summary>
-        /// <param name="packet"></param>
-        /// <returns></returns>
-        private bool ShouldBounceBack(NetPacket packet)
-        {
-            switch (packet.Type)
+            try
             {
-                // We want these packet types to bounce back to clients/peers.
-                // For example, with chat messages, we want to know that the message made it to 
-                // the server before displaying it on the originating client.
-                case PacketTypes.ChatMessage or PacketTypes.PlayerEvent or PacketTypes.PlayerReset:
-                    return true;
+                var buffer = new byte[packet.Length];
 
-                default:
-                    return false;
+                packet.CopyTo(buffer);
+
+                var packetObj = Serialization.ByteArrayToObject(buffer);
+
+                netPacket = packetObj;
+                return true;
+            }
+            catch
+            {
+                netPacket = null;
+                return false;
             }
         }
 
@@ -218,16 +197,16 @@ namespace PolyPlane.Net.NetHost
         {
             switch (netpacket.Type)
             {
-                case PacketTypes.PlaneUpdate:
+                case PacketTypes.PlaneUpdate or PacketTypes.PlaneListUpdate:
                     return 0;
 
-                case PacketTypes.MissileUpdateList or PacketTypes.MissileUpdate:
+                case PacketTypes.PlaneStatus or PacketTypes.PlaneStatusList:
                     return 1;
 
-                case PacketTypes.NewBullet:
+                case PacketTypes.NewMissile or PacketTypes.MissileUpdateList or PacketTypes.MissileUpdate:
                     return 2;
 
-                case PacketTypes.NewMissile:
+                case PacketTypes.NewBullet:
                     return 3;
 
                 case PacketTypes.NewDecoy:
@@ -239,8 +218,11 @@ namespace PolyPlane.Net.NetHost
                 case PacketTypes.Impact or PacketTypes.ImpactList:
                     return 6;
 
-                default:
+                case PacketTypes.SyncRequest or PacketTypes.SyncResponse:
                     return 7;
+
+                default:
+                    return 8;
             }
         }
 
@@ -248,8 +230,8 @@ namespace PolyPlane.Net.NetHost
         {
             switch (netpacket.Type)
             {
-                //case PacketTypes.NewBullet or PacketTypes.NewMissile or PacketTypes.NewDecoy or PacketTypes.Impact:
-                //    return PacketFlags.Instant;
+                case PacketTypes.SyncResponse or PacketTypes.SyncRequest:
+                    return PacketFlags.Instant;
 
                 default:
                     return PacketFlags.Reliable;
@@ -275,10 +257,10 @@ namespace PolyPlane.Net.NetHost
         {
             _runLoop = false;
 
+            _pollThread?.Join(100);
+
             Host?.Flush();
             Host?.Dispose();
-
-            _pollLimiter?.Dispose();
 
             Library.Deinitialize();
         }

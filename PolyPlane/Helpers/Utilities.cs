@@ -1,27 +1,28 @@
 ﻿using PolyPlane.AI_Behavior;
 using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Fixtures;
-using SkiaSharp;
+using PolyPlane.GameObjects.Managers;
 using System.Net;
 using System.Numerics;
 using unvell.D2DLib;
+using SkiaSharp;
 
 namespace PolyPlane.Helpers
 {
     public static class Utilities
     {
         public static Random Rnd = new Random();
-        public const float DEGREES_TO_RADS = (float)Math.PI / 180f;
-        public const float RADS_TO_DEGREES = 180f / (float)Math.PI;
+        public const float DEGREES_TO_RADS = (float)(Math.PI / 180d);
+        public const float RADS_TO_DEGREES = (float)(180d / Math.PI);
+
+        public static float Damp(float a, float b, float lambda, float dt)
+        {
+            return Lerp(a, b, 1f - MathF.Exp(-lambda * dt));
+        }
 
         public static float Lerp(float value1, float value2, float amount)
         {
             return value1 + (value2 - value1) * amount;
-        }
-
-        public static float Lerp(float value1, float value2, float factor1, float factor2)
-        {
-            return value1 + (value2 - value1) * Factor(factor1, factor2);
         }
 
         public static float LerpAngle(float value1, float value2, float amount)
@@ -56,7 +57,7 @@ namespace PolyPlane.Helpers
 
         public static float Repeat(float t, float length)
         {
-            return Math.Clamp(t - (float)Math.Floor(t / length) * length, 0.0f, length);
+            return Math.Clamp(t - MathF.Floor(t / length) * length, 0.0f, length);
         }
 
         public static float Clamp01(float value)
@@ -69,9 +70,9 @@ namespace PolyPlane.Helpers
             return D2DPoint.Lerp(a, b, amount);
         }
 
-        public static float Factor(float value1, float value2)
+        public static float Factor(float value, float maxValue)
         {
-            return Math.Clamp(value1 / value2, 0f, 1f);
+            return Math.Clamp(value / maxValue, 0f, 1f);
         }
 
         public static float FactorWithEasing(float value1, float value2, Func<float, float> easeFunc)
@@ -97,14 +98,8 @@ namespace PolyPlane.Helpers
         public static D2DPoint AngleToVectorDegrees(float angle, float length = 1f)
         {
             var rads = DegreesToRads(angle);
-            var vec = new D2DPoint((float)Math.Cos(rads), (float)Math.Sin(rads));
+            var vec = new D2DPoint(MathF.Cos(rads), MathF.Sin(rads));
             return vec * length;
-        }
-
-        public static D2DPoint AngleToVectorRads(float angle)
-        {
-            var vec = new D2DPoint((float)Math.Cos(angle), (float)Math.Sin(angle));
-            return vec;
         }
 
         /// <summary>
@@ -183,7 +178,7 @@ namespace PolyPlane.Helpers
 
             var delta = A1 * B2 - A2 + B1;
 
-            if (delta == 0f)
+            if (Math.Abs(delta) <= float.Epsilon)
                 return D2DPoint.Zero;
 
             var x = (B2 * C1 - B1 * C2) / delta;
@@ -206,10 +201,41 @@ namespace PolyPlane.Helpers
             return groundPos;
         }
 
+        /// <summary>
+        /// Checks for ground intersections with the previous and next positions of the specified object.
+        /// </summary>
+        /// <param name="obj">Object to test.</param>
+        /// <param name="altOffset">Ground level Y coordinate offset. (Move the intersection test up or down)</param>
+        /// <param name="dt">Current time delta.</param>
+        /// <param name="impactPnt">Ground intersection point.</param>
+        /// <returns>True if a ground intersection was found.</returns>
+        public static bool TryGetGroundCollisionPoint(GameObject obj, float altOffset, float dt, out D2DPoint impactPnt)
+        {
+            const float GROUND_LINE_LEN = 50000f;
+
+            var groundLineA = new D2DPoint(obj.Position.X - GROUND_LINE_LEN, altOffset);
+            var groundLineB = new D2DPoint(obj.Position.X + GROUND_LINE_LEN, altOffset);
+
+            // Intersect current and previous positions.
+            var intersectVector = obj.Position + (obj.Velocity * dt);
+            var intersectVectorPrev = obj.Position - (obj.Velocity * dt);
+
+            impactPnt = D2DPoint.Zero;
+
+            if (CollisionHelpers.IsIntersecting(obj.Position, intersectVector, groundLineA, groundLineB, out impactPnt))
+                return true;
+
+            // Additional check with previous position.
+            if (CollisionHelpers.IsIntersecting(obj.Position, intersectVectorPrev, groundLineA, groundLineB, out impactPnt))
+                return true;
+
+            return false;
+        }
+
         public static float PositionToAltitude(D2DPoint position)
         {
             // Up = negative on the Y axis.
-            return position.Y * -1f;
+            return Math.Clamp(position.Y * -1f, 0f, float.MaxValue);
         }
 
         public static float Cross(D2DPoint vector1, D2DPoint vector2)
@@ -239,7 +265,7 @@ namespace PolyPlane.Helpers
             return vals[Rnd.Next(len)];
         }
 
-        public static D2DPoint ApplyTranslation(D2DPoint src, float rotation, D2DPoint translation, float scale = 1f)
+        public static D2DPoint Translate(this D2DPoint src, float rotation, D2DPoint translation, float scale = 1f)
         {
             var mat = Matrix3x2.CreateScale(scale);
             mat *= Matrix3x2.CreateRotation(rotation * DEGREES_TO_RADS, D2DPoint.Zero);
@@ -248,16 +274,7 @@ namespace PolyPlane.Helpers
             return D2DPoint.Transform(src, mat);
         }
 
-        public static D2DPoint ApplyTranslation(D2DPoint src, float rotation, D2DPoint centerPoint, D2DPoint translation, float scale = 1f)
-        {
-            var mat = Matrix3x2.CreateScale(scale);
-            mat *= Matrix3x2.CreateRotation(rotation * DEGREES_TO_RADS, centerPoint);
-            mat *= Matrix3x2.CreateTranslation(translation);
-
-            return D2DPoint.Transform(src, mat);
-        }
-
-        public static void ApplyTranslation(D2DPoint[] src, D2DPoint[] dst, float rotation, D2DPoint translation, float scale = 1f)
+        public static void Translate(this D2DPoint[] src, D2DPoint[] dst, float rotation, D2DPoint translation, float scale = 1f)
         {
             var mat = Matrix3x2.CreateScale(scale);
             mat *= Matrix3x2.CreateRotation(rotation * DEGREES_TO_RADS, D2DPoint.Zero);
@@ -270,7 +287,7 @@ namespace PolyPlane.Helpers
             }
         }
 
-        public static void ApplyTranslation(D2DPoint[] src, D2DPoint[] dst, D2DPoint center, float rotation, D2DPoint translation, float scaleX = 1f, float scaleY = 1f)
+        public static void Translate(this D2DPoint[] src, D2DPoint[] dst, D2DPoint center, float rotation, D2DPoint translation, float scaleX = 1f, float scaleY = 1f)
         {
             var mat = Matrix3x2.CreateScale(scaleX, scaleY, center);
             mat *= Matrix3x2.CreateRotation(rotation * DEGREES_TO_RADS, center);
@@ -382,6 +399,29 @@ namespace PolyPlane.Helpers
             return rndPnt;
         }
 
+        public static D2DPoint[] RandomPoly(int nPoints, float radius)
+        {
+            var poly = new D2DPoint[nPoints];
+            var dists = new float[nPoints];
+
+            for (int i = 0; i < nPoints; i++)
+            {
+                dists[i] = Rnd.NextFloat(radius / 2f, radius);
+            }
+
+            var radians = Rnd.NextFloat(0.8f, 1f);
+            var angle = 0f;
+
+            for (int i = 0; i < nPoints; i++)
+            {
+                var pnt = new D2DPoint(MathF.Cos(angle * radians) * dists[i], MathF.Sin(angle * radians) * dists[i]);
+                poly[i] = pnt;
+                angle += (2f * MathF.PI / nPoints);
+            }
+
+            return poly;
+        }
+
         public static bool PointInPoly(D2DPoint pnt, D2DPoint[] poly)
         {
             int i, j = 0;
@@ -487,7 +527,7 @@ namespace PolyPlane.Helpers
         {
             var groundPos = new D2DPoint(obj.Position.X, 0f);
             var groundDist = obj.Position.DistanceTo(groundPos);
-            var vs = -obj.VerticalSpeed;
+            var vs = obj.Velocity.Y;
             var impactTime = groundDist / vs;
 
             return impactTime;
@@ -497,55 +537,102 @@ namespace PolyPlane.Helpers
         /// Returns the angle required to ascend/descend to and maintain the specified altitude.
         /// </summary>
         /// <param name="obj">Target object.</param>
-        /// <param name="targAlt">Target altitude.</param>
+        /// <param name="targetAltitude">Target altitude.</param>
         /// <returns>Guidance angle.</returns>
-        public static float MaintainAltitudeAngle(GameObject obj, float targAlt)
+        public static float MaintainAltitudeAngle(GameObject obj, float targetAltitude)
         {
-            const float defAmt = 30f;
-            var toRight = IsPointingRight(obj.Rotation);
-            var alt = obj.Altitude;
-            var altDiff = alt - targAlt;
+            const float MAX_ANGLE = 30f; // Max angle to climb or descend (to meet the target altitude).
+            const float EASE_ALT = 1000f; // Determines the difference in altitude at which to begin leveling out.
+
+            var finalAngle = 0f;
+
+            // Get the difference and direction.
+            var altDiff = obj.Altitude - targetAltitude;
             var sign = Math.Sign(altDiff);
 
-            var vsFact = 200f * Factor(Math.Abs(obj.VerticalSpeed), 1f) + 200f;
-            var fact = Factor(Math.Abs(altDiff), vsFact);
+            // Ease out the angle amount as we approach the target altitude.
+            var angleAmount = FactorWithEasing(Math.Abs(altDiff), EASE_ALT, EasingFunctions.Out.EaseSine);
 
-            var amt = defAmt * fact * sign;
-            var altDir = 0f;
-            if (!toRight)
-                altDir = 180f - amt;
+            // Initial angle.
+            var angle = MAX_ANGLE * sign * angleAmount;
+
+            // Flip the angle as needed.
+            var toRight = IsPointingRight(obj.Rotation);
+
+            if (IsPointingRight(obj.Rotation))
+                finalAngle = angle;
             else
-                altDir = amt;
+                finalAngle = 180f - angle;
 
-            return ClampAngle(altDir);
+            return ClampAngle(finalAngle);
+        }
+
+        public static float AngularSize(FighterPlane plane, D2DPoint viewPoint)
+        {
+            const float MAX_PLANE_WIDTH = 120f;
+            const float MIN_PLANE_THICCNESS = 10f;
+
+            var dist = viewPoint.DistanceTo(plane.Position);
+            var angleTo = viewPoint.AngleTo(plane.Position);
+            var angleToRot = ClampAngle(angleTo - plane.Rotation);
+
+            // Make a line segment to represent the plane's rotation.
+            var lineA = D2DPoint.Zero;
+            var lineB = new D2DPoint(0f, MAX_PLANE_WIDTH);
+
+            // Rotate the segment.
+            lineA = lineA.Translate(angleToRot, D2DPoint.Zero);
+            lineB = lineB.Translate(angleToRot, D2DPoint.Zero);
+
+            // Get the abs diff between the X coords of the line to compute linear diameter.
+            var linearDiam = Math.Abs(lineB.X - lineA.X);
+            linearDiam = Math.Clamp(linearDiam, MIN_PLANE_THICCNESS, float.MaxValue);
+
+            var delta = 2f * MathF.Atan(linearDiam / (2f * dist));
+
+            return RadsToDegrees(delta);
+        }
+
+        public static float AngularSize(Decoy decoy, D2DPoint viewPoint)
+        {
+            var dist = viewPoint.DistanceTo(decoy.Position);
+            var linearDiam = decoy.CurrentRadius;
+            var delta = 2f * MathF.Atan(linearDiam / (2f * dist));
+
+            return RadsToDegrees(delta);
         }
 
         /// <summary>
-        /// Computes the angular velocity for the specified point in relation to the rotation speed of the parent object.
+        /// Computes the linear velocity for the specified point in relation to the rotation speed and position of the parent object.
         /// </summary>
         /// <param name="parentObject">Parent object from which position and rotation speed are taken.</param>
         /// <param name="point">A point along the axis of rotation.</param>
-        /// <param name="dt">Time delta.</param>
-        /// <returns>A velocity vector which sums the parent object velocity with the computed angular velocity.</returns>
+        /// <returns>A velocity vector which sums the parent object velocity with the computed linear velocity.</returns>
         /// <remarks>See: http://hyperphysics.phy-astr.gsu.edu/hbase/rotq.html</remarks>
-        public static D2DPoint AngularVelocity(GameObject parentObject, D2DPoint point)
+        public static D2DPoint PointVelocity(GameObject parentObject, D2DPoint point)
+        {
+            var baseVelo = parentObject.Velocity;
+            var linearVelo = LinearVelocity(parentObject.Position, point, parentObject.RotationSpeed);
+
+            return baseVelo + linearVelo;
+        }
+
+        /// <summary>
+        /// Computes the linear velocity for the specified point given the specified center point and rotation speed.
+        /// </summary>
+        /// <param name="center">Center point representing the axis of rotation.</param>
+        /// <param name="point">A point along the axis of rotation.</param>
+        /// <param name="rotationSpeedDeg">Rotation speed (angular velocity) in degrees per second.</param>
+        /// <returns>The linear velocity of the specified point.</returns>
+        /// <remarks>See: http://hyperphysics.phy-astr.gsu.edu/hbase/rotq.html</remarks>
+        public static D2DPoint LinearVelocity(D2DPoint center, D2DPoint point, float rotationSpeedDeg)
         {
             // V = WR
-            var baseVelo = parentObject.Velocity;
-            var R = parentObject.Position.DistanceTo(point);
+            var R = center - point;
+            var W = DegreesToRads(rotationSpeedDeg);
+            var V = R.Tangent() * W;
 
-            // There can be no angular velocity if we are at the center of the axis of rotation.
-            if (R > 0f)
-            {
-                var dir = parentObject.Position - point;
-                var dirNorm = D2DPoint.Normalize(dir);
-                var dirNormTan = dirNorm.Tangent();
-                var W = DegreesToRads(parentObject.RotationSpeed);
-
-                return baseVelo + (dirNormTan * (R * W));
-            }
-
-            return baseVelo;
+            return V;
         }
 
         public static float GetTorque(D2DPoint centerPosition, D2DPoint forcePosition, D2DPoint force)
@@ -667,7 +754,7 @@ namespace PolyPlane.Helpers
             return tagText;
         }
 
-        public static AIPersonality GetRandomPersonalities(int num)
+        public static AIPersonality GetRandomPersonalities(int num, bool allowCowardly = true)
         {
             AIPersonality personality = AIPersonality.Normal;
 
@@ -676,6 +763,12 @@ namespace PolyPlane.Helpers
             while (nAdded < num)
             {
                 var rndPers = RandomEnum<AIPersonality>();
+
+                if (!allowCowardly)
+                {
+                    while (rndPers == AIPersonality.Cowardly)
+                        rndPers = RandomEnum<AIPersonality>();
+                }
 
                 if (!personality.HasFlag(rndPers))
                 {
@@ -713,7 +806,7 @@ namespace PolyPlane.Helpers
                 maxDist = maxDist / 2f;
             }
 
-            var point = new D2DPoint(Rnd.NextFloat(World.PlaneSpawnRange.X, World.PlaneSpawnRange.Y), Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
+            var point = new D2DPoint(Rnd.NextFloat(-World.PlaneSpawnRange, World.PlaneSpawnRange), Rnd.NextFloat(-MAX_ALT, -MIN_ALT));
             var objs = World.ObjectManager;
 
             if (objs.Planes.Count == 0)
@@ -721,7 +814,7 @@ namespace PolyPlane.Helpers
 
             var sortedPoints = new List<Tuple<float, D2DPoint>>();
 
-            for (int x = (int)World.PlaneSpawnRange.X; x < World.PlaneSpawnRange.Y; x += (int)(minDist / 4f))
+            for (int x = (int)-World.PlaneSpawnRange; x < World.PlaneSpawnRange; x += (int)(minDist / 4f))
             {
                 for (int y = (int)MIN_ALT; y < MAX_ALT; y += 1000)
                 {

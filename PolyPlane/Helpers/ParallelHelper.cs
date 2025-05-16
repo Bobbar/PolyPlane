@@ -2,11 +2,26 @@
 {
     public static class ParallelHelpers
     {
-        public static ParallelLoopResult ParallelForSlim(int count, int partitions, Action<int, int> body)
+        public static void ForEachParallel<T>(this List<T> list, Action<T> action)
         {
+            ParallelForSlim(list.Count, (start, end) =>
+            {
+                for (int i = start; i < end; i++)
+                {
+                    action(list[i]);
+                }
+            });
+        }
+
+        public static void ParallelForSlim(int count, Action<int, int> body)
+        {
+            if (count == 0)
+                return;
+
             int pLen, pRem, pCount;
-            Partition(count, partitions, out pLen, out pRem, out pCount);
-            return Parallel.For(0, pCount, (p) =>
+            Partition(count, World.MUTLI_THREAD_COUNT, out pLen, out pRem, out pCount);
+
+            Parallel.For(0, pCount, (p) =>
             {
                 int offset = p * pLen;
                 int len = offset + pLen;
@@ -17,6 +32,7 @@
                 body(offset, len);
             });
         }
+
 
         /// <summary>
         /// Computes parameters for partitioning the specified length into the specified number of parts.
@@ -45,17 +61,6 @@
                 modulo = outMod;
                 count = parts;
             }
-        }
-
-        public static void ForEachParallel<T>(this List<T> list, Action<T> action, int parts)
-        {
-            ParallelForSlim(list.Count, parts, (start, end) =>
-            {
-                for (int i = start; i < end; i++)
-                {
-                    action(list[i]);
-                }
-            });
         }
     }
 }

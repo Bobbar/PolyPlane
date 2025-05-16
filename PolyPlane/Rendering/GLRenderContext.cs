@@ -3,7 +3,9 @@ using PolyPlane.Helpers;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
+using System.Drawing.Drawing2D;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using unvell.D2DLib;
@@ -97,7 +99,7 @@ namespace PolyPlane.Rendering
             UpdateScale();
         }
 
-        public void TranslateTransform(SKPoint pos)
+        public void TranslateTransform(Vector2 pos)
         {
             _gfx.SetMatrix(_gfx.TotalMatrix.Add(SKMatrix.CreateTranslation(pos.X, pos.Y)));
 
@@ -111,13 +113,33 @@ namespace PolyPlane.Rendering
             UpdateScale();
         }
 
-        public void ScaleTransform(float xy, SKPoint center)
+        public void ScaleTransform(float xy, Vector2 center)
         {
             _gfx.SetMatrix(_gfx.TotalMatrix.Add(SKMatrix.CreateScale(xy, xy, center.X, center.Y)));
 
             UpdateScale();
         }
 
+        public void ScaleTransform(float x, float y, Vector2 center)
+        {
+            _gfx.SetMatrix(_gfx.TotalMatrix.Add(SKMatrix.CreateScale(x, y, center.X, center.Y)));
+
+            UpdateScale();
+        }
+
+        public void RotateTransform(float angleDegrees)
+        {
+            _gfx.SetMatrix(_gfx.TotalMatrix.Add(SKMatrix.CreateRotationDegrees(angleDegrees)));
+
+            UpdateScale();
+        }
+
+        public void RotateTransform(float angleDegrees, Vector2 center)
+        {
+            _gfx.SetMatrix(_gfx.TotalMatrix.Add(SKMatrix.CreateRotationDegrees(angleDegrees, center.X, center.Y)));
+
+            UpdateScale();
+        }
 
 
 
@@ -209,6 +231,21 @@ namespace PolyPlane.Rendering
         }
 
 
+        public void FillPolygon(Vector2[] poly, SKColor color)
+        {
+            using (var path = new SKPath())
+            //using (var paint = new SKPaint() { Color = color, IsAntialias = true })
+            {
+                _cachedPaint.Color = color;
+                var paint = _cachedPaint;
+
+                path.AddPoly(poly.ToSkPoints(), true);
+
+                _gfx.DrawPath(path, paint);
+            }
+        }
+
+
 
         public void FillPolygon(RenderPoly poly, SKColor color)
         {
@@ -224,7 +261,65 @@ namespace PolyPlane.Rendering
             }
         }
 
-        public void DrawLine(SKPoint p0, SKPoint p1, SKColor color, float weight)
+        public void FillPolygon(RenderPoly poly, SKColor color, SKColor strokeColor, float strokeWeight)
+        {
+            using (var path = new SKPath())
+            //using (var paint = new SKPaint() { Color = color, IsAntialias = true })
+            {
+                _cachedPaint.Color = color;
+                var paint = _cachedPaint;
+
+                path.AddPoly(poly.Poly.ToSkPoints(), true);
+
+                _gfx.DrawPath(path, paint);
+
+                paint.IsStroke = true;
+                paint.Color = strokeColor;
+
+                _gfx.DrawPath(path, paint);
+
+                paint.IsStroke = false;
+            }
+        }
+
+        public void FillPath(SKPath path, SKColor color)
+        {
+            _cachedPaint.Color = color;
+            var paint = _cachedPaint;
+
+            _gfx.DrawPath(path, paint);
+
+        }
+
+
+        public void DrawLineWithLighting(Vector2 p0, Vector2 p1, SKColor color, float maxIntensity, float weight)
+        {
+            if (World.UseLightMap)
+            {
+                var lightedColor = LightMap.SampleColorSK((p0 + p1) * 0.5f, color, 0f, maxIntensity * _currentLightingFactor);
+                DrawLine(p0, p1, lightedColor, weight);
+            }
+            else
+            {
+                DrawLine(p0, p1, color, weight);
+            }
+        }
+
+        public void DrawLineWithLighting(Vector2 p0, Vector2 p1, SKColor color, float maxIntensity, float weight, SKStrokeCap capStyle = SKStrokeCap.Square)
+        {
+            if (World.UseLightMap)
+            {
+                var lightedColor = LightMap.SampleColorSK((p0 + p1) * 0.5f, color, 0f, maxIntensity * _currentLightingFactor);
+                DrawLine(p0, p1, lightedColor, weight, capStyle);
+            }
+            else
+            {
+                DrawLine(p0, p1, color, weight, capStyle);
+            }
+        }
+
+
+        public void DrawLine(Vector2 p0, Vector2 p1, SKColor color, float weight)
         {
             //using (var paint = new SKPaint() { Color = color, IsAntialias = true, StrokeWidth = weight })
             {
@@ -232,19 +327,48 @@ namespace PolyPlane.Rendering
                 _cachedPaint.Color = color;
                 var paint = _cachedPaint;
 
+                paint.StrokeWidth = weight;
+              
+
                 _gfx.DrawLine(p0, p1, paint);
+
+                paint.StrokeWidth = 0f;
             }
 
            
         }
 
+        public void DrawLine(Vector2 p0, Vector2 p1, SKColor color, float weight, SKStrokeCap capStyle = SKStrokeCap.Square)
+        {
+            //using (var paint = new SKPaint() { Color = color, IsAntialias = true, StrokeWidth = weight })
+            {
 
-        public void DrawRectangle(SKRect rect, SKPaint paint)
+                _cachedPaint.Color = color;
+                var paint = _cachedPaint;
+
+                paint.StrokeWidth = weight;
+                paint.StrokeCap = capStyle;
+                paint.IsStroke = true;
+
+                _gfx.DrawLine(p0, p1, paint);
+
+                paint.StrokeWidth = 0f;
+                paint.StrokeCap = SKStrokeCap.Square;
+                paint.IsStroke = false;
+
+            }
+
+
+        }
+
+
+
+        public void FillRectangle(SKRect rect, SKPaint paint)
         {
             _gfx.DrawRect(rect, paint);
         }
 
-        public void DrawRectangle(SKRect rect, SKColor color)
+        public void FillRectangle(SKRect rect, SKColor color)
         {
             //using (var paint = new SKPaint() { Color = color, IsAntialias = true })
             {
@@ -258,7 +382,7 @@ namespace PolyPlane.Rendering
         }
 
 
-        public void DrawCircle(SKPoint pos, float radius, SKColor color)
+        public void FillCircle(Vector2 pos, float radius, SKColor color)
         {
             //using (var paint = new SKPaint() { Color = color, IsAntialias = true })
             {
@@ -266,36 +390,124 @@ namespace PolyPlane.Rendering
                 _cachedPaint.Color = color;
                 var paint = _cachedPaint;
 
-                DrawCircle(pos, radius, paint);
+                FillCircle(pos, radius, paint);
             }
         }
 
-        public void DrawCircle(SKPoint pos, float radius, SKPaint paint)
+        public void FillCircle(Vector2 pos, float radius, SKPaint paint)
         {
             _gfx.DrawCircle(pos, radius, paint);
         }
 
-        public void DrawCircleWithLighting(SKPoint pos, float radius, SKColor color, float maxIntensity)
+        public void FillCircleWithLighting(Vector2 pos, float radius, SKColor color, float maxIntensity)
         {
-            DrawCircleWithLighting(pos, radius, color, 0f, maxIntensity);
+            FillCircleWithLighting(pos, radius, color, 0f, maxIntensity);
         }
 
-
-        public void DrawCircleWithLighting(SKPoint pos, float radius, SKColor color, float minIntensity, float maxIntensity)
+        public void FillCircleWithLighting(Vector2 pos, float radius, Vector2 sampleLocation, SKColor color, float minIntensity, float maxIntensity)
         {
             if (World.UseLightMap)
             {
-                var lightedColor = LightMap.SampleColorSK(pos, color, minIntensity, maxIntensity * _currentLightingFactor);
-                DrawCircle(pos, radius, lightedColor);
+                var lightedColor = LightMap.SampleColorSK(sampleLocation, color, minIntensity, maxIntensity * _currentLightingFactor);
+                FillCircle(pos, radius, lightedColor);
 
             }
             else
             {
-                DrawCircle(pos, radius, color);
+                FillCircle(pos, radius, color);
             }
 
         }
 
+        public void FillCircleWithLighting(Vector2 pos, float radius, SKColor color, float minIntensity, float maxIntensity)
+        {
+            if (World.UseLightMap)
+            {
+                var lightedColor = LightMap.SampleColorSK(pos, color, minIntensity, maxIntensity * _currentLightingFactor);
+                FillCircle(pos, radius, lightedColor);
+
+            }
+            else
+            {
+                FillCircle(pos, radius, color);
+            }
+
+        }
+
+        public void FillEllipse(Vector2 pos, SKSize size, SKColor color)
+        {
+            _cachedPaint.Color = color;
+            var paint = _cachedPaint;
+
+            //paint.IsStroke = true;
+            //paint.StrokeWidth = 3f;
+
+            _gfx.DrawOval(pos, size, paint);
+        }
+
+        public void FillEllipse(Vector2 pos, SKSize size, SKPaint paint)
+        {
+            _gfx.DrawOval(pos, size, paint);
+        }
+
+        public void FillEllipseWithLighting(Vector2 pos, SKSize size, SKColor color, float maxIntensity)
+        {
+            if (World.UseLightMap)
+            {
+                var lightedColor = LightMap.SampleColorSK(pos, color, 0f, maxIntensity * _currentLightingFactor);
+                FillEllipse(pos, size, lightedColor);
+
+            }
+            else
+            {
+                FillEllipse(pos, size, color);
+            }
+        }
+
+        public void FillEllipseWithLighting(Vector2 pos, SKSize size, Vector2 sampleLocation, SKColor color, float maxIntensity)
+        {
+            if (World.UseLightMap)
+            {
+                var lightedColor = LightMap.SampleColorSK(sampleLocation, color, 0f, maxIntensity * _currentLightingFactor);
+                FillEllipse(pos, size, lightedColor);
+
+            }
+            else
+            {
+                FillEllipse(pos, size, color);
+            }
+        }
+
+
+
+        public void FillEllipseWithLighting(Vector2 pos, SKSize size, SKColor color, float minIntensity, float maxIntensity)
+        {
+            if (World.UseLightMap)
+            {
+                var lightedColor = LightMap.SampleColorSK(pos, color, minIntensity, maxIntensity * _currentLightingFactor);
+                FillEllipse(pos, size, lightedColor);
+
+            }
+            else
+            {
+                FillEllipse(pos, size, color);
+            }
+        }
+
+        public void DrawEllipse(Vector2 pos, SKSize size, SKColor color, float strokeWidth)
+        {
+            _cachedPaint.Color = color;
+            var paint = _cachedPaint;
+
+            paint.IsStroke = true;
+            paint.StrokeWidth = strokeWidth;
+
+            FillEllipse(pos, size, paint);
+
+            paint.IsStroke = false;
+            paint.StrokeWidth = 0f;
+
+        }
 
 
 

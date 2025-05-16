@@ -579,7 +579,7 @@ namespace PolyPlane
             if (_oneStep)
                 World.IsPaused = false;
 
-            _render.InitGfx();
+            //_render.InitGfx();
 
             World.Update();
 
@@ -623,7 +623,7 @@ namespace PolyPlane
             //_render.UpdateTime = _updateTime;
 
             if (World.IsNetGame)
-                _netMan.DoNetEvents(dt);
+                _netMan.HandleNetEvents(dt);
 
             //if (!_skipRender && !_killRender && this.WindowState != FormWindowState.Minimized)
             //    _render.RenderFrame(viewObject, dt);

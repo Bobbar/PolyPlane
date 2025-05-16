@@ -45,8 +45,8 @@ namespace PolyPlane.GameObjects.Guidance
                 return 0;
             }
 
-            root1 = (-b + (float)Math.Sqrt(discriminant)) / (2f * a);
-            root2 = (-b - (float)Math.Sqrt(discriminant)) / (2f * a);
+            root1 = (-b + MathF.Sqrt(discriminant)) / (2f * a);
+            root2 = (-b - MathF.Sqrt(discriminant)) / (2f * a);
 
             return discriminant > 0f ? 2 : 1;
         }
@@ -66,7 +66,7 @@ namespace PolyPlane.GameObjects.Guidance
             var vRatio = vt / missileSpeed;
 
             //solve the triangle, using cossine law
-            if (SolveQuadratic(1f - (vRatio * vRatio), 2f * vRatio * distance * (float)Math.Cos(alpha), -distance * distance, out var root1, out var root2) == 0f)
+            if (SolveQuadratic(1f - (vRatio * vRatio), 2f * vRatio * distance * MathF.Cos(alpha), -distance * distance, out var root1, out var root2) == 0f)
             {
                 result = D2DPoint.Zero;
                 return false;   //no intercept solution possible!
