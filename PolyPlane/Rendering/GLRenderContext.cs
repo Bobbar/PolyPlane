@@ -45,6 +45,7 @@ namespace PolyPlane.Rendering
 
         private float _currentScale = 1.0f;
         private SKPaint _cachedPaint = new SKPaint() { Color = SKColors.Transparent, IsAntialias = true };
+        private SKColor _timeOfDayColor = SKColors.Transparent;
 
 
         public GLRenderContext()
@@ -60,7 +61,12 @@ namespace PolyPlane.Rendering
         }
 
 
+        public void BeginRender(SKColor clearColor)
+        {
+            _gfx.Clear(clearColor);
 
+            UpdateTimeOfDayColors();
+        }
 
 
         public void PushViewPort(D2DRect viewport)
@@ -144,15 +150,16 @@ namespace PolyPlane.Rendering
         }
 
 
-
-        private void UpdateTimeOfDayLightFactor()
+        private void UpdateTimeOfDayColors()
         {
             // Compute a TimeOfDay factor to be applied to all lighting intensity.
             // Decrease lighting intensity during the day.
             var factor = Math.Clamp(Utilities.FactorWithEasing(World.TimeOfDay, World.MAX_TIMEOFDAY - 5, EasingFunctions.EaseLinear), 0.5f, 1f);
             _currentLightingFactor = factor;
-        }
 
+            var todColor = InterpolateColorGaussian(World.TimeOfDayPalletGL, World.TimeOfDay, World.MAX_TIMEOFDAY);
+            _timeOfDayColor = todColor;
+        }
 
         /// Get the sun angle for the current time of day.
         /// </summary>
@@ -185,8 +192,7 @@ namespace PolyPlane.Rendering
         /// <returns></returns>
         public SKColor GetTimeOfDayColor()
         {
-            var todColor = InterpolateColorGaussian(World.TimeOfDayPalletGL, World.TimeOfDay, World.MAX_TIMEOFDAY);
-            return todColor;
+            return _timeOfDayColor;
         }
 
 
@@ -310,6 +316,34 @@ namespace PolyPlane.Rendering
         {
             FillPolygon(poly.Poly, color);
         }
+
+
+        public void FillPolygonWithLighting(RenderPoly poly, Vector2 sampleLocation, SKColor color, SKColor strokeColor, float strokeWeight, float maxIntensity)
+        {
+            if (World.UseLightMap)
+            {
+                var lightedColor = LightMap.SampleColorSK(sampleLocation, color, 0f, maxIntensity * _currentLightingFactor);
+                FillPolygon(poly, lightedColor, strokeColor, strokeWeight);
+            }
+            else
+            {
+                FillPolygon(poly, color, strokeColor, strokeWeight);
+            }
+        }
+
+        public void FillPolygonWithLighting(RenderPoly poly, Vector2 sampleLocation, SKColor color, float maxIntensity)
+        {
+            if (World.UseLightMap)
+            {
+                var lightedColor = LightMap.SampleColorSK(sampleLocation, color, 0f, maxIntensity * _currentLightingFactor);
+                FillPolygon(poly, lightedColor);
+            }
+            else
+            {
+                FillPolygon(poly, color);
+            }
+        }
+
 
         public void FillPolygonWithLighting(Vector2[] poly, Vector2 sampleLocation, SKColor color, float maxIntensity)
         {
@@ -447,7 +481,6 @@ namespace PolyPlane.Rendering
                 _cachedPaint.Color = color;
                 var paint = _cachedPaint;
 
-
                 _gfx.DrawRect(rect, paint);
             }
         }
@@ -467,6 +500,11 @@ namespace PolyPlane.Rendering
 
         public void FillCircle(Vector2 pos, float radius, SKPaint paint)
         {
+            if (!Viewport.Contains(pos))
+            {
+                //return;
+            }
+
             _gfx.DrawCircle(pos, radius, paint);
         }
 

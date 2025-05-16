@@ -2,6 +2,7 @@
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
+using SkiaSharp;
 
 namespace PolyPlane.GameObjects
 {
@@ -96,6 +97,14 @@ namespace PolyPlane.GameObjects
 
             ctx.FillEllipse(new D2DEllipse(this.Position, Radius + _currentFlashRadius, Radius + _currentFlashRadius), D2DColor.Yellow);
         }
+
+        public override void RenderGL(GLRenderContext ctx)
+        {
+            base.RenderGL(ctx);
+
+            ctx.FillCircle(this.Position, Radius + _currentFlashRadius, SKColors.Yellow);
+        }
+
 
         public bool IsFlashing()
         {

@@ -3,6 +3,7 @@ using PolyPlane.GameObjects.Particles;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
+using SkiaSharp;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -76,6 +77,18 @@ namespace PolyPlane.GameObjects
             var color = _color.WithAlpha(ageAlpha);
 
             ctx.DrawPolygonWithLighting(this.Polygon, this.Position, D2DColor.Black.WithAlpha(ageAlpha), 0.3f, color, maxIntensity: 0.5f);
+        }
+
+        public override void RenderGL(GLRenderContext ctx)
+        {
+            base.RenderGL(ctx);
+
+            var ageAlpha = 1f - Utilities.FactorWithEasing(_onGroundAge, MAX_AGE, EasingFunctions.In.EaseExpo);
+            var color = _color.WithAlpha(ageAlpha);
+
+            ctx.FillPolygonWithLighting(this.Polygon, this.Position, color.ToSKColor(), SKColors.Black.WithAlpha(ageAlpha), 0.3f, maxIntensity: 0.5f);
+
+            //ctx.DrawPolygonWithLighting(this.Polygon, this.Position, D2DColor.Black.WithAlpha(ageAlpha), 0.3f, color, maxIntensity: 0.5f);
         }
 
         public override void Dispose()
