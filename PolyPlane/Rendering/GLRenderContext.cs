@@ -488,23 +488,24 @@ namespace PolyPlane.Rendering
 
         public void FillCircle(Vector2 pos, float radius, SKColor color)
         {
-            //using (var paint = new SKPaint() { Color = color, IsAntialias = true })
+            _cachedPaint.Color = color;
+            var paint = _cachedPaint;
+
+            var scale = this.CurrentScale;
+            var viewRad = radius * scale;
+            if (World.FastPrimitives && viewRad > World.FAST_PRIMITIVE_MIN_SIZE || !World.FastPrimitives)
             {
-
-                _cachedPaint.Color = color;
-                var paint = _cachedPaint;
-
                 FillCircle(pos, radius, paint);
+            }
+            else
+            {
+                var r = SKRect.Create(pos.X - radius, pos.Y - radius, radius * 2f, radius * 2f);
+                FillRectangle(r, paint);
             }
         }
 
         public void FillCircle(Vector2 pos, float radius, SKPaint paint)
         {
-            if (!Viewport.Contains(pos))
-            {
-                //return;
-            }
-
             _gfx.DrawCircle(pos, radius, paint);
         }
 
