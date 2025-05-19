@@ -117,10 +117,13 @@ namespace PolyPlane.GameObjects
                 ctx.DrawLine(lastPos, endPosition, color, LINE_WEIGHT);
 
             if (_trailList.Count > 0 && _trailList.Count < TRAIL_LEN - 1)
-                ctx.FillEllipse(_trailList.First(), new SKSize(50f, 50f), color);
+                ctx.FillCircle(_trailList.First(), 50f, color);
+                //ctx.FillEllipse(_trailList.First(), new SKSize(50f, 50f), color);
 
             if (_parentMissile.IsExpired && _trailEnabled)
-                ctx.FillEllipse(endPosition, new SKSize(50f, 50f), color);
+                ctx.FillCircle(endPosition, 50f, color);
+
+            //ctx.FillEllipse(endPosition, new SKSize(50f, 50f), color);
         }
 
         public override bool ContainedBy(D2DRect rect)

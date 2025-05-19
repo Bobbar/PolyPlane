@@ -630,15 +630,20 @@ namespace PolyPlane
             //else
             //    _fpsLimiter.Wait(World.TARGET_FPS);
 
-            try
-            {
-                this.Invoke(() => _glRender.RenderFrame(viewObject, dt));
+            if (!_skipRender && !_killRender && this.WindowState != FormWindowState.Minimized)
+                _glRender?.RenderFrame(viewObject, dt);
+            else
+                _fpsLimiter.Wait(World.TARGET_FPS);
 
-            }
-            catch
-            {
+            //try
+            //{
+            //    this.Invoke(() => _glRender.RenderFrame(viewObject, dt));
 
-            }
+            //}
+            //catch
+            //{
+
+            //}
             //_glRender.RenderFrame(viewObject, dt);
 
             if (_slewEnable)

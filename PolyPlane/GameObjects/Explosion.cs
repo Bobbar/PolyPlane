@@ -2,6 +2,7 @@
 using PolyPlane.GameObjects.Particles;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
+using SkiaSharp;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -156,6 +157,12 @@ namespace PolyPlane.GameObjects
         {
             var color = Utilities.LerpColor(D2DColor.White, _lightMapColor, Utilities.FactorWithEasing(this.Age, this.Duration, EasingFunctions.Out.EaseCubic));
             return color;
+        }
+
+        SKColor ILightMapContributor.GetLightColorGL()
+        {
+            var color = Utilities.LerpColor(D2DColor.White, _lightMapColor, Utilities.FactorWithEasing(this.Age, this.Duration, EasingFunctions.Out.EaseCubic));
+            return color.ToSKColor();
         }
     }
 }

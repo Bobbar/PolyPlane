@@ -13,6 +13,7 @@ using SkiaSharp.Views.Desktop;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -24,6 +25,7 @@ namespace PolyPlane.Rendering
     public sealed class GLRenderer : IDisposable
     {
         private GLRenderContext _ctx = new GLRenderContext();
+        private Action? _renderDelegate = null;
 
         private OpenTK.GLControl _glControl;
         private const SKColorType colorType = SKColorType.Rgba8888;
@@ -39,8 +41,7 @@ namespace PolyPlane.Rendering
 
         private Form? _targetForm;
 
-        private int Width => (int)(_targetForm.Width / (_targetForm.DeviceDpi / DEFAULT_DPI));
-        //private int Height => (int)(_targetForm.Height / (_targetForm.DeviceDpi / DEFAULT_DPI));
+        private int Width => (int)(_targetForm.ClientSize.Width / (_targetForm.DeviceDpi / DEFAULT_DPI));
         private int Height => (int)(_targetForm.ClientSize.Height / (_targetForm.DeviceDpi / DEFAULT_DPI));
 
         private float _groundColorTOD = 0f;
@@ -76,23 +77,8 @@ namespace PolyPlane.Rendering
 
         private SKPaint _groundBrush;
         //private SKPaint _muzzleFlashBrush = new SKPaint() { IsAntialias = true, Shader = SKShader.CreateRadialGradient(SKPoint.Empty, MUZZ_FLASH_RADIUS, [SKColors.Transparent, SKColors.Orange.WithAlpha(0.2f)], SKShaderTileMode.Clamp) };
+        private SKPaint? _muzzleFlashBrush = null;
 
-        private SKPaint _muzzleFlashBrush = new SKPaint()
-        {
-            IsAntialias = true,
-            Shader = SKShader.CreateRadialGradient(
-                SKPoint.Empty,
-                MUZZ_FLASH_RADIUS,
-                [
-                    SKColors.Orange.WithAlpha(0.2f),
-                    SKColors.Transparent,
-                ],
-                [
-                    0f,
-                    0.5f
-                ],
-                SKShaderTileMode.Clamp)
-        };
 
         private SKPaint _hudDashedLine = new SKPaint() { IsAntialias = true, StrokeWidth = 1f, Color = World.HudColor.ToSKColor(), PathEffect = SKPathEffect.CreateDash([2f, 2f], 4f) };
         private SKPaint _hudColorBrush = new SKPaint() { IsAntialias = true, Color = World.HudColor.ToSKColor() };
@@ -118,6 +104,7 @@ namespace PolyPlane.Rendering
         private double _renderFPS = 0f;
         private float _screenFlashOpacity = 0f;
         private float _warnLightFlashAmount = 1f;
+        private uint _numObjectsOnScreen = 0;
         private bool _showHUD = true;
         private bool _showHelp = false;
         private bool _showInfo = false;
@@ -146,6 +133,8 @@ namespace PolyPlane.Rendering
         private FloatAnimation _screenShakeY;
         private FloatAnimation _screenFlash;
         private FloatAnimation _warnLightFlash;
+
+        private GameObject? _viewObject = null;
 
         public GLRenderer(Control renderTarget, NetEventManager netMan)
         {
@@ -273,8 +262,6 @@ namespace PolyPlane.Rendering
             World.UpdateViewport(scaleSize);
         }
 
-        private SKPaint _testPaint = new SKPaint() { Color = SKColors.Blue };
-
         private void HandleCreated(object? sender, EventArgs e)
         {
             InitGfx();
@@ -316,9 +303,29 @@ namespace PolyPlane.Rendering
 
         public void RenderFrame(GameObject viewObject, float dt)
         {
+            try
+            {
+                if (_renderDelegate == null)
+                    _renderDelegate = new Action(Render);
+
+                _viewObject = viewObject;
+
+                // Invoke the render call on the UI thread.
+                _targetForm?.Invoke(_renderDelegate);
+            }
+            catch (ObjectDisposedException)
+            {
+                // Catch disposed exceptions.
+            }
+        }
+
+        private void Render()
+        {
+            var viewObject = _viewObject;
+            var dt = World.CurrentDT;
+
             if (canvas == null)
                 return;
-            var center = new D2DPoint(World.ViewPortSize.width * 0.5f, World.ViewPortSize.height * 0.5f);
 
             Profiler.Start(ProfilerStat.Update);
             UpdateTimersAndAnims(dt);
@@ -327,11 +334,8 @@ namespace PolyPlane.Rendering
 
             Profiler.Start(ProfilerStat.Render);
 
-
             using (new SKAutoCanvasRestore(canvas, true))
             {
-                //canvas.Clear(_clearColor);
-
                 _ctx.BeginRender(_clearColor);
 
                 if (viewObject != null)
@@ -380,39 +384,31 @@ namespace PolyPlane.Rendering
                     //DrawScreenFlash(_gfx);
 
                     _ctx.PopViewPort();
-
-                    //Debug.WriteLine(viewObject.Altitude);
-
                 }
             }
+
+
+            canvas.Flush();
 
             _renderTimeSmooth.Add(Profiler.Stop(ProfilerStat.Render).GetElapsedMilliseconds());
 
 
-            canvas.Flush();
-            GL.Finish();
+            //GL.Finish();
             _glControl.SwapBuffers();
 
-
-            //var now = DateTime.UtcNow.Ticks;
-            //var fps = TimeSpan.TicksPerSecond / (float)(now - _lastRenderTime);
-            //_lastRenderTime = now;
-            ////_renderFPSSmooth.Add(fps);
 
             var now = World.CurrentTimeMs();
             var elap = now - _lastRenderTime;
             _lastRenderTime = now;
             var fps = 1000d / elap;
             _renderFPS = fps;
-
-            //Debug.WriteLine($"{Math.Round(_renderFPSSmooth.Current, 1)}");
-
-
         }
 
 
         private void DrawPlayerView(GLRenderContext ctx, GameObject viewObj)
         {
+            uint numOnScreen = 0;
+
             FighterPlane? viewPlane = null;
 
             if (viewObj is FighterPlane plane)
@@ -434,7 +430,8 @@ namespace PolyPlane.Rendering
             var inflateAmt = VIEWPORT_PADDING_AMT * zAmt;
             viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true); // Inflate slightly to prevent "pop-in".
 
-            var objsInViewport = _objs.GetInViewport(ctx.Viewport).Where(o => o is not Explosion);
+            //var objsInViewport = _objs.GetInViewport(ctx.Viewport).Where(o => o is not Explosion);
+            var objsInViewport = _objs.GetInViewport(ctx.Viewport);
 
             // Update the light map.
             if (World.UseLightMap)
@@ -445,11 +442,12 @@ namespace PolyPlane.Rendering
                 // Add objects in viewport.
                 ctx.LightMap.AddContributions(objsInViewport);
 
-                // Add explosions separately as they have special viewport clipping.
-                ctx.LightMap.AddContributions(_objs.Explosions);
+                //// Add explosions separately as they have special viewport clipping.
+                //ctx.LightMap.AddContributions(_objs.Explosions);
             }
 
-            objsInViewport = objsInViewport.OrderBy(o => o.RenderOrder);
+            //objsInViewport = objsInViewport.OrderBy(o => o.RenderOrder);
+            var objsInViewportSorted = objsInViewport.OrderBy(o => o.RenderOrder);
 
             var shadowColor = ctx.GetShadowColor();
             var todAngle = ctx.GetTimeOfDaySunAngle();
@@ -461,15 +459,15 @@ namespace PolyPlane.Rendering
             DrawTrees(ctx);
             DrawPlaneGroundShadows(ctx, shadowColor, todAngle);
 
-            // TODO: Missile and contrail lines overlap slightly.
             for (int i = 0; i < _objs.MissileTrails.Count; i++)
                 _objs.MissileTrails[i].RenderGL(ctx);
 
-
             _contrailBox.RenderGL(ctx);
 
-            foreach (var obj in objsInViewport)
+            foreach (var obj in objsInViewportSorted)
             {
+                numOnScreen++;
+
                 if (obj is FighterPlane p)
                 {
                     p.RenderGL(ctx);
@@ -495,10 +493,19 @@ namespace PolyPlane.Rendering
                     // Circle enemy missiles.
                     if (!World.FreeCameraMode && !viewObj.Equals(missile) && !missile.Owner.Equals(viewPlane))
                         ctx.DrawCircle(missile.Position, 50f, SKColors.Red.WithAlpha(0.4f), 8f);
+
+                    DrawLightFlareEffects(ctx, missile);
+                }
+                else if (obj is Explosion)
+                {
+                    // Skip explosions. Render later.
+                    continue;
                 }
                 else
                 {
                     obj.RenderGL(ctx);
+
+                    DrawLightFlareEffects(ctx, obj);
                 }
             }
 
@@ -509,16 +516,16 @@ namespace PolyPlane.Rendering
 
             DrawClouds(ctx);
             DrawPlaneCloudShadows(ctx, shadowColor, objsInViewport);
-            DrawLightFlareEffects(ctx, objsInViewport);
+            //DrawLightFlareEffects(ctx, objsInViewport);
 
 
             ctx.PopViewPort();
             ctx.PopTransform();
+
+            _numObjectsOnScreen = numOnScreen;
         }
 
-
-
-        private void DrawLightFlareEffects(GLRenderContext ctx, IEnumerable<GameObject> objs)
+        private void DrawLightFlareEffects(GLRenderContext ctx, GameObject obj)
         {
             const float BULLET_LIGHT_RADIUS = 60f;
             if (_bulletLightingBrush == null)
@@ -533,51 +540,109 @@ namespace PolyPlane.Rendering
                 _decoyLightBrush = new SKPaint() { BlendMode = SKBlendMode.Multiply, IsAntialias = true, Shader = SKShader.CreateRadialGradient(SKPoint.Empty, DECOY_LIGHT_RADIUS, [SKColors.LightYellow.WithAlpha(0.2f), SKColors.Transparent], [0f, 1.4f], SKShaderTileMode.Clamp) };
 
 
-            foreach (var obj in objs)
+            if (obj is Bullet bullet)
             {
-                if (obj is Bullet bullet)
+                ctx.PushTransform();
+                ctx.TranslateTransform(bullet.Position);
+                ctx.FillCircle(Vector2.Zero, BULLET_LIGHT_RADIUS, _bulletLightingBrush);
+                ctx.PopTransform();
+
+                DrawObjectGroundLight(ctx, bullet);
+            }
+            else if (obj is GuidedMissile missile)
+            {
+                if (missile.FlameOn && missile.CurrentFuel > 0f)
                 {
                     ctx.PushTransform();
-                    ctx.TranslateTransform(bullet.Position);
-                    ctx.FillCircle(Vector2.Zero, BULLET_LIGHT_RADIUS, _bulletLightingBrush);
+                    ctx.TranslateTransform(missile.CenterOfThrust);
+
+                    // Add a little flicker effect to missile lights.
+                    var flickerScale = Utilities.Rnd.NextFloat(0.7f, 1f);
+                    ctx.ScaleTransform(flickerScale);
+
+                    ctx.FillCircle(Vector2.Zero, MISSILE_LIGHT_RADIUS, _missileLightingBrush);
+
                     ctx.PopTransform();
 
-                    DrawObjectGroundLight(ctx, bullet);
+                    DrawObjectGroundLight(ctx, missile);
                 }
-                else if (obj is GuidedMissile missile)
+            }
+            else if (obj is Decoy decoy)
+            {
+                if ((decoy.IsFlashing()))
                 {
-                    if (missile.FlameOn && missile.CurrentFuel > 0f)
-                    {
-                        ctx.PushTransform();
-                        ctx.TranslateTransform(missile.CenterOfThrust);
+                    ctx.PushTransform();
+                    ctx.TranslateTransform(decoy.Position);
 
-                        // Add a little flicker effect to missile lights.
-                        var flickerScale = Utilities.Rnd.NextFloat(0.7f, 1f);
-                        ctx.ScaleTransform(flickerScale);
+                    ctx.FillCircle(Vector2.Zero, DECOY_LIGHT_RADIUS, _decoyLightBrush);
 
-                        ctx.FillCircle(Vector2.Zero, MISSILE_LIGHT_RADIUS, _missileLightingBrush);
+                    ctx.PopTransform();
 
-                        ctx.PopTransform();
-
-                        DrawObjectGroundLight(ctx, missile);
-                    }
-                }
-                else if (obj is Decoy decoy)
-                {
-                    if ((decoy.IsFlashing()))
-                    {
-                        ctx.PushTransform();
-                        ctx.TranslateTransform(decoy.Position);
-
-                        ctx.FillCircle(Vector2.Zero, DECOY_LIGHT_RADIUS, _decoyLightBrush);
-
-                        ctx.PopTransform();
-
-                        DrawObjectGroundLight(ctx, decoy);
-                    }
+                    DrawObjectGroundLight(ctx, decoy);
                 }
             }
         }
+
+        //private void DrawLightFlareEffects(GLRenderContext ctx, IEnumerable<GameObject> objs)
+        //{
+        //    const float BULLET_LIGHT_RADIUS = 60f;
+        //    if (_bulletLightingBrush == null)
+        //        _bulletLightingBrush = new SKPaint() { BlendMode = SKBlendMode.Multiply, IsAntialias = true, Shader = SKShader.CreateRadialGradient(SKPoint.Empty, BULLET_LIGHT_RADIUS, [SKColors.Yellow.WithAlpha(0.2f), SKColors.Transparent], [0.2f, 1.4f], SKShaderTileMode.Clamp) };
+
+        //    const float MISSILE_LIGHT_RADIUS = 70f;
+        //    if (_missileLightingBrush == null)
+        //        _missileLightingBrush = new SKPaint() { BlendMode = SKBlendMode.Multiply, IsAntialias = true, Shader = SKShader.CreateRadialGradient(SKPoint.Empty, MISSILE_LIGHT_RADIUS, [SKColors.Yellow.WithAlpha(0.2f), SKColors.Transparent], [0f, 1.4f], SKShaderTileMode.Clamp) };
+
+        //    const float DECOY_LIGHT_RADIUS = 90f;
+        //    if (_decoyLightBrush == null)
+        //        _decoyLightBrush = new SKPaint() { BlendMode = SKBlendMode.Multiply, IsAntialias = true, Shader = SKShader.CreateRadialGradient(SKPoint.Empty, DECOY_LIGHT_RADIUS, [SKColors.LightYellow.WithAlpha(0.2f), SKColors.Transparent], [0f, 1.4f], SKShaderTileMode.Clamp) };
+
+
+        //    foreach (var obj in objs)
+        //    {
+        //        if (obj is Bullet bullet)
+        //        {
+        //            ctx.PushTransform();
+        //            ctx.TranslateTransform(bullet.Position);
+        //            ctx.FillCircle(Vector2.Zero, BULLET_LIGHT_RADIUS, _bulletLightingBrush);
+        //            ctx.PopTransform();
+
+        //            DrawObjectGroundLight(ctx, bullet);
+        //        }
+        //        else if (obj is GuidedMissile missile)
+        //        {
+        //            if (missile.FlameOn && missile.CurrentFuel > 0f)
+        //            {
+        //                ctx.PushTransform();
+        //                ctx.TranslateTransform(missile.CenterOfThrust);
+
+        //                // Add a little flicker effect to missile lights.
+        //                var flickerScale = Utilities.Rnd.NextFloat(0.7f, 1f);
+        //                ctx.ScaleTransform(flickerScale);
+
+        //                ctx.FillCircle(Vector2.Zero, MISSILE_LIGHT_RADIUS, _missileLightingBrush);
+
+        //                ctx.PopTransform();
+
+        //                DrawObjectGroundLight(ctx, missile);
+        //            }
+        //        }
+        //        else if (obj is Decoy decoy)
+        //        {
+        //            if ((decoy.IsFlashing()))
+        //            {
+        //                ctx.PushTransform();
+        //                ctx.TranslateTransform(decoy.Position);
+
+        //                ctx.FillCircle(Vector2.Zero, DECOY_LIGHT_RADIUS, _decoyLightBrush);
+
+        //                ctx.PopTransform();
+
+        //                DrawObjectGroundLight(ctx, decoy);
+        //            }
+        //        }
+        //    }
+        //}
 
         private void DrawObjectGroundLight(GLRenderContext ctx, GameObject obj)
         {
@@ -768,12 +833,13 @@ namespace PolyPlane.Rendering
             if (!ctx.Viewport.Contains(plane.Gun.Position))
                 return;
 
-
-            using (var brush = new SKPaint()
+            if (_muzzleFlashBrush == null)
             {
-                BlendMode = SKBlendMode.Multiply,
-                IsAntialias = true,
-                Shader = SKShader.CreateRadialGradient(
+                _muzzleFlashBrush = new SKPaint()
+                {
+                    BlendMode = SKBlendMode.Multiply,
+                    IsAntialias = true,
+                    Shader = SKShader.CreateRadialGradient(
                 SKPoint.Empty,
                 50f,
                 [
@@ -785,20 +851,16 @@ namespace PolyPlane.Rendering
                     1f
                 ],
                 SKShaderTileMode.Clamp)
-            })
-            {
-                if (plane.Gun.MuzzleFlashOn)
-                {
-                    ctx.PushTransform();
-                    ctx.TranslateTransform(plane.GunPosition);
-                    //ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, MUZZ_FLASH_RADIUS, _muzzleFlashBrush);
-                    ctx.FillCircle(SKPoint.Empty, MUZZ_FLASH_RADIUS, brush);
-
-                    //ctx.FillCircle(SKPoint.Empty, MUZZ_FLASH_RADIUS, _muzzleFlashBrush);
-                    ctx.PopTransform();
-                }
+                };
             }
 
+            if (plane.Gun.MuzzleFlashOn)
+            {
+                ctx.PushTransform();
+                ctx.TranslateTransform(plane.GunPosition);
+                ctx.FillCircle(SKPoint.Empty, MUZZ_FLASH_RADIUS, _muzzleFlashBrush);
+                ctx.PopTransform();
+            }
 
         }
 
@@ -849,6 +911,14 @@ namespace PolyPlane.Rendering
             //var rect =  SKRect.Create(new SKPoint(this.Width * 0.5f, this.Height * 0.5f), new SKSize(this.Width, this.Height));
             var rect = SKRect.Create(new SKPoint(0f, 0f), new SKSize(this.Width, this.Height));
 
+            //using (var testBrush = new SKPaint() { Color = SKColors.WhiteSmoke.WithAlpha(0.4f), Shader = SKShader.CreatePerlinNoiseFractalNoise(0.5f, 0.5f, 4, Utilities.Rnd.NextFloat(0f, 20f)) })
+            //{
+            //    ctx.FillRectangle(rect, color);
+            //    ctx.FillRectangle(rect, testBrush);
+
+            //}
+
+
             ctx.FillRectangle(rect, color);
         }
 
@@ -862,7 +932,7 @@ namespace PolyPlane.Rendering
             const float HEIGHT = 500f;
             var rect = SKRect.Create(groundPos, new SKSize(World.ViewPortRect.Width, (HEIGHT * 2f) / ctx.CurrentScale));
 
-            ctx.FillRectangle(rect, _groundBrush);
+            ctx.DrawRectangle(rect, _groundBrush);
         }
 
 
@@ -969,7 +1039,14 @@ namespace PolyPlane.Rendering
             float spacing = 75f;
             const float size = 4f;
             var d2dSz = new SKSize(size, size);
-            var color = SKColors.Gray.WithAlpha(127);
+
+            // Fade out with zoom level.
+            var alphaFact = 1f - Utilities.Factor(World.ViewPortScaleMulti, 35f);
+
+            if (alphaFact < 0.05f)
+                return;
+
+            var color = SKColors.Gray.WithAlpha(0.3f * alphaFact);
 
             var plrPos = viewObject.Position;
             plrPos /= World.ViewPortScaleMulti;
@@ -1063,7 +1140,7 @@ namespace PolyPlane.Rendering
                 }
 
                 _stringBuilder.AppendLine($"Num Objects: {numObj}");
-                _stringBuilder.AppendLine($"On Screen: {GraphicsExtensions.OnScreen}");
+                _stringBuilder.AppendLine($"On Screen: {_numObjectsOnScreen}");
                 _stringBuilder.AppendLine($"Off Screen: {GraphicsExtensions.OffScreen}");
                 _stringBuilder.AppendLine($"Planes: {_objs.Planes.Count}");
                 _stringBuilder.AppendLine($"Update ms: {Math.Round(_updateTimeSmooth.Current, 2)}");

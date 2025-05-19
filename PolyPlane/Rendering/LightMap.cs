@@ -48,12 +48,15 @@ namespace PolyPlane.Rendering
         public void AddContributions(IEnumerable<GameObject> objs)
         {
             // Filter out all but target object types.
-            objs = objs.Where(o => o is ILightMapContributor);
+            //objs = objs.Where(o => o is ILightMapContributor);
 
             foreach (var obj in objs)
             {
                 if (obj.ContainedBy(_viewport))
-                    AddObjContribution(obj as ILightMapContributor);
+                {
+                    if (obj is ILightMapContributor)
+                        AddObjContribution(obj as ILightMapContributor);
+                }
             }
         }
 
@@ -73,7 +76,10 @@ namespace PolyPlane.Rendering
                 return;
 
             intensityFactor = lightContributor.GetIntensityFactor();
-            lightColor = lightContributor.GetLightColor().ToVector4();
+
+            //lightColor = lightContributor.GetLightColor().ToVector4();
+            lightColor = lightContributor.GetLightColorGL().ToVector4();
+
             lightPosition = lightContributor.GetLightPosition();
             gradRadius = lightContributor.GetLightRadius();
 
@@ -274,6 +280,9 @@ namespace PolyPlane.Rendering
         /// </summary>
         /// <returns></returns>
         D2DColor GetLightColor();
+
+        SKColor GetLightColorGL();
+
 
         /// <summary>
         /// Intensity factor of the light to contribute. 

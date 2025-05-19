@@ -171,6 +171,7 @@ namespace PolyPlane.Rendering
                 var color = trailColor.WithAlpha(alpha);
 
                 ctx.DrawLine(seg.PointA, seg.PointB, color, TRAIL_WEIGHT);
+
             }
 
             // Draw final connectors between planes and the last segment.

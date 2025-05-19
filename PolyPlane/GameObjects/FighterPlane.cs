@@ -593,22 +593,18 @@ namespace PolyPlane.GameObjects
                 ctx.FillPolygon(this.FlamePoly, _flameFillColor.ToSKColor());
             }
 
-
             if (!this.IsDisabled)
                 DrawShockwaveGL(ctx);
 
             using (var polyPath = this.Polygon.GetPath())
             {
-                //ctx.FillPolygon(this.Polygon, PlaneColor.ToSKColor());
-                ctx.FillPath(polyPath, PlaneColor.ToSKColor());
+                ctx.FillPathWithLighting(polyPath, this.Position, _planeColor.ToSKColor(), SKColors.Black.WithAlpha(0.3f), 0.5f, maxIntensity: 0.6f);
 
                 DrawClippedObjectsGL(ctx, polyPath);
             }
 
             foreach (var wing in _wings)
                 wing.RenderGL(ctx);
-
-
         }
 
 
@@ -801,13 +797,25 @@ namespace PolyPlane.GameObjects
 
             // Clip with the polygon.
             // TODO: Add push/pop clip API?
-            ctx.Gfx.Save();
-            ctx.Gfx.ClipPath(clipPath, SKClipOperation.Intersect, antialias: true);
+
+            using (var state = ctx.GetTemporaryState())
+            {
+                //ctx.Gfx.ClipPath(clipPath, SKClipOperation.Intersect, antialias: true);
+
+                ctx.SetClip(clipPath, SKClipOperation.Intersect, antialias: true);
+
+                DrawCockpitGL(ctx);
+                DrawBulletHolesGL(ctx);
+
+            }
+
+            //ctx.Gfx.Save();
+            //ctx.Gfx.ClipPath(clipPath, SKClipOperation.Intersect, antialias: true);
            
-            DrawCockpitGL(ctx);
-            DrawBulletHolesGL(ctx);
+            //DrawCockpitGL(ctx);
+            //DrawBulletHolesGL(ctx);
             
-            ctx.Gfx.Restore();
+            //ctx.Gfx.Restore();
         }
 
 

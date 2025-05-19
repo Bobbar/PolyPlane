@@ -1,15 +1,7 @@
 ﻿using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using SkiaSharp;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Linq;
 using System.Numerics;
-using System.Runtime.Intrinsics.X86;
-using System.Text;
-using System.Threading.Tasks;
 using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
@@ -44,9 +36,13 @@ namespace PolyPlane.Rendering
         private Stack<SKMatrix> _matrixStack = new Stack<SKMatrix>();
 
         private float _currentScale = 1.0f;
-        private SKPaint _cachedPaint = new SKPaint() { Color = SKColors.Transparent, IsAntialias = true };
+        private SKPaint _fillPaint = new SKPaint() { Color = SKColors.Transparent, IsAntialias = true };
+        private SKPaint _strokedPaint = new SKPaint() { Color = SKColors.Transparent, IsAntialias = true, IsStroke = true };
+
         private SKColor _timeOfDayColor = SKColors.Transparent;
 
+
+        private bool _enableRender = true;
 
         public GLRenderContext()
         {
@@ -54,6 +50,26 @@ namespace PolyPlane.Rendering
 
         }
 
+        private SKPaint GetFillPaint(SKColor color)
+        {
+            _fillPaint.Color = color;
+
+            return _fillPaint;
+        }
+
+        private SKPaint GetStrokedPaint(SKColor color, float strokeWeight, SKStrokeCap strokeCap = SKStrokeCap.Butt)
+        {
+            if (!_strokedPaint.IsStroke)
+            {
+
+            }
+
+            _strokedPaint.Color = color;
+            _strokedPaint.StrokeWidth = strokeWeight;
+            _strokedPaint.StrokeCap = strokeCap;
+
+            return _strokedPaint;
+        }
 
         public void SetCanvas(SKCanvas canvas)
         {
@@ -68,7 +84,6 @@ namespace PolyPlane.Rendering
             UpdateTimeOfDayColors();
         }
 
-
         public void PushViewPort(D2DRect viewport)
         {
             _vpStack.Push(Viewport);
@@ -81,6 +96,11 @@ namespace PolyPlane.Rendering
             Viewport = _vpStack.Pop();
         }
 
+     
+        public void SetClip(SKPath path, SKClipOperation operation = SKClipOperation.Intersect, bool antialias = false)
+        {
+            _gfx.ClipPath(path, operation, antialias);
+        }
 
         private void UpdateScale()
         {
@@ -147,6 +167,13 @@ namespace PolyPlane.Rendering
             _gfx.SetMatrix(_gfx.TotalMatrix.Add(SKMatrix.CreateRotationDegrees(angleDegrees, center.X, center.Y)));
 
             UpdateScale();
+        }
+
+        public ContextState GetTemporaryState()
+        {
+            var state = new ContextState(_gfx);
+
+            return state;
         }
 
 
@@ -229,22 +256,19 @@ namespace PolyPlane.Rendering
 
         public void DrawText(string text, Vector2 pos, SKTextAlign align, SKFont font, SKColor color)
         {
-            _cachedPaint.Color = color;
-            var paint = _cachedPaint;
+            var paint = GetFillPaint(color);
 
             DrawText(text, pos, align, font, paint);
         }
 
         public void DrawTextMultiLine(string text, Vector2 pos, SKTextAlign align, SKFont font, SKColor color)
         {
-            _cachedPaint.Color = color;
-            var paint = _cachedPaint;
-
+            var paint = GetFillPaint(color);
             var lines = text.Split('\n');
+
             foreach (var line in lines)
             {
                 DrawText(line, pos, align, font, paint);
-
             }
         }
 
@@ -267,38 +291,37 @@ namespace PolyPlane.Rendering
             _gfx.DrawText(text, pos, align, font, paint);
         }
 
+
         public void DrawRectangle(SKRect rect, SKColor color, float strokeWeight = 1f)
         {
-            _cachedPaint.Color = color;
-            var paint = _cachedPaint;
-
-            paint.IsStroke = true;
-            paint.StrokeWidth = strokeWeight;
-
+            var paint = GetStrokedPaint(color, strokeWeight);
 
             DrawRectangle(rect, paint);
+        }
 
-            paint.IsStroke = false;
-            paint.StrokeWidth = 0f;
+        public void FillRectangle(SKRect rect, SKColor color)
+        {
+            var paint = GetFillPaint(color);
+
+            DrawRectangle(rect, paint);
         }
 
         public void DrawRectangle(SKRect rect, SKPaint paint)
         {
-            _gfx.DrawRect(rect, paint);
+            if (_enableRender)
+                _gfx.DrawRect(rect, paint);
+        }
+
+        public void FillPolygon(RenderPoly poly, SKColor color)
+        {
+            FillPolygon(poly.Poly, color);
         }
 
         public void FillPolygon(Vector2[] poly, SKColor color)
         {
-            using (var path = new SKPath())
-            //using (var paint = new SKPaint() { Color = color, IsAntialias = true })
-            {
-                _cachedPaint.Color = color;
-                var paint = _cachedPaint;
+            var paint = GetFillPaint(color);
 
-                path.AddPoly(poly.ToSkPoints(), true);
-
-                _gfx.DrawPath(path, paint);
-            }
+            FillPolygon(poly, paint);
         }
 
         public void FillPolygon(Vector2[] poly, SKPaint paint)
@@ -307,16 +330,23 @@ namespace PolyPlane.Rendering
             {
                 path.AddPoly(poly.ToSkPoints(), true);
 
-                _gfx.DrawPath(path, paint);
+                DrawPath(path, paint);
             }
         }
 
 
-        public void FillPolygon(RenderPoly poly, SKColor color)
+        public void FillPathWithLighting(SKPath path, Vector2 sampleLocation, SKColor color, SKColor strokeColor, float strokeWeight, float maxIntensity)
         {
-            FillPolygon(poly.Poly, color);
+            if (World.UseLightMap)
+            {
+                var lightedColor = LightMap.SampleColorSK(sampleLocation, color, 0f, maxIntensity * _currentLightingFactor);
+                FillPath(path, lightedColor, strokeColor, strokeWeight);
+            }
+            else
+            {
+                FillPath(path, color, strokeColor, strokeWeight);
+            }
         }
-
 
         public void FillPolygonWithLighting(RenderPoly poly, Vector2 sampleLocation, SKColor color, SKColor strokeColor, float strokeWeight, float maxIntensity)
         {
@@ -330,20 +360,6 @@ namespace PolyPlane.Rendering
                 FillPolygon(poly, color, strokeColor, strokeWeight);
             }
         }
-
-        public void FillPolygonWithLighting(RenderPoly poly, Vector2 sampleLocation, SKColor color, float maxIntensity)
-        {
-            if (World.UseLightMap)
-            {
-                var lightedColor = LightMap.SampleColorSK(sampleLocation, color, 0f, maxIntensity * _currentLightingFactor);
-                FillPolygon(poly, lightedColor);
-            }
-            else
-            {
-                FillPolygon(poly, color);
-            }
-        }
-
 
         public void FillPolygonWithLighting(Vector2[] poly, Vector2 sampleLocation, SKColor color, float maxIntensity)
         {
@@ -361,32 +377,28 @@ namespace PolyPlane.Rendering
         public void FillPolygon(RenderPoly poly, SKColor color, SKColor strokeColor, float strokeWeight)
         {
             using (var path = new SKPath())
-            //using (var paint = new SKPaint() { Color = color, IsAntialias = true })
             {
-                _cachedPaint.Color = color;
-                var paint = _cachedPaint;
-
                 path.AddPoly(poly.Poly.ToSkPoints(), true);
 
-                _gfx.DrawPath(path, paint);
-
-                paint.IsStroke = true;
-                paint.Color = strokeColor;
-                paint.StrokeWidth = strokeWeight;
-
-                _gfx.DrawPath(path, paint);
-
-                paint.IsStroke = false;
+                FillPath(path, color, strokeColor, strokeWeight);
             }
         }
 
-        public void FillPath(SKPath path, SKColor color)
+        public void FillPath(SKPath path, SKColor color, SKColor strokeColor, float strokeWeight)
         {
-            _cachedPaint.Color = color;
-            var paint = _cachedPaint;
+            var paint = GetFillPaint(color);
 
-            _gfx.DrawPath(path, paint);
+            DrawPath(path, paint);
 
+            paint = GetStrokedPaint(strokeColor, strokeWeight);
+
+            DrawPath(path, paint);
+        }
+
+        public void DrawPath(SKPath path, SKPaint paint)
+        {
+            if (_enableRender)
+                _gfx.DrawPath(path, paint);
         }
 
 
@@ -417,82 +429,32 @@ namespace PolyPlane.Rendering
         }
 
 
-
-
         public void DrawLine(Vector2 p0, Vector2 p1, SKColor color, float weight)
         {
-            //using (var paint = new SKPaint() { Color = color, IsAntialias = true, StrokeWidth = weight })
-            {
+            var paint = GetStrokedPaint(color, weight);
 
-                _cachedPaint.Color = color;
-                var paint = _cachedPaint;
+            DrawLine(p0, p1, paint);
+        }
 
-                paint.StrokeWidth = weight;
+        public void DrawLine(Vector2 p0, Vector2 p1, SKColor color, float weight, SKStrokeCap capStyle = SKStrokeCap.Butt)
+        {
+            var paint = GetStrokedPaint(color, weight, capStyle);
 
-
-                _gfx.DrawLine(p0, p1, paint);
-
-                paint.StrokeWidth = 0f;
-            }
-
-
+            DrawLine(p0, p1, paint);
         }
 
         public void DrawLine(Vector2 p0, Vector2 p1, SKPaint paint)
         {
-            _gfx.DrawLine(p0, p1, paint);
-        }
-
-        public void DrawLine(Vector2 p0, Vector2 p1, SKColor color, float weight, SKStrokeCap capStyle = SKStrokeCap.Square)
-        {
-            //using (var paint = new SKPaint() { Color = color, IsAntialias = true, StrokeWidth = weight })
-            {
-
-                _cachedPaint.Color = color;
-                var paint = _cachedPaint;
-
-                paint.StrokeWidth = weight;
-                paint.StrokeCap = capStyle;
-                paint.IsStroke = true;
-
+            if (_enableRender)
                 _gfx.DrawLine(p0, p1, paint);
-
-                paint.StrokeWidth = 0f;
-                paint.StrokeCap = SKStrokeCap.Square;
-                paint.IsStroke = false;
-
-            }
-
-
         }
-
-
-
-        public void FillRectangle(SKRect rect, SKPaint paint)
-        {
-            _gfx.DrawRect(rect, paint);
-        }
-
-        public void FillRectangle(SKRect rect, SKColor color)
-        {
-            //using (var paint = new SKPaint() { Color = color, IsAntialias = true })
-            {
-
-                _cachedPaint.Color = color;
-                var paint = _cachedPaint;
-
-                _gfx.DrawRect(rect, paint);
-            }
-        }
-
 
         public void FillCircle(Vector2 pos, float radius, SKColor color)
         {
-            _cachedPaint.Color = color;
-            var paint = _cachedPaint;
-
+            var paint = GetFillPaint(color);
             var scale = this.CurrentScale;
             var viewRad = radius * scale;
+
             if (World.FastPrimitives && viewRad > World.FAST_PRIMITIVE_MIN_SIZE || !World.FastPrimitives)
             {
                 FillCircle(pos, radius, paint);
@@ -500,13 +462,29 @@ namespace PolyPlane.Rendering
             else
             {
                 var r = SKRect.Create(pos.X - radius, pos.Y - radius, radius * 2f, radius * 2f);
-                FillRectangle(r, paint);
+                DrawRectangle(r, paint);
             }
         }
 
+        public void DrawCircle(Vector2 pos, float radius, SKColor color)
+        {
+            var paint = GetFillPaint(color);
+
+            FillCircle(pos, radius, paint);
+        }
+
+        public void DrawCircle(Vector2 pos, float radius, SKColor color, float strokeWidth)
+        {
+            var paint = GetStrokedPaint(color, strokeWidth);
+
+            FillCircle(pos, radius, paint);
+        }
+
+
         public void FillCircle(Vector2 pos, float radius, SKPaint paint)
         {
-            _gfx.DrawCircle(pos, radius, paint);
+            if (_enableRender)
+                _gfx.DrawCircle(pos, radius, paint);
         }
 
         public void FillCircleWithLighting(Vector2 pos, float radius, SKColor color, float maxIntensity)
@@ -546,18 +524,15 @@ namespace PolyPlane.Rendering
 
         public void FillEllipse(Vector2 pos, SKSize size, SKColor color)
         {
-            _cachedPaint.Color = color;
-            var paint = _cachedPaint;
+            var paint = GetFillPaint(color);
 
-            //paint.IsStroke = true;
-            //paint.StrokeWidth = 3f;
-
-            _gfx.DrawOval(pos, size, paint);
+            FillEllipse(pos, size, paint);
         }
 
         public void FillEllipse(Vector2 pos, SKSize size, SKPaint paint)
         {
-            _gfx.DrawOval(pos, size, paint);
+            if (_enableRender)
+                _gfx.DrawOval(pos, size, paint);
         }
 
 
@@ -589,8 +564,6 @@ namespace PolyPlane.Rendering
             }
         }
 
-
-
         public void FillEllipseWithLighting(Vector2 pos, SKSize size, SKColor color, float minIntensity, float maxIntensity)
         {
             if (World.UseLightMap)
@@ -607,46 +580,9 @@ namespace PolyPlane.Rendering
 
         public void DrawEllipse(Vector2 pos, SKSize size, SKColor color, float strokeWidth)
         {
-            _cachedPaint.Color = color;
-            var paint = _cachedPaint;
-
-            paint.IsStroke = true;
-            paint.StrokeWidth = strokeWidth;
+            var paint = GetStrokedPaint(color, strokeWidth);
 
             FillEllipse(pos, size, paint);
-
-            paint.IsStroke = false;
-            paint.StrokeWidth = 0f;
-
-        }
-
-        public void DrawCircle(Vector2 pos, float radius, SKColor color)
-        {
-            _cachedPaint.Color = color;
-            var paint = _cachedPaint;
-
-            paint.IsStroke = true;
-
-            _gfx.DrawCircle(pos, radius, paint);
-
-            paint.IsStroke = false;
-            paint.StrokeWidth = 0f;
-        }
-
-
-
-        public void DrawCircle(Vector2 pos, float radius, SKColor color, float strokeWidth)
-        {
-            _cachedPaint.Color = color;
-            var paint = _cachedPaint;
-
-            paint.IsStroke = true;
-            paint.StrokeWidth = strokeWidth;
-
-            _gfx.DrawCircle(pos, radius, paint);
-
-            paint.IsStroke = false;
-            paint.StrokeWidth = 0f;
         }
 
         public void DrawProgressBar(Vector2 pos, SKSize size, SKColor boderColor, SKColor fillColor, float percent)
@@ -655,11 +591,6 @@ namespace PolyPlane.Rendering
             DrawRectangle(SKRect.Create(pos - new Vector2(size.Width * 0.5f, 0f), size), boderColor);
         }
 
-        //public void DrawProgressBar(Vector2 pos, SKSize size, SKPaint borderPaint, SKPaint fillPaint, float percent)
-        //{
-        //    FillRectangle(SKRect.Create(pos.X - (size.Width * 0.5f), pos.Y - (size.Height * 0.5f), size.Width * percent, size.Height), fillColor);
-        //    DrawRectangle(SKRect.Create(pos, size), borderPaint);
-        //}
 
         private SKColor InterpolateColorGaussian(SKColor[] colors, float value, float maxValue)
         {
@@ -693,34 +624,21 @@ namespace PolyPlane.Rendering
 
 
 
-        private D2DColor InterpolateColorGaussian(D2DColor[] colors, float value, float maxValue)
+    }
+
+    public struct ContextState : IDisposable
+    {
+        private SKCanvas _canvas;
+
+        public ContextState(SKCanvas canvas)
         {
-            var x = Math.Min(1.0f, value / maxValue);
+            _canvas = canvas;
+            _canvas.Save();
+        }
 
-            double r = 0.0, g = 0.0, b = 0.0;
-            double total = 0.0;
-            double step = 1.0 / (double)(colors.Length - 1);
-            double mu = 0.0;
-
-            for (int i = 0; i < colors.Length; i++)
-            {
-                total += Math.Exp(-(x - mu) * (x - mu) / (2.0 * GaussianSigma2)) / GaussianSigma;
-                mu += step;
-            }
-
-            mu = 0.0;
-            for (int i = 0; i < colors.Length; i++)
-            {
-                var color = colors[i];
-                double percent = Math.Exp(-(x - mu) * (x - mu) / (2.0 * GaussianSigma2)) / GaussianSigma;
-                mu += step;
-
-                r += color.r * percent / total;
-                g += color.g * percent / total;
-                b += color.b * percent / total;
-            }
-
-            return new D2DColor(1f, (float)r, (float)g, (float)b);
+        public void Dispose()
+        {
+            _canvas.Restore();
         }
     }
 }

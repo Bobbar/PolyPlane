@@ -51,6 +51,10 @@ namespace PolyPlane.Rendering
         private readonly D2DPoint[] _trunkPoly;
         private D2DPoint[] _trunkTransPolyShadow;
         private D2DPoint[] _trunkTransPoly;
+
+        private SKPath _trunkTransPathShadow;
+        private SKPath _trunkTransPath;
+
         private D2DPoint _leafYPos;
         private D2DPoint _shadowLeafPos;
         private D2DPoint _normalLeafPos;
@@ -108,6 +112,12 @@ namespace PolyPlane.Rendering
 
             _trunkPoly.Translate(_trunkTransPoly, 180f, this.Position, TREE_SCALE);
 
+            _trunkTransPath = new SKPath();
+            _trunkTransPath.AddPoly(_trunkTransPoly.ToSkPoints(), true);
+
+            _trunkTransPathShadow = new SKPath();
+            _trunkTransPathShadow.AddPoly(_trunkTransPoly.ToSkPoints(), true);
+
             _leafYPos = new D2DPoint(0f, (-Height * TREE_SCALE) - (_radius - 0.1f));
             _shadowLeafPos = this.Position - _leafYPos;
             _normalLeafPos = this.Position + _leafYPos;
@@ -127,7 +137,7 @@ namespace PolyPlane.Rendering
             }
             else
             {
-                var newBrush = new SKPaint() { BlendMode = SKBlendMode.Multiply, IsAntialias = true, Shader = SKShader.CreateRadialGradient(SKPoint.Empty, this._radius, [SKColors.Transparent, SKColors.Black.WithAlpha(0.2f)], SKShaderTileMode.Clamp) };
+                var newBrush = new SKPaint() {BlendMode = SKBlendMode.Multiply, IsAntialias = true, Shader = SKShader.CreateRadialGradient(SKPoint.Empty, this._radius, [SKColors.Transparent, SKColors.Black.WithAlpha(0.2f)], SKShaderTileMode.Clamp) };
                 _leafBrushCacheGL.Add(radiusIdx, newBrush);
                 _leafBrushGL = newBrush;
             }
@@ -272,15 +282,8 @@ namespace PolyPlane.Rendering
 
             // Normal trunk.
             var trunkPos = this.Position + (-D2DPoint.UnitY * TotalHeight);
-            ctx.FillPolygonWithLighting(_trunkTransPoly, trunkPos, trunkColor, LIGHT_INTENSITY);
-
-
-
-            //using (var newBrush = new SKPaint() { BlendMode = SKBlendMode.Multiply, IsAntialias = true, Shader = SKShader.CreateLinearGradient(new SKPoint(0f, -Height * TREE_SCALE), SKPoint.Empty, [SKColors.Black.WithAlpha(0.4f), SKColors.Transparent], [0f, 0.3f], SKShaderTileMode.Clamp) })
-            //{
-            //    // Trunk occlusion overlay.
-            //    ctx.FillPolygon(_trunkTransPoly, newBrush);
-            //}
+            //ctx.FillPolygonWithLighting(_trunkTransPoly, trunkPos, trunkColor, LIGHT_INTENSITY);
+            ctx.FillPathWithLighting(_trunkTransPath, trunkPos, trunkColor, SKColors.Transparent, 0f, LIGHT_INTENSITY);
 
             // Trunk occlusion overlay.
             ctx.FillPolygon(_trunkTransPoly, _trunkOverlayBrushGL);

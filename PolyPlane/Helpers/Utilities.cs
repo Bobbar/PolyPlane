@@ -339,6 +339,18 @@ namespace PolyPlane.Helpers
             return newColor;
         }
 
+        public static SKColor LerpColorWithAlpha(SKColor color1, SKColor color2, float amount, float alpha)
+        {
+            var newColor = new SKColor(
+                (byte)(color1.Red + (color2.Red - color1.Red) * amount),
+                (byte)(color1.Green + (color2.Green - color1.Green) * amount),
+                (byte)(color1.Blue + (color2.Blue - color1.Blue) * amount),
+                (byte)(255f * alpha));
+
+            return newColor;
+        }
+
+
         public static D2DColor LerpColorWithAlpha(D2DColor color1, D2DColor color2, float amount, float alpha)
         {
             var newColor = new D2DColor(

@@ -238,6 +238,22 @@ namespace PolyPlane.Helpers
             return new D2DColor(color.a, r, g, b);
         }
 
+        public static SKColor WithBrightness(this SKColor color, float factor)
+        {
+            //float r = Math.Clamp(color.r * factor, 0f, 1f);
+            //float g = Math.Clamp(color.g * factor, 0f, 1f);
+            //float b = Math.Clamp(color.b * factor, 0f, 1f);
+
+            byte r = (byte)Math.Clamp(color.Red * factor, 0, 255);
+            byte g = (byte)Math.Clamp(color.Green * factor, 0, 255);
+            byte b = (byte)Math.Clamp(color.Blue * factor, 0, 255);
+
+
+            return new SKColor(r, g, b, color.Alpha);
+        }
+
+
+
         public static SKPoint[] ToSkPoints(this D2DPoint[] points)
         {
             var skPoints = new SKPoint[points.Length];
@@ -272,6 +288,12 @@ namespace PolyPlane.Helpers
         {
             return new Vector4(color.Alpha / 255f, color.Red / 255f, color.Green / 255f, color.Blue / 255f);
         }
+
+        public static Vector3 ToVector3(this SKColor color)
+        {
+            return new Vector3(color.Red / 255f, color.Green / 255f, color.Blue / 255f);
+        }
+
 
         public static SKColor ToSKColor(this Vector4 color)
         {

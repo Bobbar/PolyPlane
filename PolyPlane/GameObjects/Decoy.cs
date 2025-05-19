@@ -149,5 +149,10 @@ namespace PolyPlane.GameObjects
         {
             return D2DColor.White;
         }
+
+        SKColor ILightMapContributor.GetLightColorGL()
+        {
+            return SKColors.White;
+        }
     }
 }

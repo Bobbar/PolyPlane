@@ -540,5 +540,10 @@ namespace PolyPlane.GameObjects
         {
             return _lightMapColor;
         }
+
+        SKColor ILightMapContributor.GetLightColorGL()
+        {
+            return _lightMapColor.ToSKColor();
+        }
     }
 }

@@ -3,6 +3,7 @@ using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using System.Numerics;
 using unvell.D2DLib;
+using SkiaSharp;
 
 namespace PolyPlane.GameObjects.Particles
 {
@@ -12,9 +13,14 @@ namespace PolyPlane.GameObjects.Particles
         public ParticleType Type;
 
         public D2DEllipse Ellipse = new D2DEllipse();
-        public D2DColor Color { get; set; }
-        public D2DColor StartColor { get; set; }
-        public D2DColor EndColor { get; set; }
+        //public D2DColor Color { get; set; }
+        //public D2DColor StartColor { get; set; }
+        //public D2DColor EndColor { get; set; }
+
+        public SKColor Color { get; set; }
+        public SKColor StartColor { get; set; }
+        public SKColor EndColor { get; set; }
+
 
         public float Radius
         {
@@ -91,43 +97,43 @@ namespace PolyPlane.GameObjects.Particles
             }
         }
 
-        public override void Render(RenderContext ctx)
-        {
-            base.Render(ctx);
+        //public override void Render(RenderContext ctx)
+        //{
+        //    base.Render(ctx);
 
-            switch (this.Type)
-            {
-                case ParticleType.Flame or ParticleType.Dust:
+        //    switch (this.Type)
+        //    {
+        //        case ParticleType.Flame or ParticleType.Dust:
 
-                    var ageFactFade = 1f - Utilities.Factor(Age, MaxAge);
-                    var alpha = StartColor.a * ageFactFade;
-                    var ageFactSmoke = Utilities.Factor(Age * 4f, MaxAge);
+        //            var ageFactFade = 1f - Utilities.Factor(Age, MaxAge);
+        //            var alpha = StartColor.a * ageFactFade;
+        //            var ageFactSmoke = Utilities.Factor(Age * 4f, MaxAge);
 
-                    // Gradually grow until we reach the target radius.
-                    var ageFactGrow = Utilities.Factor(Age, PART_GROW_AGE);
+        //            // Gradually grow until we reach the target radius.
+        //            var ageFactGrow = Utilities.Factor(Age, PART_GROW_AGE);
                    
-                    Radius = TargetRadius * ageFactGrow;
-                    Color = Utilities.LerpColorWithAlpha(StartColor, EndColor, ageFactSmoke, alpha);
+        //            Radius = TargetRadius * ageFactGrow;
+        //            Color = Utilities.LerpColorWithAlpha(StartColor, EndColor, ageFactSmoke, alpha);
 
-                    ctx.FillEllipseWithLighting(Ellipse, Color, maxIntensity: 0.6f);
+        //            ctx.FillEllipseWithLighting(Ellipse, Color, maxIntensity: 0.6f);
 
-                    break;
+        //            break;
 
-                case ParticleType.Smoke or ParticleType.Vapor:
+        //        case ParticleType.Smoke or ParticleType.Vapor:
 
-                    var ageFact = 1f - Utilities.Factor(Age, MaxAge);
-                    var radAmt = EasingFunctions.Out.EaseQuintic(ageFact);
-                    var rad = (TargetRadius * radAmt);
-                    var alphaSmoke = StartColor.a * ageFact;
+        //            var ageFact = 1f - Utilities.Factor(Age, MaxAge);
+        //            var radAmt = EasingFunctions.Out.EaseQuintic(ageFact);
+        //            var rad = (TargetRadius * radAmt);
+        //            var alphaSmoke = StartColor.a * ageFact;
 
-                    Color = new D2DColor(alphaSmoke, StartColor);
-                    Radius = rad;
+        //            Color = new D2DColor(alphaSmoke, StartColor);
+        //            Radius = rad;
 
-                    ctx.FillEllipse(Ellipse, Color);
+        //            ctx.FillEllipse(Ellipse, Color);
 
-                    break;
-            }
-        }
+        //            break;
+        //    }
+        //}
 
         public override void RenderGL(GLRenderContext ctx)
         {
@@ -138,7 +144,7 @@ namespace PolyPlane.GameObjects.Particles
                 case ParticleType.Flame or ParticleType.Dust:
 
                     var ageFactFade = 1f - Utilities.Factor(Age, MaxAge);
-                    var alpha = StartColor.a * ageFactFade;
+                    var alpha = StartColor.Alpha.ToColorFloat() * ageFactFade;
                     var ageFactSmoke = Utilities.Factor(Age * 4f, MaxAge);
 
                     // Gradually grow until we reach the target radius.
@@ -147,7 +153,7 @@ namespace PolyPlane.GameObjects.Particles
                     Radius = TargetRadius * ageFactGrow;
                     Color = Utilities.LerpColorWithAlpha(StartColor, EndColor, ageFactSmoke, alpha);
 
-                    ctx.FillCircleWithLighting(Ellipse.origin, Ellipse.radiusX, Color.ToSKColor(), 0.6f);
+                    ctx.FillCircleWithLighting(Ellipse.origin, Ellipse.radiusX, Color, 0.6f);
 
                     break;
 
@@ -156,12 +162,13 @@ namespace PolyPlane.GameObjects.Particles
                     var ageFact = 1f - Utilities.Factor(Age, MaxAge);
                     var radAmt = EasingFunctions.Out.EaseQuintic(ageFact);
                     var rad = (TargetRadius * radAmt);
-                    var alphaSmoke = StartColor.a * ageFact;
+                    var alphaSmoke = StartColor.Alpha.ToColorFloat() * ageFact;
 
-                    Color = new D2DColor(alphaSmoke, StartColor);
+                    //Color = new D2DColor(alphaSmoke, StartColor);
+                    Color = StartColor.WithAlpha(alphaSmoke);
                     Radius = rad;
 
-                    ctx.FillCircle(Ellipse.origin, Ellipse.radiusX, Color.ToSKColor());
+                    ctx.FillCircle(Ellipse.origin, Ellipse.radiusX, Color);
 
                     break;
             }
@@ -200,9 +207,9 @@ namespace PolyPlane.GameObjects.Particles
             particle.Ellipse.radiusX = radius;
             particle.Ellipse.radiusY = radius;
 
-            particle.Color = startColor;
-            particle.StartColor = startColor;
-            particle.EndColor = endColor;
+            particle.Color = startColor.ToSKColor();
+            particle.StartColor = startColor.ToSKColor();
+            particle.EndColor = endColor.ToSKColor();
 
             particle.RiseRate = new D2DPoint(0f, Utilities.Rnd.NextFloat(MAX_RISE_RATE, MIN_RISE_RATE));
 
@@ -222,6 +229,12 @@ namespace PolyPlane.GameObjects.Particles
         }
 
         D2DColor ILightMapContributor.GetLightColor()
+        {
+            //return Color.WithBrightness(2.5f);
+            return D2DColor.Transparent;
+        }
+
+        SKColor ILightMapContributor.GetLightColorGL()
         {
             return Color.WithBrightness(2.5f);
         }
@@ -246,11 +259,13 @@ namespace PolyPlane.GameObjects.Particles
 
             // Compute and filter based on luminance.
             var c = Color;
-            var cVec = new Vector3(c.r, c.g, c.b);
+            var cVec = c.ToVector3();
             var brightness = Vector3.Dot(cVec, Luminance);
 
             return brightness > MIN_LUM && brightness < MAX_LUM;
         }
+
+       
     }
 
     public enum ParticleType

@@ -13,23 +13,23 @@ namespace PolyPlane.Rendering
     public static class GLExtensions
     {
 
-        public static void FillPolygon(this SKCanvas canvas, RenderPoly poly, SKColor color)
-        {
-            using (var path = new SKPath())
-            using (var paint = new SKPaint() { Color = color, IsAntialias = true })
-            {
-                path.AddPoly(poly.Poly.ToSkPoints(), true);
+        //public static void FillPolygon(this SKCanvas canvas, RenderPoly poly, SKColor color)
+        //{
+        //    using (var path = new SKPath())
+        //    using (var paint = new SKPaint() { Color = color, IsAntialias = true })
+        //    {
+        //        path.AddPoly(poly.Poly.ToSkPoints(), true);
 
-                canvas.DrawPath(path, paint);
-            }
-        }
+        //        canvas.DrawPath(path, paint);
+        //    }
+        //}
 
-        public static void DrawLine(this SKCanvas canvas, SKPoint p0, SKPoint p1, SKColor color, float weight)
-        {
-            using (var paint = new SKPaint() { Color = color, IsAntialias = true, StrokeWidth = weight })
-            {
-                canvas.DrawLine(p0, p1, paint);
-            }
-        }
+        //public static void DrawLine(this SKCanvas canvas, SKPoint p0, SKPoint p1, SKColor color, float weight)
+        //{
+        //    using (var paint = new SKPaint() { Color = color, IsAntialias = true, StrokeWidth = weight })
+        //    {
+        //        canvas.DrawLine(p0, p1, paint);
+        //    }
+        //}
     }
 }
