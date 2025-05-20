@@ -95,12 +95,15 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
+
             ctx.FillEllipse(new D2DEllipse(this.Position, Radius + _currentFlashRadius, Radius + _currentFlashRadius), D2DColor.Yellow);
         }
 
         public override void RenderGL(GLRenderContext ctx)
         {
             base.RenderGL(ctx);
+
+            ctx.LightMap.AddContribution(this);
 
             ctx.FillCircle(this.Position, Radius + _currentFlashRadius, SKColors.Yellow);
         }

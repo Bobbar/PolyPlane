@@ -85,6 +85,8 @@ namespace PolyPlane.GameObjects
         {
             base.RenderGL(ctx);
 
+            ctx.LightMap.AddContribution(this);
+
             ctx.FillPolygon(this.Polygon, SKColors.Yellow, SKColors.Black, 1f);
         }
 

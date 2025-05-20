@@ -439,11 +439,6 @@ namespace PolyPlane.Rendering
                 // Clear the map and resize as needed.
                 ctx.LightMap.Clear(viewPortRect);
 
-                // Add objects in viewport.
-                ctx.LightMap.AddContributions(objsInViewport);
-
-                //// Add explosions separately as they have special viewport clipping.
-                //ctx.LightMap.AddContributions(_objs.Explosions);
             }
 
             //objsInViewport = objsInViewport.OrderBy(o => o.RenderOrder);
@@ -505,8 +500,9 @@ namespace PolyPlane.Rendering
                 {
                     obj.RenderGL(ctx);
 
-                    DrawLightFlareEffects(ctx, obj);
                 }
+
+                DrawLightFlareEffects(ctx, obj);
             }
 
 
@@ -519,11 +515,30 @@ namespace PolyPlane.Rendering
             //DrawLightFlareEffects(ctx, objsInViewport);
 
 
+            if (World.DrawLightMap)
+                DrawLightMap(ctx);
+
             ctx.PopViewPort();
             ctx.PopTransform();
 
             _numObjectsOnScreen = numOnScreen;
         }
+
+        private void DrawLightMap(GLRenderContext ctx)
+        {
+            float step = ctx.LightMap.SIDE_LEN;
+
+            for (float x = ctx.Viewport.left; x <= ctx.Viewport.right; x += step)
+            {
+                for (float y = ctx.Viewport.top; y <= ctx.Viewport.bottom; y += step)
+                {
+                    var nPos = new D2DPoint(x, y);
+                    var color = ctx.LightMap.SampleMap(nPos);
+                    ctx.FillRectangle(SKRect.Create(nPos, new SKSize(step, step)), color.ToSKColor());
+                }
+            }
+        }
+
 
         private void DrawLightFlareEffects(GLRenderContext ctx, GameObject obj)
         {

@@ -434,6 +434,8 @@ namespace PolyPlane.GameObjects
         {
             base.RenderGL(ctx);
 
+            ctx.LightMap.AddContribution(this);
+
             _flameFillColor = D2DColor.Orange;
 
             UpdateFlame();

@@ -84,6 +84,7 @@ namespace PolyPlane.GameObjects
             if (!this.ContainedBy(ctx.Viewport))
                 return;
 
+
             if (this.Age < Duration)
             {
                 ctx.FillEllipse(new D2DEllipse(this.Position, new D2DSize(_currentRadius, _currentRadius)), _color);
@@ -91,7 +92,6 @@ namespace PolyPlane.GameObjects
                 if (_hasShockWave)
                     ctx.DrawEllipse(new D2DEllipse(this.Position, new D2DSize(_currentShockWaveRadius, _currentShockWaveRadius)), _showckWaveColor, 20f);
             }
-
         }
 
         public override void RenderGL(GLRenderContext ctx)
@@ -100,6 +100,8 @@ namespace PolyPlane.GameObjects
 
             if (!this.ContainedBy(ctx.Viewport))
                 return;
+
+            ctx.LightMap.AddContribution(this);
 
             if (this.Age < Duration)
             {
