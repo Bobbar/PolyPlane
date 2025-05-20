@@ -94,6 +94,8 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
+            ctx.LightMap.AddContribution(this);
+
             ctx.FillEllipse(new D2DEllipse(this.Position, Radius + _currentFlashRadius, Radius + _currentFlashRadius), D2DColor.Yellow);
         }
 

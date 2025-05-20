@@ -77,6 +77,8 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
+            ctx.LightMap.AddContribution(this);
+
             ctx.DrawPolygon(this.Polygon, D2DColor.Black, 1f, D2DColor.Yellow);
         }
 

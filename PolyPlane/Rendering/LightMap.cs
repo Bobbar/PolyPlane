@@ -12,7 +12,9 @@ namespace PolyPlane.Rendering
     /// </summary>
     public sealed class LightMap
     {
-        private Vector4[] _map = null;
+        private Vector4[] _mapIn = null;
+        private Vector4[] _mapOut = null;
+
         private ArrayPool<Vector4> _mapPool = ArrayPool<Vector4>.Create();
 
         public float SIDE_LEN
@@ -36,8 +38,20 @@ namespace PolyPlane.Rendering
         /// <param name="viewport"></param>
         public void Clear(D2DRect viewport)
         {
+            if (!World.UseLightMap)
+                return;
+
             UpdateViewport(viewport);
             ClearMap();
+
+            SwapBuffers();
+        }
+
+        private void SwapBuffers()
+        {
+            var tmp = _mapIn;
+            _mapIn = _mapOut;
+            _mapOut = tmp;
         }
 
         /// <summary>
@@ -46,6 +60,9 @@ namespace PolyPlane.Rendering
         /// <param name="objs"></param>
         public void AddContributions(IEnumerable<GameObject> objs)
         {
+            if (!World.UseLightMap)
+                return;
+
             // Filter out all but target object types.
             objs = objs.Where(o => o is ILightMapContributor);
 
@@ -56,9 +73,22 @@ namespace PolyPlane.Rendering
             }
         }
 
+        /// <summary>
+        /// Adds light contribution from the specified object which implements <see cref="ILightMapContributor"/>.
+        /// </summary>
+        /// <param name="objs"></param>
+        public void AddContribution(GameObject obj)
+        {
+            if (!World.UseLightMap)
+                return;
+
+            if (obj is ILightMapContributor contributor)
+                AddObjContribution(contributor);
+        }
+
         private void AddObjContribution(ILightMapContributor lightContributor)
         {
-            if (_map == null)
+            if (_mapIn == null)
                 return;
 
             var sampleNum = SAMPLE_NUM;
@@ -107,12 +137,12 @@ namespace PolyPlane.Rendering
 
                             // Blend the new color.
                             var idx = GetMapIndex(xo, yo);
-                          
-                            var current = _map[idx];
-                           
+
+                            var current = _mapIn[idx];
+
                             var next = Blend(current, lightColor);
 
-                            _map[idx] = next;
+                            _mapIn[idx] = next;
                         }
                     }
                 }
@@ -128,7 +158,7 @@ namespace PolyPlane.Rendering
         {
             var sample = Vector4.Zero;
 
-            if (_map == null)
+            if (_mapOut == null)
                 return sample;
 
             GetGridPos(pos, out int idxX, out int idxY);
@@ -136,7 +166,7 @@ namespace PolyPlane.Rendering
             if (idxX >= 0 && idxY >= 0 && idxX < _gridWidth && idxY < _gridHeight)
             {
                 var idx = GetMapIndex(idxX, idxY);
-                sample = _map[idx];
+                sample = _mapOut[idx];
             }
 
             return sample;
@@ -208,10 +238,20 @@ namespace PolyPlane.Rendering
                 var len = width * height;
 
                 // Return the previous buffer and rent a new one.
-                if (_map != null)
-                    _mapPool.Return(_map);
+                if (_mapIn != null)
+                {
+                    Array.Clear(_mapIn);
+                    _mapPool.Return(_mapIn);
+                }
 
-                _map = _mapPool.Rent(len);
+                if (_mapOut != null)
+                {
+                    Array.Clear(_mapOut);
+                    _mapPool.Return(_mapOut);
+                }
+
+                _mapIn = _mapPool.Rent(len);
+                _mapOut = _mapPool.Rent(len);
             }
 
             _viewport = viewport;
@@ -219,8 +259,8 @@ namespace PolyPlane.Rendering
 
         private void ClearMap()
         {
-            if (_map != null)
-                Array.Clear(_map);
+            if (_mapOut != null)
+                Array.Clear(_mapOut);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -478,22 +478,8 @@ namespace PolyPlane.Rendering
             // Query the spatial grid for objects within the current viewport.
             var objsInViewport = _objs.GetInViewport(viewPortRect).Where(o => o is not Explosion);
 
-            // Update the light map.
-            if (World.UseLightMap)
-            {
-                // Clear the map and resize as needed.
-                ctx.LightMap.Clear(viewPortRect);
-
-                // Add objects in viewport.
-                ctx.LightMap.AddContributions(objsInViewport);
-
-                // Add explosions separately as they have special viewport clipping.
-                ctx.LightMap.AddContributions(_objs.Explosions);
-            }
-
-            // Order the enumerator by render order after populating the light map.
-            // This is done to avoid the internal sorting/mapping while populating the light map.
-            objsInViewport = objsInViewport.OrderBy(o => o.RenderOrder);
+            // Clear the map and resize as needed.
+            ctx.LightMap.Clear(viewPortRect);
 
             var shadowColor = ctx.GetShadowColor();
             var todAngle = ctx.GetTimeOfDaySunAngle();
@@ -510,7 +496,11 @@ namespace PolyPlane.Rendering
 
             _contrailBox.Render(ctx);
 
-            foreach (var obj in objsInViewport)
+            // Order the enumerator by render order after populating the light map.
+            // This is done to avoid the internal sorting/mapping while populating the light map.
+            var objsInViewportSorted = objsInViewport.OrderBy(o => o.RenderOrder);
+
+            foreach (var obj in objsInViewportSorted)
             {
                 if (obj is FighterPlane p)
                 {
@@ -540,6 +530,8 @@ namespace PolyPlane.Rendering
                 {
                     obj.Render(ctx);
                 }
+
+                DrawLightFlareEffect(ctx, obj);
             }
 
             // Render explosions separate so that they can clip to the viewport correctly.
@@ -548,7 +540,6 @@ namespace PolyPlane.Rendering
 
             DrawClouds(ctx);
             DrawPlaneCloudShadows(ctx, shadowColor, objsInViewport);
-            DrawLightFlareEffects(ctx, objsInViewport);
 
             if (World.DrawNoiseMap)
                 DrawNoise(ctx);
@@ -731,7 +722,7 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private void DrawLightFlareEffects(RenderContext ctx, IEnumerable<GameObject> objs)
+        private void DrawLightFlareEffect(RenderContext ctx, GameObject obj)
         {
             const float BULLET_LIGHT_RADIUS = 60f;
             if (_bulletLightingBrush == null)
@@ -747,45 +738,42 @@ namespace PolyPlane.Rendering
 
             var scale = ctx.CurrentScale;
 
-            foreach (var obj in objs)
+            if (obj is Bullet bullet)
             {
-                if (obj is Bullet bullet)
+                ctx.PushTransform();
+                ctx.TranslateTransform(bullet.Position * scale);
+                ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, BULLET_LIGHT_RADIUS, _bulletLightingBrush);
+                ctx.PopTransform();
+
+                DrawObjectGroundLight(ctx, bullet);
+            }
+            else if (obj is GuidedMissile missile)
+            {
+                if (missile.FlameOn && missile.CurrentFuel > 0f)
                 {
                     ctx.PushTransform();
-                    ctx.TranslateTransform(bullet.Position * scale);
-                    ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, BULLET_LIGHT_RADIUS, _bulletLightingBrush);
+                    ctx.TranslateTransform(missile.CenterOfThrust * scale);
+
+                    // Add a little flicker effect to missile lights.
+                    var flickerScale = Utilities.Rnd.NextFloat(0.7f, 1f);
+                    ctx.ScaleTransform(flickerScale);
+
+                    ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, MISSILE_LIGHT_RADIUS, _missileLightingBrush);
                     ctx.PopTransform();
 
-                    DrawObjectGroundLight(ctx, bullet);
+                    DrawObjectGroundLight(ctx, missile);
                 }
-                else if (obj is GuidedMissile missile)
+            }
+            else if (obj is Decoy decoy)
+            {
+                if ((decoy.IsFlashing()))
                 {
-                    if (missile.FlameOn && missile.CurrentFuel > 0f)
-                    {
-                        ctx.PushTransform();
-                        ctx.TranslateTransform(missile.CenterOfThrust * scale);
+                    ctx.PushTransform();
+                    ctx.TranslateTransform(decoy.Position * scale);
+                    ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, DECOY_LIGHT_RADIUS, _decoyLightBrush);
+                    ctx.PopTransform();
 
-                        // Add a little flicker effect to missile lights.
-                        var flickerScale = Utilities.Rnd.NextFloat(0.7f, 1f);
-                        ctx.ScaleTransform(flickerScale);
-
-                        ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, MISSILE_LIGHT_RADIUS, _missileLightingBrush);
-                        ctx.PopTransform();
-
-                        DrawObjectGroundLight(ctx, missile);
-                    }
-                }
-                else if (obj is Decoy decoy)
-                {
-                    if ((decoy.IsFlashing()))
-                    {
-                        ctx.PushTransform();
-                        ctx.TranslateTransform(decoy.Position * scale);
-                        ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, DECOY_LIGHT_RADIUS, _decoyLightBrush);
-                        ctx.PopTransform();
-
-                        DrawObjectGroundLight(ctx, decoy);
-                    }
+                    DrawObjectGroundLight(ctx, decoy);
                 }
             }
         }
