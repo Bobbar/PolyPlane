@@ -131,7 +131,7 @@ namespace PolyPlane.AI_Behavior
 
                         case AIPersonality.Cowardly:
                             // Don't allow both cowardly and speedy.
-                            if (this.Personality.HasFlag(AIPersonality.Speedy) == false)
+                            if (HasFlag(AIPersonality.Speedy) == false)
                             {
                                 MAX_SPEED = 700f;
                                 this.Plane.Thrust = 700f;
@@ -142,7 +142,7 @@ namespace PolyPlane.AI_Behavior
 
                         case AIPersonality.Speedy:
                             // Don't allow both cowardly and speedy.
-                            if (this.Personality.HasFlag(AIPersonality.Cowardly) == false)
+                            if (HasFlag(AIPersonality.Cowardly) == false)
                             {
                                 MAX_SPEED = 2000f;
                                 this.Plane.Thrust = 2000f;
@@ -153,8 +153,13 @@ namespace PolyPlane.AI_Behavior
                 }
             }
 
-            if (this.Personality.HasFlag(AIPersonality.Vengeful))
+            if (HasFlag(AIPersonality.Vengeful))
                 _isVengeful = true;
+        }
+
+        public bool HasFlag(AIPersonality flag)
+        {
+            return (this.Personality & flag) == flag;
         }
 
         private void HandlePlayerKilled(PlayerKilledEventArgs killedEvent)
@@ -166,16 +171,36 @@ namespace PolyPlane.AI_Behavior
         {
             if (this.TargetPlane == null || this.TargetPlane.IsExpired || this.TargetPlane.HasCrashed || this.TargetPlane.IsDisabled)
             {
-                var rndTarg = this.Plane.Radar.FindNearestPlane();
+                FighterPlane? newTarget = null;
 
-                if (_killedByPlane != null && _killedByPlane.IsExpired)
-                    _killedByPlane = null;
+                // Try to target killed-by plane for vengeful AI.
+                if (HasFlag(AIPersonality.Vengeful))
+                {
+                    if (_killedByPlane != null && _killedByPlane.IsExpired)
+                        _killedByPlane = null;
 
-                // Vengeful AI will always go after the last player that killed them.
-                if (_isVengeful && (_killedByPlane != null && _killedByPlane.IsDisabled == false))
-                    rndTarg = _killedByPlane;
+                    if (_killedByPlane != null && _killedByPlane.IsDisabled == false)
+                    {
+                        newTarget = _killedByPlane;
+                    }
+                }
 
-                _targetPlane = rndTarg;
+                // Target one of the top scoring players.
+                if (newTarget == null && HasFlag(AIPersonality.TargetTopPlanes))
+                {
+                    var planes = World.ObjectManager.Planes;
+                    var targets = planes.Where(p => !p.Equals(this.Plane)).OrderByDescending(p => p.Kills).Take(Math.Min(planes.Count, 5)).ToArray();
+
+                    newTarget = targets[Random.Shared.Next(0, targets.Length)];
+                }
+
+                // If we still have no target, just pick the nearest one.
+                if (newTarget == null)
+                {
+                    newTarget = this.Plane.Radar.FindNearestPlane();
+                }
+
+                _targetPlane = newTarget;
             }
         }
 

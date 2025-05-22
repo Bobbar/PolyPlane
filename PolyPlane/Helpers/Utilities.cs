@@ -723,6 +723,10 @@ namespace PolyPlane.Helpers
                         case AIPersonality.Vengeful:
                             tagText += "V";
                             break;
+
+                        case AIPersonality.TargetTopPlanes:
+                            tagText += "T";
+                            break;
                     }
                 }
             }
