@@ -34,7 +34,6 @@ namespace PolyPlane.Rendering
         private D2DDevice _device;
         private D2DGraphics _gfx = null;
         private RenderContext _ctx;
-        private D2DLayer _groundClipLayer = null;
 
         private D2DRadialGradientBrush _bulletLightingBrush = null;
         private D2DRadialGradientBrush _missileLightingBrush = null;
@@ -156,7 +155,6 @@ namespace PolyPlane.Rendering
         {
             _hudMessageTimeout.Stop();
 
-            _groundClipLayer?.Dispose();
             _bulletLightingBrush?.Dispose();
             _missileLightingBrush?.Dispose();
             _muzzleFlashBrush?.Dispose();
@@ -574,14 +572,11 @@ namespace PolyPlane.Rendering
 
         private void DrawGroundImpacts(RenderContext ctx)
         {
-            if (_groundClipLayer == null)
-                _groundClipLayer = ctx.Device.CreateLayer();
-
             const float LIGHT_INTENSITY = 0.4f;
 
             var rect = new D2DRect(ctx.Viewport.Location.X, 0f, ctx.Viewport.Width, 4000f);
 
-            ctx.Gfx.PushLayer(_groundClipLayer, rect);
+            ctx.Gfx.PushClip(rect);
 
             for (int i = 0; i < _objs.GroundImpacts.Count; i++)
             {
@@ -605,7 +600,7 @@ namespace PolyPlane.Rendering
                 }
             }
 
-            ctx.Gfx.PopLayer();
+            ctx.Gfx.PopClip();
         }
 
         private void DrawMuzzleFlash(RenderContext ctx, FighterPlane plane)
