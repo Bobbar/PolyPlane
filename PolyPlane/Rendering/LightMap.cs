@@ -28,6 +28,8 @@ namespace PolyPlane.Rendering
         private D2DRect _viewport;
         private int _gridWidth = 0;
         private int _gridHeight = 0;
+        private int _prevWidth = 0;
+        private int _prevHeight = 0;
         private float _sideLen = 60f;
 
         public LightMap() { }
@@ -237,24 +239,61 @@ namespace PolyPlane.Rendering
 
                 var len = width * height;
 
-                // Return the previous buffer and rent a new one.
-                if (_mapIn != null)
+                if (_mapIn == null)
                 {
+                    _mapIn = _mapPool.Rent(len);
+                }
+
+                if (_mapOut == null)
+                {
+                    _mapOut = _mapPool.Rent(len);
+                }
+
+                if (_mapIn.Length != len)
+                {
+                    // Rent a new input buffer, copy the existing data from the old buffer, then clear & return the old buffer.
+                    // This buffer will be swapped to the output, so we need to preserve the existing data to prevent flickering.
+                    var newIn = _mapPool.Rent(len);
+                    CopyBuffer(ref _mapIn, ref newIn, _prevWidth, width, _prevHeight, height);
                     Array.Clear(_mapIn);
                     _mapPool.Return(_mapIn);
-                }
+                    _mapIn = newIn; 
 
-                if (_mapOut != null)
-                {
+                    // Just clear and return the output buffer.
                     Array.Clear(_mapOut);
                     _mapPool.Return(_mapOut);
+                    _mapOut = _mapPool.Rent(len);
                 }
-
-                _mapIn = _mapPool.Rent(len);
-                _mapOut = _mapPool.Rent(len);
             }
 
+            _prevWidth = width;
+            _prevHeight = height;
+
             _viewport = viewport;
+        }
+
+        /// <summary>
+        /// Copy existing data from the old buffer to the new one by remapping the coordinate space for the new dimentions.
+        /// </summary>
+        private void CopyBuffer(ref Vector4[] oldBuf, ref Vector4[] newBuf, int oldWidth, int newWidth, int oldHeight, int newHeight)
+        {
+            for (int x = 0; x < oldWidth; x++)
+            {
+                for (int y = 0; y < oldHeight; y++)
+                {
+                    // Map OG buffer coords to the new dimentions.
+                    var scaleX = Utilities.ScaleToRange(x, 0, oldWidth, 0, newWidth);
+                    var scaleY = Utilities.ScaleToRange(y, 0, oldHeight, 0, newHeight);
+
+                    var ogIdx = GetMapIndex(oldWidth, x, y);
+                    var newIdx = GetMapIndex(newWidth, (int)scaleX, (int)scaleY);
+
+                    if (newIdx >= 0 && newIdx < newBuf.Length && ogIdx >= 0 && ogIdx < oldBuf.Length)
+                    {
+                        newBuf[newIdx] = oldBuf[ogIdx];
+                    }
+                }
+            }
         }
 
         private void ClearMap()
@@ -276,6 +315,11 @@ namespace PolyPlane.Rendering
         private int GetMapIndex(int x, int y)
         {
             return _gridWidth * y + x;
+        }
+
+        private int GetMapIndex(int width, int x, int y)
+        {
+            return width * y + x;
         }
     }
 
