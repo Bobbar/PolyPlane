@@ -485,7 +485,6 @@ namespace PolyPlane.Rendering
             ctx.PushViewPort(viewPortRect);
 
             DrawGround(ctx, viewObj.Position);
-            DrawGroundImpacts(ctx);
             DrawTrees(ctx);
             DrawPlaneGroundShadows(ctx, shadowColor, todAngle);
 
@@ -563,6 +562,8 @@ namespace PolyPlane.Rendering
             // Draw the ground.
             var rect = new D2DRect(groundPos, new D2DSize(World.ViewPortSize.width, (HEIGHT * 2f) / ctx.CurrentScale));
             ctx.Gfx.FillRectangle(rect, _groundBrush);
+
+            DrawGroundImpacts(ctx);
         }
 
         private void DrawTrees(RenderContext ctx)
