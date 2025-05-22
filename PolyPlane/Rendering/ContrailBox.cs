@@ -124,6 +124,10 @@ namespace PolyPlane.Rendering
 
         public void Render(RenderContext ctx)
         {
+            // Don't proceed if the viewport is below the minimum altitude.
+            if (Math.Abs(ctx.Viewport.top) < MIN_ALT)
+                return;
+
             // Render all visible segments.
             var inViewPort = _segmentGrid.GetInViewport(ctx.Viewport);
 
