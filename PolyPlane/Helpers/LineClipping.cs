@@ -15,35 +15,18 @@ namespace PolyPlane.Helpers
         const int BOTTOM = 0b0100;
         const int TOP = 0b1000;
 
-        public static int ComputeOutCode(D2DPoint pnt, D2DRect rect)
+                /// <summary>
+        /// Returns true if the specified line points intersect any portion of the specified rectangle.
+        /// </summary>
+        public static bool CohenSutherlandLineClip(D2DPoint a, D2DPoint b, D2DRect rect)
         {
-            int code = INSIDE;  // initialised as being inside of clip window
-
-            var xmin = rect.left;
-            var xmax = rect.right;
-            var ymin = rect.top;
-            var ymax = rect.bottom;
-
-            if (pnt.X < xmin)           // to the left of clip window
-                code |= LEFT;
-            else if (pnt.X > xmax)      // to the right of clip window
-                code |= RIGHT;
-            if (pnt.Y < ymin)           // below the clip window
-                code |= BOTTOM;
-            else if (pnt.Y > ymax)      // above the clip window
-                code |= TOP;
-
-            return code;
+            return CohenSutherlandLineClip(a.X, a.Y, b.X, b.Y, rect);
         }
 
         /// <summary>
         /// Returns true if the specified line points intersect any portion of the specified rectangle.
         /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <param name="rect"></param>
-        /// <returns></returns>
-        public static bool CohenSutherlandLineClip(D2DPoint a, D2DPoint b, D2DRect rect)
+        public static bool CohenSutherlandLineClip(float ax, float ay, float bx, float by, D2DRect rect)
         {
             var xmin = rect.left;
             var xmax = rect.right;
@@ -51,8 +34,8 @@ namespace PolyPlane.Helpers
             var ymax = rect.bottom;
 
             // compute outcodes for P0, P1, and whatever point lies outside the clip rectangle
-            int outcode0 = ComputeOutCode(a, rect);
-            int outcode1 = ComputeOutCode(b, rect);
+            int outcode0 = ComputeOutCode(ax, ay, rect);
+            int outcode1 = ComputeOutCode(bx, by, rect);
             bool accept = false;
 
             while (true)
@@ -87,22 +70,22 @@ namespace PolyPlane.Helpers
                     // outcode bit being tested guarantees the denominator is non-zero
                     if ((outcodeOut & TOP) != 0)
                     {           // point is above the clip window
-                        x = a.X + (b.X - a.X) * (ymax - a.Y) / (b.Y - a.Y);
+                        x = ax + (bx - ax) * (ymax - ay) / (by - ay);
                         y = ymax;
                     }
                     else if ((outcodeOut & BOTTOM) != 0)
                     { // point is below the clip window
-                        x = a.X + (b.X - a.X) * (ymin - a.Y) / (b.Y - a.Y);
+                        x = ax + (bx - ax) * (ymin - ay) / (by - ay);
                         y = ymin;
                     }
                     else if ((outcodeOut & RIGHT) != 0)
                     {  // point is to the right of clip window
-                        y = a.Y + (b.Y - a.Y) * (xmax - a.X) / (b.X - a.X);
+                        y = ay + (by - ay) * (xmax - ax) / (bx - ax);
                         x = xmax;
                     }
                     else if ((outcodeOut & LEFT) != 0)
                     {   // point is to the left of clip window
-                        y = a.Y + (b.Y - a.Y) * (xmin - a.X) / (b.X - a.X);
+                        y = ay + (by - ay) * (xmin - ax) / (bx - ax);
                         x = xmin;
                     }
 
@@ -110,20 +93,41 @@ namespace PolyPlane.Helpers
                     // and get ready for next pass.
                     if (outcodeOut == outcode0)
                     {
-                        a.X = x;
-                        a.Y = y;
-                        outcode0 = ComputeOutCode(a, rect);
+                        ax = x;
+                        ay = y;
+                        outcode0 = ComputeOutCode(ax, ay, rect);
                     }
                     else
                     {
-                        b.X = x;
-                        b.Y = y;
-                        outcode1 = ComputeOutCode(b, rect);
+                        bx = x;
+                        by = y;
+                        outcode1 = ComputeOutCode(bx, by, rect);
                     }
                 }
             }
 
             return accept;
+        }
+
+        private static int ComputeOutCode(float x, float y, D2DRect rect)
+        {
+            int code = INSIDE;  // initialised as being inside of clip window
+
+            var xmin = rect.left;
+            var xmax = rect.right;
+            var ymin = rect.top;
+            var ymax = rect.bottom;
+
+            if (x < xmin)           // to the left of clip window
+                code |= LEFT;
+            else if (x > xmax)      // to the right of clip window
+                code |= RIGHT;
+            if (y < ymin)           // below the clip window
+                code |= BOTTOM;
+            else if (y > ymax)      // above the clip window
+                code |= TOP;
+
+            return code;
         }
     }
 }

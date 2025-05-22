@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using unvell.D2DLib;
 
 namespace PolyPlane.Helpers
 {
@@ -31,6 +32,14 @@ namespace PolyPlane.Helpers
         public MinMax()
         {
             Reset();
+        }
+
+        /// <summary>
+        /// Returns a rectangle representing the current bounds of the min/max coordinates.
+        /// </summary>
+        public D2DRect GetBounds()
+        {
+            return new D2DRect(MinX, MinY, MaxX - MinX, MaxY - MinY);
         }
 
         public void Update(D2DPoint[] points)

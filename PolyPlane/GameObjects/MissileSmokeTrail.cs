@@ -20,6 +20,7 @@ namespace PolyPlane.GameObjects
         private GameTimer _timeOut = new GameTimer(TIMEOUT);
         private D2DPoint _prevPos = D2DPoint.Zero;
         private bool _trailEnabled = false;
+        private MinMax _bounds = new MinMax();
 
         public MissileSmokeTrail(GuidedMissile missile) : base(missile)
         {
@@ -43,7 +44,10 @@ namespace PolyPlane.GameObjects
                 var dist = this.Position.DistanceTo(_prevPos);
                 if (dist >= TRAIL_DIST)
                 {
-                    _trailList.Add(_parentMissile.CenterOfThrust);
+                    var position = _parentMissile.CenterOfThrust;
+
+                    _bounds.Update(position);
+                    _trailList.Add(position);
 
                     if (_trailList.Count == TRAIL_LEN)
                         _trailList.RemoveAt(0);
@@ -60,6 +64,9 @@ namespace PolyPlane.GameObjects
             base.Render(ctx);
 
             if (_trailList.Count == 0)
+                return;
+
+            if (!ctx.Viewport.Contains(_bounds.GetBounds()))
                 return;
 
             var lastPos = _trailList.First();

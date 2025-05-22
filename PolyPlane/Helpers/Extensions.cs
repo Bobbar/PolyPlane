@@ -125,6 +125,32 @@ namespace PolyPlane.Helpers
             if (rect.Contains(rect2.right, rect2.bottom))
                 return true;
 
+            // Check origins.
+            if (rect.Contains(rect2.Origin))
+                return true;
+
+            if (rect2.Contains(rect.Origin))
+                return true;
+
+            // Check line clipping for each segment.
+
+            // Top-left -> top-right.
+            if (rect2.Contains(rect.left, rect.top, rect.right, rect.top))
+                return true;
+
+            // Top-right -> bottom-right.
+            if (rect2.Contains(rect.right, rect.top, rect.right, rect.bottom))
+                return true;
+
+            // Bottom-right -> bottom-left.
+            if (rect2.Contains(rect.right, rect.bottom, rect.left, rect.bottom))
+                return true;
+
+            // Bottom-left -> top-left.
+            if (rect2.Contains(rect.left, rect.bottom, rect.left, rect.top))
+                return true;
+
+
             return false;
         }
 
@@ -148,6 +174,11 @@ namespace PolyPlane.Helpers
         public static bool Contains(this D2DRect rect, D2DPoint lineA, D2DPoint lineB)
         {
             return LineClipping.CohenSutherlandLineClip(lineA, lineB, rect);
+        }
+
+        public static bool Contains(this D2DRect rect, float lineAX, float lineAY, float lineBX, float lineBY)
+        {
+            return LineClipping.CohenSutherlandLineClip(lineAX,lineAY, lineBX, lineBY, rect);
         }
 
         public static bool Contains(this D2DRect rect, D2DEllipse ellipse)

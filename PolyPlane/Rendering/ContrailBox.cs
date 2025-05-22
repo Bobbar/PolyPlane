@@ -151,8 +151,9 @@ namespace PolyPlane.Rendering
                 if (dist > MIN_DIST * 3f)
                     continue;
 
-                if (IsInside(plane) && plane.ThrustAmount > 0f && IsNotInSpace(plane) && !plane.IsDisabled)
-                    ctx.DrawLine(tag.PrevPos, plane.ExhaustPosition, color, TRAIL_WEIGHT);
+                if (ctx.Viewport.Contains(plane.Position))
+                    if (IsInside(plane) && plane.ThrustAmount > 0f && IsNotInSpace(plane) && !plane.IsDisabled)
+                        ctx.DrawLine(tag.PrevPos, plane.ExhaustPosition, color, TRAIL_WEIGHT);
             }
         }
 
