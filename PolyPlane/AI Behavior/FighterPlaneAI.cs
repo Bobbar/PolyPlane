@@ -191,7 +191,8 @@ namespace PolyPlane.AI_Behavior
                     var planes = World.ObjectManager.Planes;
                     var targets = planes.Where(p => !p.Equals(this.Plane)).OrderByDescending(p => p.Kills).Take(Math.Min(planes.Count, 5)).ToArray();
 
-                    newTarget = targets[Random.Shared.Next(0, targets.Length)];
+                    if (targets.Any())
+                        newTarget = targets[Random.Shared.Next(0, targets.Length)];
                 }
 
                 // If we still have no target, just pick the nearest one.

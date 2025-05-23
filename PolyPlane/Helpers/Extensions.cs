@@ -106,52 +106,13 @@ namespace PolyPlane.Helpers
 
         public static bool Contains(this D2DRect rect, D2DRect rect2)
         {
-            if (rect.X <= rect2.X &&
-            rect2.X + rect2.Width <= rect.X + rect.Width &&
-            rect.Y <= rect2.Y &&
-            rect2.Y + rect2.Height <= rect.Y + rect.Height)
-                return true;
+            if (rect.left > rect2.right || rect2.left > rect.right)
+                return false;
 
-            // Check the 4 corners.
-            if (rect.Contains(rect2.left, rect2.top))
-                return true;
+            if (rect.top > rect2.bottom || rect2.top > rect.bottom)
+                return false;
 
-            if (rect.Contains(rect2.right, rect2.top))
-                return true;
-
-            if (rect.Contains(rect2.left, rect2.bottom))
-                return true;
-
-            if (rect.Contains(rect2.right, rect2.bottom))
-                return true;
-
-            // Check origins.
-            if (rect.Contains(rect2.Origin))
-                return true;
-
-            if (rect2.Contains(rect.Origin))
-                return true;
-
-            // Check line clipping for each segment.
-
-            // Top-left -> top-right.
-            if (rect2.Contains(rect.left, rect.top, rect.right, rect.top))
-                return true;
-
-            // Top-right -> bottom-right.
-            if (rect2.Contains(rect.right, rect.top, rect.right, rect.bottom))
-                return true;
-
-            // Bottom-right -> bottom-left.
-            if (rect2.Contains(rect.right, rect.bottom, rect.left, rect.bottom))
-                return true;
-
-            // Bottom-left -> top-left.
-            if (rect2.Contains(rect.left, rect.bottom, rect.left, rect.top))
-                return true;
-
-
-            return false;
+            return true;
         }
 
         public static bool Contains(this D2DRect rect, D2DPoint[] poly)
