@@ -1,6 +1,7 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.Helpers;
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using unvell.D2DLib;
@@ -10,12 +11,16 @@ namespace PolyPlane.Rendering
     /// <summary>
     /// Provides a fast light color and intensity map for game objects.
     /// </summary>
-    public sealed class LightMap
+    public sealed class LightMap : IDisposable
     {
         private Vector4[] _mapIn = null;
         private Vector4[] _mapOut = null;
 
         private ArrayPool<Vector4> _mapPool = ArrayPool<Vector4>.Create();
+        private ConcurrentQueue<ILightMapContributor> _queue = new ConcurrentQueue<ILightMapContributor>();
+
+        private Thread? _queueThread = null;
+        private FPSLimiter _queueLimiter = new FPSLimiter();
 
         public float SIDE_LEN
         {
@@ -24,6 +29,7 @@ namespace PolyPlane.Rendering
 
         const int SAMPLE_NUM = 7;
         const float GRADIENT_RADIUS = 450f;
+        const bool USE_QUEUE = true;
 
         private D2DRect _viewport;
         private int _gridWidth = 0;
@@ -31,6 +37,8 @@ namespace PolyPlane.Rendering
         private int _prevWidth = 0;
         private int _prevHeight = 0;
         private float _sideLen = 60f;
+        private bool disposedValue;
+
 
         public LightMap() { }
 
@@ -43,10 +51,24 @@ namespace PolyPlane.Rendering
             if (!World.UseLightMap)
                 return;
 
+            StartQueueLoop();
+
             UpdateViewport(viewport);
             ClearMap();
 
             SwapBuffers();
+        }
+
+        private void StartQueueLoop()
+        {
+            if (!USE_QUEUE)
+                return;
+
+            if (_queueThread == null)
+            {
+                _queueThread = new Thread(QueueLoop);
+                _queueThread.Start();
+            }
         }
 
         private void SwapBuffers()
@@ -54,6 +76,25 @@ namespace PolyPlane.Rendering
             var tmp = _mapIn;
             _mapIn = _mapOut;
             _mapOut = tmp;
+        }
+
+        private void QueueContribution(ILightMapContributor contributor)
+        {
+            _queue.Enqueue(contributor);
+        }
+
+        private void QueueLoop()
+        {
+            while (!disposedValue)
+            {
+                while (_queue.Count > 0)
+                {
+                    if (_queue.TryDequeue(out ILightMapContributor contrib))
+                        AddContribution(contrib);
+                }
+
+                _queueLimiter.Wait(1000);
+            }
         }
 
         /// <summary>
@@ -65,13 +106,15 @@ namespace PolyPlane.Rendering
             if (!World.UseLightMap)
                 return;
 
-            // Filter out all but target object types.
-            objs = objs.Where(o => o is ILightMapContributor);
-
             foreach (var obj in objs)
             {
-                if (obj.ContainedBy(_viewport))
-                    AddObjContribution(obj as ILightMapContributor);
+                if (obj is ILightMapContributor contributor)
+                {
+                    if (USE_QUEUE)
+                        QueueContribution(contributor);
+                    else
+                        AddObjContribution(contributor);
+                }
             }
         }
 
@@ -85,7 +128,20 @@ namespace PolyPlane.Rendering
                 return;
 
             if (obj is ILightMapContributor contributor)
-                AddObjContribution(contributor);
+            {
+                if (USE_QUEUE)
+                    QueueContribution(contributor);
+                else
+                    AddObjContribution(contributor);
+            }
+        }
+
+        private void AddContribution(ILightMapContributor contributor)
+        {
+            if (!World.UseLightMap)
+                return;
+
+            AddObjContribution(contributor);
         }
 
         private void AddObjContribution(ILightMapContributor lightContributor)
@@ -257,7 +313,7 @@ namespace PolyPlane.Rendering
                     CopyBuffer(ref _mapIn, ref newIn, _prevWidth, width, _prevHeight, height);
                     Array.Clear(_mapIn);
                     _mapPool.Return(_mapIn);
-                    _mapIn = newIn; 
+                    _mapIn = newIn;
 
                     // Just clear and return the output buffer.
                     Array.Clear(_mapOut);
@@ -320,6 +376,23 @@ namespace PolyPlane.Rendering
         private int GetMapIndex(int width, int x, int y)
         {
             return width * y + x;
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                disposedValue = true;
+
+                _queueThread.Join();
+                _queueLimiter?.Dispose();
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 

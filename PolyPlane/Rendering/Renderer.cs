@@ -183,6 +183,8 @@ namespace PolyPlane.Rendering
 
             _device?.Dispose();
             _fpsLimiter?.Dispose();
+
+            _ctx?.Dispose();
         }
 
 
@@ -558,7 +560,7 @@ namespace PolyPlane.Rendering
                 DrawLightMap(ctx);
 
             ctx.PopViewPort();
-            ctx.PopTransform();
+            ctx.PopTransform(); 
         }
 
         private void DrawViewObject(RenderContext ctx, GameObject obj, FighterPlane viewPlane)
