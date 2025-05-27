@@ -20,7 +20,7 @@ namespace PolyPlane.GameObjects
         {
             this.Flags = GameObjectFlags.AeroPushable | GameObjectFlags.ExplosionImpulse | GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround | GameObjectFlags.CanSleep;
             this.Mass = 40f;
-            this.RenderOrder = 3;
+            this.RenderLayer = 3;
             this.Polygon = new RenderPoly(this, Utilities.RandomPoly(8, 12));
 
             _flame = new FlameEmitter(this, D2DPoint.Zero, 2f, 4f, false);

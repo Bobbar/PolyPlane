@@ -156,7 +156,7 @@ namespace PolyPlane.GameObjects
             this.Flags = GameObjectFlags.SpatialGrid;
             this.Mass = 22.5f;
             this.RenderScale = 0.9f;
-            this.RenderOrder = 2;
+            this.RenderLayer = 2;
 
             _initRotation = this.Rotation;
 

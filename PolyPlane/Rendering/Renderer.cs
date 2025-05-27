@@ -125,6 +125,9 @@ namespace PolyPlane.Rendering
 
         private CloudManager _cloudManager = new();
         private TreeManager _treeManager = new();
+        private Stack<GameObject> sortStackA = new Stack<GameObject>();
+        private Stack<GameObject> sortStackB = new Stack<GameObject>();
+        private Stack<FighterPlane> visiblePlanes = new Stack<FighterPlane>();
 
         public Renderer(Control renderTarget, NetEventManager netMan)
         {
@@ -474,7 +477,7 @@ namespace PolyPlane.Rendering
             viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true); // Inflate slightly to prevent "pop-in".
 
             // Query the spatial grid for objects within the current viewport.
-            var objsInViewport = _objs.GetInViewport(viewPortRect).Where(o => o is not Explosion);
+            var objsInViewport = _objs.GetInViewport(viewPortRect);
 
             // Clear the map and resize as needed.
             ctx.LightMap.Clear(viewPortRect);
@@ -493,50 +496,60 @@ namespace PolyPlane.Rendering
 
             _contrailBox.Render(ctx);
 
-            // Order the enumerator by render order after populating the light map.
-            // This is done to avoid the internal sorting/mapping while populating the light map.
-            var objsInViewportSorted = objsInViewport.OrderBy(o => o.RenderOrder);
+            // Use stacks to draw the objects in order by layer.
+            int maxLayers = 0;
+            int layer = 0;
 
-            foreach (var obj in objsInViewportSorted)
+            sortStackA.Clear();
+            sortStackB.Clear();
+            visiblePlanes.Clear();
+
+            foreach (var obj in objsInViewport)
             {
-                if (obj is FighterPlane p)
-                {
-                    p.Render(ctx);
-                    DrawMuzzleFlash(ctx, p);
+                var order = obj.RenderLayer;
 
-                    if (viewPlane != null)
-                    {
-                        // Draw health bars for other planes.
-                        if (!p.Equals(viewPlane))
-                            DrawPlaneHealthBar(ctx, p, new D2DPoint(p.Position.X, p.Position.Y - 110f));
+                // Track the max seen layer.
+                if (order > maxLayers)
+                    maxLayers = order;
 
-                        // Draw circle around locked on plane.
-                        if (viewPlane.Radar.LockedObj != null && viewPlane.Radar.LockedObj.Equals(p))
-                            ctx.DrawEllipse(new D2DEllipse(p.Position, new D2DSize(80f, 80f)), World.HudColor, 4f);
-                    }
-                }
-                else if (obj is GuidedMissile missile)
-                {
-                    missile.Render(ctx);
-
-                    // Circle enemy missiles.
-                    if (!World.FreeCameraMode && !viewObj.Equals(missile) && !missile.Owner.Equals(viewPlane))
-                        ctx.DrawEllipse(new D2DEllipse(missile.Position, new D2DSize(50f, 50f)), new D2DColor(0.4f, D2DColor.Red), 8f);
-                }
+                // Draw the object, otherwise push it to the stack.
+                if (order == layer)
+                    DrawViewObject(ctx, obj, viewPlane);
                 else
+                    sortStackA.Push(obj);
+            }
+
+
+            // Move to next layer and iterate the remaining layers.
+            layer = 1;
+            while (layer <= maxLayers)
+            {
+                while (sortStackA.Count > 0)
                 {
-                    obj.Render(ctx);
+                    var o = sortStackA.Pop();
+
+                    // Draw or push to next stack layer.
+                    if (o.RenderLayer == layer)
+                        DrawViewObject(ctx, o, viewPlane);
+                    else
+                        sortStackB.Push(o);
                 }
 
-                DrawLightFlareEffect(ctx, obj);
+                // Swap to next layer.
+                var tmp = sortStackA;
+                sortStackA = sortStackB;
+                sortStackB = tmp;
+
+                layer++;
             }
+
 
             // Render explosions separate so that they can clip to the viewport correctly.
             for (int i = 0; i < _objs.Explosions.Count; i++)
                 _objs.Explosions[i].Render(ctx);
 
             DrawClouds(ctx);
-            DrawPlaneCloudShadows(ctx, shadowColor, objsInViewport);
+            DrawPlaneCloudShadows(ctx, shadowColor);
 
             if (World.DrawNoiseMap)
                 DrawNoise(ctx);
@@ -546,6 +559,54 @@ namespace PolyPlane.Rendering
 
             ctx.PopViewPort();
             ctx.PopTransform();
+        }
+
+        private void DrawViewObject(RenderContext ctx, GameObject obj, FighterPlane viewPlane)
+        {
+            if (obj is FighterPlane p)
+            {
+                // Record visible planes for later effects rendering.
+                visiblePlanes.Push(p);
+
+                p.Render(ctx);
+                DrawMuzzleFlash(ctx, p);
+
+                if (viewPlane != null)
+                {
+                    // Draw health bars for other planes.
+                    if (!p.Equals(viewPlane))
+                        DrawPlaneHealthBar(ctx, p, new D2DPoint(p.Position.X, p.Position.Y - 110f));
+
+                    // Draw circle around locked on plane.
+                    if (viewPlane.Radar.LockedObj != null && viewPlane.Radar.LockedObj.Equals(p))
+                        ctx.DrawEllipse(new D2DEllipse(p.Position, new D2DSize(80f, 80f)), World.HudColor, 4f);
+                }
+            }
+            else if (obj is GuidedMissile missile)
+            {
+                missile.Render(ctx);
+
+                DrawLightFlareEffect(ctx, obj);
+
+                // Circle enemy missiles.
+                if (!World.FreeCameraMode && !missile.Owner.Equals(viewPlane))
+                    ctx.DrawEllipse(new D2DEllipse(missile.Position, new D2DSize(50f, 50f)), new D2DColor(0.4f, D2DColor.Red), 8f);
+
+            }
+            else if (obj is Bullet || obj is Decoy)
+            {
+                obj.Render(ctx);
+                DrawLightFlareEffect(ctx, obj);
+            }
+            else if (obj is Explosion)
+            {
+                return;
+            }
+            else
+            {
+                obj.Render(ctx);
+            }
+
         }
 
         private void DrawGround(RenderContext ctx, D2DPoint position)
@@ -648,7 +709,7 @@ namespace PolyPlane.Rendering
             _cloudManager.Render(ctx);
         }
 
-        private void DrawPlaneCloudShadows(RenderContext ctx, D2DColor shadowColor, IEnumerable<GameObject> objs)
+        private void DrawPlaneCloudShadows(RenderContext ctx, D2DColor shadowColor)
         {
             // Don't bother if we are currently zoomed way out.
             if (World.ZoomScale < 0.03f)
@@ -656,10 +717,10 @@ namespace PolyPlane.Rendering
 
             var color = shadowColor.WithAlpha(0.07f);
 
-            foreach (var obj in objs)
+            while (visiblePlanes.Count > 0)
             {
-                if (obj is FighterPlane plane)
-                    ctx.FillPolygon(plane.Polygon, color);
+                var plane = visiblePlanes.Pop();
+                ctx.FillPolygon(plane.Polygon, color);
             }
         }
 

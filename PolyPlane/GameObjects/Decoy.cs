@@ -67,7 +67,7 @@ namespace PolyPlane.GameObjects
         {
             this.Flags = GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround;
             this.Mass = 50f;
-            this.RenderOrder = 1;
+            this.RenderLayer = 1;
 
             _flashAnimation = new FloatAnimation(0f, 5f, 0.4f, EasingFunctions.EaseLinear, v => _currentFlashRadius = v);
             _flashAnimation.Start();

@@ -137,11 +137,6 @@ namespace PolyPlane.Helpers
             return LineClipping.CohenSutherlandLineClip(lineA, lineB, rect);
         }
 
-        public static bool Contains(this D2DRect rect, float lineAX, float lineAY, float lineBX, float lineBY)
-        {
-            return LineClipping.CohenSutherlandLineClip(lineAX,lineAY, lineBX, lineBY, rect);
-        }
-
         public static bool Contains(this D2DRect rect, D2DEllipse ellipse)
         {
             return rect.Inflate(ellipse.radiusX * 2f, ellipse.radiusY * 2f).Contains(ellipse.origin);

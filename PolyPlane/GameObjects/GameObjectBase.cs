@@ -111,7 +111,7 @@ namespace PolyPlane.GameObjects
         public bool IsAwake = true;
         public bool IsExpired = false;
         public float RenderScale = 1f;
-        public int RenderOrder = 99;
+        public int RenderLayer = 99;
         public float Age = 0f;
         public bool IsNetObject = false;
 

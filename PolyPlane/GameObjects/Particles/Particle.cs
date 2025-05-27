@@ -47,7 +47,7 @@ namespace PolyPlane.GameObjects.Particles
         public Particle()
         {
             Ellipse = new D2DEllipse();
-            RenderOrder = 0;
+            RenderLayer = 0;
             Mass = PARTICLE_MASS;
             Flags = GameObjectFlags.SpatialGrid | GameObjectFlags.AeroPushable | GameObjectFlags.ExplosionImpulse | GameObjectFlags.BounceOffGround;
         }
@@ -143,7 +143,7 @@ namespace PolyPlane.GameObjects.Particles
             // Rent a particle and set the new properties.
             var particle = World.ObjectManager.RentParticle();
 
-            particle.RenderOrder = 0;
+            particle.RenderLayer = 0;
 
             particle.Type = type;
 

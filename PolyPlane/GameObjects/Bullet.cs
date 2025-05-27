@@ -29,7 +29,7 @@ namespace PolyPlane.GameObjects
         public Bullet() : base()
         {
             this.Polygon = new RenderPoly(this, _poly);
-            this.RenderOrder = 4;
+            this.RenderLayer = 4;
             this.Flags = GameObjectFlags.SpatialGrid;
         }
 

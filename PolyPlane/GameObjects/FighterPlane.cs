@@ -260,7 +260,7 @@ namespace PolyPlane.GameObjects
 
             this.Mass = 90f;
             this.RenderScale = 1.5f;
-            this.RenderOrder = 5;
+            this.RenderLayer = 5;
 
             this.Polygon = new RenderPoly(this, _planePoly, this.RenderScale, POLY_TESSELLATE_DIST);
             this.FlamePoly = new RenderPoly(this, _flamePoly, new D2DPoint(12f, 0), this.RenderScale);
