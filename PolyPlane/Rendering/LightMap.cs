@@ -13,14 +13,15 @@ namespace PolyPlane.Rendering
     /// </summary>
     public sealed class LightMap : IDisposable
     {
-        private Vector4[] _mapIn = null;
-        private Vector4[] _mapOut = null;
+        private Vector4[]? _mapIn = null;
+        private Vector4[]? _mapOut = null;
 
         private ArrayPool<Vector4> _mapPool = ArrayPool<Vector4>.Create();
         private ConcurrentQueue<ILightMapContributor> _queue = new ConcurrentQueue<ILightMapContributor>();
 
         private Thread? _queueThread = null;
-        private FPSLimiter _queueLimiter = new FPSLimiter();
+        private ManualResetEventSlim _drainEvent = new ManualResetEventSlim(false);
+        private CancellationTokenSource _disposedSource = new CancellationTokenSource();
 
         public float SIDE_LEN
         {
@@ -53,6 +54,10 @@ namespace PolyPlane.Rendering
 
             StartQueueLoop();
 
+            // Drain queue as needed.
+            if (!_queue.IsEmpty)
+                DrainQueue();
+
             UpdateViewport(viewport);
             ClearMap();
 
@@ -81,19 +86,32 @@ namespace PolyPlane.Rendering
         private void QueueContribution(ILightMapContributor contributor)
         {
             _queue.Enqueue(contributor);
+
+            // Signal the queue thread as needed.
+            if (!_drainEvent.IsSet)
+                _drainEvent.Set();
         }
 
         private void QueueLoop()
         {
             while (!disposedValue)
             {
-                while (_queue.Count > 0)
-                {
-                    if (_queue.TryDequeue(out ILightMapContributor contrib))
-                        AddContribution(contrib);
-                }
+                if (!_drainEvent.IsSet)
+                    _drainEvent.Wait(_disposedSource.Token);
 
-                _queueLimiter.Wait(1000);
+                _drainEvent.Reset();
+
+                DrainQueue();
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void DrainQueue()
+        {
+            while (!_queue.IsEmpty)
+            {
+                if (_queue.TryDequeue(out ILightMapContributor contrib))
+                    AddContribution(contrib);
             }
         }
 
@@ -384,8 +402,9 @@ namespace PolyPlane.Rendering
             {
                 disposedValue = true;
 
-                _queueThread.Join();
-                _queueLimiter?.Dispose();
+                _disposedSource.Cancel();
+                _drainEvent.Set();
+                _queueThread?.Join();
             }
         }
 
