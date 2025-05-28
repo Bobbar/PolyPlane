@@ -526,10 +526,11 @@ namespace PolyPlane.Rendering
                     sortStackA.Push(obj);
             }
 
-            // Move to next layer and iterate the remaining layers.
-            layer = 1;
-            while (layer <= maxLayers)
+            // Iterate the remaining layers.
+            while (layer < maxLayers)
             {
+                layer++;
+
                 while (sortStackA.Count > 0)
                 {
                     var o = sortStackA.Pop();
@@ -545,8 +546,6 @@ namespace PolyPlane.Rendering
                 var tmp = sortStackA;
                 sortStackA = sortStackB;
                 sortStackB = tmp;
-
-                layer++;
             }
 
 
