@@ -521,7 +521,6 @@ namespace PolyPlane.Rendering
                     sortStackA.Push(obj);
             }
 
-
             // Move to next layer and iterate the remaining layers.
             layer = 1;
             while (layer <= maxLayers)
@@ -560,7 +559,7 @@ namespace PolyPlane.Rendering
                 DrawLightMap(ctx);
 
             ctx.PopViewPort();
-            ctx.PopTransform(); 
+            ctx.PopTransform();
         }
 
         private void DrawViewObject(RenderContext ctx, GameObject obj, FighterPlane viewPlane)

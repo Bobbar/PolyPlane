@@ -24,6 +24,7 @@ namespace PolyPlane.GameObjects
         public Explosion() : base()
         {
             this.Flags = GameObjectFlags.SpatialGrid;
+            this.RenderLayer = 7;
         }
 
         public void ReInit(GameObject owner, float maxRadius, float duration)
