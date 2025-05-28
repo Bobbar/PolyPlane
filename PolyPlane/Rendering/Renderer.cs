@@ -613,35 +613,29 @@ namespace PolyPlane.Rendering
             }
 
         }
-
+     
         private void DrawGround(RenderContext ctx, D2DPoint position)
         {
-            var groundPos = new D2DPoint(position.X, 0f);
-
-            if (!ctx.Viewport.Contains(groundPos))
+            // Don't bother if it is offscreen.
+            if (ctx.Viewport.bottom < 0f)
                 return;
 
-            const float HEIGHT = 500f;
-            var yPos = HEIGHT / ctx.CurrentScale;
-            groundPos += new D2DPoint(0f, yPos);
-
             // Draw the ground.
-            var rect = new D2DRect(groundPos, new D2DSize(World.ViewPortSize.width, (HEIGHT * 2f) / ctx.CurrentScale));
+            var rect = new D2DRect(ctx.Viewport.left, 0f, ctx.Viewport.Width, ctx.Viewport.bottom);
             ctx.Gfx.FillRectangle(rect, _groundBrush);
 
+            // Draw clipped impacts.
             DrawGroundImpacts(ctx);
         }
 
-        private void DrawTrees(RenderContext ctx)
-        {
-            _treeManager.Render(ctx);
-        }
+        private void DrawTrees(RenderContext ctx) => _treeManager.Render(ctx);
+        private void DrawClouds(RenderContext ctx) => _cloudManager.Render(ctx);
 
         private void DrawGroundImpacts(RenderContext ctx)
         {
             const float LIGHT_INTENSITY = 0.4f;
 
-            var rect = new D2DRect(ctx.Viewport.Location.X, 0f, ctx.Viewport.Width, 4000f);
+            var rect = new D2DRect(ctx.Viewport.left, 0f, ctx.Viewport.Width, 150f);
 
             ctx.Gfx.PushClip(rect);
 
@@ -707,11 +701,6 @@ namespace PolyPlane.Rendering
 
             var rect = new D2DRect(position + new D2DPoint(0, -40), new D2DSize(300, 100));
             ctx.DrawText(plane.PlayerName, _hudColorBrush, _textConsolas30Centered, rect);
-        }
-
-        private void DrawClouds(RenderContext ctx)
-        {
-            _cloudManager.Render(ctx);
         }
 
         private void DrawPlaneCloudShadows(RenderContext ctx, D2DColor shadowColor)
