@@ -72,6 +72,7 @@ namespace PolyPlane.Rendering
             if (_queueThread == null)
             {
                 _queueThread = new Thread(QueueLoop);
+                _queueThread.IsBackground = true;
                 _queueThread.Start();
             }
         }

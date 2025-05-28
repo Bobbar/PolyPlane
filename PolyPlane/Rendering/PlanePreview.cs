@@ -30,7 +30,9 @@ namespace PolyPlane.Rendering
             PlaneColor = planeColor;
             _plane = new FighterPlane(_planePosition, PlaneColor);
             World.ObjectManager.Clear();
+
             _renderThread = new Thread(RenderLoop);
+            _renderThread.IsBackground = true;
             _renderThread.Start();
         }
 

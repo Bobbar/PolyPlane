@@ -527,6 +527,7 @@ namespace PolyPlane
             _killRender = false;
             _renderExitEvent.Reset();
             _gameThread = new Thread(GameLoop);
+            _gameThread.IsBackground = true;
             _gameThread.Priority = ThreadPriority.AboveNormal;
             _gameThread.Start();
         }

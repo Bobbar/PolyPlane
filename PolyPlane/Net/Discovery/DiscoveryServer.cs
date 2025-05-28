@@ -25,6 +25,7 @@ namespace PolyPlane.Net.Discovery
         {
             _stopListenToken = _tokenSource.Token;
             _listenThread = new Thread(ListenLoop);
+            _listenThread.IsBackground = true;
 
             _udpListener.Client.Bind(new IPEndPoint(IPAddress.Any, PORT));
 
