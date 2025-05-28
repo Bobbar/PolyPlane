@@ -353,6 +353,9 @@ namespace PolyPlane.Rendering
                 var viewPortRect = new D2DRect(viewObject.Position, viewPortSize);
                 _ctx.PushViewPort(viewPortRect);
 
+                // Clip to the viewport.
+                _ctx.Gfx.PushClip(World.ViewPortRectUnscaled);
+
                 // Draw sky background color.
                 DrawSky(_ctx, viewObject);
 
@@ -387,6 +390,8 @@ namespace PolyPlane.Rendering
 
                 // And finally screen flash.
                 DrawScreenFlash(_gfx);
+
+                _ctx.Gfx.PopClip();
 
                 _ctx.PopViewPort();
             }
