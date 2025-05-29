@@ -40,9 +40,9 @@ namespace PolyPlane.Net
         }
 
         // Get number of bits needed to store common enum types.
-        public static int NumBitsPacketType = Serialization.NumBitsEnum<PacketTypes>();
-        public static int NumBitsSendType = Serialization.NumBitsEnum<SendType>();
-        public static int NumBitsImpactType = Serialization.NumBitsEnum<ImpactType>();
+        public static readonly int NumBitsPacketType = Serialization.NumBitsEnum<PacketTypes>();
+        public static readonly int NumBitsSendType = Serialization.NumBitsEnum<SendType>();
+        public static readonly int NumBitsImpactType = Serialization.NumBitsEnum<ImpactType>();
 
         public NetPacket()
         {
@@ -731,9 +731,9 @@ namespace PolyPlane.Net
         public int NumDecoys;
 
         // Get number of bits needed to store loadout stats.
-        private static int NumBitsMissiles = Serialization.NumBits(FighterPlane.MAX_MISSILES);
-        private static int NumBitsBullets = Serialization.NumBits(FighterPlane.MAX_BULLETS);
-        private static int NumBitsDecoys = Serialization.NumBits(FighterPlane.MAX_DECOYS);
+        private static readonly int NumBitsMissiles = Serialization.NumBits(FighterPlane.MAX_MISSILES);
+        private static readonly int NumBitsBullets = Serialization.NumBits(FighterPlane.MAX_BULLETS);
+        private static readonly int NumBitsDecoys = Serialization.NumBits(FighterPlane.MAX_DECOYS);
 
         public PlanePacket(BitBuffer data)
         {
