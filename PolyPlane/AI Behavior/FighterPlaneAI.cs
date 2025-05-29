@@ -36,6 +36,7 @@ namespace PolyPlane.AI_Behavior
         private float MIN_MISSILE_TIME = 40f;
         private float MAX_MISSILE_TIME = 80f;
         private float MAX_SPEED = 1000f;
+        private const float SPEED_HOLD_RANGE = 10f;
         private readonly float MAX_DECOY_DIST = 20000f; // Max distance between missile and plane before dropping decoys.
 
         public FighterPlaneAI(FighterPlane plane, AIPersonality personality)
@@ -98,12 +99,11 @@ namespace PolyPlane.AI_Behavior
             ConsiderNewTarget();
             ConsiderDropDecoy();
 
+            // Adjust throttle to maintain max allowed speed.
             var velo = this.Plane.AirSpeedTrue;
+            var thrustFact = Math.Clamp(1f - Utilities.FactorWithEasing(velo - MAX_SPEED, SPEED_HOLD_RANGE, EasingFunctions.In.EaseExpo), 0f, 1f);
 
-            if (velo > MAX_SPEED)
-                this.Plane.ThrustOn = false;
-            else
-                this.Plane.ThrustOn = true;
+            this.Plane.ThrustAmount = thrustFact;
         }
 
         private void ConfigPersonality()
