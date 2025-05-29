@@ -17,7 +17,9 @@ namespace PolyPlane.Rendering
         private Vector4[]? _mapOut = null;
 
         private ArrayPool<Vector4> _mapPool = ArrayPool<Vector4>.Create();
-        private ConcurrentQueue<ILightMapContributor> _queue = new ConcurrentQueue<ILightMapContributor>();
+
+        private ConcurrentStack<ILightMapContributor> _queue = new ConcurrentStack<ILightMapContributor>();
+        private ILightMapContributor[] _popCache = new ILightMapContributor[MAX_NUM_TO_POP];
 
         private Thread? _queueThread = null;
         private ManualResetEventSlim _drainEvent = new ManualResetEventSlim(false);
@@ -28,6 +30,7 @@ namespace PolyPlane.Rendering
             get { return _sideLen; }
         }
 
+        const int MAX_NUM_TO_POP = 50;
         const int SAMPLE_NUM = 7;
         const float GRADIENT_RADIUS = 450f;
         const bool USE_QUEUE = true;
@@ -86,7 +89,7 @@ namespace PolyPlane.Rendering
 
         private void QueueContribution(ILightMapContributor contributor)
         {
-            _queue.Enqueue(contributor);
+            _queue.Push(contributor);
 
             // Signal the queue thread as needed.
             if (!_drainEvent.IsSet)
@@ -111,8 +114,13 @@ namespace PolyPlane.Rendering
         {
             while (!_queue.IsEmpty)
             {
-                if (_queue.TryDequeue(out ILightMapContributor contrib))
-                    AddContribution(contrib);
+                var numPopped = _queue.TryPopRange(_popCache, 0, MAX_NUM_TO_POP);
+                if (numPopped > 0)
+                {
+                    for (int i = 0; i < numPopped; i++)
+                        AddContribution(_popCache[i]);
+                }
+
             }
         }
 
