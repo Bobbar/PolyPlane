@@ -125,9 +125,8 @@ namespace PolyPlane.Rendering
 
         private CloudManager _cloudManager = new();
         private TreeManager _treeManager = new();
-        private Stack<GameObject> sortStackA = new Stack<GameObject>();
-        private Stack<GameObject> sortStackB = new Stack<GameObject>();
-        private Stack<FighterPlane> visiblePlanes = new Stack<FighterPlane>();
+        private List<Stack<GameObject>> _layerStacks = new List<Stack<GameObject>>();
+        private Stack<FighterPlane> _visiblePlanes = new Stack<FighterPlane>();
 
         public Renderer(Control renderTarget, NetEventManager netMan)
         {
@@ -501,53 +500,41 @@ namespace PolyPlane.Rendering
             for (int i = 0; i < _objs.MissileTrails.Count; i++)
                 _objs.MissileTrails[i].Render(ctx);
 
-            _contrailBox.Render(ctx);
+            DrawContrails(ctx);
 
             // Use stacks to draw the objects in order by layer.
-            int maxLayers = 0;
-            int layer = 0;
-
-            sortStackA.Clear();
-            sortStackB.Clear();
-            visiblePlanes.Clear();
-
+            // Draw the first layer objects and push the rest into stacks for each following layer.
             foreach (var obj in objsInViewport)
             {
-                var order = obj.RenderLayer;
+                var layer = obj.RenderLayer;
 
-                // Track the max seen layer.
-                if (order > maxLayers)
-                    maxLayers = order;
+                // Accumulate layer stacks as needed.
+                while (layer > _layerStacks.Count)
+                    _layerStacks.Add(new Stack<GameObject>());
 
-                // Draw the object, otherwise push it to the stack.
-                if (order == layer)
-                    DrawViewObject(ctx, obj, viewPlane);
-                else
-                    sortStackA.Push(obj);
-            }
-
-            // Iterate the remaining layers.
-            while (layer < maxLayers)
-            {
-                layer++;
-
-                while (sortStackA.Count > 0)
+                // Draw the object, otherwise push it to the appropriate stack.
+                if (layer == 0)
                 {
-                    var o = sortStackA.Pop();
-
-                    // Draw or push to next stack layer.
-                    if (o.RenderLayer == layer)
-                        DrawViewObject(ctx, o, viewPlane);
-                    else
-                        sortStackB.Push(o);
+                    DrawViewObject(ctx, obj, viewPlane);
                 }
-
-                // Swap to next layer.
-                var tmp = sortStackA;
-                sortStackA = sortStackB;
-                sortStackB = tmp;
+                else
+                {
+                    // Offset by one as we skip layer zero.
+                    _layerStacks[layer - 1].Push(obj);
+                }
             }
 
+            // Iterate the remaining layers in order and draw each object.
+            for (int l = 0; l < _layerStacks.Count; l++)
+            {
+                var stack = _layerStacks[l];
+
+                while (stack.Count > 0)
+                {
+                    var obj = stack.Pop();
+                    DrawViewObject(ctx, obj, viewPlane);
+                }
+            }
 
             // Render explosions separate so that they can clip to the viewport correctly.
             for (int i = 0; i < _objs.Explosions.Count; i++)
@@ -571,7 +558,7 @@ namespace PolyPlane.Rendering
             if (obj is FighterPlane p)
             {
                 // Record visible planes for later effects rendering.
-                visiblePlanes.Push(p);
+                _visiblePlanes.Push(p);
 
                 p.Render(ctx);
                 DrawMuzzleFlash(ctx, p);
@@ -613,7 +600,7 @@ namespace PolyPlane.Rendering
             }
 
         }
-     
+
         private void DrawGround(RenderContext ctx, D2DPoint position)
         {
             // Don't bother if it is offscreen.
@@ -628,6 +615,7 @@ namespace PolyPlane.Rendering
             DrawGroundImpacts(ctx);
         }
 
+        private void DrawContrails(RenderContext ctx) => _contrailBox.Render(ctx);
         private void DrawTrees(RenderContext ctx) => _treeManager.Render(ctx);
         private void DrawClouds(RenderContext ctx) => _cloudManager.Render(ctx);
 
@@ -707,13 +695,16 @@ namespace PolyPlane.Rendering
         {
             // Don't bother if we are currently zoomed way out.
             if (World.ZoomScale < 0.03f)
-                return;
+            {
+                _visiblePlanes.Clear();
+                 return;
+            }
 
             var color = shadowColor.WithAlpha(0.07f);
 
-            while (visiblePlanes.Count > 0)
+            while (_visiblePlanes.Count > 0)
             {
-                var plane = visiblePlanes.Pop();
+                var plane = _visiblePlanes.Pop();
                 ctx.FillPolygon(plane.Polygon, color);
             }
         }
