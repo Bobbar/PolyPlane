@@ -108,6 +108,7 @@ namespace PolyPlane.GameObjects
         public bool HasRadarLock = false;
         public bool AIRespawnReady = false;
         public string PlayerName = "Player";
+        public float VerticalSpeed = 0f;
         public float PlayerGuideAngle = 0;
         public float Deflection = 0f;
         public float DeathTime = 0;
@@ -173,11 +174,13 @@ namespace PolyPlane.GameObjects
         private float _gForce = 0f;
         private float _gForceDirection = 0f;
         private float _health = MAX_HEALTH;
+        private float _prevAlt = 0;
         private int _throttlePos = 0;
         private int _numMissiles = MAX_MISSILES;
         private int _numBullets = MAX_BULLETS;
         private int _numDecoys = MAX_DECOYS;
-        private SmoothFloat _gforceAvg = new SmoothFloat(8);
+        private SmoothFloat _gforceSmooth = new SmoothFloat(8);
+        private SmoothFloat _vsSmooth = new SmoothFloat(16);
 
         private const float POLY_TESSELLATE_DIST = 2f; // Tessellation amount. Smaller = higher resolution.
         private const float BULLET_DISTORT_AMT = 4f;
@@ -264,6 +267,8 @@ namespace PolyPlane.GameObjects
 
             this.Polygon = new RenderPoly(this, _planePoly, this.RenderScale, POLY_TESSELLATE_DIST);
             this.FlamePoly = new RenderPoly(this, _flamePoly, new D2DPoint(12f, 0), this.RenderScale);
+
+            _prevAlt = this.Altitude;
 
             InitWings();
 
@@ -479,7 +484,7 @@ namespace PolyPlane.GameObjects
             // Compute g-force.
             var totForce = (thrust / this.Mass * dt) + (wingForce / this.Mass * dt);
             var gforce = totForce.Length() / dt / World.Gravity.Y;
-            _gForce = _gforceAvg.Add(gforce);
+            _gForce = _gforceSmooth.Add(gforce);
             _gForceDirection = totForce.Angle();
         }
 
@@ -503,6 +508,12 @@ namespace PolyPlane.GameObjects
 
             if (!this.IsDisabled && !this.EngineDamaged)
                 _engineFireFlame.StopSpawning();
+
+            // Update vertical speed.
+            var diff = Altitude - _prevAlt;
+            _prevAlt = Altitude;
+
+            VerticalSpeed = _vsSmooth.Add(diff * World.TARGET_FPS);
         }
 
         public override void NetUpdate(GameObjectPacket packet)

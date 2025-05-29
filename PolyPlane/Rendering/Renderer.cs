@@ -893,7 +893,7 @@ namespace PolyPlane.Rendering
                 var altimeterPos = new D2DPoint(viewportsize.width * 0.85f, viewportsize.height * 0.33f);
 
                 // Draw altimeter and speedo.
-                DrawTapeIndicator(ctx, viewportsize, altimeterPos, viewObject.Altitude, 3000f, 175f);
+                DrawTapeIndicator(ctx, viewportsize, altimeterPos, viewObject.Altitude, 3000f, 175f,  markersOnLeft: false);
                 DrawTapeIndicator(ctx, viewportsize, speedoPos, viewObject.AirSpeedIndicated, 250f, 50f);
 
                 if (viewObject is FighterPlane plane)
@@ -901,6 +901,10 @@ namespace PolyPlane.Rendering
                     // Draw g-force.
                     var gforceRect = new D2DRect(new D2DPoint(speedoPos.X, speedoPos.Y - 195f), new D2DSize(60f, 20f));
                     ctx.Gfx.DrawText($"G {Math.Round(plane.GForce, 1)}", _hudColorBrush, _textConsolas15, gforceRect);
+
+                    // Draw vertical speed..
+                    var vsRect = new D2DRect(new D2DPoint(altimeterPos.X + 25f, altimeterPos.Y - 195f), new D2DSize(120f, 20f));
+                    ctx.Gfx.DrawText($"VS {Math.Round(plane.VerticalSpeed, 0)}", _hudColorBrush, _textConsolas15, vsRect);
 
                     if (!plane.IsDisabled)
                     {
@@ -943,7 +947,7 @@ namespace PolyPlane.Rendering
         /// <param name="value">Current value.</param>
         /// <param name="minValue">Minimum value. The background changes to red below this value.</param>
         /// <param name="markerRange">Step size for markers.</param>
-        private void DrawTapeIndicator(RenderContext ctx, D2DSize viewportsize, D2DPoint pos, float value, float minValue, float markerRange)
+        private void DrawTapeIndicator(RenderContext ctx, D2DSize viewportsize, D2DPoint pos, float value, float minValue, float markerRange, bool markersOnLeft = true)
         {
             const float W = 80f;
             const float H = 350f;
@@ -987,6 +991,11 @@ namespace PolyPlane.Rendering
                 var start = new D2DPoint(pos.X - HalfW, posY);
                 var end = new D2DPoint(pos.X + HalfW, posY);
 
+                var markerPos = start - new D2DPoint(25f, 0f);
+
+                if (!markersOnLeft)
+                    markerPos = end + new D2DPoint(25f, 0f);
+
                 var div = y / markerRange;
                 var markerValue = Math.Round(startValue + (-HalfH + (div * markerRange)), 0);
 
@@ -997,7 +1006,8 @@ namespace PolyPlane.Rendering
                 {
                     // Fade in marker text as they move towards the center.
                     var alpha = Math.Clamp(1f - Utilities.FactorWithEasing(Math.Abs(pos.Y - posY), HalfH, EasingFunctions.Out.EaseSine), 0.02f, 0.4f);
-                    var textRect = new D2DRect(start - new D2DPoint(25f, 0f), new D2DSize(60f, 30f));
+                    var textRect = new D2DRect(markerPos, new D2DSize(60f, 30f));
+
                     ctx.DrawText(markerValue.ToString(), World.HudColor.WithAlpha(alpha), _textConsolas15Centered, textRect);
                 }
             }
