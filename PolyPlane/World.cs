@@ -134,7 +134,8 @@ namespace PolyPlane
         public const float CLOUD_MOVE_RATE = 40f;
         public const float CLOUD_MAX_X = 400000f;
         public const float MAX_AIR_DENSITY = 1.225f;
-      
+        public const float MAX_ROT_SPD = 3000f; // Max rotation speed allowed for game objects.
+
         public static readonly D2DColor DefaultHudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
         public static D2DColor HudColor = new D2DColor(0.3f, D2DColor.GreenYellow);
         public static readonly D2DColor DefaultFlameColor = new D2DColor(0.6f, D2DColor.Yellow);

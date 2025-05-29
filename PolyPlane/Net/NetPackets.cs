@@ -642,10 +642,10 @@ namespace PolyPlane.Net
             base.Serialize(data);
 
             data.AddGameID(OwnerID);
-            data.AddD2DPoint(Position);
+            data.AddD2DPoint(Position, Ranges.WorldBounds);
             data.AddD2DPoint(Velocity, Ranges.VeloBounds);
             data.AddFloat(Rotation, Ranges.AngleBounds);
-            data.AddFloat(RotationSpeed);
+            data.AddFloat(RotationSpeed, Ranges.RotationSpeedBounds);
         }
 
         public override void Deserialize(BitBuffer data)
@@ -653,10 +653,10 @@ namespace PolyPlane.Net
             base.Deserialize(data);
 
             OwnerID = data.ReadGameID();
-            Position = data.ReadD2DPoint();
+            Position = data.ReadD2DPoint(Ranges.WorldBounds);
             Velocity = data.ReadD2DPoint(Ranges.VeloBounds);
             Rotation = data.ReadFloat(Ranges.AngleBounds);
-            RotationSpeed = data.ReadFloat();
+            RotationSpeed = data.ReadFloat(Ranges.RotationSpeedBounds);
         }
     }
 

@@ -74,8 +74,8 @@ namespace PolyPlane.GameObjects
 
             set
             {
-                if (Math.Abs(value) > MAX_ROT_SPD)
-                    _rotationSpeed = MAX_ROT_SPD * Math.Sign(value);
+                if (Math.Abs(value) > World.MAX_ROT_SPD)
+                    _rotationSpeed = World.MAX_ROT_SPD * Math.Sign(value);
                 else
                     _rotationSpeed = value;
             }
@@ -124,7 +124,6 @@ namespace PolyPlane.GameObjects
         protected int _gridHash = 0;
         private bool _hasPhysicsUpdate = false;
 
-        private const float MAX_ROT_SPD = 3000f;
 
         public GameObject()
         {

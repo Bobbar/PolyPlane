@@ -51,6 +51,11 @@ namespace PolyPlane.Net
         public static readonly BoundedRange DeflectionBounds = new BoundedRange(-50f, 50f, 0.5f);
 
         /// <summary>
+        /// Rotation speed bounds. (See: <see cref="World.MAX_ROT_SPD"/>)
+        /// </summary>
+        public static readonly BoundedRange RotationSpeedBounds = new BoundedRange(-World.MAX_ROT_SPD, World.MAX_ROT_SPD, 1f);
+
+        /// <summary>
         /// Plane health bounds.
         /// </summary>
         public static readonly BoundedRange HealthBounds = new BoundedRange(0f, FighterPlane.MAX_HEALTH, 0.01f);
