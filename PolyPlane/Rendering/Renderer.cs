@@ -1,7 +1,7 @@
 ﻿using PolyPlane.GameObjects;
 using PolyPlane.GameObjects.Animations;
-using PolyPlane.GameObjects.Tools;
 using PolyPlane.GameObjects.Managers;
+using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Net;
 using System.Diagnostics;
@@ -502,9 +502,33 @@ namespace PolyPlane.Rendering
 
             DrawContrails(ctx);
 
+            // Draw objects in view in-order by layer.
+            DrawViewObjects(ctx, objsInViewport, viewPlane);
+
+            // Render explosions separate so that they can clip to the viewport correctly.
+            for (int i = 0; i < _objs.Explosions.Count; i++)
+                _objs.Explosions[i].Render(ctx);
+
+            DrawClouds(ctx);
+            DrawPlaneCloudShadows(ctx, shadowColor);
+
+            if (World.DrawNoiseMap)
+                DrawNoise(ctx);
+
+            if (World.DrawLightMap)
+                DrawLightMap(ctx);
+
+            ctx.PopViewPort();
+            ctx.PopTransform();
+        }
+
+        private void DrawViewObjects(RenderContext ctx, IEnumerable<GameObject> objs, FighterPlane? viewPlane)
+        {
+            _visiblePlanes.Clear();
+
             // Use stacks to draw the objects in order by layer.
             // Draw the first layer objects and push the rest into stacks for each following layer.
-            foreach (var obj in objsInViewport)
+            foreach (var obj in objs)
             {
                 var layer = obj.RenderLayer;
 
@@ -535,25 +559,9 @@ namespace PolyPlane.Rendering
                     DrawViewObject(ctx, obj, viewPlane);
                 }
             }
-
-            // Render explosions separate so that they can clip to the viewport correctly.
-            for (int i = 0; i < _objs.Explosions.Count; i++)
-                _objs.Explosions[i].Render(ctx);
-
-            DrawClouds(ctx);
-            DrawPlaneCloudShadows(ctx, shadowColor);
-
-            if (World.DrawNoiseMap)
-                DrawNoise(ctx);
-
-            if (World.DrawLightMap)
-                DrawLightMap(ctx);
-
-            ctx.PopViewPort();
-            ctx.PopTransform();
         }
 
-        private void DrawViewObject(RenderContext ctx, GameObject obj, FighterPlane viewPlane)
+        private void DrawViewObject(RenderContext ctx, GameObject obj, FighterPlane? viewPlane)
         {
             if (obj is FighterPlane p)
             {
@@ -695,10 +703,7 @@ namespace PolyPlane.Rendering
         {
             // Don't bother if we are currently zoomed way out.
             if (World.ZoomScale < 0.03f)
-            {
-                _visiblePlanes.Clear();
                  return;
-            }
 
             var color = shadowColor.WithAlpha(0.07f);
 
