@@ -443,7 +443,6 @@ namespace PolyPlane
             if (isAI && World.ShowAITags)
                 plane.PlayerName += $" [{Utilities.GetPersonalityTag(plane.Personality)}]";
 
-            plane.ThrustOn = true;
             plane.Velocity = new D2DPoint(World.PlaneSpawnVelo, 0f);
 
             plane.FireBulletCallback = b =>

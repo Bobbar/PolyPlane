@@ -724,7 +724,7 @@ namespace PolyPlane.Net
     {
         public float Deflection;
         public bool FiringBurst;
-        public bool ThrustOn;
+        public float ThrustAmt;
         public bool IsFlipped;
         public int NumMissiles;
         public int NumBullets;
@@ -744,7 +744,7 @@ namespace PolyPlane.Net
         {
             Deflection = plane.Deflection;
             FiringBurst = plane.FiringBurst;
-            ThrustOn = plane.ThrustOn;
+            ThrustAmt = plane.ThrustAmount;
             IsFlipped = plane.Polygon.IsFlipped;
             NumMissiles = plane.NumMissiles;
             NumBullets = plane.NumBullets;
@@ -755,7 +755,7 @@ namespace PolyPlane.Net
         {
             Deflection = plane.Deflection;
             FiringBurst = plane.FiringBurst;
-            ThrustOn = plane.ThrustOn;
+            ThrustAmt = plane.ThrustAmount;
             IsFlipped = plane.Polygon.IsFlipped;
             NumMissiles = plane.NumMissiles;
             NumBullets = plane.NumBullets;
@@ -767,7 +767,7 @@ namespace PolyPlane.Net
             base.SyncObj(plane);
             plane.Deflection = Deflection;
             plane.FiringBurst = FiringBurst;
-            plane.ThrustOn = ThrustOn;
+            plane.ThrustAmount = ThrustAmt;
             plane.NumMissiles = NumMissiles;
             plane.NumBullets = NumBullets;
             plane.NumDecoys = NumDecoys;
@@ -782,7 +782,7 @@ namespace PolyPlane.Net
 
             data.AddFloat(Deflection, Ranges.DeflectionBounds);
             data.AddBool(FiringBurst);
-            data.AddBool(ThrustOn);
+            data.AddFloat(ThrustAmt, Ranges.ZeroToOneBounds);
             data.AddBool(IsFlipped);
             data.Add(NumBitsMissiles, (uint)NumMissiles);
             data.Add(NumBitsBullets, (uint)NumBullets);
@@ -795,9 +795,8 @@ namespace PolyPlane.Net
 
             Deflection = data.ReadFloat(Ranges.DeflectionBounds);
             FiringBurst = data.ReadBool();
-            ThrustOn = data.ReadBool();
+            ThrustAmt = data.ReadFloat(Ranges.ZeroToOneBounds);
             IsFlipped = data.ReadBool();
-
             NumMissiles = (int)data.Read(NumBitsMissiles);
             NumBullets = (int)data.Read(NumBitsBullets);
             NumDecoys = (int)data.Read(NumBitsDecoys);

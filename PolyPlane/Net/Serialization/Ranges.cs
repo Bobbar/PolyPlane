@@ -59,5 +59,10 @@ namespace PolyPlane.Net
         /// Plane health bounds.
         /// </summary>
         public static readonly BoundedRange HealthBounds = new BoundedRange(0f, FighterPlane.MAX_HEALTH, 0.01f);
+
+        /// <summary>
+        /// Zero to one bounds.
+        /// </summary>
+        public static readonly BoundedRange ZeroToOneBounds = new BoundedRange(0f, 1f, 0.1f);
     }
 }

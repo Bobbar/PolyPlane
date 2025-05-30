@@ -49,7 +49,15 @@ namespace PolyPlane.GameObjects
         public float ThrustAmount
         {
             get { return _thrustAmt.Value; }
-            set { _thrustAmt.SetNow(value); }
+
+            set
+            {
+                if (!IsDisabled && !EngineDamaged)
+                {
+                    _thrustAmt.Target = Math.Clamp(value, 0.0001f, 1f);
+                }
+            }
+
         }
 
         public int NumMissiles
@@ -77,7 +85,7 @@ namespace PolyPlane.GameObjects
         }
 
         public Radar Radar { get; set; }
-        public float Thrust { get; set; } = 2000f;
+        public float Thrust = 2000f;
 
         public bool FiringBurst
         {
@@ -98,7 +106,6 @@ namespace PolyPlane.GameObjects
         }
 
         public bool DroppingDecoy { get; set; } = false;
-        public bool ThrustOn { get; set; } = true;
         public bool EngineDamaged { get; set; } = false;
         public bool HasCrashed { get; set; } = false;
         public bool WasHeadshot { get; set; } = false;
@@ -125,6 +132,7 @@ namespace PolyPlane.GameObjects
         public const float MAX_HEALTH = 32f;
         public const float MISSILE_DAMAGE = 32;
         public const float BULLET_DAMAGE = 4;
+        public const float THRUST_BOOST_AMT = 1000f;
 
         public Action<Bullet> FireBulletCallback
         {
@@ -153,7 +161,7 @@ namespace PolyPlane.GameObjects
         private IAIBehavior _aiBehavior;
         private List<Wing> _wings = new List<Wing>();
         private Wing? _controlWing = null;
-        private RateLimiter _thrustAmt = new RateLimiter(0.5f);
+        private RateLimiter _thrustAmt = new RateLimiter(0.2f);
         private Direction _currentDir = Direction.Right;
         private Direction _queuedDir = Direction.Right;
         private bool _isAIPlane = false;
@@ -237,7 +245,7 @@ namespace PolyPlane.GameObjects
         {
             this.PlayerID = World.GetNextPlayerId();
             _isAIPlane = false;
-            _thrustAmt.Target = 1f;
+            ThrustAmount = 1f;
             _planeColor = color;
 
             InitStuff();
@@ -284,7 +292,7 @@ namespace PolyPlane.GameObjects
             _engineOutSpoolDown = AddAttachment(new FloatAnimation(1f, 0f, 20f, EasingFunctions.EaseLinear, v =>
             {
                 if (!this.IsDisabled)
-                    _thrustAmt.SetNow(v);
+                    _thrustAmt.Target = v;
             }));
 
             _flipTimer = AddTimer(2f);
@@ -525,14 +533,24 @@ namespace PolyPlane.GameObjects
 
         private void UpdateFlame()
         {
-            // Fiddle with flame angle, length and color.
+            const float MIN_LEN = 4f;
+            const float MAX_LEN = 50f;
+            const float MAX_VELO_LEN = 30f;
+            const float MAX_VELO = 1500f;
+            const float MAX_THRUST_LEN = 20f;
+
             var thrust = GetThrust(true);
-            var thrustMag = thrust.Length();
+            var maxThrust = Thrust + THRUST_BOOST_AMT;
+
+            // Fiddle with flame angle, length and color.
+            var veloFact = Utilities.Factor(this.AirSpeedTrue, MAX_VELO);
+            var veloLen = MAX_VELO_LEN * veloFact;
+
+            var thrustFact = Utilities.Factor(thrust.Length(), maxThrust);
+            var thrustLen = thrustFact * MAX_THRUST_LEN;
+
             var flameAngle = thrust.Angle();
-            var len = this.Velocity.Length() * 0.05f;
-            len += thrustMag * 0.01f;
-            len *= 0.6f;
-            len = Math.Clamp(len, 0f, 70f);
+            var len = Math.Clamp((veloLen + thrustLen), MIN_LEN, MAX_LEN);
 
             FlamePoly.SourcePoly[1].X = -Utilities.Rnd.NextFloat(9f + len, 11f + len);
             _flameFillColor.g = Utilities.Rnd.NextFloat(0.6f, 0.86f);
@@ -563,7 +581,7 @@ namespace PolyPlane.GameObjects
         {
             base.Render(ctx);
 
-            if (!IsDisabled && _thrustAmt.Value > 0f && GetThrust(true).Length() > 0f)
+            if (GetThrust(true).Length() > 0f)
             {
                 UpdateFlame();
 
@@ -1000,11 +1018,9 @@ namespace PolyPlane.GameObjects
             if (IsDisabled)
                 return;
 
+            _thrustAmt.SetTarget(0f);
             IsDisabled = true;
             DeathTime = World.TargetDT;
-
-            ThrustOn = false;
-            _thrustAmt.SetNow(0f);
             FiringBurst = false;
             DroppingDecoy = false;
             _engineFireFlame.StartSpawning();
@@ -1072,9 +1088,9 @@ namespace PolyPlane.GameObjects
                 Deaths++;
             }
 
+            _thrustAmt.SetTarget(0f);
             HasCrashed = true;
             IsDisabled = true;
-            ThrustOn = false;
             _flipTimer.Stop();
             Health = 0;
         }
@@ -1090,7 +1106,6 @@ namespace PolyPlane.GameObjects
             RespawnQueued = false;
             IsDisabled = false;
             HasCrashed = false;
-            ThrustOn = true;
             EngineDamaged = false;
             _expireTimeout.Stop();
             _flipTimer.Restart();
@@ -1103,7 +1118,7 @@ namespace PolyPlane.GameObjects
             _engineFireFlame.StopSpawning();
             _engineOutSpoolDown.Stop();
             _engineOutSpoolDown.Reset();
-            _thrustAmt.Target = 1f;
+            _thrustAmt.SetTarget(1f);
             DeathTime = 0f;
 
             _wings.ForEach(w => w.Visible = true);
@@ -1140,7 +1155,7 @@ namespace PolyPlane.GameObjects
 
             _throttlePos = Math.Clamp(_throttlePos, 0, DETENTS);
             var amt = (1f / (float)DETENTS) * _throttlePos;
-            _thrustAmt.Target = amt;
+            ThrustAmount = amt;
         }
 
         private void GetBulletHoleDrag(BulletHole hole, float dt, out D2DPoint force, out float torque)
@@ -1210,11 +1225,7 @@ namespace PolyPlane.GameObjects
         {
             var thrust = D2DPoint.Zero;
 
-            if (!ThrustOn)
-                return thrust;
-
             const float thrustVectorAmt = 1f;
-            const float thrustBoostAmt = 1000f;
             const float thrustBoostMaxSpd = 400f;
             const float MAX_VELO = 2500f;
 
@@ -1228,7 +1239,8 @@ namespace PolyPlane.GameObjects
             var boostFact = Utilities.Factor(velo, thrustBoostMaxSpd);
             var maxVeloFact = 1f - Utilities.Factor(velo, MAX_VELO);
 
-            thrust *= _thrustAmt.Value * ((this.Thrust + (thrustBoostAmt * boostFact)) * World.GetAltitudeDensity(this.Position));
+            var densAlt = World.GetAltitudeDensity(this.Position);
+            thrust *= _thrustAmt.Value * ((this.Thrust + (THRUST_BOOST_AMT * boostFact)) * densAlt);
             thrust *= maxVeloFact; // Reduce thrust as we approach max velo.
 
             return thrust;

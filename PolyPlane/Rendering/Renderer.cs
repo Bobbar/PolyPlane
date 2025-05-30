@@ -1760,7 +1760,7 @@ namespace PolyPlane.Rendering
                     _stringBuilder.AppendLine($"Headshots: {plane.Headshots}");
                     _stringBuilder.AppendLine($"IsDisabled: {plane.IsDisabled}");
                     _stringBuilder.AppendLine($"HasCrashed: {plane.HasCrashed}");
-                    _stringBuilder.AppendLine($"ThrustOn: {plane.ThrustOn}");
+                    _stringBuilder.AppendLine($"ThrustAmt: {plane.ThrustAmount}");
                 }
 
                 _stringBuilder.AppendLine($"GunsOnly: {World.GunsOnly.ToString()}");
