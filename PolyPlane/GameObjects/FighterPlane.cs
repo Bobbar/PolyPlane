@@ -1018,7 +1018,7 @@ namespace PolyPlane.GameObjects
             if (IsDisabled)
                 return;
 
-            _thrustAmt.SetTarget(0f);
+            _thrustAmt.SetNow(0f);
             IsDisabled = true;
             DeathTime = World.TargetDT;
             FiringBurst = false;
@@ -1088,7 +1088,7 @@ namespace PolyPlane.GameObjects
                 Deaths++;
             }
 
-            _thrustAmt.SetTarget(0f);
+            _thrustAmt.SetNow(0f);
             HasCrashed = true;
             IsDisabled = true;
             _flipTimer.Stop();
