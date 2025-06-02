@@ -30,7 +30,7 @@ namespace PolyPlane.Rendering
             get { return _sideLen; }
         }
 
-        const int MAX_NUM_TO_POP = 50;
+        const int MAX_NUM_TO_POP = 100;
         const int SAMPLE_NUM = 7;
         const float GRADIENT_RADIUS = 450f;
         const bool USE_QUEUE = true;
