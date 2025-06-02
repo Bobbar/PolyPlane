@@ -22,8 +22,7 @@ namespace PolyPlane.Rendering
         private ILightMapContributor[] _popCache = new ILightMapContributor[MAX_NUM_TO_POP];
 
         private Thread? _queueThread = null;
-        private ManualResetEventSlim _drainEvent = new ManualResetEventSlim(false);
-        private CancellationTokenSource _disposedSource = new CancellationTokenSource();
+        private FPSLimiter _queueLimiter = new FPSLimiter();
 
         public float SIDE_LEN
         {
@@ -34,6 +33,7 @@ namespace PolyPlane.Rendering
         const int SAMPLE_NUM = 7;
         const float GRADIENT_RADIUS = 450f;
         const bool USE_QUEUE = true;
+        const int QUEUE_FPS = 500;
 
         private D2DRect _viewport;
         private int _gridWidth = 0;
@@ -90,22 +90,15 @@ namespace PolyPlane.Rendering
         private void QueueContribution(ILightMapContributor contributor)
         {
             _queue.Push(contributor);
-
-            // Signal the queue thread as needed.
-            if (!_drainEvent.IsSet)
-                _drainEvent.Set();
         }
 
         private void QueueLoop()
         {
             while (!disposedValue)
             {
-                if (!_drainEvent.IsSet)
-                    _drainEvent.Wait(_disposedSource.Token);
-
-                _drainEvent.Reset();
-
                 DrainQueue();
+
+                _queueLimiter.Wait(QUEUE_FPS);
             }
         }
 
@@ -410,9 +403,6 @@ namespace PolyPlane.Rendering
             if (!disposedValue)
             {
                 disposedValue = true;
-
-                _disposedSource.Cancel();
-                _drainEvent.Set();
                 _queueThread?.Join();
             }
         }
