@@ -15,6 +15,7 @@ namespace PolyPlane.Rendering
         private const float MIN_DIST = 40f;
         private const float MAX_ALPHA_ALT = 6000f;
         private const float TRAIL_WEIGHT = 8f;
+        private const float LIGHT_INTENSITY = 0.4f;
 
         private Dictionary<GameID, PlaneTag> _currentPlanes = new();
         private List<TrailSegment> _segments = new List<TrailSegment>();
@@ -138,7 +139,7 @@ namespace PolyPlane.Rendering
                 var alpha = ALPHA * ageFact * altFact;
                 var color = _trailColor.WithAlpha(alpha);
 
-                ctx.DrawLine(seg.PointA, seg.PointB, color, TRAIL_WEIGHT);
+                ctx.DrawLineWithLighting(seg.PointA, seg.PointB, color, LIGHT_INTENSITY, TRAIL_WEIGHT);
             }
 
             // Draw final connectors between planes and the last segment.
@@ -157,7 +158,7 @@ namespace PolyPlane.Rendering
 
                 if (ctx.Viewport.Contains(plane.Position))
                     if (IsInside(plane) && plane.ThrustAmount > 0f && IsNotInSpace(plane) && !plane.IsDisabled)
-                        ctx.DrawLine(tag.PrevPos, plane.ExhaustPosition, color, TRAIL_WEIGHT);
+                        ctx.DrawLineWithLighting(tag.PrevPos, plane.ExhaustPosition, color, LIGHT_INTENSITY, TRAIL_WEIGHT);
             }
         }
 

@@ -13,6 +13,7 @@ namespace PolyPlane.GameObjects
         private const float TIMEOUT = 80f;
         private const float ALPHA = 0.3f;
         private const float LINE_WEIGHT = 2f;
+        private const float LIGHT_INTENSITY = 0.5f;
 
         private List<D2DPoint> _trailList = new List<D2DPoint>();
         private GuidedMissile _parentMissile;
@@ -77,7 +78,7 @@ namespace PolyPlane.GameObjects
 
                 var color = _trailColor;
 
-                ctx.DrawLine(lastPos, nextPos, color, LINE_WEIGHT);
+                ctx.DrawLineWithLighting(lastPos, nextPos, color, LIGHT_INTENSITY, LINE_WEIGHT);
 
                 lastPos = nextPos;
             }
@@ -86,13 +87,13 @@ namespace PolyPlane.GameObjects
             var endPosition = _parentMissile.CenterOfThrust;
 
             if (_trailList.Count > 1 && _trailEnabled)
-                ctx.DrawLine(lastPos, endPosition, _trailColor, LINE_WEIGHT);
+                ctx.DrawLineWithLighting(lastPos, endPosition, _trailColor, LIGHT_INTENSITY, LINE_WEIGHT);
 
             if (_trailList.Count > 0 && _trailList.Count < TRAIL_LEN - 1)
-                ctx.FillEllipse(new D2DEllipse(_trailList.First(), new D2DSize(50f, 50f)), _trailColor);
+                ctx.FillEllipseWithLighting(new D2DEllipse(_trailList.First(), new D2DSize(50f, 50f)), _trailColor, LIGHT_INTENSITY);
 
             if (_parentMissile.IsExpired && _trailEnabled)
-                ctx.FillEllipse(new D2DEllipse(endPosition, new D2DSize(50f, 50f)), _trailColor);
+                ctx.FillEllipseWithLighting(new D2DEllipse(endPosition, new D2DSize(50f, 50f)), _trailColor, LIGHT_INTENSITY);
         }
 
         public override bool ContainedBy(D2DRect rect)
