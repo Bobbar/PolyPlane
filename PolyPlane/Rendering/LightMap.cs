@@ -18,8 +18,8 @@ namespace PolyPlane.Rendering
 
         private ArrayPool<Vector4> _mapPool = ArrayPool<Vector4>.Create();
 
-        private ConcurrentStack<ILightMapContributor> _queue = new ConcurrentStack<ILightMapContributor>();
-        private ILightMapContributor[] _popCache = new ILightMapContributor[MAX_NUM_TO_POP];
+        private ConcurrentBag<ILightMapContributor> _queue = new ConcurrentBag<ILightMapContributor>();
+        private ManualResetEventSlim _runQueueEvent = new ManualResetEventSlim(false);
 
         private Thread? _queueThread = null;
         private FPSLimiter _queueLimiter = new FPSLimiter();
@@ -29,7 +29,6 @@ namespace PolyPlane.Rendering
             get { return _sideLen; }
         }
 
-        const int MAX_NUM_TO_POP = 100;
         const int SAMPLE_NUM = 7;
         const float GRADIENT_RADIUS = 450f;
         const bool USE_QUEUE = true;
@@ -43,28 +42,37 @@ namespace PolyPlane.Rendering
         private float _sideLen = 60f;
         private bool disposedValue;
 
-
         public LightMap() { }
 
         /// <summary>
-        /// Clears and updates the light map to fit the specified viewport
+        /// Clears and updates the light map to fit the specified viewport and starts the async queue thread.
         /// </summary>
         /// <param name="viewport"></param>
-        public void Clear(D2DRect viewport)
+        public void BeginFrame(D2DRect viewport)
         {
             if (!World.UseLightMap)
                 return;
 
             StartQueueLoop();
 
-            // Drain queue as needed.
-            if (!_queue.IsEmpty)
-                DrainQueue();
-
             UpdateViewport(viewport);
             ClearMap();
 
             SwapBuffers();
+
+            _runQueueEvent.Set();
+        }
+
+        /// <summary>
+        /// Stops the async queue and flushes any remaining contributions.
+        /// </summary>
+        public void EndFrame()
+        {
+            _runQueueEvent.Reset();
+
+            // Drain queue as needed.
+            if (!_queue.IsEmpty)
+                DrainQueue();
         }
 
         private void StartQueueLoop()
@@ -89,13 +97,16 @@ namespace PolyPlane.Rendering
 
         private void QueueContribution(ILightMapContributor contributor)
         {
-            _queue.Push(contributor);
+            _queue.Add(contributor);
         }
 
         private void QueueLoop()
         {
             while (!disposedValue)
             {
+                if (!_runQueueEvent.IsSet)
+                    _runQueueEvent.Wait();
+
                 DrainQueue();
 
                 _queueLimiter.Wait(QUEUE_FPS);
@@ -107,13 +118,8 @@ namespace PolyPlane.Rendering
         {
             while (!_queue.IsEmpty)
             {
-                var numPopped = _queue.TryPopRange(_popCache, 0, MAX_NUM_TO_POP);
-                if (numPopped > 0)
-                {
-                    for (int i = 0; i < numPopped; i++)
-                        AddContribution(_popCache[i]);
-                }
-
+                if (_queue.TryTake(out ILightMapContributor contributor))
+                    AddContribution(contributor);
             }
         }
 
@@ -403,7 +409,9 @@ namespace PolyPlane.Rendering
             if (!disposedValue)
             {
                 disposedValue = true;
+                _runQueueEvent.Set();
                 _queueThread?.Join();
+                _queueLimiter.Dispose();
             }
         }
 

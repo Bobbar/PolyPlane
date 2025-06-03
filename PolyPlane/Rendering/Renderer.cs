@@ -395,6 +395,8 @@ namespace PolyPlane.Rendering
                 _ctx.PopViewPort();
             }
 
+            _ctx.LightMap.EndFrame();
+
             _renderTimeSmooth.Add(Profiler.Stop(ProfilerStat.Render).GetElapsedMilliseconds());
 
             _ctx.EndRender();
@@ -485,8 +487,8 @@ namespace PolyPlane.Rendering
             // Query the spatial grid for objects within the current viewport.
             var objsInViewport = _objs.GetInViewport(viewPortRect);
 
-            // Clear the map and resize as needed.
-            ctx.LightMap.Clear(viewPortRect);
+            // Start a new light map frame.
+            ctx.LightMap.BeginFrame(viewPortRect);
 
             var shadowColor = ctx.GetShadowColor();
             var todAngle = ctx.GetTimeOfDaySunAngle();
