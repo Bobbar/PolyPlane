@@ -4,6 +4,7 @@ using PolyPlane.GameObjects.Fixtures;
 using PolyPlane.GameObjects.Managers;
 using System.Net;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using unvell.D2DLib;
 
 namespace PolyPlane.Helpers
@@ -84,11 +85,13 @@ namespace PolyPlane.Helpers
             return Math.Clamp((value - min) / (max - min), 0f, 1f);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float RadsToDegrees(float rads)
         {
             return rads * RADS_TO_DEGREES;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float DegreesToRads(float degrees)
         {
             return degrees * DEGREES_TO_RADS;
@@ -432,55 +435,6 @@ namespace PolyPlane.Helpers
             }
 
             return false;
-        }
-
-        public static bool CircleInPoly(D2DPoint pos, float radius, D2DPoint[] poly)
-        {
-            if (!PointInPoly(pos, poly))
-                return false;
-
-            float minDist = float.MaxValue;
-
-            for (int i = 0; i < poly.Length; i++)
-            {
-                var pnt = poly[i];
-                var dist = pos.DistanceTo(pnt);
-
-                if (dist < minDist)
-                {
-                    minDist = dist;
-                }
-            }
-
-            if (minDist >= radius)
-                return true;
-
-            return false;
-        }
-
-        /// <summary>
-        /// Finds the index of the polygon point which is closest to the specified point.
-        /// </summary>
-        /// <param name="point"></param>
-        /// <returns></returns>
-        public static int ClosestPolyIdx(D2DPoint point, D2DPoint[] poly)
-        {
-            int idx = 0;
-            float minDist = float.MaxValue;
-
-            for (int i = 0; i < poly.Length; i++)
-            {
-                var pnt = poly[i];
-                var dist = point.DistanceTo(pnt);
-
-                if (dist < minDist)
-                {
-                    minDist = dist;
-                    idx = i;
-                }
-            }
-
-            return idx;
         }
 
         /// <summary>

@@ -64,15 +64,9 @@ namespace PolyPlane.Helpers
             return angle;
         }
 
-        public static float Cross(this D2DPoint vector, D2DPoint other)
-        {
-            return Utilities.Cross(vector, other);
-        }
+        public static float Cross(this D2DPoint vector, D2DPoint other) => Utilities.Cross(vector, other);
 
-        public static float AngleBetween(this D2DPoint vector, D2DPoint other, bool clamp = true)
-        {
-            return Utilities.AngleBetween(vector, other, clamp);
-        }
+        public static float AngleBetween(this D2DPoint vector, D2DPoint other, bool clamp = true) => Utilities.AngleBetween(vector, other, clamp);
 
         public static float AngleTo(this D2DPoint vector, D2DPoint other, bool clamp = false)
         {
@@ -192,16 +186,6 @@ namespace PolyPlane.Helpers
         public static D2DRect Deflate(this D2DRect rect, float width, float height)
         {
             return new D2DRect(rect.left + (width * 0.5f), rect.top + (height * 0.5f), rect.Width - width, rect.Height - height);
-        }
-
-        public static D2DPoint[] ToPoints(this D2DRect rect)
-        {
-            var points = new D2DPoint[4];
-            points[0] = new D2DPoint(rect.left, rect.top);
-            points[1] = new D2DPoint(rect.right, rect.top);
-            points[2] = new D2DPoint(rect.right, rect.bottom);
-            points[3] = new D2DPoint(rect.left, rect.bottom);
-            return points;
         }
 
         public static D2DColor ToD2DColor(this Color color)

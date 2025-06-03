@@ -87,7 +87,7 @@ namespace PolyPlane.GameObjects.Tools
             for (int i = 0; i < SourcePoly.Length; i++)
             {
                 var pnt = SourcePoly[i];
-                var dist = point.DistanceTo(pnt);
+                var dist = point.DistanceSquaredTo(pnt);
 
                 if (dist < minDist)
                 {
