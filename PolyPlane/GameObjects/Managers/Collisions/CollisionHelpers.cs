@@ -1,5 +1,4 @@
-﻿using PolyPlane.GameObjects;
-using PolyPlane.GameObjects.Tools;
+﻿using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 
 namespace PolyPlane.GameObjects.Managers
@@ -102,60 +101,93 @@ namespace PolyPlane.GameObjects.Managers
             // Project lines from each polygon vert of the impactor; one point at the current position, and one point at the next/future position.
             // Then for each of those lines, check for intersections on each line segment of the target object's polygon.
 
-            const float BB_INFLATE_AMT = 20f;
-
-            // First, check if we need to move the impactor backwards because it is already inside the polygon.
+            const float BB_INFLATE_AMT = 10f;
             bool movedBack = false;
-            while (Utilities.PointInPoly(impactorObj.Position, targetPoly.Poly))
-            {
-                movedBack = true;
-                impactorObj.Position -= impactorObj.Velocity * dt;
 
-                // Stop if it gets close to the ground. Otherwise might butt heads with the ground clamping logic.
-                if (impactorObj.Position.Y < 5f)
-                    break;
-            }
-
-            // Move it back one last step then update the polygon with the new position.
-            if (movedBack)
-            {
-                impactorObj.Position -= impactorObj.Velocity * dt;
-                impactorPoly.Update();
-            }
-
-            // Now do the collisions.
             // Get relative velo.
             var relVelo = (impactorObj.Velocity - targetVelo) * dt;
 
             // Bounding box for initial collision testing.
             var targetBounds = new BoundingBox(targetPoly.Poly, BB_INFLATE_AMT);
 
-            // For new bullets in net games, do a ray cast between the predicted "real" start position and the current position.
-            // This is done because we are extrapolating the bullet position when a new packet is received,
-            // so we need to handle collisions for the "gap" between the real bullet/plane and the net bullet on the client.
-            if (World.IsNetGame)
+            // Special ray-casting and move-back logic for bullets.
+            if (impactorObj is Bullet bullet)
             {
-                if (impactorObj is Bullet netBullet && netBullet.AgeMs(dt) < netBullet.LagAmount * 1f)
+                // For new bullets in net games, do a ray cast between the predicted "real" start position and the current position.
+                // This is done because we are extrapolating the bullet position when a new packet is received,
+                // so we need to handle collisions for the "gap" between the real bullet/plane and the net bullet on the client.
+                if (World.IsNetGame)
                 {
-                    var lagPntStart = netBullet.Position - netBullet.Velocity * (netBullet.LagAmountFrames * dt);
-                    var lagPntEnd = netBullet.Position;
-
-                    // Check for intersection on bounding box first.
-                    if (targetBounds.BoundsRect.Contains(lagPntStart, lagPntEnd) || targetBounds.Contains(lagPntStart, lagPntEnd, netBullet.Position))
+                    if (bullet.AgeMs(dt) < bullet.LagAmount)
                     {
-                        // Get the sides of the poly which face the impactor.
-                        var angleToImpactor = lagPntStart - lagPntEnd;
-                        var polyFaces = targetPoly.GetSidesFacingDirection(angleToImpactor);
+                        var lagPntStart = bullet.Position - bullet.Velocity * (bullet.LagAmountFrames * dt);
+                        var lagPntEnd = bullet.Position;
 
-                        if (PolyIntersect(lagPntStart, lagPntEnd, polyFaces, out D2DPoint iPosLag))
+                        // Check for intersection on bounding box first.
+                        if (targetBounds.BoundsRect.Contains(lagPntStart, lagPntEnd) || targetBounds.Contains(lagPntStart, lagPntEnd, bullet.Position))
                         {
-                            impactPoint = iPosLag;
-                            return true;
+                            // Get the sides of the poly which face the impactor.
+                            var angleToImpactor = lagPntStart - lagPntEnd;
+                            var polyFaces = targetPoly.GetSidesFacingDirection(angleToImpactor);
+
+                            if (PolyIntersect(lagPntStart, lagPntEnd, polyFaces, out D2DPoint iPosLag))
+                            {
+
+                                impactPoint = iPosLag;
+                                return true;
+                            }
                         }
+                    }
+                }
+                else
+                {
+                    // Ray cast for new bullets during local play.
+                    if (bullet.Frame <= 1)
+                    {
+                        var rayPnt1 = bullet.SpawnPoint;
+                        var rayPnt2 = bullet.Position;
+
+                        // Check for intersection on bounding box first.
+                        if (targetBounds.BoundsRect.Contains(rayPnt1, rayPnt2) || targetBounds.Contains(rayPnt1, rayPnt2))
+                        {
+                            // Get the sides of the poly which face the impactor.
+                            var angleToImpactor = rayPnt1 - rayPnt2;
+                            var polyFaces = targetPoly.GetSidesFacingDirection(angleToImpactor);
+
+                            // Check for an intersection and get the exact location of the impact.
+                            if (PolyIntersect(rayPnt1, rayPnt2, polyFaces, out D2DPoint iPosPoly))
+                            {
+                                impactPoint = iPosPoly;
+                                return true;
+                            }
+                        }
+                    }
+                }
+
+                
+                // Check if we need to move the impactor backwards because it is already inside the target polygon.
+                if (targetBounds.Contains(bullet.Position))
+                {
+                    while (Utilities.PolyInPoly(impactorPoly.Poly, targetPoly.Poly))
+                    {
+                        movedBack = true;
+                        bullet.Position -= bullet.Velocity * dt;
+
+                        // Stop if it gets close to the ground. Otherwise might butt heads with the ground clamping logic.
+                        if (bullet.Position.Y < 5f)
+                            break;
+                    }
+
+                    // Move it back one last step then update the polygon with the new position.
+                    if (movedBack)
+                    {
+                        bullet.Position -= bullet.Velocity * dt;
+                        impactorPoly.Update();
                     }
                 }
             }
 
+            // ### Regular swept polygon collisions ###
             // Test the facing points of the impactor with the target poly.
             var angleToTarget = impactorObj.Velocity - targetVelo;
             var impactorPoints = impactorPoly.GetPointsFacingDirection(angleToTarget);

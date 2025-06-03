@@ -10,7 +10,9 @@ namespace PolyPlane.GameObjects
     {
         public const float SPEED = 800f;
         public float Lifetime = 10f;
-
+        public D2DPoint SpawnPoint = D2DPoint.Zero;
+        public int Frame = 0;
+   
         private static readonly D2DColor _lightMapColor = new D2DColor(1f, 1f, 0.98f, 0.54f);
 
         private static readonly D2DPoint[] _poly = new D2DPoint[]
@@ -42,6 +44,7 @@ namespace PolyPlane.GameObjects
             this.Age = 0f;
 
             this.Position = plane.GunPosition;
+            this.SpawnPoint = plane.GunPosition;
             this.Rotation = plane.Rotation;
             this.Owner = plane;
 
@@ -59,6 +62,7 @@ namespace PolyPlane.GameObjects
             this.Age = 0f;
 
             this.Position = pos;
+            this.SpawnPoint = pos;
             this.Velocity = velo;
             this.Rotation = rotation;
 
@@ -71,6 +75,8 @@ namespace PolyPlane.GameObjects
 
             if (this.Age >= Lifetime)
                 this.IsExpired = true;
+
+            Frame++;
         }
 
         public override void Render(RenderContext ctx)

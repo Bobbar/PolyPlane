@@ -411,6 +411,29 @@ namespace PolyPlane.Helpers
             return c;
         }
 
+        public static bool PolyInPoly(D2DPoint[] polyA, D2DPoint[] polyB)
+        {
+            int i, j = 0;
+            bool c = false;
+
+            for (int p = 0; p < polyA.Length; p++)
+            {
+                var pnt = polyA[p];
+                c = false;
+
+                for (i = 0, j = polyB.Length - 1; i < polyB.Length; j = i++)
+                {
+                    if (polyB[i].Y > pnt.Y != polyB[j].Y > pnt.Y && pnt.X < (polyB[j].X - polyB[i].X) * (pnt.Y - polyB[i].Y) / (polyB[j].Y - polyB[i].Y) + polyB[i].X)
+                        c = !c;
+                }
+
+                if (c)
+                    return true;
+            }
+
+            return false;
+        }
+
         public static bool CircleInPoly(D2DPoint pos, float radius, D2DPoint[] poly)
         {
             if (!PointInPoly(pos, poly))
