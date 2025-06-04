@@ -481,11 +481,10 @@ namespace PolyPlane.GameObjects
                 // Integrate torque, thrust and wing force.
                 var thrustTorque = Utilities.GetTorque(_centerOfMass.Position, _centerOfThrust.Position, thrust);
                 var rotAmt = ((wingTorque + thrustTorque + damageTorque) * easeFact) / this.GetInertia(this.Mass);
+                var forces = (thrust + wingForce + damageForce) * easeFact;
 
                 this.RotationSpeed += rotAmt * dt;
-                this.Velocity += (thrust * easeFact) / this.Mass * dt;
-                this.Velocity += (wingForce * easeFact) / this.Mass * dt;
-                this.Velocity += (damageForce * easeFact) / this.Mass * dt;
+                this.Velocity += (forces / this.Mass) * dt;
                 this.Velocity += (World.Gravity * dt);
             }
 
@@ -512,7 +511,10 @@ namespace PolyPlane.GameObjects
                 _aiBehavior.Update(dt);
 
             if (this.IsDisabled)
+            {
                 DeathTime += dt;
+                _thrustAmt.SetNow(0f);
+            }
 
             if (!this.IsDisabled && !this.EngineDamaged)
                 _engineFireFlame.StopSpawning();
