@@ -198,8 +198,9 @@ namespace PolyPlane.GameObjects
         private D2DLayer _polyClipLayer = null;
         private D2DColor _flameFillColor = new D2DColor(0.6f, D2DColor.Yellow);
         private D2DColor _planeColor = D2DColor.White;
-        private D2DColor _cockpitColor = new D2DColor(0.5f, D2DColor.LightBlue);
-        private D2DSize _cockpitSize = new D2DSize(9f, 6f);
+        private static readonly D2DColor _cockpitColor = new D2DColor(0.5f, D2DColor.LightBlue);
+        private static readonly D2DColor _groundDustColor = new D2DColor(1f, 0.35f, 0.2f, 0.1f);
+        private static readonly D2DSize _cockpitSize = new D2DSize(9f, 6f);
 
         private Gun _gun;
         private DecoyDispenser _decoyDispenser;
@@ -568,14 +569,13 @@ namespace PolyPlane.GameObjects
 
             if (this.Altitude < DUST_ALT && this.Velocity.Length() > MIN_VELO)
             {
-                var dustColor = new D2DColor(1f, 0.35f, 0.2f, 0.1f);
                 var altFact = 1f - Utilities.FactorWithEasing(this.Altitude, DUST_ALT, EasingFunctions.EaseLinear);
                 var alpha = Math.Clamp(altFact, 0f, 0.5f);
                 var radius = 15f * (altFact) + Utilities.Rnd.NextFloat(1f, 3f);
                 var velo = (this.Velocity + (this.Velocity * 0.4f)) + new D2DPoint(Utilities.Rnd.NextFloat(-150f, 150f), 0f);
                 var groundPos = new D2DPoint(this.Position.X - (this.Velocity.X * 0.2f) + Utilities.Rnd.NextFloat(-100f, 100f), 0f);
 
-                Particle.SpawnParticle(this, groundPos, velo, radius, dustColor.WithAlpha(alpha), dustColor, ParticleType.Dust);
+                Particle.SpawnParticle(this, groundPos, velo, radius, _groundDustColor.WithAlpha(alpha), _groundDustColor, ParticleType.Dust);
             }
         }
 

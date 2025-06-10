@@ -195,16 +195,17 @@ namespace PolyPlane.Helpers
 
         public static D2DColor WithAlpha(this D2DColor color, float alpha)
         {
-            return new D2DColor(alpha, color);
+            color.a = alpha;
+            return color;
         }
 
         public static D2DColor WithBrightness(this D2DColor color, float factor)
         {
-            float r = Math.Clamp(color.r * factor, 0f, 1f);
-            float g = Math.Clamp(color.g * factor, 0f, 1f);
-            float b = Math.Clamp(color.b * factor, 0f, 1f);
+            color.r = Math.Clamp(color.r * factor, 0f, 1f);
+            color.g = Math.Clamp(color.g * factor, 0f, 1f);
+            color.b = Math.Clamp(color.b * factor, 0f, 1f);
 
-            return new D2DColor(color.a, r, g, b);
+            return color;
         }
     }
 }
