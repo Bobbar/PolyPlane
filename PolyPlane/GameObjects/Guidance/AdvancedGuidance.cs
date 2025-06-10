@@ -15,7 +15,8 @@ namespace PolyPlane.GameObjects.Guidance
 
         private float _prevVelo = 0f;
         private float _prevTargetDist = 0f;
-        private float _prevTargVeloAngle = 0f;
+        private D2DPoint _prevTargVeloAngleVec = D2DPoint.Zero;
+
         private const int MAX_FTI = 4000; // Max iterations allowed.
 
         public AdvancedGuidance(GuidedMissile missile, GameObject target) : base(missile, target)
@@ -34,7 +35,7 @@ namespace PolyPlane.GameObjects.Guidance
 
             var targetPosition = GetTargetPosition();
             var targetVelo = this.Target.Velocity;
-            var targetVeloAngle = this.Target.Velocity.Angle();
+            var targetVeloNorm = this.Target.Velocity.Normalized();
 
             var missileVelo = this.Missile.Velocity;
             var missileVeloMag = this.Missile.Velocity.Length();
@@ -60,12 +61,13 @@ namespace PolyPlane.GameObjects.Guidance
             // Where will the target be when we arrive?
             if (Missile.Age > 0f)
             {
-                var targAngleDelta = targetVeloAngle - _prevTargVeloAngle;
-                _prevTargVeloAngle = targetVeloAngle;
+                var targAngleDeltaVec = targetVeloNorm - _prevTargVeloAngleVec;
+                _prevTargVeloAngleVec = targetVeloNorm;
 
                 var relVelo = (missileVelo - targetVelo).Length();
                 var framesToImpact = ImpactTime(targDist, (relVelo * dt), (deltaV * dt));
-                var predictedPoint = RefineImpact(targetPosition, targetVelo, targAngleDelta, framesToImpact, dt);
+                var predictedPoint = RefineImpact(targetPosition, targetVelo, targAngleDeltaVec, framesToImpact, dt);
+
                 impactPnt = _predictSmooth.Add(predictedPoint);
             }
 
@@ -118,32 +120,30 @@ namespace PolyPlane.GameObjects.Guidance
             return impactTime;
         }
 
-        private D2DPoint RefineImpact(D2DPoint targetPos, D2DPoint targetVelo, float targAngleDelta, float framesToImpact, float dt)
+        private D2DPoint RefineImpact(D2DPoint targetPos, D2DPoint targetVelo, D2DPoint targAngleDelta, float framesToImpact, float dt)
         {
             // To obtain a high order target position we basically run a small simulation here.
             // This considers the target velocity as well as the change in angular velocity.
-
             D2DPoint predicted = targetPos;
 
             if (framesToImpact > 5 && framesToImpact < MAX_FTI)
             {
                 var targLoc = targetPos;
-                var angle = targetVelo.Angle();
+                var veloDir = targetVelo.Normalized();
+                var veloMag = targetVelo.Length();
 
                 // Advance the target position and velocity angle.
                 for (int i = 0; i <= framesToImpact; i++)
                 {
-                    var avec = Utilities.AngleToVectorDegrees(angle) * targetVelo.Length();
+                    var avec = veloDir * veloMag;
                     targLoc += avec * dt;
-                    angle += targAngleDelta * dt;
-                    angle = Utilities.ClampAngle(angle);
+                    veloDir += targAngleDelta * dt;
                 }
 
                 // Include the remainder after the loop.
                 var rem = framesToImpact % (int)framesToImpact;
-                angle += targAngleDelta * rem * dt;
-                angle = Utilities.ClampAngle(angle);
-                targLoc += (Utilities.AngleToVectorDegrees(angle) * targetVelo.Length()) * rem * dt;
+                veloDir += targAngleDelta * rem * dt;
+                targLoc += (veloDir * veloMag) * rem * dt;
 
                 predicted = targLoc;
             }
