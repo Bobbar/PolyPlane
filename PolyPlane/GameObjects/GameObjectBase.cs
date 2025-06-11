@@ -86,7 +86,7 @@ namespace PolyPlane.GameObjects
         /// </summary>
         public double AgeMs(float dt)
         {
-            return (this.Age / dt) * World.LAST_FRAME_TIME;
+            return (this.Age / dt) * World.LastFrameTimeMs;
         }
 
         public int PlayerID
@@ -580,7 +580,7 @@ namespace PolyPlane.GameObjects
         {
             get
             {
-                var frames = (float)this.LagAmount / (float)World.LAST_FRAME_TIME;
+                var frames = (float)this.LagAmount / (float)World.LastFrameTimeMs;
                 return frames;
             }
         }

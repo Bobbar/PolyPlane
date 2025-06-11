@@ -54,7 +54,7 @@ namespace PolyPlane.Rendering
                 _angle = Utilities.ClampAngle(_angle + 1f);
                 _plane.Rotation = _angle;
                 _plane.Velocity = D2DPoint.Zero;
-                _plane.Update(World.TargetDT);
+                _plane.Update(World.CurrentDT);
                 _plane.Render(_ctx);
 
                 // Draw a crosshair to preview HUD color.

@@ -179,7 +179,7 @@ namespace PolyPlane.Net
 
         public void ServerSendGameState()
         {
-            var gameStatePacket = new GameStatePacket(World.TimeOfDay, World.TimeOfDayDir, World.GunsOnly, World.IsPaused, World.TargetDT);
+            var gameStatePacket = new GameStatePacket(World.TimeOfDay, World.TimeOfDayDir, World.GunsOnly, World.IsPaused, World.GameSpeed);
             Host.EnqueuePacket(gameStatePacket);
         }
 

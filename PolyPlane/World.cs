@@ -11,15 +11,15 @@ namespace PolyPlane
         public static readonly GameObjectManager ObjectManager;
         public static GameObject ViewObject;
 
-        public static float TargetDT
+        public static double LastFrameTimeMs => _lastFrameTimeMs;
+
+        public static float GameSpeed
         {
-            get => _dt;
+            get => _gameSpeed;
 
             set
             {
-                _dt = Math.Clamp(value, 0.0045f, 1f);
-
-                SetSubDT(_dt);
+                _gameSpeed = Math.Clamp(value, 0f, 10f);
             }
         }
 
@@ -101,10 +101,8 @@ namespace PolyPlane
         public static float TimeOfDayDir = -1f;
         public static double ServerTimeOffset = 0;
 
-        public static double LAST_FRAME_TIME = 16.6d;
         public static float TARGET_FRAME_TIME = 16.6f;
         public static readonly float TARGET_FRAME_TIME_NET = TARGET_FRAME_TIME * 2f;
-        public const float DEFAULT_FRAME_TIME = 1000f / 60f;
         public const double SERVER_FRAME_TIME = 1000d / NET_SERVER_FPS;
 
         public const float MAX_TIMEOFDAY = 24f;
@@ -118,7 +116,6 @@ namespace PolyPlane
 
         public const int TARGET_FPS = 60; // Primary FPS target. Change this to match the desired refresh rate.
         public const int NET_SERVER_FPS = 240;
-        public const int NET_CLIENT_FPS = TARGET_FPS;
         public const float NET_INTERP_AMOUNT = 70f; // Amount of time in milliseconds for the interpolation buffer.
 
         public const int SPATIAL_GRID_SIDELEN = 9;
@@ -168,7 +165,7 @@ namespace PolyPlane
             new D2DColor(0.5f, 0f, 0f, 0f)
         ];
 
-        private const int DEFAULT_FPS = 60;
+        private const float GAME_SPEED_MULTI = 0.00255f;
         private const int DEFAULT_SUB_STEPS = 6;
         private const int MAX_SUB_STEPS = 8;
         private const float NOISE_FLOOR = -1f;
@@ -178,11 +175,13 @@ namespace PolyPlane
         private const float MAX_TURB = 1f;
 
         private static long _lastFrameTimeTicks = 0;
+        private static double _lastFrameTimeMs = 0;
         private static float _timeOfDay = 5f;
         private static bool _isServer = false;
-        private static float _currentDT = TargetDT;
-        private static float _dt = DEFAULT_DT * ((float)DEFAULT_FPS / (float)TARGET_FPS);
-        private static float _sub_dt = DEFAULT_SUB_DT * ((float)DEFAULT_FPS / (float)TARGET_FPS);
+        private static float _currentDT = DEFAULT_DT;
+        private static float _gameSpeed = 1f;
+      
+        private static float _sub_dt = DEFAULT_SUB_DT;
         private static int _sub_steps = DEFAULT_SUB_STEPS;
         private static float _zoomScale = 0.11f;
         private static GameID _viewObjectID;
@@ -209,7 +208,8 @@ namespace PolyPlane
             if (elapFrameTime > 250f)
                 elapFrameTime = 250f;
 
-            var dt = (float)(World.TargetDT * (elapFrameTime / World.DEFAULT_FRAME_TIME));
+            var gameSpeedFactor = _gameSpeed * GAME_SPEED_MULTI;
+            var dt = (float)(elapFrameTime * gameSpeedFactor);
 
             _currentDT = dt;
 
@@ -304,7 +304,7 @@ namespace PolyPlane
 
             var dt = SetDynamicDT(elapFrameTimeMs);
 
-            LAST_FRAME_TIME = elapFrameTimeMs;
+            _lastFrameTimeMs = elapFrameTimeMs;
 
             if (!IsPaused)
                 UpdateTOD(dt);

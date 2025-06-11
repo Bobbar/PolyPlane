@@ -314,23 +314,22 @@
             // DeltaTimeLabel
             // 
             DeltaTimeLabel.AutoSize = true;
-            DeltaTimeLabel.Location = new Point(771, 359);
+            DeltaTimeLabel.Location = new Point(760, 359);
             DeltaTimeLabel.Name = "DeltaTimeLabel";
-            DeltaTimeLabel.Size = new Size(64, 15);
+            DeltaTimeLabel.Size = new Size(75, 15);
             DeltaTimeLabel.TabIndex = 27;
-            DeltaTimeLabel.Text = "Delta time:";
+            DeltaTimeLabel.Text = "Game speed:";
             // 
             // DeltaTimeNumeric
             // 
             DeltaTimeNumeric.DecimalPlaces = 4;
-            DeltaTimeNumeric.Increment = new decimal(new int[] { 1, 0, 0, 196608 });
+            DeltaTimeNumeric.Increment = new decimal(new int[] { 25, 0, 0, 196608 });
             DeltaTimeNumeric.Location = new Point(841, 357);
-            DeltaTimeNumeric.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
-            DeltaTimeNumeric.Minimum = new decimal(new int[] { 1, 0, 0, 196608 });
+            DeltaTimeNumeric.Maximum = new decimal(new int[] { 5, 0, 0, 0 });
             DeltaTimeNumeric.Name = "DeltaTimeNumeric";
             DeltaTimeNumeric.Size = new Size(68, 23);
             DeltaTimeNumeric.TabIndex = 28;
-            DeltaTimeNumeric.Value = new decimal(new int[] { 1, 0, 0, 196608 });
+            DeltaTimeNumeric.Value = new decimal(new int[] { 1, 0, 0, 0 });
             DeltaTimeNumeric.ValueChanged += DeltaTimeNumeric_ValueChanged;
             // 
             // DefaultDTButton

@@ -1080,14 +1080,13 @@ namespace PolyPlane
                     case Keys.Oemplus:
 
                         if (!World.IsNetGame)
-                            World.TargetDT += 0.002f;
-
+                            World.GameSpeed += 0.025f;
                         break;
 
                     case Keys.OemMinus:
 
                         if (!World.IsNetGame)
-                            World.TargetDT -= 0.002f;
+                            World.GameSpeed -= 0.025f;
 
                         break;
                 }

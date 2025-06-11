@@ -97,7 +97,7 @@ namespace PolyPlane.Server
             ChatMessageTextBox.MaxLength = ChatInterface.MAX_CHARS;
 
             TimeOfDaySlider.Maximum = (int)World.MAX_TIMEOFDAY;
-            DeltaTimeNumeric.Value = (decimal)World.TargetDT;
+            DeltaTimeNumeric.Value = (decimal)World.GameSpeed;
         }
 
         private void EnqueueAction(Action action)
@@ -582,7 +582,8 @@ namespace PolyPlane.Server
             infoText += $"Packets Expired: {_netMan.NumExpiredPackets}\n";
             infoText += $"MB Rec/s: {Math.Round(_recBytesSmooth.Current, 3)}\n";
             infoText += $"MB Sent/s: {Math.Round(_sentBytesSmooth.Current, 3)}\n";
-            infoText += $"DT: {Math.Round(World.TargetDT, 4)}\n";
+            infoText += $"Game Speed: {World.GameSpeed}\n";
+            infoText += $"DT: {Math.Round(World.CurrentDT, 4)}\n";
             infoText += $"TimeOfDay: {Math.Round(World.TimeOfDay, 2)}\n";
 
             return infoText;
@@ -783,14 +784,14 @@ namespace PolyPlane.Server
             if (_server == null)
                 return;
 
-            World.TargetDT = (float)DeltaTimeNumeric.Value;
+            World.GameSpeed = (float)DeltaTimeNumeric.Value;
             _netMan.ServerSendGameState();
         }
 
         private void DefaultDTButton_Click(object sender, EventArgs e)
         {
-            World.TargetDT = World.DEFAULT_DT;
-            DeltaTimeNumeric.Value = (decimal)World.TargetDT;
+            World.GameSpeed = 1f;
+            DeltaTimeNumeric.Value = (decimal)1f;
         }
 
         private void PlayersListBox_MouseEnter(object sender, EventArgs e)

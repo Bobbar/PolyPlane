@@ -41,9 +41,9 @@ namespace PolyPlane.Net
         public static readonly BoundedRange AngleBounds = new BoundedRange(0f, 360f, 0.01f);
 
         /// <summary>
-        /// Time delta bounds.
+        /// Game speed bounds. (0f to 10f)
         /// </summary>
-        public static readonly BoundedRange TimeDeltaBounds = new BoundedRange(0.0045f, 1f, 0.0001f);
+        public static readonly BoundedRange GameSpeedBounds = new BoundedRange(0f, 10f, 0.0001f);
 
         /// <summary>
         /// Deflection bounds. (-50f to 50f)
@@ -64,5 +64,6 @@ namespace PolyPlane.Net
         /// Zero to one bounds.
         /// </summary>
         public static readonly BoundedRange ZeroToOneBounds = new BoundedRange(0f, 1f, 0.1f);
+
     }
 }

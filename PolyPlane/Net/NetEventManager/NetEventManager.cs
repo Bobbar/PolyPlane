@@ -488,7 +488,7 @@ namespace PolyPlane.Net
                             World.TimeOfDay = gameStatePacket.TimeOfDay;
                             World.TimeOfDayDir = gameStatePacket.TimeOfDayDir;
                             World.GunsOnly = gameStatePacket.GunsOnly;
-                            World.TargetDT = gameStatePacket.DeltaTime;
+                            World.GameSpeed = gameStatePacket.GameSpeed;
                             World.IsPaused = gameStatePacket.IsPaused;
                         }
                     }

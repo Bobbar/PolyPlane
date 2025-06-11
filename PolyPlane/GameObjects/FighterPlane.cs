@@ -524,7 +524,7 @@ namespace PolyPlane.GameObjects
             var diff = Altitude - _prevAlt;
             _prevAlt = Altitude;
 
-            VerticalSpeed = _vsSmooth.Add(diff * World.TARGET_FPS);
+            VerticalSpeed = _vsSmooth.Add(diff * (1000f / (float)World.LastFrameTimeMs));
         }
 
         public override void NetUpdate(GameObjectPacket packet)
@@ -1022,7 +1022,7 @@ namespace PolyPlane.GameObjects
 
             _thrustAmt.SetNow(0f);
             IsDisabled = true;
-            DeathTime = World.TargetDT;
+            DeathTime = World.CurrentDT;
             FiringBurst = false;
             DroppingDecoy = false;
             _engineFireFlame.StartSpawning();

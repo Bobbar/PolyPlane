@@ -300,7 +300,7 @@ namespace PolyPlane.Rendering
             _screenFlash.Update(dt);
             _screenShakeX.Update(dt);
             _screenShakeY.Update(dt);
-            _warnLightFlash.Update(World.DEFAULT_DT);
+            _warnLightFlash.Update(dt);
 
             _contrailBox.Update(_objs.Planes, dt);
 
@@ -1753,7 +1753,8 @@ namespace PolyPlane.Rendering
                 _stringBuilder.AppendLine($"Total ms: {Math.Round(_updateTimeSmooth.Current + _collisionTimeSmooth.Current + _renderTimeSmooth.Current, 2)}");
 
                 _stringBuilder.AppendLine($"Zoom: {Math.Round(World.ZoomScale, 2)}");
-                _stringBuilder.AppendLine($"DT: {Math.Round(World.TargetDT, 4)}  ({Math.Round(World.CurrentDT, 4)}) ");
+                _stringBuilder.AppendLine($"GameSpeed: {World.GameSpeed}");
+                _stringBuilder.AppendLine($"DT: {Math.Round(World.CurrentDT, 4)}");
                 _stringBuilder.AppendLine($"Position: {viewObject?.Position}");
 
                 if (viewObject is FighterPlane plane)

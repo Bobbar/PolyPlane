@@ -18,7 +18,7 @@ namespace PolyPlane.GameObjects.Managers
 
             // Server will need to rate limit explosion impulses.
             if (World.IsServer)
-                _rateLimitedActions.AddAction(World.TARGET_FRAME_TIME, () => HandleExplosionImpulse(World.CurrentDT));
+                _rateLimitedActions.AddAction(World.TARGET_FRAME_TIME_NET, () => HandleExplosionImpulse(World.CurrentDT));
         }
 
         public CollisionManager()

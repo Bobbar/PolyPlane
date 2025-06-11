@@ -34,7 +34,7 @@ namespace PolyPlane.Net
         {
             get
             {
-                var frames = (float)this.Age / (float)World.LAST_FRAME_TIME;
+                var frames = (float)this.Age / (float)World.LastFrameTimeMs;
                 return frames;
             }
         }
@@ -238,20 +238,20 @@ namespace PolyPlane.Net
         public float TimeOfDayDir;
         public bool GunsOnly;
         public bool IsPaused;
-        public float DeltaTime;
+        public float GameSpeed;
 
         public GameStatePacket(BitBuffer data)
         {
             this.Deserialize(data);
         }
 
-        public GameStatePacket(float timeOfDay, float timeOfDayDir, bool gunsOnly, bool isPaused, float deltaTime) : base(PacketTypes.GameStateUpdate, SendType.ToAll)
+        public GameStatePacket(float timeOfDay, float timeOfDayDir, bool gunsOnly, bool isPaused, float gameSpeed) : base(PacketTypes.GameStateUpdate, SendType.ToAll)
         {
             TimeOfDay = timeOfDay;
             TimeOfDayDir = timeOfDayDir;
             GunsOnly = gunsOnly;
             IsPaused = isPaused;
-            DeltaTime = deltaTime;
+            GameSpeed = gameSpeed;
         }
 
         public override void Serialize(BitBuffer data)
@@ -262,7 +262,7 @@ namespace PolyPlane.Net
             data.AddFloat(TimeOfDayDir);
             data.AddBool(GunsOnly);
             data.AddBool(IsPaused);
-            data.AddFloat(DeltaTime, Ranges.TimeDeltaBounds);
+            data.AddFloat(GameSpeed, Ranges.GameSpeedBounds);
         }
 
         public override void Deserialize(BitBuffer data)
@@ -273,7 +273,7 @@ namespace PolyPlane.Net
             TimeOfDayDir = data.ReadFloat();
             GunsOnly = data.ReadBool();
             IsPaused = data.ReadBool();
-            DeltaTime = data.ReadFloat(Ranges.TimeDeltaBounds);
+            GameSpeed = data.ReadFloat(Ranges.GameSpeedBounds);
         }
     }
 
