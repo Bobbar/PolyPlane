@@ -19,7 +19,7 @@ namespace PolyPlane
 
             set
             {
-                _gameSpeed = Math.Clamp(value, 0f, 10f);
+                _gameSpeed = Math.Clamp(value, 0.01f, 3f);
             }
         }
 
