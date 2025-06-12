@@ -304,24 +304,22 @@ namespace PolyPlane.Helpers
 
         public static D2DColor LerpColor(D2DColor color1, D2DColor color2, float amount)
         {
-            var newColor = new D2DColor(
-                color1.a + (color2.a - color1.a) * amount,
-                color1.r + (color2.r - color1.r) * amount,
-                color1.g + (color2.g - color1.g) * amount,
-                color1.b + (color2.b - color1.b) * amount);
+            color1.r = color1.r + (color2.r - color1.r) * amount;
+            color1.g = color1.g + (color2.g - color1.g) * amount;
+            color1.b = color1.b + (color2.b - color1.b) * amount;
+            color1.a = color1.a + (color2.a - color1.a) * amount;
 
-            return newColor;
+            return color1;
         }
 
         public static D2DColor LerpColorWithAlpha(D2DColor color1, D2DColor color2, float amount, float alpha)
         {
-            var newColor = new D2DColor(
-                alpha,
-                color1.r + (color2.r - color1.r) * amount,
-                color1.g + (color2.g - color1.g) * amount,
-                color1.b + (color2.b - color1.b) * amount);
+            color1.r = color1.r + (color2.r - color1.r) * amount;
+            color1.g = color1.g + (color2.g - color1.g) * amount;
+            color1.b = color1.b + (color2.b - color1.b) * amount;
+            color1.a = alpha;
 
-            return newColor;
+            return color1;
         }
 
         public static bool IsPosInFOV(GameObject obj, D2DPoint pos, float fov)

@@ -201,6 +201,7 @@ namespace PolyPlane.GameObjects
         private static readonly D2DColor _cockpitColor = new D2DColor(0.5f, D2DColor.LightBlue);
         private static readonly D2DColor _groundDustColor = new D2DColor(1f, 0.35f, 0.2f, 0.1f);
         private static readonly D2DSize _cockpitSize = new D2DSize(9f, 6f);
+        private D2DEllipse _cockpitEllipse = new D2DEllipse(D2DPoint.Zero, _cockpitSize);
 
         private Gun _gun;
         private DecoyDispenser _decoyDispenser;
@@ -746,11 +747,11 @@ namespace PolyPlane.GameObjects
 
             ctx.PushTransform();
             ctx.RotateTransform(_cockpitPosition.Rotation, _cockpitPosition.Position);
+            
+            _cockpitEllipse.origin = _cockpitPosition.Position;
 
-            var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
-
-            ctx.FillEllipseWithLighting(cockpitEllipse, WasHeadshot ? D2DColor.DarkRed : _cockpitColor, maxIntensity: 0.6f);
-            ctx.DrawEllipse(cockpitEllipse, D2DColor.Black.WithAlpha(0.5f), 0.5f);
+            ctx.FillEllipseWithLighting(_cockpitEllipse, WasHeadshot ? D2DColor.DarkRed : _cockpitColor, maxIntensity: 0.6f);
+            ctx.DrawEllipse(_cockpitEllipse, D2DColor.Black.WithAlpha(0.5f), 0.5f);
 
             ctx.PopTransform();
         }
@@ -986,9 +987,9 @@ namespace PolyPlane.GameObjects
             var distortVec = Utilities.AngleToVectorDegrees(angle, distortAmt);
 
             // Check for headshots.
-            var cockpitEllipse = new D2DEllipse(_cockpitPosition.Position, _cockpitSize);
+            _cockpitEllipse.origin = _cockpitPosition.Position;
             var cockpitImpactPos = (result.ImpactPointOrigin + distortVec).Translate(this.Rotation, this.Position, this.RenderScale);
-            var hitCockpit = cockpitEllipse.Contains(_cockpitPosition.Rotation, cockpitImpactPos);
+            var hitCockpit = _cockpitEllipse.Contains(_cockpitPosition.Rotation, cockpitImpactPos);
 
             if (hitCockpit)
             {
