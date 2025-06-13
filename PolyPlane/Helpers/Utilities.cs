@@ -234,10 +234,11 @@ namespace PolyPlane.Helpers
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float PositionToAltitude(D2DPoint position)
         {
             // Up = negative on the Y axis.
-            return Math.Clamp(position.Y * -1f, 0f, float.MaxValue);
+            return -position.Y;
         }
 
         public static float Cross(D2DPoint vector1, D2DPoint vector2)

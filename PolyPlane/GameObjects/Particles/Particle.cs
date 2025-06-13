@@ -85,7 +85,7 @@ namespace PolyPlane.GameObjects.Particles
             if (Age > MaxAge && !IsExpired)
             {
                 // Add our index to the queue to be cleaned up later.
-                World.ObjectManager.ExpiredParticleIdxs.Enqueue(Idx);
+                World.ObjectManager.ExpiredParticleIdxs.Add(Idx);
 
                 IsExpired = true;
             }

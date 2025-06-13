@@ -8,7 +8,8 @@ namespace PolyPlane.Helpers
     /// <typeparam name="T"></typeparam>
     public sealed class GameObjectPool<T>
     {
-        private ConcurrentQueue<T> _pool = new ConcurrentQueue<T>();
+        private ConcurrentBag<T> _pool = new ConcurrentBag<T>();
+
         private readonly Func<T> _factory;
 
         public GameObjectPool(Func<T> factory)
@@ -18,7 +19,7 @@ namespace PolyPlane.Helpers
 
         public T RentObject()
         {
-            if (_pool.TryDequeue(out T obj))
+            if (_pool.TryTake(out T obj))
             {
                 return obj;
             }
@@ -30,7 +31,7 @@ namespace PolyPlane.Helpers
 
         public void ReturnObject(T obj)
         {
-            _pool.Enqueue(obj);
+            _pool.Add(obj);
         }
 
         public void Clear()

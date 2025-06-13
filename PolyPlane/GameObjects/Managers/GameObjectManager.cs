@@ -26,14 +26,14 @@ namespace PolyPlane.GameObjects.Managers
         public List<GroundImpact> GroundImpacts = new(5000);
         public List<FighterPlane> Planes = new();
 
-        public ConcurrentQueue<Explosion> NewExplosions = new();
-        public ConcurrentQueue<GameObject> NewDecoys = new();
-        public ConcurrentQueue<GameObject> NewDebris = new();
-        public ConcurrentQueue<GameObject> NewBullets = new();
-        public ConcurrentQueue<GameObject> NewMissiles = new();
-        public ConcurrentQueue<FighterPlane> NewPlanes = new();
-        public ConcurrentQueue<Particle> NewParticles = new();
-        public ConcurrentQueue<int> ExpiredParticleIdxs = new();
+        public ConcurrentBag<Explosion> NewExplosions = new();
+        public ConcurrentBag<GameObject> NewDecoys = new();
+        public ConcurrentBag<GameObject> NewDebris = new();
+        public ConcurrentBag<GameObject> NewBullets = new();
+        public ConcurrentBag<GameObject> NewMissiles = new();
+        public ConcurrentBag<FighterPlane> NewPlanes = new();
+        public ConcurrentBag<Particle> NewParticles = new();
+        public ConcurrentBag<int> ExpiredParticleIdxs = new();
 
         private Dictionary<int, GameObject> _objLookup = new();
         private SpatialGridGameObject _spatialGrid = new(World.SPATIAL_GRID_SIDELEN);
@@ -46,7 +46,7 @@ namespace PolyPlane.GameObjects.Managers
         private GameObjectPool<Explosion> _explosionPool = new(() => new Explosion());
         private GameObjectPool<Debris> _debrisPool = new(() => new Debris());
         private GameObjectPool<GroundImpact> _groundImpactPool = new(() => new GroundImpact());
-        private ConcurrentQueue<BulletHole> _bulletHolePool = new();
+        private ConcurrentBag<BulletHole> _bulletHolePool = new();
 
         public event EventHandler<PlayerScoredEventArgs> PlayerScoredEvent;
         public event EventHandler<EventMessage> PlayerKilledEvent;
@@ -61,7 +61,7 @@ namespace PolyPlane.GameObjects.Managers
 
         public BulletHole RentBulletHole(GameObject obj, D2DPoint offset, float angle)
         {
-            if (_bulletHolePool.TryDequeue(out BulletHole hole))
+            if (_bulletHolePool.TryTake(out BulletHole hole))
             {
                 hole.Owner = obj;
                 hole.ReferencePosition = offset;
@@ -81,7 +81,7 @@ namespace PolyPlane.GameObjects.Managers
 
         public void ReturnBulletHole(BulletHole bulletHole)
         {
-            _bulletHolePool.Enqueue(bulletHole);
+            _bulletHolePool.Add(bulletHole);
         }
 
         public Particle RentParticle()
@@ -108,13 +108,13 @@ namespace PolyPlane.GameObjects.Managers
         public void EnqueueParticle(Particle particle)
         {
             if (!World.IsServer)
-                NewParticles.Enqueue(particle);
+                NewParticles.Add(particle);
         }
 
         public void EnqueueDebris(Debris debris)
         {
             if (!World.IsServer)
-                NewDebris.Enqueue(debris);
+                NewDebris.Add(debris);
         }
 
         public Debris RentDebris()
@@ -148,7 +148,7 @@ namespace PolyPlane.GameObjects.Managers
 
         public void EnqueueBullet(Bullet bullet)
         {
-            NewBullets.Enqueue(bullet);
+            NewBullets.Add(bullet);
         }
 
         public void AddMissile(GuidedMissile missile)
@@ -165,7 +165,7 @@ namespace PolyPlane.GameObjects.Managers
 
         public void EnqueueMissile(GuidedMissile missile)
         {
-            NewMissiles.Enqueue(missile);
+            NewMissiles.Add(missile);
         }
 
         public void AddPlane(FighterPlane plane)
@@ -189,7 +189,7 @@ namespace PolyPlane.GameObjects.Managers
 
         public void EnqueuePlane(FighterPlane plane)
         {
-            NewPlanes.Enqueue(plane);
+            NewPlanes.Add(plane);
         }
 
         private void AddDecoy(Decoy decoy)
@@ -203,12 +203,12 @@ namespace PolyPlane.GameObjects.Managers
 
         public void EnqueueDecoy(Decoy decoy)
         {
-            NewDecoys.Enqueue(decoy);
+            NewDecoys.Add(decoy);
         }
 
         private void EnqueueExplosion(Explosion explosion)
         {
-            NewExplosions.Enqueue(explosion);
+            NewExplosions.Add(explosion);
 
             if (explosion.Altitude <= 10f)
             {
@@ -712,57 +712,57 @@ namespace PolyPlane.GameObjects.Managers
 
         private void SyncObjQueues()
         {
-            while (NewDecoys.Count > 0)
+            while (!NewDecoys.IsEmpty)
             {
-                if (NewDecoys.TryDequeue(out GameObject decoy))
+                if (NewDecoys.TryTake(out GameObject decoy))
                 {
                     AddDecoy(decoy as Decoy);
                 }
             }
 
-            while (NewDebris.Count > 0)
+            while (!NewDebris.IsEmpty)
             {
-                if (NewDebris.TryDequeue(out GameObject debris))
+                if (NewDebris.TryTake(out GameObject debris))
                 {
                     AddDebris(debris as Debris);
                 }
             }
 
-            while (NewBullets.Count > 0)
+            while (!NewBullets.IsEmpty)
             {
-                if (NewBullets.TryDequeue(out GameObject bullet))
+                if (NewBullets.TryTake(out GameObject bullet))
                 {
                     AddBullet(bullet as Bullet);
                 }
             }
 
-            while (NewMissiles.Count > 0)
+            while (!NewMissiles.IsEmpty)
             {
-                if (NewMissiles.TryDequeue(out GameObject missile))
+                if (NewMissiles.TryTake(out GameObject missile))
                 {
                     AddMissile(missile as GuidedMissile);
                 }
             }
 
-            while (NewPlanes.Count > 0)
+            while (!NewPlanes.IsEmpty)
             {
-                if (NewPlanes.TryDequeue(out FighterPlane plane))
+                if (NewPlanes.TryTake(out FighterPlane plane))
                 {
                     AddPlane(plane);
                 }
             }
 
-            while (NewParticles.Count > 0)
+            while (!NewParticles.IsEmpty)
             {
-                if (NewParticles.TryDequeue(out Particle particle))
+                if (NewParticles.TryTake(out Particle particle))
                 {
                     AddParticle(particle);
                 }
             }
 
-            while (NewExplosions.Count > 0)
+            while (!NewExplosions.IsEmpty)
             {
-                if (NewExplosions.TryDequeue(out Explosion explosion))
+                if (NewExplosions.TryTake(out Explosion explosion))
                 {
                     if (!Contains(explosion))
                     {
