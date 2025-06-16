@@ -59,6 +59,12 @@ namespace PolyPlane.GameObjects
             }
 
         }
+        public float Deflection
+        {
+            get { return _controlWing.Deflection; }
+
+            set { _controlWing.Deflection = value; }
+        }
 
         public int NumMissiles
         {
@@ -117,7 +123,6 @@ namespace PolyPlane.GameObjects
         public string PlayerName = "Player";
         public float VerticalSpeed = 0f;
         public float PlayerGuideAngle = 0;
-        public float Deflection = 0f;
         public float DeathTime = 0;
         public int BulletsFired = 0;
         public int MissilesFired = 0;
@@ -409,9 +414,9 @@ namespace PolyPlane.GameObjects
             if (!IsNetObject)
             {
                 if (!this.IsDisabled)
-                    _controlWing.Deflection = deflection;
+                    this.Deflection = deflection;
                 else
-                    _controlWing.Deflection = _damageDeflection;
+                    this.Deflection = _damageDeflection;
             }
 
             // Wing force and torque.
@@ -469,8 +474,6 @@ namespace PolyPlane.GameObjects
 
             if (!IsNetObject)
             {
-                Deflection = _controlWing.Deflection;
-
                 // Ease in physics.
                 var easeFact = 1f;
 
@@ -526,13 +529,6 @@ namespace PolyPlane.GameObjects
             _prevAlt = Altitude;
 
             VerticalSpeed = _vsSmooth.Add(diff * (1000f / (float)World.LastFrameTimeMs / World.GameSpeed));
-        }
-
-        public override void NetUpdate(GameObjectPacket packet)
-        {
-            base.NetUpdate(packet);
-
-            _controlWing.Deflection = this.Deflection;
         }
 
         private void UpdateFlame()
@@ -747,7 +743,7 @@ namespace PolyPlane.GameObjects
 
             ctx.PushTransform();
             ctx.RotateTransform(_cockpitPosition.Rotation, _cockpitPosition.Position);
-            
+
             _cockpitEllipse.origin = _cockpitPosition.Position;
 
             ctx.FillEllipseWithLighting(_cockpitEllipse, WasHeadshot ? D2DColor.DarkRed : _cockpitColor, maxIntensity: 0.6f);

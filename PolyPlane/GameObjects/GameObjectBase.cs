@@ -701,7 +701,7 @@ namespace PolyPlane.GameObjects
 
         public void RecordHistory()
         {
-            if (!World.IsNetGame)
+            if (!World.IsServer)
                 return;
 
             if (HistoryBuffer != null && (this is FighterPlane || this is GuidedMissile))

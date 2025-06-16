@@ -11,7 +11,13 @@ namespace PolyPlane.GameObjects
 {
     public sealed class GuidedMissile : GameObjectNet, IPolygon, ILightMapContributor
     {
-        public float Deflection = 0f;
+        public float Deflection
+        {
+            get { return _curDeflection; }
+
+            set { SetDeflection(value); }
+        }
+
         public bool FlameOn = false;
         public RenderPoly Polygon { get; set; }
         public GameObject Target { get; set; }
@@ -29,7 +35,6 @@ namespace PolyPlane.GameObjects
         public float TotalMass
         {
             get { return this.Mass + _currentFuel; }
-
         }
 
         public float TargetDistance { get; set; } = 0f;
@@ -60,6 +65,7 @@ namespace PolyPlane.GameObjects
         private float _gForcePeak = 0f;
         private float _initRotation = 0f;
         private float _guideRotation = 0f;
+        private float _curDeflection = 0f;
 
         private RenderPoly FlamePoly;
         private D2DColor _flameFillColor = new D2DColor(0.6f, D2DColor.Yellow);
@@ -272,9 +278,6 @@ namespace PolyPlane.GameObjects
 
                 liftDrag += tailForce.LiftAndDrag + noseForce.LiftAndDrag + bodyForce.LiftAndDrag;
 
-                const float TAIL_AUTH = 1f;
-                const float NOSE_AUTH = 0f;
-
                 // Apply guidance.
                 if (_guidance != null)
                     _guideRotation = _guidance.GuideTo(dt);
@@ -308,10 +311,8 @@ namespace PolyPlane.GameObjects
                 }
 
                 // Damp and apply deflection.
-                _tailWing.Deflection = TAIL_AUTH * Utilities.Damp(_tailWing.Deflection, -nextDeflect, DEFLECTION_DAMPING, dt);
-                _noseWing.Deflection = NOSE_AUTH * Utilities.Damp(_noseWing.Deflection, nextDeflect, DEFLECTION_DAMPING, dt);
-
-                this.Deflection = _tailWing.Deflection;
+                var dampDeflection = Utilities.Damp(this.Deflection, nextDeflect, DEFLECTION_DAMPING, dt);
+                SetDeflection(dampDeflection);
 
                 // Compute torque and rotation result.
                 var thrust = GetThrust();
@@ -343,8 +344,10 @@ namespace PolyPlane.GameObjects
 
             // Don't expire net missiles. Wait for client packets.
             if (!this.IsNetObject)
+            {
                 if (_currentFuel <= 0f && this.Age > LIFESPAN && this.MissedTarget)
                     this.IsExpired = true;
+            }
 
             if (FlameOn && _currentFuel <= 0f)
             {
@@ -364,11 +367,14 @@ namespace PolyPlane.GameObjects
             return rot;
         }
 
-        public override void NetUpdate(GameObjectPacket packet)
+        private void SetDeflection(float deflection)
         {
-            base.NetUpdate(packet);
+            const float TAIL_AUTH = 1f;
+            const float NOSE_AUTH = 0f;
 
-            _tailWing.Deflection = this.Deflection;
+            _curDeflection = deflection;
+            _tailWing.Deflection = TAIL_AUTH * -deflection;
+            _noseWing.Deflection = NOSE_AUTH * deflection;
         }
 
         public void ChangeTarget(GameObject target)
