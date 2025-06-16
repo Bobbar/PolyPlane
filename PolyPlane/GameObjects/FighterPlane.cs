@@ -525,7 +525,7 @@ namespace PolyPlane.GameObjects
             var diff = Altitude - _prevAlt;
             _prevAlt = Altitude;
 
-            VerticalSpeed = _vsSmooth.Add(diff * (1000f / (float)World.LastFrameTimeMs));
+            VerticalSpeed = _vsSmooth.Add(diff * (1000f / (float)World.LastFrameTimeMs / World.GameSpeed));
         }
 
         public override void NetUpdate(GameObjectPacket packet)
