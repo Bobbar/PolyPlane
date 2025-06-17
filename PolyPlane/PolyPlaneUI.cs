@@ -450,7 +450,7 @@ namespace PolyPlane
                 _objs.EnqueueBullet(b);
 
                 if (b.Owner.Equals(World.ViewObject))
-                    _render.DoScreenShake(2f);
+                    _render.DoScreenShake(6f);
 
                 if (World.IsNetGame)
                     _netMan.SendNewBulletPacket(b);

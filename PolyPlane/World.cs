@@ -108,11 +108,11 @@ namespace PolyPlane
         public const float MAX_TIMEOFDAY = 24f;
         public const float TOD_RATE = 0.02f;
 
-        public static int PHYSICS_SUB_STEPS => _sub_steps;
+        public const int PHYSICS_SUB_STEPS = 8;
         public static readonly int MUTLI_THREAD_COUNT = 8;
      
         public const float DEFAULT_DT = 0.0425f;
-        public const float DEFAULT_SUB_DT = DEFAULT_DT / DEFAULT_SUB_STEPS;
+        public const float DEFAULT_SUB_DT = DEFAULT_DT / PHYSICS_SUB_STEPS;
 
         public const int TARGET_FPS = 60; // Primary FPS target. Change this to match the desired refresh rate.
         public const int NET_SERVER_FPS = 240;
@@ -166,8 +166,6 @@ namespace PolyPlane
         ];
 
         private const float GAME_SPEED_MULTI = 0.00255f;
-        private const int DEFAULT_SUB_STEPS = 6;
-        private const int MAX_SUB_STEPS = 8;
         private const float NOISE_FLOOR = -1f;
         private const float NOISE_CEILING = 0.8f;
         private const float NOISE_FREQUENCY = 0.0025f;
@@ -182,7 +180,6 @@ namespace PolyPlane
         private static float _gameSpeed = 1f;
       
         private static float _sub_dt = DEFAULT_SUB_DT;
-        private static int _sub_steps = DEFAULT_SUB_STEPS;
         private static float _zoomScale = 0.11f;
         private static GameID _viewObjectID;
         private static FastNoiseLite _turbulenceNoise = new FastNoiseLite();
@@ -199,7 +196,7 @@ namespace PolyPlane
         }
 
         /// <summary>
-        /// Computes the dynamic delta time based on the specified elapsed frame time and sets fixed sub DT and sub steps.
+        /// Computes the dynamic delta time based on the specified elapsed frame time.
         /// </summary>
         /// <param name="elapFrameTime"></param>
         /// <returns>Returns the new delta time.</returns>
@@ -212,24 +209,9 @@ namespace PolyPlane
             var dt = (float)(elapFrameTime * gameSpeedFactor);
 
             _currentDT = dt;
-
-            SetSubDT(dt);
+            _sub_dt = dt / PHYSICS_SUB_STEPS;
 
             return dt;
-        }
-
-        /// <summary>
-        /// Sets the fixed-ish sub DT and number of sub steps used for physics.
-        /// </summary>
-        /// <param name="dt"></param>
-        public static void SetSubDT(float dt)
-        {
-            // Compute sub DT and number of sub steps.
-            var subSteps = (int)Math.Ceiling(dt / DEFAULT_SUB_DT);
-            subSteps = Math.Clamp(subSteps, 1, MAX_SUB_STEPS);
-
-            _sub_dt = dt / subSteps;
-            _sub_steps = subSteps;
         }
 
         public static D2DColor GetRandomFlameColor()

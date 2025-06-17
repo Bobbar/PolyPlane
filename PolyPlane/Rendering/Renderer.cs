@@ -210,8 +210,8 @@ namespace PolyPlane.Rendering
             World.UpdateViewport(scaleSize);
 
             _screenFlash = new FloatAnimation(0.4f, 0f, 4f, EasingFunctions.Out.EaseCircle, v => _screenFlashOpacity = v);
-            _screenShakeX = new FloatAnimation(5f, 0f, 2f, EasingFunctions.Out.EaseCircle, v => _screenShakeTrans.X = v);
-            _screenShakeY = new FloatAnimation(5f, 0f, 2f, EasingFunctions.Out.EaseCircle, v => _screenShakeTrans.Y = v);
+            _screenShakeX = new FloatAnimation(5f, 0f, 0.2f, EasingFunctions.Out.EaseBounce, v => _screenShakeTrans.X = v);
+            _screenShakeY = new FloatAnimation(5f, 0f, 0.2f, EasingFunctions.Out.EaseBounce, v => _screenShakeTrans.Y = v);
 
             _warnLightFlash = new FloatAnimation(0f, 1f, 0.3f, EasingFunctions.EaseLinear, v => _warnLightFlashAmount = v);
             _warnLightFlash.Loop = true;
@@ -344,8 +344,10 @@ namespace PolyPlane.Rendering
                 // Do G-Force screen shake effect for planes.
                 if (viewObject is FighterPlane plane)
                 {
-                    if (plane.GForce > World.SCREEN_SHAKE_G)
-                        DoScreenShake(plane.GForce / 4f);
+                    var shakeAmt = Utilities.FactorWithEasing(plane.GForce, World.SCREEN_SHAKE_G, EasingFunctions.In.EaseCircle);
+
+                    if (shakeAmt > 0f)
+                        DoScreenShake((plane.GForce * 0.4f) * shakeAmt);
                 }
 
                 var viewPortSize = new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE);
@@ -705,7 +707,7 @@ namespace PolyPlane.Rendering
         {
             // Don't bother if we are currently zoomed way out.
             if (World.ZoomScale < 0.03f)
-                 return;
+                return;
 
             var color = shadowColor.WithAlpha(0.07f);
 
@@ -895,7 +897,7 @@ namespace PolyPlane.Rendering
                 var altimeterPos = new D2DPoint(viewportsize.width * 0.85f, viewportsize.height * 0.33f);
 
                 // Draw altimeter and speedo.
-                DrawTapeIndicator(ctx, viewportsize, altimeterPos, viewObject.Altitude, 3000f, 175f,  markersOnLeft: false);
+                DrawTapeIndicator(ctx, viewportsize, altimeterPos, viewObject.Altitude, 3000f, 175f, markersOnLeft: false);
                 DrawTapeIndicator(ctx, viewportsize, speedoPos, viewObject.AirSpeedIndicated, 250f, 50f);
 
                 if (viewObject is FighterPlane plane)
@@ -1704,6 +1706,9 @@ namespace PolyPlane.Rendering
 
         public void DoScreenShake(float amt)
         {
+            if (amt < 0.05f)
+                return;
+
             if (_screenShakeX == null || _screenShakeY == null)
                 return;
 
