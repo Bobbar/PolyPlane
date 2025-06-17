@@ -203,7 +203,7 @@ namespace PolyPlane.Net.NetHost
                 case PacketTypes.PlaneStatus or PacketTypes.PlaneStatusList:
                     return 1;
 
-                case PacketTypes.NewMissile or PacketTypes.MissileUpdateList or PacketTypes.MissileUpdate:
+                case PacketTypes.NewMissile or PacketTypes.MissileUpdateList:
                     return 2;
 
                 case PacketTypes.NewBullet:

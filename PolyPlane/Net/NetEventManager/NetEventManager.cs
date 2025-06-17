@@ -300,13 +300,6 @@ namespace PolyPlane.Net
 
                     break;
 
-                case PacketTypes.MissileUpdate:
-
-                    var missilePacket = packet as MissilePacket;
-                    HandleNetMissileUpdate(missilePacket);
-
-                    break;
-
                 case PacketTypes.Impact:
 
                     var impactPacket = packet as ImpactPacket;

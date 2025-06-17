@@ -69,7 +69,6 @@ namespace PolyPlane.Net.NetHost
             {
                 case PacketTypes.PlaneUpdate
                 or PacketTypes.MissileUpdateList
-                or PacketTypes.MissileUpdate
                 or PacketTypes.ChatMessage
                 or PacketTypes.NewBullet
                 or PacketTypes.NewMissile

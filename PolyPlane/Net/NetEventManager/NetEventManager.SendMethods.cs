@@ -53,50 +53,37 @@ namespace PolyPlane.Net
         {
             var missileListPacket = new MissileListPacket(PacketTypes.MissileUpdateList);
 
+            IEnumerable<GameObject> missiles;
+
             if (IsServer)
-            {
-                // Don't send updates for net missiles.
-                // (Already re-broadcast by the net host.)
-                var missiles = _objs.Missiles.Where(m => m.IsNetObject == false);
-
-                foreach (var missile in missiles)
-                {
-                    var missilePacket = new MissilePacket(missile as GuidedMissile, PacketTypes.MissileUpdate);
-                    missileListPacket.Missiles.Add(missilePacket);
-
-                    // Batch the list packet as needed.
-                    if (missileListPacket.Missiles.Count >= LIST_PACKET_BATCH_COUNT)
-                    {
-                        Host.EnqueuePacket(missileListPacket, SendType.ToAll);
-
-                        missileListPacket = new MissileListPacket(PacketTypes.MissileUpdateList);
-                    }
-                }
-
-                if (missileListPacket.Missiles.Count > 0)
-                    Host.EnqueuePacket(missileListPacket, SendType.ToAll);
-            }
+                missiles = _objs.Missiles.Where(m => m.IsNetObject == false);
             else
+                missiles = _objs.Missiles.Where(m => m.PlayerID == PlayerPlane.PlayerID);
+
+            foreach (var missile in missiles)
             {
-                // Filter out all other missiles except the ones we control.
-                var missiles = _objs.Missiles.Where(m => m.PlayerID == PlayerPlane.PlayerID);
+                var missilePacket = new MissilePacket(missile as GuidedMissile, PacketTypes.MissileUpdate);
+                missileListPacket.Missiles.Add(missilePacket);
 
-                foreach (var m in missiles)
+                // Batch the list packet as needed.
+                if (missileListPacket.Missiles.Count >= LIST_PACKET_BATCH_COUNT)
                 {
-                    var missilePacket = new MissilePacket(m as GuidedMissile, PacketTypes.MissileUpdate);
-                    missileListPacket.Missiles.Add(missilePacket);
+                   Enqueue(missileListPacket);
 
-                    // Batch the list packet as needed.
-                    if (missileListPacket.Missiles.Count >= LIST_PACKET_BATCH_COUNT)
-                    {
-                        Host.EnqueuePacket(missileListPacket, SendType.ToAllExcept, PlayerPlane.PlayerID);
-
-                        missileListPacket = new MissileListPacket(PacketTypes.MissileUpdateList);
-                    }
+                    missileListPacket = new MissileListPacket(PacketTypes.MissileUpdateList);
                 }
+            }
 
-                if (missileListPacket.Missiles.Count > 0)
-                    Host.EnqueuePacket(missileListPacket, SendType.ToAllExcept, PlayerPlane.PlayerID);
+            if (missileListPacket.Missiles.Count > 0)
+                Enqueue(missileListPacket);
+
+
+            void Enqueue(NetPacket packet)
+            {
+                if (IsServer)
+                    Host.EnqueuePacket(packet, SendType.ToAll);
+                else
+                    Host.EnqueuePacket(packet, SendType.ToAllExcept, PlayerPlane.PlayerID);
             }
         }
 
