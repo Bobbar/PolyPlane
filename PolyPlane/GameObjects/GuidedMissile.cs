@@ -3,7 +3,6 @@ using PolyPlane.GameObjects.Guidance;
 using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
-using PolyPlane.Net;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
@@ -57,7 +56,6 @@ namespace PolyPlane.GameObjects
         private const float BURN_RATE = 0.85f;
         private const float THRUST = 2500f;
         private const float FUEL = 10f;
-        private const float DEFLECTION_RATE = 45f;
         private const float DEFLECTION_DAMPING = 1.2f;
 
         private float _currentFuel = 0f;
@@ -205,52 +203,53 @@ namespace PolyPlane.GameObjects
 
         private void InitWings()
         {
-            const float liftScale = 1.5f;
-            const float minVelo = 800f;
+            const float LIFT_SCALE = 1.5f;
+            const float MIN_VELO = 800f;
+            const float DEFLECTION_RATE = 360f;
 
             _tailWing = new Wing(this, new WingParameters()
             {
                 RenderLength = 2.5f,
                 RenderWidth = 1f,
-                Area = 0.1f,
+                Area = 0.075f,
                 MaxDeflection = 45f,
-                MaxLiftForce = 4500f * liftScale,
-                VeloLiftFactor = 1f,
-                VeloDragFactor = 1f,
+                MaxLiftForce = 4500f * LIFT_SCALE,
+                VeloLiftFactor = 1.2f,
+                VeloDragFactor = 1.2f,
                 PivotPoint = new D2DPoint(-21f, 0f),
                 Position = new D2DPoint(-22f, 0f),
-                MinVelo = minVelo,
-                ParasiticDrag = 0.7f,
-                DragFactor = 0.8f,
+                MinVelo = MIN_VELO,
+                ParasiticDrag = 0.8f,
+                DragFactor = 0.5f,
                 DeflectionRate = DEFLECTION_RATE,
-                MaxAOA = 40f
+                MaxAOA = 45f
             });
 
             _rocketBody = new Wing(this, new WingParameters()
             {
                 RenderLength = 0f,
-                Area = 0.045f,
-                MaxLiftForce = 1000f * liftScale,
-                VeloLiftFactor = 1f,
-                VeloDragFactor = 1f,
-                MinVelo = minVelo,
-                ParasiticDrag = 0.2f,
+                Area = 0.03375f,
+                MaxLiftForce = 1000f * LIFT_SCALE,
+                VeloLiftFactor = 1.2f,
+                VeloDragFactor = 1.2f,
+                MinVelo = MIN_VELO,
+                ParasiticDrag = 0.3f,
                 MaxAOA = 30f,
-                DragFactor = 0.5f,
+                DragFactor = 0.6f,
             });
 
             _noseWing = new Wing(this, new WingParameters()
             {
                 RenderLength = 2.5f,
                 RenderWidth = 1f,
-                Area = 0.06f,
+                Area = 0.045f,
                 MaxDeflection = 20f,
-                MaxLiftForce = 2000f * liftScale,
-                VeloLiftFactor = 1f,
-                VeloDragFactor = 1f,
+                MaxLiftForce = 2000f * LIFT_SCALE,
+                VeloLiftFactor = 1.2f,
+                VeloDragFactor = 1.2f,
                 Position = new D2DPoint(21.5f, 0f),
-                MinVelo = minVelo,
-                ParasiticDrag = 0.2f,
+                MinVelo = MIN_VELO,
+                ParasiticDrag = 0.4f,
                 DragFactor = 0.5f,
                 MaxAOA = 30f
             });
@@ -299,10 +298,10 @@ namespace PolyPlane.GameObjects
                     const float MIN_DEF_SPD = 450f; // Minimum speed required for full deflection.
                     var spdFact = Utilities.Factor(this.Velocity.Length(), MIN_DEF_SPD);
 
-                    const float MAX_DEF_AOA = 40f;// Maximum AoA allowed. Reduce deflection as AoA increases.
-                    var aoaFact = 1f - (Math.Abs(_rocketBody.AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 2f))));
+                    const float MAX_DEF_AOA = 50f; // Maximum AoA allowed. Reduce deflection as AoA increases.
+                    var aoaFact = 1f - (Math.Abs(_rocketBody.AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 3f))));
 
-                    const float MAX_DEF_ROT_SPD = 250f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
+                    const float MAX_DEF_ROT_SPD = 80f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
                     var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 3f))));
 
                     // Ease out of SAS as fuel runs out.
