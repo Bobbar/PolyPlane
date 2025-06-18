@@ -59,11 +59,29 @@ namespace PolyPlane.GameObjects
             }
 
         }
+
         public float Deflection
         {
             get { return _controlWing.Deflection; }
 
-            set { _controlWing.Deflection = value; }
+            set 
+            { 
+                _controlWing.Deflection = value;
+                NozzleDeflection = value;
+            }
+        }
+
+        private float NozzleDeflection
+        {
+            get { return _nozzleDefLimiter.Value; }
+
+            set
+            {
+                if (value >= -MAX_NOZZLE_DEF && value <= MAX_NOZZLE_DEF)
+                    _nozzleDefLimiter.Target = value;
+                else
+                    _nozzleDefLimiter.Target = Math.Sign(value) * MAX_NOZZLE_DEF;
+            }
         }
 
         public int NumMissiles
@@ -131,6 +149,7 @@ namespace PolyPlane.GameObjects
         public int Headshots = 0;
         public int Deaths = 0;
 
+        private const float MAX_NOZZLE_DEF = 30f;
         public const int MAX_DECOYS = 15;
         public const int MAX_BULLETS = 30;
         public const int MAX_MISSILES = 6;
@@ -167,6 +186,7 @@ namespace PolyPlane.GameObjects
         private List<Wing> _wings = new List<Wing>();
         private Wing? _controlWing = null;
         private RateLimiter _thrustAmt = new RateLimiter(0.2f);
+        private RateLimiter _nozzleDefLimiter = new RateLimiter(30f);
         private Direction _currentDir = Direction.Right;
         private Direction _queuedDir = Direction.Right;
         private bool _isAIPlane = false;
@@ -506,6 +526,7 @@ namespace PolyPlane.GameObjects
 
             // Update all the low frequency stuff.
             _thrustAmt.Update(dt);
+            _nozzleDefLimiter.Update(dt);
 
             if (!this.IsNetObject)
                 CheckForFlip();
@@ -1225,11 +1246,11 @@ namespace PolyPlane.GameObjects
             var thrust = D2DPoint.Zero;
 
             const float thrustVectorAmt = 1f;
-            const float thrustBoostMaxSpd = 400f;
+            const float thrustBoostMaxSpd = 600f;
             const float MAX_VELO = 2500f;
 
             if (thrustVector)
-                thrust = Utilities.AngleToVectorDegrees(this.Rotation + (_controlWing.Deflection * thrustVectorAmt));
+                thrust = Utilities.AngleToVectorDegrees(this.Rotation + (NozzleDeflection * thrustVectorAmt));
             else
                 thrust = Utilities.AngleToVectorDegrees(this.Rotation);
 
