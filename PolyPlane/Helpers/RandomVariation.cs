@@ -96,6 +96,12 @@
 
             _curTime += dt;
         }
+
+        public void SetMinMaxValue(float minMax)
+        {
+            _minValue = -minMax;
+            _maxValue = minMax;
+        }
     }
 
     public class RandomVariationVector

@@ -104,14 +104,15 @@ namespace PolyPlane.Rendering
         private readonly D2DPoint _infoPosition = new D2DPoint(20, 20);
         private readonly D2DSize _healthBarSize = new D2DSize(80, 20);
 
-        private FloatAnimation _screenShakeX;
-        private FloatAnimation _screenShakeY;
         private FloatAnimation _screenFlash;
         private FloatAnimation _warnLightFlash;
+        private RandomVariationPoint _screenShake = new RandomVariationPoint(10f, 0.05f, 0.08f);
+        private float _screenShakeAmount = 0f;
 
         private int Width => (int)(_renderTarget.Width / (_renderTarget.DeviceDpi / DEFAULT_DPI));
         private int Height => (int)(_renderTarget.Height / (_renderTarget.DeviceDpi / DEFAULT_DPI));
 
+        private const float SCREEN_SHAKE_DECAY = 4f; // How fast screen shake amount decays.
         private const float VIEW_SCALE = 4f;
         private const float DEFAULT_DPI = 96f;
 
@@ -210,8 +211,6 @@ namespace PolyPlane.Rendering
             World.UpdateViewport(scaleSize);
 
             _screenFlash = new FloatAnimation(0.4f, 0f, 4f, EasingFunctions.Out.EaseCircle, v => _screenFlashOpacity = v);
-            _screenShakeX = new FloatAnimation(5f, 0f, 0.2f, EasingFunctions.Out.EaseBounce, v => _screenShakeTrans.X = v);
-            _screenShakeY = new FloatAnimation(5f, 0f, 0.2f, EasingFunctions.Out.EaseBounce, v => _screenShakeTrans.Y = v);
 
             _warnLightFlash = new FloatAnimation(0f, 1f, 0.3f, EasingFunctions.EaseLinear, v => _warnLightFlashAmount = v);
             _warnLightFlash.Loop = true;
@@ -298,9 +297,11 @@ namespace PolyPlane.Rendering
             _hudMessageTimeout.Update(dt);
 
             _screenFlash.Update(dt);
-            _screenShakeX.Update(dt);
-            _screenShakeY.Update(dt);
             _warnLightFlash.Update(dt);
+            _screenShake.Update(dt);
+
+            _screenShakeAmount = Math.Clamp(_screenShakeAmount - (SCREEN_SHAKE_DECAY * dt), 0f, 1f);
+            _screenShakeTrans = _screenShake.Value * _screenShakeAmount;
 
             _contrailBox.Update(_objs.Planes, dt);
 
@@ -1696,12 +1697,9 @@ namespace PolyPlane.Rendering
 
         public void DoScreenShake()
         {
-            float amt = 10f;
-            _screenShakeX.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
-            _screenShakeY.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
-
-            _screenShakeX.Restart();
-            _screenShakeY.Restart();
+            const float amt = 10f;
+            _screenShake.SetMinMaxValue(amt);
+            _screenShakeAmount = 1f;
         }
 
         public void DoScreenShake(float amt)
@@ -1709,14 +1707,8 @@ namespace PolyPlane.Rendering
             if (amt < 0.05f)
                 return;
 
-            if (_screenShakeX == null || _screenShakeY == null)
-                return;
-
-            _screenShakeX.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
-            _screenShakeY.StartValue = Utilities.Rnd.NextFloat(-amt, amt);
-
-            _screenShakeX.Restart();
-            _screenShakeY.Restart();
+            _screenShake.SetMinMaxValue(amt);
+            _screenShakeAmount = 1f;
         }
 
         public void DoScreenFlash(D2DColor color)
