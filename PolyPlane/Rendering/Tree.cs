@@ -192,6 +192,7 @@ namespace PolyPlane.Rendering
         private D2DPoint[] _trunkTransPolyShadow;
 
         private D2DLinearGradientBrush _trunkOverlayBrush = null;
+        private static D2DLinearGradientBrush _leafOverlayBrush = null;
 
         public PineTree(RenderContext ctx, D2DPoint pos, float height, float width, D2DColor trunkColor, D2DColor leafColor) : base(pos, height, trunkColor, leafColor)
         {
@@ -221,11 +222,13 @@ namespace PolyPlane.Rendering
             _trunkTransPoly = new D2DPoint[_trunkPoly.Length];
             _trunkTransPolyShadow = new D2DPoint[_trunkPoly.Length];
 
-            _topPoly.Translate(_topTrans, 180f, this.Position - new D2DPoint(0, this.Height), TREE_SCALE);
+            _topPoly.Translate(_topPoly, 0f, D2DPoint.Zero, TREE_SCALE);
+            _topPoly.Translate(_topTrans, 180f, new D2DPoint(0, this.Height), 1f);
+
             _trunkPoly.Translate(_trunkTransPoly, 180f, this.Position, 1f);
 
             var shadowTopPos = this.Position + new D2DPoint(0, this.Height);
-            _topPoly.Translate(_topTransShadow, 0f, shadowTopPos, TREE_SCALE);
+            _topPoly.Translate(_topTransShadow, 0f, shadowTopPos, 1f);
 
             InitBrushes(ctx);
         }
@@ -248,6 +251,9 @@ namespace PolyPlane.Rendering
                 _trunkBrushCache.Add(heightIdx, newBrush);
                 _trunkOverlayBrush = newBrush;
             }
+
+            if (_leafOverlayBrush == null)
+                _leafOverlayBrush = ctx.Device.CreateLinearGradientBrush(new D2DPoint(-80f, 0f), new D2DPoint(80f, 0f), [new D2DGradientStop(0f, D2DColor.Transparent), new D2DGradientStop(0.5f, D2DColor.Black.WithAlpha(0.2f)), new D2DGradientStop(1f, D2DColor.Transparent)]);
         }
 
         public override void Render(RenderContext ctx, D2DColor timeOfDayColor, D2DColor shadowColor, float shadowAngle)
@@ -285,7 +291,14 @@ namespace PolyPlane.Rendering
             ctx.FillPolygon(_trunkTransPoly, _trunkOverlayBrush);
 
             // Normal top.
-            ctx.FillPolygonWithLighting(_topTrans, centerPos, leafColor, LIGHT_INTENSITY);
+            ctx.PushTransform();
+            ctx.TranslateTransform(centerPos * ctx.CurrentScale);
+
+            // Lighted leaf color and overlay shading.
+            ctx.FillPolygonWithLighting(_topTrans, centerPos, leafColor, LIGHT_INTENSITY, clipped: false);
+            ctx.FillPolygon(_topTrans, _leafOverlayBrush, clipped: false);
+
+            ctx.PopTransform();
         }
 
         public override void Dispose()

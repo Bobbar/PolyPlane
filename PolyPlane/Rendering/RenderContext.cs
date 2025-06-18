@@ -314,14 +314,20 @@ namespace PolyPlane.Rendering
             Gfx.DrawPolygonClipped(Viewport, points, strokeColor, strokeWidth, dashStyle, fillColor);
         }
 
-        public void FillPolygon(D2DPoint[] points, D2DColor fillColor)
+        public void FillPolygon(D2DPoint[] points, D2DColor fillColor, bool clipped = true)
         {
-            Gfx.DrawPolygonClipped(Viewport, points, D2DColor.Transparent, 0f, D2DDashStyle.Solid, fillColor);
+            if (clipped)
+                Gfx.DrawPolygonClipped(Viewport, points, D2DColor.Transparent, 0f, D2DDashStyle.Solid, fillColor);
+            else
+                Gfx.DrawPolygon(points, D2DColor.Transparent, 0f, D2DDashStyle.Solid, fillColor);
         }
 
-        public void FillPolygon(D2DPoint[] points, D2DBrush fillBrush)
+        public void FillPolygon(D2DPoint[] points, D2DBrush fillBrush, bool clipped = true)
         {
-            Gfx.DrawPolygonClipped(Viewport, points, D2DColor.Transparent, 0f, D2DDashStyle.Solid, fillBrush);
+            if (clipped)
+                Gfx.DrawPolygonClipped(Viewport, points, D2DColor.Transparent, 0f, D2DDashStyle.Solid, fillBrush);
+            else
+                Gfx.DrawPolygon(points, D2DColor.Transparent, 0f, D2DDashStyle.Solid, fillBrush);
         }
 
         public void FillPolygon(RenderPoly poly, D2DColor fillColor)
@@ -329,16 +335,16 @@ namespace PolyPlane.Rendering
             Gfx.DrawPolygonClipped(Viewport, poly.Poly, D2DColor.Transparent, 0f, D2DDashStyle.Solid, fillColor);
         }
 
-        public void FillPolygonWithLighting(D2DPoint[] points, D2DPoint centerPos, D2DColor fillColor, float maxIntensity)
+        public void FillPolygonWithLighting(D2DPoint[] points, D2DPoint centerPos, D2DColor fillColor, float maxIntensity, bool clipped = true)
         {
             if (World.UseLightMap)
             {
                 var lightedColor = LightMap.SampleColor(centerPos, fillColor, 0, maxIntensity * _currentLightingFactor);
-                FillPolygon(points, lightedColor);
+                FillPolygon(points, lightedColor, clipped);
             }
             else
             {
-                FillPolygon(points, fillColor);
+                FillPolygon(points, fillColor, clipped);
             }
         }
 
