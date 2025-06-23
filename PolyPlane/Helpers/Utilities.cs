@@ -444,15 +444,10 @@ namespace PolyPlane.Helpers
         /// <param name="index"></param>
         /// <param name="length"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int WrapIndex(int index, int length)
         {
-            if (index < 0)
-                index = length + index;
-
-            if (index >= length)
-                index = index % length;
-
-            return index;
+            return ((index % length) + length) % length;
         }
 
         public static float ImpactTime(GameObject objA, GameObject objB)
