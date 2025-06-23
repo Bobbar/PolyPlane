@@ -7,6 +7,8 @@ namespace PolyPlane.AI_Behavior
 {
     public class FighterPlaneAI : IAIBehavior
     {
+        public List<PlaneThreats> Threats => _threats;
+
         public FighterPlane Plane => _plane;
         public FighterPlane TargetPlane => _targetPlane;
         public GuidedMissile DefendingMissile = null;
@@ -22,6 +24,7 @@ namespace PolyPlane.AI_Behavior
         private bool _gainingVelo = false;
         private bool _reverseDirection = false;
         private bool _isDefending = false;
+
         private bool _isVengeful = false;
         private bool _isCoward = false;
 
@@ -39,6 +42,8 @@ namespace PolyPlane.AI_Behavior
         private const float SPEED_HOLD_RANGE = 5f;
         private readonly float MAX_DECOY_DIST = 20000f; // Max distance between missile and plane before dropping decoys.
 
+        private List<PlaneThreats> _threats = new List<PlaneThreats>();
+
         public FighterPlaneAI(FighterPlane plane, AIPersonality personality)
         {
             _plane = plane;
@@ -50,7 +55,7 @@ namespace PolyPlane.AI_Behavior
         {
             Plane.PlayerKilledCallback += HandlePlayerKilled;
 
-           
+
             ConfigPersonality();
 
             _fireBurstTimer.StartCallback = () =>
@@ -171,12 +176,87 @@ namespace PolyPlane.AI_Behavior
 
         private void ConsiderNewTarget()
         {
+            if (_targetPlane != null && _targetPlane.IsDisabled)
+                _targetPlane = null;
+
+            //if ( _targetPlane.Equals(this.Plane))
+            //    _targetPlane = null;
+
+
+            //if (World.ViewObject.Equals(this.Plane))
+            //{
+
+            //}
+
+            var planes = World.ObjectManager.Planes;
+            _threats.Clear();
+
+
+
+            foreach (var plane in planes)
+            {
+                if (plane.Equals(this.Plane))
+                    continue;
+
+                if (!plane.IsDisabled && !plane.HasCrashed)
+                {
+                    var threatLevel = ComputeThreatLevel(plane);
+
+                    _threats.Add(new PlaneThreats(plane, threatLevel));
+                }
+
+            }
+
+            var sortedThreats = _threats.OrderByDescending(t => t.ThreatLevel);
+
+            if (sortedThreats.Any())
+            {
+
+                var top = sortedThreats.First().Plane;
+                var topLevel = ComputeThreatLevel(top);
+
+                if (_targetPlane == null)
+                {
+                    _targetPlane = top;
+                }
+                else
+                {
+                    var curLevel = ComputeThreatLevel(_targetPlane);
+                    if (topLevel > curLevel)
+                        _targetPlane = top;
+                }
+
+
+
+            }
+
+           
+
+            if (_targetPlane != null)
+                return;
+
             if (this.TargetPlane == null || this.TargetPlane.IsExpired || this.TargetPlane.HasCrashed || this.TargetPlane.IsDisabled)
             {
                 FighterPlane? newTarget = null;
 
+                //var planes = World.ObjectManager.Planes;
+                //_threats.Clear();
+
+                //foreach (var plane in planes)
+                //{
+                //    var threatLevel = ComputeThreatLevel(plane);
+
+                //    _threats.Add(new PlaneThreats(plane, threatLevel));
+                //}
+
+
+                if (World.ViewObject.Equals(this.Plane))
+                {
+
+                }
+
                 // Try to target killed-by plane for vengeful AI.
-                if (HasFlag(AIPersonality.Vengeful))
+                if (_isVengeful)
                 {
                     if (_killedByPlane != null && _killedByPlane.IsExpired)
                         _killedByPlane = null;
@@ -190,7 +270,7 @@ namespace PolyPlane.AI_Behavior
                 // Target one of the top scoring players.
                 if (newTarget == null && HasFlag(AIPersonality.TargetTopPlanes))
                 {
-                    var planes = World.ObjectManager.Planes;
+                    //var planes = World.ObjectManager.Planes;
                     var targets = planes.Where(p => !p.Equals(this.Plane) && !p.IsDisabled).OrderByDescending(p => p.Kills).Take(Math.Min(planes.Count, 5)).ToArray();
 
                     if (targets.Any())
@@ -205,6 +285,31 @@ namespace PolyPlane.AI_Behavior
 
                 _targetPlane = newTarget;
             }
+
+            if (World.ViewObject.Equals(this.Plane))
+            {
+
+            }
+        }
+
+        private int ComputeThreatLevel(FighterPlane plane)
+        {
+            const float CLOSE_DIST = 6000f;
+
+            int level = 0;
+
+            var dist = this.Plane.Position.DistanceTo(plane.Position);
+            level += (int)(3f * (1f - Utilities.Factor(dist, CLOSE_DIST)));
+
+            bool isLockedOn = plane.Radar.LockedObj != null && plane.Radar.LockedObj.Equals(this.Plane);
+
+            if (isLockedOn)
+                level += 1;
+
+            if (plane.FOVToObject(this.Plane) < 20f)
+                level += 1;
+
+            return level;
         }
 
         private void ConsiderFireMissileAtTarget()
@@ -509,6 +614,24 @@ namespace PolyPlane.AI_Behavior
             var targetRot = leadRotation;
 
             return targetRot;
+        }
+    }
+
+    public class PlaneThreats
+    {
+        public FighterPlane Plane;
+        public int ThreatLevel = 0;
+
+
+        public PlaneThreats(FighterPlane plane, int threatLevel)
+        {
+            Plane = plane;
+            ThreatLevel = threatLevel;
+        }
+
+        public PlaneThreats(FighterPlane plane)
+        {
+            Plane = plane;
         }
     }
 }

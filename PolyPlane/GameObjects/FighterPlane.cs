@@ -35,6 +35,9 @@ namespace PolyPlane.GameObjects
             }
         }
 
+        public IAIBehavior AIBehavior => _aiBehavior;
+
+
         public bool InResetCooldown
         {
             get { return !_easePhysicsComplete; }
@@ -64,8 +67,8 @@ namespace PolyPlane.GameObjects
         {
             get { return _controlWing.Deflection; }
 
-            set 
-            { 
+            set
+            {
                 _controlWing.Deflection = value;
                 NozzleDeflection = value;
             }
@@ -617,6 +620,25 @@ namespace PolyPlane.GameObjects
 
             foreach (var wing in _wings)
                 wing.Render(ctx);
+
+
+            //if (this.IsAI)
+            //{
+            //    var threats = _aiBehavior.Threats.AsEnumerable();
+            //    var filterd = threats.OrderByDescending(t => t.ThreatLevel).Take(3);
+
+
+            //    foreach (var threat in filterd)
+            //    {
+            //        ctx.DrawLine(this.Position, threat.Plane.Position, D2DColor.Red, threat.ThreatLevel * 3f);
+            //    }
+
+
+            //    if (this._aiBehavior.TargetPlane != null)
+            //        ctx.DrawLine(this.Position, this._aiBehavior.TargetPlane.Position, D2DColor.Blue, 5f, D2DDashStyle.Dash);
+            //}
+
+
 
             //foreach (var b in _bulletHoles)
             //    ctx.DrawArrow(b.Position, b.Position + Utilities.AngleToVectorDegrees(b.Rotation, 10), D2DColor.Blue, 1f, 3f);
