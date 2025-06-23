@@ -8,7 +8,7 @@ namespace PolyPlane.Rendering
     {
         private List<CloudGeometry> _cloudGeometries = new();
         private List<Cloud> _clouds = new();
-        private SpatialGrid<Cloud> _cloudGrid = new SpatialGrid<Cloud>(c => c.Position, c => false, 11);
+        private SpatialGrid<Cloud> _cloudGrid = new SpatialGrid<Cloud>(c => c.Position, c => false, 13);
 
         private const int NUM_GEO = 500;
 
@@ -16,22 +16,26 @@ namespace PolyPlane.Rendering
         {
             _cloudGeometries.ForEachParallel(c => c.Update(World.CurrentDT));
             _clouds.ForEachParallel(c => c.Update(World.CurrentDT));
-            _cloudGrid.Update(); 
+            _cloudGrid.Update();
         }
 
         public void Render(RenderContext ctx)
         {
-            const float INFLATE_FACT_W = 3f;
-            const float INFLATE_FACT_H = 7f;
+            // Increase the width inflate factor with zoom level.
+            float InflateFactorWidth = Math.Clamp(9f * (1f - Utilities.FactorWithEasing(World.ViewPortScaleMulti, 95f, EasingFunctions.Out.EaseCircle)), 1f, 11f);
 
             var todColor = ctx.GetTimeOfDayColor();
             var todAngle = ctx.GetTimeOfDaySunAngle();
             var shadowColor = Utilities.LerpColorWithAlpha(todColor, D2DColor.Black, 0.7f, 0.05f);
 
             // Inflate the viewport to ensure off-screen clouds with shadow rays are included.
-            var viewPortInflated = ctx.Viewport.Inflate(ctx.Viewport.Width * INFLATE_FACT_W, ctx.Viewport.Height * INFLATE_FACT_H);
-            var inViewPort = _cloudGrid.GetInViewport(viewPortInflated).OrderBy(c => c.OrderIndex);
+            var viewPortInflated = ctx.Viewport.Inflate(ctx.Viewport.Width * InflateFactorWidth, ctx.Viewport.Height);
 
+            // Clamp the top of the viewport so that it is never lower than the lowest shawdow clouds.
+            if (viewPortInflated.top > -Cloud.MAX_SHADOW_ALT)
+                viewPortInflated.top = -Cloud.MAX_SHADOW_ALT;
+
+            var inViewPort = _cloudGrid.GetInViewport(viewPortInflated).OrderBy(c => c.OrderIndex);
             foreach (var cloud in inViewPort)
             {
                 cloud.Render(ctx, shadowColor, todColor, todAngle);
@@ -47,7 +51,7 @@ namespace PolyPlane.Rendering
 
             // Generate some geometry to be shared by multiple clouds.
             GenGeometry(rnd, NUM_GEO);
-           
+
             var cloudDeDup = new HashSet<D2DPoint>();
             var cloudRange = World.CloudRangeY;
             var fieldRange = World.FieldXBounds;

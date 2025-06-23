@@ -17,7 +17,7 @@ namespace PolyPlane.Rendering
         private readonly float _altitude;
 
         private const float LIGHT_INTENSITY = 0.7f;
-        private const float MAX_SHADOW_ALT = 8000f;
+        public const float MAX_SHADOW_ALT = 8000f;
         private const float MAX_ALT = 30000f;
         private const float MIN_ALT = 10000f;
 
