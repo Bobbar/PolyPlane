@@ -31,7 +31,6 @@ namespace PolyPlane.GameObjects
         private const float _maxAge = 1.4f;
         private const float _radius = 150f;
 
-        private D2DColor _color = World.HudColor;
         private Dictionary<GameID, PingObj> _pings = new Dictionary<GameID, PingObj>();
         private GameObjectPool<PingObj> _pingPool = new GameObjectPool<PingObj>(() => new PingObj());
 
@@ -39,9 +38,22 @@ namespace PolyPlane.GameObjects
         private GameTimer _lostLockTimer = new GameTimer(10f);
         private GameTimer _updateTimer = new GameTimer(0.5f, true);
 
-        private D2DLayer _groundClipLayer = null;
-        private D2DTextFormat _textConsolas20Centered = null;
-        private D2DTextFormat _textConsolas15Centered = null;
+        private static readonly D2DColor _color = World.HudColor;
+        private static readonly D2DSize _groundRectSize = new D2DSize(_radius * 2f, _radius * 2f);
+        private static readonly D2DSize _radarSize = new D2DSize(_radius, _radius);
+        private static readonly D2DSize _disabledPlaneSize = new D2DSize(4f, 4f);
+        private static readonly D2DSize _alivePlaneSize = new D2DSize(6f, 6f);
+        private static readonly D2DSize _lockCircleSize = new D2DSize(10f, 10f);
+
+        private static readonly D2DRect _lockInfoRect = new D2DRect(new D2DPoint(-240f, 100f), new D2DSize(180, 80));
+        private static readonly D2DRect _lockIconrect = new D2DRect(new D2DPoint(0f, -130f), new D2DSize(80, 20));
+        private static readonly D2DRect _groundClipRect = new D2DRect(D2DPoint.Zero, _groundRectSize);
+
+        private static D2DLayer _groundClipLayer = null;
+        private static D2DPathGeometry _groundGeo = null;
+
+        private static D2DTextFormat _textConsolas20Centered = null;
+        private static D2DTextFormat _textConsolas15Centered = null;
 
         public Radar(FighterPlane hostPlane)
         {
@@ -126,25 +138,25 @@ namespace PolyPlane.GameObjects
                 _textConsolas15Centered = ctx.Device.CreateTextFormat("Consolas", 15f, D2DFontWeight.Normal, D2DFontStyle.Normal, D2DFontStretch.Normal, DWriteTextAlignment.Center, DWriteParagraphAlignment.Center);
 
             // Background
-            var bgColor = new D2DColor(_color.a * 0.05f, _color);
-            gfx.FillEllipse(new D2DEllipse(D2DPoint.Zero, new D2DSize(_radius, _radius)), bgColor);
+            var bgColor = _color.WithAlpha(0.015f);
+            gfx.FillEllipse(new D2DEllipse(D2DPoint.Zero, _radarSize), bgColor);
 
             // Draw icons.
             foreach (var p in _pings.Values)
             {
                 var ageFact = 1f - Utilities.Factor(p.Age, _maxAge);
-                var pColor = new D2DColor(ageFact, _color);
+                var pColor = _color.WithAlpha(ageFact);
 
                 if (p.Obj is FighterPlane plane)
                 {
                     if (plane.IsDisabled)
-                        gfx.DrawEllipse(new D2DEllipse(p.RadarPos, new D2DSize(4f, 4f)), pColor);
+                        gfx.DrawEllipse(new D2DEllipse(p.RadarPos, _disabledPlaneSize), pColor);
                     else
                     {
                         // Draw direction line.
                         gfx.DrawLine(p.RadarPos, p.RadarPos + (p.Obj.Velocity.Normalized() * 7f), pColor);
 
-                        gfx.FillRectangle(new D2DRect(p.RadarPos, new D2DSize(6f, 6f)), pColor);
+                        gfx.FillRectangle(new D2DRect(p.RadarPos, _alivePlaneSize), pColor);
                     }
 
                 }
@@ -175,18 +187,16 @@ namespace PolyPlane.GameObjects
                 if (aimedAtPlane != null)
                 {
                     var dist = HostPlane.Position.DistanceTo(aimedAtPlane.Position);
-                    var distPos = new D2DPoint(-240f, 100f);
-                    var dRect = new D2DRect(distPos, new D2DSize(180, 80));
-                    gfx.FillRectangle(dRect, new D2DColor(0.5f, D2DColor.Black));
+                    gfx.FillRectangle(_lockInfoRect, D2DColor.Black.WithAlpha(0.5f));
                     var info = $"D:{Math.Round(dist / 1000f, 0)}\nA:{Math.Round(aimedAtPlane.Altitude / 1000f, 0)}\n{aimedAtPlane.PlayerName}";
-                    ctx.DrawText(info, _color, _textConsolas20Centered, dRect);
+                    ctx.DrawText(info, _color, _textConsolas20Centered, _lockInfoRect);
                 }
 
             }
 
             // Draw lock circle around locked on obj.
             if (_lockedPingObj != null && HasLock)
-                gfx.DrawEllipse(new D2DEllipse(_lockedPingObj.RadarPos, new D2DSize(10f, 10f)), _color);
+                gfx.DrawEllipse(new D2DEllipse(_lockedPingObj.RadarPos, _lockCircleSize), _color);
 
             // Draw range rings.
             const int N_RANGES = 4;
@@ -200,16 +210,14 @@ namespace PolyPlane.GameObjects
             DrawGround(ctx);
 
             // Border
-            gfx.DrawEllipse(new D2DEllipse(D2DPoint.Zero, new D2DSize(_radius, _radius)), _color);
+            gfx.DrawEllipse(new D2DEllipse(D2DPoint.Zero, _radarSize), _color);
 
             // Lock icon.
             if (HasLock)
             {
                 var color = Utilities.LerpColor(World.HudColor, D2DColor.WhiteSmoke, 0.3f);
-                var lockPos = new D2DPoint(0f, -130f);
-                var lRect = new D2DRect(lockPos, new D2DSize(80, 20));
-                ctx.DrawText("LOCKED", color, _textConsolas15Centered, lRect);
-                ctx.Gfx.FillRectangle(lRect, color.WithAlpha(0.1f));
+                ctx.DrawText("LOCKED", color, _textConsolas15Centered, _lockIconrect);
+                ctx.Gfx.FillRectangle(_lockIconrect, color.WithAlpha(0.1f));
             }
         }
 
@@ -232,6 +240,16 @@ namespace PolyPlane.GameObjects
             if (_groundClipLayer == null)
                 _groundClipLayer = ctx.Device.CreateLayer();
 
+            if (_groundGeo == null)
+            {
+                // Build an inverted semi-circular path.
+                var clipGeo = ctx.Device.CreatePathGeometry();
+                clipGeo.SetStartPoint(new D2DPoint(-_radius, 0f));
+                clipGeo.AddArc(new D2DPoint(_radius, 0f), _radarSize, 0f, D2DArcSize.Small, D2DSweepDirection.CounterClockwise);
+                clipGeo.ClosePath();
+                _groundGeo = clipGeo;
+            }
+
             // Calculate ground position relative to the plane.
             var groundDist = HostPlane.Position.DistanceTo(new D2DPoint(HostPlane.Position.X, 0f));
             var radDist = _radius / _maxRange * groundDist;
@@ -242,25 +260,14 @@ namespace PolyPlane.GameObjects
 
             radPos += new D2DPoint(0f, _radius);
 
-            // Draw a clipped rectangle to represent the ground.
-            using (var clipGeo = ctx.Device.CreatePathGeometry())
-            {
-                var start = new D2DPoint(-_radius, 0f);
-                var end = new D2DPoint(_radius, 0f);
-                var groundRectSize = new D2DSize(_radius * 2f, _radius * 2f);
-                var groundRect = new D2DRect(radPos, groundRectSize);
+            var groundRect = new D2DRect(radPos, _groundRectSize);
 
-                // Build an inverted semi-circular path.
-                clipGeo.SetStartPoint(start);
-                clipGeo.AddArc(end, new D2DSize(_radius, _radius), 0f, D2DArcSize.Small, D2DSweepDirection.CounterClockwise);
-                clipGeo.ClosePath();
+            // Draw the clipped ground rect.
+            ctx.Gfx.PushLayer(_groundClipLayer, _groundClipRect, _groundGeo);
 
-                ctx.Gfx.PushLayer(_groundClipLayer, new D2DRect(D2DPoint.Zero, groundRectSize), clipGeo);
+            ctx.Gfx.FillRectangle(groundRect, _color.WithAlpha(0.05f));
 
-                ctx.Gfx.FillRectangle(groundRect, _color.WithAlpha(0.05f));
-
-                ctx.Gfx.PopLayer();
-            }
+            ctx.Gfx.PopLayer();
         }
 
         private void NotifyLocks()
