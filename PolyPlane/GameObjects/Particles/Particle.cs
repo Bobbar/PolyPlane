@@ -9,14 +9,9 @@ namespace PolyPlane.GameObjects.Particles
     public sealed class Particle : GameObject, INoGameID, ILightMapContributor
     {
         public int Idx;
-        public ParticleType Type;
+        public float MaxAge = 1f;
 
-        public D2DEllipse Ellipse = new D2DEllipse();
-        public D2DColor Color { get; set; }
-        public D2DColor StartColor { get; set; }
-        public D2DColor EndColor { get; set; }
-
-        public float Radius
+        private float Radius
         {
             get
             {
@@ -30,10 +25,13 @@ namespace PolyPlane.GameObjects.Particles
             }
         }
 
-        public float MaxAge = 1f;
-        public float TargetRadius = 0f;
-
+        private ParticleType Type;
         private D2DPoint RiseRate;
+        private D2DColor Color;
+        private D2DColor StartColor;
+        private D2DColor EndColor;
+        private D2DEllipse Ellipse = new D2DEllipse();
+        private float TargetRadius = 0f;
 
         const float DEFAULT_MAX_AGE = 30f;
         const float MIN_RISE_RATE = -50f;
@@ -46,7 +44,6 @@ namespace PolyPlane.GameObjects.Particles
 
         public Particle()
         {
-            Ellipse = new D2DEllipse();
             RenderLayer = 0;
             Mass = PARTICLE_MASS;
             Flags = GameObjectFlags.SpatialGrid | GameObjectFlags.AeroPushable | GameObjectFlags.ExplosionImpulse | GameObjectFlags.BounceOffGround;
@@ -56,7 +53,7 @@ namespace PolyPlane.GameObjects.Particles
         {
             base.DoUpdate(dt);
 
-            switch (this.Type)
+            switch (Type)
             {
                 case ParticleType.Flame or ParticleType.Dust:
 
@@ -80,8 +77,6 @@ namespace PolyPlane.GameObjects.Particles
                     break;
             }
 
-            Ellipse.origin = Position;
-
             if (Age > MaxAge && !IsExpired)
             {
                 // Add our index to the queue to be cleaned up later.
@@ -95,6 +90,8 @@ namespace PolyPlane.GameObjects.Particles
         {
             base.Render(ctx);
 
+            Ellipse.origin = Position;
+
             switch (this.Type)
             {
                 case ParticleType.Flame or ParticleType.Dust:
@@ -105,7 +102,7 @@ namespace PolyPlane.GameObjects.Particles
 
                     // Gradually grow until we reach the target radius.
                     var ageFactGrow = Utilities.Factor(Age, PART_GROW_AGE);
-                   
+
                     Radius = TargetRadius * ageFactGrow;
                     Color = Utilities.LerpColorWithAlpha(StartColor, EndColor, ageFactSmoke, alpha);
 
@@ -122,8 +119,8 @@ namespace PolyPlane.GameObjects.Particles
                     var rad = (TargetRadius * radAmt);
                     var alphaSmoke = StartColor.a * ageFact;
 
-                    Color = new D2DColor(alphaSmoke, StartColor);
                     Radius = rad;
+                    Color = StartColor.WithAlpha(alphaSmoke);
 
                     ctx.FillEllipse(Ellipse, Color);
 
@@ -160,6 +157,8 @@ namespace PolyPlane.GameObjects.Particles
             particle.IsExpired = false;
 
             particle.TargetRadius = radius;
+            particle.Velocity = velo;
+            particle.Position = pos;
             particle.Ellipse.origin = pos;
             particle.Ellipse.radiusX = radius;
             particle.Ellipse.radiusY = radius;
@@ -170,10 +169,6 @@ namespace PolyPlane.GameObjects.Particles
 
             particle.RiseRate = new D2DPoint(0f, Utilities.Rnd.NextFloat(MAX_RISE_RATE, MIN_RISE_RATE));
 
-            particle.Position = particle.Ellipse.origin;
-            particle.Velocity = velo;
-
-            //World.ObjectManager.AddParticle(particle);
             World.ObjectManager.EnqueueParticle(particle);
 
             return particle;

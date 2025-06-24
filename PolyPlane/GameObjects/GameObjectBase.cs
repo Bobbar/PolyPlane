@@ -442,6 +442,10 @@ namespace PolyPlane.GameObjects
 
         public virtual void ClampToGround(float dt)
         {
+            // Don't bother with objects with no flags.
+            if (Flags == 0)
+                return;
+
             if (HasFlag(GameObjectFlags.BounceOffGround))
             {
                 // Let some objects bounce.
