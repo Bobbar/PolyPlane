@@ -7,8 +7,6 @@ namespace PolyPlane.AI_Behavior
 {
     public class FighterPlaneAI : IAIBehavior
     {
-        public List<PlaneThreats> Threats => _threats;
-
         public FighterPlane Plane => _plane;
         public FighterPlane TargetPlane => _targetPlane;
         public GuidedMissile DefendingMissile = null;
@@ -32,7 +30,7 @@ namespace PolyPlane.AI_Behavior
         private GameTimer _fireMissileCooldown = new GameTimer(6f);
         private GameTimer _dropDecoysTimer = new GameTimer(2f, 3f);
         private GameTimer _changeTargetCooldown = new GameTimer(10f);
-        private GameTimer _defendMissileCooldown = new GameTimer(4f);
+        private GameTimer _defendMissileCooldown = new GameTimer(8f);
         private GameTimer _dodgeMissileCooldown = new GameTimer(4.5f);
         private RateLimiterAngle _defendAngleRate = new RateLimiterAngle(20f);
 
@@ -77,7 +75,11 @@ namespace PolyPlane.AI_Behavior
         public void Update(float dt)
         {
             if (this.Plane.IsDisabled || this.Plane.HasCrashed)
+            {
+                _threats.Clear();
+                _targetPlane = null;
                 return;
+            }
 
             _sineWavePos += 0.3f * dt;
 
@@ -179,20 +181,10 @@ namespace PolyPlane.AI_Behavior
             if (_targetPlane != null && _targetPlane.IsDisabled)
                 _targetPlane = null;
 
-            //if ( _targetPlane.Equals(this.Plane))
-            //    _targetPlane = null;
-
-
-            //if (World.ViewObject.Equals(this.Plane))
-            //{
-
-            //}
-
             var planes = World.ObjectManager.Planes;
             _threats.Clear();
 
-
-
+            // Compute threat levels for other planes.
             foreach (var plane in planes)
             {
                 if (plane.Equals(this.Plane))
@@ -204,56 +196,35 @@ namespace PolyPlane.AI_Behavior
 
                     _threats.Add(new PlaneThreats(plane, threatLevel));
                 }
-
             }
 
-            var sortedThreats = _threats.OrderByDescending(t => t.ThreatLevel);
+            // Sort by threat level.
+            _threats.Sort();
 
-            if (sortedThreats.Any())
+            // Only proceed if we have a theat level greater than zero.
+            if (_threats.Any(t => t.ThreatLevel > 0f))
             {
+                var top = _threats.First();
+                var topLevel = top.ThreatLevel;
 
-                var top = sortedThreats.First().Plane;
-                var topLevel = ComputeThreatLevel(top);
-
+                // Just pick the plane with the highest threat.
                 if (_targetPlane == null)
                 {
-                    _targetPlane = top;
+                    _targetPlane = top.Plane;
                 }
                 else
                 {
+                    // Otherwise only switch if the top threat is a higher level than the current target.
                     var curLevel = ComputeThreatLevel(_targetPlane);
                     if (topLevel > curLevel)
-                        _targetPlane = top;
+                        _targetPlane = top.Plane;
                 }
-
-
-
             }
 
-           
-
-            if (_targetPlane != null)
-                return;
-
-            if (this.TargetPlane == null || this.TargetPlane.IsExpired || this.TargetPlane.HasCrashed || this.TargetPlane.IsDisabled)
+            // Run the regular AI behavior target selection if none was found in the threat-level logic.
+            if (_targetPlane == null)
             {
                 FighterPlane? newTarget = null;
-
-                //var planes = World.ObjectManager.Planes;
-                //_threats.Clear();
-
-                //foreach (var plane in planes)
-                //{
-                //    var threatLevel = ComputeThreatLevel(plane);
-
-                //    _threats.Add(new PlaneThreats(plane, threatLevel));
-                //}
-
-
-                if (World.ViewObject.Equals(this.Plane))
-                {
-
-                }
 
                 // Try to target killed-by plane for vengeful AI.
                 if (_isVengeful)
@@ -270,7 +241,6 @@ namespace PolyPlane.AI_Behavior
                 // Target one of the top scoring players.
                 if (newTarget == null && HasFlag(AIPersonality.TargetTopPlanes))
                 {
-                    //var planes = World.ObjectManager.Planes;
                     var targets = planes.Where(p => !p.Equals(this.Plane) && !p.IsDisabled).OrderByDescending(p => p.Kills).Take(Math.Min(planes.Count, 5)).ToArray();
 
                     if (targets.Any())
@@ -285,29 +255,42 @@ namespace PolyPlane.AI_Behavior
 
                 _targetPlane = newTarget;
             }
-
-            if (World.ViewObject.Equals(this.Plane))
-            {
-
-            }
         }
 
-        private int ComputeThreatLevel(FighterPlane plane)
+        /// <summary>
+        /// Tries to compute a threat level for the specified plane. Higher threat levels for planes which are close, closing-in, locked on and pointing at our plane.
+        /// </summary>
+        /// <param name="plane"></param>
+        /// <returns></returns>
+        private float ComputeThreatLevel(FighterPlane plane)
         {
-            const float CLOSE_DIST = 6000f;
+            const float CLOSE_DIST = 6000f; // Min distance to me considered "close"
+            const float CLOSE_RATE = 400f; // Closing-rate for max threat level.
+            const float CLOSE_MULTI = 3f;
+            const float LOCKON_MULTI = 2f;
+            const float FOV_MULTI = 3f;
 
-            int level = 0;
+            float level = 0f;
 
+            // Increase threat level as distance decreases.
             var dist = this.Plane.Position.DistanceTo(plane.Position);
-            level += (int)(3f * (1f - Utilities.Factor(dist, CLOSE_DIST)));
+            level += CLOSE_MULTI * (1f - Utilities.Factor(dist, CLOSE_DIST));
 
-            bool isLockedOn = plane.Radar.LockedObj != null && plane.Radar.LockedObj.Equals(this.Plane);
+            // Add locked-on multiplier.
+            var lockedObj = plane.Radar.LockedObj;
+            bool isLockedOn = lockedObj != null && lockedObj.Equals(this.Plane);
 
             if (isLockedOn)
-                level += 1;
+                level *= LOCKON_MULTI;
 
-            if (plane.FOVToObject(this.Plane) < 20f)
-                level += 1;
+            // Add FOV multiplier.
+            if (plane.FOVToObject(this.Plane) < 10f)
+                level *= FOV_MULTI;
+
+            // Closing-rate multiplier.
+            var closingRate = Utilities.ClosingRate(this.Plane, plane);
+            var closeRateFact = Utilities.Factor(closingRate, CLOSE_RATE);
+            level *= closeRateFact + 0.1f;
 
             return level;
         }
@@ -615,23 +598,30 @@ namespace PolyPlane.AI_Behavior
 
             return targetRot;
         }
-    }
-
-    public class PlaneThreats
-    {
-        public FighterPlane Plane;
-        public int ThreatLevel = 0;
 
 
-        public PlaneThreats(FighterPlane plane, int threatLevel)
+        private struct PlaneThreats : IComparable<PlaneThreats>
         {
-            Plane = plane;
-            ThreatLevel = threatLevel;
-        }
+            public FighterPlane Plane;
+            public float ThreatLevel = 0;
 
-        public PlaneThreats(FighterPlane plane)
-        {
-            Plane = plane;
+
+            public PlaneThreats(FighterPlane plane, float threatLevel)
+            {
+                Plane = plane;
+                ThreatLevel = threatLevel;
+            }
+
+            public PlaneThreats(FighterPlane plane)
+            {
+                Plane = plane;
+            }
+
+            public int CompareTo(PlaneThreats other)
+            {
+                // Order by theat level descending.
+                return other.ThreatLevel.CompareTo(ThreatLevel);
+            }
         }
     }
 }

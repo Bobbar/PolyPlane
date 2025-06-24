@@ -5,9 +5,6 @@ namespace PolyPlane.AI_Behavior
     // Target practice...
     public sealed class DummyAI : IAIBehavior
     {
-
-        public List<PlaneThreats> Threats { get; }
-
         public FighterPlane Plane => _plane;
         public FighterPlane TargetPlane => throw new NotImplementedException();
         public AIPersonality Personality { get; set; }
