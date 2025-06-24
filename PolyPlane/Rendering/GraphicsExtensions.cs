@@ -143,7 +143,7 @@ namespace PolyPlane.Rendering
 
         public static void DrawLineClipped(this D2DGraphics gfx, D2DRect viewport, D2DPoint start, D2DPoint end, D2DColor color, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid, D2DCapStyle startCap = D2DCapStyle.Flat, D2DCapStyle endCap = D2DCapStyle.Flat)
         {
-            if (viewport.Contains(start) || viewport.Contains(end))
+            if (viewport.Contains(start, end))
             {
                 gfx.DrawLine(start, end, color, weight, dashStyle, startCap, endCap);
                 OnScreen++;
