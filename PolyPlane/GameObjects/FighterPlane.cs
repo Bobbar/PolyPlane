@@ -221,6 +221,7 @@ namespace PolyPlane.GameObjects
         private const float POLY_TESSELLATE_DIST = 2f; // Tessellation amount. Smaller = higher resolution.
         private const float BULLET_DISTORT_AMT = 4f;
         private const float MISSILE_DISTORT_AMT = 7f;
+        private const float PILOT_HEAD_SIZE = 3.5f; // Radius of the ellipse within the cockpit, representing the pilot, for headshot checking.
 
         private RenderPoly FlamePoly;
         private D2DLayer _polyClipLayer = null;
@@ -230,6 +231,7 @@ namespace PolyPlane.GameObjects
         private static readonly D2DColor _groundDustColor = new D2DColor(1f, 0.35f, 0.2f, 0.1f);
         private static readonly D2DSize _cockpitSize = new D2DSize(9f, 6f);
         private D2DEllipse _cockpitEllipse = new D2DEllipse(D2DPoint.Zero, _cockpitSize);
+        private D2DEllipse _pilotHeadEllipse = new D2DEllipse(D2DPoint.Zero, new D2DSize(PILOT_HEAD_SIZE, PILOT_HEAD_SIZE));
 
         private Gun _gun;
         private DecoyDispenser _decoyDispenser;
@@ -622,24 +624,6 @@ namespace PolyPlane.GameObjects
                 wing.Render(ctx);
 
 
-            //if (this.IsAI)
-            //{
-            //    var threats = _aiBehavior.Threats.AsEnumerable();
-            //    var filterd = threats.OrderByDescending(t => t.ThreatLevel).Take(3);
-
-
-            //    foreach (var threat in filterd)
-            //    {
-            //        ctx.DrawLine(this.Position, threat.Plane.Position, D2DColor.Red, threat.ThreatLevel * 3f);
-            //    }
-
-
-            //    if (this._aiBehavior.TargetPlane != null)
-            //        ctx.DrawLine(this.Position, this._aiBehavior.TargetPlane.Position, D2DColor.Blue, 5f, D2DDashStyle.Dash);
-            //}
-
-
-
             //foreach (var b in _bulletHoles)
             //    ctx.DrawArrow(b.Position, b.Position + Utilities.AngleToVectorDegrees(b.Rotation, 10), D2DColor.Blue, 1f, 3f);
 
@@ -1025,20 +1009,23 @@ namespace PolyPlane.GameObjects
             // Distortion vector for poly damage and headshot checks.
             var distortVec = Utilities.AngleToVectorDegrees(angle, distortAmt);
 
+            // Copy the polygon, distort it, then check for distortion related damage effects.
+            var polyCopy = new RenderPoly(this.Polygon, this.Position, this.Rotation);
+            polyCopy.Distort(result.ImpactPointOrigin, distortVec);
+
+
             // Check for headshots.
-            _cockpitEllipse.origin = _cockpitPosition.Position;
+            _pilotHeadEllipse.origin = _cockpitPosition.Position;
             var cockpitImpactPos = (result.ImpactPointOrigin + distortVec).Translate(this.Rotation, this.Position, this.RenderScale);
-            var hitCockpit = _cockpitEllipse.Contains(_cockpitPosition.Rotation, cockpitImpactPos);
+
+            // Headshot if the impact is inside the head ellipse or if the origin of the ellipse is outside the polygon due to distortion/damage.
+            var hitCockpit = _pilotHeadEllipse.Contains(_cockpitPosition.Rotation, cockpitImpactPos) || !Utilities.PointInPoly(_cockpitPosition.Position, polyCopy.Poly);
 
             if (hitCockpit)
             {
                 result.ImpactType |= ImpactType.Headshot;
                 damageAmt = this.Health;
             }
-
-            // Copy the polygon, distort it, then check for distortion related damage effects.
-            var polyCopy = new RenderPoly(this.Polygon, this.Position, this.Rotation);
-            polyCopy.Distort(result.ImpactPointOrigin, distortVec);
 
             AddPolyDamageEffectsResult(polyCopy, result);
 
