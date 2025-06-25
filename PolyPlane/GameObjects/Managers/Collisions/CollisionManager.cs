@@ -240,9 +240,6 @@ namespace PolyPlane.GameObjects.Managers
             {
                 for (int b = start; b < end; b++)
                 {
-                    if (b >= _objs.Bullets.Count)
-                        Debugger.Break();
-
                     var bullet = _objs.Bullets[b];
                     var nearObjs = _objs.GetNear(bullet);
 

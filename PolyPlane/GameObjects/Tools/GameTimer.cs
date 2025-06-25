@@ -86,6 +86,9 @@ namespace PolyPlane.GameObjects.Tools
                     {
                         _currentCooldown = 0f;
                         _isInCooldown = false;
+
+                        if (CoolDownEndCallback != null)
+                            CoolDownEndCallback();
                     }
                 }
             }

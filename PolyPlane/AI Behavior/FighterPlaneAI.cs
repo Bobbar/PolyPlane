@@ -23,12 +23,9 @@ namespace PolyPlane.AI_Behavior
         private bool _reverseDirection = false;
         private bool _isDefending = false;
 
-        private bool _isVengeful = false;
-        private bool _isCoward = false;
-
         private GameTimer _fireBurstTimer = new GameTimer(2f, 6f);
         private GameTimer _fireMissileCooldown = new GameTimer(6f);
-        private GameTimer _dropDecoysTimer = new GameTimer(2f, 3f);
+        private GameTimer _dropDecoysTimer = new GameTimer(1.2f, 2.5f);
         private GameTimer _changeTargetCooldown = new GameTimer(10f);
         private GameTimer _defendMissileCooldown = new GameTimer(8f);
         private GameTimer _dodgeMissileCooldown = new GameTimer(4.5f);
@@ -53,14 +50,10 @@ namespace PolyPlane.AI_Behavior
         {
             Plane.PlayerKilledCallback += HandlePlayerKilled;
 
-
             ConfigPersonality();
 
-            _fireBurstTimer.StartCallback = () =>
-            this.Plane.FiringBurst = true;
-
-            _fireBurstTimer.TriggerCallback = () =>
-            this.Plane.FiringBurst = false;
+            _fireBurstTimer.StartCallback = () => this.Plane.FiringBurst = true;
+            _fireBurstTimer.TriggerCallback = () => this.Plane.FiringBurst = false;
 
             _dropDecoysTimer.StartCallback = () => this.Plane.DroppingDecoy = true;
             _dropDecoysTimer.TriggerCallback = () => this.Plane.DroppingDecoy = false;
@@ -144,8 +137,6 @@ namespace PolyPlane.AI_Behavior
                             {
                                 MAX_SPEED = 700f;
                                 this.Plane.Thrust = 700f;
-
-                                _isCoward = true;
                             }
                             break;
 
@@ -161,9 +152,6 @@ namespace PolyPlane.AI_Behavior
                     }
                 }
             }
-
-            if (HasFlag(AIPersonality.Vengeful))
-                _isVengeful = true;
         }
 
         public bool HasFlag(AIPersonality flag)
@@ -227,7 +215,7 @@ namespace PolyPlane.AI_Behavior
                 FighterPlane? newTarget = null;
 
                 // Try to target killed-by plane for vengeful AI.
-                if (_isVengeful)
+                if (HasFlag(AIPersonality.Vengeful))
                 {
                     if (_killedByPlane != null && _killedByPlane.IsExpired)
                         _killedByPlane = null;
@@ -268,6 +256,7 @@ namespace PolyPlane.AI_Behavior
             const float CLOSE_RATE = 400f; // Closing-rate for max threat level.
             const float CLOSE_MULTI = 3f;
             const float LOCKON_MULTI = 2f;
+            const float MAX_FOV = 10f;
             const float FOV_MULTI = 3f;
 
             float level = 0f;
@@ -284,7 +273,7 @@ namespace PolyPlane.AI_Behavior
                 level *= LOCKON_MULTI;
 
             // Add FOV multiplier.
-            if (plane.FOVToObject(this.Plane) < 10f)
+            if (plane.FOVToObject(this.Plane) < MAX_FOV)
                 level *= FOV_MULTI;
 
             // Closing-rate multiplier.
@@ -440,7 +429,7 @@ namespace PolyPlane.AI_Behavior
                 var dirToTarget = TargetPlane.Position - this.Plane.Position;
                 var distToTarget = this.Plane.Position.DistanceTo(TargetPlane.Position);
 
-                if (_isCoward && distToTarget < RUN_DISTANCE && distToTarget > FIGHT_DISTANCE)
+                if (HasFlag(AIPersonality.Cowardly) && distToTarget < RUN_DISTANCE && distToTarget > FIGHT_DISTANCE)
                 {
                     // Fly away from target plane.
                     dirToTarget *= -1f;
@@ -605,16 +594,10 @@ namespace PolyPlane.AI_Behavior
             public FighterPlane Plane;
             public float ThreatLevel = 0;
 
-
             public PlaneThreats(FighterPlane plane, float threatLevel)
             {
                 Plane = plane;
                 ThreatLevel = threatLevel;
-            }
-
-            public PlaneThreats(FighterPlane plane)
-            {
-                Plane = plane;
             }
 
             public int CompareTo(PlaneThreats other)

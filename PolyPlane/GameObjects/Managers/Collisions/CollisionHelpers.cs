@@ -132,7 +132,6 @@ namespace PolyPlane.GameObjects.Managers
 
                             if (PolyIntersect(lagPntStart, lagPntEnd, polyFaces, out D2DPoint iPosLag))
                             {
-
                                 impactPoint = iPosLag;
                                 return true;
                             }
