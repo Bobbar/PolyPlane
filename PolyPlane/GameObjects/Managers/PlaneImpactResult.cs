@@ -10,7 +10,7 @@ namespace PolyPlane.GameObjects.Managers
         public D2DPoint ImpactPoint;
         public D2DPoint ImpactPointOrigin;
         public float ImpactAngle;
-        public bool WasHeadshot => ImpactType.HasFlag(ImpactType.Headshot);
+        public bool WasHeadshot => HasFlag(ImpactType.Headshot);
         public bool WasFlipped;
         public float DamageAmount = 0f;
         public float NewHealth = 0f;
@@ -39,6 +39,11 @@ namespace PolyPlane.GameObjects.Managers
 
             if (impactPacket.WasHeadshot)
                 ImpactType |= ImpactType.Headshot;
+        }
+
+        public bool HasFlag(ImpactType flag)
+        {
+            return (ImpactType & flag) == flag;
         }
     }
 

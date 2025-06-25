@@ -897,19 +897,19 @@ namespace PolyPlane.GameObjects
             var mainWing = _wings.First();
             var tailWing = _wings.Last();
 
-            if (mainWing.Visible && result.ImpactType.HasFlag(ImpactType.DamagedMainWing))
+            if (mainWing.Visible && result.HasFlag(ImpactType.DamagedMainWing))
             {
                 mainWing.Visible = false;
                 SpawnDebris(1, mainWing.Position, D2DColor.Gray);
             }
 
-            if (tailWing.Visible && result.ImpactType.HasFlag(ImpactType.DamagedTailWing))
+            if (tailWing.Visible && result.HasFlag(ImpactType.DamagedTailWing))
             {
                 tailWing.Visible = false;
                 SpawnDebris(1, tailWing.Position, D2DColor.Gray);
             }
 
-            if (!this.EngineDamaged && result.ImpactType.HasFlag(ImpactType.DamagedEngine))
+            if (!this.EngineDamaged && result.HasFlag(ImpactType.DamagedEngine))
             {
                 _engineFireFlame.StartSpawning();
                 this.EngineDamaged = true;
@@ -932,7 +932,7 @@ namespace PolyPlane.GameObjects
             {
                 var distortAmt = BULLET_DISTORT_AMT;
 
-                if (result.ImpactType.HasFlag(ImpactType.Missile))
+                if (result.HasFlag(ImpactType.Missile))
                     distortAmt = MISSILE_DISTORT_AMT;
 
                 var angle = result.ImpactAngle;
@@ -960,9 +960,9 @@ namespace PolyPlane.GameObjects
                 {
                     Health -= result.DamageAmount;
 
-                    if (result.ImpactType.HasFlag(ImpactType.Missile))
+                    if (result.HasFlag(ImpactType.Missile))
                         SpawnDebris(4, result.ImpactPoint, this.PlaneColor);
-                    else if (result.ImpactType.HasFlag(ImpactType.Bullet))
+                    else if (result.HasFlag(ImpactType.Bullet))
                         SpawnDebris(1, result.ImpactPoint, this.PlaneColor);
                 }
 
