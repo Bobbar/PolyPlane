@@ -59,8 +59,6 @@ namespace PolyPlane.GameObjects
         private const float DEFLECTION_DAMPING = 1.2f;
 
         private float _currentFuel = 0f;
-        private float _gForce = 0f;
-        private float _gForcePeak = 0f;
         private float _initRotation = 0f;
         private float _guideRotation = 0f;
         private float _curDeflection = 0f;
@@ -326,26 +324,22 @@ namespace PolyPlane.GameObjects
                 this.Velocity += World.Gravity * dt;
                 this.RotationSpeed += torqueRot * dt;
             }
-
-            var gforce = accel.Length() / dt / 9.8f;
-            _gForce = gforce;
-            _gForcePeak = Math.Max(_gForcePeak, _gForce);
         }
 
         public override void DoUpdate(float dt)
         {
             base.DoUpdate(dt);
 
-            if (_currentFuel > 0f)
-            {
-                _currentFuel -= BURN_RATE * dt;
-            }
-
             // Don't expire net missiles. Wait for client packets.
             if (!this.IsNetObject)
             {
                 if (_currentFuel <= 0f && this.Age > LIFESPAN && this.MissedTarget)
                     this.IsExpired = true;
+            }
+
+            if (FlameOn && _currentFuel > 0f)
+            {
+                _currentFuel -= BURN_RATE * dt;
             }
 
             if (FlameOn && _currentFuel <= 0f)
