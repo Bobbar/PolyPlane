@@ -243,6 +243,8 @@ namespace PolyPlane.GameObjects
 
         private List<BulletHole> _bulletHoles = new List<BulletHole>();
 
+        const GameObjectFlags DefaultFlags = GameObjectFlags.ClampToGround | GameObjectFlags.SpatialGrid | GameObjectFlags.ExplosionImpulse;
+
         private static readonly D2DPoint[] _planePoly =
         [
             new D2DPoint(28,0),
@@ -273,7 +275,7 @@ namespace PolyPlane.GameObjects
 
         ];
 
-        public FighterPlane(D2DPoint pos, D2DColor color) : base(pos)
+        public FighterPlane(D2DPoint pos, D2DColor color) : base(pos, DefaultFlags)
         {
             this.PlayerID = World.GetNextPlayerId();
             _isAIPlane = false;
@@ -298,7 +300,6 @@ namespace PolyPlane.GameObjects
 
         private void InitStuff()
         {
-            this.Flags = GameObjectFlags.ClampToGround | GameObjectFlags.SpatialGrid | GameObjectFlags.ExplosionImpulse;
             this.Radar = new Radar(this);
 
             this.Mass = 90f;

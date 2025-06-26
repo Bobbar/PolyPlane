@@ -21,9 +21,8 @@ namespace PolyPlane.GameObjects
         private D2DColor _showckWaveColor = new D2DColor(1f, D2DColor.White);
         private static readonly D2DColor _lightMapColor = new D2DColor(1f, 0.96f, 0.67f, 0.26f);
 
-        public Explosion() : base()
+        public Explosion() : base(GameObjectFlags.SpatialGrid)
         {
-            this.Flags = GameObjectFlags.SpatialGrid;
             this.RenderLayer = 7;
         }
 

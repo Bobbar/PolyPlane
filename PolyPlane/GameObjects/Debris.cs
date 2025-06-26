@@ -16,9 +16,10 @@ namespace PolyPlane.GameObjects
 
         public RenderPoly Polygon { get; set; }
 
-        public Debris() : base()
+        private static readonly GameObjectFlags DefaultFlags = GameObjectFlags.AeroPushable | GameObjectFlags.ExplosionImpulse | GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround | GameObjectFlags.CanSleep;
+
+        public Debris() : base(DefaultFlags)
         {
-            this.Flags = GameObjectFlags.AeroPushable | GameObjectFlags.ExplosionImpulse | GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround | GameObjectFlags.CanSleep;
             this.Mass = 40f;
             this.RenderLayer = 3;
             this.Polygon = new RenderPoly(this, Utilities.RandomPoly(8, 12));

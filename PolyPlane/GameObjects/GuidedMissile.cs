@@ -114,7 +114,7 @@ namespace PolyPlane.GameObjects
             new D2DPoint(-8, -1.5f),
         ];
 
-        public GuidedMissile(GameObject player, GameObject target, D2DPoint position, D2DPoint velocity, float rotation)
+        public GuidedMissile(GameObject player, GameObject target, D2DPoint position, D2DPoint velocity, float rotation) : base(GameObjectFlags.SpatialGrid)
         {
             this.PlayerID = player.ID.PlayerID;
             this.IsNetObject = true;
@@ -129,7 +129,7 @@ namespace PolyPlane.GameObjects
             InitStuff();
         }
 
-        public GuidedMissile(GameObject player, GameObject target, GuidanceType guidance = GuidanceType.Advanced) : base(player.Position, player.Velocity, player.Rotation)
+        public GuidedMissile(GameObject player, GameObject target, GuidanceType guidance = GuidanceType.Advanced) : base(player.Position, player.Velocity, player.Rotation, GameObjectFlags.SpatialGrid)
         {
             this.PlayerID = player.ID.PlayerID;
             this.GuidanceType = guidance;
@@ -155,7 +155,6 @@ namespace PolyPlane.GameObjects
 
         private void InitStuff()
         {
-            this.Flags = GameObjectFlags.SpatialGrid;
             this.Mass = 22.5f;
             this.RenderScale = 0.9f;
             this.RenderLayer = 2;

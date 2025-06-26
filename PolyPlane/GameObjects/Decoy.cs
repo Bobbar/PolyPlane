@@ -17,7 +17,9 @@ namespace PolyPlane.GameObjects
 
         private FloatAnimation _flashAnimation;
 
-        public Decoy() : base() 
+        const GameObjectFlags DefaultFlags = GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround;
+
+        public Decoy() : base(DefaultFlags) 
         {
             InitStuff();
         }
@@ -65,7 +67,6 @@ namespace PolyPlane.GameObjects
 
         private void InitStuff()
         {
-            this.Flags = GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround;
             this.Mass = 50f;
             this.RenderLayer = 1;
 

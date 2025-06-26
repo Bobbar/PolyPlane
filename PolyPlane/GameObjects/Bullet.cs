@@ -28,11 +28,10 @@ namespace PolyPlane.GameObjects
 
         public RenderPoly Polygon { get; set; }
 
-        public Bullet() : base()
+        public Bullet() : base(GameObjectFlags.SpatialGrid)
         {
             this.Polygon = new RenderPoly(this, _poly);
             this.RenderLayer = 4;
-            this.Flags = GameObjectFlags.SpatialGrid;
         }
 
         public Bullet(FighterPlane plane) : this()

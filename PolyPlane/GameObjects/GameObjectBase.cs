@@ -123,6 +123,7 @@ namespace PolyPlane.GameObjects
         protected float _rotation = 0f;
         protected int _gridHash = 0;
         private bool _hasPhysicsUpdate = false;
+        private bool _isSpatialGridObj = false;
 
 
         public GameObject()
@@ -133,9 +134,22 @@ namespace PolyPlane.GameObjects
             _hasPhysicsUpdate = ImplementsPhysicsUpdate();
         }
 
+        public GameObject(GameObjectFlags flags) : this()
+        {
+            this.Flags = flags;
+
+            if (HasFlag(GameObjectFlags.SpatialGrid))
+                _isSpatialGridObj = true;
+        }
+
         public GameObject(GameObject owner) : this()
         {
             Owner = owner;
+        }
+
+        public GameObject(D2DPoint pos, GameObjectFlags flags) : this(pos, D2DPoint.Zero, 0f, 0f, flags)
+        {
+            Position = pos;
         }
 
         public GameObject(D2DPoint pos) : this(pos, D2DPoint.Zero, 0f, 0f)
@@ -143,13 +157,7 @@ namespace PolyPlane.GameObjects
             Position = pos;
         }
 
-        public GameObject(D2DPoint pos, D2DPoint velo) : this(pos, velo, 0f, 0f)
-        {
-            Position = pos;
-            Velocity = velo;
-        }
-
-        public GameObject(D2DPoint pos, D2DPoint velo, float rotation) : this(pos, velo, rotation, 0f)
+        public GameObject(D2DPoint pos, D2DPoint velo, float rotation, GameObjectFlags flags) : this(pos, velo, rotation, 0f, flags)
         {
             Position = pos;
             Velocity = velo;
@@ -157,6 +165,14 @@ namespace PolyPlane.GameObjects
         }
 
         public GameObject(D2DPoint pos, D2DPoint velo, float rotation, float rotationSpeed) : this()
+        {
+            Position = pos;
+            Velocity = velo;
+            Rotation = rotation;
+            RotationSpeed = rotationSpeed;
+        }
+
+        public GameObject(D2DPoint pos, D2DPoint velo, float rotation, float rotationSpeed, GameObjectFlags flags) : this(flags)
         {
             Position = pos;
             Velocity = velo;
@@ -182,6 +198,9 @@ namespace PolyPlane.GameObjects
         {
             if (!HasFlag(flag))
                 this.Flags |= flag;
+
+            if (HasFlag(GameObjectFlags.SpatialGrid))
+                _isSpatialGridObj = true;
         }
 
         /// <summary>
@@ -192,6 +211,9 @@ namespace PolyPlane.GameObjects
         {
             if (HasFlag(flag))
                 this.Flags -= flag;
+
+            if (!HasFlag(GameObjectFlags.SpatialGrid))
+                _isSpatialGridObj = false;
         }
 
         /// <summary>
@@ -315,7 +337,7 @@ namespace PolyPlane.GameObjects
             UpdateTimers(dt);
             UpdateAttachments(dt);
 
-            if (this.HasFlag(GameObjectFlags.SpatialGrid) && SpatialGridRef != null)
+            if (_isSpatialGridObj && SpatialGridRef != null)
             {
                 // Update the hash for the spatial grid.
                 _gridHash = SpatialGridRef.GetGridHash(this);
@@ -607,17 +629,17 @@ namespace PolyPlane.GameObjects
         protected HistoricalBuffer<GameObjectPacket> HistoryBuffer = null;
         protected long _lastNetTime = 0;
 
-        public GameObjectNet()
+        public GameObjectNet(GameObjectFlags flags) : base(flags)
+        {
+            InitNetBuffers();
+        }
+       
+        public GameObjectNet(D2DPoint pos, GameObjectFlags flags) : base(pos, flags)
         {
             InitNetBuffers();
         }
 
-        public GameObjectNet(D2DPoint pos) : base(pos)
-        {
-            InitNetBuffers();
-        }
-
-        public GameObjectNet(D2DPoint pos, D2DPoint velo, float rotation) : base(pos, velo, rotation)
+        public GameObjectNet(D2DPoint pos, D2DPoint velo, float rotation, GameObjectFlags flags) : base(pos, velo, rotation, flags)
         {
             InitNetBuffers();
         }
