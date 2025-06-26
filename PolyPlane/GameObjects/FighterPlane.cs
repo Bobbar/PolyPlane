@@ -755,7 +755,7 @@ namespace PolyPlane.GameObjects
                     return;
 
                 ctx.PushTransform();
-                ctx.RotateTransform(hole.Rotation, hole.Position);
+                ctx.RotateTransform(hole.Rotation + hole.Angle, hole.Position);
 
                 hole.Render(ctx);
 

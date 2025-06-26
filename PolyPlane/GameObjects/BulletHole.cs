@@ -17,12 +17,6 @@ namespace PolyPlane.GameObjects
             set { _rotOffset = value; }
         }
 
-        public override float Rotation
-        {
-            get => base.Rotation + _rotOffset;
-            set => base.Rotation = value;
-        }
-
         private const float MIN_HOLE_SZ = 2f;
         private const float MAX_HOLE_SZ = 6f;
         private float _rotOffset = 0f;

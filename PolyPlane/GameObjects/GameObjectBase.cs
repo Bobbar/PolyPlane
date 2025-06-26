@@ -23,7 +23,7 @@ namespace PolyPlane.GameObjects
 
         public float Mass { get; set; } = 1f;
 
-        public virtual float Rotation
+        public float Rotation
         {
             get { return _rotation; }
 
