@@ -5,7 +5,6 @@ using PolyPlane.Net;
 using PolyPlane.Net.NetHost;
 using PolyPlane.Rendering;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using unvell.D2DLib;
 
 namespace PolyPlane
@@ -38,7 +37,7 @@ namespace PolyPlane
 
         private GameObjectManager _objs = World.ObjectManager;
         private FighterPlane _playerPlane;
-        private DummyObject? _freeCamObject = null;
+        private FreeCamera? _freeCamObject = null;
 
         private NetPlayHost _client;
         private NetEventManager _netMan;
@@ -105,7 +104,7 @@ namespace PolyPlane
             var enableFreeCamAction = new Action(() =>
             {
                 var currentObj = World.GetViewObject();
-                _freeCamObject = new DummyObject(currentObj.Position);
+                _freeCamObject = new FreeCamera(currentObj.Position);
                 World.ViewObject = _freeCamObject;
             });
 
@@ -326,7 +325,6 @@ namespace PolyPlane
         {
             World.IsNetGame = false;
             World.IsServer = false;
-            World.FreeCameraMode = false;
             World.ServerTimeOffset = 0;
 
             _killRender = true;
@@ -647,8 +645,7 @@ namespace PolyPlane
 
                 if (viewObject.IsExpired)
                 {
-                    World.FreeCameraMode = true;
-                    _freeCamObject = new DummyObject(_prevViewObjectPosition);
+                    _freeCamObject = new FreeCamera(_prevViewObjectPosition);
                     World.ViewObject = _freeCamObject;
                     viewObj = _freeCamObject;
                 }
@@ -659,8 +656,7 @@ namespace PolyPlane
             }
             else
             {
-                World.FreeCameraMode = true;
-                _freeCamObject = new DummyObject(_prevViewObjectPosition);
+                _freeCamObject = new FreeCamera(_prevViewObjectPosition);
                 World.ViewObject = _freeCamObject;
                 viewObj = _freeCamObject;
             }
@@ -825,7 +821,6 @@ namespace PolyPlane
         {
             if ((_playerPlane.IsDisabled || _playerPlane.HasCrashed || _playerPlane.IsAI))
             {
-                World.FreeCameraMode = false;
                 EnqueueAction(World.NextViewPlane);
             }
         }
@@ -834,7 +829,6 @@ namespace PolyPlane
         {
             if ((_playerPlane.IsDisabled || _playerPlane.HasCrashed || _playerPlane.IsAI))
             {
-                World.FreeCameraMode = false;
                 EnqueueAction(World.PrevViewPlane);
             }
         }
@@ -899,9 +893,8 @@ namespace PolyPlane
 
                 case 'f':
 
-                    World.FreeCameraMode = !World.FreeCameraMode;
 
-                    if (World.FreeCameraMode)
+                    if (!World.FreeCameraMode)
                         EnqueueEnableFreeCam();
                     else
                         EnqueueDisableFreeCam();
@@ -1034,7 +1027,6 @@ namespace PolyPlane
 
                 case (char)8: //Backspace
                     World.ViewObject = _playerPlane;
-                    World.FreeCameraMode = false;
                     EnqueueDisableFreeCam();
 
                     break;

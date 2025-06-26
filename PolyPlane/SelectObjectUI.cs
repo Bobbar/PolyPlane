@@ -74,7 +74,6 @@ namespace PolyPlane
             {
                 SelectedObject = obj.Ref;
                 World.ViewObject = SelectedObject;
-                World.FreeCameraMode = false;
             }
         }
 

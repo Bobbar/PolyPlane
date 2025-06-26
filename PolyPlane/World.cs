@@ -75,6 +75,11 @@ namespace PolyPlane
             }
         }
 
+        public static bool FreeCameraMode
+        {
+            get { return ViewObject != null && ViewObject is FreeCamera; }
+        }
+
         public static bool FastPrimitives = true;
         public static bool DrawLightMap = false;
         public static bool DrawNoiseMap = false;
@@ -90,7 +95,6 @@ namespace PolyPlane
         public static bool BulletHoleDrag = true;
         public static bool IsPaused = false;
         public static bool IsNetGame = false;
-        public static bool FreeCameraMode = false;
         public static bool UseSkyGradient = false;
         public static bool RespawnAIPlanes = true;
         public static bool GunsOnly = false;

@@ -594,7 +594,7 @@ namespace PolyPlane.Rendering
                 DrawLightFlareEffect(ctx, obj);
 
                 // Circle enemy missiles.
-                if (!World.FreeCameraMode && !missile.Owner.Equals(viewPlane))
+                if (viewPlane != null && !missile.Owner.Equals(viewPlane))
                     ctx.DrawEllipse(new D2DEllipse(missile.Position, new D2DSize(50f, 50f)), new D2DColor(0.4f, D2DColor.Red), 8f);
 
             }
