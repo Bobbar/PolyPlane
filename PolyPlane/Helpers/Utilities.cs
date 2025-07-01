@@ -11,7 +11,20 @@ namespace PolyPlane.Helpers
 {
     public static class Utilities
     {
-        public static Random Rnd = new Random();
+        [ThreadStatic]
+        private static Random _rnd;
+
+        public static Random Rnd
+        {
+            get
+            {
+                if (_rnd == null)
+                    _rnd = new Random();
+
+                return _rnd;
+            }
+        }
+
         public const float DEGREES_TO_RADS = (float)(Math.PI / 180d);
         public const float RADS_TO_DEGREES = (float)(180d / Math.PI);
 
