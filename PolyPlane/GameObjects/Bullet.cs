@@ -47,7 +47,13 @@ namespace PolyPlane.GameObjects
             this.Rotation = plane.Rotation;
             this.Owner = plane;
 
-            var velo = (Utilities.AngleToVectorDegrees(plane.Rotation, Bullet.SPEED));
+            var angle = plane.Rotation;
+
+            // Make damaged gun less accurate.
+            if (plane.GunDamaged)
+                angle += Utilities.Rnd.NextFloat(-5f, 5f);
+
+            var velo = (Utilities.AngleToVectorDegrees(angle, Bullet.SPEED));
             this.Velocity = velo + Utilities.PointVelocity(plane, plane.Gun.Position);
 
             this.Rotation = this.Velocity.Angle();

@@ -1151,7 +1151,7 @@ namespace PolyPlane.Rendering
             const float MIN_IMPACT_TIME = 20f;
 
             bool warningMessage = false;
-            var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
+            var centerPos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
 
             for (int i = 0; i < _objs.Missiles.Count; i++)
             {
@@ -1184,7 +1184,7 @@ namespace PolyPlane.Rendering
 
                     var dir = missile.Position - plane.Position;
                     var vec = dir.Normalized();
-                    var pos1 = pos + (vec * 200f);
+                    var pos1 = centerPos + (vec * 200f);
                     var pos2 = pos1 + (vec * 20f);
                     var impactFact = 1f - Utilities.FactorWithEasing(impactTime, MIN_IMPACT_TIME, EasingFunctions.Out.EaseQuad);
 
@@ -1196,10 +1196,12 @@ namespace PolyPlane.Rendering
             var flashScale = Utilities.ScaleToRange(_warnLightFlashAmount, 0f, 1f, 0.98f, 1.1f);
             var flashAlpha = Utilities.ScaleToRange(_warnLightFlashAmount, 0f, 1f, 0.5f, 1f);
 
+            var lightPos = centerPos + new D2DPoint(0f, 200f);
+
             // Lock light.
             if (plane.HasRadarLock)
             {
-                var lockRect = new D2DRect(pos - new D2DPoint(0, -160), new D2DSize(120, 30));
+                var lockRect = new D2DRect(lightPos, new D2DSize(120, 30));
                 var lockColor = D2DColor.Red.WithAlpha(0.7f);
 
                 ctx.Gfx.DrawRectangle(lockRect, lockColor);
@@ -1209,10 +1211,10 @@ namespace PolyPlane.Rendering
             // Missile warning light.
             if (warningMessage)
             {
-                var missileWarnPos = pos - new D2DPoint(0, -200);
+                var missileWarnPos = lightPos + new D2DPoint(0, 40);
 
                 ctx.PushTransform();
-                ctx.ScaleTransform(flashScale, flashScale, missileWarnPos);
+                ctx.ScaleTransform(flashScale, missileWarnPos);
 
                 var missileWarnRect = new D2DRect(missileWarnPos, new D2DSize(120, 30));
                 var warnColor = D2DColor.Red.WithAlpha(flashAlpha);
@@ -1226,16 +1228,33 @@ namespace PolyPlane.Rendering
             // Engine out light.
             if (plane.EngineDamaged)
             {
-                var engineOutPos = pos - new D2DPoint(0, -240);
+                var engineOutPos = lightPos + new D2DPoint(0, 80);
 
                 ctx.PushTransform();
-                ctx.ScaleTransform(flashScale, flashScale, engineOutPos);
+                ctx.ScaleTransform(flashScale, engineOutPos);
 
                 var engineOutRect = new D2DRect(engineOutPos, new D2DSize(180, 30));
                 var engineOutColor = D2DColor.Orange.WithAlpha(flashAlpha);
 
                 ctx.Gfx.DrawRectangle(engineOutRect, engineOutColor);
                 ctx.DrawText("ENGINE OUT", engineOutColor, _textConsolas30Centered, engineOutRect);
+
+                ctx.PopTransform();
+            }
+
+            // Gun damage light.
+            if (plane.GunDamaged)
+            {
+                var gunDamagePos = lightPos + new D2DPoint(0, 120);
+
+                ctx.PushTransform();
+                ctx.ScaleTransform(flashScale, gunDamagePos);
+
+                var gunDamageRect = new D2DRect(gunDamagePos, new D2DSize(200, 30));
+                var gunDamageColor = D2DColor.Orange.WithAlpha(flashAlpha);
+
+                ctx.Gfx.DrawRectangle(gunDamageRect, gunDamageColor);
+                ctx.DrawText("GUN DAMAGED", gunDamageColor, _textConsolas30Centered, gunDamageRect);
 
                 ctx.PopTransform();
             }

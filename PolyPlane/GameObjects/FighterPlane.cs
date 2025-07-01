@@ -96,7 +96,7 @@ namespace PolyPlane.GameObjects
         public int NumBullets
         {
             get { return _numBullets; }
-            set { _numBullets = Math.Clamp(value, 0, MAX_BULLETS); }
+            set { _numBullets = Math.Clamp(value, 0, MaxBullets); }
         }
 
         public int NumDecoys
@@ -132,8 +132,20 @@ namespace PolyPlane.GameObjects
             }
         }
 
+        private int MaxBullets
+        {
+            get
+            {
+                if (!GunDamaged)
+                    return MAX_BULLETS;
+                else
+                    return MAX_BULLETS_DAMAGED;
+            }
+        }
+
         public bool DroppingDecoy { get; set; } = false;
         public bool EngineDamaged { get; set; } = false;
+        public bool GunDamaged { get; set; } = false;
         public bool HasCrashed { get; set; } = false;
         public bool WasHeadshot { get; set; } = false;
         public bool IsDisabled { get; set; } = false;
@@ -155,6 +167,7 @@ namespace PolyPlane.GameObjects
         private const float MAX_NOZZLE_DEF = 30f;
         public const int MAX_DECOYS = 15;
         public const int MAX_BULLETS = 30;
+        public const int MAX_BULLETS_DAMAGED = 15;
         public const int MAX_MISSILES = 6;
         public const float MAX_HEALTH = 32f;
         public const float MISSILE_DAMAGE = 32;
@@ -347,7 +360,7 @@ namespace PolyPlane.GameObjects
 
             _bulletRegenTimer.TriggerCallback = () =>
             {
-                if (!this.IsNetObject && !this.FiringBurst && NumBullets < MAX_BULLETS)
+                if (!this.IsNetObject && !this.FiringBurst && NumBullets < MaxBullets)
                     NumBullets++;
             };
 
@@ -891,6 +904,10 @@ namespace PolyPlane.GameObjects
             // Check for engine damage.
             if (!this.EngineDamaged && !Utilities.PointInPoly(_centerOfThrust.Position, poly.Poly))
                 result.ImpactType |= ImpactType.DamagedEngine;
+
+            // Check for gun damage.
+            if (!this.GunDamaged && !Utilities.PointInPoly(GunPosition, poly.Poly))
+                result.ImpactType |= ImpactType.DamagedGun;
         }
 
         private void ApplyPolyDamageEffects(PlaneImpactResult result)
@@ -917,6 +934,15 @@ namespace PolyPlane.GameObjects
 
                 // Spool down thrust gradually.
                 _engineOutSpoolDown.Start();
+            }
+
+            // Set gun damaged and trim ammo.
+            if (!this.GunDamaged && result.HasFlag(ImpactType.DamagedGun))
+            {
+                this.GunDamaged = true;
+
+                if (NumBullets > MAX_BULLETS_DAMAGED)
+                    NumBullets = MAX_BULLETS_DAMAGED;
             }
         }
 
@@ -1129,14 +1155,11 @@ namespace PolyPlane.GameObjects
         {
             this.SetPosition(location);
 
-            Health = MAX_HEALTH;
-            NumBullets = MAX_BULLETS;
-            NumMissiles = MAX_MISSILES;
-            NumDecoys = MAX_DECOYS;
             RespawnQueued = false;
             IsDisabled = false;
             HasCrashed = false;
             EngineDamaged = false;
+            GunDamaged = false;
             _expireTimeout.Stop();
             _flipTimer.Restart();
             _bulletHoles.ForEach(b => b.Dispose());
@@ -1150,6 +1173,11 @@ namespace PolyPlane.GameObjects
             _engineOutSpoolDown.Reset();
             _thrustAmt.SetTarget(1f);
             DeathTime = 0f;
+            Health = MAX_HEALTH;
+            NumBullets = MAX_BULLETS;
+            NumMissiles = MAX_MISSILES;
+            NumDecoys = MAX_DECOYS;
+
 
             _wings.ForEach(w => w.Visible = true);
 

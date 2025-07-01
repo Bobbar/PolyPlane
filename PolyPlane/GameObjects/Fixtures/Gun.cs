@@ -1,6 +1,7 @@
 ﻿using PolyPlane.GameObjects.Interfaces;
 using PolyPlane.GameObjects.Particles;
 using PolyPlane.GameObjects.Tools;
+using PolyPlane.Helpers;
 using PolyPlane.Rendering;
 using unvell.D2DLib;
 
@@ -15,9 +16,10 @@ namespace PolyPlane.GameObjects.Fixtures
         private GunSmokeEmitter _smoke;
         private FighterPlane _ownerPlane;
         private GameTimer _burstTimer;
-        private GameTimer _muzzleFlashTimer;
+        private float _muzzFlashTime = 0f;
 
         private const float BURST_INTERVAL = 0.25f;
+        private const float BURST_INTERVAL_DAMAGED = 0.35f;
 
         public Gun(FighterPlane plane, D2DPoint position) : base(plane, position)
         {
@@ -31,10 +33,6 @@ namespace PolyPlane.GameObjects.Fixtures
             _burstTimer.RateLimitStartCallback = true;
             _burstTimer.StartCallback = FireBullet;
             _burstTimer.TriggerCallback = FireBullet;
-
-            _muzzleFlashTimer = AddTimer(BURST_INTERVAL);
-            _muzzleFlashTimer.StartCallback = () => { MuzzleFlashOn = true; };
-            _muzzleFlashTimer.TriggerCallback = () => { MuzzleFlashOn = false; };
         }
 
         public void StartBurst()
@@ -63,6 +61,14 @@ namespace PolyPlane.GameObjects.Fixtures
 
             if (_ownerPlane.NumBullets <= 0 || _ownerPlane.IsDisabled)
                 StopBurst();
+
+            // Decay muzzle flash time.
+            _muzzFlashTime = Math.Clamp(_muzzFlashTime - (4f * dt), 0f, 1f);
+
+            if (_muzzFlashTime > 0f)
+                MuzzleFlashOn = true;
+            else if (_muzzFlashTime <= 0f)
+                MuzzleFlashOn = false;
         }
 
         public override void Render(RenderContext ctx)
@@ -79,9 +85,16 @@ namespace PolyPlane.GameObjects.Fixtures
 
             if (_ownerPlane.NumBullets <= 0)
                 return;
-         
+
+            // Add random variation to burst rate when damaged.
+            if (_ownerPlane.GunDamaged)
+                _burstTimer.Interval = BURST_INTERVAL_DAMAGED + Utilities.Rnd.NextFloat(0f, 0.3f);
+            else
+                _burstTimer.Interval = BURST_INTERVAL;
+
+            _smoke.Visible = true;
             _smoke.AddPuff();
-            _muzzleFlashTimer.Restart();
+            _muzzFlashTime = 1f;
 
             // Don't actually fire a bullet for net planes.
             if (!_ownerPlane.IsNetObject)

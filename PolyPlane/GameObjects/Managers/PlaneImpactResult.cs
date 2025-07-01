@@ -70,6 +70,7 @@ namespace PolyPlane.GameObjects.Managers
         Headshot = 8,
         DamagedEngine = 16,
         DamagedTailWing = 32,
-        DamagedMainWing = 64
+        DamagedMainWing = 64,
+        DamagedGun = 128
     }
 }
