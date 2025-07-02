@@ -509,8 +509,13 @@ namespace PolyPlane
 
         private void TargetLockedWithMissile()
         {
-            if (_playerPlane.Radar.HasLock && _playerPlane.Radar.LockedObj != null)
-                _playerPlane.FireMissile(_playerPlane.Radar.LockedObj);
+            if (_playerPlane.Radar.HasLock)
+            {
+                var lockObj = _playerPlane.Radar.LockedObj;
+
+                if  (lockObj != null)
+                    _playerPlane.FireMissile(lockObj);
+            }
         }
 
         private void SpawnAIPlane()

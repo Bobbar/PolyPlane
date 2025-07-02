@@ -266,8 +266,7 @@ namespace PolyPlane.AI_Behavior
             level += CLOSE_MULTI * (1f - Utilities.Factor(dist, CLOSE_DIST));
 
             // Add locked-on multiplier.
-            var lockedObj = plane.Radar.LockedObj;
-            bool isLockedOn = lockedObj != null && lockedObj.Equals(this.Plane);
+            bool isLockedOn = plane.Radar.IsLockedOnTo(this.Plane);
 
             if (isLockedOn)
                 level *= LOCKON_MULTI;
@@ -292,9 +291,9 @@ namespace PolyPlane.AI_Behavior
             const float MAX_DIST = 50000f;
             const float MIN_DIST = 1500f;
 
-            if (this.Plane.Radar.HasLock && this.Plane.Radar.LockedObj != null && this.Plane.Radar.LockedObj.Equals(TargetPlane))
+            if (this.Plane.Radar.IsLockedOnTo(TargetPlane))
             {
-                var dist = this.Plane.Position.DistanceTo(this.Plane.Radar.LockedObj.Position);
+                var dist = this.Plane.Position.DistanceTo(TargetPlane.Position);
 
                 if (dist > MAX_DIST || dist < MIN_DIST)
                     return;
@@ -304,7 +303,7 @@ namespace PolyPlane.AI_Behavior
                 if (fov > World.SENSOR_FOV * 0.5f)
                     return;
 
-                this.Plane.FireMissile(this.Plane.Radar.LockedObj);
+                this.Plane.FireMissile(TargetPlane);
 
                 _fireMissileCooldown.Interval = Utilities.Rnd.NextFloat(MIN_MISSILE_TIME, MAX_MISSILE_TIME);
                 _fireMissileCooldown.Restart();

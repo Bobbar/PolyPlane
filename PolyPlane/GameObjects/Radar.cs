@@ -9,8 +9,8 @@ namespace PolyPlane.GameObjects
     {
         public D2DPoint Position { get; set; } = D2DPoint.Zero;
         public FighterPlane HostPlane;
-
         public bool HasLock = false;
+
         public GameObject LockedObj
         {
             get
@@ -84,6 +84,18 @@ namespace PolyPlane.GameObjects
             }
 
             NotifyLocks();
+        }
+
+        public bool IsLockedOnTo(GameObject obj)
+        {
+            if (!HasLock)
+                return false;
+
+            var lockedPing = _lockedPingObj;
+            if (lockedPing != null)
+                return lockedPing.Obj.Equals(obj);
+            else
+                return false;
         }
 
         private void DoSweeps()

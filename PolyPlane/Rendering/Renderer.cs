@@ -75,7 +75,6 @@ namespace PolyPlane.Rendering
         private SmoothDouble _collisionTimeSmooth = new SmoothDouble(60);
         private SmoothDouble _fpsSmooth = new SmoothDouble(20);
 
-        private Stopwatch _timer = new Stopwatch();
         private GameTimer _hudMessageTimeout = new GameTimer(10f);
         private List<EventMessage> _messageEvents = new List<EventMessage>();
         private List<PopMessage> _popMessages = new List<PopMessage>();
@@ -583,7 +582,7 @@ namespace PolyPlane.Rendering
                         DrawPlaneHealthBar(ctx, p, new D2DPoint(p.Position.X, p.Position.Y - 110f));
 
                     // Draw circle around locked on plane.
-                    if (viewPlane.Radar.LockedObj != null && viewPlane.Radar.LockedObj.Equals(p))
+                    if (viewPlane.Radar.IsLockedOnTo(p))
                         ctx.DrawEllipse(new D2DEllipse(p.Position, new D2DSize(80f, 80f)), World.HudColor, 4f);
                 }
             }
