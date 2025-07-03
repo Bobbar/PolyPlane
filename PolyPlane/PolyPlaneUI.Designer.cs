@@ -38,7 +38,7 @@
             RenderTarget.Dock = DockStyle.Fill;
             RenderTarget.Location = new Point(0, 0);
             RenderTarget.Name = "RenderTarget";
-            RenderTarget.Size = new Size(1008, 729);
+            RenderTarget.Size = new Size(1350, 839);
             RenderTarget.TabIndex = 0;
             RenderTarget.TabStop = false;
             RenderTarget.MouseDown += RenderTarget_MouseDown;
@@ -48,7 +48,7 @@
             // 
             AutoScaleDimensions = new SizeF(96F, 96F);
             AutoScaleMode = AutoScaleMode.Dpi;
-            ClientSize = new Size(1008, 729);
+            ClientSize = new Size(1350, 839);
             Controls.Add(RenderTarget);
             Cursor = Cursors.Cross;
             Icon = (Icon)resources.GetObject("$this.Icon");

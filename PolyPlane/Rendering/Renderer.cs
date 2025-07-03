@@ -63,7 +63,7 @@ namespace PolyPlane.Rendering
         private int _scoreScrollPos = 0;
         private int _currentDPI = 96;
         private double _lastRenderTime = 0;
-        private float _hudScale = 1f;
+        private float _hudScale = 1.1f;
         private double _renderFPS = 0;
         private float _screenFlashOpacity = 0f;
         private float _warnLightFlashAmount = 1f;
@@ -1279,7 +1279,7 @@ namespace PolyPlane.Rendering
         private void DrawRadar(RenderContext ctx, D2DSize viewportsize, FighterPlane plane)
         {
             const float SCALE = 0.9f;
-            var pos = new D2DPoint(viewportsize.width * 0.82f * HudScale * SCALE, viewportsize.height * 0.76f * HudScale * SCALE);
+            var pos = new D2DPoint(viewportsize.width * 0.82f * HudScale * SCALE, viewportsize.height * 0.77f * HudScale * SCALE);
 
             ctx.PushTransform();
             ctx.ScaleTransform(SCALE, pos);
@@ -1520,7 +1520,7 @@ namespace PolyPlane.Rendering
 
         public void DrawInfo(D2DGraphics gfx, D2DPoint pos, GameObject viewObject)
         {
-            var infoText = GetInfo(viewObject);
+            BuildInfo(viewObject);
 
             if (_showHelp)
             {
@@ -1735,7 +1735,7 @@ namespace PolyPlane.Rendering
             _screenFlash?.Restart();
         }
 
-        private string GetInfo(GameObject viewObject)
+        private void BuildInfo(GameObject viewObject)
         {
             _stringBuilder.Clear();
 
@@ -1768,6 +1768,7 @@ namespace PolyPlane.Rendering
                 _stringBuilder.AppendLine($"Total ms: {Math.Round(_updateTimeSmooth.Current + _collisionTimeSmooth.Current + _renderTimeSmooth.Current, 2)}");
 
                 _stringBuilder.AppendLine($"Zoom: {Math.Round(World.ZoomScale, 2)}");
+                _stringBuilder.AppendLine($"HUD Scale: {Math.Round(HudScale, 2)}");
                 _stringBuilder.AppendLine($"GameSpeed: {World.GameSpeed}");
                 _stringBuilder.AppendLine($"DT: {Math.Round(World.CurrentDT, 4)}");
                 _stringBuilder.AppendLine($"Position: {viewObject?.Position}");
@@ -1787,8 +1788,6 @@ namespace PolyPlane.Rendering
                 _stringBuilder.AppendLine($"TimeOfDay: {Math.Round(World.TimeOfDay, 1)}");
                 _stringBuilder.AppendLine($"TimeOffset: {Math.Round(TimeSpan.FromTicks((long)World.ServerTimeOffset).TotalMilliseconds, 2)}");
             }
-
-            return _stringBuilder.ToString();
         }
 
     }
