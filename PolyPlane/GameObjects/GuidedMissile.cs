@@ -54,9 +54,9 @@ namespace PolyPlane.GameObjects
         private const float THURST_VECTOR_AMT = 1f;
         private const float LIFESPAN = 100f;
         private const float BURN_RATE = 0.85f;
-        private const float THRUST = 2500f;
+        private const float THRUST = 3000f;
         private const float FUEL = 10f;
-        private const float DEFLECTION_DAMPING = 1.2f;
+        private const float DEFLECTION_DAMPING = 1.25f;
 
         private float _currentFuel = 0f;
         private float _initRotation = 0f;
@@ -202,7 +202,7 @@ namespace PolyPlane.GameObjects
         {
             const float LIFT_SCALE = 1.5f;
             const float MIN_VELO = 800f;
-            const float DEFLECTION_RATE = 360f;
+            const float DEFLECTION_RATE = 60f;
 
             _tailWing = new Wing(this, new WingParameters()
             {
@@ -298,7 +298,7 @@ namespace PolyPlane.GameObjects
                     const float MAX_DEF_AOA = 50f; // Maximum AoA allowed. Reduce deflection as AoA increases.
                     var aoaFact = 1f - (Math.Abs(_rocketBody.AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 3f))));
 
-                    const float MAX_DEF_ROT_SPD = 80f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
+                    const float MAX_DEF_ROT_SPD = 150f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
                     var rotSpdFact = 1f - (Math.Abs(this.RotationSpeed) / (MAX_DEF_ROT_SPD + (spdFact * (MAX_DEF_ROT_SPD * 3f))));
 
                     // Ease out of SAS as fuel runs out.

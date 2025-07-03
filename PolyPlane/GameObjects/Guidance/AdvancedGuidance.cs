@@ -18,10 +18,13 @@ namespace PolyPlane.GameObjects.Guidance
         private D2DPoint _prevTargVeloAngleVec = D2DPoint.Zero;
 
         private const int MAX_FTI = 4000; // Max iterations allowed.
+        private const int MIN_FTI = 5; // Min iterations allowed.
 
         public AdvancedGuidance(GuidedMissile missile, GameObject target) : base(missile, target)
         {
-            StableAimPoint = GetTargetPosition();
+            var targPos = GetTargetPosition();
+            StableAimPoint = targPos;
+            _predictSmooth.Add(targPos);
         }
 
         public override float GetGuidanceDirection(float dt)
@@ -31,7 +34,7 @@ namespace PolyPlane.GameObjects.Guidance
             const float ROT_MOD_AMT = 1.2f;//0.95f; // Max amount to increase rot rate per above time.
             const float ROT_AMT_FACTOR = 1.1f; // Effects sensitivity and how much rotation is computed. (Higher value == more rotatation for a given aim direction)
             const float IMPACT_POINT_DELTA_THRESH = 10f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
-            const float MIN_CLOSE_RATE = 0.05f; // Min closing rate required to aim at predicted impact point.
+            const float MIN_CLOSE_RATE = 1f; // Min closing rate required to aim at predicted impact point.
 
             var targetPosition = GetTargetPosition();
             var targetVelo = this.Target.Velocity;
@@ -54,8 +57,8 @@ namespace PolyPlane.GameObjects.Guidance
             var targDist = D2DPoint.Distance(this.Missile.Position, targetPosition);
             var timeToImpact = Utilities.ImpactTime(this.Missile, this.Target);
 
-            // Set initial impact point directly on the target.
-            var impactPnt = targetPosition;
+            // Set initial impact point.
+            var impactPnt = _predictSmooth.Current;
 
             // Refine the impact point when able.
             // Where will the target be when we arrive?
@@ -66,9 +69,13 @@ namespace PolyPlane.GameObjects.Guidance
 
                 var relVelo = (missileVelo - targetVelo).Length();
                 var framesToImpact = ImpactTime(targDist, (relVelo * dt), (deltaV * dt));
-                var predictedPoint = RefineImpact(targetPosition, targetVelo, targAngleDeltaVec, framesToImpact, dt);
 
-                impactPnt = _predictSmooth.Add(predictedPoint);
+                if (framesToImpact > MIN_FTI && framesToImpact < MAX_FTI)
+                {
+                    var predictedPoint = RefineImpact(targetPosition, targetVelo, targAngleDeltaVec, framesToImpact, dt);
+
+                    impactPnt = _predictSmooth.Add(predictedPoint);
+                }
             }
 
             // Compute the speed (delta) of the impact point as it is refined.
@@ -126,7 +133,7 @@ namespace PolyPlane.GameObjects.Guidance
             // This considers the target velocity as well as the change in angular velocity.
             D2DPoint predicted = targetPos;
 
-            if (framesToImpact > 5 && framesToImpact < MAX_FTI)
+            if (framesToImpact > MIN_FTI && framesToImpact < MAX_FTI)
             {
                 var targLoc = targetPos;
                 var veloDir = targetVelo.Normalized();
