@@ -1,6 +1,5 @@
 ﻿using PolyPlane.Helpers;
 using PolyPlane.Net;
-using System.Diagnostics;
 
 namespace PolyPlane.GameObjects.Managers
 {
@@ -249,7 +248,7 @@ namespace PolyPlane.GameObjects.Managers
                     }
                 }
             });
-          
+
             // Since the server runs at a higher FPS than clients,
             // we want to limit the rate of explosion impulses.
             // Otherwise we may be sending dozens of packets per second

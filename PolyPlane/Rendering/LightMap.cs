@@ -393,7 +393,7 @@ namespace PolyPlane.Rendering
             Y = (int)MathF.Floor(posOffset.Y / SIDE_LEN);
         }
 
-        private int GetMapIndex(int x, int y) => GetMapIndex(_gridWidth, x, y); 
+        private int GetMapIndex(int x, int y) => GetMapIndex(_gridWidth, x, y);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int GetMapIndex(int width, int x, int y)

@@ -12,7 +12,7 @@ namespace PolyPlane.GameObjects
         public float Lifetime = 10f;
         public D2DPoint SpawnPoint = D2DPoint.Zero;
         public int Frame = 0;
-   
+
         private static readonly D2DColor _lightMapColor = new D2DColor(1f, 1f, 0.98f, 0.54f);
 
         private static readonly D2DPoint[] _poly = new D2DPoint[]

@@ -513,7 +513,7 @@ namespace PolyPlane
             {
                 var lockObj = _playerPlane.Radar.LockedObj;
 
-                if  (lockObj != null)
+                if (lockObj != null)
                     _playerPlane.FireMissile(lockObj);
             }
         }

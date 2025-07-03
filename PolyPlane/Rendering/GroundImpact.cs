@@ -13,7 +13,7 @@ namespace PolyPlane.Rendering
         public float Age = 0f;
 
         public GroundImpact() { }
-      
+
         public void ReInit(D2DPoint pos, D2DSize size, float angle)
         {
             Age = 0f;

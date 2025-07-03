@@ -1,7 +1,5 @@
 ﻿using PolyPlane.GameObjects;
 using System.Collections;
-using System.Diagnostics;
-using System.Runtime.InteropServices.ObjectiveC;
 using unvell.D2DLib;
 
 namespace PolyPlane.Helpers

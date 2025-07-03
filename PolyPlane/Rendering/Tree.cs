@@ -141,7 +141,7 @@ namespace PolyPlane.Rendering
 
             ctx.PopTransform();
 
-           
+
             // Normal trunk.
             var trunkPos = this.Position + (-D2DPoint.UnitY * TotalHeight);
             ctx.FillPolygonWithLighting(_trunkTransPoly, trunkPos, trunkColor, LIGHT_INTENSITY);
@@ -149,22 +149,22 @@ namespace PolyPlane.Rendering
             // Trunk occlusion overlay.
             ctx.FillPolygon(_trunkTransPoly, _trunkOverlayBrush);
 
-           
+
             // Leaf gradient.
             ctx.PushTransform();
             ctx.TranslateTransform(_normalLeafPos * ctx.CurrentScale);
 
             var leafEllipse = new D2DEllipse(D2DPoint.Zero, _leafSize);
-           
+
             // Regular leaf color.
             ctx.Gfx.FillEllipse(leafEllipse, this.LeafColor);
-            
+
             // Add gradient overlay.
             ctx.Gfx.FillEllipse(leafEllipse, _leafBrush);
 
             ctx.PopTransform();
 
-           
+
             // Add ToD color overlay.
             leafEllipse.origin = _normalLeafPos;
             ctx.FillEllipseWithLighting(leafEllipse, leafToDColor, LIGHT_INTENSITY);

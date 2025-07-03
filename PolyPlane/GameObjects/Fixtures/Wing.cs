@@ -291,7 +291,7 @@ namespace PolyPlane.GameObjects.Fixtures
     {
         public D2DPoint LiftAndDrag
         {
-            get { return Lift + Drag; } 
+            get { return Lift + Drag; }
         }
 
         public D2DPoint Lift;
@@ -300,8 +300,8 @@ namespace PolyPlane.GameObjects.Fixtures
 
         public WingForces(D2DPoint lift, D2DPoint drag, float torque)
         {
-            Lift = lift; 
-            Drag = drag; 
+            Lift = lift;
+            Drag = drag;
             Torque = torque;
         }
 

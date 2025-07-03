@@ -19,7 +19,7 @@ namespace PolyPlane.GameObjects
 
         const GameObjectFlags DefaultFlags = GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround;
 
-        public Decoy() : base(DefaultFlags) 
+        public Decoy() : base(DefaultFlags)
         {
             InitStuff();
         }

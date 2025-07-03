@@ -15,7 +15,7 @@ namespace PolyPlane.Helpers
         const int BOTTOM = 0b0100;
         const int TOP = 0b1000;
 
-                /// <summary>
+        /// <summary>
         /// Returns true if the specified line points intersect any portion of the specified rectangle.
         /// </summary>
         public static bool CohenSutherlandLineClip(D2DPoint a, D2DPoint b, D2DRect rect)

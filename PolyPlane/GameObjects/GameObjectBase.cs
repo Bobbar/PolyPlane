@@ -633,7 +633,7 @@ namespace PolyPlane.GameObjects
         {
             InitNetBuffers();
         }
-       
+
         public GameObjectNet(D2DPoint pos, GameObjectFlags flags) : base(pos, flags)
         {
             InitNetBuffers();

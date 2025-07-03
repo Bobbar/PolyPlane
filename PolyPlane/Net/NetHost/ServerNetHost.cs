@@ -103,11 +103,11 @@ namespace PolyPlane.Net.NetHost
                 case SendType.ToAll:
 
                     Host.Broadcast(channel, ref packet);
-                 
+
                     break;
 
                 case SendType.ToAllExcept:
-                  
+
                     if (_peers.TryGetValue(netPacket.PeerID, out Peer excludePeer))
                         Host.Broadcast(channel, ref packet, excludePeer);
                     else

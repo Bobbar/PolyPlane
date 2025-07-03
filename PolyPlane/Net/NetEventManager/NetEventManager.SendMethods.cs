@@ -68,7 +68,7 @@ namespace PolyPlane.Net
                 // Batch the list packet as needed.
                 if (missileListPacket.Missiles.Count >= LIST_PACKET_BATCH_COUNT)
                 {
-                   Enqueue(missileListPacket);
+                    Enqueue(missileListPacket);
 
                     missileListPacket = new MissileListPacket(PacketTypes.MissileUpdateList);
                 }
@@ -307,7 +307,7 @@ namespace PolyPlane.Net
 
         public void ServerSendPlaneReset(FighterPlane plane, D2DPoint spawnPos)
         {
-            if (!IsServer) 
+            if (!IsServer)
                 return;
 
             var resetPacket = new BasicPacket(PacketTypes.PlayerReset, plane.ID, spawnPos);

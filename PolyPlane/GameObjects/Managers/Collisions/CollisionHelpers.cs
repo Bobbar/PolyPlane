@@ -163,7 +163,7 @@ namespace PolyPlane.GameObjects.Managers
                     }
                 }
 
-                
+
                 // Check if we need to move the impactor backwards because it is already inside the target polygon.
                 if (targetBounds.Contains(bullet.Position))
                 {

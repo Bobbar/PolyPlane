@@ -62,7 +62,7 @@
                 Interval = interval;
             }
 
-            public ScheduledAction(Action action, float interval, long nextRun) 
+            public ScheduledAction(Action action, float interval, long nextRun)
             {
                 Interval = interval;
                 NextRun = nextRun;

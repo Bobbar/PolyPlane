@@ -50,7 +50,7 @@ namespace PolyPlane.Helpers
         public static float Angle(this D2DPoint vector, bool clamp = true)
         {
             var angle = MathF.Atan2(vector.Y, vector.X) * Utilities.RADS_TO_DEGREES;
-            
+
             if (clamp)
                 angle = Utilities.ClampAngle(angle);
 

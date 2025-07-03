@@ -15,7 +15,7 @@ namespace PolyPlane.Net.NetHost
         public uint PacketsSent => Host.PacketsSent;
         public uint PacketsReceived => Host.PacketsReceived;
         public uint PeersCount => Host.PeersCount;
-        
+
         protected const int MAX_CLIENTS = 30;
         protected const int MAX_CHANNELS = 9;
         protected const int TIMEOUT = 0;

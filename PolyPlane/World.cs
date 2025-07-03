@@ -114,7 +114,7 @@ namespace PolyPlane
 
         public const int PHYSICS_SUB_STEPS = 8;
         public static readonly int MUTLI_THREAD_COUNT = 8;
-     
+
         public const float DEFAULT_DT = 0.0425f;
         public const float DEFAULT_SUB_DT = DEFAULT_DT / PHYSICS_SUB_STEPS;
 
@@ -182,7 +182,7 @@ namespace PolyPlane
         private static bool _isServer = false;
         private static float _currentDT = DEFAULT_DT;
         private static float _gameSpeed = 1f;
-      
+
         private static float _sub_dt = DEFAULT_SUB_DT;
         private static float _zoomScale = 0.11f;
         private static GameID _viewObjectID;

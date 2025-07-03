@@ -41,7 +41,7 @@ namespace PolyPlane.GameObjects.Particles
         const float PART_GROW_AGE = 0.3f; // Age at which particle will grow to its full size.
 
         private static readonly Vector3 Luminance = new Vector3(0.2126f, 0.7152f, 0.0722f); // For flame particle lighting amount.
-        
+
         const GameObjectFlags DefaultFlags = GameObjectFlags.SpatialGrid | GameObjectFlags.AeroPushable | GameObjectFlags.ExplosionImpulse | GameObjectFlags.BounceOffGround;
         public Particle() : base(DefaultFlags)
         {

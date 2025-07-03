@@ -1,5 +1,4 @@
-﻿using PolyPlane.GameObjects;
-using PolyPlane.Helpers;
+﻿using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
