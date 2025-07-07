@@ -1097,10 +1097,16 @@ namespace PolyPlane.GameObjects
             if (this.IsNetObject)
                 return;
 
-            const float IMPACT_MASS = 2f;
+            const float IMPACT_MASS_BULLET = 2f;
+            const float IMPACT_MASS_MISSILE = 10f;
+
+            float mass = IMPACT_MASS_BULLET;
+
+            if (impactor is GuidedMissile)
+                mass = IMPACT_MASS_MISSILE;
 
             var velo = impactor.Velocity - this.Velocity;
-            var force = (IMPACT_MASS * velo.Length());
+            var force = (mass * velo.Length());
             var forceVec = (velo.Normalized() * force);
             var impactTq = Utilities.GetTorque(_centerOfMass.Position, impactPos, forceVec);
 

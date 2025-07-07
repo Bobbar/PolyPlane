@@ -209,9 +209,9 @@ namespace PolyPlane.GameObjects
                 RenderLength = 2.5f,
                 RenderWidth = 1f,
                 Area = 0.075f,
-                MaxDeflection = 45f,
+                MaxDeflection = 55f,
                 MaxLiftForce = 4500f * LIFT_SCALE,
-                VeloLiftFactor = 1.2f,
+                VeloLiftFactor = 1.4f,
                 VeloDragFactor = 1.2f,
                 PivotPoint = new D2DPoint(-21f, 0f),
                 Position = new D2DPoint(-22f, 0f),
@@ -227,7 +227,7 @@ namespace PolyPlane.GameObjects
                 RenderLength = 0f,
                 Area = 0.03375f,
                 MaxLiftForce = 1000f * LIFT_SCALE,
-                VeloLiftFactor = 1.2f,
+                VeloLiftFactor = 1.4f,
                 VeloDragFactor = 1.2f,
                 MinVelo = MIN_VELO,
                 ParasiticDrag = 0.3f,
@@ -242,7 +242,7 @@ namespace PolyPlane.GameObjects
                 Area = 0.045f,
                 MaxDeflection = 20f,
                 MaxLiftForce = 2000f * LIFT_SCALE,
-                VeloLiftFactor = 1.2f,
+                VeloLiftFactor = 1.4f,
                 VeloDragFactor = 1.2f,
                 Position = new D2DPoint(21.5f, 0f),
                 MinVelo = MIN_VELO,
@@ -411,7 +411,7 @@ namespace PolyPlane.GameObjects
                 ctx.DrawPolygon(this.FlamePoly, _flameFillColor, 1f, _flameFillColor);
 
             var fillColor = D2DColor.White;
-            ctx.DrawPolygon(this.Polygon, D2DColor.Black, 0.3f, fillColor);
+            ctx.DrawPolygonWithLighting(this.Polygon, this.Position, D2DColor.Black, 0.3f, fillColor, 0.4f);
 
             _tailWing.Render(ctx);
             _rocketBody.Render(ctx);
