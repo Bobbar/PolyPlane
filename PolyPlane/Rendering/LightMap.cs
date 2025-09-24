@@ -286,17 +286,16 @@ namespace PolyPlane.Rendering
         {
             var r = Vector4.Zero;
 
-            r.X = 1f - (1f - colorA.X) * (1f - colorB.X);
+            var alpha = 1f - (1f - colorA.X) * (1f - colorB.X);
 
-            if (r.X < 0.001f)
-                return r; // Fully transparent -- R,G,B not important
+            if (alpha < 0.001f)
+                return r;
 
-            var alphaFact = colorA.X / r.X;
+            var alphaFact = colorA.X / alpha;
             var alphaFactInvert = 1f - alphaFact;
 
-            r.Y = colorA.Y * alphaFact + colorB.Y * alphaFactInvert;
-            r.Z = colorA.Z * alphaFact + colorB.Z * alphaFactInvert;
-            r.W = colorA.W * alphaFact + colorB.W * alphaFactInvert;
+            r = colorA * alphaFact + colorB * alphaFactInvert;
+            r.X = alpha;
 
             return r;
         }
