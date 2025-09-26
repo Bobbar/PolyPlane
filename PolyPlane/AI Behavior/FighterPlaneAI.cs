@@ -272,8 +272,9 @@ namespace PolyPlane.AI_Behavior
                 level *= LOCKON_MULTI;
 
             // Add FOV multiplier.
-            if (plane.FOVToObject(this.Plane) < MAX_FOV)
-                level *= FOV_MULTI;
+            var fov = plane.FOVToObject(this.Plane);
+            if (fov <= MAX_FOV)
+                level *= (1f - Utilities.Factor(fov, MAX_FOV)) * FOV_MULTI;
 
             // Closing-rate multiplier.
             var closingRate = Utilities.ClosingRate(this.Plane, plane);
