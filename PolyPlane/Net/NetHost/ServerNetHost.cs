@@ -50,6 +50,8 @@ namespace PolyPlane.Net.NetHost
             base.HandleDisconnect(ref netEvent);
 
             var peer = netEvent.Peer;
+            peer.Reset();
+            peer.DisconnectNow(0);
             _peers.Remove(peer.ID);
         }
 
@@ -58,6 +60,8 @@ namespace PolyPlane.Net.NetHost
             base.HandleTimeout(ref netEvent);
 
             var peer = netEvent.Peer;
+            peer.Reset();
+            peer.DisconnectNow(0);
             _peers.Remove(peer.ID);
         }
 

@@ -471,14 +471,14 @@ namespace PolyPlane.GameObjects.Managers
 
         private void ExpireStaleNetObject(GameObject obj)
         {
-            const double MAX_NET_AGE = 500;
+            const double MAX_NET_AGE = 5000;
 
             if (World.IsNetGame)
             {
                 // Check for stale net objects which don't appear to be receiving updates.
                 // This really shouldn't happen, but it does rarely.
                 // Perhaps if an update packet arrives after an expired packet for the same object.
-                if (obj is GuidedMissile || obj is FighterPlane)
+                if (obj is GuidedMissile)
                 {
                     var netObj = obj as GameObjectNet;
 

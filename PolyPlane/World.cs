@@ -365,9 +365,13 @@ namespace PolyPlane
             return now;
         }
 
-        public static FighterPlane GetViewPlane()
+        public static GameObject GetViewPlane()
         {
             var plane = ObjectManager.GetPlaneByPlayerID(ViewObject.PlayerID);
+
+            if (plane == null)
+                return new FreeCamera(ViewObject.Position);
+
             return plane;
         }
 

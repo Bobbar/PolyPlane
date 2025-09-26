@@ -364,7 +364,7 @@ namespace PolyPlane.Server
             // Render if spectate viewport is active.
             if (_render != null && !_stopRender)
             {
-                FighterPlane viewPlane = World.GetViewPlane();
+                GameObject viewPlane = World.GetViewPlane();
 
                 if (viewPlane != null)
                 {
