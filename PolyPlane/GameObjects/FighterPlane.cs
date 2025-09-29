@@ -977,7 +977,9 @@ namespace PolyPlane.GameObjects
             {
                 if (result.WasHeadshot)
                 {
-                    SpawnDebris(8, result.ImpactPoint, D2DColor.Red);
+                    if (!result.HasFlag(ImpactType.Existing))
+                        SpawnDebris(8, result.ImpactPoint, D2DColor.Red);
+
                     WasHeadshot = true;
                     Health = 0;
                     attackPlane.Headshots++;
@@ -986,10 +988,13 @@ namespace PolyPlane.GameObjects
                 {
                     Health -= result.DamageAmount;
 
-                    if (result.HasFlag(ImpactType.Missile))
-                        SpawnDebris(4, result.ImpactPoint, this.PlaneColor);
-                    else if (result.HasFlag(ImpactType.Bullet))
-                        SpawnDebris(1, result.ImpactPoint, this.PlaneColor);
+                    if (!result.HasFlag(ImpactType.Existing))
+                    {
+                        if (result.HasFlag(ImpactType.Missile))
+                            SpawnDebris(4, result.ImpactPoint, this.PlaneColor);
+                        else if (result.HasFlag(ImpactType.Bullet))
+                            SpawnDebris(1, result.ImpactPoint, this.PlaneColor);
+                    }
                 }
 
                 if (this.Health <= 0 && !this.IsDisabled)

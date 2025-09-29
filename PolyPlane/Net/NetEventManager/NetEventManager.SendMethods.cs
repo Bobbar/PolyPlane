@@ -279,6 +279,8 @@ namespace PolyPlane.Net
             {
                 foreach (var impact in impactList)
                 {
+                    impact.ImpactType |= ImpactType.Existing;
+
                     impactsPacket.Impacts.Add(impact);
 
                     // Batch the list packet as needed.

@@ -407,6 +407,7 @@ namespace PolyPlane.Net
         public string Name;
         public D2DColor PlaneColor;
         public D2DPoint Position;
+        public float Rotation;
 
         public NewPlayerPacket(BitBuffer data)
         {
@@ -418,6 +419,7 @@ namespace PolyPlane.Net
             Name = plane.PlayerName;
             PlaneColor = plane.PlaneColor;
             Position = plane.Position;
+            Rotation = plane.Rotation;
             ID = plane.ID;
         }
 
@@ -428,6 +430,7 @@ namespace PolyPlane.Net
             data.AddString(Name);
             data.AddD2DColor(PlaneColor);
             data.AddD2DPoint(Position);
+            data.AddFloat(Rotation, Ranges.AngleBounds);
         }
 
         public override void Deserialize(BitBuffer data)
@@ -437,6 +440,7 @@ namespace PolyPlane.Net
             Name = data.ReadString();
             PlaneColor = data.ReadD2DColor();
             Position = data.ReadD2DPoint();
+            Rotation = data.ReadFloat(Ranges.AngleBounds);
         }
     }
 

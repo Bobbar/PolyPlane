@@ -110,6 +110,10 @@ namespace PolyPlane.Net
                 if (!existing)
                 {
                     var newPlane = new FighterPlane(player.Position, player.PlaneColor, player.ID);
+                    newPlane.Rotation = player.Rotation;
+
+                    newPlane.SetPosition(player.Position, player.Rotation);
+
                     newPlane.PlayerName = player.Name;
                     newPlane.IsNetObject = true;
                     newPlane.LagAmount = player.Age;
