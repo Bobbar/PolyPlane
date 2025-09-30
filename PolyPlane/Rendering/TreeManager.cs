@@ -10,6 +10,10 @@ namespace PolyPlane.Rendering
 
         public void Render(RenderContext ctx)
         {
+            // Don't bother if the viewport is above the trees.
+            if (ctx.Viewport.bottom < -350f)
+                return;
+
             const int IDX_PAD = 2;
             var todColor = ctx.GetTimeOfDayColor();
             var shadowColor = ctx.GetShadowColor();
