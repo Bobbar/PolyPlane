@@ -21,7 +21,7 @@
                 if (now >= action.NextRun)
                 {
                     action.Action();
-                    action.NextRun = GetNextRun(action.Interval);
+                    action.NextRun = GetNextRun(action.Interval) - (now - action.NextRun);
                 }
             }
         }
