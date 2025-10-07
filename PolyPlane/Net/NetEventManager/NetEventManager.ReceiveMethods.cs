@@ -196,13 +196,6 @@ namespace PolyPlane.Net
                     missilePacket.SyncObj(netMissile);
                     netMissile.NetUpdate(missilePacket);
                 }
-
-                RecordDeferSuccess(missilePacket);
-            }
-            else
-            {
-                // If we receive an update for a non-existent missile, defer the update for the next frame.
-                DeferPacket(missilePacket);
             }
         }
 
