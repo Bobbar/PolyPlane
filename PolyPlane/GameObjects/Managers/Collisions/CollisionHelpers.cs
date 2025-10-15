@@ -94,7 +94,6 @@ namespace PolyPlane.GameObjects.Managers
             return false;
         }
 
-
         public static bool PolygonSweepCollision(GameObject impactorObj, RenderPoly impactorPoly, RenderPoly targetPoly, D2DPoint targetVelo, float dt, out D2DPoint impactPoint)
         {
             // Sweep-based Continuous Collision Detection technique.
@@ -103,6 +102,7 @@ namespace PolyPlane.GameObjects.Managers
 
             const float BB_INFLATE_AMT = 10f;
             bool movedBack = false;
+            D2DPoint ogPos = D2DPoint.Zero;
 
             // Get relative velo.
             var relVelo = (impactorObj.Velocity - targetVelo) * dt;
@@ -169,19 +169,19 @@ namespace PolyPlane.GameObjects.Managers
                 {
                     while (Utilities.PolyInPoly(impactorPoly.Poly, targetPoly.Poly))
                     {
-                        movedBack = true;
-                        bullet.Position -= bullet.Velocity * dt;
+                        if (!movedBack)
+                        {
+                            movedBack = true;
+
+                            // Record OG position so we can restore it if move-back fails.
+                            ogPos = bullet.Position;
+                        }
+
+                        bullet.SetPosition(bullet.Position -= bullet.Velocity * dt);
 
                         // Stop if it gets close to the ground. Otherwise might butt heads with the ground clamping logic.
                         if (bullet.Position.Y < 5f)
                             break;
-                    }
-
-                    // Move it back one last step then update the polygon with the new position.
-                    if (movedBack)
-                    {
-                        bullet.Position -= bullet.Velocity * dt;
-                        impactorPoly.Update();
                     }
                 }
             }
@@ -229,6 +229,12 @@ namespace PolyPlane.GameObjects.Managers
                     impactPoint = iPosPoly;
                     return true;
                 }
+            }
+
+            if (movedBack)
+            {
+                // Restore the original position if no collision found after move-back.
+                impactorObj.SetPosition(ogPos);
             }
 
             impactPoint = D2DPoint.Zero;
