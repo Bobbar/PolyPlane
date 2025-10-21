@@ -296,10 +296,9 @@ namespace PolyPlane.Helpers
             mat *= Matrix3x2.CreateRotation(rotation * DEGREES_TO_RADS, D2DPoint.Zero);
             mat *= Matrix3x2.CreateTranslation(translation);
 
-            for (int i = 0; i < dst.Length; i++)
+            for (int i = dst.Length - 1; i >= 0; i--)
             {
-                var transPnt = D2DPoint.Transform(src[i], mat);
-                dst[i] = transPnt;
+                dst[i] = D2DPoint.Transform(src[i], mat);
             }
         }
 
@@ -309,10 +308,9 @@ namespace PolyPlane.Helpers
             mat *= Matrix3x2.CreateRotation(rotation * DEGREES_TO_RADS, center);
             mat *= Matrix3x2.CreateTranslation(translation);
 
-            for (int i = 0; i < dst.Length; i++)
+            for (int i = dst.Length - 1; i >= 0; i--)
             {
-                var transPnt = D2DPoint.Transform(src[i], mat);
-                dst[i] = transPnt;
+                dst[i] = D2DPoint.Transform(src[i], mat);
             }
         }
 
