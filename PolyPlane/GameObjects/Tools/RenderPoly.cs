@@ -10,6 +10,7 @@ namespace PolyPlane.GameObjects.Tools
         public bool IsFlipped = false;
         public GameObject ParentObject;
 
+        private bool _isDistortable = false;
         private D2DPoint[] _originalPoly;
 
         public D2DPoint Position => ParentObject.Position;
@@ -22,9 +23,9 @@ namespace PolyPlane.GameObjects.Tools
             _originalPoly = new D2DPoint[0];
         }
 
-        public RenderPoly(RenderPoly copyPoly, D2DPoint pos, float rotation) : this(copyPoly.ParentObject)
+        public RenderPoly(RenderPoly copyPoly, D2DPoint pos, float rotation, bool distortable = false) : this(copyPoly.ParentObject)
         {
-            InitPolyArrays(copyPoly.SourcePoly, D2DPoint.Zero);
+            InitPolyArrays(copyPoly.SourcePoly, D2DPoint.Zero, 1f, distortable);
 
             this.Update(pos, rotation, copyPoly.ParentObject.RenderScale);
         }
@@ -50,9 +51,9 @@ namespace PolyPlane.GameObjects.Tools
             this.Update();
         }
 
-        public RenderPoly(GameObject parent, D2DPoint[] polygon, float scale, float tessalateDist = 0f) : this(parent)
+        public RenderPoly(GameObject parent, D2DPoint[] polygon, float scale, float tessalateDist, bool distortable = false) : this(parent)
         {
-            InitPolyArrays(polygon, D2DPoint.Zero, scale);
+            InitPolyArrays(polygon, D2DPoint.Zero, scale, distortable);
 
             if (tessalateDist > 0f)
                 IncreaseResolution(tessalateDist);
@@ -60,15 +61,20 @@ namespace PolyPlane.GameObjects.Tools
             this.Update();
         }
 
-        private void InitPolyArrays(D2DPoint[] polygon, D2DPoint offset, float scale = 1f)
+        internal void InitPolyArrays(D2DPoint[] polygon, D2DPoint offset, float scale = 1f, bool distortable = false)
         {
             Poly = new D2DPoint[polygon.Length];
             SourcePoly = new D2DPoint[polygon.Length];
-            _originalPoly = new D2DPoint[polygon.Length];
 
             Array.Copy(polygon, SourcePoly, polygon.Length);
             Array.Copy(polygon, Poly, polygon.Length);
-            Array.Copy(polygon, _originalPoly, polygon.Length);
+
+            if (distortable)
+            {
+                _originalPoly = new D2DPoint[polygon.Length];
+                Array.Copy(polygon, _originalPoly, polygon.Length);
+                _isDistortable = true;
+            }
 
             Poly.Translate(Poly, 0f, offset, scale);
             SourcePoly.Translate(SourcePoly, 0f, offset, scale);
@@ -302,10 +308,13 @@ namespace PolyPlane.GameObjects.Tools
 
             SourcePoly = srcCopy.ToArray();
             Poly = new D2DPoint[SourcePoly.Length];
-            _originalPoly = new D2DPoint[SourcePoly.Length];
-
             Array.Copy(SourcePoly, Poly, SourcePoly.Length);
-            Array.Copy(SourcePoly, _originalPoly, SourcePoly.Length);
+
+            if (_isDistortable)
+            {
+                _originalPoly = new D2DPoint[SourcePoly.Length];
+                Array.Copy(SourcePoly, _originalPoly, SourcePoly.Length);
+            }
         }
 
         /// <summary>
@@ -315,6 +324,9 @@ namespace PolyPlane.GameObjects.Tools
         /// <param name="distortVec">Vector containing the magnitude and direction of the distortion.</param>
         public void Distort(D2DPoint position, D2DPoint distortVec)
         {
+            if (!_isDistortable)
+                return;
+
             // Find the closest poly point to the impact and distort the polygon.
             var closestIdx = ClosestIdx(position);
 
@@ -334,6 +346,9 @@ namespace PolyPlane.GameObjects.Tools
         /// </summary>
         public void Restore()
         {
+            if (!_isDistortable)
+                return;
+
             for (int i = 0; i < SourcePoly.Length; i++)
                 SourcePoly[i] = _originalPoly[i];
 
@@ -350,7 +365,9 @@ namespace PolyPlane.GameObjects.Tools
             for (int i = 0; i < Poly.Length; i++)
             {
                 SourcePoly[i].Y = -SourcePoly[i].Y;
-                _originalPoly[i].Y = -_originalPoly[i].Y;
+
+                if (_isDistortable)
+                    _originalPoly[i].Y = -_originalPoly[i].Y;
             }
 
             this.Update();

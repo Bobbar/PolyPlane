@@ -318,7 +318,7 @@ namespace PolyPlane.GameObjects
             this.RenderScale = 1.5f;
             this.RenderLayer = 5;
 
-            this.Polygon = new RenderPoly(this, _planePoly, this.RenderScale, POLY_TESSELLATE_DIST);
+            this.Polygon = new RenderPoly(this, _planePoly, this.RenderScale, POLY_TESSELLATE_DIST, distortable: true);
             this.FlamePoly = new RenderPoly(this, _flamePoly, new D2DPoint(12f, 0), this.RenderScale);
 
             _prevAlt = this.Altitude;
@@ -1041,7 +1041,7 @@ namespace PolyPlane.GameObjects
             var distortVec = Utilities.AngleToVectorDegrees(angle, distortAmt);
 
             // Copy the polygon, distort it, then check for distortion related damage effects.
-            var polyCopy = new RenderPoly(this.Polygon, this.Position, this.Rotation);
+            var polyCopy = new RenderPoly(this.Polygon, this.Position, this.Rotation, distortable: true);
             polyCopy.Distort(result.ImpactPointOrigin, distortVec);
 
 
