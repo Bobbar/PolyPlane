@@ -503,8 +503,6 @@ namespace PolyPlane.GameObjects
 
                 wingForce *= DISABLED_FACTOR;
                 wingTorque *= DISABLED_FACTOR;
-
-                damageTorque *= DISABLED_FACTOR;
                 damageForce *= DISABLED_FACTOR;
             }
 
