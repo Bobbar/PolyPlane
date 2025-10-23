@@ -359,17 +359,17 @@ namespace PolyPlane.GameObjects.Managers
             SyncObjCollections();
 
             // Update all regular objects.
-            _allObjects.ForEachParallel(o => o.Update(World.CurrentDT));
+            _allObjects.ForEachParallel(o => o.Update(dt));
 
             // Update planes separately.
             // They are pretty expensive, so we want "all threads on deck"
             // to be working on the updates.
-            Planes.ForEachParallel(o => o.Update(World.CurrentDT));
+            Planes.ForEachParallel(o => o.Update(dt));
 
             if (!World.IsNetGame || World.IsClient)
             {
                 // Update particles.
-                Particles.ForEachParallel(o => o.Update(World.CurrentDT));
+                Particles.ForEachParallel(o => o.Update(dt));
             }
 
             _spatialGrid.Update();

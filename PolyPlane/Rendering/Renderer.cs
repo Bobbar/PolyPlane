@@ -305,7 +305,7 @@ namespace PolyPlane.Rendering
 
             if (!World.IsPaused)
             {
-                _cloudManager.Update();
+                _cloudManager.Update(dt);
 
                 // Check if we need to update the ground brush.
                 var todDiff = Math.Abs(World.TimeOfDay - _groundColorTOD);

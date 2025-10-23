@@ -322,12 +322,11 @@ namespace PolyPlane.GameObjects
         {
             if (_hasPhysicsUpdate)
             {
+                var partialDT = World.SUB_DT;
+
                 for (int i = 0; i < World.PHYSICS_SUB_STEPS; i++)
                 {
-                    var partialDT = World.SUB_DT;
-
                     DoPhysicsUpdate(partialDT);
-
                     UpdatePhysicsAttachments(partialDT);
                 }
             }

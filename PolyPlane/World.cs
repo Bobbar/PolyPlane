@@ -105,8 +105,8 @@ namespace PolyPlane
         public static float TimeOfDayDir = -1f;
         public static double ServerTimeOffset = 0;
 
-        public static float TARGET_FRAME_TIME = 16.6f;
-        public static readonly float TARGET_FRAME_TIME_NET = TARGET_FRAME_TIME * 2f;
+        public const float TARGET_FRAME_TIME = 16.666666666f;
+        public const float TARGET_FRAME_TIME_NET = TARGET_FRAME_TIME * 2f;
         public const double SERVER_FRAME_TIME = 1000d / NET_SERVER_FPS;
 
         public const float MAX_TIMEOFDAY = 24f;
@@ -169,7 +169,7 @@ namespace PolyPlane
             new D2DColor(0.5f, 0f, 0f, 0f)
         ];
 
-        private const float GAME_SPEED_MULTI = 0.00255f;
+        private const float GAME_SPEED_MULTI = DEFAULT_DT / TARGET_FRAME_TIME;
         private const float NOISE_FLOOR = -1f;
         private const float NOISE_CEILING = 0.8f;
         private const float NOISE_FREQUENCY = 0.0025f;
@@ -195,7 +195,6 @@ namespace PolyPlane
             _turbulenceNoise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
             _turbulenceNoise.SetFrequency(NOISE_FREQUENCY);
 
-            TARGET_FRAME_TIME = 1000f / (float)TARGET_FPS;
             MUTLI_THREAD_COUNT = Environment.ProcessorCount;
         }
 

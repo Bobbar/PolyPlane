@@ -11,10 +11,10 @@ namespace PolyPlane.Rendering
 
         private const int NUM_GEO = 500;
 
-        public void Update()
+        public void Update(float dt)
         {
-            _cloudGeometries.ForEachParallel(c => c.Update(World.CurrentDT));
-            _clouds.ForEachParallel(c => c.Update(World.CurrentDT));
+            _cloudGeometries.ForEachParallel(c => c.Update(dt));
+            _clouds.ForEachParallel(c => c.Update(dt));
             _cloudGrid.Update();
         }
 
