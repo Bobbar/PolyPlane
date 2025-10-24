@@ -110,7 +110,7 @@ namespace PolyPlane.Rendering
         private int Width => (int)(_renderTarget.Width / (_renderTarget.DeviceDpi / DEFAULT_DPI));
         private int Height => (int)(_renderTarget.Height / (_renderTarget.DeviceDpi / DEFAULT_DPI));
 
-        private const float SCREEN_SHAKE_DECAY = 4f; // How fast screen shake amount decays.
+        private const float SCREEN_SHAKE_DECAY = 2f; // How fast screen shake amount decays.
         private const float VIEW_SCALE = 4f;
         private const float DEFAULT_DPI = 96f;
 
