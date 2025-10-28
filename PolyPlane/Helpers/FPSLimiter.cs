@@ -9,26 +9,34 @@ namespace PolyPlane
         private Stopwatch _fpsTimer = new Stopwatch();
         private Stopwatch _offsetTimer = new Stopwatch();
         private SmoothDouble _offset = new SmoothDouble(3);
+        private long _targetFrameTime = 0;
+        private int _targetFPS = 60;
 
         public FPSLimiter() { }
 
         public void Wait(int targetFPS)
         {
-            _offsetTimer.Restart();
+            if (targetFPS != _targetFPS)
+            {
+                _targetFrameTime = TimeSpan.TicksPerSecond / targetFPS;
+                _targetFPS = targetFPS;
+                _offset.Clear();
+            }
 
-            long targetFrameTime = TimeSpan.TicksPerSecond / targetFPS;
+            _offsetTimer.Restart();
+           
             long elapTime = _fpsTimer.Elapsed.Ticks;
 
-            if (elapTime < targetFrameTime)
+            if (elapTime < _targetFrameTime)
             {
-                // # High accuracy, low CPU usage. #
-                long waitTime = (long)(targetFrameTime - elapTime);
+                long waitTime = (long)(_targetFrameTime - elapTime);
 
                 // Apply the current offset.
                 waitTime += (long)Math.Ceiling(_offset.Current);
-
+              
                 if (waitTime > 0)
                 {
+                    // High accuracy, low CPU usage waitable timer.
                     _waitTimer.Wait(waitTime, false);
 
                     // Test how long the timer actually waited versus
@@ -39,7 +47,7 @@ namespace PolyPlane
                     var offset = waitTime - _offsetTimer.Elapsed.Ticks;
 
                     // Filter out very large deviations. 
-                    if (Math.Abs(offset) < targetFrameTime)
+                    if (Math.Abs(offset) < _targetFrameTime)
                         _offset.Add(offset);
                 }
             }
