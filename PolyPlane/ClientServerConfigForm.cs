@@ -206,6 +206,21 @@ namespace PolyPlane
             UpdateHudColorPreview();
         }
 
+        private void TargetFPSTextBox_Validating(object sender, CancelEventArgs e)
+        {
+            TargetFPSTextBox.Text = TargetFPSTextBox.Text.Trim();
+
+            if (int.TryParse(TargetFPSTextBox.Text, out int fps))
+            {
+                World.TARGET_FPS = fps;
+            }
+            else
+            {
+                e.Cancel = true;
+                TargetFPSTextBox.Text = "60";
+            }
+        }
+
 
         private class ServerEntry
         {

@@ -50,6 +50,8 @@
             HudColorAlphaNumeric = new NumericUpDown();
             label6 = new Label();
             DefaultHubColorButton = new Button();
+            label7 = new Label();
+            TargetFPSTextBox = new TextBox();
             ((System.ComponentModel.ISupportInitialize)PlanePreviewBox).BeginInit();
             ((System.ComponentModel.ISupportInitialize)HudColorAlphaNumeric).BeginInit();
             SuspendLayout();
@@ -212,7 +214,7 @@
             // label5
             // 
             label5.AutoSize = true;
-            label5.Location = new Point(513, 318);
+            label5.Location = new Point(515, 309);
             label5.Name = "label5";
             label5.Size = new Size(68, 15);
             label5.TabIndex = 17;
@@ -222,7 +224,7 @@
             // 
             HudColorPreviewLabel.BorderStyle = BorderStyle.FixedSingle;
             HudColorPreviewLabel.Cursor = Cursors.Hand;
-            HudColorPreviewLabel.Location = new Point(590, 313);
+            HudColorPreviewLabel.Location = new Point(592, 304);
             HudColorPreviewLabel.Name = "HudColorPreviewLabel";
             HudColorPreviewLabel.Size = new Size(98, 25);
             HudColorPreviewLabel.TabIndex = 18;
@@ -232,7 +234,7 @@
             // 
             HudColorAlphaNumeric.DecimalPlaces = 1;
             HudColorAlphaNumeric.Increment = new decimal(new int[] { 5, 0, 0, 131072 });
-            HudColorAlphaNumeric.Location = new Point(590, 341);
+            HudColorAlphaNumeric.Location = new Point(592, 332);
             HudColorAlphaNumeric.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
             HudColorAlphaNumeric.Name = "HudColorAlphaNumeric";
             HudColorAlphaNumeric.Size = new Size(45, 23);
@@ -242,7 +244,7 @@
             // label6
             // 
             label6.AutoSize = true;
-            label6.Location = new Point(513, 341);
+            label6.Location = new Point(515, 334);
             label6.Name = "label6";
             label6.Size = new Size(44, 15);
             label6.TabIndex = 20;
@@ -250,7 +252,7 @@
             // 
             // DefaultHubColorButton
             // 
-            DefaultHubColorButton.Location = new Point(697, 315);
+            DefaultHubColorButton.Location = new Point(699, 306);
             DefaultHubColorButton.Name = "DefaultHubColorButton";
             DefaultHubColorButton.Size = new Size(54, 23);
             DefaultHubColorButton.TabIndex = 21;
@@ -258,11 +260,32 @@
             DefaultHubColorButton.UseVisualStyleBackColor = true;
             DefaultHubColorButton.Click += DefaultHubColorButton_Click;
             // 
+            // label7
+            // 
+            label7.AutoSize = true;
+            label7.Location = new Point(515, 359);
+            label7.Name = "label7";
+            label7.Size = new Size(64, 15);
+            label7.TabIndex = 22;
+            label7.Text = "Target FPS:";
+            // 
+            // TargetFPSTextBox
+            // 
+            TargetFPSTextBox.Location = new Point(590, 356);
+            TargetFPSTextBox.Name = "TargetFPSTextBox";
+            TargetFPSTextBox.Size = new Size(47, 23);
+            TargetFPSTextBox.TabIndex = 23;
+            TargetFPSTextBox.Text = "60";
+            TargetFPSTextBox.TextAlign = HorizontalAlignment.Center;
+            TargetFPSTextBox.Validating += TargetFPSTextBox_Validating;
+            // 
             // ClientServerConfigForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(772, 419);
+            Controls.Add(TargetFPSTextBox);
+            Controls.Add(label7);
             Controls.Add(DefaultHubColorButton);
             Controls.Add(label6);
             Controls.Add(HudColorAlphaNumeric);
@@ -322,5 +345,7 @@
         private NumericUpDown HudColorAlphaNumeric;
         private Label label6;
         private Button DefaultHubColorButton;
+        private Label label7;
+        private TextBox TargetFPSTextBox;
     }
 }

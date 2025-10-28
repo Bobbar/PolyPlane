@@ -591,12 +591,11 @@ namespace PolyPlane
                 _oneStep = false;
             }
 
-            // Render the frame.
-            // Or hit the FPS limiter if window is minimized or we're skipping rendering.
+            // Render the frame if window is not minimized and we're not skipping rendering.
             if (!_skipRender && !_killRender && this.WindowState != FormWindowState.Minimized)
                 _render.RenderFrame(viewObject, dt);
-            else
-                _fpsLimiter.Wait(World.TARGET_FPS);
+
+            _fpsLimiter.Wait(World.TARGET_FPS);
 
             if (_slewEnable)
             {

@@ -118,7 +118,12 @@ namespace PolyPlane
         public const float DEFAULT_DT = 0.0425f;
         public const float DEFAULT_SUB_DT = DEFAULT_DT / PHYSICS_SUB_STEPS;
 
-        public const int TARGET_FPS = 60; // Primary FPS target. Change this to match the desired refresh rate.
+        public static int TARGET_FPS
+        {
+            get { return _targetFPS; }
+            set { _targetFPS = Math.Clamp(value, 1, 480); }
+        }
+
         public const int NET_SERVER_FPS = 240;
         public const float NET_INTERP_AMOUNT = 70f; // Amount of time in milliseconds for the interpolation buffer.
 
@@ -182,7 +187,7 @@ namespace PolyPlane
         private static bool _isServer = false;
         private static float _currentDT = DEFAULT_DT;
         private static float _gameSpeed = 1f;
-
+        private static int _targetFPS = 60;
         private static float _sub_dt = DEFAULT_SUB_DT;
         private static float _zoomScale = 0.11f;
         private static GameID _viewObjectID;

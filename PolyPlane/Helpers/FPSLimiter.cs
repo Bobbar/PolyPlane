@@ -10,7 +10,7 @@ namespace PolyPlane
         private Stopwatch _offsetTimer = new Stopwatch();
         private SmoothDouble _offset = new SmoothDouble(3);
         private long _targetFrameTime = 0;
-        private int _targetFPS = 60;
+        private int _targetFPS = -1;
 
         public FPSLimiter() { }
 
@@ -18,6 +18,9 @@ namespace PolyPlane
         {
             if (targetFPS != _targetFPS)
             {
+                if (targetFPS < 1)
+                    targetFPS = 1;
+
                 _targetFrameTime = TimeSpan.TicksPerSecond / targetFPS;
                 _targetFPS = targetFPS;
                 _offset.Clear();
