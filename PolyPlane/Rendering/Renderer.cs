@@ -53,6 +53,8 @@ namespace PolyPlane.Rendering
         private D2DSolidColorBrush _redColorBrush;
         private D2DSolidColorBrush _whiteColorBrush;
         private D2DSolidColorBrush _greenYellowColorBrush;
+        private D2DSolidColorBrush _gridBrush;
+
         private D2DBitmap? _clearBitmap = null;
 
         private bool _showInfo = false;
@@ -228,6 +230,7 @@ namespace PolyPlane.Rendering
             _redColorBrush = _ctx.Device.CreateSolidColorBrush(D2DColor.Red);
             _whiteColorBrush = _ctx.Device.CreateSolidColorBrush(D2DColor.White);
             _greenYellowColorBrush = _ctx.Device.CreateSolidColorBrush(D2DColor.GreenYellow);
+            _gridBrush = _ctx.Device.CreateSolidColorBrush(D2DColor.Gray);
 
             UpdateGroundColorBrush(_ctx);
             InitClearGradientBitmap();
@@ -437,6 +440,7 @@ namespace PolyPlane.Rendering
             // Fade out with zoom level.
             var alphaFact = 1f - Utilities.Factor(World.ViewPortScaleMulti, 35f);
             var color = new D2DColor(0.3f * alphaFact, D2DColor.Gray);
+            _gridBrush.Color = color;
 
             if (alphaFact < 0.05f)
                 return;
@@ -457,9 +461,9 @@ namespace PolyPlane.Rendering
                     pos -= roundPos;
 
                     if (rect.Contains(pos))
-                        ctx.Gfx.FillRectangle(new D2DRect(pos, d2dSz), color);
+                        ctx.Gfx.FillRectangle(new D2DRect(pos, d2dSz), _gridBrush);
                 }
-            }
+            } 
         }
 
         private void DrawPlayerView(RenderContext ctx, GameObject viewObj)
