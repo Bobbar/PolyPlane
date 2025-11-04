@@ -310,10 +310,9 @@ namespace PolyPlane.Net
                 case PacketTypes.NewPlayer:
 
                     var playerPacket = packet as NewPlayerPacket;
-
-                    if (IsServer)
+                    if (playerPacket != null)
                     {
-                        if (playerPacket != null)
+                        if (IsServer)
                         {
                             var newPlane = new FighterPlane(playerPacket.Position, playerPacket.PlaneColor, playerPacket.ID);
                             newPlane.PlayerName = playerPacket.Name;
@@ -321,18 +320,18 @@ namespace PolyPlane.Net
                             newPlane.PlayerKilledCallback += HandlePlayerKilled;
 
                             _objs.AddPlane(newPlane);
+
+                            // Begin streaming out the current game state to the new player.
+                            ServerSendGameState();
+                            ServerSendOtherPlanes();
+                            ServerSendExistingBullets(playerPacket.ID);
+                            ServerSendExistingMissiles(playerPacket.ID);
+                            ServerSendExistingDecoys(playerPacket.ID);
+                            ServerSendExistingImpacts(playerPacket.ID);
                         }
 
-                        // Begin streaming out the current game state to the new player.
-                        ServerSendGameState();
-                        ServerSendOtherPlanes();
-                        ServerSendExistingBullets(playerPacket.ID);
-                        ServerSendExistingMissiles(playerPacket.ID);
-                        ServerSendExistingDecoys(playerPacket.ID);
-                        ServerSendExistingImpacts(playerPacket.ID);
+                        PlayerJoined?.Invoke(this, playerPacket.ID.PlayerID);
                     }
-
-                    PlayerJoined?.Invoke(this, playerPacket.ID.PlayerID);
 
                     break;
 

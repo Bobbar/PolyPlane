@@ -42,7 +42,7 @@ namespace PolyPlane.Net.NetHost
             idPacket.SendType = SendType.ToOnly;
             idPacket.PeerID = peer.ID;
 
-            SendIDPacket(peer, idPacket);
+            SendPacket(idPacket);
         }
 
         public override void HandleDisconnect(ref Event netEvent)
@@ -76,13 +76,11 @@ namespace PolyPlane.Net.NetHost
                 or PacketTypes.ChatMessage
                 or PacketTypes.NewBullet
                 or PacketTypes.NewMissile
-                or PacketTypes.NewDecoy
-                or PacketTypes.Impact
-                or PacketTypes.PlayerDisconnect
-                or PacketTypes.PlayerEvent:
+                or PacketTypes.NewDecoy:
 
-                    // Queue certain updates to re-broadcast ASAP.
-                    PacketSendQueue.Enqueue(netPacket);
+                    // Re-broadcast certain updates ASAP.
+                    SendPacket(netPacket);
+
                     break;
             }
         }
@@ -154,14 +152,6 @@ namespace PolyPlane.Net.NetHost
             }
 
             return 0;
-        }
-
-        private void SendIDPacket(Peer peer, NetPacket packet)
-        {
-            var idPacket = CreatePacket(packet);
-            var channel = GetChannel(packet);
-
-            peer.Send(channel, ref idPacket);
         }
     }
 }

@@ -62,7 +62,6 @@ namespace PolyPlane.Net.NetHost
         public virtual void DoStart()
         { }
 
-
         public virtual void HandleConnect(ref Event netEvent)
         { }
 
