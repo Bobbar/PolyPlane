@@ -223,6 +223,7 @@ namespace PolyPlane.GameObjects
         private float _gForceDirection = 0f;
         private float _health = MAX_HEALTH;
         private float _prevAlt = 0;
+        private float _limitedAngle = 0f;
         private int _throttlePos = 0;
         private int _numMissiles = MAX_MISSILES;
         private int _numBullets = MAX_BULLETS;
@@ -438,24 +439,6 @@ namespace PolyPlane.GameObjects
 
             var wingForce = D2DPoint.Zero;
             var wingTorque = 0f;
-            var guideRot = this.Rotation;
-
-            // Get guidance direction.
-            if (_isAIPlane)
-                guideRot = GetAPGuidanceDirection(_aiBehavior.GetAIGuidanceDirection(dt));
-            else
-                guideRot = GetAPGuidanceDirection(PlayerGuideAngle);
-
-            // Deflection direction.
-            var deflection = Utilities.ClampAngle180(guideRot);
-
-            if (!IsNetObject)
-            {
-                if (!this.IsDisabled)
-                    this.Deflection = deflection;
-                else
-                    this.Deflection = _damageDeflection;
-            }
 
             // Wing force and torque.
             for (int i = 0; i < _wings.Count; i++)
@@ -539,6 +522,44 @@ namespace PolyPlane.GameObjects
         public override void DoUpdate(float dt)
         {
             base.DoUpdate(dt);
+
+            var guideRot = this.Rotation;
+            var targetAngle = 0f;
+
+            // Get guidance direction.
+            if (_isAIPlane)
+                targetAngle = _aiBehavior.GetAIGuidanceDirection(dt);
+            else
+                targetAngle = PlayerGuideAngle;
+
+            // Try to avoid gimbal lock when guidance is pointed in nearly
+            // the opposite direction of the current rotation.
+            // Ease the final guidance direction so that we produce
+            // a pitch moment more quickly.
+            // Ex. Pitching from 0 to 90 is more responsive than 
+            // trying to pitch from 0 to 180 (due to gibal lock).
+            var angleDiff = Utilities.AngleDiff(targetAngle, this.Rotation);
+            if (angleDiff > 100f)
+            {
+                _limitedAngle = Utilities.MoveTowardsAngle(_limitedAngle, targetAngle, 80f * dt);
+                guideRot = GetAPGuidanceDirection(_limitedAngle);
+            }
+            else
+            {
+                _limitedAngle = targetAngle;
+                guideRot = GetAPGuidanceDirection(targetAngle);
+            }
+
+            // Deflection direction.
+            var deflection = Utilities.ClampAngle180(guideRot);
+
+            if (!IsNetObject)
+            {
+                if (!this.IsDisabled)
+                    this.Deflection = deflection;
+                else
+                    this.Deflection = _damageDeflection;
+            }
 
             // Update all the low frequency stuff.
             _thrustAmt.Update(dt);
