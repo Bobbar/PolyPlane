@@ -107,11 +107,11 @@ namespace PolyPlane.GameObjects
             new D2DPoint(25 + LEN, 2)
         ];
 
-        private static readonly D2DPoint[] _flamePoly =
+        private readonly D2DPoint[] _flamePoly =
         [
-            new D2DPoint(-8, 1.5f),
+            new D2DPoint(-8, 1.2f),
             new D2DPoint(-10, 0),
-            new D2DPoint(-8, -1.5f),
+            new D2DPoint(-8, -1.2f),
         ];
 
         public GuidedMissile(GameObject player, GameObject target, D2DPoint position, D2DPoint velocity, float rotation) : base(GameObjectFlags.SpatialGrid)
@@ -164,10 +164,10 @@ namespace PolyPlane.GameObjects
             _centerOfThrust = AddAttachment(new FixturePoint(this, new D2DPoint(-21, 0)), true);
             _warheadCenterMass = AddAttachment(new FixturePoint(this, new D2DPoint(12f, 0)), true);
             _motorCenterMass = AddAttachment(new FixturePoint(this, new D2DPoint(-13f, 0)), true);
-            _flamePos = AddAttachment(new FixturePoint(this, new D2DPoint(-22f, 0)), true);
+            _flamePos = AddAttachment(new FixturePoint(this, new D2DPoint(-26f, 0)), true);
 
             this.Polygon = new RenderPoly(this, _missilePoly, new D2DPoint(-2f, 0f));
-            this.FlamePoly = new RenderPoly(_flamePos, _flamePoly, new D2DPoint(6f, 0));
+            this.FlamePoly = new RenderPoly(_flamePos, _flamePoly, new D2DPoint(8f, 0));
 
             InitWings();
 
@@ -180,13 +180,12 @@ namespace PolyPlane.GameObjects
                 easeTime = impactTime;
 
             _easeGuidanceTimer = AddTimer(easeTime);
+            _easeGuidanceTimer.Restart();
 
             _igniteCooldown = AddTimer(1f);
 
             _igniteCooldown.TriggerCallback = () =>
             {
-                _easeGuidanceTimer.Restart();
-
                 IsActivated = true;
                 FlameOn = true;
 
@@ -200,16 +199,16 @@ namespace PolyPlane.GameObjects
 
         private void InitWings()
         {
-            const float LIFT_SCALE = 1.5f;
+            const float LIFT_SCALE = 1.3f;
             const float MIN_VELO = 800f;
-            const float DEFLECTION_RATE = 60f;
+            const float DEFLECTION_RATE = 80f;
 
             _tailWing = new Wing(this, new WingParameters()
             {
                 RenderLength = 2.5f,
                 RenderWidth = 1f,
                 Area = 0.075f,
-                MaxDeflection = 55f,
+                MaxDeflection = 45f,
                 MaxLiftForce = 4500f * LIFT_SCALE,
                 VeloLiftFactor = 1.4f,
                 VeloDragFactor = 1.2f,
@@ -278,12 +277,8 @@ namespace PolyPlane.GameObjects
                 if (_guidance != null)
                     _guideRotation = _guidance.GuideTo(dt);
 
-                // Hold initial rotation until activated.
-                // Otherwise ease in the guidance rotation.
-                if (!this.IsActivated)
-                    _guideRotation = _initRotation;
-                else
-                    _guideRotation = Utilities.LerpAngle(_initRotation, _guideRotation, _easeGuidanceTimer.Position);
+                // Ease in the guidance rotation.
+                _guideRotation = Utilities.LerpAngle(_initRotation, _guideRotation, _easeGuidanceTimer.Position);
 
                 // Compute deflection.
                 var nextDeflect = GetDeflectionAmount(_guideRotation);
@@ -295,7 +290,7 @@ namespace PolyPlane.GameObjects
                     const float MIN_DEF_SPD = 450f; // Minimum speed required for full deflection.
                     var spdFact = Utilities.Factor(this.Velocity.Length(), MIN_DEF_SPD);
 
-                    const float MAX_DEF_AOA = 50f; // Maximum AoA allowed. Reduce deflection as AoA increases.
+                    const float MAX_DEF_AOA = 40f; // Maximum AoA allowed. Reduce deflection as AoA increases.
                     var aoaFact = 1f - (Math.Abs(_rocketBody.AoA) / (MAX_DEF_AOA + (spdFact * (MAX_DEF_AOA * 3f))));
 
                     const float MAX_DEF_ROT_SPD = 150f; // Maximum rotation speed allowed. Reduce deflection to try to control rotation speed.
@@ -306,9 +301,8 @@ namespace PolyPlane.GameObjects
                     nextDeflect = Utilities.Lerp(nextDeflect, nextDeflect * (aoaFact * rotSpdFact * spdFact), fuelFact);
                 }
 
-                // Damp and apply deflection.
-                var dampDeflection = Utilities.Damp(this.Deflection, nextDeflect, DEFLECTION_DAMPING, dt);
-                SetDeflection(dampDeflection);
+                // Apply deflection.
+                SetDeflection(nextDeflect);
 
                 // Compute torque and rotation result.
                 var thrust = GetThrust();
@@ -350,9 +344,11 @@ namespace PolyPlane.GameObjects
 
         private float GetDeflectionAmount(float dir)
         {
+            const float SENSITIVITY = 0.7f; // How aggressively we try to point in the specified direction.
             var dirVec = Utilities.AngleToVectorDegrees(dir);
-            var amtRot = Utilities.RadsToDegrees(Utilities.AngleToVectorDegrees(this.Rotation).Cross(dirVec));
-            var rot = amtRot;
+            var dirVecVelo = dirVec * SENSITIVITY;
+            var rotVelo = Utilities.RadsToDegrees(this.Velocity.Normalized().Cross(dirVecVelo));
+            var rot = rotVelo;
 
             rot = Utilities.ClampAngle180(rot);
 
@@ -439,7 +435,7 @@ namespace PolyPlane.GameObjects
             var thrust = GetThrust().Length();
             var len = this.Velocity.Length() * 0.05f;
             len += thrust * 0.01f;
-            len *= 0.8f;
+            len *= 0.6f;
             FlamePoly.SourcePoly[1].X = -Utilities.Rnd.NextFloat(9f + len, 11f + len);
             _flameFillColor.g = Utilities.Rnd.NextFloat(0.6f, 0.86f);
             FlamePoly.Update(_flamePos.Position, flameAngle, this.RenderScale);
