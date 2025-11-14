@@ -239,7 +239,8 @@ namespace PolyPlane.Rendering
 
         public void FillEllipse(D2DEllipse ellipse, D2DColor color, bool clipped = true)
         {
-            if (color.a <= 0f)
+            // Skip rendering of alpha is low enough to be invisible.
+            if (color.a <= World.MIN_RENDER_ALPHA)
                 return;
 
             // Use cached brush for performance.
@@ -256,7 +257,9 @@ namespace PolyPlane.Rendering
             }
             else
             {
-                FillRectangle(new D2DRect(ellipse.origin, new D2DSize(ellipse.radiusX * 2f, ellipse.radiusY * 2f)), _cachedBrush);
+                // Just skip rendering entirely for extremely small ellipses.
+                if (viewRad > World.MIN_ELLIPSE_RENDER_SIZE)
+                    FillRectangle(new D2DRect(ellipse.origin, new D2DSize(ellipse.radiusX * 2f, ellipse.radiusY * 2f)), _cachedBrush);
             }
         }
 

@@ -129,6 +129,8 @@ namespace PolyPlane
 
         public const int SPATIAL_GRID_SIDELEN = 9;
         public const float FAST_PRIMITIVE_MIN_SIZE = 1.5f;
+        public const float MIN_ELLIPSE_RENDER_SIZE = 0.5f; // Ellipses with a final radius less than this value are not rendered. 
+        public const float MIN_RENDER_ALPHA = 0.0023f; // Skip rendering if the alpha is below this value.
         public const float SCREEN_SHAKE_G = 9f; // Amount of g-force before screen shake effect.
         public const float INERTIA_MULTI = 20f; // Mass is multiplied by this value for interia calculations.
         public const float DEFAULT_DPI = 96f;
