@@ -28,7 +28,7 @@ namespace PolyPlane.AI_Behavior
         private GameTimer _dropDecoysTimer = new GameTimer(1.2f, 2.5f);
         private GameTimer _changeTargetCooldown = new GameTimer(10f);
         private GameTimer _defendMissileCooldown = new GameTimer(8f);
-        private GameTimer _dodgeMissileCooldown = new GameTimer(4.5f);
+        private GameTimer _dodgeMissileCooldown = new GameTimer(5f);
         private RateLimiterAngle _defendAngleRate = new RateLimiterAngle(20f);
 
         private float MIN_MISSILE_TIME = 40f;
@@ -462,7 +462,7 @@ namespace PolyPlane.AI_Behavior
                 var threatVeloAngle = DefendingMissile.Velocity.Angle();
 
                 const float DEFEND_ANGLE = 25f; // Offset angle to threat slightly to try to put decoys in the flight path.
-                const float DODGE_TIME = 2f; // Impact time to try to dodge the missile.
+                const float DODGE_TIME = 2.5f; // Impact time to try to dodge the missile.
 
                 var defendAngleOne = Utilities.ClampAngle(angleAwayFromThreat + DEFEND_ANGLE);
                 var defendAngleTwo = Utilities.ClampAngle(angleAwayFromThreat - DEFEND_ANGLE);

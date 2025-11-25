@@ -56,11 +56,12 @@ namespace PolyPlane.GameObjects
         private const float BURN_RATE = 0.85f;
         private const float THRUST = 3000f;
         private const float FUEL = 10f;
-        private const float DEFLECTION_DAMPING = 1.25f;
+        private const float GUIDANCE_TRACK_RATE = 40f;
 
         private float _currentFuel = 0f;
         private float _initRotation = 0f;
         private float _guideRotation = 0f;
+        private float _curGuideRot = 0f;
         private float _curDeflection = 0f;
 
         private RenderPoly FlamePoly;
@@ -159,8 +160,8 @@ namespace PolyPlane.GameObjects
             this.RenderScale = 0.9f;
             this.RenderLayer = 2;
 
-            _initRotation = this.Rotation;
-
+            _initRotation = _curGuideRot = this.Rotation;
+            
             _centerOfThrust = AddAttachment(new FixturePoint(this, new D2DPoint(-21, 0)), true);
             _warheadCenterMass = AddAttachment(new FixturePoint(this, new D2DPoint(12f, 0)), true);
             _motorCenterMass = AddAttachment(new FixturePoint(this, new D2DPoint(-13f, 0)), true);
@@ -177,7 +178,7 @@ namespace PolyPlane.GameObjects
             var impactTime = Utilities.ImpactTime(this, Target);
 
             if (impactTime < easeTime && impactTime > 0f)
-                easeTime = impactTime;
+                easeTime = impactTime * 0.5f;
 
             _easeGuidanceTimer = AddTimer(easeTime);
             _easeGuidanceTimer.Restart();
@@ -199,8 +200,8 @@ namespace PolyPlane.GameObjects
 
         private void InitWings()
         {
-            const float LIFT_SCALE = 1.3f;
-            const float MIN_VELO = 800f;
+            const float LIFT_SCALE = 1.2f;
+            const float MIN_VELO = 700f;
             const float DEFLECTION_RATE = 80f;
 
             _tailWing = new Wing(this, new WingParameters()
@@ -275,7 +276,12 @@ namespace PolyPlane.GameObjects
 
                 // Apply guidance.
                 if (_guidance != null)
-                    _guideRotation = _guidance.GuideTo(dt);
+                {
+                    // Gradually move towards the guidance direction
+                    // to smooth out large, rapid deviations. 
+                    _curGuideRot = Utilities.MoveTowardsAngle(_curGuideRot, _guidance.GuideTo(dt), GUIDANCE_TRACK_RATE * dt);
+                    _guideRotation = _curGuideRot;
+                }
 
                 // Ease in the guidance rotation.
                 _guideRotation = Utilities.LerpAngle(_initRotation, _guideRotation, _easeGuidanceTimer.Position);
@@ -344,7 +350,7 @@ namespace PolyPlane.GameObjects
 
         private float GetDeflectionAmount(float dir)
         {
-            const float SENSITIVITY = 0.7f; // How aggressively we try to point in the specified direction.
+            const float SENSITIVITY = 0.75f; // How aggressively we try to point in the specified direction.
             var dirVec = Utilities.AngleToVectorDegrees(dir);
             var dirVecVelo = dirVec * SENSITIVITY;
             var rotVelo = Utilities.RadsToDegrees(this.Velocity.Normalized().Cross(dirVecVelo));
@@ -416,11 +422,9 @@ namespace PolyPlane.GameObjects
             if (World.ShowTracking && _guidance != null)
             {
                 ctx.FillEllipseSimple(_guidance.CurrentAimPoint, 50f, D2DColor.LawnGreen);
-                ctx.FillEllipseSimple(_guidance.StableAimPoint, 40f, D2DColor.Blue);
                 ctx.FillEllipseSimple(_guidance.ImpactPoint, 30f, D2DColor.Red);
 
                 ctx.DrawLine(this.Position, _guidance.CurrentAimPoint, D2DColor.LawnGreen, 5f);
-                ctx.DrawLine(this.Position, _guidance.StableAimPoint, D2DColor.Blue, 5f);
                 ctx.DrawLine(this.Position, _guidance.ImpactPoint, D2DColor.Red, 5f);
             }
         }

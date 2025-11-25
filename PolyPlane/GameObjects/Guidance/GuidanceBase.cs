@@ -6,7 +6,6 @@ namespace PolyPlane.GameObjects.Guidance
     public abstract class GuidanceBase
     {
         public D2DPoint ImpactPoint { get; set; }
-        public D2DPoint StableAimPoint { get; set; }
         public D2DPoint CurrentAimPoint { get; set; }
 
         protected GuidedMissile Missile { get; set; }
@@ -346,7 +345,8 @@ namespace PolyPlane.GameObjects.Guidance
                         if (rnd == 0)
                         {
                             this.LostInGround = true;
-                            _missedTargetRot = 90f; // Send missile into ground.
+                            //_missedTargetRot = 90f; // Send missile into ground.
+                            _missedTargetRot = this.Missile.Rotation; ; // Hold current rotation.
 
                             Log.Msg("Lost in ground scatter....");
                         }
@@ -380,6 +380,7 @@ namespace PolyPlane.GameObjects.Guidance
                     this.Target = newTarget;
                     _lostLockTimer.Stop();
                     _missedTarget = false;
+                    _lostInGround = false;
                     this.Missile.ChangeTarget(newTarget);
 
                     return;
