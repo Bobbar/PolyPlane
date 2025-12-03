@@ -765,10 +765,14 @@ namespace PolyPlane
             if (_freeCamObject == null)
                 return;
 
+            // Scale for DPI.
+            var dpiDivisor = World.DEFAULT_DPI / (float)this.DeviceDpi;
+
             var mousePos = _mousePosition;
+            mousePos /= dpiDivisor;
 
             var center = _mouseDownPosition;
-            center /= World.DEFAULT_DPI / (float)this.DeviceDpi; // Scale for DPI.
+            center /= dpiDivisor; 
 
             var dist = mousePos.DistanceTo(center);
             var angle = mousePos.AngleTo(center);
