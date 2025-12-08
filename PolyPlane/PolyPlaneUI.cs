@@ -777,6 +777,8 @@ namespace PolyPlane
             var dist = mousePos.DistanceTo(center);
             var angle = mousePos.AngleTo(center);
 
+            dist *= dpiDivisor;
+
             if (dist > 0f)
             {
                 _freeCamObject.Position += Utilities.AngleToVectorDegrees(angle, dist * (0.5f * Math.Clamp(1f - Utilities.Factor(World.ZoomScale, 0.5f), 0.1f, 1f)));
