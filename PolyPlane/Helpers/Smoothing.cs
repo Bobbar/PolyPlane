@@ -42,43 +42,35 @@
         /// <returns>Returns the new accumulative average value.</returns>
         public float Add(float value)
         {
-            lock (_values)
+            // Add new values until the collection is full, then do round robin.
+            if (_values.Count < _max)
             {
-                // Add new values until the collection is full, then do round robin.
-                if (_values.Count < _max)
-                {
-                    _values.Add(value);
-                }
-                else
-                {
-                    _values[_position] = value;
-                }
-
-                // Sum all values and compute the average.
-                double total = 0;
-                for (int i = 0; i < _values.Count; i++)
-                {
-                    total += _values[i];
-                }
-
-                _current = (float)total / _values.Count;
-
-                // Move to next position.
-                _position = (_position + 1) % _max;
-
-                return _current;
+                _values.Add(value);
+            }
+            else
+            {
+                _values[_position] = value;
             }
 
+            // Sum all values and compute the average.
+            double total = 0;
+            for (int i = 0; i < _values.Count; i++)
+            {
+                total += _values[i];
+            }
+
+            _current = (float)total / _values.Count;
+
+            // Move to next position.
+            _position = (_position + 1) % _max;
+
+            return _current;
         }
 
         public void Clear()
         {
-            lock (_values)
-            {
-                _values.Clear();
-                _position = 0;
-            }
-
+            _values.Clear();
+            _position = 0;
         }
 
         public void Resize(int newSize)
@@ -95,6 +87,7 @@
         private int _max;
         private int _position = 0;
         private double _current;
+
         /// <summary>
         /// Current average.
         /// </summary>
@@ -127,43 +120,35 @@
         /// <returns>Returns the new accumulative average value.</returns>
         public double Add(double value)
         {
-            lock (_values)
+            // Add new values until the collection is full, then do round robin.
+            if (_values.Count < _max)
             {
-                // Add new values until the collection is full, then do round robin.
-                if (_values.Count < _max)
-                {
-                    _values.Add(value);
-                }
-                else
-                {
-                    _values[_position] = value;
-                }
-
-                // Sum all values and compute the average.
-                double total = 0;
-                for (int i = 0; i < _values.Count; i++)
-                {
-                    total += _values[i];
-                }
-
-                _current = total / _values.Count;
-
-                // Move to next position.
-                _position = (_position + 1) % _max;
-
-                return _current;
+                _values.Add(value);
+            }
+            else
+            {
+                _values[_position] = value;
             }
 
+            // Sum all values and compute the average.
+            double total = 0;
+            for (int i = 0; i < _values.Count; i++)
+            {
+                total += _values[i];
+            }
+
+            _current = total / _values.Count;
+
+            // Move to next position.
+            _position = (_position + 1) % _max;
+
+            return _current;
         }
 
         public void Clear()
         {
-            lock (_values)
-            {
-                _values.Clear();
-                _position = 0;
-            }
-
+            _values.Clear();
+            _position = 0;
         }
 
         public void Resize(int newSize)
