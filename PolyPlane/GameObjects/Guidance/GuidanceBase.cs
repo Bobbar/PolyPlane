@@ -21,8 +21,7 @@ namespace PolyPlane.GameObjects.Guidance
         private GameTimer _groundScatterTimer = new GameTimer(4f);
         private GameTimer _armTimer = new GameTimer(ARM_TIME);
         private GameTimer _decoyDistractCooldown = new GameTimer(3f);
-        private GameTimer _decoyDistractArm = new GameTimer(2f);
-        private GameTimer _pitbullTimer = new GameTimer(2f);
+        private GameTimer _pitbullTimer = new GameTimer(6f);
 
         public bool GroundScatterInCooldown
         {
@@ -62,20 +61,24 @@ namespace PolyPlane.GameObjects.Guidance
 
             _lostLockTimer.TriggerCallback = () =>
             {
-                DoPitBull();
+                _missedTarget = true;
             };
 
             _pitbullTimer.TriggerCallback = () =>
             {
                 if (this.Target.IsExpired || (this.Target is FighterPlane plane && plane.IsDisabled))
+                {
                     DoPitBull();
+                }
             };
 
-            _armTimer.TriggerCallback = () => { _isArmed = true; };
+            _armTimer.TriggerCallback = () => 
+            {
+                _isArmed = true; 
+            };
 
             _pitbullTimer.Start();
             _decoyDistractCooldown.Start();
-            _decoyDistractArm.Start();
         }
 
         public float GuideTo(float dt)
@@ -88,7 +91,6 @@ namespace PolyPlane.GameObjects.Guidance
                 _lostLockTimer.Update(dt);
                 _groundScatterTimer.Update(dt);
                 _decoyDistractCooldown.Update(dt);
-                _decoyDistractArm.Update(dt);
                 _pitbullTimer.Update(dt);
 
                 if (_sensorType == SensorType.HeatSeek)
@@ -393,7 +395,7 @@ namespace PolyPlane.GameObjects.Guidance
 
         private void DoChangeTargetChance(GameObject target, int chances)
         {
-            if (_decoyDistractCooldown.IsRunning || _decoyDistractArm.IsRunning)
+            if (_decoyDistractCooldown.IsRunning)
                 return;
 
             var randOChanceO = Utilities.Rnd.Next(chances);
