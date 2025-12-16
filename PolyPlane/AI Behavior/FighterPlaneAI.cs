@@ -461,8 +461,8 @@ namespace PolyPlane.AI_Behavior
                 var impactTime = Utilities.ImpactTime(this.Plane, DefendingMissile);
                 var threatVeloAngle = DefendingMissile.Velocity.Angle();
 
-                const float DEFEND_ANGLE = 25f; // Offset angle to threat slightly to try to put decoys in the flight path.
-                const float DODGE_TIME = 2.5f; // Impact time to try to dodge the missile.
+                const float DEFEND_ANGLE = 35f; // Offset angle to threat slightly to try to put decoys in the flight path.
+                const float DODGE_TIME = 2f; // Impact time to try to dodge the missile.
 
                 var defendAngleOne = Utilities.ClampAngle(angleAwayFromThreat + DEFEND_ANGLE);
                 var defendAngleTwo = Utilities.ClampAngle(angleAwayFromThreat - DEFEND_ANGLE);

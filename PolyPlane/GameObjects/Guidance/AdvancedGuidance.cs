@@ -22,7 +22,9 @@ namespace PolyPlane.GameObjects.Guidance
 
         public override float GetGuidanceDirection(float dt)
         {
-            const float IMPACT_POINT_DELTA_THRESH = 20f; // Smaller value = target impact point later. (Waits until the point has stabilized more)
+            const float MIN_TRACK_SPEED = 1000f;
+            const float MAX_TRACK_SPEED = 10000f;
+            const float MAX_TRACK_SPD_DIST = 10000f;
 
             var targetPosition = GetTargetPosition();
             var targetVelo = this.Target.Velocity;
@@ -59,10 +61,17 @@ namespace PolyPlane.GameObjects.Guidance
             var impactPntDelta = D2DPoint.Distance(_prevImpactPnt, impactPnt);
             _prevImpactPnt = impactPnt;
 
-            // Only update the stable aim point when the predicted impact point is moving slowly.
-            // If it begins to move quickly (when the target changes velo/direction) we keep targeting the previous point until it slows down again.
-            var impactDeltaFact = Utilities.Factor(IMPACT_POINT_DELTA_THRESH, impactPntDelta);
-            _currentAimPnt = D2DPoint.Lerp(_currentAimPnt, impactPnt, impactDeltaFact);
+            if (_currentAimPnt == D2DPoint.Zero)
+                _currentAimPnt = impactPnt;
+
+            // Increase tracking rate as the disparity increases.
+            var trackDist = _currentAimPnt.DistanceTo(impactPnt);
+            var trackSpdFactor = Utilities.Factor(trackDist, MAX_TRACK_SPD_DIST);
+            var trackSpeed = Utilities.Lerp(MIN_TRACK_SPEED, MAX_TRACK_SPEED, trackSpdFactor);
+
+            // Gradually move the current aim point towards the predicted impact point.
+            // This is to smooth out large deviations in the prediction logic.
+            _currentAimPnt = Utilities.MoveTowardsPoint(_currentAimPnt, impactPnt, trackSpeed * dt);
 
             // Compute the final aim direction vector.
             var aimDirectionVec = (_currentAimPnt - this.Missile.Position).Normalized();

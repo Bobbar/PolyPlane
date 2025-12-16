@@ -196,6 +196,21 @@ namespace PolyPlane.Helpers
             return ClampAngle(from + amt);
         }
 
+        public static D2DPoint MoveTowardsPoint(D2DPoint from, D2DPoint to, float rate)
+        {
+            var distance = from.DistanceSquaredTo(to);
+
+            if (distance < rate * rate)
+            {
+                return to;
+            }
+            else
+            {
+                var scale = rate / MathF.Sqrt(distance);
+                return (to - from) * scale + from;
+            }
+        }
+
         public static D2DPoint IntersectionPoint(D2DPoint line1A, D2DPoint line1B, D2DPoint line2A, D2DPoint line2B)
         {
             var A1 = line1B.Y - line1A.Y;
