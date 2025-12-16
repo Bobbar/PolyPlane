@@ -61,7 +61,7 @@ namespace PolyPlane.GameObjects.Managers
 
         public BulletHole RentBulletHole(GameObject obj, D2DPoint offset, float angle)
         {
-            if (_bulletHolePool.TryTake(out BulletHole hole))
+            if (_bulletHolePool.TryTake(out var hole))
             {
                 hole.Owner = obj;
                 hole.ReferencePosition = offset;
@@ -304,15 +304,15 @@ namespace PolyPlane.GameObjects.Managers
             World.CurrentPlayerId = 1000;
         }
 
-        public GameObject GetObjectByID(GameID gameID)
+        public GameObject? GetObjectByID(GameID gameID)
         {
-            if (_objLookup.TryGetValue(gameID.GetHashCode(), out GameObject obj))
+            if (_objLookup.TryGetValue(gameID.GetHashCode(), out var obj))
                 return obj;
 
             return null;
         }
 
-        public bool TryGetObjectByID(GameID gameID, out GameObject obj)
+        public bool TryGetObjectByID(GameID gameID, out GameObject? obj)
         {
             return _objLookup.TryGetValue(gameID.GetHashCode(), out obj);
         }
@@ -326,7 +326,7 @@ namespace PolyPlane.GameObjects.Managers
             }
         }
 
-        public FighterPlane GetPlaneByPlayerID(int playerID)
+        public FighterPlane? GetPlaneByPlayerID(int playerID)
         {
             return Planes.Where(p => p.PlayerID == playerID).FirstOrDefault();
         }
@@ -407,7 +407,7 @@ namespace PolyPlane.GameObjects.Managers
 
         public void ChangeObjID(GameObject obj, GameID id)
         {
-            if (_objLookup.TryGetValue(obj.ID.GetHashCode(), out GameObject existingObj))
+            if (_objLookup.TryGetValue(obj.ID.GetHashCode(), out _))
             {
                 _objLookup.Remove(obj.ID.GetHashCode());
                 _objLookup.Add(id.GetHashCode(), obj);
@@ -482,8 +482,11 @@ namespace PolyPlane.GameObjects.Managers
                 {
                     var netObj = obj as GameObjectNet;
 
-                    if (obj.IsNetObject && netObj.NetAge > MAX_NET_AGE)
-                        obj.IsExpired = true;
+                    if (netObj != null)
+                    {
+                        if (obj.IsNetObject && netObj.NetAge > MAX_NET_AGE)
+                            obj.IsExpired = true;
+                    }
                 }
             }
         }

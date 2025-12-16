@@ -9,8 +9,7 @@ namespace PolyPlane.AI_Behavior
         public FighterPlane TargetPlane => throw new NotImplementedException();
         public AIPersonality Personality { get; set; }
 
-        private FighterPlane _plane;
-        private FighterPlane _targetPlane;
+        private readonly FighterPlane _plane;
 
         public DummyAI(FighterPlane plane)
         {

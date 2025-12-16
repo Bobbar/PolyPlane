@@ -419,8 +419,8 @@ namespace PolyPlane.Helpers
             private int _curX;
             private int _curY;
 
-            private EntrySequence _curSeq;
-            private Entry _curEntry;
+            private EntrySequence? _curSeq;
+            private Entry? _curEntry;
 
             T IEnumerator<T>.Current => _current;
             object IEnumerator.Current => _current;
@@ -553,8 +553,8 @@ namespace PolyPlane.Helpers
             private int _curLutIdx = 0;
             private IntPoint _offset;
 
-            private EntrySequence _curSeq;
-            private Entry _curEntry;
+            private EntrySequence? _curSeq;
+            private Entry? _curEntry;
 
             private static readonly IntPoint[] OFFSET_LUT =
             [

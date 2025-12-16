@@ -664,7 +664,7 @@ namespace PolyPlane.Helpers
             return rot180 < 0f;
         }
 
-        public static string GetLocalIP()
+        public static string? GetLocalIP()
         {
             var addys = Dns.GetHostAddresses(Dns.GetHostName());
 

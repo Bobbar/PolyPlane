@@ -15,7 +15,7 @@ namespace PolyPlane.GameObjects
         private float _currentFlashRadius = 0f;
         private int _currentFrame;
 
-        private FloatAnimation _flashAnimation;
+        private FloatAnimation? _flashAnimation;
 
         const GameObjectFlags DefaultFlags = GameObjectFlags.SpatialGrid | GameObjectFlags.BounceOffGround;
 
@@ -49,7 +49,7 @@ namespace PolyPlane.GameObjects
             var topVec = new D2DPoint(rotVec.Y, -rotVec.X);
             this.Velocity += topVec * EJECT_FORCE;
 
-            _flashAnimation.Start();
+            _flashAnimation?.Start();
         }
 
         public Decoy(FighterPlane owner, D2DPoint pos, D2DPoint velo) : this()
@@ -62,7 +62,7 @@ namespace PolyPlane.GameObjects
             this.Position = pos;
             this.Velocity = velo;
 
-            _flashAnimation.Start();
+            _flashAnimation?.Start();
         }
 
         private void InitStuff()
@@ -80,7 +80,7 @@ namespace PolyPlane.GameObjects
         {
             base.DoUpdate(dt);
 
-            _flashAnimation.Update(dt);
+            _flashAnimation?.Update(dt);
 
             this.Velocity += -this.Velocity * (dt * 0.6f);
             this.Velocity += ((World.Gravity * 2f) * dt);
@@ -114,7 +114,7 @@ namespace PolyPlane.GameObjects
         {
             base.Dispose();
 
-            _flashAnimation.Stop();
+            _flashAnimation?.Stop();
         }
 
         float ILightMapContributor.GetLightRadius()

@@ -10,17 +10,17 @@ namespace PolyPlane
 {
     public partial class ClientServerConfigForm : Form
     {
-        public string ServerIPAddress;
-        public string ClientIPAddress;
-        public string PlayerName;
+        public string ServerIPAddress = string.Empty;
+        public string ClientIPAddress = string.Empty;
+        public string PlayerName = string.Empty;
         public ushort Port;
         public bool IsServer = true;
         public bool IsAI = false;
         public D2DColor PlaneColor = D2DColor.Randomly();
 
-        private DiscoveryServer _discovery;
+        private DiscoveryServer? _discovery;
         private BindingList<ServerEntry> _serverEntries = new BindingList<ServerEntry>();
-        private PlanePreview _planePreview;
+        private readonly PlanePreview _planePreview;
 
         public ClientServerConfigForm()
         {
@@ -40,7 +40,7 @@ namespace PolyPlane
 
         private void ClientServerConfigForm_Disposed(object? sender, EventArgs e)
         {
-            _discovery.NewDiscoveryReceived -= Discovery_NewDiscoveryReceived;
+            _discovery?.NewDiscoveryReceived -= Discovery_NewDiscoveryReceived;
 
             _planePreview?.Dispose();
             _discovery?.Dispose();
@@ -104,7 +104,7 @@ namespace PolyPlane
 
         private void StartClientButton_Click(object sender, EventArgs e)
         {
-            if (IPAddress.TryParse(IPAddressTextBox.Text.Trim(), out IPAddress addy))
+            if (IPAddress.TryParse(IPAddressTextBox.Text.Trim(), out IPAddress? addy))
             {
                 PlayerName = PlayerNameTextBox.Text.Trim();
                 ServerIPAddress = addy.ToString();
@@ -150,8 +150,11 @@ namespace PolyPlane
             if (selected != null)
             {
                 var entry = selected as ServerEntry;
-                IPAddressTextBox.Text = entry.IP;
-                PortTextBox.Text = entry.Port.ToString();
+                if (entry != null)
+                {
+                    IPAddressTextBox.Text = entry.IP;
+                    PortTextBox.Text = entry.Port.ToString();
+                }
             }
         }
 

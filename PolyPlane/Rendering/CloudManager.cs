@@ -178,13 +178,11 @@ namespace PolyPlane.Rendering
 
         public static CloudGeometry RandomGeometry(Random rnd, int minPoints, int maxPoints, int minRadius, int maxRadius)
         {
-            const float MAX_ALT = 30000f;
             const float MIN_DIMS_X = 60f;
             const float MAX_DIMS_X = 100f;
             const float MIN_DIMS_Y = 50f;
             const float MAX_DIMS_Y = 70f;
 
-            const float ALT_FACT_AMT = 30f;
             var radius = rnd.Next(minRadius, maxRadius);
             var nPnts = (int)radius;
             var dims = new List<D2DSize>();

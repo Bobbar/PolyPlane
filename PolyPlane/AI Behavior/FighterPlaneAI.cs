@@ -8,13 +8,13 @@ namespace PolyPlane.AI_Behavior
     public class FighterPlaneAI : IAIBehavior
     {
         public FighterPlane Plane => _plane;
-        public FighterPlane TargetPlane => _targetPlane;
-        public GuidedMissile DefendingMissile = null;
+        public FighterPlane? TargetPlane => _targetPlane;
+        public GuidedMissile? DefendingMissile = null;
         public AIPersonality Personality { get; set; }
 
-        private FighterPlane _plane;
-        private FighterPlane _targetPlane;
-        private FighterPlane _killedByPlane;
+        private readonly FighterPlane _plane;
+        private FighterPlane? _targetPlane;
+        private FighterPlane? _killedByPlane;
         private D2DPoint _threatPosition = D2DPoint.Zero;
         private float _sineWavePos = 0f;
         private float _avoidingGroundAlt = 0f;
@@ -90,8 +90,8 @@ namespace PolyPlane.AI_Behavior
 
             if (TargetPlane != null)
             {
-                ConsiderFireBurstAtTarget();
-                ConsiderFireMissileAtTarget();
+                ConsiderFireBurstAtTarget(TargetPlane);
+                ConsiderFireMissileAtTarget(TargetPlane);
             }
 
             ConsiderDefendMissile();
@@ -284,7 +284,7 @@ namespace PolyPlane.AI_Behavior
             return level;
         }
 
-        private void ConsiderFireMissileAtTarget()
+        private void ConsiderFireMissileAtTarget(FighterPlane targetPlane)
         {
             if (_fireMissileCooldown.IsRunning)
                 return;
@@ -292,26 +292,26 @@ namespace PolyPlane.AI_Behavior
             const float MAX_DIST = 50000f;
             const float MIN_DIST = 1500f;
 
-            if (this.Plane.Radar.IsLockedOnTo(TargetPlane))
+            if (this.Plane.Radar.IsLockedOnTo(targetPlane))
             {
-                var dist = this.Plane.Position.DistanceTo(TargetPlane.Position);
+                var dist = this.Plane.Position.DistanceTo(targetPlane.Position);
 
                 if (dist > MAX_DIST || dist < MIN_DIST)
                     return;
 
-                var fov = this.Plane.FOVToObject(TargetPlane);
+                var fov = this.Plane.FOVToObject(targetPlane);
 
                 if (fov > World.SENSOR_FOV * 0.5f)
                     return;
 
-                this.Plane.FireMissile(TargetPlane);
+                this.Plane.FireMissile(targetPlane);
 
                 _fireMissileCooldown.Interval = Utilities.Rnd.NextFloat(MIN_MISSILE_TIME, MAX_MISSILE_TIME);
                 _fireMissileCooldown.Restart();
             }
         }
 
-        private void ConsiderFireBurstAtTarget()
+        private void ConsiderFireBurstAtTarget(FighterPlane targetPlane)
         {
             if (_fireBurstTimer.IsRunning)
                 return;
@@ -322,12 +322,12 @@ namespace PolyPlane.AI_Behavior
             const float MIN_DIST = 2000f;
             const float MIN_OFFBORE = 10f;
 
-            var plrDist = D2DPoint.Distance(TargetPlane.Position, this.Plane.Position);
+            var plrDist = D2DPoint.Distance(targetPlane.Position, this.Plane.Position);
 
             if (plrDist > MIN_DIST)
                 return;
 
-            var plrFOV = this.Plane.FOVToObject(TargetPlane);
+            var plrFOV = this.Plane.FOVToObject(targetPlane);
 
             if (plrFOV <= MIN_OFFBORE)
             {

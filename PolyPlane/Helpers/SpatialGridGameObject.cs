@@ -274,18 +274,15 @@ namespace PolyPlane.Helpers
         {
             // Use thread ID to index and cache enumerators for multi-threaded ops.
             var tid = Environment.CurrentManagedThreadId;
-            GetNearEnumerator enumerator;
 
             ResizePool(tid);
 
-            if (_getNearEnumPool[tid] == null)
+            GetNearEnumerator enumerator = _getNearEnumPool[tid];
+
+            if (enumerator == null)
             {
                 enumerator = new GetNearEnumerator(this);
                 _getNearEnumPool[tid] = enumerator;
-            }
-            else
-            {
-                enumerator = _getNearEnumPool[tid];
             }
 
             return enumerator;
@@ -396,8 +393,8 @@ namespace PolyPlane.Helpers
             private int _curX;
             private int _curY;
 
-            private EntrySequence _curSeq;
-            private Entry _curEntry;
+            private EntrySequence? _curSeq;
+            private Entry? _curEntry;
 
             GameObject IEnumerator<GameObject>.Current => _current;
             object IEnumerator.Current => _current;
@@ -530,8 +527,8 @@ namespace PolyPlane.Helpers
             private int _curLutIdx = 0;
             private IntPoint _offset;
 
-            private EntrySequence _curSeq;
-            private Entry _curEntry;
+            private EntrySequence? _curSeq;
+            private Entry? _curEntry;
 
             private static readonly IntPoint[] OFFSET_LUT =
             [

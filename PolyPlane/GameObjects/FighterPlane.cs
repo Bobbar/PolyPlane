@@ -8,6 +8,7 @@ using PolyPlane.GameObjects.Particles;
 using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
 using PolyPlane.Rendering;
+using System.Diagnostics.CodeAnalysis;
 using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
@@ -64,11 +65,19 @@ namespace PolyPlane.GameObjects
 
         public float Deflection
         {
-            get { return _controlWing.Deflection; }
+            get
+            {
+                if (_controlWing != null)
+                    return _controlWing.Deflection;
+                else
+                    return 0f;
+            }
 
             set
             {
-                _controlWing.Deflection = value;
+                if (_controlWing != null)
+                    _controlWing.Deflection = value;
+
                 NozzleDeflection = value;
             }
         }
@@ -237,7 +246,7 @@ namespace PolyPlane.GameObjects
         private const float PILOT_HEAD_SIZE = 3.5f; // Radius of the ellipse within the cockpit, representing the pilot, for headshot checking.
 
         private RenderPoly FlamePoly;
-        private D2DLayer _polyClipLayer = null;
+        private D2DLayer? _polyClipLayer = null;
         private D2DColor _flameFillColor = new D2DColor(0.6f, D2DColor.Yellow);
         private D2DColor _planeColor = D2DColor.White;
         private static readonly D2DColor _cockpitColor = new D2DColor(0.5f, D2DColor.LightBlue);

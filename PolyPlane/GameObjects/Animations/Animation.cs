@@ -18,8 +18,6 @@
         protected bool _isReversed = false;
         protected float _elapsed = 0f;
 
-        protected Animation() { }
-
         protected Animation(T start, T end, float duration, Func<float, float> easeFunc, Action<T> setValFunc)
         {
             StartValue = start;
