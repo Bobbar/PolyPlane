@@ -99,7 +99,6 @@ namespace PolyPlane.Rendering
             return Utilities.LerpColor(color, todColor, AMT);
         }
 
-
         /// <summary>
         /// Gets the shadow color for the current time of day.  (A darker variation of the time of day color)
         /// </summary>
@@ -108,6 +107,11 @@ namespace PolyPlane.Rendering
         {
             var shadowColor = Utilities.LerpColorWithAlpha(GetTimeOfDayColor(), D2DColor.Black, 0.7f, 0.4f);
             return shadowColor;
+        }
+
+        private D2DColor GetLightMapColor(D2DPoint location, D2DColor initColor, float minIntensity, float maxIntensity)
+        {
+            return LightMap.SampleColor(location, initColor, minIntensity * _currentLightingFactor, maxIntensity * _currentLightingFactor);
         }
 
         /// <summary>
@@ -251,7 +255,7 @@ namespace PolyPlane.Rendering
         {
             if (World.UseLightMap)
             {
-                var lightedColor = LightMap.SampleColor(sampleLocation, color, minIntensity, maxIntensity * _currentLightingFactor);
+                var lightedColor = GetLightMapColor(sampleLocation, color, minIntensity, maxIntensity);
                 FillEllipse(ellipse, lightedColor, clipped);
             }
             else
@@ -264,7 +268,7 @@ namespace PolyPlane.Rendering
         {
             if (World.UseLightMap)
             {
-                var lightedColor = LightMap.SampleColor(ellipse.origin, color, minIntensity, maxIntensity * _currentLightingFactor);
+                var lightedColor = GetLightMapColor(ellipse.origin, color, minIntensity, maxIntensity);
                 FillEllipse(ellipse, lightedColor, clipped);
             }
             else
@@ -340,7 +344,7 @@ namespace PolyPlane.Rendering
         {
             if (World.UseLightMap)
             {
-                var lightedColor = LightMap.SampleColor((start + end) * 0.5f, color, 0f, maxIntensity * _currentLightingFactor);
+                var lightedColor = GetLightMapColor((start + end) * 0.5f, color, 0f, maxIntensity);
                 DrawLine(start, end, lightedColor, weight, dashStyle, startCap, endCap);
             }
             else
@@ -394,7 +398,7 @@ namespace PolyPlane.Rendering
         {
             if (World.UseLightMap)
             {
-                var lightedColor = LightMap.SampleColor(centerPos, fillColor, 0, maxIntensity * _currentLightingFactor);
+                var lightedColor = GetLightMapColor(centerPos, fillColor, 0, maxIntensity);
                 FillPolygon(points, lightedColor, clipped);
             }
             else
@@ -412,7 +416,7 @@ namespace PolyPlane.Rendering
         {
             if (World.UseLightMap)
             {
-                var lightedColor = LightMap.SampleColor(centerPos, fillColor, 0, maxIntensity * _currentLightingFactor);
+                var lightedColor = GetLightMapColor(centerPos, fillColor, 0, maxIntensity);
                 DrawPolygon(points, strokeColor, strokeWidth, dashStyle, lightedColor);
             }
             else

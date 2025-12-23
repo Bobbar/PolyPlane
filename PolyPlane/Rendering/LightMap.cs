@@ -97,7 +97,8 @@ namespace PolyPlane.Rendering
 
         private void QueueContribution(ILightMapContributor contributor)
         {
-            _queue.Add(contributor);
+            if (contributor.IsLightEnabled())
+                _queue.Add(contributor);
         }
 
         private void QueueLoop()
@@ -182,9 +183,6 @@ namespace PolyPlane.Rendering
             var lightPosition = D2DPoint.Zero;
 
             // Query light params for contributor.
-            if (lightContributor.IsLightEnabled() == false)
-                return;
-
             intensityFactor = lightContributor.GetIntensityFactor();
             lightColor = lightContributor.GetLightColor().ToVector4();
             lightPosition = lightContributor.GetLightPosition();

@@ -106,8 +106,6 @@ namespace PolyPlane.GameObjects.Particles
                     Radius = TargetRadius * ageFactGrow;
                     Color = Utilities.LerpColorWithAlpha(StartColor, EndColor, ageFactSmoke, alpha);
 
-                    ctx.LightMap.AddContribution(this);
-
                     ctx.FillEllipseWithLighting(Ellipse, Color, maxIntensity: 0.6f);
 
                     break;

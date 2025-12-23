@@ -518,6 +518,10 @@ namespace PolyPlane.GameObjects
         {
             if (this.IsExpired)
                 return;
+
+            // Add light map contributions as needed.
+            if (this is ILightMapContributor)
+                ctx.LightMap.AddContribution(this);
         }
 
         public virtual void FlipY()
