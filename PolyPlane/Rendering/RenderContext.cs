@@ -110,6 +110,22 @@ namespace PolyPlane.Rendering
             return shadowColor;
         }
 
+        /// <summary>
+        /// Disable viewport clipping for all future render calls.
+        /// </summary>
+        public void DisableClipping()
+        {
+            GraphicsExtensions.DisableClipping = true;
+        }
+
+        /// <summary>
+        /// Enable viewport clipping for all future render calls.
+        /// </summary>
+        public void EnableClipping()
+        {
+            GraphicsExtensions.DisableClipping = false;
+        }
+
         public void PushViewPort(D2DRect viewport)
         {
             _vpStack.Push(Viewport);
@@ -194,6 +210,26 @@ namespace PolyPlane.Rendering
             UpdateScale();
         }
 
+        public void PushLayer(D2DLayer layer, D2DRect rectBounds, D2DGeometry? geometry = null, D2DBrush? opacityBrush = null)
+        {
+            Gfx.PushLayer(layer, rectBounds, geometry, opacityBrush);
+        }
+
+        public void PopLayer()
+        {
+            Gfx.PopLayer();
+        }
+
+        public void PushClip(D2DRect rect)
+        {
+            Gfx.PushClip(rect);
+        }
+
+        public void PopClip()
+        {
+            Gfx.PopClip();
+        }
+
         private void UpdateScale()
         {
             var trans = Gfx.GetTransform();
@@ -274,14 +310,20 @@ namespace PolyPlane.Rendering
             }
         }
 
-        public void FillEllipseSimple(D2DPoint pos, float radius, D2DColor color)
+        public void FillEllipseSimple(D2DPoint pos, float radius, D2DColor color, bool clipped = true)
         {
-            Gfx.FillEllipseClipped(Viewport, new D2DEllipse(pos, new D2DSize(radius, radius)), color);
+            if (clipped)
+                Gfx.FillEllipseClipped(Viewport, new D2DEllipse(pos, new D2DSize(radius, radius)), color);
+            else
+                Gfx.FillEllipse(new D2DEllipse(pos, new D2DSize(radius, radius)), color);
         }
 
-        public void FillEllipseSimple(D2DPoint pos, float radius, D2DBrush brush)
+        public void FillEllipseSimple(D2DPoint pos, float radius, D2DBrush brush, bool clipped = true)
         {
-            Gfx.FillEllipseClipped(Viewport, new D2DEllipse(pos, new D2DSize(radius, radius)), brush);
+            if (clipped)
+                Gfx.FillEllipseClipped(Viewport, new D2DEllipse(pos, new D2DSize(radius, radius)), brush);
+            else
+                Gfx.FillEllipse(new D2DEllipse(pos, new D2DSize(radius, radius)), brush);
         }
 
         public void DrawEllipse(D2DEllipse ellipse, D2DColor color, float weight = 1f, D2DDashStyle dashStyle = D2DDashStyle.Solid)
@@ -305,6 +347,16 @@ namespace PolyPlane.Rendering
             {
                 DrawLine(start, end, color, weight, dashStyle, startCap, endCap);
             }
+        }
+
+        public void DrawTriangle(D2DPoint position, D2DColor color, D2DColor fillColor, float scale = 1f)
+        {
+            Gfx.DrawTriangle(position, color, fillColor, scale);
+        }
+
+        public void DrawCrosshair(D2DPoint pos, float weight, D2DColor color, float innerRadius, float outerRadius)
+        {
+            Gfx.DrawCrosshair(pos, weight, color, innerRadius, outerRadius);
         }
 
         public void DrawPolygon(RenderPoly poly, D2DColor strokeColor, float strokeWidth, D2DColor fillColor)
@@ -369,9 +421,12 @@ namespace PolyPlane.Rendering
             }
         }
 
-        public void FillRectangle(D2DRect rect, D2DColor color)
+        public void FillRectangle(D2DRect rect, D2DColor color, bool clipped = true)
         {
-            Gfx.FillRectangleClipped(Viewport, rect, color);
+            if (clipped)
+                Gfx.FillRectangleClipped(Viewport, rect, color);
+            else
+                Gfx.FillRectangle(rect, color);
         }
 
         public void FillRectangle(D2DRect rect, D2DBrush brush, bool clipped = true)
@@ -421,6 +476,11 @@ namespace PolyPlane.Rendering
         public void DrawProgressBar(D2DPoint position, D2DSize size, D2DColor borderColor, D2DColor fillColor, float percent)
         {
             Gfx.DrawProgressBarClipped(Viewport, position, size, borderColor, fillColor, percent);
+        }
+
+        public D2DSize MeasureText(string text, string fontName, float fontSize, D2DSize placeSize)
+        {
+            return Gfx.MeasureText(text, fontName, fontSize, placeSize);
         }
 
         private D2DColor InterpolateColorGaussian(D2DColor[] colors, float value, float maxValue)

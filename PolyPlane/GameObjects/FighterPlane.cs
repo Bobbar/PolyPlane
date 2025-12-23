@@ -778,12 +778,12 @@ namespace PolyPlane.GameObjects
                 polyClipGeo.AddLines(this.Polygon.Poly);
                 polyClipGeo.ClosePath();
 
-                ctx.Gfx.PushLayer(_polyClipLayer, ctx.Viewport, polyClipGeo);
+                ctx.PushLayer(_polyClipLayer, ctx.Viewport, polyClipGeo);
 
                 DrawCockpit(ctx);
                 DrawBulletHoles(ctx);
 
-                ctx.Gfx.PopLayer();
+                ctx.PopLayer();
             }
         }
 

@@ -141,8 +141,6 @@ namespace PolyPlane.GameObjects
 
         public void Render(RenderContext ctx)
         {
-            var gfx = ctx.Gfx;
-
             if (_textConsolas20Centered == null)
                 _textConsolas20Centered = ctx.Device.CreateTextFormat("Consolas", 20f, D2DFontWeight.Normal, D2DFontStyle.Normal, D2DFontStretch.Normal, DWriteTextAlignment.Center, DWriteParagraphAlignment.Center);
 
@@ -151,7 +149,7 @@ namespace PolyPlane.GameObjects
 
             // Background
             var bgColor = _color.WithAlpha(0.015f);
-            gfx.FillEllipse(new D2DEllipse(D2DPoint.Zero, _radarSize), bgColor);
+            ctx.FillEllipse(new D2DEllipse(D2DPoint.Zero, _radarSize), bgColor);
 
             // Draw icons.
             foreach (var p in _pings.Values)
@@ -162,15 +160,13 @@ namespace PolyPlane.GameObjects
                 if (p.Obj is FighterPlane plane)
                 {
                     if (plane.IsDisabled)
-                        gfx.DrawEllipse(new D2DEllipse(p.RadarPos, _disabledPlaneSize), pColor);
+                        ctx.DrawEllipse(new D2DEllipse(p.RadarPos, _disabledPlaneSize), pColor);
                     else
                     {
                         // Draw direction line.
-                        gfx.DrawLine(p.RadarPos, p.RadarPos + (p.Obj.Velocity.Normalized() * 7f), pColor);
-
-                        gfx.FillRectangle(new D2DRect(p.RadarPos, _alivePlaneSize), pColor);
+                        ctx.DrawLine(p.RadarPos, p.RadarPos + (p.Obj.Velocity.Normalized() * 7f), pColor);
+                        ctx.FillRectangle(new D2DRect(p.RadarPos, _alivePlaneSize), pColor);
                     }
-
                 }
 
                 if (World.ShowMissilesOnRadar)
@@ -178,20 +174,20 @@ namespace PolyPlane.GameObjects
                     if (p.Obj is GuidedMissile missile)
                     {
                         if (!p.Obj.Owner.Equals(HostPlane))
-                            gfx.DrawTriangle(p.RadarPos, pColor, D2DColor.Red, 1f);
+                            ctx.DrawTriangle(p.RadarPos, pColor, D2DColor.Red, 1f);
                         else
-                            gfx.DrawTriangle(p.RadarPos, pColor, pColor, 1f);
+                            ctx.DrawTriangle(p.RadarPos, pColor, pColor, 1f);
                     }
                 }
             }
 
             // Direction line and FOV cone.
-            DrawFOVCone(gfx, _color);
+            DrawFOVCone(ctx, _color);
 
             // Draw crosshairs on aimed at obj.
             if (_aimedAtPingObj != null)
             {
-                gfx.DrawCrosshair(_aimedAtPingObj.RadarPos, 2f, _color, 0, 10f);
+                ctx.DrawCrosshair(_aimedAtPingObj.RadarPos, 2f, _color, 0, 10f);
 
                 // Draw target info.
                 var aimedAtPlane = _aimedAtPingObj.Obj as FighterPlane;
@@ -199,7 +195,7 @@ namespace PolyPlane.GameObjects
                 if (aimedAtPlane != null)
                 {
                     var dist = HostPlane.Position.DistanceTo(aimedAtPlane.Position);
-                    gfx.FillRectangle(_lockInfoRect, D2DColor.Black.WithAlpha(0.5f));
+                    ctx.FillRectangle(_lockInfoRect, D2DColor.Black.WithAlpha(0.5f));
                     var info = $"D:{Math.Round(dist / 1000f, 0)}\nA:{Math.Round(aimedAtPlane.Altitude / 1000f, 0)}\n{aimedAtPlane.PlayerName}";
                     ctx.DrawText(info, _color, _textConsolas20Centered, _lockInfoRect);
                 }
@@ -208,32 +204,32 @@ namespace PolyPlane.GameObjects
 
             // Draw lock circle around locked on obj.
             if (_lockedPingObj != null && HasLock)
-                gfx.DrawEllipse(new D2DEllipse(_lockedPingObj.RadarPos, _lockCircleSize), _color);
+                ctx.DrawEllipse(new D2DEllipse(_lockedPingObj.RadarPos, _lockCircleSize), _color);
 
             // Draw range rings.
             const int N_RANGES = 4;
             var step = _radius / N_RANGES;
             for (int i = 0; i < N_RANGES; i++)
             {
-                gfx.DrawEllipse(new D2DEllipse(D2DPoint.Zero, new D2DSize(step * i, step * i)), _color, 1f, D2DDashStyle.Dot);
+                ctx.DrawEllipse(new D2DEllipse(D2DPoint.Zero, new D2DSize(step * i, step * i)), _color, 1f, D2DDashStyle.Dot);
             }
 
             // Draw ground indicator.
             DrawGround(ctx);
 
             // Border
-            gfx.DrawEllipse(new D2DEllipse(D2DPoint.Zero, _radarSize), _color);
+            ctx.DrawEllipse(new D2DEllipse(D2DPoint.Zero, _radarSize), _color);
 
             // Lock icon.
             if (HasLock)
             {
                 var color = Utilities.LerpColor(World.HudColor, D2DColor.WhiteSmoke, 0.3f);
                 ctx.DrawText("LOCKED", color, _textConsolas15Centered, _lockIconrect);
-                ctx.Gfx.FillRectangle(_lockIconrect, color.WithAlpha(0.1f));
+                ctx.FillRectangle(_lockIconrect, color.WithAlpha(0.1f));
             }
         }
 
-        private void DrawFOVCone(D2DGraphics gfx, D2DColor color)
+        private void DrawFOVCone(RenderContext gfx, D2DColor color)
         {
             var fov = _radarFOV;
 
@@ -275,11 +271,9 @@ namespace PolyPlane.GameObjects
             var groundRect = new D2DRect(radPos, _groundRectSize);
 
             // Draw the clipped ground rect.
-            ctx.Gfx.PushLayer(_groundClipLayer, _groundClipRect, _groundGeo);
-
-            ctx.Gfx.FillRectangle(groundRect, _color.WithAlpha(0.05f));
-
-            ctx.Gfx.PopLayer();
+            ctx.PushLayer(_groundClipLayer, _groundClipRect, _groundGeo);
+            ctx.FillRectangle(groundRect, _color.WithAlpha(0.05f));
+            ctx.PopLayer();
         }
 
         private void NotifyLocks()

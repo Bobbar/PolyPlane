@@ -357,7 +357,7 @@ namespace PolyPlane.Rendering
                 _ctx.PushViewPort(viewPortRect);
 
                 // Clip to the viewport.
-                _ctx.Gfx.PushClip(World.ViewPortRectUnscaled);
+                _ctx.PushClip(World.ViewPortRectUnscaled);
 
                 // Draw sky background color.
                 DrawSky(_ctx, viewObject);
@@ -392,9 +392,9 @@ namespace PolyPlane.Rendering
                 DrawOverlays(_ctx, viewObject);
 
                 // And finally screen flash.
-                DrawScreenFlash(_gfx);
+                DrawScreenFlash(_ctx);
 
-                _ctx.Gfx.PopClip();
+                _ctx.PopClip();
 
                 _ctx.PopViewPort();
             }
@@ -428,7 +428,7 @@ namespace PolyPlane.Rendering
             color = Utilities.LerpColor(color, D2DColor.Black, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY - 5f));
             color = Utilities.LerpColor(color, ctx.AddTimeOfDayColor(color), 0.2f);
 
-            ctx.Gfx.FillRectangle(World.ViewPortRectUnscaled, color);
+            ctx.FillRectangle(World.ViewPortRectUnscaled, color, clipped: false);
         }
 
         private void DrawMovingBackground(RenderContext ctx, GameObject viewObject)
@@ -461,7 +461,7 @@ namespace PolyPlane.Rendering
                     pos -= roundPos;
 
                     if (rect.Contains(pos))
-                        ctx.Gfx.FillRectangle(new D2DRect(pos, d2dSz), _gridBrush);
+                        ctx.FillRectangle(new D2DRect(pos, d2dSz), _gridBrush, clipped: false);
                 }
             } 
         }
@@ -624,7 +624,7 @@ namespace PolyPlane.Rendering
 
             // Draw the ground.
             var rect = new D2DRect(ctx.Viewport.left, 0f, ctx.Viewport.Width, ctx.Viewport.bottom);
-            ctx.Gfx.FillRectangle(rect, _groundBrush);
+            ctx.FillRectangle(rect, _groundBrush);
 
             // Draw clipped impacts.
             DrawGroundImpacts(ctx);
@@ -640,7 +640,7 @@ namespace PolyPlane.Rendering
 
             var rect = new D2DRect(ctx.Viewport.left, 0f, ctx.Viewport.Width, 150f);
 
-            ctx.Gfx.PushClip(rect);
+            ctx.PushClip(rect);
 
             for (int i = 0; i < _objs.GroundImpacts.Count; i++)
             {
@@ -664,7 +664,7 @@ namespace PolyPlane.Rendering
                 }
             }
 
-            ctx.Gfx.PopClip();
+            ctx.PopClip();
         }
 
         private void DrawMuzzleFlash(RenderContext ctx, FighterPlane plane)
@@ -680,7 +680,7 @@ namespace PolyPlane.Rendering
             {
                 ctx.PushTransform();
                 ctx.TranslateTransform(plane.GunPosition * ctx.CurrentScale);
-                ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, MUZZ_FLASH_RADIUS, _muzzleFlashBrush);
+                ctx.FillEllipseSimple(D2DPoint.Zero, MUZZ_FLASH_RADIUS, _muzzleFlashBrush, clipped: false);
                 ctx.PopTransform();
             }
         }
@@ -796,7 +796,7 @@ namespace PolyPlane.Rendering
             {
                 ctx.PushTransform();
                 ctx.TranslateTransform(bullet.Position * scale);
-                ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, BULLET_LIGHT_RADIUS, _bulletLightingBrush);
+                ctx.FillEllipseSimple(D2DPoint.Zero, BULLET_LIGHT_RADIUS, _bulletLightingBrush, clipped: false);
                 ctx.PopTransform();
 
                 DrawObjectGroundLight(ctx, bullet);
@@ -811,8 +811,7 @@ namespace PolyPlane.Rendering
                     // Add a little flicker effect to missile lights.
                     var flickerScale = Utilities.Rnd.NextFloat(0.7f, 1f);
                     ctx.ScaleTransform(flickerScale);
-
-                    ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, MISSILE_LIGHT_RADIUS, _missileLightingBrush);
+                    ctx.FillEllipseSimple(D2DPoint.Zero, MISSILE_LIGHT_RADIUS, _missileLightingBrush, clipped: false);
                     ctx.PopTransform();
 
                     DrawObjectGroundLight(ctx, missile);
@@ -824,7 +823,7 @@ namespace PolyPlane.Rendering
                 {
                     ctx.PushTransform();
                     ctx.TranslateTransform(decoy.Position * scale);
-                    ctx.Gfx.FillEllipseSimple(D2DPoint.Zero, DECOY_LIGHT_RADIUS, _decoyLightBrush);
+                    ctx.FillEllipseSimple(D2DPoint.Zero, DECOY_LIGHT_RADIUS, _decoyLightBrush, clipped: false);
                     ctx.PopTransform();
 
                     DrawObjectGroundLight(ctx, decoy);
@@ -891,6 +890,7 @@ namespace PolyPlane.Rendering
         {
             var viewportsize = World.ViewPortRectUnscaled.Size;
 
+            ctx.DisableClipping();
             ctx.PushTransform();
             ctx.ScaleTransform(_hudScale, new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f));
 
@@ -907,17 +907,17 @@ namespace PolyPlane.Rendering
                 {
                     // Draw g-force.
                     var gforceRect = new D2DRect(new D2DPoint(speedoPos.X, speedoPos.Y - 195f), new D2DSize(60f, 20f));
-                    ctx.Gfx.DrawText($"G {Math.Round(plane.GForce, 1)}", _hudColorBrush, _textConsolas15, gforceRect);
+                    ctx.DrawText($"G {Math.Round(plane.GForce, 1)}", _hudColorBrush, _textConsolas15, gforceRect);
 
                     // Draw vertical speed..
                     var vsRect = new D2DRect(new D2DPoint(altimeterPos.X + 25f, altimeterPos.Y - 195f), new D2DSize(120f, 20f));
-                    ctx.Gfx.DrawText($"VS {Math.Round(plane.VerticalSpeed, 0)}", _hudColorBrush, _textConsolas15, vsRect);
+                    ctx.DrawText($"VS {Math.Round(plane.VerticalSpeed, 0)}", _hudColorBrush, _textConsolas15, vsRect);
 
                     if (!plane.IsDisabled)
                     {
                         if (plane.IsAI == false)
                         {
-                            DrawGuideIcon(ctx.Gfx, viewportsize, plane);
+                            DrawGuideIcon(ctx, viewportsize, plane);
                             DrawGroundWarning(ctx, viewportsize, plane);
                         }
 
@@ -925,7 +925,7 @@ namespace PolyPlane.Rendering
                         DrawMissilePointersAndWarnings(ctx, viewportsize, plane);
                     }
 
-                    DrawHudMessage(ctx.Gfx, viewportsize);
+                    DrawHudMessage(ctx, viewportsize);
                     DrawRadar(ctx, viewportsize, plane);
 
                     var healthBarSize = new D2DSize(300, 30);
@@ -943,6 +943,8 @@ namespace PolyPlane.Rendering
 
             if (World.FreeCameraMode)
                 DrawFreeCamPrompt(ctx);
+
+            ctx.EnableClipping();
         }
 
         /// <summary>
@@ -968,8 +970,8 @@ namespace PolyPlane.Rendering
             var highestVal = startValue + markerRange;
             var lowestVal = (startValue - HalfH) - markerRange;
 
-            ctx.Gfx.DrawRectangle(rect, World.HudColor);
-            ctx.Gfx.DrawLine(new D2DPoint(pos.X - HalfW, pos.Y), new D2DPoint(pos.X + HalfW, pos.Y), World.HudColor.WithAlpha(1f), 1f, D2DDashStyle.Solid);
+            ctx.DrawRectangle(rect, World.HudColor);
+            ctx.DrawLine(new D2DPoint(pos.X - HalfW, pos.Y), new D2DPoint(pos.X + HalfW, pos.Y), World.HudColor.WithAlpha(1f), 1f, D2DDashStyle.Solid);
 
             if (highestVal <= minValue || lowestVal <= minValue)
             {
@@ -981,7 +983,7 @@ namespace PolyPlane.Rendering
                 var sRect = new D2DRect(s.X, s.Y, W, (pos.Y + (H * 0.5f)) - s.Y);
 
                 if (sRect.Height > 0f)
-                    ctx.Gfx.FillRectangle(sRect, valueWarningColor);
+                    ctx.FillRectangle(sRect, valueWarningColor);
             }
 
 
@@ -1007,7 +1009,7 @@ namespace PolyPlane.Rendering
                 var markerValue = Math.Round(startValue + (-HalfH + (div * markerRange)), 0);
 
                 if (rect.Contains(start))
-                    ctx.Gfx.DrawLine(start, end, World.HudColor, 1f, D2DDashStyle.Dash);
+                    ctx.DrawLine(start, end, World.HudColor, 1f, D2DDashStyle.Dash);
 
                 if (markerValue >= 0f)
                 {
@@ -1023,18 +1025,18 @@ namespace PolyPlane.Rendering
             ctx.DrawText(Math.Round(value, 0).ToString(), _hudColorBrush, _textConsolas15Centered, curValueRect);
         }
 
-        private void DrawGuideIcon(D2DGraphics gfx, D2DSize viewportsize, FighterPlane viewPlane)
+        private void DrawGuideIcon(RenderContext ctx, D2DSize viewportsize, FighterPlane viewPlane)
         {
             const float DIST = 300f;
             var pos = new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f);
 
             var mouseAngle = viewPlane.PlayerGuideAngle;
             var mouseVec = Utilities.AngleToVectorDegrees(mouseAngle, DIST);
-            gfx.DrawEllipse(new D2DEllipse(pos + mouseVec, new D2DSize(5f, 5f)), World.HudColor, 2f);
+            ctx.DrawEllipse(new D2DEllipse(pos + mouseVec, new D2DSize(5f, 5f)), World.HudColor, 2f);
 
             var planeAngle = viewPlane.Rotation;
             var planeVec = Utilities.AngleToVectorDegrees(planeAngle, DIST);
-            gfx.DrawCrosshair(pos + planeVec, 2f, World.HudColor, 5f, 20f);
+            ctx.DrawCrosshair(pos + planeVec, 2f, World.HudColor, 5f, 20f);
 
 
             if (World.ShowPointerLine)
@@ -1051,8 +1053,8 @@ namespace PolyPlane.Rendering
                 {
                     // Draw pointer line.
                     var color = new D2DColor(0.3f * alphaFact, World.HudColor);
-                    gfx.DrawLine(pos, pos + (planeVec * 1f), color, 2f, D2DDashStyle.Dot);
-                    gfx.FillEllipseSimple(pos + (planeVec * 1f), 2f, color);
+                    ctx.DrawLine(pos, pos + (planeVec * 1f), color, 2f, D2DDashStyle.Dot);
+                    ctx.FillEllipseSimple(pos + (planeVec * 1f), 2f, color);
                 }
             }
         }
@@ -1071,7 +1073,7 @@ namespace PolyPlane.Rendering
                 ctx.PushTransform();
                 ctx.ScaleTransform(flashScale, flashScale, pos);
 
-                ctx.Gfx.DrawText("PULL UP!", _redColorBrush, _textConsolas30Centered, rect);
+                ctx.DrawText("PULL UP!", _redColorBrush, _textConsolas30Centered, rect);
 
                 ctx.PopTransform();
             }
@@ -1105,7 +1107,7 @@ namespace PolyPlane.Rendering
                 var angle = dir.Angle();
                 var vec = Utilities.AngleToVectorDegrees(angle);
 
-                ctx.Gfx.DrawArrow(pos + (vec * (POINTER_DIST - 20f)), pos + (vec * POINTER_DIST), color, 2f);
+                ctx.DrawArrow(pos + (vec * (POINTER_DIST - 20f)), pos + (vec * POINTER_DIST), color, 2f);
 
                 // Draw lead indicator.
                 if (World.ShowLeadIndicators)
@@ -1116,9 +1118,8 @@ namespace PolyPlane.Rendering
                     if (Math.Abs(angleDiff) < 70f && plane.IsObjInFOV(target, 70f))
                     {
                         var leadVec = Utilities.AngleToVectorDegrees(leadAmt);
-
-                        ctx.Gfx.DrawLine(pos + (vec * POINTER_DIST), pos + (leadVec * POINTER_DIST), color, 1f, D2DDashStyle.Dash);
-                        ctx.Gfx.FillEllipseSimple(pos + (leadVec * POINTER_DIST), 3f, color);
+                        ctx.DrawLine(pos + (vec * POINTER_DIST), pos + (leadVec * POINTER_DIST), color, 1f, D2DDashStyle.Dash);
+                        ctx.FillEllipseSimple(pos + (leadVec * POINTER_DIST), 3f, color);
                     }
                 }
             }
@@ -1191,7 +1192,7 @@ namespace PolyPlane.Rendering
                     var impactFact = 1f - Utilities.FactorWithEasing(impactTime, MIN_IMPACT_TIME, EasingFunctions.Out.EaseQuad);
 
                     if (impactFact > 0f)
-                        ctx.Gfx.DrawArrow(pos1, pos2, D2DColor.Red, (impactFact * MAX_SIZE) + 1f);
+                        ctx.DrawArrow(pos1, pos2, D2DColor.Red, (impactFact * MAX_SIZE) + 1f);
                 }
             }
 
@@ -1206,7 +1207,7 @@ namespace PolyPlane.Rendering
                 var lockRect = new D2DRect(lightPos, new D2DSize(120, 30));
                 var lockColor = D2DColor.Red.WithAlpha(0.7f);
 
-                ctx.Gfx.DrawRectangle(lockRect, lockColor);
+                ctx.DrawRectangle(lockRect, lockColor);
                 ctx.DrawText("LOCK", lockColor, _textConsolas30Centered, lockRect);
             }
 
@@ -1221,7 +1222,7 @@ namespace PolyPlane.Rendering
                 var missileWarnRect = new D2DRect(missileWarnPos, new D2DSize(120, 30));
                 var warnColor = D2DColor.Red.WithAlpha(flashAlpha);
 
-                ctx.Gfx.DrawRectangle(missileWarnRect, warnColor);
+                ctx.DrawRectangle(missileWarnRect, warnColor);
                 ctx.DrawText("MISSILE", warnColor, _textConsolas30Centered, missileWarnRect);
 
                 ctx.PopTransform();
@@ -1238,7 +1239,7 @@ namespace PolyPlane.Rendering
                 var engineOutRect = new D2DRect(engineOutPos, new D2DSize(180, 30));
                 var engineOutColor = D2DColor.Orange.WithAlpha(flashAlpha);
 
-                ctx.Gfx.DrawRectangle(engineOutRect, engineOutColor);
+                ctx.DrawRectangle(engineOutRect, engineOutColor);
                 ctx.DrawText("ENGINE OUT", engineOutColor, _textConsolas30Centered, engineOutRect);
 
                 ctx.PopTransform();
@@ -1255,24 +1256,24 @@ namespace PolyPlane.Rendering
                 var gunDamageRect = new D2DRect(gunDamagePos, new D2DSize(200, 30));
                 var gunDamageColor = D2DColor.Orange.WithAlpha(flashAlpha);
 
-                ctx.Gfx.DrawRectangle(gunDamageRect, gunDamageColor);
+                ctx.DrawRectangle(gunDamageRect, gunDamageColor);
                 ctx.DrawText("GUN DAMAGED", gunDamageColor, _textConsolas30Centered, gunDamageRect);
 
                 ctx.PopTransform();
             }
         }
 
-        private void DrawHudMessage(D2DGraphics gfx, D2DSize viewportsize)
+        private void DrawHudMessage(RenderContext ctx, D2DSize viewportsize)
         {
             const float FONT_SIZE = 30f;
             if (_hudMessageTimeout.IsRunning && !string.IsNullOrEmpty(_hudMessage))
             {
                 var pos = new D2DPoint(viewportsize.width * 0.5f, 300f);
                 var initSize = new D2DSize(600, 100);
-                var size = gfx.MeasureText(_hudMessage, DEFAULT_FONT_NAME, FONT_SIZE, initSize);
+                var size = ctx.MeasureText(_hudMessage, DEFAULT_FONT_NAME, FONT_SIZE, initSize);
                 var rect = new D2DRect(pos, size);
 
-                gfx.DrawTextCenter(_hudMessage, _hudMessageColor, DEFAULT_FONT_NAME, FONT_SIZE, rect);
+                ctx.DrawTextCenter(_hudMessage, _hudMessageColor, DEFAULT_FONT_NAME, FONT_SIZE, rect);
             }
 
             if (!_hudMessageTimeout.IsRunning)
@@ -1300,7 +1301,7 @@ namespace PolyPlane.Rendering
             if (healthPct > 0f && healthPct < 0.05f)
                 healthPct = 0.05f;
 
-            ctx.Gfx.DrawProgressBar(position, size, World.HudColor, World.HudColor, healthPct);
+            ctx.DrawProgressBar(position, size, World.HudColor, World.HudColor, healthPct);
 
             // Draw loadout stats labels.
             var labelSize = new D2DSize(120f, 30f);
@@ -1380,8 +1381,9 @@ namespace PolyPlane.Rendering
 
             ctx.ScaleTransform(_hudScale, new D2DPoint(viewportsize.width * 0.5f, viewportsize.height * 0.5f));
             ctx.ScaleTransform(scale, boxPos);
+            ctx.DisableClipping();
 
-            ctx.Gfx.FillRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y - lineSize.height, WIDTH, height + lineSize.height, new D2DColor(0.05f, World.HudColor));
+            ctx.FillRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y - lineSize.height, WIDTH, height + lineSize.height, new D2DColor(0.05f, World.HudColor));
 
             var start = 0;
 
@@ -1401,11 +1403,12 @@ namespace PolyPlane.Rendering
                         break;
                 }
 
-                ctx.Gfx.DrawText(msg.Message, brush, _messageBoxFont, rect);
+                ctx.DrawText(msg.Message, brush, _messageBoxFont, rect);
                 linePos += new D2DPoint(0, lineSize.height);
             }
 
-            ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y - lineSize.height, WIDTH, height + lineSize.height, World.HudColor);
+            var boxRect = new D2DRect(boxPos.X - (WIDTH / 2f), boxPos.Y - lineSize.height, WIDTH, height + lineSize.height);
+            ctx.DrawRectangle(boxRect, World.HudColor);
 
             // Draw current chat message.
             if (chatActive)
@@ -1414,14 +1417,17 @@ namespace PolyPlane.Rendering
                 var curText = _netMan.ChatInterface.CurrentText;
 
                 if (string.IsNullOrEmpty(curText))
-                    ctx.Gfx.DrawText("Type chat message...", _hudColorBrush, _messageBoxFont, rect);
+                    ctx.DrawText("Type chat message...", _hudColorBrush, _messageBoxFont, rect);
                 else
-                    ctx.Gfx.DrawText(_netMan.ChatInterface.CurrentText, _whiteColorBrush, _messageBoxFont, rect);
+                    ctx.DrawText(_netMan.ChatInterface.CurrentText, _whiteColorBrush, _messageBoxFont, rect);
 
-                ctx.Gfx.DrawRectangle(boxPos.X - (WIDTH / 2f), boxPos.Y + height, WIDTH, lineSize.height + 5f, World.HudColor);
+                var msgRect = new D2DRect(boxPos.X - (WIDTH / 2f), boxPos.Y + height, WIDTH, lineSize.height + 5f);
+                ctx.DrawRectangle(msgRect, World.HudColor);
+
             }
 
             ctx.PopTransform();
+            ctx.EnableClipping();
         }
 
         private void DrawPopMessages(RenderContext ctx, D2DSize vpSize, FighterPlane viewPlane)
@@ -1449,13 +1455,13 @@ namespace PolyPlane.Rendering
             var topLeft = new D2DPoint(rect.left + leftPad, rect.top + topPad);
 
             // Draw background.
-            ctx.Gfx.FillRectangle(rect, new D2DColor(0.3f, World.HudColor));
-            ctx.Gfx.DrawRectangle(rect, World.HudColor, 4f);
+            ctx.FillRectangle(rect, new D2DColor(0.3f, World.HudColor));
+            ctx.DrawRectangle(rect, World.HudColor, 4f);
 
             // Title
             var titleRect = new D2DRect(rect.left, rect.top + 10f, size.width, 30f);
-            ctx.Gfx.DrawRectangle(titleRect, World.HudColor);
-            ctx.Gfx.DrawText("SCORE", _whiteColorBrush, _textConsolas30Centered, titleRect);
+            ctx.DrawRectangle(titleRect, World.HudColor);
+            ctx.DrawText("SCORE", _whiteColorBrush, _textConsolas30Centered, titleRect);
 
             // Lines
             var lineHeight = 20f;
@@ -1476,9 +1482,9 @@ namespace PolyPlane.Rendering
 
                 if (linePosY < rect.bottom - lineHeight)
                 {
-                    ctx.Gfx.DrawText($"[ {playerPlane.PlayerName} ]", _whiteColorBrush, _textConsolas15, lineRect);
-                    ctx.Gfx.DrawText($"Kills: {playerPlane.Kills}", _whiteColorBrush, _textConsolas15, lineRectColumn1);
-                    ctx.Gfx.DrawText($"Deaths: {playerPlane.Deaths}", _whiteColorBrush, _textConsolas15, lineRectColumn2);
+                    ctx.DrawText($"[ {playerPlane.PlayerName} ]", _whiteColorBrush, _textConsolas15, lineRect);
+                    ctx.DrawText($"Kills: {playerPlane.Kills}", _whiteColorBrush, _textConsolas15, lineRectColumn1);
+                    ctx.DrawText($"Deaths: {playerPlane.Deaths}", _whiteColorBrush, _textConsolas15, lineRectColumn2);
 
                     linePosY += lineHeight;
                 }
@@ -1487,7 +1493,7 @@ namespace PolyPlane.Rendering
             // Draw scroll bar.
             var scrollBarPos = new D2DPoint(rect.right - 10f, Utilities.Lerp(rect.top + lineHeight + titleRect.Height, rect.bottom, ((float)_scoreScrollPos / numPlanes)));
             var scrollBarRect = new D2DRect(scrollBarPos, new D2DSize(10f, 20f));
-            ctx.Gfx.FillRectangle(scrollBarRect, D2DColor.White);
+            ctx.FillRectangle(scrollBarRect, D2DColor.White);
         }
 
         private void DrawFreeCamPrompt(RenderContext ctx)
@@ -1501,7 +1507,7 @@ namespace PolyPlane.Rendering
 
         private void DrawOverlays(RenderContext ctx, GameObject viewObject)
         {
-            DrawInfo(ctx.Gfx, _infoPosition, viewObject);
+            DrawInfo(ctx, _infoPosition, viewObject);
             DrawDeathScreenOverlay(ctx, viewObject);
         }
 
@@ -1516,12 +1522,12 @@ namespace PolyPlane.Rendering
                     var alpha = Math.Clamp(1f - Utilities.FactorWithEasing(plane.DeathTime, DISPLAY_TIME, EasingFunctions.Out.EaseCircle), 0f, 0.4f);
 
                     if (alpha > 0f)
-                        ctx.Gfx.FillRectangle(World.ViewPortRectUnscaled, _deathScreenColor.WithAlpha(alpha));
+                        ctx.FillRectangle(World.ViewPortRectUnscaled, _deathScreenColor.WithAlpha(alpha), clipped: false);
                 }
             }
         }
 
-        public void DrawInfo(D2DGraphics gfx, D2DPoint pos, GameObject viewObject)
+        public void DrawInfo(RenderContext ctx, D2DPoint pos, GameObject viewObject)
         {
             BuildInfo(viewObject);
 
@@ -1559,15 +1565,15 @@ namespace PolyPlane.Rendering
                 _stringBuilder.AppendLine("H: Show help");
             }
 
-            gfx.DrawText(_stringBuilder.ToString(), _greenYellowColorBrush, _textConsolas12, World.ViewPortRect.Deflate(30f, 30f));
+            ctx.DrawText(_stringBuilder.ToString(), _greenYellowColorBrush, _textConsolas12, World.ViewPortRect.Deflate(30f, 30f));
         }
 
-        private void DrawScreenFlash(D2DGraphics gfx)
+        private void DrawScreenFlash(RenderContext ctx)
         {
             _screenFlashColor.a = _screenFlashOpacity;
 
             if (_screenFlashOpacity > 0.01f)
-                gfx.FillRectangle(World.ViewPortRectUnscaled, _screenFlashColor);
+                ctx.FillRectangle(World.ViewPortRectUnscaled, _screenFlashColor, clipped: false);
         }
 
         private void UpdatePopMessages(float dt)

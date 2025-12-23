@@ -137,7 +137,7 @@ namespace PolyPlane.Rendering
             ctx.RotateTransform(shadowAngle, this.Position);
             ctx.ScaleTransform(1f, SHADOW_LEN_SCALE, this.Position);
 
-            ctx.Gfx.FillEllipse(new D2DEllipse(_shadowLeafPos, _leafSize), shadowColor);
+            ctx.FillEllipse(new D2DEllipse(_shadowLeafPos, _leafSize), shadowColor);
 
             ctx.PopTransform();
 
@@ -157,10 +157,10 @@ namespace PolyPlane.Rendering
             var leafEllipse = new D2DEllipse(D2DPoint.Zero, _leafSize);
 
             // Regular leaf color.
-            ctx.Gfx.FillEllipse(leafEllipse, this.LeafColor);
+            ctx.FillEllipse(leafEllipse, this.LeafColor, clipped: false);
 
             // Add gradient overlay.
-            ctx.Gfx.FillEllipse(leafEllipse, _leafBrush);
+            ctx.FillEllipse(leafEllipse, _leafBrush, clipped: false);
 
             ctx.PopTransform();
 
