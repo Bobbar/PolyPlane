@@ -65,6 +65,9 @@ namespace PolyPlane.Helpers
 
         private void PruneFreeEntries()
         {
+            if (_freeIndices.Count == 0)
+                return;
+
             foreach (var idx in _freeIndices.OrderByDescending(i => i))
             {
                 _entries[idx] = _entries[_entries.Count - 1];

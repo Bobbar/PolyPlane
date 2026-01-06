@@ -119,7 +119,7 @@ namespace PolyPlane.Rendering
                         _currentPlanes.Remove(plane.ID);
                 }
 
-                _segmentGrid.Update();
+                _segmentGrid.Update(computeHashes: false); 
             }
         }
 
