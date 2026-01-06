@@ -1,5 +1,4 @@
-﻿using PolyPlane.GameObjects.Tools;
-using PolyPlane.Helpers;
+﻿using PolyPlane.Helpers;
 using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
@@ -66,25 +65,6 @@ namespace PolyPlane.Rendering
             gfx.DrawLine(pos + (UnitRight * innerRadius), pos + (UnitRight * outerRadius), color, weight);
         }
 
-        public static void DrawArrowStroked(this D2DGraphics gfx, D2DPoint start, D2DPoint end, D2DColor color, float weight, D2DColor strokeColor, float strokeWeight)
-        {
-            gfx.DrawArrow(start, end, strokeColor, weight + strokeWeight);
-            gfx.DrawArrow(start, end, color, weight);
-        }
-
-        public static void DrawArrowStrokedClipped(this D2DGraphics gfx, D2DRect viewport, D2DPoint start, D2DPoint end, D2DColor color, float weight, D2DColor strokeColor, float strokeWeight)
-        {
-            gfx.DrawArrowClipped(viewport, start, end, strokeColor, weight + strokeWeight);
-            gfx.DrawArrowClipped(viewport, start, end, color, weight);
-
-
-            //if (viewport.Contains(start) || viewport.Contains(end))
-            //{
-            //    gfx.DrawArrow(start, end, strokeColor, weight + strokeWeight);
-            //    gfx.DrawArrow(start, end, color, weight);
-            //}
-        }
-
         public static void DrawProgressBarClipped(this D2DGraphics gfx, D2DRect viewport, D2DPoint position, D2DSize size, D2DColor borderColor, D2DColor fillColor, float percent)
         {
             if (DisableClipping || viewport.Contains(new D2DRect(position, size)))
@@ -100,23 +80,6 @@ namespace PolyPlane.Rendering
         {
             gfx.FillRectangle(new D2DRect(position.X - (size.width * 0.5f), position.Y - (size.height * 0.5f), size.width * percent, size.height), fillColor);
             gfx.DrawRectangle(new D2DRect(position, size), borderColor);
-        }
-
-        public static void DrawProgressBar(this D2DGraphics gfx, D2DPoint position, D2DSize size, D2DColor borderColor, D2DColor fillColor, float maxValue, float value)
-        {
-            var percent = Utilities.Factor(value, maxValue);
-            DrawProgressBar(gfx, position, size, borderColor, fillColor, percent);
-        }
-
-
-        public static void FillEllipseSimple(this D2DGraphics gfx, D2DPoint pos, float radius, D2DColor color)
-        {
-            gfx.FillEllipse(new D2DEllipse(pos, new D2DSize(radius, radius)), color);
-        }
-
-        public static void FillEllipseSimple(this D2DGraphics gfx, D2DPoint pos, float radius, D2DBrush brush)
-        {
-            gfx.FillEllipse(new D2DEllipse(pos, new D2DSize(radius, radius)), brush);
         }
 
         public static void FillEllipseClipped(this D2DGraphics gfx, D2DRect viewport, D2DEllipse ellipse, D2DColor color)
@@ -159,17 +122,6 @@ namespace PolyPlane.Rendering
             if (DisableClipping || viewport.Contains(points))
             {
                 gfx.DrawPolygon(points, strokeColor, strokeWidth, dashStyle, fillColor);
-                OnScreen++;
-            }
-            else
-                OffScreen++;
-        }
-
-        public static void DrawPolygonClipped(this D2DGraphics gfx, D2DRect viewport, RenderPoly poly, D2DColor strokeColor, float strokeWidth, D2DDashStyle dashStyle, D2DColor fillColor)
-        {
-            if (DisableClipping || viewport.Contains(poly.Position))
-            {
-                gfx.DrawPolygon(poly.Poly, strokeColor, strokeWidth, dashStyle, fillColor);
                 OnScreen++;
             }
             else
@@ -240,28 +192,6 @@ namespace PolyPlane.Rendering
             if (DisableClipping || viewport.Contains(rect))
             {
                 gfx.DrawRectangle(rect, color, strokeWidth, dashStyle);
-                OnScreen++;
-            }
-            else
-                OffScreen++;
-        }
-
-        public static void DrawTextClipped(this D2DGraphics gfx, D2DRect viewport, string text, D2DColor color, string fontName, float fontSize, D2DRect rect, DWriteTextAlignment halign = DWriteTextAlignment.Leading, DWriteParagraphAlignment valign = DWriteParagraphAlignment.Near)
-        {
-            if (DisableClipping || viewport.Contains(rect))
-            {
-                gfx.DrawText(text, color, fontName, fontSize, rect, halign, valign);
-                OnScreen++;
-            }
-            else
-                OffScreen++;
-        }
-
-        public static void DrawTextClipped(this D2DGraphics gfx, D2DRect viewport, string text, D2DBrush brush, D2DTextFormat format, D2DRect rect)
-        {
-            if (DisableClipping || viewport.Contains(rect))
-            {
-                gfx.DrawText(text, brush, format, rect);
                 OnScreen++;
             }
             else

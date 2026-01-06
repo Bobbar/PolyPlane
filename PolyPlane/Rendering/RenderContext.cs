@@ -472,11 +472,6 @@ namespace PolyPlane.Rendering
             Gfx.DrawArrowClipped(Viewport, start, end, color, weight, arrowLen);
         }
 
-        public void DrawArrowStroked(D2DPoint start, D2DPoint end, D2DColor color, float weight, D2DColor strokeColor, float strokeWeight)
-        {
-            Gfx.DrawArrowStrokedClipped(Viewport, start, end, color, weight, strokeColor, strokeWeight);
-        }
-
         public void DrawProgressBar(D2DPoint position, D2DSize size, D2DColor borderColor, D2DColor fillColor, float percent)
         {
             Gfx.DrawProgressBarClipped(Viewport, position, size, borderColor, fillColor, percent);
