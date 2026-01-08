@@ -24,6 +24,7 @@ namespace PolyPlane.Helpers
         private readonly Func<T, D2DPoint> _positionSelector;
         private readonly Func<T, bool> _isExpiredSelector;
         private readonly int SIDE_LEN = 9;
+        private const int MAX_NUM_FREE = 2000;
 
         public SpatialGrid(Func<T, D2DPoint> positionSelector, Func<T, bool> isExpiredSelector, int sideLen = 9)
         {
@@ -44,29 +45,35 @@ namespace PolyPlane.Helpers
             if (computeHashes)
                 ComputeNextHashes();
 
-            // Clear free entries left over from the previous turn.
-            PruneFreeEntries();
+            // Prune free entries once we exceed the max number allowed.
+            if (_freeIndices.Count > MAX_NUM_FREE)
+                PruneFreeEntries();
 
             // Iterate all entries and update as needed.
             for (int i = _entries.Count - 1; i >= 0; i--)
             {
                 var entry = _entries[i];
 
-                // Remove expired entries.
-                if (_isExpiredSelector(entry.Item))
+                if (entry.Sequence != null)
                 {
-                    RemoveFromSequence(entry);
-
-                    // Record the free index to possibly be reused before the next turn.
-                    _freeIndices.Push(i);
-                }
-                else
-                {
-                    // Move entry to a new sequence.
-                    var curHash = entry.CurrentHash;
-                    if (curHash != entry.NextHash)
+                    // Remove expired entries.
+                    if (_isExpiredSelector(entry.Item))
                     {
-                        MoveEntry(entry);
+                        RemoveFromSequence(entry);
+
+                        entry.Item = default;
+
+                        // Record the free index to be reused later.
+                        _freeIndices.Push(i);
+                    }
+                    else
+                    {
+                        // Move entry to a new sequence.
+                        var curHash = entry.CurrentHash;
+                        if (curHash != entry.NextHash)
+                        {
+                            MoveEntry(entry);
+                        }
                     }
                 }
             }
@@ -133,10 +140,6 @@ namespace PolyPlane.Helpers
                     entrySeq.IsEmpty = true;
                     entrySeq.Head = null;
                     entrySeq.Tail = null;
-
-                    entry.IsHead = false;
-                    entry.Prev = null;
-                    entry.Next = null;
                 }
                 else
                 {
@@ -144,12 +147,7 @@ namespace PolyPlane.Helpers
                     entry.Next.IsHead = true;
                     entry.Next.Prev = null;
                     entrySeq.Head = entry.Next;
-
-                    entry.Prev = null;
-                    entry.Next = null;
                 }
-
-                entry.IsHead = false;
             }
             else
             {
@@ -168,11 +166,13 @@ namespace PolyPlane.Helpers
                     // Middle entry: Link previous and next entries together.
                     prev.Next = next;
                     next.Prev = prev;
-
-                    entry.Prev = null;
-                    entry.Next = null;
                 }
             }
+
+            entry.Sequence = null;
+            entry.Next = null;
+            entry.Prev = null;
+            entry.IsHead = false;
         }
 
         /// <summary>

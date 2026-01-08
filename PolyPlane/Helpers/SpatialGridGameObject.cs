@@ -11,6 +11,7 @@ namespace PolyPlane.Helpers
     public sealed class SpatialGridGameObject
     {
         private Dictionary<int, EntrySequence> _sequences = new(1000);
+        private GameObjectPool<EntrySequence> _seqPool = new GameObjectPool<EntrySequence>(() => new EntrySequence());
         private List<Entry> _entries = new(50000);
         private Stack<int> _freeIndices = new(1000);
 
@@ -18,6 +19,7 @@ namespace PolyPlane.Helpers
         private GetNearEnumerator[] _getNearEnumPool = new GetNearEnumerator[0];
 
         private readonly int SIDE_LEN = 9;
+        private const int MAX_NUM_FREE = 2000;
 
         public SpatialGridGameObject(int sideLen = 9)
         {
@@ -31,31 +33,37 @@ namespace PolyPlane.Helpers
         /// </summary>
         public void Update()
         {
-            // Clear free entries left over from the previous turn.
-            PruneFreeEntries();
+            // Prune free entries once we exceed the max number allowed.
+            if (_freeIndices.Count > MAX_NUM_FREE)
+                PruneFreeEntries();
 
             // Iterate all entries and update as needed.
             for (int i = _entries.Count - 1; i >= 0; i--)
             {
                 var entry = _entries[i];
 
-                // Remove expired entries.
-                if (entry.Object.IsExpired)
+                if (entry.Sequence != null)
                 {
-                    RemoveFromSequence(entry);
-
-                    // Record the free index to possibly be reused before the next turn.
-                    _freeIndices.Push(i);
-                }
-                else
-                {
-                    // Move entry to a new sequence.
-                    var curHash = entry.CurrentHash;
-                    entry.NextHash = entry.Object.GridHash;
-
-                    if (curHash != entry.NextHash)
+                    // Remove expired entries.
+                    if (entry.Object.IsExpired)
                     {
-                        MoveEntry(entry);
+                        RemoveFromSequence(entry);
+
+                        entry.Object = null;
+
+                        // Record the free index to be reused later.
+                        _freeIndices.Push(i);
+                    }
+                    else
+                    {
+                        // Move entry to a new sequence.
+                        var curHash = entry.CurrentHash;
+                        entry.NextHash = entry.Object.GridHash;
+
+                        if (curHash != entry.NextHash)
+                        {
+                            MoveEntry(entry);
+                        }
                     }
                 }
             }
@@ -87,6 +95,7 @@ namespace PolyPlane.Helpers
                 if (seq.IsEmpty)
                 {
                     _sequences.Remove(seq.Hash);
+                    _seqPool.ReturnObject(seq);
                 }
             }
         }
@@ -122,10 +131,6 @@ namespace PolyPlane.Helpers
                     entrySeq.IsEmpty = true;
                     entrySeq.Head = null;
                     entrySeq.Tail = null;
-
-                    entry.IsHead = false;
-                    entry.Prev = null;
-                    entry.Next = null;
                 }
                 else
                 {
@@ -133,12 +138,7 @@ namespace PolyPlane.Helpers
                     entry.Next.IsHead = true;
                     entry.Next.Prev = null;
                     entrySeq.Head = entry.Next;
-
-                    entry.Prev = null;
-                    entry.Next = null;
                 }
-
-                entry.IsHead = false;
             }
             else
             {
@@ -157,11 +157,13 @@ namespace PolyPlane.Helpers
                     // Middle entry: Link previous and next entries together.
                     prev.Next = next;
                     next.Prev = prev;
-
-                    entry.Prev = null;
-                    entry.Next = null;
                 }
             }
+
+            entry.Sequence = null;
+            entry.Next = null;
+            entry.Prev = null;
+            entry.IsHead = false;
         }
 
         /// <summary>
@@ -209,12 +211,13 @@ namespace PolyPlane.Helpers
                 entry.Prev = null;
                 entry.Next = null;
 
-                var newIndex = new EntrySequence(entry);
+                var newSeq = _seqPool.RentObject();
+                newSeq.Init(entry);
 
-                newIndex.Hash = hash;
-                entry.Sequence = newIndex;
+                newSeq.Hash = hash;
+                entry.Sequence = newSeq;
 
-                _sequences.Add(hash, newIndex);
+                _sequences.Add(hash, newSeq);
             }
         }
 
@@ -345,7 +348,9 @@ namespace PolyPlane.Helpers
             public int Hash;
             public bool IsEmpty = false;
 
-            public EntrySequence(Entry head)
+            public EntrySequence() { }
+
+            public void Init(Entry head)
             {
                 Head = head;
                 Tail = null;
