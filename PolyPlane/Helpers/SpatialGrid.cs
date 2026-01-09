@@ -194,8 +194,6 @@ namespace PolyPlane.Helpers
                     existingSeq.IsEmpty = false;
                     existingSeq.Head = entry;
                     entry.IsHead = true;
-                    entry.Next = null;
-                    entry.Prev = null;
                 }
                 else
                 {
@@ -208,24 +206,17 @@ namespace PolyPlane.Helpers
 
                     entry.Prev = swapEntry;
                     swapEntry.Next = entry;
-
                     existingSeq.Tail = entry;
-                    entry.Next = null;
                 }
             }
             else
             {
                 // Add to new sequence.
+                var newSeq = new EntrySequence(entry);
+                _sequences.Add(hash, newSeq);
+
+                entry.Sequence = newSeq;
                 entry.IsHead = true;
-                entry.Prev = null;
-                entry.Next = null;
-
-                var newIndex = new EntrySequence(entry);
-
-                newIndex.Hash = hash;
-                entry.Sequence = newIndex;
-
-                _sequences.Add(hash, newIndex);
             }
         }
 
@@ -249,12 +240,8 @@ namespace PolyPlane.Helpers
             {
                 entry = _entries[idx];
 
-                entry.IsHead = false;
                 entry.CurrentHash = hash;
                 entry.NextHash = hash;
-                entry.Next = null;
-                entry.Prev = null;
-                entry.Sequence = null;
                 entry.Item = obj;
             }
             else
@@ -377,6 +364,7 @@ namespace PolyPlane.Helpers
                 Head = head;
                 Tail = null;
                 IsEmpty = false;
+                Hash = head.NextHash;
             }
         }
 

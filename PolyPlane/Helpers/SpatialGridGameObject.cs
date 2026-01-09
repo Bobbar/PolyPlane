@@ -11,12 +11,12 @@ namespace PolyPlane.Helpers
     public sealed class SpatialGridGameObject
     {
         private Dictionary<int, EntrySequence> _sequences = new(1000);
-        private GameObjectPool<EntrySequence> _seqPool = new GameObjectPool<EntrySequence>(() => new EntrySequence());
+        private GameObjectPool<EntrySequence> _seqPool = new(() => new EntrySequence());
         private List<Entry> _entries = new(50000);
         private Stack<int> _freeIndices = new(1000);
 
         private GetInViewportEnumerator _viewportEnumerator;
-        private GetNearEnumerator[] _getNearEnumPool = new GetNearEnumerator[0];
+        private GetNearEnumerator[] _getNearEnumPool = [];
 
         private readonly int SIDE_LEN = 9;
         private const int MAX_NUM_FREE = 2000;
@@ -176,7 +176,6 @@ namespace PolyPlane.Helpers
 
             if (_sequences.TryGetValue(hash, out var existingSeq))
             {
-                existingSeq.Hash = hash;
                 entry.Sequence = existingSeq;
 
                 // Add to existing sequence.
@@ -185,8 +184,6 @@ namespace PolyPlane.Helpers
                     existingSeq.IsEmpty = false;
                     existingSeq.Head = entry;
                     entry.IsHead = true;
-                    entry.Next = null;
-                    entry.Prev = null;
                 }
                 else
                 {
@@ -199,25 +196,18 @@ namespace PolyPlane.Helpers
 
                     entry.Prev = swapEntry;
                     swapEntry.Next = entry;
-
                     existingSeq.Tail = entry;
-                    entry.Next = null;
                 }
             }
             else
             {
                 // Add to new sequence.
-                entry.IsHead = true;
-                entry.Prev = null;
-                entry.Next = null;
-
                 var newSeq = _seqPool.RentObject();
                 newSeq.Init(entry);
-
-                newSeq.Hash = hash;
-                entry.Sequence = newSeq;
-
                 _sequences.Add(hash, newSeq);
+
+                entry.Sequence = newSeq;
+                entry.IsHead = true;
             }
         }
 
@@ -245,12 +235,8 @@ namespace PolyPlane.Helpers
             {
                 entry = _entries[idx];
 
-                entry.IsHead = false;
                 entry.CurrentHash = hash;
                 entry.NextHash = hash;
-                entry.Next = null;
-                entry.Prev = null;
-                entry.Sequence = null;
                 entry.Object = obj;
             }
             else
@@ -259,7 +245,6 @@ namespace PolyPlane.Helpers
 
                 _entries.Add(entry);
             }
-
 
             AddToSequence(entry);
         }
@@ -336,10 +321,7 @@ namespace PolyPlane.Helpers
             return GetGridHash(idxX, idxY);
         }
 
-        private int GetGridHash(int idxX, int idxY)
-        {
-            return HashCode.Combine(idxX, idxY);
-        }
+        private int GetGridHash(int idxX, int idxY) => HashCode.Combine(idxX, idxY);
 
         private class EntrySequence
         {
@@ -355,6 +337,7 @@ namespace PolyPlane.Helpers
                 Head = head;
                 Tail = null;
                 IsEmpty = false;
+                Hash = head.NextHash;
             }
         }
 
