@@ -59,6 +59,8 @@
             DeltaTimeLabel = new Label();
             DeltaTimeNumeric = new NumericUpDown();
             DefaultDTButton = new Button();
+            SpawnDistTextBox = new TextBox();
+            label7 = new Label();
             PlayerListContextMenu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)TimeOfDaySlider).BeginInit();
             ((System.ComponentModel.ISupportInitialize)DeltaTimeNumeric).BeginInit();
@@ -303,7 +305,7 @@
             // GunsOnlyCheckBox
             // 
             GunsOnlyCheckBox.AutoSize = true;
-            GunsOnlyCheckBox.Location = new Point(841, 434);
+            GunsOnlyCheckBox.Location = new Point(863, 453);
             GunsOnlyCheckBox.Name = "GunsOnlyCheckBox";
             GunsOnlyCheckBox.Size = new Size(81, 19);
             GunsOnlyCheckBox.TabIndex = 25;
@@ -314,7 +316,7 @@
             // DeltaTimeLabel
             // 
             DeltaTimeLabel.AutoSize = true;
-            DeltaTimeLabel.Location = new Point(760, 359);
+            DeltaTimeLabel.Location = new Point(782, 344);
             DeltaTimeLabel.Name = "DeltaTimeLabel";
             DeltaTimeLabel.Size = new Size(75, 15);
             DeltaTimeLabel.TabIndex = 27;
@@ -324,7 +326,7 @@
             // 
             DeltaTimeNumeric.DecimalPlaces = 4;
             DeltaTimeNumeric.Increment = new decimal(new int[] { 25, 0, 0, 196608 });
-            DeltaTimeNumeric.Location = new Point(841, 357);
+            DeltaTimeNumeric.Location = new Point(863, 342);
             DeltaTimeNumeric.Maximum = new decimal(new int[] { 5, 0, 0, 0 });
             DeltaTimeNumeric.Name = "DeltaTimeNumeric";
             DeltaTimeNumeric.Size = new Size(68, 23);
@@ -334,7 +336,7 @@
             // 
             // DefaultDTButton
             // 
-            DefaultDTButton.Location = new Point(841, 386);
+            DefaultDTButton.Location = new Point(863, 371);
             DefaultDTButton.Name = "DefaultDTButton";
             DefaultDTButton.Size = new Size(68, 23);
             DefaultDTButton.TabIndex = 29;
@@ -342,11 +344,30 @@
             DefaultDTButton.UseVisualStyleBackColor = true;
             DefaultDTButton.Click += DefaultDTButton_Click;
             // 
+            // SpawnDistTextBox
+            // 
+            SpawnDistTextBox.Location = new Point(863, 400);
+            SpawnDistTextBox.Name = "SpawnDistTextBox";
+            SpawnDistTextBox.Size = new Size(100, 23);
+            SpawnDistTextBox.TabIndex = 30;
+            SpawnDistTextBox.Validating += SpawnDistTextBox_Validating;
+            // 
+            // label7
+            // 
+            label7.AutoSize = true;
+            label7.Location = new Point(764, 406);
+            label7.Name = "label7";
+            label7.Size = new Size(93, 15);
+            label7.TabIndex = 31;
+            label7.Text = "Spawn Distance:";
+            // 
             // ServerUI
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1008, 536);
+            Controls.Add(label7);
+            Controls.Add(SpawnDistTextBox);
             Controls.Add(DefaultDTButton);
             Controls.Add(DeltaTimeNumeric);
             Controls.Add(DeltaTimeLabel);
@@ -418,5 +439,7 @@
         private Label DeltaTimeLabel;
         private NumericUpDown DeltaTimeNumeric;
         private Button DefaultDTButton;
+        private TextBox SpawnDistTextBox;
+        private Label label7;
     }
 }

@@ -782,14 +782,11 @@ namespace PolyPlane.Helpers
 
         public static D2DPoint FindSafeSpawnPoint()
         {
-            const float MIN_DIST = 40000f;
-            const float MAX_DIST = 100000f;
-
             const float MIN_ALT = 3000f;
             const float MAX_ALT = 25000f;
 
-            var minDist = MIN_DIST;
-            var maxDist = MAX_DIST;
+            var minDist = World.PlaneSpawnRange / 2f;
+            var maxDist = World.PlaneSpawnRange;
 
             // Half the spawn range when in guns only mode.
             if (World.GunsOnly)

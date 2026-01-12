@@ -36,6 +36,8 @@ namespace PolyPlane
 
             UpdateHudColorPreview();
             HudColorAlphaNumeric.Value = (decimal)World.HudColor.a;
+
+            SpawnDistTextBox.Text = World.PlaneSpawnRange.ToString();
         }
 
         private void ClientServerConfigForm_Disposed(object? sender, EventArgs e)
@@ -121,8 +123,16 @@ namespace PolyPlane
 
         private void SinglePlayerButton_Click(object sender, EventArgs e)
         {
-            PlayerName = PlayerNameTextBox.Text.Trim();
-            DialogResult = DialogResult.Cancel;
+            SpawnDistTextBox.Text = SpawnDistTextBox.Text.Trim();
+
+            if (float.TryParse(SpawnDistTextBox.Text, out float spawnDist))
+            {
+                if (World.PlaneSpawnRange != spawnDist)
+                    World.PlaneSpawnRange = spawnDist;
+
+                PlayerName = PlayerNameTextBox.Text.Trim();
+                DialogResult = DialogResult.Cancel;
+            }
         }
 
         private void AIPlaneCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -224,6 +234,20 @@ namespace PolyPlane
             }
         }
 
+        private void SpawnDistTextBox_Validating(object sender, CancelEventArgs e)
+        {
+            SpawnDistTextBox.Text = SpawnDistTextBox.Text.Trim();
+
+            if (float.TryParse(SpawnDistTextBox.Text, out float spawnDist))
+            {
+                if (World.PlaneSpawnRange != spawnDist)
+                    World.PlaneSpawnRange = spawnDist;
+            }
+            else
+            {
+                SpawnDistTextBox.Text = World.PlaneSpawnRange.ToString();
+            }
+        }
 
         private class ServerEntry
         {

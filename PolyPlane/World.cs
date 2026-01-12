@@ -154,7 +154,7 @@ namespace PolyPlane
         public static readonly D2DPoint CloudRangeY = new D2DPoint(-30000, -2000);
         public static readonly float FieldPlaneXBounds = 350000f;
         public static readonly float FieldXBounds = 400000f;
-        public static readonly float PlaneSpawnRange = 250000f;
+        public static float PlaneSpawnRange = 250000f;
         public static readonly float PlaneSpawnVelo = 500f;
 
         public static readonly D2DColor[] TimeOfDayPallet =

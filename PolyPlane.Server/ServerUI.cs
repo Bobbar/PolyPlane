@@ -98,6 +98,8 @@ namespace PolyPlane.Server
 
             TimeOfDaySlider.Maximum = (int)World.MAX_TIMEOFDAY;
             DeltaTimeNumeric.Value = (decimal)World.GameSpeed;
+
+            SpawnDistTextBox.Text = World.PlaneSpawnRange.ToString();
         }
 
         private void EnqueueAction(Action action)
@@ -802,6 +804,21 @@ namespace PolyPlane.Server
         private void PlayersListBox_MouseLeave(object sender, EventArgs e)
         {
             _mouseOverPlayerList = false;
+        }
+
+        private void SpawnDistTextBox_Validating(object sender, CancelEventArgs e)
+        {
+            SpawnDistTextBox.Text = SpawnDistTextBox.Text.Trim();
+
+            if (float.TryParse(SpawnDistTextBox.Text, out float spawnDist))
+            {
+                if (World.PlaneSpawnRange != spawnDist)
+                    World.PlaneSpawnRange = spawnDist;
+            }
+            else
+            {
+                SpawnDistTextBox.Text = World.PlaneSpawnRange.ToString();
+            }
         }
     }
 }

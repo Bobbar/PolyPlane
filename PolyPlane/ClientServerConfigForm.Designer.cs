@@ -52,6 +52,8 @@
             DefaultHubColorButton = new Button();
             label7 = new Label();
             TargetFPSTextBox = new TextBox();
+            SpawnDistTextBox = new TextBox();
+            label8 = new Label();
             ((System.ComponentModel.ISupportInitialize)PlanePreviewBox).BeginInit();
             ((System.ComponentModel.ISupportInitialize)HudColorAlphaNumeric).BeginInit();
             SuspendLayout();
@@ -279,11 +281,30 @@
             TargetFPSTextBox.TextAlign = HorizontalAlignment.Center;
             TargetFPSTextBox.Validating += TargetFPSTextBox_Validating;
             // 
+            // SpawnDistTextBox
+            // 
+            SpawnDistTextBox.Location = new Point(12, 351);
+            SpawnDistTextBox.Name = "SpawnDistTextBox";
+            SpawnDistTextBox.Size = new Size(100, 23);
+            SpawnDistTextBox.TabIndex = 24;
+            SpawnDistTextBox.Validating += SpawnDistTextBox_Validating;
+            // 
+            // label8
+            // 
+            label8.AutoSize = true;
+            label8.Location = new Point(12, 334);
+            label8.Name = "label8";
+            label8.Size = new Size(93, 15);
+            label8.TabIndex = 25;
+            label8.Text = "Spawn Distance:";
+            // 
             // ClientServerConfigForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(772, 419);
+            Controls.Add(label8);
+            Controls.Add(SpawnDistTextBox);
             Controls.Add(TargetFPSTextBox);
             Controls.Add(label7);
             Controls.Add(DefaultHubColorButton);
@@ -347,5 +368,7 @@
         private Button DefaultHubColorButton;
         private Label label7;
         private TextBox TargetFPSTextBox;
+        private TextBox SpawnDistTextBox;
+        private Label label8;
     }
 }
