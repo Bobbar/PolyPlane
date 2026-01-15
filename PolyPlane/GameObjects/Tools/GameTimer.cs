@@ -96,9 +96,6 @@ namespace PolyPlane.GameObjects.Tools
             if (!_isRunning)
                 return;
 
-            if (_current < Interval)
-                _current += dt;
-
             if (_current >= Interval && !_hasFired)
             {
                 if (TriggerCallback != null)
@@ -114,6 +111,9 @@ namespace PolyPlane.GameObjects.Tools
                 else
                     Stop();
             }
+
+            if (_current < Interval)
+                _current += dt;
         }
 
         public void Start()
