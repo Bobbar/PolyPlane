@@ -2,6 +2,7 @@
 using PolyPlane.Helpers;
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using unvell.D2DLib;
@@ -11,7 +12,7 @@ namespace PolyPlane.Rendering
     /// <summary>
     /// Provides a fast light color and intensity map for game objects.
     /// </summary>
-    public sealed class LightMap : IDisposable
+    public sealed class LightMap : IDisposable, ILightMap
     {
         private Vector4[]? _mapIn = null;
         private Vector4[]? _mapOut = null;
@@ -27,11 +28,13 @@ namespace PolyPlane.Rendering
         public float SIDE_LEN
         {
             get { return _sideLen; }
+
+            set { }
         }
 
         const int SAMPLE_NUM = 7;
         const float GRADIENT_RADIUS = 450f;
-        const bool USE_QUEUE = true;
+        const bool USE_QUEUE = false;//true;
         const int QUEUE_FPS = 500;
 
         private D2DRect _viewport;
@@ -41,6 +44,13 @@ namespace PolyPlane.Rendering
         private int _prevHeight = 0;
         private float _sideLen = 60f;
         private bool disposedValue;
+
+
+        private TimeSpan _mapTime = TimeSpan.Zero;
+        private Stopwatch _timer = new Stopwatch();
+
+        private int _numMapped = 0;
+
 
         public LightMap() { }
 
@@ -52,6 +62,9 @@ namespace PolyPlane.Rendering
         {
             if (!World.UseLightMap)
                 return;
+
+            _mapTime = TimeSpan.Zero;
+            _numMapped = 0;
 
             StartQueueLoop();
 
@@ -68,11 +81,20 @@ namespace PolyPlane.Rendering
         /// </summary>
         public void EndFrame()
         {
-            _runQueueEvent.Reset();
+            if (USE_QUEUE)
+            {
+                _runQueueEvent.Reset();
 
-            // Drain queue as needed.
-            if (!_queue.IsEmpty)
-                DrainQueue();
+                // Drain queue as needed.
+                if (!_queue.IsEmpty)
+                    DrainQueue();
+            }
+
+
+
+
+            Debug.WriteLine($"[{_numMapped}]  {_mapTime.TotalMilliseconds} ms  {_mapTime.Ticks} ticks");
+
         }
 
         private void StartQueueLoop()
@@ -176,6 +198,11 @@ namespace PolyPlane.Rendering
             if (_mapIn == null)
                 return;
 
+            if (!lightContributor.IsLightEnabled())
+                return;
+
+            _timer.Restart();
+
             var sampleNum = SAMPLE_NUM;
             var gradRadius = GRADIENT_RADIUS;
             var intensityFactor = 1f;
@@ -229,6 +256,11 @@ namespace PolyPlane.Rendering
                     }
                 }
             }
+
+            _numMapped++;
+
+            _timer.Stop();
+            _mapTime += _timer.Elapsed;
         }
 
         /// <summary>

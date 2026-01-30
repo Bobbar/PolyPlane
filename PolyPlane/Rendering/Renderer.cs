@@ -873,6 +873,9 @@ namespace PolyPlane.Rendering
 
         private void DrawLightMap(RenderContext ctx)
         {
+            var timer = new System.Diagnostics.Stopwatch();
+            timer.Restart();
+
             float step = ctx.LightMap.SIDE_LEN;
 
             for (float x = ctx.Viewport.left; x <= ctx.Viewport.right; x += step)
@@ -883,7 +886,11 @@ namespace PolyPlane.Rendering
                     var color = ctx.LightMap.SampleMap(nPos);
                     ctx.FillRectangle(new D2DRect(nPos, new D2DSize(step, step)), color.ToD2DColor());
                 }
-            }
+            } 
+
+            timer.Stop();
+            System.Diagnostics.Debug.WriteLine(string.Format("Timer: {0} ms  {1} ticks", timer.Elapsed.TotalMilliseconds, timer.Elapsed.Ticks));
+
         }
 
         private void DrawHud(RenderContext ctx, GameObject viewObject, float dt)

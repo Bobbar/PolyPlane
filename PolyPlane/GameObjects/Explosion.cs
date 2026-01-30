@@ -78,10 +78,10 @@ namespace PolyPlane.GameObjects
 
         public override void Render(RenderContext ctx)
         {
-            base.Render(ctx);
-
             if (!this.ContainedBy(ctx.Viewport))
                 return;
+
+            base.Render(ctx);
 
             if (this.Age < Duration)
             {

@@ -899,6 +899,8 @@ namespace PolyPlane
                     break;
 
                 case 'e':
+
+                    World.ToggleLightmap = true;
                     break;
 
                 case 'f':
@@ -988,6 +990,7 @@ namespace PolyPlane
                     break;
 
                 case 't':
+                    World.DrawLightMap = !World.DrawLightMap;
                     break;
 
                 case 'u':
@@ -1007,7 +1010,8 @@ namespace PolyPlane
                 case '=' or '+':
                     if (_shiftDown)
                     {
-                        _render.HudScale += 0.01f;
+                        //_render.HudScale += 0.01f;
+                        World.TimeOfDay += 1f;
                     }
                     else
                     {
@@ -1019,7 +1023,9 @@ namespace PolyPlane
 
                     if (_shiftDown)
                     {
-                        _render.HudScale -= 0.01f;
+                        //_render.HudScale -= 0.01f;
+                        World.TimeOfDay -= 1f;
+
                     }
                     else
                     {

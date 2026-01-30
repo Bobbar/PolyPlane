@@ -80,6 +80,8 @@ namespace PolyPlane
             get { return ViewObject != null && ViewObject is FreeCamera; }
         }
 
+        public static bool ToggleLightmap = false;
+
         public static bool FastPrimitives = true;
         public static bool DrawLightMap = false;
         public static bool DrawNoiseMap = false;
@@ -154,7 +156,7 @@ namespace PolyPlane
         public static readonly D2DPoint CloudRangeY = new D2DPoint(-30000, -2000);
         public static readonly float FieldPlaneXBounds = 350000f;
         public static readonly float FieldXBounds = 400000f;
-        public static float PlaneSpawnRange = 250000f;
+        public static float PlaneSpawnRange = 25000f;
         public static readonly float PlaneSpawnVelo = 500f;
 
         public static readonly D2DColor[] TimeOfDayPallet =

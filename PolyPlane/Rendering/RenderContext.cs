@@ -1,9 +1,13 @@
 ﻿using PolyPlane.GameObjects.Tools;
 using PolyPlane.Helpers;
+using System.Diagnostics;
 using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
 {
+
+   
+
     /// <summary>
     /// Provides overloads of common graphics methods which include automagic viewport clipping for performance.
     /// </summary>
@@ -12,7 +16,15 @@ namespace PolyPlane.Rendering
         public readonly D2DGraphics Gfx;
         public readonly D2DDevice Device;
         public D2DRect Viewport;
-        public readonly LightMap LightMap;
+        //public readonly LightMap LightMap;
+        //public readonly LightMap2 LightMap;
+
+        public  ILightMap LightMap;
+
+        private readonly LightMap _mapOG;
+        private readonly LightMap2 _map2;
+
+
 
         public float CurrentScale
         {
@@ -31,11 +43,19 @@ namespace PolyPlane.Rendering
         private const double GaussianSigma2 = 0.035;
         private readonly double GaussianSigma = Math.Sqrt(2.0 * Math.PI * GaussianSigma2);
 
+        private bool _mapSwapped = false;
+
         public RenderContext(D2DGraphics gfx, D2DDevice device)
         {
             Gfx = gfx;
             Device = device;
-            LightMap = new LightMap();
+
+            _mapOG = new LightMap();
+            _map2 = new LightMap2();
+
+            //LightMap = new LightMap();
+            //LightMap = new LightMap2();
+            LightMap = _map2;
 
             _cachedBrush = device.CreateSolidColorBrush(D2DColor.Transparent);
 
@@ -154,6 +174,27 @@ namespace PolyPlane.Rendering
 
         public void BeginRender(D2DColor color)
         {
+            if (World.ToggleLightmap)
+            {
+                World.ToggleLightmap = false;
+
+                if (!_mapSwapped)
+                {
+                    LightMap = _mapOG;
+                    _mapSwapped = true;
+                    Debug.WriteLine("OG Light map");
+                }
+                else
+                {
+                    LightMap = _map2;
+                    _mapSwapped = false;
+
+                    Debug.WriteLine("NEW Light map");
+
+                }
+            }
+
+
             Gfx.BeginRender(color);
             UpdateTimeOfDayColors();
 
@@ -514,7 +555,7 @@ namespace PolyPlane.Rendering
 
         public void Dispose()
         {
-            LightMap?.Dispose();
+            //LightMap?.Dispose();
         }
     }
 }
