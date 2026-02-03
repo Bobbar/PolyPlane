@@ -62,13 +62,13 @@ namespace PolyPlane.GameObjects
 
         public override void Render(RenderContext ctx)
         {
-            base.Render(ctx);
-
             if (_trailList.Count == 0)
                 return;
 
             if (!ctx.Viewport.Contains(_bounds.GetBounds()))
                 return;
+
+            base.Render(ctx);
 
             var lastPos = _trailList.First();
             for (int i = 0; i < _trailList.Count; i++)
