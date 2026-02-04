@@ -207,15 +207,15 @@ namespace PolyPlane.Rendering
 
                         // Compute a mask for the pixels we need to load.
                         // Skip pixels outside the gradient or out of range on the X axis.
-                        var obDistMask = Avx.CompareGreaterThan(distSqrt, radiusVec);
-                        var obRightMask = Avx.CompareGreaterThanOrEqual(xOffsetVec, _gridWidthVec);
-                        var loadMask = obDistMask | obRightMask;
+                        var obDistMask = Avx.CompareLessThanOrEqual(distSqrt, radiusVec);
+                        var obRightMask = Avx.CompareLessThan(xOffsetVec, _gridWidthVec);
+                        var loadMask = obDistMask & obRightMask;
 
                         // Selectively load current colors within the bounds. 
-                        var curAVec = Avx.MaskLoad(&ptrA[idx], ~loadMask);
-                        var curRVec = Avx.MaskLoad(&ptrR[idx], ~loadMask);
-                        var curGVec = Avx.MaskLoad(&ptrG[idx], ~loadMask);
-                        var curBVec = Avx.MaskLoad(&ptrB[idx], ~loadMask);
+                        var curAVec = Avx.MaskLoad(&ptrA[idx], loadMask);
+                        var curRVec = Avx.MaskLoad(&ptrR[idx], loadMask);
+                        var curGVec = Avx.MaskLoad(&ptrG[idx], loadMask);
+                        var curBVec = Avx.MaskLoad(&ptrB[idx], loadMask);
 
                         // Alpha blend the two color series.
                         var alpha = ONE_F8 - (ONE_F8 - curAVec) * (ONE_F8 - intensity);
@@ -229,14 +229,14 @@ namespace PolyPlane.Rendering
                         var resB = curBVec * alphaFact + inputBVec * alphaFactInvert;
 
                         // Discard mask for pixels with alpha value below the threshold.
-                        var invisibleMask = Avx.CompareLessThan(alpha, MIN_ALPHA_VEC);
+                        var invisibleMask = Avx.CompareGreaterThan(alpha, MIN_ALPHA_VEC);
 
                         // Selectively store the new values with the mask.
-                        var storeMask = loadMask | invisibleMask;
-                        Avx.MaskStore(&ptrA[idx], ~storeMask, resA);
-                        Avx.MaskStore(&ptrR[idx], ~storeMask, resR);
-                        Avx.MaskStore(&ptrG[idx], ~storeMask, resG);
-                        Avx.MaskStore(&ptrB[idx], ~storeMask, resB);
+                        var storeMask = loadMask & invisibleMask;
+                        Avx.MaskStore(&ptrA[idx], storeMask, resA);
+                        Avx.MaskStore(&ptrR[idx], storeMask, resR);
+                        Avx.MaskStore(&ptrG[idx], storeMask, resG);
+                        Avx.MaskStore(&ptrB[idx], storeMask, resB);
                     }
                 }
             }
