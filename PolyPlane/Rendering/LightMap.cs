@@ -17,10 +17,11 @@ namespace PolyPlane.Rendering
 
         private ConcurrentBag<ILightMapContributor> _queue = new ConcurrentBag<ILightMapContributor>();
         private ManualResetEventSlim _runQueueEvent = new ManualResetEventSlim(false);
+        private ManualResetEventSlim _queueDoneEvent = new ManualResetEventSlim(false);
 
         private Thread? _queueThread = null;
         private FPSLimiter _queueLimiter = new FPSLimiter();
-        const int QUEUE_FPS = 500;
+        const int QUEUE_FPS = 2000;
         const float MIN_ALPHA = 0.001f;
 
         public float SIDE_LEN
@@ -55,15 +56,14 @@ namespace PolyPlane.Rendering
             SwapBuffers();
 
             _runQueueEvent.Set();
+            _queueDoneEvent.Reset();
         }
 
         public void EndFrame()
         {
+            // Signal and wait for the queue thread to stop.
             _runQueueEvent.Reset();
-
-            // Drain queue as needed.
-            if (!_queue.IsEmpty)
-                DrainQueue();
+            _queueDoneEvent.Wait();
         }
 
         private void StartQueueLoop()
@@ -81,11 +81,16 @@ namespace PolyPlane.Rendering
             while (!disposedValue)
             {
                 if (!_runQueueEvent.IsSet)
+                {
+                    _queueDoneEvent.Set();
                     _runQueueEvent.Wait();
+                }
+                else
+                {
+                    _queueLimiter.Wait(QUEUE_FPS);
+                }
 
                 DrainQueue();
-
-                _queueLimiter.Wait(QUEUE_FPS);
             }
         }
 
