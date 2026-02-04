@@ -14,6 +14,14 @@ namespace PolyPlane.Rendering
         public D2DRect Viewport;
         public readonly LightMap LightMap;
 
+        public float LightMapAlpha
+        {
+            get
+            {
+                return _lightMapAlpha;
+            }
+        }
+
         public float CurrentScale
         {
             get
@@ -26,6 +34,7 @@ namespace PolyPlane.Rendering
         private D2DSolidColorBrush _cachedBrush;
         private float _currentScale = 1f;
         private float _currentLightingFactor = 1f;
+        private float _lightMapAlpha = 0.02f;
         private D2DColor _timeOfDayColor = D2DColor.Transparent;
 
         private const double GaussianSigma2 = 0.035;
@@ -51,6 +60,9 @@ namespace PolyPlane.Rendering
 
             var todColor = InterpolateColorGaussian(World.TimeOfDayPallet, World.TimeOfDay, World.MAX_TIMEOFDAY);
             _timeOfDayColor = todColor;
+
+            var lightMapAlpha = Utilities.Lerp(0.02f, 0.23f, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
+            _lightMapAlpha = lightMapAlpha;
         }
 
         /// <summary>

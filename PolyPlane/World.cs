@@ -81,7 +81,7 @@ namespace PolyPlane
         }
 
         public static bool FastPrimitives = true;
-        public static bool DrawLightMap = false;
+        public static bool DrawLightMap = true;
         public static bool DrawNoiseMap = false;
         public static bool UseLightMap = true;
         public static bool MissileRegen = true;

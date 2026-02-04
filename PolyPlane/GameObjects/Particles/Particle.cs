@@ -195,12 +195,11 @@ namespace PolyPlane.GameObjects.Particles
 
         bool ILightMapContributor.IsLightEnabled()
         {
-            const float MIN_LUM = 0.19f;
-            const float MAX_LUM = 0.4f;
+            const float MIN_LUM = 0.2f;
+            const float MAX_LUM = 0.45f;
 
             if (Type != ParticleType.Flame)
                 return false;
-
             // Compute and filter based on luminance.
             var c = Color;
             var cVec = new Vector3(c.r, c.g, c.b);

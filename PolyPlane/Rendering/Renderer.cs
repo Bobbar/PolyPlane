@@ -6,6 +6,7 @@ using PolyPlane.Helpers;
 using PolyPlane.Net;
 using System.Text;
 using unvell.D2DLib;
+using unvell.D2DLib.WinForm;
 
 namespace PolyPlane.Rendering
 {
@@ -487,18 +488,20 @@ namespace PolyPlane.Rendering
 
             const float VIEWPORT_PADDING_AMT = 1.5f;
             var inflateAmt = VIEWPORT_PADDING_AMT * zAmt;
-            viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true); // Inflate slightly to prevent "pop-in".
+
+            // Inflate slightly to prevent "pop-in".
+            viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true); 
 
             // Query the spatial grid for objects within the current viewport.
             var objsInViewport = _objs.GetInViewport(viewPortRect);
+
+            ctx.PushViewPort(viewPortRect);
 
             // Start a new light map frame.
             ctx.LightMap.BeginFrame(viewPortRect);
 
             var shadowColor = ctx.GetShadowColor();
             var todAngle = ctx.GetTimeOfDaySunAngle();
-
-            ctx.PushViewPort(viewPortRect);
 
             DrawGround(ctx, viewObj.Position);
             DrawTrees(ctx);
@@ -526,6 +529,7 @@ namespace PolyPlane.Rendering
                 DrawLightMap(ctx);
 
             ctx.PopViewPort();
+
             ctx.PopTransform();
         }
 
@@ -873,17 +877,17 @@ namespace PolyPlane.Rendering
 
         private void DrawLightMap(RenderContext ctx)
         {
-            float step = ctx.LightMap.SIDE_LEN;
+            Profiler.Start(ProfilerStat.LigthMap);
 
-            for (float x = ctx.Viewport.left; x <= ctx.Viewport.right; x += step)
-            {
-                for (float y = ctx.Viewport.top; y <= ctx.Viewport.bottom; y += step)
-                {
-                    var nPos = new D2DPoint(x, y);
-                    var color = ctx.LightMap.SampleMap(nPos);
-                    ctx.FillRectangle(new D2DRect(nPos, new D2DSize(step, step)), color.ToD2DColor());
-                }
-            }
+            var bmp = ctx.LightMap.GetBitmap();
+
+            var vp = ctx.Viewport;
+            vp.Width += ctx.LightMap.SIDE_LEN * 4f;
+            vp.Height += ctx.LightMap.SIDE_LEN * 4f;
+
+            ctx.Gfx.DrawBitmap(bmp, vp, ctx.LightMapAlpha, true);
+
+            Profiler.Stop(ProfilerStat.LigthMap);
         }
 
         private void DrawHud(RenderContext ctx, GameObject viewObject, float dt)
@@ -1529,43 +1533,48 @@ namespace PolyPlane.Rendering
 
         public void DrawInfo(RenderContext ctx, D2DPoint pos, GameObject viewObject)
         {
-            BuildInfo(viewObject);
+            var sb = _stringBuilder;
+
+            sb.Clear();
+
+            BuildInfo(sb, viewObject);
 
             if (_showHelp)
             {
-                _stringBuilder.AppendLine("H: Hide help\n");
+                sb.AppendLine("H: Hide help\n");
 
                 if (!World.IsNetGame)
                 {
-                    _stringBuilder.AppendLine($"Alt + Enter: Toggle Fullscreen");
-                    _stringBuilder.AppendLine($"P: Pause");
-                    _stringBuilder.AppendLine($"U: Spawn AI Plane");
-                    _stringBuilder.AppendLine($"C: Remove AI Planes");
+                    sb.AppendLine($"Alt + Enter: Toggle Fullscreen");
+                    sb.AppendLine($"P: Pause");
+                    sb.AppendLine($"U: Spawn AI Plane");
+                    sb.AppendLine($"C: Remove AI Planes");
                 }
 
-                _stringBuilder.AppendLine($"Y: Start Chat Message");
-                _stringBuilder.AppendLine($"Tab: Show Scores");
-                _stringBuilder.AppendLine($"(+/-): Zoom");
-                _stringBuilder.AppendLine($"Shift + (+/-): HUD Scale");
-                _stringBuilder.AppendLine($"Left-Click: Fire Bullets");
-                _stringBuilder.AppendLine($"Right-Click: Drop Decoys");
-                _stringBuilder.AppendLine($"Middle-Click/Space Bar: Fire Missile");
-                _stringBuilder.AppendLine($"L: Toggle Lead Indicators");
-                _stringBuilder.AppendLine($"M: Toggle Missiles On Radar");
-                _stringBuilder.AppendLine($"K: Toggle Missiles Regen");
-                _stringBuilder.AppendLine($"F2: Toggle HUD");
+                sb.AppendLine($"Y: Start Chat Message");
+                sb.AppendLine($"Tab: Show Scores");
+                sb.AppendLine($"(+/-): Zoom");
+                sb.AppendLine($"Shift + (+/-): HUD Scale");
+                sb.AppendLine($"Left-Click: Fire Bullets");
+                sb.AppendLine($"Right-Click: Drop Decoys");
+                sb.AppendLine($"Middle-Click/Space Bar: Fire Missile");
+                sb.AppendLine($"E: Toggle Lightmap Overlay");
+                sb.AppendLine($"L: Toggle Lead Indicators");
+                sb.AppendLine($"M: Toggle Missiles On Radar");
+                sb.AppendLine($"K: Toggle Missiles Regen");
+                sb.AppendLine($"F2: Toggle HUD");
 
-                _stringBuilder.AppendLine($"\nSpectate (While crashed)");
-                _stringBuilder.AppendLine($"([/]): Prev/Next Spectate Plane");
-                _stringBuilder.AppendLine($"Backspace: Reset Spectate");
-                _stringBuilder.AppendLine($"F: Toggle Free Camera Mode (Hold Right-Mouse to move)");
+                sb.AppendLine($"\nSpectate (While crashed)");
+                sb.AppendLine($"([/]): Prev/Next Spectate Plane");
+                sb.AppendLine($"Backspace: Reset Spectate");
+                sb.AppendLine($"F: Toggle Free Camera Mode (Hold Right-Mouse to move)");
             }
             else
             {
-                _stringBuilder.AppendLine("H: Show help");
+                sb.AppendLine("H: Show help");
             }
 
-            ctx.DrawText(_stringBuilder.ToString(), _greenYellowColorBrush, _textConsolas12, World.ViewPortRect.Deflate(30f, 30f));
+            ctx.DrawText(sb.ToString(), _greenYellowColorBrush, _textConsolas12, World.ViewPortRect.Deflate(30f, 30f));
         }
 
         private void DrawScreenFlash(RenderContext ctx)
@@ -1744,13 +1753,11 @@ namespace PolyPlane.Rendering
             _screenFlash?.Restart();
         }
 
-        private void BuildInfo(GameObject viewObject)
+        private void BuildInfo(StringBuilder sb, GameObject viewObject)
         {
-            _stringBuilder.Clear();
-
             var numObj = _objs.TotalObjects;
 
-            _stringBuilder.AppendLine($"FPS: {Math.Round(_fpsSmooth.Add(_renderFPS), 1)}");
+            sb.AppendLine($"FPS: {Math.Round(_fpsSmooth.Add(_renderFPS), 1)}");
 
             if (_showInfo)
             {
@@ -1759,43 +1766,44 @@ namespace PolyPlane.Rendering
 
                 if (World.IsNetGame && _netMan != null)
                 {
-                    _stringBuilder.AppendLine($"Latency: {Math.Round(_netMan.Host.GetPlayerRTT(0), 2)}");
-                    _stringBuilder.AppendLine($"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}");
-                    _stringBuilder.AppendLine($"Packet Loss: {_netMan.Host.PacketLoss()}");
-                    _stringBuilder.AppendLine($"Packets Deferred: {_netMan.NumDeferredPackets}");
-                    _stringBuilder.AppendLine($"Packets Handled: {_netMan.NumHandledPackets}");
-                    _stringBuilder.AppendLine($"Packets Expired: {_netMan.NumExpiredPackets}\n");
+                    sb.AppendLine($"Latency: {Math.Round(_netMan.Host.GetPlayerRTT(0), 2)}");
+                    sb.AppendLine($"Packet Delay: {Math.Round(_netMan.PacketDelay, 2)}");
+                    sb.AppendLine($"Packet Loss: {_netMan.Host.PacketLoss()}");
+                    sb.AppendLine($"Packets Deferred: {_netMan.NumDeferredPackets}");
+                    sb.AppendLine($"Packets Handled: {_netMan.NumHandledPackets}");
+                    sb.AppendLine($"Packets Expired: {_netMan.NumExpiredPackets}\n");
                 }
 
-                _stringBuilder.AppendLine($"Num Objects: {numObj}");
-                _stringBuilder.AppendLine($"On Screen: {GraphicsExtensions.OnScreen}");
-                _stringBuilder.AppendLine($"Off Screen: {GraphicsExtensions.OffScreen}");
-                _stringBuilder.AppendLine($"Planes: {_objs.Planes.Count}");
-                _stringBuilder.AppendLine($"Update ms: {Math.Round(_updateTimeSmooth.Current, 2)}");
-                _stringBuilder.AppendLine($"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}");
-                _stringBuilder.AppendLine($"Collision ms: {Math.Round(_collisionTimeSmooth.Current, 2)}");
-                _stringBuilder.AppendLine($"Total ms: {Math.Round(_updateTimeSmooth.Current + _collisionTimeSmooth.Current + _renderTimeSmooth.Current, 2)}");
+                sb.AppendLine($"Num Objects: {numObj}");
+                sb.AppendLine($"On Screen: {GraphicsExtensions.OnScreen}");
+                sb.AppendLine($"Off Screen: {GraphicsExtensions.OffScreen}");
+                sb.AppendLine($"Planes: {_objs.Planes.Count}");
+                sb.AppendLine($"Update ms: {Math.Round(_updateTimeSmooth.Current, 2)}");
+                sb.AppendLine($"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}");
+                sb.AppendLine($"LightMap ms: {Math.Round(Profiler.GetElapsedMilliseconds(ProfilerStat.LigthMap), 2)}");
+                sb.AppendLine($"Collision ms: {Math.Round(_collisionTimeSmooth.Current, 2)}");
+                sb.AppendLine($"Total ms: {Math.Round(_updateTimeSmooth.Current + _collisionTimeSmooth.Current + _renderTimeSmooth.Current, 2)}");
 
-                _stringBuilder.AppendLine($"Zoom: {Math.Round(World.ZoomScale, 2)}");
-                _stringBuilder.AppendLine($"HUD Scale: {Math.Round(HudScale, 2)}");
-                _stringBuilder.AppendLine($"GameSpeed: {World.GameSpeed}");
-                _stringBuilder.AppendLine($"DT: {Math.Round(World.CurrentDT, 4)}");
-                _stringBuilder.AppendLine($"Position: {viewObject?.Position}");
+                sb.AppendLine($"Zoom: {Math.Round(World.ZoomScale, 2)}");
+                sb.AppendLine($"HUD Scale: {Math.Round(HudScale, 2)}");
+                sb.AppendLine($"GameSpeed: {World.GameSpeed}");
+                sb.AppendLine($"DT: {Math.Round(World.CurrentDT, 4)}");
+                sb.AppendLine($"Position: {viewObject?.Position}");
 
                 if (viewObject is FighterPlane plane)
                 {
-                    _stringBuilder.AppendLine($"Kills: {plane.Kills}");
-                    _stringBuilder.AppendLine($"Headshots: {plane.Headshots}");
-                    _stringBuilder.AppendLine($"IsDisabled: {plane.IsDisabled}");
-                    _stringBuilder.AppendLine($"HasCrashed: {plane.HasCrashed}");
-                    _stringBuilder.AppendLine($"ThrustAmt: {plane.ThrustAmount}");
+                    sb.AppendLine($"Kills: {plane.Kills}");
+                    sb.AppendLine($"Headshots: {plane.Headshots}");
+                    sb.AppendLine($"IsDisabled: {plane.IsDisabled}");
+                    sb.AppendLine($"HasCrashed: {plane.HasCrashed}");
+                    sb.AppendLine($"ThrustAmt: {plane.ThrustAmount}");
                 }
 
-                _stringBuilder.AppendLine($"GunsOnly: {World.GunsOnly.ToString()}");
-                _stringBuilder.AppendLine($"MissilesOnRadar: {World.ShowMissilesOnRadar.ToString()}");
-                _stringBuilder.AppendLine($"Missile Regen: {World.MissileRegen.ToString()}");
-                _stringBuilder.AppendLine($"TimeOfDay: {Math.Round(World.TimeOfDay, 1)}");
-                _stringBuilder.AppendLine($"TimeOffset: {Math.Round(TimeSpan.FromTicks((long)World.ServerTimeOffset).TotalMilliseconds, 2)}");
+                sb.AppendLine($"GunsOnly: {World.GunsOnly.ToString()}");
+                sb.AppendLine($"MissilesOnRadar: {World.ShowMissilesOnRadar.ToString()}");
+                sb.AppendLine($"Missile Regen: {World.MissileRegen.ToString()}");
+                sb.AppendLine($"TimeOfDay: {Math.Round(World.TimeOfDay, 1)}");
+                sb.AppendLine($"TimeOffset: {Math.Round(TimeSpan.FromTicks((long)World.ServerTimeOffset).TotalMilliseconds, 2)}");
             }
         }
 

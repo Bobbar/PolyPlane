@@ -899,6 +899,7 @@ namespace PolyPlane
                     break;
 
                 case 'e':
+                    World.DrawLightMap = !World.DrawLightMap;
                     break;
 
                 case 'f':
