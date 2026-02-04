@@ -6,6 +6,7 @@ using PolyPlane.Helpers;
 using PolyPlane.Net;
 using System.Text;
 using unvell.D2DLib;
+using unvell.D2DLib.WinForm;
 
 namespace PolyPlane.Rendering
 {
@@ -401,6 +402,17 @@ namespace PolyPlane.Rendering
 
             _ctx.LightMap.EndFrame();
 
+            if (World.BMPTest)
+            {
+                World.BMPTest = false;
+
+               var bmp = _ctx.LightMap.GetBitmap();
+
+                bmp.Save($@"C:\Temp\map_ren_test.bmp");
+
+                //bmp.Dispose();
+            }
+
             _renderTimeSmooth.Add(Profiler.Stop(ProfilerStat.Render).GetElapsedMilliseconds());
 
             _ctx.EndRender();
@@ -485,6 +497,9 @@ namespace PolyPlane.Rendering
 
             var viewPortRect = new D2DRect(viewObj.Position, new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE));
 
+            //ctx.LightMap.BeginFrame(viewPortRect);
+
+
             const float VIEWPORT_PADDING_AMT = 1.5f;
             var inflateAmt = VIEWPORT_PADDING_AMT * zAmt;
             viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true); // Inflate slightly to prevent "pop-in".
@@ -526,6 +541,10 @@ namespace PolyPlane.Rendering
                 DrawLightMap(ctx);
 
             ctx.PopViewPort();
+
+            //if (World.DrawLightMap)
+            //    DrawLightMap(ctx);
+
             ctx.PopTransform();
         }
 
@@ -871,7 +890,44 @@ namespace PolyPlane.Rendering
             }
         }
 
+        //private void DrawLightMap(RenderContext ctx)
+        //{
+        //    float step = ctx.LightMap.SIDE_LEN;
+
+        //    for (float x = ctx.Viewport.left; x <= ctx.Viewport.right; x += step)
+        //    {
+        //        for (float y = ctx.Viewport.top; y <= ctx.Viewport.bottom; y += step)
+        //        {
+        //            var nPos = new D2DPoint(x, y);
+        //            var color = ctx.LightMap.SampleMap(nPos);
+        //            ctx.FillRectangle(new D2DRect(nPos, new D2DSize(step, step)), color.ToD2DColor());
+        //        }
+        //    }
+        //}
+
         private void DrawLightMap(RenderContext ctx)
+        {
+            //var timer = new System.Diagnostics.Stopwatch();
+            //timer.Restart();
+
+            var bmp = ctx.LightMap.GetBitmap();
+
+            var vp = ctx.Viewport;
+            vp.Width += ctx.LightMap.SIDE_LEN * 4f;
+            vp.Height += ctx.LightMap.SIDE_LEN * 4f;
+
+            ctx.Gfx.DrawBitmap(bmp, vp, 0.4f, true);
+
+
+
+            //timer.Stop();
+            //System.Diagnostics.Debug.WriteLine(string.Format("Timer: {0} ms  {1} ticks", timer.Elapsed.TotalMilliseconds, timer.Elapsed.Ticks));
+
+
+            DrawLightMapOG(ctx);
+        }
+
+        private void DrawLightMapOG(RenderContext ctx)
         {
             float step = ctx.LightMap.SIDE_LEN;
 
@@ -885,6 +941,10 @@ namespace PolyPlane.Rendering
                 }
             }
         }
+
+
+        [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+        public static extern bool DeleteObject(IntPtr hObject);
 
         private void DrawHud(RenderContext ctx, GameObject viewObject, float dt)
         {

@@ -80,6 +80,10 @@ namespace PolyPlane
             get { return ViewObject != null && ViewObject is FreeCamera; }
         }
 
+
+        public static bool BMPTest = false;
+
+
         public static bool FastPrimitives = true;
         public static bool DrawLightMap = false;
         public static bool DrawNoiseMap = false;
