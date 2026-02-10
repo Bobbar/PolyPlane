@@ -402,16 +402,16 @@ namespace PolyPlane.Rendering
 
             _ctx.LightMap.EndFrame();
 
-            if (World.BMPTest)
-            {
-                World.BMPTest = false;
+            //if (World.BMPTest)
+            //{
+            //    World.BMPTest = false;
 
-               var bmp = _ctx.LightMap.GetBitmap();
+            //   var bmp = _ctx.LightMap.GetBitmap();
 
-                bmp.Save($@"C:\Temp\map_ren_test.bmp");
+            //    bmp.Save($@"C:\Temp\map_ren_test.bmp");
 
-                //bmp.Dispose();
-            }
+            //    //bmp.Dispose();
+            //}
 
             _renderTimeSmooth.Add(Profiler.Stop(ProfilerStat.Render).GetElapsedMilliseconds());
 
@@ -507,13 +507,19 @@ namespace PolyPlane.Rendering
             // Query the spatial grid for objects within the current viewport.
             var objsInViewport = _objs.GetInViewport(viewPortRect);
 
+            ctx.PushViewPort(viewPortRect);
+
+
+            //if (World.DrawLightMap)
+            //    DrawLightMap(ctx);
+
             // Start a new light map frame.
             ctx.LightMap.BeginFrame(viewPortRect);
 
             var shadowColor = ctx.GetShadowColor();
             var todAngle = ctx.GetTimeOfDaySunAngle();
 
-            ctx.PushViewPort(viewPortRect);
+            //ctx.PushViewPort(viewPortRect);
 
             DrawGround(ctx, viewObj.Position);
             DrawTrees(ctx);
@@ -890,25 +896,9 @@ namespace PolyPlane.Rendering
             }
         }
 
-        //private void DrawLightMap(RenderContext ctx)
-        //{
-        //    float step = ctx.LightMap.SIDE_LEN;
-
-        //    for (float x = ctx.Viewport.left; x <= ctx.Viewport.right; x += step)
-        //    {
-        //        for (float y = ctx.Viewport.top; y <= ctx.Viewport.bottom; y += step)
-        //        {
-        //            var nPos = new D2DPoint(x, y);
-        //            var color = ctx.LightMap.SampleMap(nPos);
-        //            ctx.FillRectangle(new D2DRect(nPos, new D2DSize(step, step)), color.ToD2DColor());
-        //        }
-        //    }
-        //}
-
         private void DrawLightMap(RenderContext ctx)
         {
-            //var timer = new System.Diagnostics.Stopwatch();
-            //timer.Restart();
+            Profiler.Start(ProfilerStat.LigthMap);
 
             var bmp = ctx.LightMap.GetBitmap();
 
@@ -916,15 +906,11 @@ namespace PolyPlane.Rendering
             vp.Width += ctx.LightMap.SIDE_LEN * 4f;
             vp.Height += ctx.LightMap.SIDE_LEN * 4f;
 
-            ctx.Gfx.DrawBitmap(bmp, vp, 0.4f, true);
+            ctx.Gfx.DrawBitmap(bmp, vp, ctx.LightMapAlpha, true);
 
+            Profiler.Stop(ProfilerStat.LigthMap);
 
-
-            //timer.Stop();
-            //System.Diagnostics.Debug.WriteLine(string.Format("Timer: {0} ms  {1} ticks", timer.Elapsed.TotalMilliseconds, timer.Elapsed.Ticks));
-
-
-            DrawLightMapOG(ctx);
+            //DrawLightMapOG(ctx);
         }
 
         private void DrawLightMapOG(RenderContext ctx)
@@ -1833,8 +1819,13 @@ namespace PolyPlane.Rendering
                 _stringBuilder.AppendLine($"Planes: {_objs.Planes.Count}");
                 _stringBuilder.AppendLine($"Update ms: {Math.Round(_updateTimeSmooth.Current, 2)}");
                 _stringBuilder.AppendLine($"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}");
+                _stringBuilder.AppendLine($"LightMap ms: {Math.Round(Profiler.GetElapsedMilliseconds(ProfilerStat.LigthMap), 2)}");
+
                 _stringBuilder.AppendLine($"Collision ms: {Math.Round(_collisionTimeSmooth.Current, 2)}");
                 _stringBuilder.AppendLine($"Total ms: {Math.Round(_updateTimeSmooth.Current + _collisionTimeSmooth.Current + _renderTimeSmooth.Current, 2)}");
+
+                //_stringBuilder.AppendLine($"MapAlpha: {World.LightmapAlpha}");
+                _stringBuilder.AppendLine($"MapAlpha: {_ctx.LightMapAlpha}");
 
                 _stringBuilder.AppendLine($"Zoom: {Math.Round(World.ZoomScale, 2)}");
                 _stringBuilder.AppendLine($"HUD Scale: {Math.Round(HudScale, 2)}");

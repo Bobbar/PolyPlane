@@ -108,6 +108,7 @@
         Update,
         Collisions,
         Render,
-        NetTime
+        NetTime,
+        LigthMap
     }
 }

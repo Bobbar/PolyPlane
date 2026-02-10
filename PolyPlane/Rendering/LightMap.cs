@@ -5,8 +5,10 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+using System.Security.Cryptography.Pkcs;
 using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
@@ -15,6 +17,7 @@ namespace PolyPlane.Rendering
     {
         private MapBuffer _mapIn = new MapBuffer();
         private MapBuffer _mapOut = new MapBuffer();
+        private Bitmap? _bmpImage = null;
 
         private ConcurrentBag<ILightMapContributor> _queue = new ConcurrentBag<ILightMapContributor>();
         private ManualResetEventSlim _runQueueEvent = new ManualResetEventSlim(false);
@@ -45,14 +48,10 @@ namespace PolyPlane.Rendering
         private static readonly Vector256<float> ZERO_F8 = Vector256<float>.Zero;
         private static readonly Vector256<int> ONE_I8 = Vector256<int>.One;
         private static readonly Vector256<int> ZERO_I8 = Vector256<int>.Zero;
-
-
+        private static readonly Vector256<float> BYTE_COLOR_MAX = Vector256.Create(255f);
 
         private Vector256<float> _sideLenVec = ZERO_F8;
         private Vector256<float> _gridWidthVec = ZERO_F8;
-
-
-  
 
         public void BeginFrame(D2DRect viewport)
         {
@@ -72,12 +71,6 @@ namespace PolyPlane.Rendering
             // Signal and wait for the queue thread to stop.
             _runQueueEvent.Reset();
             _queueDoneEvent.Wait();
-
-
-            if (!_queue.IsEmpty)
-            {
-                Debug.WriteLine(_queue.Count);
-            }
         }
 
         private void StartQueueLoop()
@@ -136,15 +129,6 @@ namespace PolyPlane.Rendering
             if (obj is ILightMapContributor contributor)
             {
                 QueueContribution(contributor);
-
-                //if (Avx.IsSupported)
-                //{
-                //    AddContributionAvx(contributor);
-                //}
-                //else
-                //{
-                //    AddContributionScalar(contributor);
-                //}
             }
         }
 
@@ -270,74 +254,6 @@ namespace PolyPlane.Rendering
             }
         }
 
-
-        private Bitmap? _bmpImage = null;
-
-        public unsafe Bitmap GetBitmap()
-        {
-            if (_bmpImage == null)
-                _bmpImage = new Bitmap(_gridWidth, _gridHeight);
-
-            if (_bmpImage.Width != _gridWidth || _bmpImage.Height != _gridHeight)
-            {
-                _bmpImage.Dispose();
-                _bmpImage = new Bitmap(_gridWidth, _gridHeight);
-            }
-
-            var len = (_gridHeight * _gridWidth) * 4;
-
-            var data = _bmpImage.LockBits(new Rectangle(0, 0, _gridWidth, _gridHeight),
-                System.Drawing.Imaging.ImageLockMode.WriteOnly,
-                _bmpImage.PixelFormat);
-
-            byte* pixels = (byte*)data.Scan0;
-
-            var maxVal = Vector256.Create(255f);
-
-            fixed (float* ptrA = _mapOut.A, ptrR = _mapOut.R, ptrG = _mapOut.G, ptrB = _mapOut.B)
-            {
-                for (int y = 0; y < _gridHeight; y++)
-                {
-                    var yOffset = y;
-
-                    for (int x = 0; x < _gridWidth; x += 8)
-                    {
-                        var xOffset = x;
-
-                        var idx = GetMapIndex(xOffset, yOffset);
-
-                        var curAVec = Avx.LoadVector256(&ptrA[idx]);
-                        var curRVec = Avx.LoadVector256(&ptrR[idx]);
-                        var curGVec = Avx.LoadVector256(&ptrG[idx]);
-                        var curBVec = Avx.LoadVector256(&ptrB[idx]);
-
-                        var intA = Vector256.ConvertToInt32(Vector256.Clamp(curAVec * maxVal, ZERO_F8, maxVal));
-                        var intR = Vector256.ConvertToInt32(Vector256.Clamp(curRVec * maxVal, ZERO_F8, maxVal));
-                        var intG = Vector256.ConvertToInt32(Vector256.Clamp(curGVec * maxVal, ZERO_F8, maxVal));
-                        var intB = Vector256.ConvertToInt32(Vector256.Clamp(curBVec * maxVal, ZERO_F8, maxVal));
-
-                        for (int i = 0; i < 8; i++)
-                        {
-                            var pidx = (idx + i) * 4;
-
-                            if (pidx < len)
-                            {
-                                pixels[pidx] = (byte)(intB[i]);
-                                pixels[pidx + 1] = (byte)(intG[i]);
-                                pixels[pidx + 2] = (byte)(intR[i]);
-                                pixels[pidx + 3] = (byte)(intA[i]);
-                            }
-                        }
-                    }
-                }
-            }
-
-            _bmpImage.UnlockBits(data);
-
-            return _bmpImage;
-        }
-
-
         public void AddContributionScalar(ILightMapContributor lightContributor)
         {
             var radius = lightContributor.GetLightRadius();
@@ -386,6 +302,105 @@ namespace PolyPlane.Rendering
                 }
             }
         }
+
+        /// <summary>
+        /// Blit the current lightmap to a bitmap.
+        /// </summary>
+        /// <returns></returns>
+        public unsafe Bitmap GetBitmap()
+        {
+            if (_bmpImage != null)
+            {
+                if (_bmpImage.Width != _gridWidth || _bmpImage.Height != _gridHeight)
+                {
+                    _bmpImage.Dispose();
+                    _bmpImage = null;
+                }
+            }
+
+            if (_bmpImage == null)
+                _bmpImage = new Bitmap(_gridWidth, _gridHeight);
+
+            var len = (_gridHeight * _gridWidth) * 4;
+
+            var data = _bmpImage.LockBits(new Rectangle(0, 0, _gridWidth, _gridHeight),
+                System.Drawing.Imaging.ImageLockMode.WriteOnly,
+                _bmpImage.PixelFormat);
+
+            byte* pixels = (byte*)data.Scan0;
+
+            if (Avx.IsSupported)
+            {
+                fixed (float* ptrA = _mapOut.A, ptrR = _mapOut.R, ptrG = _mapOut.G, ptrB = _mapOut.B)
+                {
+                    for (int y = 0; y < _gridHeight; y++)
+                    {
+                        for (int x = 0; x < _gridWidth; x += 8)
+                        {
+                            var idx = GetMapIndex(x, y);
+
+                            var curAVec = Avx.LoadVector256(&ptrA[idx]);
+                            var curRVec = Avx.LoadVector256(&ptrR[idx]);
+                            var curGVec = Avx.LoadVector256(&ptrG[idx]);
+                            var curBVec = Avx.LoadVector256(&ptrB[idx]);
+
+                            var intA = Vector256.ConvertToInt32(curAVec * BYTE_COLOR_MAX);
+                            var intR = Vector256.ConvertToInt32(curRVec * BYTE_COLOR_MAX);
+                            var intG = Vector256.ConvertToInt32(curGVec * BYTE_COLOR_MAX);
+                            var intB = Vector256.ConvertToInt32(curBVec * BYTE_COLOR_MAX);
+
+                            for (int i = 0; i < 8; i++)
+                            {
+                                var pidx = (idx + i) * 4;
+
+                                if (pidx < len)
+                                {
+                                    pixels[pidx] = (byte)(intB[i]);
+                                    pixels[pidx + 1] = (byte)(intG[i]);
+                                    pixels[pidx + 2] = (byte)(intR[i]);
+                                    pixels[pidx + 3] = (byte)(intA[i]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for (int y = 0; y < _gridHeight; y++)
+                {
+                    for (int x = 0; x < _gridWidth; x++)
+                    {
+                        var idx = GetMapIndex(x, y);
+
+                        var curA = _mapOut.A[idx];
+                        var curR = _mapOut.R[idx];
+                        var curG = _mapOut.G[idx];
+                        var curB = _mapOut.B[idx];
+
+                        var intA = (byte)(curA * 255f);
+                        var intR = (byte)(curR * 255f);
+                        var intG = (byte)(curG * 255f);
+                        var intB = (byte)(curB * 255f);
+
+                        var pidx = idx * 4;
+
+                        if (pidx < len)
+                        {
+                            pixels[pidx] = intB;
+                            pixels[pidx + 1] = intG;
+                            pixels[pidx + 2] = intR;
+                            pixels[pidx + 3] = intA;
+                        }
+                    }
+                }
+            }
+
+            _bmpImage.UnlockBits(data);
+
+            return _bmpImage;
+        }
+
 
         private Vector4 Blend(Vector4 colorA, Vector4 colorB)
         {
@@ -515,8 +530,6 @@ namespace PolyPlane.Rendering
         private void Clear()
         {
             _mapOut.Clear();
-            //_mapIn.Clear();
-
         }
 
         private void Dispose(bool disposing)
@@ -533,7 +546,6 @@ namespace PolyPlane.Rendering
 
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
@@ -588,6 +600,7 @@ namespace PolyPlane.Rendering
                 B = newB;
             }
 
+
             /// <summary>
             /// Copy existing data from the old buffer to the new one by remapping the coordinate space for the new dimentions.
             /// </summary>
@@ -596,19 +609,18 @@ namespace PolyPlane.Rendering
                 fixed (float* ptrOldA = A, ptrOldR = R, ptrOldG = G, ptrOldB = B)
                 fixed (float* ptrNewA = newA, ptrNewR = newR, ptrNewG = newG, ptrNewB = newB)
                 {
-                    for (int y = 0; y < oldHeight; y++)
+                    for (int y = 0; y < newHeight; y++)
                     {
-                        for (int x = 0; x < oldWidth; x += 8)
+                        for (int x = 0; x < newWidth; x += 8)
                         {
                             // Map OG buffer coords to the new dimentions.
-                            var scaleX = ScaleToRange(x, 0, oldWidth, 0, newWidth);
-                            var scaleY = ScaleToRange(y, 0, oldHeight, 0, newHeight);
+                            var scaleX = ScaleToRange(x, 0, newWidth, 0, oldWidth);
+                            var scaleY = ScaleToRange(y, 0, newHeight, 0, oldHeight);
 
-                            var ogIdx = GetMapIndex(oldWidth, x, y);
-                            //var newIdx = GetMapIndex(newWidth, (int)scaleX, (int)scaleY);
-                            var newIdx = GetMapIndex(newWidth, (int)Math.Floor(scaleX), (int)Math.Floor(scaleY));
+                            var ogIdx = GetMapIndex(oldWidth, (int)scaleX, (int)scaleY);
+                            var newIdx = GetMapIndex(newWidth, x, y);
 
-                            if (newIdx >= 0 && newIdx < newA.Length && ogIdx >= 0 && ogIdx < A.Length)
+                            if (newIdx >= 0 && newIdx + 8 < newA.Length && ogIdx >= 0 && ogIdx + 8 < A.Length)
                             {
                                 var curA = Avx.LoadVector256(&ptrOldA[ogIdx]);
                                 var curR = Avx.LoadVector256(&ptrOldR[ogIdx]);

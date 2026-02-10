@@ -5,6 +5,7 @@ using PolyPlane.Net;
 using PolyPlane.Net.NetHost;
 using PolyPlane.Rendering;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using unvell.D2DLib;
 
 namespace PolyPlane
@@ -989,7 +990,6 @@ namespace PolyPlane
                     break;
 
                 case 't':
-                    World.BMPTest = true;
                     break;
 
                 case 'u':
@@ -1024,7 +1024,6 @@ namespace PolyPlane
                     {
                         //_render.HudScale -= 0.01f;
                         World.TimeOfDay -= 1f;
-
                     }
                     else
                     {
