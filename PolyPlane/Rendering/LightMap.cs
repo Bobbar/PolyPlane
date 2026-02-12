@@ -43,8 +43,6 @@ namespace PolyPlane.Rendering
         private static readonly Vector256<float> MIN_ALPHA_VEC = Vector256.Create(MIN_ALPHA);
         private static readonly Vector256<float> ONE_F8 = Vector256<float>.One;
         private static readonly Vector256<float> ZERO_F8 = Vector256<float>.Zero;
-        private static readonly Vector256<int> ONE_I8 = Vector256<int>.One;
-        private static readonly Vector256<int> ZERO_I8 = Vector256<int>.Zero;
         private static readonly Vector256<float> BYTE_COLOR_MAX = Vector256.Create(255f);
 
         private Vector256<float> _sideLenVec = ZERO_F8;
@@ -155,7 +153,7 @@ namespace PolyPlane.Rendering
             var intensityFactor = lightContributor.GetIntensityFactor();
             var sampleNum = (int)(radius / SIDE_LEN);
 
-            GetGridPos(lightPosition.X, lightPosition.Y, out int idxX, out int idxY);
+            GetGridPos(lightPosition, out int idxX, out int idxY);
 
             // Create vectors for the input parameters.
             var inputAVec = Vector256.Create(lightColor.a);
@@ -186,7 +184,7 @@ namespace PolyPlane.Rendering
                     for (int x = -sampleNum; x <= sampleNum; x += 8)
                     {
                         var xOffset = idxX + x;
-                        if (xOffset < 0 || xOffset >= _gridWidth)
+                        if (xOffset + 8 < 0 || xOffset >= _gridWidth)
                             continue;
 
                         var idx = GetMapIndex(xOffset, yOffset);
@@ -218,7 +216,8 @@ namespace PolyPlane.Rendering
                         // Skip pixels outside the gradient or out of range on the X axis.
                         var obDistMask = Avx.CompareLessThanOrEqual(distSqrt, radiusVec);
                         var obRightMask = Avx.CompareLessThan(xOffsetVec, _gridWidthVec);
-                        var loadMask = obDistMask & obRightMask;
+                        var obLeftMask = Avx.CompareGreaterThan(xOffsetVec, ZERO_F8);
+                        var loadMask = obDistMask & obRightMask & obLeftMask;
 
                         // Selectively load current colors within the bounds. 
                         var curAVec = Avx.MaskLoad(&ptrA[idx], loadMask);
@@ -281,7 +280,7 @@ namespace PolyPlane.Rendering
                         {
                             var intensity = 1f - Utilities.FactorWithEasing(dist, radius, EasingFunctions.Out.EaseQuad);
 
-                            lightColor.X = Math.Clamp(intensity, 0f, 1f);
+                            lightColor.X = Math.Clamp(intensity * intensityFactor, 0f, 1f);
 
                             // Blend the new color.
                             var idx = GetMapIndex(xo, yo);
@@ -336,6 +335,7 @@ namespace PolyPlane.Rendering
                         {
                             var idx = GetMapIndex(x, y);
 
+                            // Load and convert 8 pixels at once.
                             var curAVec = Avx.LoadVector256(&ptrA[idx]);
                             var curRVec = Avx.LoadVector256(&ptrR[idx]);
                             var curGVec = Avx.LoadVector256(&ptrG[idx]);
@@ -350,13 +350,14 @@ namespace PolyPlane.Rendering
                             {
                                 var pidx = (idx + i) * 4;
 
-                                if (pidx < len)
-                                {
-                                    pixels[pidx] = (byte)(intB[i]);
-                                    pixels[pidx + 1] = (byte)(intG[i]);
-                                    pixels[pidx + 2] = (byte)(intR[i]);
-                                    pixels[pidx + 3] = (byte)(intA[i]);
-                                }
+                                if (pidx >= len)
+                                    break;
+
+                                pixels[pidx] = (byte)(intB[i]);
+                                pixels[pidx + 1] = (byte)(intG[i]);
+                                pixels[pidx + 2] = (byte)(intR[i]);
+                                pixels[pidx + 3] = (byte)(intA[i]);
+
                             }
                         }
                     }
@@ -662,7 +663,7 @@ namespace PolyPlane.Rendering
                             }
                         }
                     }
-                } 
+                }
             }
 
             private int GetMapIndex(int width, int x, int y)
