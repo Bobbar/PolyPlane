@@ -464,7 +464,7 @@ namespace PolyPlane.Rendering
                     if (rect.Contains(pos))
                         ctx.FillRectangle(new D2DRect(pos, d2dSz), _gridBrush, clipped: false);
                 }
-            } 
+            }
         }
 
         private void DrawPlayerView(RenderContext ctx, GameObject viewObj)
@@ -490,7 +490,7 @@ namespace PolyPlane.Rendering
             var inflateAmt = VIEWPORT_PADDING_AMT * zAmt;
 
             // Inflate slightly to prevent "pop-in".
-            viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true); 
+            viewPortRect = viewPortRect.Inflate(viewPortRect.Width * inflateAmt, viewPortRect.Height * inflateAmt, keepAspectRatio: true);
 
             // Query the spatial grid for objects within the current viewport.
             var objsInViewport = _objs.GetInViewport(viewPortRect);
@@ -880,10 +880,11 @@ namespace PolyPlane.Rendering
             Profiler.Start(ProfilerStat.LigthMap);
 
             var bmp = ctx.LightMap.GetBitmap();
+            var pixelSize = ctx.LightMap.SIDE_LEN;
 
-            var vp = ctx.Viewport;
-            vp.Width += ctx.LightMap.SIDE_LEN * 4f;
-            vp.Height += ctx.LightMap.SIDE_LEN * 4f;
+            // Align the destination rect with the viewport
+            // and size it to match the lightmap dimensions.
+            var vp = new D2DRect(ctx.Viewport.left, ctx.Viewport.top, bmp.Width * pixelSize, bmp.Height * pixelSize);
 
             ctx.Gfx.DrawBitmap(bmp, vp, ctx.LightMapAlpha, true);
 

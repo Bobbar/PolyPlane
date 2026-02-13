@@ -600,7 +600,7 @@ namespace PolyPlane.Rendering
 
 
             /// <summary>
-            /// Copy existing data from the old buffer to the new one by remapping the coordinate space for the new dimentions.
+            /// Copy existing data from the old buffer to the new one by remapping the coordinate space for the new dimensions.
             /// </summary>
             private unsafe void CopyBuffer(ref float[] newA, ref float[] newR, ref float[] newG, ref float[] newB, int oldWidth, int newWidth, int oldHeight, int newHeight)
             {
@@ -613,7 +613,7 @@ namespace PolyPlane.Rendering
                         {
                             for (int x = 0; x < newWidth; x += 8)
                             {
-                                // Map OG buffer coords to the new dimentions.
+                                // Map OG buffer coords to the new dimensions.
                                 var scaleX = ScaleToRange(x, 0, newWidth, 0, oldWidth);
                                 var scaleY = ScaleToRange(y, 0, newHeight, 0, oldHeight);
 
@@ -642,7 +642,7 @@ namespace PolyPlane.Rendering
                     {
                         for (int x = 0; x < newWidth; x++)
                         {
-                            // Map OG buffer coords to the new dimentions.
+                            // Map OG buffer coords to the new dimensions.
                             var scaleX = ScaleToRange(x, 0, newWidth, 0, oldWidth);
                             var scaleY = ScaleToRange(y, 0, newHeight, 0, oldHeight);
 
@@ -663,7 +663,7 @@ namespace PolyPlane.Rendering
                             }
                         }
                     }
-                }
+                } 
             }
 
             private int GetMapIndex(int width, int x, int y)
