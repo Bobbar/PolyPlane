@@ -4,7 +4,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
 {
-    public class PlanePreview : IDisposable
+    public sealed class PlanePreview : IDisposable
     {
         public D2DColor PlaneColor = D2DColor.Yellow;
 
@@ -75,7 +75,7 @@ namespace PolyPlane.Rendering
             _ctx = new RenderContext(_gfx, _device);
         }
 
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (!disposedValue)
             {

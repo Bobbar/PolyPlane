@@ -2,7 +2,7 @@
 
 namespace PolyPlane.Server
 {
-    public class NetPlayer
+    public sealed class NetPlayer
     {
         public GameID ID;
         public string Name;

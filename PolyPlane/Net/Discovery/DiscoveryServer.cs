@@ -3,7 +3,7 @@ using System.Net.Sockets;
 
 namespace PolyPlane.Net.Discovery
 {
-    public class DiscoveryServer : IDisposable
+    public sealed class DiscoveryServer : IDisposable
     {
         private const int PORT = 4321;
         private UdpClient _udpListener = new UdpClient();

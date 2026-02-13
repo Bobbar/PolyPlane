@@ -2,7 +2,7 @@
 
 namespace PolyPlane.Rendering
 {
-    public class GroundImpact
+    public sealed class GroundImpact
     {
         public const float MAX_AGE = 1600f;
         public const float START_FADE_AGE = MAX_AGE - (MAX_AGE * 0.125f);

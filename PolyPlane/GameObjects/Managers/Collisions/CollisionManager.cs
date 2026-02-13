@@ -3,7 +3,7 @@ using PolyPlane.Net;
 
 namespace PolyPlane.GameObjects.Managers
 {
-    public class CollisionManager
+    public sealed class CollisionManager
     {
         private GameObjectManager _objs = World.ObjectManager;
         private NetEventManager _netMan;

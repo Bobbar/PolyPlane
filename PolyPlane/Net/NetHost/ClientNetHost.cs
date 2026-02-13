@@ -3,7 +3,7 @@ using PolyPlane.Helpers;
 
 namespace PolyPlane.Net.NetHost
 {
-    public class ClientNetHost : NetPlayHost
+    public sealed class ClientNetHost : NetPlayHost
     {
         public Peer Peer;
 

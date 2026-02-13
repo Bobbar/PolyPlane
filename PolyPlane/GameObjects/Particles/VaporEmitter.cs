@@ -6,7 +6,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects.Particles
 {
-    public class VaporEmitter : FixturePoint, INoGameID
+    public sealed class VaporEmitter : FixturePoint, INoGameID
     {
         private GameTimer _spawnTimer;
         private float _radius = 5f;

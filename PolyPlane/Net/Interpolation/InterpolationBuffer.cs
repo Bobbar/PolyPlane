@@ -2,7 +2,7 @@
 
 namespace PolyPlane.Net.Interpolation
 {
-    public class InterpolationBuffer<T>
+    public sealed class InterpolationBuffer<T>
     {
         private double _clientStartTime = -1;
         private SmoothDouble _offsetMedian = new SmoothDouble(10);

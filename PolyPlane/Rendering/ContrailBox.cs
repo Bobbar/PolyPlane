@@ -208,7 +208,7 @@ namespace PolyPlane.Rendering
             return segment.Age > MAX_SEG_AGE || segment.Plane.IsExpired;
         }
 
-        private class PlaneTag
+        private sealed class PlaneTag
         {
             public FighterPlane Plane;
             public D2DPoint PrevPos;
@@ -220,7 +220,7 @@ namespace PolyPlane.Rendering
             }
         }
 
-        private class TrailSegment
+        private sealed class TrailSegment
         {
             public D2DPoint PointA;
             public D2DPoint PointB;

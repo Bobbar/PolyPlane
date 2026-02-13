@@ -5,7 +5,7 @@
         event EventHandler<ImpactEvent> ImpactEvent;
     }
 
-    public class ImpactEvent
+    public sealed class ImpactEvent
     {
         public GameObject Attacker;
         public GameObject Target;

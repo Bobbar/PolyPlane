@@ -6,7 +6,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class MissileSmokeTrail : GameObject, INoGameID
+    public sealed class MissileSmokeTrail : GameObject, INoGameID
     {
         private const int TRAIL_LEN = 400;
         private readonly float TRAIL_DIST = 40f;

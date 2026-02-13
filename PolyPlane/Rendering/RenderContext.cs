@@ -7,7 +7,7 @@ namespace PolyPlane.Rendering
     /// <summary>
     /// Provides overloads of common graphics methods which include automagic viewport clipping for performance.
     /// </summary>
-    public class RenderContext : IDisposable
+    public sealed class RenderContext : IDisposable
     {
         public readonly D2DGraphics Gfx;
         public readonly D2DDevice Device;

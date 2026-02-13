@@ -2,16 +2,26 @@
 
 namespace PolyPlane
 {
-    public class WaitableTimer : IDisposable
+    /// <summary>
+    /// Provides a high accuracy, low power waitable timer.
+    /// </summary>
+    public sealed class WaitableTimer : IDisposable
     {
         private IntPtr handle;
         private bool disposedValue;
         private const uint INFINITE_TIMEOUT = 0xFFFFFFFF;
 
-        public WaitableTimer() : this(IntPtr.Zero, null, CreateFlags.CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, AccessFlags.TIMER_ALL_ACCESS)
+        /// <summary>
+        /// Create a new <see cref="WaitableTimer"/> with default configuration.
+        /// </summary>
+        public WaitableTimer() : this(
+            IntPtr.Zero,
+            null,
+            CreateFlags.CREATE_WAITABLE_TIMER_HIGH_RESOLUTION | CreateFlags.CREATE_WAITABLE_TIMER_MANUAL_RESET,
+            AccessFlags.TIMER_ALL_ACCESS)
         { }
 
-        public WaitableTimer(IntPtr attributes, string name, IntPtr flags, IntPtr access)
+        public WaitableTimer(IntPtr attributes, string name, CreateFlags flags, AccessFlags access)
         {
             var handle = CreateWaitableTimerExW(attributes, name, flags, access);
 
@@ -25,24 +35,41 @@ namespace PolyPlane
             }
         }
 
-        public void Wait(long dueTime, bool resume)
+        /// <summary>
+        /// Waits and blocks the current thread for the specified number of ticks.
+        /// </summary>
+        /// <param name="dueTimeTicks">Time to wait in ticks.</param>
+        public void WaitTicks(long dueTimeTicks)
         {
-            var dt = dueTime * -1;
-            SetWaitableTimer(handle, ref dt, 0, null, IntPtr.Zero, resume);
+            // Due time must be positive.
+            if (dueTimeTicks <= 0)
+                return;
+
+            // But the timer requires due time to be negative...
+            // Flip the sign.
+            var dt = dueTimeTicks * -1;
+
+            // Set the timer params then start the wait.
+            SetWaitableTimer(handle, ref dt, 0, null, IntPtr.Zero, fResume: false);
             WaitForSingleObject(handle, INFINITE_TIMEOUT);
         }
 
-        protected virtual void Dispose(bool disposing)
+        /// <summary>
+        /// Waits and blocks the current thread for the specified number of milliseconds.
+        /// </summary>
+        /// <param name="dueTimeMilliseconds">Time to wait in milliseconds.</param>
+        public void WaitMs(float dueTimeMilliseconds)
+        {
+            var dueTimeTicks = TimeSpan.FromMilliseconds(dueTimeMilliseconds).Ticks;
+            WaitTicks(dueTimeTicks);
+        }
+
+        private void Dispose(bool disposing)
         {
             if (!disposedValue)
             {
-                if (disposing)
-                {
-                    // TODO: dispose managed state (managed objects)
-                }
-
-                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
-                // TODO: set large fields to null
+                // Cancel any current wait.
+                CancelWaitableTimer(handle);
 
                 var res = CloseHandle(handle);
 
@@ -53,49 +80,43 @@ namespace PolyPlane
             }
         }
 
-        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
-        // ~WaitableTimer()
-        // {
-        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-        //     Dispose(disposing: false);
-        // }
-
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
 
-
-        public static class CreateFlags
+        public enum CreateFlags
         {
-            public static readonly IntPtr CREATE_WAITABLE_TIMER_MANUAL_RESET = new IntPtr(0x00000001);
-            public static readonly IntPtr CREATE_WAITABLE_TIMER_HIGH_RESOLUTION = new IntPtr(0x00000002);
+            CREATE_WAITABLE_TIMER_MANUAL_RESET = 1,
+            CREATE_WAITABLE_TIMER_HIGH_RESOLUTION = 2
         }
 
-        public static class AccessFlags
+        public enum AccessFlags
         {
-            public static readonly IntPtr TIMER_ALL_ACCESS = new IntPtr(0x1F0003);
-            public static readonly IntPtr TIMER_MODIFY_STATE = new IntPtr(0x0002);
-            public static readonly IntPtr TIMER_QUERY_STATE = new IntPtr(0x0001);
+            TIMER_QUERY_STATE = 1,
+            TIMER_MODIFY_STATE = 2,
+            TIMER_ALL_ACCESS = 2031619
         }
 
-        [DllImport("kernel32", SetLastError = true, ExactSpelling = true)]
-        public static extern IntPtr CreateWaitableTimerExW(IntPtr lpTimerAttributes, string lpTimerName, IntPtr dwFlags, IntPtr dwDesiredAccess);
-
-        [DllImport("kernel32", SetLastError = true, ExactSpelling = true)]
-        public static extern bool CloseHandle(IntPtr hObject);
-
-        public delegate void TimerAPCProc(
+        private delegate void TimerAPCProc(
            IntPtr lpArgToCompletionRoutine,
            UInt32 dwTimerLowValue,
            UInt32 dwTimerHighValue);
 
         [DllImport("kernel32", SetLastError = true, ExactSpelling = true)]
-        public static extern bool SetWaitableTimer(IntPtr hTimer, [In] ref long pDueTime, Int64 lPeriod, TimerAPCProc pfnCompletionRoutine, IntPtr lpArgToCompletionRoutine, bool fResume);
+        private static extern IntPtr CreateWaitableTimerExW(IntPtr lpTimerAttributes, string lpTimerName, CreateFlags dwFlags, AccessFlags dwDesiredAccess);
 
         [DllImport("kernel32", SetLastError = true, ExactSpelling = true)]
-        public static extern Int32 WaitForSingleObject(IntPtr handle, uint milliseconds);
+        private static extern bool CancelWaitableTimer(IntPtr hTimer);
+
+        [DllImport("kernel32", SetLastError = true, ExactSpelling = true)]
+        private static extern bool CloseHandle(IntPtr hObject);
+
+        [DllImport("kernel32", SetLastError = true, ExactSpelling = true)]
+        private static extern bool SetWaitableTimer(IntPtr hTimer, [In] ref long pDueTime, Int64 lPeriod, TimerAPCProc pfnCompletionRoutine, IntPtr lpArgToCompletionRoutine, bool fResume);
+
+        [DllImport("kernel32", SetLastError = true, ExactSpelling = true)]
+        private static extern Int32 WaitForSingleObject(IntPtr handle, uint milliseconds);
     }
 }

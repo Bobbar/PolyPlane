@@ -2,7 +2,7 @@
 
 namespace PolyPlane.GameObjects.Managers
 {
-    public class PlaneImpactResult
+    public sealed class PlaneImpactResult
     {
         public FighterPlane TargetPlane;
         public GameObject ImpactorObject;

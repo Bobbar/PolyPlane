@@ -1,6 +1,6 @@
 ﻿namespace PolyPlane.Helpers
 {
-    public class RandomVariationFloat
+    public sealed class RandomVariationFloat
     {
         private float _curTime = 0f;
         private float _nextTime = 0f;
@@ -42,7 +42,7 @@
         }
     }
 
-    public class RandomVariationPoint
+    public sealed class RandomVariationPoint
     {
         private float _curTime = 0f;
         private float _nextTime = 0f;
@@ -103,83 +103,4 @@
             _maxValue = minMax;
         }
     }
-
-    public class RandomVariationVector
-    {
-        private float _curMagTime = 0f;
-        private float _nextMagTime = 0f;
-
-        private float _curDirTime = 0f;
-        private float _nextDirTime = 0f;
-
-        private float _targetMag = 0f;
-        private float _currentMag = 0f;
-        private float _prevTargetMag = 0f;
-
-        private float _targetDir = 0f;
-        private float _currentDir = 0f;
-        private float _prevTargetDir = 0f;
-
-        private float _minTime = 0f;
-        private float _maxTime = 0f;
-        private float _minMag = 0f;
-        private float _maxMag = 0f;
-
-        public D2DPoint Value
-        {
-            get
-            {
-                var vec = Utilities.AngleToVectorDegrees(_currentDir) * _currentMag;
-                return vec;
-            }
-        }
-
-        public RandomVariationVector(float minMaxMagnitude, float minTime, float maxTime)
-        {
-            _minMag = -minMaxMagnitude;
-            _maxMag = minMaxMagnitude;
-            _minTime = minTime;
-            _maxTime = maxTime;
-
-            _targetMag = Utilities.Rnd.NextFloat(_minMag, _maxMag);
-            _prevTargetMag = _targetMag;
-            _currentMag = _targetMag;
-
-            _targetDir = Utilities.Rnd.NextFloat(0f, 360f);
-            _prevTargetDir = _targetDir;
-            _currentDir = _targetDir;
-
-            _nextMagTime = Utilities.Rnd.NextFloat(_minTime, _maxTime);
-            _nextDirTime = Utilities.Rnd.NextFloat(_minTime, _maxTime);
-        }
-
-        public void Update(float dt)
-        {
-            if (_curMagTime >= _nextMagTime)
-            {
-                _targetMag = Utilities.Rnd.NextFloat(_minMag, _maxMag);
-                _nextMagTime = Utilities.Rnd.NextFloat(_minTime, _maxTime);
-                _curMagTime = 0f;
-                _prevTargetMag = _currentMag;
-            }
-
-            _currentMag = Utilities.Lerp(_prevTargetMag, _targetMag, Utilities.Factor(_curMagTime, _nextMagTime));
-            _curMagTime += dt;
-
-
-            if (_curDirTime >= _nextDirTime)
-            {
-                _targetDir = Utilities.Rnd.NextFloat(0f, 360f);
-                _nextDirTime = Utilities.Rnd.NextFloat(_minTime, _maxTime);
-                _curDirTime = 0f;
-                _prevTargetDir = _currentDir;
-            }
-
-            //_currentDir = Utilities.Lerp(_prevTargetDir, _targetDir, Utilities.Factor(_curDirTime, _nextDirTime));
-            _currentDir = Utilities.LerpAngle(_prevTargetDir, _targetDir, Utilities.Factor(_curDirTime, _nextDirTime));
-
-            _curDirTime += dt;
-        }
-    }
-
 }

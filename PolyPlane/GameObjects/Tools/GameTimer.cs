@@ -2,7 +2,7 @@
 
 namespace PolyPlane.GameObjects.Tools
 {
-    public class GameTimer
+    public sealed class GameTimer
     {
         public float Interval
         {

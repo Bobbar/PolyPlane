@@ -7,7 +7,7 @@ using PolyPlane.Rendering;
 
 namespace PolyPlane.Net
 {
-    public partial class NetEventManager : IImpactEvent, IPlayerScoredEvent
+    public sealed partial class NetEventManager : IImpactEvent, IPlayerScoredEvent
     {
         public NetPlayHost Host;
         public ChatInterface ChatInterface;

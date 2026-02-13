@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace PolyPlane
 {
-    public class FPSLimiter : IDisposable
+    public sealed class FPSLimiter : IDisposable
     {
         private WaitableTimer _waitTimer = new WaitableTimer();
         private Stopwatch _fpsTimer = new Stopwatch();
@@ -40,7 +40,7 @@ namespace PolyPlane
                 if (waitTime > 0)
                 {
                     // High accuracy, low CPU usage waitable timer.
-                    _waitTimer.Wait(waitTime, false);
+                    _waitTimer.WaitTicks(waitTime);
 
                     // Test how long the timer actually waited versus
                     // the expected wait time and compute an offset

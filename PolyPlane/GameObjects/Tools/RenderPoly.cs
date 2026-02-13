@@ -3,7 +3,7 @@ using PolyPlane.Helpers;
 
 namespace PolyPlane.GameObjects.Tools
 {
-    public class RenderPoly : IFlippable
+    public sealed class RenderPoly : IFlippable
     {
         public D2DPoint[] Poly;
         public D2DPoint[] SourcePoly;

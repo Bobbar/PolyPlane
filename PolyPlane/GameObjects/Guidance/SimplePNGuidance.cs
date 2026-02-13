@@ -2,7 +2,7 @@
 
 namespace PolyPlane.GameObjects.Guidance
 {
-    public class SimplePNGuidance : GuidanceBase
+    public sealed class SimplePNGuidance : GuidanceBase
     {
         public SimplePNGuidance(GuidedMissile missile, GameObject target) : base(missile, target)
         { }

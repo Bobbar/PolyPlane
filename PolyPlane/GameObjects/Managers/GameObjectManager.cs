@@ -10,7 +10,7 @@ namespace PolyPlane.GameObjects.Managers
     /// <summary>
     /// Handles collections for all game objects and provides fast lookups and nearest neighbor searching.
     /// </summary>
-    public class GameObjectManager : IPlayerScoredEvent
+    public sealed class GameObjectManager : IPlayerScoredEvent
     {
         public int TotalObjects = 0;
 

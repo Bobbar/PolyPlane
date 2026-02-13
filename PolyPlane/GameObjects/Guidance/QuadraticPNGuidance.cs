@@ -2,7 +2,7 @@
 
 namespace PolyPlane.GameObjects.Guidance
 {
-    public class QuadraticPNGuidance : GuidanceBase
+    public sealed class QuadraticPNGuidance : GuidanceBase
     {
         private float _prevDir = 0f;
 

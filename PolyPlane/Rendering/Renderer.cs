@@ -10,7 +10,7 @@ using unvell.D2DLib.WinForm;
 
 namespace PolyPlane.Rendering
 {
-    public class Renderer : IDisposable
+    public sealed class Renderer : IDisposable
     {
         public float HudScale
         {

@@ -5,7 +5,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class BulletHole : FlameEmitter
+    public sealed class BulletHole : FlameEmitter
     {
         public D2DSize HoleSize { get; set; }
         public D2DSize OuterHoleSize { get; set; }

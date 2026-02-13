@@ -3,7 +3,7 @@
     /// <summary>
     /// Provides basic rate limiting for a single value.
     /// </summary>
-    public class RateLimiter
+    public sealed class RateLimiter
     {
         public float Target
         {
@@ -63,7 +63,7 @@
     /// <summary>
     /// Provides basic rate limiting for a single angle.
     /// </summary>
-    public class RateLimiterAngle
+    public sealed class RateLimiterAngle
     {
         public float Target
         {

@@ -3,7 +3,7 @@
     /// <summary>
     /// Provides a round-robin running average for a float value over time.
     /// </summary>
-    public class SmoothFloat
+    public sealed class SmoothFloat
     {
         private List<float> _values = new List<float>();
         private int _max;
@@ -81,7 +81,7 @@
         }
     }
 
-    public class SmoothDouble
+    public sealed class SmoothDouble
     {
         private List<double> _values = new List<double>();
         private int _max;
@@ -160,7 +160,7 @@
     }
 
 
-    public class SmoothPoint
+    public sealed class SmoothPoint
     {
         private List<D2DPoint> _values = new List<D2DPoint>();
         private int _max;

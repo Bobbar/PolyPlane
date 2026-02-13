@@ -2,7 +2,7 @@
 
 namespace PolyPlane.GameObjects.Guidance
 {
-    public class BasicLOSGuidance : GuidanceBase
+    public sealed class BasicLOSGuidance : GuidanceBase
     {
         public BasicLOSGuidance(GuidedMissile missile, GameObject target) : base(missile, target)
         { }

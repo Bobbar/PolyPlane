@@ -3,7 +3,7 @@ using PolyPlane.GameObjects.Managers;
 
 namespace PolyPlane.Net
 {
-    public partial class NetEventManager
+    public sealed partial class NetEventManager
     {
         private void SendPlaneUpdates()
         {

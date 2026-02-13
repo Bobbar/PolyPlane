@@ -1,6 +1,6 @@
 ﻿namespace PolyPlane.Net.Interpolation
 {
-    public class HistoricalBuffer<T>
+    public sealed class HistoricalBuffer<T>
     {
         // Max allowed historical data in milliseconds.
         private const long MAX_HIST_TIME = 400;

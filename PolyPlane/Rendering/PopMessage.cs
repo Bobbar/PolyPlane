@@ -4,7 +4,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
 {
-    public class PopMessage
+    public sealed class PopMessage
     {
         public string Message;
         public float Age = 0f;

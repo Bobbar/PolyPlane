@@ -1,6 +1,6 @@
 ﻿namespace PolyPlane.Net
 {
-    public class ChatInterface
+    public sealed class ChatInterface
     {
         public string CurrentText => _currentText;
         public bool ChatIsActive = false;

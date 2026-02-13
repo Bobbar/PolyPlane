@@ -3,7 +3,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.Rendering
 {
-    public class Cloud
+    public sealed class Cloud
     {
         public CloudGeometry Geometry;
         public D2DPoint Position;

@@ -6,7 +6,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects.Particles
 {
-    public class GunSmokeEmitter : FixturePoint, INoGameID
+    public sealed class GunSmokeEmitter : FixturePoint, INoGameID
     {
         public bool Visible = true;
 

@@ -7,7 +7,7 @@ namespace PolyPlane.Net
     /// Implementation of the Disruptor pattern
     /// </summary>
     /// <typeparam name="T">the type of item to be stored</typeparam>
-    public class RingBuffer<T>
+    public sealed class RingBuffer<T>
     {
         private readonly T[] _entries;
         private readonly int _modMask;

@@ -352,7 +352,7 @@ namespace PolyPlane.Helpers
             return HashCode.Combine(idxX, idxY);
         }
 
-        private class EntrySequence
+        private sealed class EntrySequence
         {
             public Entry? Head;
             public Entry? Tail;
@@ -368,7 +368,7 @@ namespace PolyPlane.Helpers
             }
         }
 
-        private class Entry
+        private sealed class Entry
         {
             public int NextHash;
             public int CurrentHash;

@@ -135,7 +135,7 @@ namespace PolyPlane.Rendering
         }
     }
 
-    public class CloudGeometry
+    public sealed class CloudGeometry
     {
         public D2DPoint[] Points = Array.Empty<D2DPoint>();
         public List<D2DSize> Dims = new List<D2DSize>();

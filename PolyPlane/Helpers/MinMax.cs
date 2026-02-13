@@ -3,7 +3,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.Helpers
 {
-    public class MinMax
+    public sealed class MinMax
     {
         public float MinX => _minXY.X;
         public float MinY => _minXY.Y;

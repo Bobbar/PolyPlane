@@ -5,7 +5,7 @@ using PolyPlane.Helpers;
 
 namespace PolyPlane.AI_Behavior
 {
-    public class FighterPlaneAI : IAIBehavior
+    public sealed class FighterPlaneAI : IAIBehavior
     {
         public FighterPlane Plane => _plane;
         public FighterPlane? TargetPlane => _targetPlane;

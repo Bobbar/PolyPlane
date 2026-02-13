@@ -5,7 +5,7 @@ using unvell.D2DLib;
 
 namespace PolyPlane.GameObjects
 {
-    public class Radar
+    public sealed class Radar
     {
         public D2DPoint Position { get; set; } = D2DPoint.Zero;
         public FighterPlane HostPlane;

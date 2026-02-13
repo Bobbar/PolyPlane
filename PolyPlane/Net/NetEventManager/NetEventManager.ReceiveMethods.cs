@@ -4,7 +4,7 @@ using PolyPlane.Rendering;
 
 namespace PolyPlane.Net
 {
-    public partial class NetEventManager
+    public sealed partial class NetEventManager
     {
 
         private void HandleExpiredObjects(BasicListPacket expiredObjectsPacket)

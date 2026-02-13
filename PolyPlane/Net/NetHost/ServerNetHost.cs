@@ -3,7 +3,7 @@ using PolyPlane.Helpers;
 
 namespace PolyPlane.Net.NetHost
 {
-    public class ServerNetHost : NetPlayHost
+    public sealed class ServerNetHost : NetPlayHost
     {
         private Dictionary<uint, Peer> _peers = new Dictionary<uint, Peer>();
         private const int PEER_TIMEOUT = 10000;
