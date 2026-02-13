@@ -2,7 +2,21 @@
 {
     public static class Profiler
     {
-        private static Dictionary<ProfilerStat, Marker> _stats = new Dictionary<ProfilerStat, Marker>();
+        private static Marker[] _stats = Array.Empty<Marker>();
+
+        static Profiler()
+        {
+            // Find the last stat in the enum and init the array.
+            var lastStat = Enum.GetValues(typeof(ProfilerStat)).Cast<ProfilerStat>().Max();
+            var numStats = (int)lastStat + 1;
+
+            _stats = new Marker[numStats];
+
+            for (int i = 0; i < numStats; i++)
+            {
+                _stats[i] = new Marker();
+            }
+        }
 
         /// <summary>
         /// Get milliseconds elapsed for the specified <see cref="ProfilerStat"/>.
@@ -21,7 +35,7 @@
         /// </summary>
         public static void ResetAll()
         {
-            foreach (var marker in _stats.Values)
+            foreach (var marker in _stats)
             {
                 marker.Elapsed = 0;
             }
@@ -71,14 +85,7 @@
 
         private static Marker GetStatMarker(ProfilerStat stat)
         {
-            Marker marker;
-
-            if (!_stats.TryGetValue(stat, out marker))
-            {
-                marker = new Marker();
-                _stats[stat] = marker;
-            }
-
+            var marker = _stats[(int)stat];
             return marker;
         }
 
@@ -89,7 +96,7 @@
         }
     }
 
-    public class Marker
+    public sealed class Marker
     {
         public long StartTime { get; set; }
         public long EndTime { get; set; }

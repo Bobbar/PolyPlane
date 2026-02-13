@@ -73,6 +73,7 @@ namespace PolyPlane.Rendering
         private string _hudMessage = string.Empty;
 
         private SmoothDouble _renderTimeSmooth = new SmoothDouble(60);
+        private SmoothDouble _lightMapRenderTimeSmooth = new SmoothDouble(60);
         private SmoothDouble _updateTimeSmooth = new SmoothDouble(60);
         private SmoothDouble _collisionTimeSmooth = new SmoothDouble(60);
         private SmoothDouble _fpsSmooth = new SmoothDouble(20);
@@ -522,11 +523,10 @@ namespace PolyPlane.Rendering
             DrawClouds(ctx);
             DrawPlaneCloudShadows(ctx, shadowColor);
 
+            DrawLightMap(ctx);
+
             if (World.DrawNoiseMap)
                 DrawNoise(ctx);
-
-            if (World.DrawLightMap)
-                DrawLightMap(ctx);
 
             ctx.PopViewPort();
 
@@ -879,16 +879,20 @@ namespace PolyPlane.Rendering
         {
             Profiler.Start(ProfilerStat.LigthMap);
 
-            var bmp = ctx.LightMap.GetBitmap();
-            var pixelSize = ctx.LightMap.SIDE_LEN;
+            if (World.DrawLightMap)
+            {
+                var bmp = ctx.LightMap.GetBitmap();
+                var pixelSize = ctx.LightMap.SIDE_LEN;
 
-            // Align the destination rect with the viewport
-            // and size it to match the lightmap dimensions.
-            var vp = new D2DRect(ctx.Viewport.left, ctx.Viewport.top, bmp.Width * pixelSize, bmp.Height * pixelSize);
+                // Align the destination rect with the viewport
+                // and size it to match the lightmap dimensions.
+                var vp = new D2DRect(ctx.Viewport.left, ctx.Viewport.top, bmp.Width * pixelSize, bmp.Height * pixelSize);
 
-            ctx.Gfx.DrawBitmap(bmp, vp, ctx.LightMapAlpha, true);
+                ctx.Gfx.DrawBitmap(bmp, vp, ctx.LightMapAlpha, true);
+            }
 
-            Profiler.Stop(ProfilerStat.LigthMap);
+            var ms = Profiler.Stop(ProfilerStat.LigthMap).GetElapsedMilliseconds();
+            _lightMapRenderTimeSmooth.Add(ms);
         }
 
         private void DrawHud(RenderContext ctx, GameObject viewObject, float dt)
@@ -1781,9 +1785,9 @@ namespace PolyPlane.Rendering
                 sb.AppendLine($"Planes: {_objs.Planes.Count}");
                 sb.AppendLine($"Update ms: {Math.Round(_updateTimeSmooth.Current, 2)}");
                 sb.AppendLine($"Render ms: {Math.Round(_renderTimeSmooth.Current, 2)}");
-                sb.AppendLine($"LightMap ms: {Math.Round(Profiler.GetElapsedMilliseconds(ProfilerStat.LigthMap), 2)}");
+                sb.AppendLine($"LightMap ms: {Math.Round(_lightMapRenderTimeSmooth.Current, 2)}");
                 sb.AppendLine($"Collision ms: {Math.Round(_collisionTimeSmooth.Current, 2)}");
-                sb.AppendLine($"Total ms: {Math.Round(_updateTimeSmooth.Current + _collisionTimeSmooth.Current + _renderTimeSmooth.Current, 2)}");
+                sb.AppendLine($"Total ms: {Math.Round(_updateTimeSmooth.Current + _collisionTimeSmooth.Current + _renderTimeSmooth.Current + _lightMapRenderTimeSmooth.Current, 2)}");
 
                 sb.AppendLine($"Zoom: {Math.Round(World.ZoomScale, 2)}");
                 sb.AppendLine($"HUD Scale: {Math.Round(HudScale, 2)}");
