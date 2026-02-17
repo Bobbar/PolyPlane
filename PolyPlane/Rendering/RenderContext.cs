@@ -37,6 +37,9 @@ namespace PolyPlane.Rendering
         private float _lightMapAlpha = 0.02f;
         private D2DColor _timeOfDayColor = D2DColor.Transparent;
 
+        private const float MIN_LIGHT_MAP_ALPHA = 0.02f;
+        private const float MAX_LIGHT_MAP_ALPHA = 0.16f;
+
         private const double GaussianSigma2 = 0.035;
         private readonly double GaussianSigma = Math.Sqrt(2.0 * Math.PI * GaussianSigma2);
 
@@ -61,7 +64,7 @@ namespace PolyPlane.Rendering
             var todColor = InterpolateColorGaussian(World.TimeOfDayPallet, World.TimeOfDay, World.MAX_TIMEOFDAY);
             _timeOfDayColor = todColor;
 
-            var lightMapAlpha = Utilities.Lerp(0.02f, 0.23f, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
+            var lightMapAlpha = Utilities.Lerp(MIN_LIGHT_MAP_ALPHA, MAX_LIGHT_MAP_ALPHA, Utilities.Factor(World.TimeOfDay, World.MAX_TIMEOFDAY));
             _lightMapAlpha = lightMapAlpha;
         }
 
