@@ -39,7 +39,7 @@ namespace PolyPlane.Rendering
         private float _sideLen = 60f;
         private bool disposedValue;
 
-        private static readonly Vector256<int> X_SEQUENCE = Vector256.Create(0, 1, 2, 3, 4, 5, 6, 7);
+        private static readonly Vector256<float> X_SEQUENCE = Vector256.Create(0f, 1f, 2f, 3f, 4f, 5f, 6f, 7f);
         private static readonly Vector256<float> MIN_ALPHA_VEC = Vector256.Create(MIN_ALPHA);
         private static readonly Vector256<float> ONE_F8 = Vector256<float>.One;
         private static readonly Vector256<float> ZERO_F8 = Vector256<float>.Zero;
@@ -160,16 +160,15 @@ namespace PolyPlane.Rendering
             var inputRVec = Vector256.Create(lightColor.r);
             var inputGVec = Vector256.Create(lightColor.g);
             var inputBVec = Vector256.Create(lightColor.b);
-
             var radiusVec = Vector256.Create(radius);
             var intensityFactorVec = Vector256.Create(intensityFactor);
 
             // Center position of the gradient.
-            var idxXVec = Vector256.Create(idxX);
-            var idxYVec = Vector256.Create(idxY);
+            var idxXVec = Vector256.Create<float>(idxX);
+            var idxYVec = Vector256.Create<float>(idxY);
 
-            var centerPosX = Vector256.Create(idxX * SIDE_LEN);
-            var centerPosY = Vector256.Create(idxY * SIDE_LEN);
+            var centerPosX = Vector256.Create<float>(idxX * SIDE_LEN);
+            var centerPosY = Vector256.Create<float>(idxY * SIDE_LEN);
 
             fixed (float* ptrA = _mapIn.A, ptrR = _mapIn.R, ptrG = _mapIn.G, ptrB = _mapIn.B)
             {
@@ -179,7 +178,7 @@ namespace PolyPlane.Rendering
                     if (yOffset < 0 || yOffset >= _gridHeight)
                         continue;
 
-                    var yStep = Vector256.Create(y);
+                    var yStep = Vector256.Create<float>(y);
 
                     for (int x = -sampleNum; x <= sampleNum; x += 8)
                     {
@@ -187,12 +186,12 @@ namespace PolyPlane.Rendering
                         if (xOffset + 8 < 0 || xOffset >= _gridWidth)
                             continue;
 
+                        var xStep = Vector256.Create<float>(x);
                         var idx = GetMapIndex(xOffset, yOffset);
-                        var xStep = Vector256.Create(x);
 
                         // Compute the gradient for 8 sequential pixels.
-                        var xOffsetVec = Vector256.ConvertToSingle(idxXVec + X_SEQUENCE + xStep);
-                        var yOffsetVec = Vector256.ConvertToSingle(idxYVec + yStep);
+                        var xOffsetVec = idxXVec + X_SEQUENCE + xStep;
+                        var yOffsetVec = idxYVec + yStep;
 
                         // Gradient distances.
                         var gradPosX = xOffsetVec * _sideLenVec;
@@ -663,7 +662,7 @@ namespace PolyPlane.Rendering
                             }
                         }
                     }
-                } 
+                }
             }
 
             private int GetMapIndex(int width, int x, int y)
