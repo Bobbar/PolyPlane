@@ -12,11 +12,9 @@ namespace PolyPlane
     public partial class PolyPlaneUI : Form
     {
         private Thread _gameThread;
-        private ManualResetEventSlim _renderExitEvent = new ManualResetEventSlim(false);
-
         private bool _isFullScreen = false;
         private bool _oneStep = false;
-        private bool _killRender = false;
+        private bool _stopGameLoop = false;
         private bool _shiftDown = false;
         private bool _ctrlDown = false;
 
@@ -327,7 +325,7 @@ namespace PolyPlane
             World.IsServer = false;
             World.ServerTimeOffset = 0;
 
-            _killRender = true;
+            _stopGameLoop = true;
 
             _gameThread.Join();
 
@@ -375,7 +373,7 @@ namespace PolyPlane
 
         private void HandleNewImpact(object? sender, ImpactEvent e)
         {
-            if (this.Disposing || this.IsDisposed || _render == null || _killRender == true) return;
+            if (this.Disposing || this.IsDisposed || _render == null || _stopGameLoop == true) return;
 
             HandleImpactFeedback(e);
         }
@@ -399,7 +397,6 @@ namespace PolyPlane
             }
         }
 
-
         private void NetMan_PlayerIDReceived(object? sender, int e)
         {
             if (this.InvokeRequired)
@@ -410,11 +407,6 @@ namespace PolyPlane
             {
                 this.Text = $"{_title} - CLIENT - ID: {e}";
             }
-        }
-
-        private void PolyPlaneUI_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            StopRender();
         }
 
         private void PolyPlaneUI_Disposed(object? sender, EventArgs e)
@@ -526,8 +518,7 @@ namespace PolyPlane
 
         private void StartGameThread()
         {
-            _killRender = false;
-            _renderExitEvent.Reset();
+            _stopGameLoop = false;
             _gameThread = new Thread(GameLoop);
             _gameThread.IsBackground = true;
             _gameThread.Priority = ThreadPriority.AboveNormal;
@@ -544,12 +535,10 @@ namespace PolyPlane
 
         private void GameLoop()
         {
-            while (!this.Disposing && !_killRender)
+            while (!this.Disposing && !_stopGameLoop)
             {
                 AdvanceAndRender();
             }
-
-            _renderExitEvent.Set();
         }
 
 
@@ -564,7 +553,7 @@ namespace PolyPlane
 
             var dt = World.CurrentDT;
 
-            if (_killRender)
+            if (_stopGameLoop)
                 return;
 
             // Process any queued actions.
@@ -592,7 +581,7 @@ namespace PolyPlane
             }
 
             // Render the frame if window is not minimized and we're not skipping rendering.
-            if (!_skipRender && !_killRender && this.WindowState != FormWindowState.Minimized)
+            if (!_skipRender && !_stopGameLoop && this.WindowState != FormWindowState.Minimized)
                 _render.RenderFrame(viewObject, dt);
 
             _fpsLimiter.Wait(World.TARGET_FPS);
@@ -772,7 +761,7 @@ namespace PolyPlane
             mousePos /= dpiDivisor;
 
             var center = _mouseDownPosition;
-            center /= dpiDivisor; 
+            center /= dpiDivisor;
 
             var dist = mousePos.DistanceTo(center);
             var angle = mousePos.AngleTo(center);
@@ -813,13 +802,6 @@ namespace PolyPlane
         private void ResumeGame()
         {
             World.IsPaused = false;
-        }
-
-        private void StopRender()
-        {
-            _killRender = true;
-
-            _renderExitEvent.Wait(1000);
         }
 
         private void SendPlayerReset()
