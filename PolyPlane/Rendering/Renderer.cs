@@ -295,7 +295,7 @@ namespace PolyPlane.Rendering
             return scaleSize;
         }
 
-        private void UpdateTimersAndAnims(float dt)
+        private void UpdateTimersAndAnims(float dt, GameObject viewObject)
         {
             _hudMessageTimeout.Update(dt);
 
@@ -321,6 +321,15 @@ namespace PolyPlane.Rendering
                 }
 
                 UpdatePopMessages(dt);
+
+                // Do G-Force screen shake effect for planes.
+                if (viewObject is FighterPlane plane)
+                {
+                    var shakeAmt = Utilities.FactorWithEasing(plane.GForce, World.SCREEN_SHAKE_G, EasingFunctions.In.EaseCircle);
+
+                    if (shakeAmt > 0f)
+                        DoScreenShake((plane.GForce * 0.4f) * shakeAmt);
+                }
             }
         }
 
@@ -332,7 +341,9 @@ namespace PolyPlane.Rendering
             ResizeGfx();
 
             Profiler.Start(ProfilerStat.Update);
-            UpdateTimersAndAnims(dt);
+
+            UpdateTimersAndAnims(dt, viewObject);
+
             Profiler.StopAndAppend(ProfilerStat.Update);
 
 
@@ -345,15 +356,6 @@ namespace PolyPlane.Rendering
 
             if (viewObject != null)
             {
-                // Do G-Force screen shake effect for planes.
-                if (viewObject is FighterPlane plane)
-                {
-                    var shakeAmt = Utilities.FactorWithEasing(plane.GForce, World.SCREEN_SHAKE_G, EasingFunctions.In.EaseCircle);
-
-                    if (shakeAmt > 0f)
-                        DoScreenShake((plane.GForce * 0.4f) * shakeAmt);
-                }
-
                 var viewPortSize = new D2DSize((World.ViewPortSize.width / VIEW_SCALE), World.ViewPortSize.height / VIEW_SCALE);
                 var viewPortRect = new D2DRect(viewObject.Position, viewPortSize);
                 _ctx.PushViewPort(viewPortRect);
