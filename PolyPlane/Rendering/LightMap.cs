@@ -144,9 +144,6 @@ namespace PolyPlane.Rendering
 
         public unsafe void AddContributionAvx(ILightMapContributor lightContributor)
         {
-            if (!lightContributor.IsLightEnabled())
-                return;
-
             var radius = lightContributor.GetLightRadius();
             var lightPosition = lightContributor.GetLightPosition();
             var lightColor = lightContributor.GetLightColor();
@@ -603,6 +600,9 @@ namespace PolyPlane.Rendering
             /// </summary>
             private unsafe void CopyBuffer(ref float[] newA, ref float[] newR, ref float[] newG, ref float[] newB, int oldWidth, int newWidth, int oldHeight, int newHeight)
             {
+                int newLen = newHeight * newWidth;
+                int oldLen = oldHeight * oldWidth;
+
                 if (Avx.IsSupported)
                 {
                     fixed (float* ptrOldA = A, ptrOldR = R, ptrOldG = G, ptrOldB = B)
@@ -619,7 +619,7 @@ namespace PolyPlane.Rendering
                                 var ogIdx = GetMapIndex(oldWidth, (int)scaleX, (int)scaleY);
                                 var newIdx = GetMapIndex(newWidth, x, y);
 
-                                if (newIdx >= 0 && newIdx + 8 < newA.Length && ogIdx >= 0 && ogIdx + 8 < A.Length)
+                                if (newIdx >= 0 && newIdx + 8 < newLen && ogIdx >= 0 && ogIdx + 8 < oldLen)
                                 {
                                     var curA = Avx.LoadVector256(&ptrOldA[ogIdx]);
                                     var curR = Avx.LoadVector256(&ptrOldR[ogIdx]);
@@ -648,7 +648,7 @@ namespace PolyPlane.Rendering
                             var ogIdx = GetMapIndex(oldWidth, (int)scaleX, (int)scaleY);
                             var newIdx = GetMapIndex(newWidth, x, y);
 
-                            if (newIdx >= 0 && newIdx < newA.Length && ogIdx >= 0 && ogIdx < A.Length)
+                            if (newIdx >= 0 && newIdx < newLen && ogIdx >= 0 && ogIdx < oldLen)
                             {
                                 var curA = A[ogIdx];
                                 var curR = R[ogIdx];
@@ -662,7 +662,7 @@ namespace PolyPlane.Rendering
                             }
                         }
                     }
-                }
+                } 
             }
 
             private int GetMapIndex(int width, int x, int y)
