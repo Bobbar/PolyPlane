@@ -5,10 +5,9 @@
     /// </summary>
     public sealed class SmoothFloat
     {
-        private List<float> _values = new List<float>();
-        private int _max;
-        private int _position = 0;
+        private readonly int _numValues;
         private float _current;
+        private float _num;
 
         /// <summary>
         /// Current average.
@@ -24,15 +23,10 @@
         /// <summary>
         /// Creates a new instance with the specified max number of values.
         /// </summary>
-        /// <param name="max">The max number of values to maintain an average of.</param>
-        public SmoothFloat(int max)
+        /// <param name="numValues">The max number of values to maintain an average of.</param>
+        public SmoothFloat(int numValues)
         {
-            _max = max;
-        }
-
-        public SmoothFloat(int max, float maxDelta)
-        {
-            _max = max;
+            _numValues = numValues;
         }
 
         /// <summary>
@@ -42,51 +36,30 @@
         /// <returns>Returns the new accumulative average value.</returns>
         public float Add(float value)
         {
-            // Add new values until the collection is full, then do round robin.
-            if (_values.Count < _max)
-            {
-                _values.Add(value);
-            }
-            else
-            {
-                _values[_position] = value;
-            }
+            if (float.IsNaN(value))
+                return _current;
 
-            // Sum all values and compute the average.
-            double total = 0;
-            for (int i = 0; i < _values.Count; i++)
-            {
-                total += _values[i];
-            }
+            if (_num < _numValues)
+                _num++;
 
-            _current = (float)total / _values.Count;
-
-            // Move to next position.
-            _position = (_position + 1) % _max;
+            // Cumulative average.
+            _current = (value + _num * _current) / (_num + 1);
 
             return _current;
         }
 
         public void Clear()
         {
-            _values.Clear();
-            _position = 0;
-        }
-
-        public void Resize(int newSize)
-        {
-            _values.Clear();
-            _position = 0;
-            _max = newSize;
+            _num = 0;
+            _current = 0f;
         }
     }
 
     public sealed class SmoothDouble
     {
-        private List<double> _values = new List<double>();
-        private int _max;
-        private int _position = 0;
+        private readonly int _numValues;
         private double _current;
+        private double _num;
 
         /// <summary>
         /// Current average.
@@ -102,15 +75,10 @@
         /// <summary>
         /// Creates a new instance with the specified max number of values.
         /// </summary>
-        /// <param name="max">The max number of values to maintain an average of.</param>
-        public SmoothDouble(int max)
+        /// <param name="numValues">The max number of values to maintain an average of.</param>
+        public SmoothDouble(int numValues)
         {
-            _max = max;
-        }
-
-        public SmoothDouble(int max, double maxDelta)
-        {
-            _max = max;
+            _numValues = numValues;
         }
 
         /// <summary>
@@ -120,52 +88,30 @@
         /// <returns>Returns the new accumulative average value.</returns>
         public double Add(double value)
         {
-            // Add new values until the collection is full, then do round robin.
-            if (_values.Count < _max)
-            {
-                _values.Add(value);
-            }
-            else
-            {
-                _values[_position] = value;
-            }
+            if (double.IsNaN(value))
+                return _current;
 
-            // Sum all values and compute the average.
-            double total = 0;
-            for (int i = 0; i < _values.Count; i++)
-            {
-                total += _values[i];
-            }
+            if (_num < _numValues)
+                _num++;
 
-            _current = total / _values.Count;
-
-            // Move to next position.
-            _position = (_position + 1) % _max;
+            // Cumulative average.
+            _current = (value + _num * _current) / (_num + 1);
 
             return _current;
         }
 
         public void Clear()
         {
-            _values.Clear();
-            _position = 0;
-        }
-
-        public void Resize(int newSize)
-        {
-            _values.Clear();
-            _position = 0;
-            _max = newSize;
+            _current = 0;
+            _num = 0;
         }
     }
 
-
     public sealed class SmoothPoint
     {
-        private List<D2DPoint> _values = new List<D2DPoint>();
-        private int _max;
-        private int _position = 0;
+        private readonly int _numValues;
         private D2DPoint _current;
+        private int _num = 0;
 
         /// <summary>
         /// Current average.
@@ -181,10 +127,10 @@
         /// <summary>
         /// Creates a new instance with the specified max number of values.
         /// </summary>
-        /// <param name="max">The max number of values to maintain an average of.</param>
-        public SmoothPoint(int max)
+        /// <param name="numValues">The max number of values to maintain an average of.</param>
+        public SmoothPoint(int numValues)
         {
-            _max = max;
+            _numValues = numValues;
         }
 
         /// <summary>
@@ -194,27 +140,14 @@
         /// <returns>Returns the new accumulative average value.</returns>
         public D2DPoint Add(D2DPoint value)
         {
-            // Add new values until the collection is full, then do round robin.
-            if (_values.Count < _max)
-            {
-                _values.Add(value);
-            }
-            else
-            {
-                _values[_position] = value;
-            }
+            if (float.IsNaN(value.X) || float.IsNaN(value.Y))
+                return _current;
 
-            // Sum all values and compute the average.
-            D2DPoint total = D2DPoint.Zero;
-            for (int i = 0; i < _values.Count; i++)
-            {
-                total += _values[i];
-            }
+            if (_num < _numValues)
+                _num++;
 
-            _current = total / _values.Count;
-
-            // Move to next position.
-            _position = (_position + 1) % _max;
+            // Cumulative average.
+            _current = (value + _num * _current) / (_num + 1);
 
             return _current;
         }
